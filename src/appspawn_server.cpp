@@ -275,6 +275,19 @@ int32_t AppSpawnServer::SetProcessName(
     return ERR_OK;
 }
 
+/**
+ * Set keep capabilities.
+ */
+int32_t AppSpawnServer::SetKeepCapabilities()
+{
+    // keep capabilities when uid changed.
+    if (prctl(PR_SET_KEEPCAPS, 1, 0, 0, 0) == -1) {
+        HiLog::Error(LABEL, "set keepcaps failed: %{public}s", strerror(errno));
+        return (-errno);
+    }
+    return ERR_OK;
+}
+
 int32_t AppSpawnServer::SetUidGid(
     const uint32_t uid, const uint32_t gid, const uint32_t *gitTable, const uint32_t gidCount)
 {
@@ -408,6 +421,17 @@ bool AppSpawnServer::SetAppProcProperty(int connectFd, const ClientSocket::AppPr
         write(fd[1], &ret, sizeof(ret));
         close(fd[1]);
         return false;
+    }
+
+    // set keep capabilities when user not root.
+    if (appProperty->uid != 0) {
+        ret = SetKeepCapabilities();
+        if (FAILED(ret)) {
+            HiLog::Error(LABEL, "SetKeepCapabilities error, ret %{public}d", ret);
+            write(fd[1], &ret, sizeof(ret));
+            close(fd[1]);
+            return false;
+        }
     }
 
 #ifdef GRAPHIC_PERMISSION_CHECK

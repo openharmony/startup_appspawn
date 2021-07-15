@@ -23,6 +23,7 @@
           }
       ],
       "test_list": [
+        "//base/startup/appspawn_standard/test:unittest",
         "//base/startup/appspawn_standard/test:moduletest"
       ]
     }
