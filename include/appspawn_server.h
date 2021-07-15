@@ -99,6 +99,11 @@ private:
     int32_t SetProcessName(char *longProcName, int64_t longProcNameLen, const char *processName, int32_t len);
 
     /**
+     * Sets keep capabilities.
+     */
+    int32_t SetKeepCapabilities();
+
+    /**
      * Sets the uid and gid of an application process.
      *
      * @param uid Indicates the uid of the application process.
@@ -118,6 +123,9 @@ private:
      */
     int32_t SetCapabilities();
 
+    /**
+     * Sets app process property.
+     */
     bool SetAppProcProperty(int connectFd, const ClientSocket::AppProperty *appProperty, char *longProcName,
         int64_t longProcNameLen, const int32_t fd[FDLEN2]);
 
