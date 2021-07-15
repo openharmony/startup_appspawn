@@ -126,7 +126,7 @@ int ServerSocket::BindSocket(int connectFd)
         return -1;
     }
 
-    if (chown(socketAddr_.sun_path, AID_ROOT, AID_SYSTEM)) {
+    if (chown(socketAddr_.sun_path, APPSPAWN_ID_ROOT, APPSPAWN_ID_SYSTEM)) {
         HiLog::Error(LABEL, "Server: failed to chown socket fd %d, failed: %s", connectFd, strerror(errno));
         return -1;
     }
