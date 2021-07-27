@@ -37,6 +37,9 @@ namespace {
 constexpr int32_t ERR_PIPE_FAIL = -100;
 constexpr int32_t MAX_LEN_SHORT_NAME = 16;
 constexpr int32_t WAIT_DELAY_US = 100 * 1000;  // 100ms
+
+constexpr std::string_view BUNDLE_NAME_CAMERA("com.ohos.camera");
+constexpr std::string_view BUNDLE_NAME_PHOTOS("com.ohos.photos");
 }  // namespace
 
 using namespace OHOS::HiviewDFX;
@@ -199,6 +202,13 @@ bool AppSpawnServer::ServerMain(char *longProcName, int64_t longProcNameLen)
         }
 
         if (pid == 0) {
+            // special handle bundle name "com.ohos.photos" and "com.ohos.camera"
+            if ((strcmp(appProperty->processName, BUNDLE_NAME_CAMERA.data()) == 0) ||
+                (strcmp(appProperty->processName, BUNDLE_NAME_PHOTOS.data()) == 0)) {
+                appProperty->gidTable[appProperty->gidCount] = 1023;
+                appProperty->gidCount++;
+            }
+
             return SetAppProcProperty(connectFd, appProperty, longProcName, longProcNameLen, fd);
         }
         // parent process
