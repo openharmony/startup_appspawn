@@ -166,32 +166,14 @@ HWTEST(ServerSocketTest, Server_Socket_005, TestSize.Level0)
 /*
  * Feature: AppSpawn
  * Function: ServerSocket
- * SubFunction: BindSocket
- * FunctionPoints: bind the server socket
- * EnvConditions: mobile that can run ohos test framework
- * CaseDescription: Verify the linux function bind which bind the invalid socket fd.
- */
-HWTEST(ServerSocketTest, Server_Socket_006, TestSize.Level0)
-{
-    GTEST_LOG_(INFO) << "Server_Socket_006 start";
-
-    std::unique_ptr<ServerSocket> serverSocket = std::make_unique<ServerSocket>("ServerSocketTest");
-    EXPECT_EQ(-1, serverSocket->BindSocket(1));
-
-    GTEST_LOG_(INFO) << "Server_Socket_006 end";
-}
-
-/*
- * Feature: AppSpawn
- * Function: ServerSocket
  * SubFunction: RegisterServerSocket
  * FunctionPoints: bind socket fail
  * EnvConditions: mobile that can run ohos test framework
  * CaseDescription: Verify the function RegisterServerSocket BindSocket fail and close the socket fd.
  */
-HWTEST(ServerSocketTest, Server_Socket_007, TestSize.Level0)
+HWTEST(ServerSocketTest, Server_Socket_006, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "Server_Socket_007 start";
+    GTEST_LOG_(INFO) << "Server_Socket_006 start";
 
     std::string invalidSocketName =
         "InvalidInvalidInvalidInvalidInvalidInvalidInvalidInvalid"
@@ -201,5 +183,5 @@ HWTEST(ServerSocketTest, Server_Socket_007, TestSize.Level0)
     EXPECT_EQ(-1, serverSocket->RegisterServerSocket());
     EXPECT_EQ(-1, serverSocket->GetSocketFd());
 
-    GTEST_LOG_(INFO) << "Server_Socket_007 end";
+    GTEST_LOG_(INFO) << "Server_Socket_006 end";
 }
