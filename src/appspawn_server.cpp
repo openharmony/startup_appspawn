@@ -37,6 +37,8 @@ namespace {
 constexpr int32_t ERR_PIPE_FAIL = -100;
 constexpr int32_t MAX_LEN_SHORT_NAME = 16;
 constexpr int32_t WAIT_DELAY_US = 100 * 1000;  // 100ms
+constexpr int32_t GID_MEDIA = 1023;
+constexpr int32_t MAX_GIDS = 64;
 
 constexpr std::string_view BUNDLE_NAME_CAMERA("com.ohos.camera");
 constexpr std::string_view BUNDLE_NAME_PHOTOS("com.ohos.photos");
@@ -205,8 +207,12 @@ bool AppSpawnServer::ServerMain(char *longProcName, int64_t longProcNameLen)
             // special handle bundle name "com.ohos.photos" and "com.ohos.camera"
             if ((strcmp(appProperty->processName, BUNDLE_NAME_CAMERA.data()) == 0) ||
                 (strcmp(appProperty->processName, BUNDLE_NAME_PHOTOS.data()) == 0)) {
-                appProperty->gidTable[appProperty->gidCount] = 1023;
-                appProperty->gidCount++;
+                if (appProperty->gidCount < MAX_GIDS) {
+                    appProperty->gidTable[appProperty->gidCount] = GID_MEDIA;
+                    appProperty->gidCount++;
+                } else {
+                    HiLog::Info(LABEL, "gidCount out of bounds !");
+                }
             }
 
             return SetAppProcProperty(connectFd, appProperty, longProcName, longProcNameLen, fd);
