@@ -65,7 +65,7 @@ HWTEST(AppSpawnSocketTest, App_Spawn_Socket_001, TestSize.Level0)
     GTEST_LOG_(INFO) << "App_Spawn_Socket_001 start";
 
     std::unique_ptr<AppSpawnSocket> appSpawnSocket = std::make_unique<AppSpawnSocket>("AppSpawnSocketTest");
-    ASSERT_FALSE(appSpawnSocket == nullptr);
+    EXPECT_TRUE(appSpawnSocket);
 
     EXPECT_EQ(-1, appSpawnSocket->GetSocketFd());
     auto socketFd = appSpawnSocket->CreateSocket();
@@ -89,7 +89,7 @@ HWTEST(AppSpawnSocketTest, App_Spawn_Socket_002, TestSize.Level0)
     GTEST_LOG_(INFO) << "App_Spawn_Socket_002 start";
 
     std::unique_ptr<AppSpawnSocket> appSpawnSocket = std::make_unique<AppSpawnSocket>("AppSpawnSocketTest");
-    ASSERT_FALSE(appSpawnSocket == nullptr);
+    EXPECT_TRUE(appSpawnSocket);
 
     int32_t socketFd = -2;
     appSpawnSocket->CloseSocket(socketFd);
@@ -112,7 +112,7 @@ HWTEST(AppSpawnSocketTest, App_Spawn_Socket_003, TestSize.Level0)
     GTEST_LOG_(INFO) << "App_Spawn_Socket_003 start";
 
     std::unique_ptr<AppSpawnSocket> appSpawnSocket = std::make_unique<AppSpawnSocket>("");
-    ASSERT_FALSE(appSpawnSocket == nullptr);
+    EXPECT_TRUE(appSpawnSocket);
 
     EXPECT_EQ(-1, appSpawnSocket->PackSocketAddr());
 
@@ -135,7 +135,7 @@ HWTEST(AppSpawnSocketTest, App_Spawn_Socket_004, TestSize.Level0)
         "InvalidInvalidInvalidInvalidInvalidInvalidInvalidInvalid"
         "InvalidInvalidInvalidInvalidInvalidInvalidInvalidInvalidInvalidInvalidInvalidInvalid";
     std::unique_ptr<AppSpawnSocket> appSpawnSocket = std::make_unique<AppSpawnSocket>(invalidSocketName.c_str());
-    ASSERT_FALSE(appSpawnSocket == nullptr);
+    EXPECT_TRUE(appSpawnSocket);
 
     EXPECT_EQ(-1, appSpawnSocket->PackSocketAddr());
 
@@ -155,7 +155,7 @@ HWTEST(AppSpawnSocketTest, App_Spawn_Socket_005, TestSize.Level0)
     GTEST_LOG_(INFO) << "App_Spawn_Socket_005 start";
 
     std::unique_ptr<AppSpawnSocket> appSpawnSocket = std::make_unique<AppSpawnSocket>("AppSpawnSocketTest");
-    ASSERT_FALSE(appSpawnSocket == nullptr);
+    EXPECT_TRUE(appSpawnSocket);
 
     EXPECT_EQ(0, appSpawnSocket->PackSocketAddr());
 
@@ -175,11 +175,11 @@ HWTEST(AppSpawnSocketTest, App_Spawn_Socket_006, TestSize.Level0)
     GTEST_LOG_(INFO) << "App_Spawn_Socket_006 start";
 
     std::unique_ptr<AppSpawnSocket> appSpawnSocket = std::make_unique<AppSpawnSocket>("AppSpawnSocketTest");
-    ASSERT_FALSE(appSpawnSocket == nullptr);
+    EXPECT_TRUE(appSpawnSocket);
 
     int32_t socketFd = -1;
     std::unique_ptr<uint8_t[]> buff = std::make_unique<uint8_t[]>(10);
-    ASSERT_FALSE(buff == nullptr);
+    EXPECT_TRUE(buff);
     int32_t len = 10;
 
     EXPECT_EQ(-1, appSpawnSocket->ReadSocketMessage(socketFd, buff.get(), len));
@@ -200,12 +200,13 @@ HWTEST(AppSpawnSocketTest, App_Spawn_Socket_007, TestSize.Level0)
     GTEST_LOG_(INFO) << "App_Spawn_Socket_007 start";
 
     std::unique_ptr<AppSpawnSocket> appSpawnSocket = std::make_unique<AppSpawnSocket>("AppSpawnSocketTest");
-    ASSERT_FALSE(appSpawnSocket == nullptr);
+    EXPECT_TRUE(appSpawnSocket);
     auto socketFd = appSpawnSocket->CreateSocket();
     std::unique_ptr<uint8_t[]> buff = nullptr;
     int32_t len = 10;
 
     EXPECT_EQ(-1, appSpawnSocket->ReadSocketMessage(socketFd, buff.get(), len));
+    appSpawnSocket->CloseSocket(socketFd);
 
     GTEST_LOG_(INFO) << "App_Spawn_Socket_007 end";
 }
@@ -223,13 +224,14 @@ HWTEST(AppSpawnSocketTest, App_Spawn_Socket_008, TestSize.Level0)
     GTEST_LOG_(INFO) << "App_Spawn_Socket_008 start";
 
     std::unique_ptr<AppSpawnSocket> appSpawnSocket = std::make_unique<AppSpawnSocket>("AppSpawnSocketTest");
-    ASSERT_FALSE(appSpawnSocket == nullptr);
+    EXPECT_TRUE(appSpawnSocket);
     auto socketFd = appSpawnSocket->CreateSocket();
     std::unique_ptr<uint8_t[]> buff = std::make_unique<uint8_t[]>(10);
-    ASSERT_FALSE(buff == nullptr);
+    EXPECT_TRUE(buff);
     int32_t len = 0;
 
     EXPECT_EQ(-1, appSpawnSocket->ReadSocketMessage(socketFd, buff.get(), len));
+    appSpawnSocket->CloseSocket(socketFd);
 
     GTEST_LOG_(INFO) << "App_Spawn_Socket_008 end";
 }
@@ -247,13 +249,14 @@ HWTEST(AppSpawnSocketTest, App_Spawn_Socket_009, TestSize.Level0)
     GTEST_LOG_(INFO) << "App_Spawn_Socket_009 start";
 
     std::unique_ptr<AppSpawnSocket> appSpawnSocket = std::make_unique<AppSpawnSocket>("AppSpawnSocketTest");
-    ASSERT_FALSE(appSpawnSocket == nullptr);
+    EXPECT_TRUE(appSpawnSocket);
     auto socketFd = appSpawnSocket->CreateSocket();
     std::unique_ptr<uint8_t[]> buff = std::make_unique<uint8_t[]>(10);
-    ASSERT_FALSE(buff == nullptr);
+    EXPECT_TRUE(buff);
     int32_t len = -1;
 
     EXPECT_EQ(-1, appSpawnSocket->ReadSocketMessage(socketFd, buff.get(), len));
+    appSpawnSocket->CloseSocket(socketFd);
 
     GTEST_LOG_(INFO) << "App_Spawn_Socket_009 end";
 }
@@ -271,11 +274,11 @@ HWTEST(AppSpawnSocketTest, App_Spawn_Socket_010, TestSize.Level0)
     GTEST_LOG_(INFO) << "App_Spawn_Socket_010 start";
 
     std::unique_ptr<AppSpawnSocket> appSpawnSocket = std::make_unique<AppSpawnSocket>("AppSpawnSocketTest");
-    ASSERT_FALSE(appSpawnSocket == nullptr);
+    EXPECT_TRUE(appSpawnSocket);
     std::string content = "hiworld";
     int32_t len = content.length();
     std::unique_ptr<int8_t[]> buff = std::make_unique<int8_t[]>(len);
-    ASSERT_FALSE(buff == nullptr);
+    EXPECT_TRUE(buff);
     int32_t fd[2] = {0, 0};
 
     if (pipe(fd) == -1) {
@@ -307,7 +310,7 @@ HWTEST(AppSpawnSocketTest, App_Spawn_Socket_011, TestSize.Level0)
     GTEST_LOG_(INFO) << "App_Spawn_Socket_011 start";
 
     std::unique_ptr<AppSpawnSocket> appSpawnSocket = std::make_unique<AppSpawnSocket>("AppSpawnSocketTest");
-    ASSERT_FALSE(appSpawnSocket == nullptr);
+    EXPECT_TRUE(appSpawnSocket);
     int32_t socketFd = -1;
     std::string buff = "hiworld";
 
@@ -329,12 +332,13 @@ HWTEST(AppSpawnSocketTest, App_Spawn_Socket_012, TestSize.Level0)
     GTEST_LOG_(INFO) << "App_Spawn_Socket_012 start";
 
     std::unique_ptr<AppSpawnSocket> appSpawnSocket = std::make_unique<AppSpawnSocket>("AppSpawnSocketTest");
-    ASSERT_FALSE(appSpawnSocket == nullptr);
+    EXPECT_TRUE(appSpawnSocket);
     auto socketFd = appSpawnSocket->CreateSocket();
     std::unique_ptr<uint8_t[]> buff = nullptr;
     int32_t len = 10;
 
     EXPECT_EQ(-1, appSpawnSocket->WriteSocketMessage(socketFd, buff.get(), len));
+    appSpawnSocket->CloseSocket(socketFd);
 
     GTEST_LOG_(INFO) << "App_Spawn_Socket_012 end";
 }
@@ -352,12 +356,13 @@ HWTEST(AppSpawnSocketTest, App_Spawn_Socket_013, TestSize.Level0)
     GTEST_LOG_(INFO) << "App_Spawn_Socket_013 start";
 
     std::unique_ptr<AppSpawnSocket> appSpawnSocket = std::make_unique<AppSpawnSocket>("AppSpawnSocketTest");
-    ASSERT_FALSE(appSpawnSocket == nullptr);
+    EXPECT_TRUE(appSpawnSocket);
     auto socketFd = appSpawnSocket->CreateSocket();
     std::string buff = "hiworld";
     int32_t len = 0;
 
     EXPECT_EQ(-1, appSpawnSocket->WriteSocketMessage(socketFd, buff.c_str(), len));
+    appSpawnSocket->CloseSocket(socketFd);
 
     GTEST_LOG_(INFO) << "App_Spawn_Socket_013 end";
 }
@@ -375,12 +380,13 @@ HWTEST(AppSpawnSocketTest, App_Spawn_Socket_014, TestSize.Level0)
     GTEST_LOG_(INFO) << "App_Spawn_Socket_014 start";
 
     std::unique_ptr<AppSpawnSocket> appSpawnSocket = std::make_unique<AppSpawnSocket>("AppSpawnSocketTest");
-    ASSERT_FALSE(appSpawnSocket == nullptr);
+    EXPECT_TRUE(appSpawnSocket);
     auto socketFd = appSpawnSocket->CreateSocket();
     std::string buff = "hiworld";
     int32_t len = -1;
 
     EXPECT_EQ(-1, appSpawnSocket->WriteSocketMessage(socketFd, buff.c_str(), len));
+    appSpawnSocket->CloseSocket(socketFd);
 
     GTEST_LOG_(INFO) << "App_Spawn_Socket_014 end";
 }
@@ -398,11 +404,11 @@ HWTEST(AppSpawnSocketTest, App_Spawn_Socket_015, TestSize.Level0)
     GTEST_LOG_(INFO) << "App_Spawn_Socket_015 start";
 
     std::unique_ptr<AppSpawnSocket> appSpawnSocket = std::make_unique<AppSpawnSocket>("AppSpawnSocketTest");
-    ASSERT_FALSE(appSpawnSocket == nullptr);
+    EXPECT_TRUE(appSpawnSocket);
     std::string content = "hiworld";
     int32_t len = content.length();
     std::unique_ptr<int8_t[]> buff = std::make_unique<int8_t[]>(len);
-    ASSERT_FALSE(buff == nullptr);
+    EXPECT_TRUE(buff);
     int32_t fd[2] = {0, 0};
 
     if (pipe(fd) == -1) {

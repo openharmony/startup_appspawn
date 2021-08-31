@@ -43,16 +43,25 @@ ClientSocket::AppProperty *AppSpawnMsgPeer::GetMsg() const
 {
     HiLog::Info(LABEL, "GetMsg");
     if (buf_ != nullptr) {
-        ClientSocket::AppProperty* appProperty = reinterpret_cast<ClientSocket::AppProperty *>(buf_.get());
+        ClientSocket::AppProperty *appProperty = reinterpret_cast<ClientSocket::AppProperty *>(buf_.get());
         appProperty->uid = 0;
         appProperty->gid = 0;
-        (void)memset_s(appProperty->gidTable, sizeof(appProperty->gidTable), 0, sizeof(appProperty->gidTable));
+        auto ret = memset_s(appProperty->gidTable, sizeof(appProperty->gidTable), 0, sizeof(appProperty->gidTable));
+        if (ret != EOK) {
+            HiLog::Error(LABEL, "memset_s failed!");
+        }
         appProperty->gidCount = ClientSocket::MAX_GIDS;
         std::string processName = "processName";
-        (void)memcpy_s(appProperty->processName, sizeof(appProperty->processName),
-            processName.c_str(), processName.length());
+        ret = memcpy_s(
+            appProperty->processName, sizeof(appProperty->processName), processName.c_str(), processName.length());
+        if (ret != EOK) {
+            HiLog::Error(LABEL, "memcpy_s failed!");
+        }
         std::string soPath = "soPath";
-        (void)memcpy_s(appProperty->soPath, sizeof(appProperty->soPath), soPath.c_str(), soPath.length());
+        ret = memcpy_s(appProperty->soPath, sizeof(appProperty->soPath), soPath.c_str(), soPath.length());
+        if (ret != EOK) {
+            HiLog::Error(LABEL, "memcpy_s failed!");
+        }
     }
 
     return reinterpret_cast<ClientSocket::AppProperty *>(buf_.get());
