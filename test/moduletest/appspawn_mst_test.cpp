@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2021 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -34,11 +34,11 @@ namespace {
 const bool CHECK_OK = true;
 const bool CHECK_ERROR = false;
 const int32_t DEFAULT_PID = 0;
-const int32_t FILE_PATH_SIZE = 50;  
+const int32_t FILE_PATH_SIZE = 50;
 const int32_t CMD_SIZE = 50;
 const int32_t BUFFER_SIZE = 512;
 const int32_t BASE_TYPE = 10;
-const int32_t CONNECT_RETRY_DELAY = 50 * 1000;  
+const int32_t CONNECT_RETRY_DELAY = 50 * 1000;
 const int32_t CONNECT_RETRY_MAX_TIMES = 5;
 const int32_t UID_POSITION_MOVE = 5;
 const int32_t GID_POSITION_MOVE = 5;
@@ -107,7 +107,7 @@ bool checkUid(const int32_t &pid, const AppSpawnStartMsg &params)
             HiLog::Error(LABEL, "get Uid info failed.");
             return CHECK_ERROR;
         }
-        if (strlen(uidPtr) > UID_POSITION_MOVE){
+        if (strlen(uidPtr) > UID_POSITION_MOVE) {
             uidPtr = uidPtr + UID_POSITION_MOVE;
         }
         int32_t uid = (int32_t)strtol(uidPtr, NULL, BASE_TYPE);
@@ -128,7 +128,7 @@ bool checkGid(const int32_t &pid, const AppSpawnStartMsg &params)
             HiLog::Error(LABEL, "get Gid info failed.");
             return CHECK_ERROR;
         }
-        if (strlen(gidPtr) > GID_POSITION_MOVE){
+        if (strlen(gidPtr) > GID_POSITION_MOVE) {
             gidPtr = gidPtr + GID_POSITION_MOVE;
         }
         int32_t gid = (int32_t)strtol(gidPtr, NULL, BASE_TYPE);
@@ -143,18 +143,18 @@ std::size_t getGids(const int32_t &pid, std::vector<int32_t> &gids)
 {
     if (readFileInfo(buffer, pid, "status")) {
         // Move to Groups position
-        char *groupsPtr  = strstr(buffer, "Groups");
-        if (groupsPtr  == nullptr) {
+        char *groupsPtr = strstr(buffer, "Groups");
+        if (groupsPtr == nullptr || strlen(groupsPtr) > BUFFER_SIZE) {
             HiLog::Error(LABEL, "get Groups info failed.");
             return CHECK_ERROR;
         }
-        if (strlen(groupsPtr) > GROUPS_POSITION_MOVE){
+        if (strlen(groupsPtr) > GROUPS_POSITION_MOVE) {
             groupsPtr = groupsPtr + GROUPS_POSITION_MOVE;
         }
         // Get the row content of Groups
         char *saveptr = NULL;
-        char *line = strtok_r(groupsPtr , DELIMITER_NEWLINE, &saveptr);
-        if (line == nullptr) {
+        char *line = strtok_r(groupsPtr, DELIMITER_NEWLINE, &saveptr);
+        if (line == nullptr || strlen(line) > BUFFER_SIZE) {
             HiLog::Error(LABEL, "get Groups line info failed.");
             return CHECK_ERROR;
         }
@@ -199,7 +199,7 @@ bool checkProcName(const int32_t &pid, const AppSpawnStartMsg &params)
 {
     FILE *fp = nullptr;
     char cmd[CMD_SIZE];
-    if (sprintf_s(cmd, sizeof(cmd),"ps -o ARGS=CMD -p %d |grep -v CMD", pid) <= 0) {
+    if (sprintf_s(cmd, sizeof(cmd), "ps -o ARGS=CMD -p %d |grep -v CMD", pid) <= 0) {
         HiLog::Error(LABEL, "cmd sprintf_s fail .");
         return CHECK_ERROR;
     }
@@ -219,12 +219,12 @@ bool checkProcName(const int32_t &pid, const AppSpawnStartMsg &params)
         GTEST_LOG_(INFO) << "strcmp"
                          << " :" << strcmp(params.procName.c_str(), procName) << ".";
 
-        if (params.procName.compare(0,params.procName.size(),procName,params.procName.size()) == 0) {
+        if (params.procName.compare(0, params.procName.size(), procName, params.procName.size()) == 0) {
             pclose(fp);
             return CHECK_OK;
         }
         HiLog::Error(LABEL, " procName=%{public}s, params.procName=%{public}s.", procName, params.procName.c_str());
-        
+
     } else {
         HiLog::Error(LABEL, "Getting procName failed.");
     }
@@ -236,7 +236,7 @@ bool checkProcName(const int32_t &pid, const AppSpawnStartMsg &params)
 bool checkProcessIsDestroyed(const int32_t &pid)
 {
     char filePath[FILE_PATH_SIZE];
-    if (sprintf_s(filePath,sizeof(filePath), "/proc/%d", pid) <= 0) {
+    if (sprintf_s(filePath, sizeof(filePath), "/proc/%d", pid) <= 0) {
         HiLog::Error(LABEL, "filePath sprintf_s fail .");
         return CHECK_ERROR;
     }
@@ -261,8 +261,8 @@ bool checkAppspawnPID()
     if (fgets(pid, sizeof(pid), fp) != nullptr) {
         pclose(fp);
         return CHECK_OK;
-    } 
-    
+    }
+
     HiLog::Error(LABEL, "Getting Pid failed.");
 
     pclose(fp);
@@ -327,9 +327,7 @@ void AppSpawnModuleTest::SetUp()
 }
 
 void AppSpawnModuleTest::TearDown()
-{
-
-}
+{}
 
 /*
  * Feature: AppSpawn

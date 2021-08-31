@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2021 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -22,8 +22,8 @@
 
 namespace OHOS {
 namespace AppSpawn {
-
-static constexpr HiviewDFX::HiLogLabel LABEL = {LOG_CORE, 0, "MockServerSocket"};
+using namespace OHOS::HiviewDFX;
+static constexpr HiLogLabel LABEL = {LOG_CORE, 0, "MockServerSocket"};
 
 class MockServerSocket : public ServerSocket {
 public:
@@ -41,7 +41,7 @@ public:
     MOCK_METHOD3(ReadSocketMessage, int32_t(int32_t socketFd, void *buf, int32_t len));
     MOCK_METHOD3(WriteSocketMessage, int32_t(int32_t socketFd, const void *buf, int32_t len));
 
-    int32_t ReadImplGidCountMax([[maybe_unused]]int32_t socketFd, void *buf, [[maybe_unused]]int32_t len)
+    int32_t ReadImplGidCountMax([[maybe_unused]] int32_t socketFd, void *buf, [[maybe_unused]] int32_t len)
     {
         std::lock_guard<std::mutex> lock(mutex_);
 
@@ -52,17 +52,26 @@ public:
         }
         params->uid = 0;
         params->gid = 0;
-        (void)memset_s(params->gidTable, sizeof(params->gidTable), 0, sizeof(params->gidTable));
+        auto ret = memset_s(params->gidTable, sizeof(params->gidTable), 0, sizeof(params->gidTable));
+        if (ret != EOK) {
+            HiLog::Info(LABEL, "memset_s failed");
+        }
         params->gidCount = ClientSocket::MAX_GIDS + 1;
         std::string processName = "processName";
-        (void)memcpy_s(params->processName, sizeof(params->processName), processName.c_str(), processName.length());
+        ret = memcpy_s(params->processName, sizeof(params->processName), processName.c_str(), processName.length());
+        if (ret != EOK) {
+            HiLog::Info(LABEL, "memcpy_s failed");
+        }
         std::string soPath = "soPath";
-        (void)memcpy_s(params->soPath, sizeof(params->soPath), soPath.c_str(), soPath.length());
+        ret = memcpy_s(params->soPath, sizeof(params->soPath), soPath.c_str(), soPath.length());
+        if (ret != EOK) {
+            HiLog::Info(LABEL, "memcpy_s failed");
+        }
 
         return sizeof(ClientSocket::AppProperty);
     }
 
-    int32_t ReadImplProcessName([[maybe_unused]]int32_t socketFd, void *buf, [[maybe_unused]]int32_t len)
+    int32_t ReadImplProcessName([[maybe_unused]] int32_t socketFd, void *buf, [[maybe_unused]] int32_t len)
     {
         std::lock_guard<std::mutex> lock(mutex_);
 
@@ -73,17 +82,26 @@ public:
         }
         params->uid = 0;
         params->gid = 0;
-        (void)memset_s(params->gidTable, sizeof(params->gidTable), 0, sizeof(params->gidTable));
+        auto ret = memset_s(params->gidTable, sizeof(params->gidTable), 0, sizeof(params->gidTable));
+        if (ret != EOK) {
+            HiLog::Info(LABEL, "memset_s failed");
+        }
         params->gidCount = ClientSocket::MAX_GIDS;
         std::string processName = "";
-        (void)memcpy_s(params->processName, sizeof(params->processName), processName.c_str(), processName.length());
+        ret = memcpy_s(params->processName, sizeof(params->processName), processName.c_str(), processName.length());
+        if (ret != EOK) {
+            HiLog::Info(LABEL, "memcpy_s failed");
+        }
         std::string soPath = "soPath";
-        (void)memcpy_s(params->soPath, sizeof(params->soPath), soPath.c_str(), soPath.length());
+        ret = memcpy_s(params->soPath, sizeof(params->soPath), soPath.c_str(), soPath.length());
+        if (ret != EOK) {
+            HiLog::Info(LABEL, "memcpy_s failed");
+        }
 
         return sizeof(ClientSocket::AppProperty);
     }
 
-    int32_t ReadImplValid([[maybe_unused]]int32_t socketFd, void *buf, [[maybe_unused]]int32_t len)
+    int32_t ReadImplValid([[maybe_unused]] int32_t socketFd, void *buf, [[maybe_unused]] int32_t len)
     {
         std::lock_guard<std::mutex> lock(mutex_);
 
@@ -94,17 +112,26 @@ public:
         }
         params->uid = 0;
         params->gid = 0;
-        (void)memset_s(params->gidTable, sizeof(params->gidTable), 0, sizeof(params->gidTable));
+        auto ret = memset_s(params->gidTable, sizeof(params->gidTable), 0, sizeof(params->gidTable));
+        if (ret != EOK) {
+            HiLog::Info(LABEL, "memset_s failed");
+        }
         params->gidCount = ClientSocket::MAX_GIDS;
         std::string processName = "processName";
-        (void)memcpy_s(params->processName, sizeof(params->processName), processName.c_str(), processName.length());
+        ret = memcpy_s(params->processName, sizeof(params->processName), processName.c_str(), processName.length());
+        if (ret != EOK) {
+            HiLog::Info(LABEL, "memcpy_s failed");
+        }
         std::string soPath = "soPath";
-        (void)memcpy_s(params->soPath, sizeof(params->soPath), soPath.c_str(), soPath.length());
+        ret = memcpy_s(params->soPath, sizeof(params->soPath), soPath.c_str(), soPath.length());
+        if (ret != EOK) {
+            HiLog::Info(LABEL, "memcpy_s failed");
+        }
 
         return sizeof(ClientSocket::AppProperty);
     }
 
-    int32_t ReadImplValidLongProcessName([[maybe_unused]]int32_t socketFd, void *buf, [[maybe_unused]]int32_t len)
+    int32_t ReadImplValidLongProcessName([[maybe_unused]] int32_t socketFd, void *buf, [[maybe_unused]] int32_t len)
     {
         std::lock_guard<std::mutex> lock(mutex_);
 
@@ -115,12 +142,21 @@ public:
         }
         params->uid = 0;
         params->gid = 0;
-        (void)memset_s(params->gidTable, sizeof(params->gidTable), 0, sizeof(params->gidTable));
+        auto ret = memset_s(params->gidTable, sizeof(params->gidTable), 0, sizeof(params->gidTable));
+        if (ret != EOK) {
+            HiLog::Info(LABEL, "memset_s failed");
+        }
         params->gidCount = ClientSocket::MAX_GIDS;
         std::string processName = "ProcessName1234567890";
-        (void)memcpy_s(params->processName, sizeof(params->processName), processName.c_str(), processName.length());
+        ret = memcpy_s(params->processName, sizeof(params->processName), processName.c_str(), processName.length());
+        if (ret != EOK) {
+            HiLog::Info(LABEL, "memcpy_s failed");
+        }
         std::string soPath = "soPath";
-        (void)memcpy_s(params->soPath, sizeof(params->soPath), soPath.c_str(), soPath.length());
+        ret = memcpy_s(params->soPath, sizeof(params->soPath), soPath.c_str(), soPath.length());
+        if (ret != EOK) {
+            HiLog::Info(LABEL, "memcpy_s failed");
+        }
 
         return sizeof(ClientSocket::AppProperty);
     }
