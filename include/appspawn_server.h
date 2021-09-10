@@ -25,7 +25,6 @@
 
 namespace OHOS {
 namespace AppSpawn {
-
 class AppSpawnServer {
 public:
     /**
@@ -101,7 +100,7 @@ private:
     /**
      * Sets keep capabilities.
      */
-    int32_t SetKeepCapabilities();
+    int32_t SetKeepCapabilities(uint32_t uid);
 
     /**
      * Sets the uid and gid of an application process.
@@ -129,6 +128,21 @@ private:
     bool SetAppProcProperty(int connectFd, const ClientSocket::AppProperty *appProperty, char *longProcName,
         int64_t longProcNameLen, const int32_t fd[FDLEN2]);
 
+    /**
+     * Notify
+     */
+    void NotifyResToParentProc(const int32_t fd, const int32_t value);
+
+    /**
+     * Special app process property.
+     */
+    void SpecialHandle(ClientSocket::AppProperty *appProperty);
+
+    /**
+     * Check app process property.
+     */
+    bool CheckAppProperty(const ClientSocket::AppProperty *appProperty);
+
 private:
     const std::string deviceNull_ = "/dev/null";
     std::string socketName_{};
@@ -140,7 +154,6 @@ private:
     std::function<void(const std::string &)> errHandlerHook_ = nullptr;
     bool isRunning_{};
 };
-
 }  // namespace AppSpawn
 }  // namespace OHOS
 

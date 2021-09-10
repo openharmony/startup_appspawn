@@ -17,7 +17,7 @@ import("//build/test.gni")
 ohos_moduletest("AppSpawnModuleTest") {
   module_out_path = "${module_output_path}"
 
-  sources = [ "${appspawn_path}/test/moduletest/appspawn_mst_test.cpp" ]
+  sources = [ "${appspawn_path}/test/moduletest/appspawn_module_test.cpp" ]
 
   include_dirs = [
     "//utils/native/base/include",
