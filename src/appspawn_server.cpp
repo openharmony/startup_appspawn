@@ -32,7 +32,6 @@
 
 namespace OHOS {
 namespace AppSpawn {
-
 namespace {
 constexpr int32_t ERR_PIPE_FAIL = -100;
 constexpr int32_t MAX_LEN_SHORT_NAME = 16;
@@ -51,7 +50,7 @@ static constexpr HiLogLabel LABEL = {LOG_CORE, 0, "AppSpawnServer"};
 extern "C" {
 #endif
 
-static void SignalHandler(int) /* signal_number */
+static void SignalHandler([[maybe_unused]] int sig)
 {
     pid_t pid;
     int status;
@@ -154,7 +153,6 @@ bool AppSpawnServer::ServerMain(char *longProcName, int64_t longProcNameLen)
         HiLog::Error(LABEL, "AppSpawnServer::Failed to register server socket");
         return false;
     }
-
     std::thread(&AppSpawnServer::ConnectionPeer, this).detach();
 
     while (isRunning_) {
@@ -164,82 +162,41 @@ bool AppSpawnServer::ServerMain(char *longProcName, int64_t longProcNameLen)
         appQueue_.pop();
         int connectFd = msg->GetConnectFd();
         ClientSocket::AppProperty *appProperty = msg->GetMsg();
-
-        // check appProperty
-        if (appProperty == nullptr) {
-            HiLog::Error(LABEL, "appProperty is nullptr");
-            continue;
-        }
-
-        if (appProperty->gidCount > ClientSocket::MAX_GIDS) {
-            HiLog::Error(LABEL, "gidCount error: %{public}u", appProperty->gidCount);
+        if (!CheckAppProperty(appProperty)) {
             msg->Response(-EINVAL);
             continue;
         }
-
-        if (strlen(appProperty->processName) == 0) {
-            HiLog::Error(LABEL, "process name length is 0");
-            msg->Response(-EINVAL);
-            continue;
-        }
-
-        InstallSigHandler();
 
         int32_t fd[FDLEN2] = {FD_INIT_VALUE, FD_INIT_VALUE};
         int32_t buff = 0;
         if (pipe(fd) == -1) {
-            HiLog::Error(LABEL, "create pipe fail");
+            HiLog::Error(LABEL, "create pipe fail, errno = %{public}d", errno);
             msg->Response(ERR_PIPE_FAIL);
             continue;
         }
 
+        InstallSigHandler();
         pid_t pid = fork();
         if (pid < 0) {
             HiLog::Error(LABEL, "AppSpawnServer::Failed to fork new process, errno = %{public}d", errno);
-            // close pipe fds
             close(fd[0]);
             close(fd[1]);
             msg->Response(-errno);
             continue;
-        }
-
-        if (pid == 0) {
-            // special handle bundle name "com.ohos.photos" and "com.ohos.camera"
-            if ((strcmp(appProperty->processName, BUNDLE_NAME_CAMERA.data()) == 0) ||
-                (strcmp(appProperty->processName, BUNDLE_NAME_PHOTOS.data()) == 0)) {
-                if (appProperty->gidCount < MAX_GIDS) {
-                    appProperty->gidTable[appProperty->gidCount] = GID_MEDIA;
-                    appProperty->gidCount++;
-                } else {
-                    HiLog::Info(LABEL, "gidCount out of bounds !");
-                }
-            }
-
+        } else if (pid == 0) {
+            SpecialHandle(appProperty);
             return SetAppProcProperty(connectFd, appProperty, longProcName, longProcNameLen, fd);
         }
-        // parent process
-        // close write end
-        close(fd[1]);
-        // wait child process result
-        read(fd[0], &buff, sizeof(buff));
-        // close read end
+
+        read(fd[0], &buff, sizeof(buff));  // wait child process resutl
         close(fd[0]);
+        close(fd[1]);
 
         HiLog::Info(LABEL, "child process init %{public}s", (buff == ERR_OK) ? "success" : "fail");
-
-        if (buff == ERR_OK) {
-            // send pid to AppManagerService
-            msg->Response(pid);
-        } else {
-            // send error code to AppManagerService
-            msg->Response(buff);
-        }
-
-        // close socket connection
-        socket_->CloseConnection(connectFd);
+        (buff == ERR_OK) ? msg->Response(pid) : msg->Response(buff);  // response to AppManagerService
+        socket_->CloseConnection(connectFd);                          // close socket connection
         HiLog::Debug(LABEL, "AppSpawnServer::parent process create app finish, pid = %{public}d", pid);
     }
-
     return false;
 }
 
@@ -288,19 +245,6 @@ int32_t AppSpawnServer::SetProcessName(
         return -EINVAL;
     }
 
-    return ERR_OK;
-}
-
-/**
- * Set keep capabilities.
- */
-int32_t AppSpawnServer::SetKeepCapabilities()
-{
-    // keep capabilities when uid changed.
-    if (prctl(PR_SET_KEEPCAPS, 1, 0, 0, 0) == -1) {
-        HiLog::Error(LABEL, "set keepcaps failed: %{public}s", strerror(errno));
-        return (-errno);
-    }
     return ERR_OK;
 }
 
@@ -421,73 +365,103 @@ bool AppSpawnServer::SetAppProcProperty(int connectFd, const ClientSocket::AppPr
 {
     pid_t newPid = getpid();
     HiLog::Debug(LABEL, "AppSpawnServer::Success to fork new process, pid = %{public}d", newPid);
-    // close socket connection in child process
+    // close socket connection and peer socket in child process
     socket_->CloseConnection(connectFd);
-    // close peer socket
     socket_->CloseServerMonitor();
-    // close read end
-    close(fd[0]);
+    close(fd[0]);  // close read fd
     UninstallSigHandler();
 
-    // set process name
     int32_t ret = ERR_OK;
-    ret = SetProcessName(longProcName, longProcNameLen, appProperty->processName, strlen(appProperty->processName) + 1);
+    ret = SetKeepCapabilities(appProperty->uid);
     if (FAILED(ret)) {
-        HiLog::Error(LABEL, "SetProcessName error, ret %{public}d", ret);
-        write(fd[1], &ret, sizeof(ret));
-        close(fd[1]);
+        NotifyResToParentProc(fd[1], ret);
         return false;
     }
 
-    // set keep capabilities when user not root.
-    if (appProperty->uid != 0) {
-        ret = SetKeepCapabilities();
-        if (FAILED(ret)) {
-            HiLog::Error(LABEL, "SetKeepCapabilities error, ret %{public}d", ret);
-            write(fd[1], &ret, sizeof(ret));
-            close(fd[1]);
-            return false;
-        }
+    ret = SetProcessName(longProcName, longProcNameLen, appProperty->processName, strlen(appProperty->processName) + 1);
+    if (FAILED(ret)) {
+        NotifyResToParentProc(fd[1], ret);
+        return false;
     }
 
 #ifdef GRAPHIC_PERMISSION_CHECK
-    // set uid gid
     ret = SetUidGid(appProperty->uid, appProperty->gid, appProperty->gidTable, appProperty->gidCount);
     if (FAILED(ret)) {
-        HiLog::Error(LABEL, "SetUidGid error, ret %{public}d", ret);
-        write(fd[1], &ret, sizeof(ret));
-        close(fd[1]);
+        NotifyResToParentProc(fd[1], ret);
         return false;
     }
 #endif
 
-    // set file descriptors
     ret = SetFileDescriptors();
     if (FAILED(ret)) {
-        HiLog::Error(LABEL, "SetFileDescriptors error, ret %{public}d", ret);
-        write(fd[1], &ret, sizeof(ret));
-        close(fd[1]);
+        NotifyResToParentProc(fd[1], ret);
         return false;
     }
 
-    // set capabilities
     ret = SetCapabilities();
     if (FAILED(ret)) {
-        HiLog::Error(LABEL, "SetCapabilities error, ret %{public}d", ret);
-        write(fd[1], &ret, sizeof(ret));
-        close(fd[1]);
+        NotifyResToParentProc(fd[1], ret);
         return false;
     }
-
-    // child process init success, send to father process
-    write(fd[1], &ret, sizeof(ret));
-    close(fd[1]);
-
-    // start app process
+    // notify success to father process and start app process
+    NotifyResToParentProc(fd[1], ret);
     AppExecFwk::MainThread::Start();
 
     HiLog::Error(LABEL, "Failed to start process, pid = %{public}d", newPid);
     return false;
+}
+
+void AppSpawnServer::NotifyResToParentProc(const int32_t fd, const int32_t value)
+{
+    write(fd, &value, sizeof(value));
+    close(fd);
+}
+
+void AppSpawnServer::SpecialHandle(ClientSocket::AppProperty *appProperty)
+{
+    // special handle bundle name "com.ohos.photos" and "com.ohos.camera"
+    if ((strcmp(appProperty->processName, BUNDLE_NAME_CAMERA.data()) == 0) ||
+        (strcmp(appProperty->processName, BUNDLE_NAME_PHOTOS.data()) == 0)) {
+        if (appProperty->gidCount < MAX_GIDS) {
+            appProperty->gidTable[appProperty->gidCount] = GID_MEDIA;
+            appProperty->gidCount++;
+        } else {
+            HiLog::Info(LABEL, "gidCount out of bounds !");
+        }
+    }
+}
+
+int32_t AppSpawnServer::SetKeepCapabilities(uint32_t uid)
+{
+    // set keep capabilities when user not root.
+    if (uid != 0) {
+        if (prctl(PR_SET_KEEPCAPS, 1, 0, 0, 0) == -1) {
+            HiLog::Error(LABEL, "set keepcaps failed: %{public}s", strerror(errno));
+            return (-errno);
+        }
+    }
+
+    return ERR_OK;
+}
+
+bool AppSpawnServer::CheckAppProperty(const ClientSocket::AppProperty *appProperty)
+{
+    if (appProperty == nullptr) {
+        HiLog::Error(LABEL, "appProperty is nullptr");
+        return false;
+    }
+
+    if (appProperty->gidCount > ClientSocket::MAX_GIDS) {
+        HiLog::Error(LABEL, "gidCount error: %{public}u", appProperty->gidCount);
+        return false;
+    }
+
+    if (strlen(appProperty->processName) == 0) {
+        HiLog::Error(LABEL, "process name length is 0");
+        return false;
+    }
+
+    return true;
 }
 }  // namespace AppSpawn
 }  // namespace OHOS

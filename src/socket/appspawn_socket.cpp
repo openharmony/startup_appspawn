@@ -130,7 +130,7 @@ int AppSpawnSocket::WriteSocketMessage(int socketFd, const void *buf, int len)
     ssize_t written = 0;
     ssize_t remain = static_cast<ssize_t>(len);
     const uint8_t *offset = reinterpret_cast<const uint8_t *>(buf);
-    for (ssize_t wLen; remain > 0; offset += wLen, remain -= wLen, written += wLen) {
+    for (ssize_t wLen = 0; remain > 0; offset += wLen, remain -= wLen, written += wLen) {
         wLen = write(socketFd, offset, remain);
         HiLog::Debug(LABEL, "socket fd %d, wLen %zd", socketFd, wLen);
         if ((wLen <= 0) && (errno != EINTR)) {

@@ -89,6 +89,5 @@ int ServerSocket::WaitForConnection()
     HiLog::Info(LABEL, "WaitForConnection");
     return 0;
 }
-
 }  // namespace AppSpawn
 }  // namespace OHOS
