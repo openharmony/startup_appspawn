@@ -18,7 +18,6 @@
 
 namespace OHOS {
 namespace AppSpawn {
-
 class MockClientSocket : public ClientSocket {
 public:
     virtual ~MockClientSocket() = default;
@@ -31,6 +30,5 @@ public:
     MOCK_METHOD2(WriteSocketMessage, int32_t(const void *buf, int32_t len));
     MOCK_METHOD2(ReadSocketMessage, int32_t(void *buf, int32_t len));
 };
-
 }  // namespace AppSpawn
 }  // namespace OHOS

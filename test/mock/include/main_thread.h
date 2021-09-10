@@ -18,9 +18,7 @@
 
 namespace OHOS {
 namespace AppExecFwk {
-
-class MainThread  {
-
+class MainThread {
 public:
     MainThread() = default;
     virtual ~MainThread() = default;

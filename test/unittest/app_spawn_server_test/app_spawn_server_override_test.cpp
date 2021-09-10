@@ -38,16 +38,14 @@ public:
 public:
     static constexpr int TEST_WAIT_TIME = 50 * 1000;  // 50 ms
 protected:
-    std::unique_ptr<AppSpawnServer> appSpawnServer_;
+    std::unique_ptr<AppSpawnServer> appSpawnServer_ = nullptr;
 };
 
 void AppSpawnServerOverrideTest::SetUpTestCase()
-{
-}
+{}
 
 void AppSpawnServerOverrideTest::TearDownTestCase()
-{
-}
+{}
 
 void AppSpawnServerOverrideTest::SetUp()
 {
@@ -98,11 +96,11 @@ HWTEST_F(AppSpawnServerOverrideTest, App_Spawn_Server_Override_002, TestSize.Lev
 {
     GTEST_LOG_(INFO) << "App_Spawn_Server_Override_002 start";
 
-    char* longProcName = nullptr;
+    char *longProcName = nullptr;
     int64_t longProcNameLen = sizeof(longProcName);
     char processName[16] = "LongNameTest";
     int32_t len = sizeof(processName);
-    
+
     EXPECT_EQ(-EINVAL, appSpawnServer_->SetProcessName(longProcName, longProcNameLen, processName, len));
 
     GTEST_LOG_(INFO) << "App_Spawn_Server_Override_002 end";
@@ -122,7 +120,7 @@ HWTEST_F(AppSpawnServerOverrideTest, App_Spawn_Server_Override_003, TestSize.Lev
 
     char longProcName[20] = "longProcName";
     int64_t longProcNameLen = sizeof(longProcName);
-    char* processName = nullptr;
+    char *processName = nullptr;
     int32_t len = sizeof(processName);
 
     EXPECT_EQ(-EINVAL, appSpawnServer_->SetProcessName(longProcName, longProcNameLen, processName, len));
