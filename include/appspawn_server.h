@@ -145,14 +145,14 @@ private:
 
 private:
     const std::string deviceNull_ = "/dev/null";
-    std::string socketName_{};
+    std::string socketName_ {};
     std::shared_ptr<ServerSocket> socket_ = nullptr;
-    std::mutex mut_{};
-    mutable std::condition_variable dataCond_{};
-    std::queue<std::unique_ptr<AppSpawnMsgPeer>> appQueue_{};
+    std::mutex mut_ {};
+    mutable std::condition_variable dataCond_ {};
+    std::queue<std::unique_ptr<AppSpawnMsgPeer>> appQueue_ {};
     std::function<int(const ClientSocket::AppProperty &)> propertyHandler_ = nullptr;
     std::function<void(const std::string &)> errHandlerHook_ = nullptr;
-    bool isRunning_{};
+    bool isRunning_ {};
 };
 }  // namespace AppSpawn
 }  // namespace OHOS
