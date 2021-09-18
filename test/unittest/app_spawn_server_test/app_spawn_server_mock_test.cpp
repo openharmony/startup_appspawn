@@ -40,17 +40,15 @@ public:
 public:
     static constexpr int TEST_WAIT_TIME = 50 * 1000;  // 50 ms
 protected:
-    std::unique_ptr<AppSpawnServer> appSpawnServer_;
-    std::shared_ptr<MockServerSocket> mockServerSocket_;
+    std::unique_ptr<AppSpawnServer> appSpawnServer_ = nullptr;
+    std::shared_ptr<MockServerSocket> mockServerSocket_ = nullptr;
 };
 
 void AppSpawnServerMockTest::SetUpTestCase()
-{
-}
+{}
 
 void AppSpawnServerMockTest::TearDownTestCase()
-{
-}
+{}
 
 void AppSpawnServerMockTest::SetUp()
 {

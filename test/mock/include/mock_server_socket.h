@@ -164,6 +164,5 @@ public:
 private:
     std::mutex mutex_;
 };
-
 }  // namespace AppSpawn
 }  // namespace OHOS

@@ -25,6 +25,5 @@ void MainThread::Start()
 {
     HiLog::Info(LABEL, "Start");
 }
-
 }  // namespace AppExecFwk
 }  // namespace OHOS
