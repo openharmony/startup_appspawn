@@ -143,6 +143,13 @@ private:
      */
     bool CheckAppProperty(const ClientSocket::AppProperty *appProperty);
 
+#ifdef ACEABILITY_LIBRARY_LOADER
+    /**
+     * Load libace.z.so library when boot the devices
+     */
+    void LoadAceLib();
+#endif
+
 private:
     const std::string deviceNull_ = "/dev/null";
     std::string socketName_ {};
