@@ -26,6 +26,7 @@ namespace OHOS {
 namespace AppSpawn {
 using namespace OHOS::HiviewDFX;
 static constexpr HiLogLabel LABEL = {LOG_CORE, 0, "ClientSocket"};
+constexpr static size_t ERR_STRING_SZ = 64;
 
 ClientSocket::ClientSocket(const std::string &client) : AppSpawnSocket(client)
 {}
@@ -57,6 +58,7 @@ void ClientSocket::CloseClient()
 
 int ClientSocket::ConnectSocket(int connectFd)
 {
+    char err_string[ERR_STRING_SZ];
     if (connectFd < 0) {
         HiLog::Error(LABEL, "Client: Invalid socket fd: %d", connectFd);
         return -1;
@@ -68,11 +70,13 @@ int ClientSocket::ConnectSocket(int connectFd)
 
     if ((setsockopt(connectFd, SOL_SOCKET, SO_RCVTIMEO, &SOCKET_TIMEOUT, sizeof(SOCKET_TIMEOUT)) != 0) ||
         (setsockopt(connectFd, SOL_SOCKET, SO_SNDTIMEO, &SOCKET_TIMEOUT, sizeof(SOCKET_TIMEOUT)) != 0)) {
-        HiLog::Warn(LABEL, "Client: Failed to set opt of socket %d, err %s", connectFd, strerror(errno));
+        HiLog::Warn(LABEL, "Client: Failed to set opt of socket %d, err %d",
+            connectFd, strerror_r(errno, err_string, ERR_STRING_SZ));
     }
 
     if (connect(connectFd, reinterpret_cast<struct sockaddr *>(&socketAddr_), socketAddrLen_) < 0) {
-        HiLog::Warn(LABEL, "Client: Connect on socket fd %d, failed: %s", connectFd, strerror(errno));
+        HiLog::Warn(LABEL, "Client: Connect on socket fd %d, failed: %d",
+            connectFd, strerror_r(errno, err_string, ERR_STRING_SZ));
         CloseSocket(connectFd);
         return -1;
     }
