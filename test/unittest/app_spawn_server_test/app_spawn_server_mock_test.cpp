@@ -30,15 +30,14 @@ using namespace testing;
 using namespace testing::ext;
 using namespace OHOS::AppSpawn;
 
+static constexpr int TEST_WAIT_TIME = 50 * 1000;  // 50 ms
+
 class AppSpawnServerMockTest : public testing::Test {
 public:
     static void SetUpTestCase();
     static void TearDownTestCase();
     void SetUp();
     void TearDown();
-
-public:
-    static constexpr int TEST_WAIT_TIME = 50 * 1000;  // 50 ms
 protected:
     std::unique_ptr<AppSpawnServer> appSpawnServer_ = nullptr;
     std::shared_ptr<MockServerSocket> mockServerSocket_ = nullptr;
@@ -110,7 +109,7 @@ HWTEST_F(AppSpawnServerMockTest, App_Spawn_Server_002, TestSize.Level0)
 
     auto func = [&]() {
         // wait ServerMain unit test case
-        usleep(AppSpawnServerMockTest::TEST_WAIT_TIME);
+        usleep(TEST_WAIT_TIME);
         appSpawnServer_->SetRunning(false);
     };
 
@@ -118,7 +117,7 @@ HWTEST_F(AppSpawnServerMockTest, App_Spawn_Server_002, TestSize.Level0)
     EXPECT_EQ(false, appSpawnServer_->ServerMain(argv, sizeof(argv)));
 
     // wait release
-    usleep(AppSpawnServerMockTest::TEST_WAIT_TIME);
+    usleep(TEST_WAIT_TIME);
 
     GTEST_LOG_(INFO) << "App_Spawn_Server_002 end";
 }
@@ -149,7 +148,7 @@ HWTEST_F(AppSpawnServerMockTest, App_Spawn_Server_003, TestSize.Level0)
 
     auto func = [=]() {
         // wait ServerMain unit test case
-        usleep(AppSpawnServerMockTest::TEST_WAIT_TIME);
+        usleep(TEST_WAIT_TIME);
         appSpawnServer_->SetRunning(false);
     };
 
@@ -157,7 +156,7 @@ HWTEST_F(AppSpawnServerMockTest, App_Spawn_Server_003, TestSize.Level0)
     EXPECT_EQ(false, appSpawnServer_->ServerMain(argv, sizeof(argv)));
 
     // wait release
-    usleep(AppSpawnServerMockTest::TEST_WAIT_TIME);
+    usleep(TEST_WAIT_TIME);
 
     GTEST_LOG_(INFO) << "App_Spawn_Server_003 end";
 }

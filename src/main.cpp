@@ -18,7 +18,7 @@
 #include "appspawn_server.h"
 #include "hilog/log.h"
 
-int main(int argc, char* const argv[])
+int main(int argc, char *const argv[])
 {
     if (argc > 0) {
         // calculate child process long name size
