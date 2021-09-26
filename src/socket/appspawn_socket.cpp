@@ -27,6 +27,7 @@ namespace OHOS {
 namespace AppSpawn {
 using namespace OHOS::HiviewDFX;
 static constexpr HiLogLabel LABEL = {LOG_CORE, 0, "AppSpawnSocket"};
+constexpr static size_t ERR_STRING_SZ = 64;
 
 AppSpawnSocket::AppSpawnSocket(const std::string &name)
 {
@@ -80,9 +81,10 @@ int AppSpawnSocket::PackSocketAddr()
 
 int AppSpawnSocket::CreateSocket()
 {
+    char err_string[ERR_STRING_SZ];
     int socketFd = socket(AF_LOCAL, SOCK_SEQPACKET, 0);
     if (socketFd < 0) {
-        HiLog::Error(LABEL, "Failed to create socket: %s", strerror(errno));
+        HiLog::Error(LABEL, "Failed to create socket: %d", strerror_r(errno, err_string, ERR_STRING_SZ));
         return -1;
     }
 
@@ -101,6 +103,7 @@ void AppSpawnSocket::CloseSocket(int &socketFd)
 
 int AppSpawnSocket::ReadSocketMessage(int socketFd, void *buf, int len)
 {
+    char err_string[ERR_STRING_SZ];
     if (socketFd < 0 || len <= 0 || buf == nullptr) {
         HiLog::Error(LABEL, "Invalid args: socket %d, len %d, buf might be nullptr", socketFd, len);
         return -1;
@@ -113,7 +116,8 @@ int AppSpawnSocket::ReadSocketMessage(int socketFd, void *buf, int len)
 
     ssize_t rLen = TEMP_FAILURE_RETRY(read(socketFd, buf, len));
     if (rLen < 0) {
-        HiLog::Error(LABEL, "Read message from fd %d error %zd: %s", socketFd, rLen, strerror(errno));
+        HiLog::Error(LABEL, "Read message from fd %d error %zd: %d",
+            socketFd, rLen, strerror_r(errno, err_string, ERR_STRING_SZ));
         return -1;
     }
 
@@ -122,6 +126,7 @@ int AppSpawnSocket::ReadSocketMessage(int socketFd, void *buf, int len)
 
 int AppSpawnSocket::WriteSocketMessage(int socketFd, const void *buf, int len)
 {
+    char err_string[ERR_STRING_SZ];
     if (socketFd < 0 || len <= 0 || buf == nullptr) {
         HiLog::Error(LABEL, "Invalid args: socket %d, len %d, buf might be nullptr", socketFd, len);
         return -1;
@@ -134,7 +139,8 @@ int AppSpawnSocket::WriteSocketMessage(int socketFd, const void *buf, int len)
         wLen = write(socketFd, offset, remain);
         HiLog::Debug(LABEL, "socket fd %d, wLen %zd", socketFd, wLen);
         if ((wLen <= 0) && (errno != EINTR)) {
-            HiLog::Error(LABEL, "Failed to write message to fd %d, error %zd: %s", socketFd, wLen, strerror(errno));
+            HiLog::Error(LABEL, "Failed to write message to fd %d, error %zd: %d",
+                socketFd, wLen, strerror_r(errno, err_string, ERR_STRING_SZ));
             return -1;
         }
     }

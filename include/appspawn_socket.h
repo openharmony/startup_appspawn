@@ -99,7 +99,7 @@ protected:
 
 protected:
     int socketFd_ = -1;
-    std::string socketName_{};
+    std::string socketName_ {};
     struct sockaddr_un socketAddr_ {};
     socklen_t socketAddrLen_ = 0;
 #ifdef __MUSL__
