@@ -28,15 +28,14 @@ using namespace testing;
 using namespace testing::ext;
 using namespace OHOS::AppSpawn;
 
+static constexpr int TEST_WAIT_TIME = 50 * 1000;  // 50 ms
+
 class AppSpawnServerOverrideTest : public testing::Test {
 public:
     static void SetUpTestCase();
     static void TearDownTestCase();
     void SetUp();
     void TearDown();
-
-public:
-    static constexpr int TEST_WAIT_TIME = 50 * 1000;  // 50 ms
 protected:
     std::unique_ptr<AppSpawnServer> appSpawnServer_ = nullptr;
 };
@@ -72,14 +71,14 @@ HWTEST_F(AppSpawnServerOverrideTest, App_Spawn_Server_Override_001, TestSize.Lev
     char argv[20] = "LongNameTest";
     auto func = [&]() {
         // wait ServerMain unit test case
-        usleep(AppSpawnServerOverrideTest::TEST_WAIT_TIME);
+        usleep(TEST_WAIT_TIME);
         appSpawnServer_->SetRunning(false);
     };
     std::thread(func).detach();
     EXPECT_EQ(false, appSpawnServer_->ServerMain(argv, sizeof(argv)));
 
     // wait release
-    usleep(AppSpawnServerOverrideTest::TEST_WAIT_TIME);
+    usleep(TEST_WAIT_TIME);
 
     GTEST_LOG_(INFO) << "App_Spawn_Server_Override_001 end";
 }

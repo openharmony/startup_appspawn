@@ -48,7 +48,7 @@ const int32_t GROUPS_POSITION_MOVE = 8;
 const char *DELIMITER_SPACE = " ";
 const char *DELIMITER_NEWLINE = "\n";
 
-char buffer[BUFFER_SIZE];
+char buffer[BUFFER_SIZE] = {"\0"};
 int32_t newPid = 0;
 int32_t retryCount = 0;
 }  // namespace
@@ -132,6 +132,10 @@ bool checkGid(const int32_t &pid, const AppSpawnStartMsg &params)
         if (strlen(gidPtr) > GID_POSITION_MOVE) {
             gidPtr = gidPtr + GID_POSITION_MOVE;
         }
+        if (gidPtr == nullptr) {
+            HiLog::Error(LABEL, "get Gid info failed.");
+            return CHECK_ERROR;
+        }
         int32_t gid = (int32_t)strtol(gidPtr, NULL, BASE_TYPE);
         HiLog::Info(LABEL, "new proc(%{public}d) gid = %{public}d, setGid=%{public}d.", pid, gid, params.gid);
         if (gid == params.gid) {
@@ -154,6 +158,10 @@ std::size_t getGids(const int32_t &pid, std::vector<int32_t> &gids)
         }
         // Get the row content of Groups
         char *saveptr = nullptr;
+        if (groupsPtr == nullptr || strlen(groupsPtr) > BUFFER_SIZE) {
+            HiLog::Error(LABEL, "get Groups info failed.");
+            return CHECK_ERROR;
+        }
         char *line = strtok_r(groupsPtr, DELIMITER_NEWLINE, &saveptr);
         if (line == nullptr || strlen(line) > BUFFER_SIZE) {
             HiLog::Error(LABEL, "get Groups line info failed.");
