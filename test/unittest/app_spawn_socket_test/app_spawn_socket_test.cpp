@@ -14,7 +14,7 @@
  */
 
 #include <gtest/gtest.h>
-#include <string.h>
+#include <cstring>
 
 // redefine private and protected since testcase need to invoke and test private function
 #define private public
@@ -35,9 +35,6 @@ public:
     static void TearDownTestCase();
     void SetUp();
     void TearDown();
-
-public:
-    static constexpr int TEST_WAIT_TIME = 100000;
 };
 
 void AppSpawnSocketTest::SetUpTestCase()
@@ -277,6 +274,7 @@ HWTEST(AppSpawnSocketTest, App_Spawn_Socket_010, TestSize.Level0)
     EXPECT_TRUE(appSpawnSocket);
     std::string content = "hiworld";
     int32_t len = content.length();
+    EXPECT_TRUE(len);
     std::unique_ptr<int8_t[]> buff = std::make_unique<int8_t[]>(len);
     EXPECT_TRUE(buff);
     int32_t fd[2] = {0, 0};
@@ -407,6 +405,7 @@ HWTEST(AppSpawnSocketTest, App_Spawn_Socket_015, TestSize.Level0)
     EXPECT_TRUE(appSpawnSocket);
     std::string content = "hiworld";
     int32_t len = content.length();
+    EXPECT_TRUE(len);
     std::unique_ptr<int8_t[]> buff = std::make_unique<int8_t[]>(len);
     EXPECT_TRUE(buff);
     int32_t fd[2] = {0, 0};
