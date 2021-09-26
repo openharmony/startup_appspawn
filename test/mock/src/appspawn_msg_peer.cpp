@@ -49,6 +49,7 @@ ClientSocket::AppProperty *AppSpawnMsgPeer::GetMsg() const
         auto ret = memset_s(appProperty->gidTable, sizeof(appProperty->gidTable), 0, sizeof(appProperty->gidTable));
         if (ret != EOK) {
             HiLog::Error(LABEL, "memset_s failed!");
+            return nullptr;
         }
         appProperty->gidCount = ClientSocket::MAX_GIDS;
         std::string processName = "processName";
@@ -56,11 +57,13 @@ ClientSocket::AppProperty *AppSpawnMsgPeer::GetMsg() const
             appProperty->processName, sizeof(appProperty->processName), processName.c_str(), processName.length());
         if (ret != EOK) {
             HiLog::Error(LABEL, "memcpy_s failed!");
+            return nullptr;
         }
         std::string soPath = "soPath";
         ret = memcpy_s(appProperty->soPath, sizeof(appProperty->soPath), soPath.c_str(), soPath.length());
         if (ret != EOK) {
             HiLog::Error(LABEL, "memcpy_s failed!");
+            return nullptr;
         }
     }
 

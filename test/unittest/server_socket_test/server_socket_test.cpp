@@ -35,9 +35,6 @@ public:
     static void TearDownTestCase();
     void SetUp();
     void TearDown();
-
-public:
-    static constexpr int TEST_WAIT_TIME = 100000;
 };
 
 void ServerSocketTest::SetUpTestCase()
