@@ -210,7 +210,7 @@ bool checkProcName(const int32_t &pid, const AppSpawnStartMsg &params)
         HiLog::Error(LABEL, "cmd sprintf_s fail .");
         return CHECK_ERROR;
     }
-    if(strlen(cmd) > CMD_SIZE){
+    if(strlen(cmd) > CMD_SIZE) {
         HiLog::Error(LABEL, " cmd length is too long  .");
         return CHECK_ERROR;
     }
