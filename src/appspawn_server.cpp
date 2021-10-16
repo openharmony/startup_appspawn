@@ -211,7 +211,8 @@ bool AppSpawnServer::ServerMain(char *longProcName, int64_t longProcNameLen)
             continue;
         } else if (pid == 0) {
             SpecialHandle(appProperty);
-            return SetAppProcProperty(connectFd, appProperty, longProcName, longProcNameLen, fd);
+            SetAppProcProperty(connectFd, appProperty, longProcName, longProcNameLen, fd);
+            _exit(0);
         }
 
         read(fd[0], &buff, sizeof(buff));  // wait child process resutl
