@@ -45,6 +45,8 @@ constexpr int32_t MAX_GIDS = 64;
 
 constexpr std::string_view BUNDLE_NAME_CAMERA("com.ohos.camera");
 constexpr std::string_view BUNDLE_NAME_PHOTOS("com.ohos.photos");
+constexpr std::string_view BUNDLE_NAME_MEDIA_LIBRARY("com.ohos.medialibrary.MediaLibraryDataA");
+constexpr std::string_view BUNDLE_NAME_SCANNER("com.ohos.medialibrary.MediaScannerAbilityA");
 }  // namespace
 
 using namespace OHOS::HiviewDFX;
@@ -465,7 +467,9 @@ void AppSpawnServer::SpecialHandle(ClientSocket::AppProperty *appProperty)
     }
     // special handle bundle name "com.ohos.photos" and "com.ohos.camera"
     if ((strcmp(appProperty->processName, BUNDLE_NAME_CAMERA.data()) == 0) ||
-        (strcmp(appProperty->processName, BUNDLE_NAME_PHOTOS.data()) == 0)) {
+        (strcmp(appProperty->processName, BUNDLE_NAME_PHOTOS.data()) == 0) ||
+        (strcmp(appProperty->processName, BUNDLE_NAME_MEDIA_LIBRARY.data()) == 0) ||
+        (strcmp(appProperty->processName, BUNDLE_NAME_SCANNER.data()) == 0)) {
         if (appProperty->gidCount < MAX_GIDS) {
             appProperty->gidTable[appProperty->gidCount] = GID_MEDIA;
             appProperty->gidCount++;
