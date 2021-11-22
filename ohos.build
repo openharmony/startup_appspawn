@@ -8,6 +8,7 @@
         "//base/startup/appspawn_standard:appspawn_socket_client",
         "//base/startup/appspawn_standard:appspawn.rc",
         "//base/startup/syspara_lite/interfaces/innerkits/native/syspara:syspara",
+        "//base/startup/syspara_lite/interfaces/innerkits/native/syspara:syspara_watchagent",
         "//base/startup/syspara_lite/interfaces/kits/js:deviceinfo",
         "//base/startup/syspara_lite/interfaces/kits/js:systemparameter"
       ],
@@ -20,6 +21,15 @@
                   "header_base": "//base/startup/syspara_lite/interfaces/innerkits/native/syspara/include/"
               },
               "name": "//base/startup/syspara_lite/interfaces/innerkits/native/syspara:syspara"
+          },
+          {
+              "header": {
+                  "header_files": [
+                      "parameter.h"
+                  ],
+                 "header_base": "//base/startup/syspara_lite/interfaces/innerkits/native/syspara/include/"
+              },
+              "name": "//base/startup/syspara_lite/interfaces/innerkits/native/syspara:syspara_watchagent"
           }
       ],
       "test_list": [
