@@ -3,14 +3,8 @@
   "parts": {
     "startup_l2": {
       "module_list": [
-        "//base/startup/appspawn_standard:appspawn",
-        "//base/startup/appspawn_standard:appspawn_server",
-        "//base/startup/appspawn_standard:appspawn_socket_client",
-        "//base/startup/appspawn_standard:appspawn.rc",
-        "//base/startup/syspara_lite/interfaces/innerkits/native/syspara:syspara",
-        "//base/startup/syspara_lite/interfaces/innerkits/native/syspara:syspara_watchagent",
-        "//base/startup/syspara_lite/interfaces/kits/js:deviceinfo",
-        "//base/startup/syspara_lite/interfaces/kits/js:systemparameter"
+        "//base/startup/syspara_lite:appspawn_group",
+        "//base/startup/syspara_lite:syspara_group"
       ],
       "inner_kits": [
           {
@@ -33,8 +27,7 @@
           }
       ],
       "test_list": [
-        "//base/startup/appspawn_standard/test:unittest",
-        "//base/startup/appspawn_standard/test:moduletest"
+        "//base/startup/syspara_lite:appspawn_test"
       ]
     }
   }
