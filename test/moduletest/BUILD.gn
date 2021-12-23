@@ -34,7 +34,7 @@ ohos_moduletest("AppSpawnModuleTest") {
   deps = [
     "${appexecfwk_path}/interfaces/innerkits/appexecfwk_core:appexecfwk_core",
     "${appexecfwk_path}/services/appmgr:libams",
-    "${appspawn_path}:appspawn_socket_client",
+    "${appspawn_path}/interfaces/innerkits:appspawn_socket_client",
     "//third_party/googletest:gtest_main",
     "//utils/native/base:utils",
   ]
