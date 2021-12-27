@@ -52,8 +52,8 @@ public:
     ClientSocket::AppProperty *GetMsg() const;
 
     /**
-     * Returns the PID of the application process in the response sent to the AMS service after AppSpawn forks the
-     * application process.
+     * Returns the PID of the application process in the response sent to the ability manager service
+     * after AppSpawn forks the application process.
      *
      * @param pid Indicates the PID of the application process.
      */
@@ -65,7 +65,7 @@ public:
     int MsgPeer();
 
     /**
-     * Gets the connection file description used by the AMS service to connect to AppSpawn.
+     * Gets the connection file description used by the ability manager service to connect to AppSpawn.
      */
     int GetConnectFd() const;
 
