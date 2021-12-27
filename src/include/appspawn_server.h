@@ -48,7 +48,7 @@ public:
     DISALLOW_COPY_AND_MOVE(AppSpawnServer);
 
     /**
-     * Provides the AppSpawn core function for the server to receive messages from AMS service.
+     * Provides the AppSpawn core function for the server to receive messages from ability manager service.
      *
      * @param longProcName Indicates the long process name.
      * @param longProcNameLen Indicates the length of long process name.
@@ -92,7 +92,7 @@ private:
      *
      * @param longProcName Indicates the length of long process name.
      * @param longProcNameLen Indicates the long process name.
-     * @param processName Indicates the process name from the AMS service.
+     * @param processName Indicates the process name from the ability manager service.
      * @param len Indicates the size of processName.
      */
     int32_t SetProcessName(char *longProcName, int64_t longProcNameLen, const char *processName, int32_t len);

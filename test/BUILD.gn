@@ -39,7 +39,8 @@ config("appspawn_test_config") {
 
   include_dirs = [
     "${appspawn_path}/test/mock/include",
-    "${appspawn_path}/include",
+    "${appspawn_path}/src/include",
+    "${appspawn_path}/interfaces/innerkits/include",
   ]
 }
 
