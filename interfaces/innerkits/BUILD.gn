@@ -27,7 +27,10 @@ ohos_static_library("appspawn_socket_client") {
   include_dirs = [ "${appspawn_path}/include" ]
   public_configs = [ ":exported_header_files" ]
   deps = [ "//utils/native/base:utils" ]
-  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  external_deps = [
+    "bytrace_standard:bytrace_core",
+    "hiviewdfx_hilog_native:libhilog",
+  ]
 
   subsystem_name = "${subsystem_name}"
   part_name = "${part_name}"
