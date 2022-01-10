@@ -23,6 +23,7 @@
 #include <sys/capability.h>
 #include <thread>
 
+#include "bytrace.h"
 #include "errors.h"
 #include "hilog/log.h"
 #include "main_thread.h"
@@ -126,6 +127,7 @@ AppSpawnServer::AppSpawnServer(const std::string &socketName)
 
 void AppSpawnServer::MsgPeer(int connectFd)
 {
+    BYTRACE_NAME(BYTRACE_TAG_APP, __PRETTY_FUNCTION__);
     char err_string[ERR_STRING_SZ];
     std::unique_ptr<AppSpawnMsgPeer> msgPeer = std::make_unique<AppSpawnMsgPeer>(socket_, connectFd);
     if (msgPeer == nullptr || msgPeer->MsgPeer() != 0) {
@@ -152,6 +154,7 @@ void AppSpawnServer::ConnectionPeer()
             continue;
         }
 
+        BYTRACE_NAME(BYTRACE_TAG_APP, __PRETTY_FUNCTION__);
         mut_.lock();  // Ensure that mutex in SaveConnection is unlocked before being forked
         socket_->SaveConnection(connectFd);
         mut_.unlock();
@@ -188,6 +191,7 @@ bool AppSpawnServer::ServerMain(char *longProcName, int64_t longProcNameLen)
         dataCond_.wait(lock, [this] { return !this->appQueue_.empty(); });
         std::unique_ptr<AppSpawnMsgPeer> msg = std::move(appQueue_.front());
         appQueue_.pop();
+        BYTRACE_NAME(BYTRACE_TAG_APP, __PRETTY_FUNCTION__);
         int connectFd = msg->GetConnectFd();
         ClientSocket::AppProperty *appProperty = msg->GetMsg();
         if (!CheckAppProperty(appProperty)) {
@@ -212,6 +216,7 @@ bool AppSpawnServer::ServerMain(char *longProcName, int64_t longProcNameLen)
             msg->Response(-errno);
             continue;
         } else if (pid == 0) {
+            BYTRACE_NAME(BYTRACE_TAG_APP, "fork MainThread");
             SpecialHandle(appProperty);
             SetAppProcProperty(connectFd, appProperty, longProcName, longProcNameLen, fd);
             _exit(0);
