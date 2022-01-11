@@ -19,6 +19,7 @@
 #include <iostream>
 #include <sys/socket.h>
 
+#include "bytrace.h"
 #include "hilog/log.h"
 #include "securec.h"
 
@@ -58,6 +59,7 @@ void ClientSocket::CloseClient()
 
 int ClientSocket::ConnectSocket(int connectFd)
 {
+    BYTRACE_NAME(BYTRACE_TAG_APP, __PRETTY_FUNCTION__);
     char err_string[ERR_STRING_SZ];
     if (connectFd < 0) {
         HiLog::Error(LABEL, "Client: Invalid socket fd: %d", connectFd);
@@ -92,11 +94,13 @@ int ClientSocket::ConnectSocket()
 
 int ClientSocket::WriteSocketMessage(const void *buf, int len)
 {
+    BYTRACE_NAME(BYTRACE_TAG_APP, __PRETTY_FUNCTION__);
     return WriteSocketMessage(socketFd_, buf, len);
 }
 
 int ClientSocket::ReadSocketMessage(void *buf, int len)
 {
+    BYTRACE_NAME(BYTRACE_TAG_APP, __PRETTY_FUNCTION__);
     return ReadSocketMessage(socketFd_, buf, len);
 }
 }  // namespace AppSpawn
