@@ -34,6 +34,7 @@ ohos_unittest("AppSpawnServerOverrideTest") {
   deps = [ "${appspawn_path}/test:appspawn_test_source" ]
 
   external_deps = [
+    "bytrace_standard:bytrace_core",
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
   ]
@@ -59,6 +60,7 @@ ohos_unittest("AppSpawnServerMockTest") {
   deps = [ "${appspawn_path}/test:appspawn_test_source" ]
 
   external_deps = [
+    "bytrace_standard:bytrace_core",
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
   ]

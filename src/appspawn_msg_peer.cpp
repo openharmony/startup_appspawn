@@ -17,6 +17,7 @@
 
 #include <memory>
 
+#include "bytrace.h"
 #include "hilog/log.h"
 #include "securec.h"
 
@@ -48,6 +49,7 @@ int AppSpawnMsgPeer::GetConnectFd() const
 
 int AppSpawnMsgPeer::Response(pid_t pid)
 {
+    BYTRACE_NAME(BYTRACE_TAG_APP, __PRETTY_FUNCTION__);
     if ((socket_ == nullptr) || (connectFd_ < 0)) {
         HiLog::Error(LABEL, "Invalid socket params: connectFd %d", connectFd_);
         return -1;
