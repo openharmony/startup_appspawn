@@ -29,10 +29,7 @@ ohos_unittest("AppSpawnMsgPeerTest") {
 
   deps = [ "${appspawn_path}/test:appspawn_test_source" ]
 
-  external_deps = [
-    "bytrace_standard:bytrace_core",
-    "hiviewdfx_hilog_native:libhilog",
-  ]
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 }
 
 group("unittest") {
