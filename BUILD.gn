@@ -62,7 +62,6 @@ ohos_static_library("appspawn_server") {
     "//utils/native/base:utils",
   ]
   external_deps = [
-    "bytrace_standard:bytrace_core",
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
   ]
