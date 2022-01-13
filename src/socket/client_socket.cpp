@@ -72,7 +72,7 @@ int ClientSocket::ConnectSocket(int connectFd)
     }
 
     if (connect(connectFd, reinterpret_cast<struct sockaddr *>(&socketAddr_), socketAddrLen_) < 0) {
-        HiLog::Warn(LABEL, "Client: Connect on socket fd %d, failed: %d", connectFd, serrno);
+        HiLog::Warn(LABEL, "Client: Connect on socket fd %d, failed: %d", connectFd, errno);
         CloseSocket(connectFd);
         return -1;
     }
