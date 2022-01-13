@@ -26,7 +26,6 @@ namespace OHOS {
 namespace AppSpawn {
 using namespace OHOS::HiviewDFX;
 static constexpr HiLogLabel LABEL = {LOG_CORE, 0, "ServerSocket"};
-constexpr static size_t ERR_STRING_SZ = 64;
 
 ServerSocket::ServerSocket(const std::string &server) : AppSpawnSocket(server)
 {}
@@ -101,7 +100,6 @@ void ServerSocket::CloseServerMonitor()
 
 int ServerSocket::BindSocket(int connectFd)
 {
-    char err_string[ERR_STRING_SZ];
     if (connectFd < 0) {
         HiLog::Error(LABEL, "Server: Invalid socket fd: %d", connectFd);
         return -1;
@@ -112,7 +110,7 @@ int ServerSocket::BindSocket(int connectFd)
     }
 
     if ((unlink(socketAddr_.sun_path) != 0) && (errno != ENOENT)) {
-        HiLog::Error(LABEL, "Server: Failed to unlink, err %d", strerror_r(errno, err_string, ERR_STRING_SZ));
+        HiLog::Error(LABEL, "Server: Failed to unlink, err %d", errno);
         return -1;
     }
 
@@ -120,26 +118,22 @@ int ServerSocket::BindSocket(int connectFd)
     if ((setsockopt(connectFd, SOL_SOCKET, SO_REUSEADDR, &reuseAddr, sizeof(reuseAddr)) != 0) ||
         (setsockopt(connectFd, SOL_SOCKET, SO_RCVTIMEO, &SOCKET_TIMEOUT, sizeof(SOCKET_TIMEOUT)) != 0) ||
         (setsockopt(connectFd, SOL_SOCKET, SO_SNDTIMEO, &SOCKET_TIMEOUT, sizeof(SOCKET_TIMEOUT)) != 0)) {
-        HiLog::Warn(LABEL, "Server: Failed to set opt of socket %d, err %d",
-            connectFd, strerror_r(errno, err_string, ERR_STRING_SZ));
+        HiLog::Warn(LABEL, "Server: Failed to set opt of socket %d, err %d", connectFd, errno);
     }
 
     if (bind(connectFd, reinterpret_cast<struct sockaddr *>(&socketAddr_), socketAddrLen_) < 0) {
-        HiLog::Error(LABEL, "Server: Bind socket fd %d, failed: %d",
-            connectFd, strerror_r(errno, err_string, ERR_STRING_SZ));
+        HiLog::Error(LABEL, "Server: Bind socket fd %d, failed: %d", connectFd, errno);
         return -1;
     }
 
     if (chown(socketAddr_.sun_path, APPSPAWN_ID_ROOT, APPSPAWN_ID_SYSTEM)) {
-        HiLog::Error(LABEL, "Server: failed to chown socket fd %d, failed: %d",
-            connectFd, strerror_r(errno, err_string, ERR_STRING_SZ));
+        HiLog::Error(LABEL, "Server: failed to chown socket fd %d, failed: %d", connectFd, errno);
         return -1;
     }
     if (chmod(socketAddr_.sun_path, SOCKET_PERM)) {
-        HiLog::Error(LABEL, "Server: failed to chmod socket fd %d, failed: %d",
-            connectFd, strerror_r(errno, err_string, ERR_STRING_SZ));
+        HiLog::Error(LABEL, "Server: failed to chmod socket fd %d, failed: %d", connectFd, errno);
         if ((unlink(socketAddr_.sun_path) != 0) && (errno != ENOENT)) {
-            HiLog::Error(LABEL, "Server: Failed to unlink, err %d", strerror_r(errno, err_string, ERR_STRING_SZ));
+            HiLog::Error(LABEL, "Server: Failed to unlink, err %d", errno);
         }
         return -1;
     }
@@ -149,7 +143,6 @@ int ServerSocket::BindSocket(int connectFd)
 
 int ServerSocket::RegisterServerSocket(int &connectFd)
 {
-    char err_string[ERR_STRING_SZ];
     if (socketName_.empty()) {
         HiLog::Error(LABEL, "Server: Invalid socket name: empty");
         return -1;
@@ -165,7 +158,7 @@ int ServerSocket::RegisterServerSocket(int &connectFd)
             "Server: Register socket fd %d with backlog %d error: %d",
             connectFd,
             listenBacklog_,
-            strerror_r(errno, err_string, ERR_STRING_SZ));
+            errno);
         close(connectFd);
         connectFd = -1;
         return -1;
@@ -187,7 +180,6 @@ int ServerSocket::RegisterServerSocket()
 
 int ServerSocket::WaitForConnection(int connectFd)
 {
-    char err_string[ERR_STRING_SZ];
     if (connectFd < 0) {
         HiLog::Error(LABEL, "Server: Invalid args: connectFd %d", connectFd);
         return -1;
@@ -206,8 +198,7 @@ int ServerSocket::WaitForConnection(int connectFd)
 
     if ((setsockopt(connFd, SOL_SOCKET, SO_RCVTIMEO, &SOCKET_TIMEOUT, sizeof(SOCKET_TIMEOUT)) < 0) ||
         (setsockopt(connFd, SOL_SOCKET, SO_SNDTIMEO, &SOCKET_TIMEOUT, sizeof(SOCKET_TIMEOUT)) < 0)) {
-        HiLog::Warn(LABEL, "Server: Failed to set opt of Connection %d, err %d",
-            connFd, strerror_r(errno, err_string, ERR_STRING_SZ));
+        HiLog::Warn(LABEL, "Server: Failed to set opt of Connection %d, err %d", connFd, errno);
     }
 
     HiLog::Debug(LABEL, "Server: Connection accepted, connect fd %d", connFd);
