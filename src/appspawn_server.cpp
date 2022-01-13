@@ -32,7 +32,6 @@
 #include <dlfcn.h>
 
 #define GRAPHIC_PERMISSION_CHECK
-constexpr static size_t ERR_STRING_SZ = 64;
 
 namespace OHOS {
 namespace AppSpawn {
@@ -77,13 +76,11 @@ static void SignalHandler([[maybe_unused]] int sig)
 
 static void InstallSigHandler()
 {
-    char err_string[ERR_STRING_SZ];
     struct sigaction sa = {};
     sa.sa_handler = SignalHandler;
     int err = sigaction(SIGCHLD, &sa, nullptr);
     if (err < 0) {
-        HiLog::Error(LABEL, "Error installing SIGCHLD handler: %{public}d",
-            strerror_r(errno, err_string, ERR_STRING_SZ));
+        HiLog::Error(LABEL, "Error installing SIGCHLD handler: %{public}d", errno);
         return;
     }
 
@@ -91,26 +88,24 @@ static void InstallSigHandler()
     sah.sa_handler = SIG_IGN;
     err = sigaction(SIGHUP, &sah, nullptr);
     if (err < 0) {
-        HiLog::Error(LABEL, "Error installing SIGHUP handler: %{public}d",
-            strerror_r(errno, err_string, ERR_STRING_SZ));
+        HiLog::Error(LABEL, "Error installing SIGHUP handler: %{public}d", errno);
     }
 }
 
 static void UninstallSigHandler()
 {
-    char err_string[ERR_STRING_SZ];
     struct sigaction sa = {};
     sa.sa_handler = SIG_DFL;
     int err = sigaction(SIGCHLD, &sa, nullptr);
     if (err < 0) {
-        HiLog::Error(LABEL, "Error uninstalling SIGCHLD handler: %d", strerror_r(errno, err_string, ERR_STRING_SZ));
+        HiLog::Error(LABEL, "Error uninstalling SIGCHLD handler: %d", errno);
     }
 
     struct sigaction sah = {};
     sah.sa_handler = SIG_DFL;
     err = sigaction(SIGHUP, &sah, nullptr);
     if (err < 0) {
-        HiLog::Error(LABEL, "Error uninstalling SIGHUP handler: %d", strerror_r(errno, err_string, ERR_STRING_SZ));
+        HiLog::Error(LABEL, "Error uninstalling SIGHUP handler: %d", errno);
     }
 }
 #ifdef __cplusplus
@@ -126,11 +121,9 @@ AppSpawnServer::AppSpawnServer(const std::string &socketName)
 
 void AppSpawnServer::MsgPeer(int connectFd)
 {
-    char err_string[ERR_STRING_SZ];
     std::unique_ptr<AppSpawnMsgPeer> msgPeer = std::make_unique<AppSpawnMsgPeer>(socket_, connectFd);
     if (msgPeer == nullptr || msgPeer->MsgPeer() != 0) {
-        HiLog::Error(LABEL, "Failed to listen connection %d, %d",
-            connectFd, strerror_r(errno, err_string, ERR_STRING_SZ));
+        HiLog::Error(LABEL, "Failed to listen connection %d, %d", connectFd, errno);
         return;
     }
 
@@ -232,7 +225,6 @@ bool AppSpawnServer::ServerMain(char *longProcName, int64_t longProcNameLen)
 int32_t AppSpawnServer::SetProcessName(
     char *longProcName, int64_t longProcNameLen, const char *processName, int32_t len)
 {
-    char err_string[ERR_STRING_SZ];
     if (longProcName == nullptr || processName == nullptr || len <= 0) {
         HiLog::Error(LABEL, "process name is nullptr or length error");
         return -EINVAL;
@@ -247,19 +239,19 @@ int32_t AppSpawnServer::SetProcessName(
     // process short name max length 16 bytes.
     if (len > MAX_LEN_SHORT_NAME) {
         if (strncpy_s(shortName, MAX_LEN_SHORT_NAME, processName, MAX_LEN_SHORT_NAME - 1) != EOK) {
-            HiLog::Error(LABEL, "strncpy_s short name error: %{public}d", strerror_r(errno, err_string, ERR_STRING_SZ));
+            HiLog::Error(LABEL, "strncpy_s short name error: %{public}d", errno);
             return -EINVAL;
         }
     } else {
         if (strncpy_s(shortName, MAX_LEN_SHORT_NAME, processName, len) != EOK) {
-            HiLog::Error(LABEL, "strncpy_s short name error: %{public}d", strerror_r(errno, err_string, ERR_STRING_SZ));
+            HiLog::Error(LABEL, "strncpy_s short name error: %{public}d", errno);
             return -EINVAL;
         }
     }
 
     // set short name
     if (prctl(PR_SET_NAME, shortName) == -1) {
-        HiLog::Error(LABEL, "prctl(PR_SET_NAME) error: %{public}d", strerror_r(errno, err_string, ERR_STRING_SZ));
+        HiLog::Error(LABEL, "prctl(PR_SET_NAME) error: %{public}d", errno);
         return (-errno);
     }
 
@@ -271,7 +263,7 @@ int32_t AppSpawnServer::SetProcessName(
 
     // set long process name
     if (strncpy_s(longProcName, len, processName, len) != EOK) {
-        HiLog::Error(LABEL, "strncpy_s long name error: %{public}d", strerror_r(errno, err_string, ERR_STRING_SZ));
+        HiLog::Error(LABEL, "strncpy_s long name error: %{public}d", errno);
         return -EINVAL;
     }
 
@@ -281,27 +273,25 @@ int32_t AppSpawnServer::SetProcessName(
 int32_t AppSpawnServer::SetUidGid(
     const uint32_t uid, const uint32_t gid, const uint32_t *gitTable, const uint32_t gidCount)
 {
-    char err_string[ERR_STRING_SZ];
     if (gitTable == nullptr) {
         HiLog::Error(LABEL, "gitTable is nullptr");
         return (-errno);
     }
     // set gids
     if (setgroups(gidCount, reinterpret_cast<const gid_t *>(&gitTable[0])) == -1) {
-        HiLog::Error(LABEL, "setgroups failed: %{public}d, gids.size=%{public}u",
-            strerror_r(errno, err_string, ERR_STRING_SZ), gidCount);
+        HiLog::Error(LABEL, "setgroups failed: %{public}d, gids.size=%{public}u", errno, gidCount);
         return (-errno);
     }
 
     // set gid
     if (setresgid(gid, gid, gid) == -1) {
-        HiLog::Error(LABEL, "setgid(%{public}u) failed: %{public}d", gid, strerror_r(errno, err_string, ERR_STRING_SZ));
+        HiLog::Error(LABEL, "setgid(%{public}u) failed: %{public}d", gid, errno);
         return (-errno);
     }
 
     // If the effective user ID is changed from 0 to nonzero, then all capabilities are cleared from the effective set
     if (setresuid(uid, uid, uid) == -1) {
-        HiLog::Error(LABEL, "setuid(%{public}u) failed: %{public}d", uid, strerror_r(errno, err_string, ERR_STRING_SZ));
+        HiLog::Error(LABEL, "setuid(%{public}u) failed: %{public}d", uid, errno);
         return (-errno);
     }
     return ERR_OK;
@@ -309,7 +299,6 @@ int32_t AppSpawnServer::SetUidGid(
 
 int32_t AppSpawnServer::SetFileDescriptors()
 {
-    char err_string[ERR_STRING_SZ];
     // close stdin stdout stderr
     close(STDIN_FILENO);
     close(STDOUT_FILENO);
@@ -318,25 +307,25 @@ int32_t AppSpawnServer::SetFileDescriptors()
     // redirect to /dev/null
     int dev_null_fd = open(deviceNull_.c_str(), O_RDWR);
     if (dev_null_fd == -1) {
-        HiLog::Error(LABEL, "open dev_null error: %{public}d", strerror_r(errno, err_string, ERR_STRING_SZ));
+        HiLog::Error(LABEL, "open dev_null error: %{public}d", errno);
         return (-errno);
     }
 
     // stdin
     if (dup2(dev_null_fd, STDIN_FILENO) == -1) {
-        HiLog::Error(LABEL, "dup2 STDIN error: %{public}d", strerror_r(errno, err_string, ERR_STRING_SZ));
+        HiLog::Error(LABEL, "dup2 STDIN error: %{public}d", errno);
         return (-errno);
     };
 
     // stdout
     if (dup2(dev_null_fd, STDOUT_FILENO) == -1) {
-        HiLog::Error(LABEL, "dup2 STDOUT error: %{public}d", strerror_r(errno, err_string, ERR_STRING_SZ));
+        HiLog::Error(LABEL, "dup2 STDOUT error: %{public}d", errno);
         return (-errno);
     };
 
     // stderr
     if (dup2(dev_null_fd, STDERR_FILENO) == -1) {
-        HiLog::Error(LABEL, "dup2 STDERR error: %{public}d", strerror_r(errno, err_string, ERR_STRING_SZ));
+        HiLog::Error(LABEL, "dup2 STDERR error: %{public}d", errno);
         return (-errno);
     };
 
@@ -378,10 +367,9 @@ int32_t AppSpawnServer::SetCapabilities()
     cap_data[0].effective = static_cast<__u32>(effective);
     cap_data[1].effective = static_cast<__u32>(effective >> BITLEN32);
 
-    char err_string[ERR_STRING_SZ];
     // set capabilities
     if (capset(&cap_header, &cap_data[0]) == -1) {
-        HiLog::Error(LABEL, "capset failed: %{public}d", strerror_r(errno, err_string, ERR_STRING_SZ));
+        HiLog::Error(LABEL, "capset failed: %{public}d", errno);
         return errno;
     }
 
@@ -481,11 +469,10 @@ void AppSpawnServer::SpecialHandle(ClientSocket::AppProperty *appProperty)
 
 int32_t AppSpawnServer::SetKeepCapabilities(uint32_t uid)
 {
-    char err_string[ERR_STRING_SZ];
     // set keep capabilities when user not root.
     if (uid != 0) {
         if (prctl(PR_SET_KEEPCAPS, 1, 0, 0, 0) == -1) {
-            HiLog::Error(LABEL, "set keepcaps failed: %{public}d", strerror_r(errno, err_string, ERR_STRING_SZ));
+            HiLog::Error(LABEL, "set keepcaps failed: %{public}d", errno);
             return (-errno);
         }
     }
