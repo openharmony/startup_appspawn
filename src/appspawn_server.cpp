@@ -123,7 +123,7 @@ void AppSpawnServer::MsgPeer(int connectFd)
 {
     std::unique_ptr<AppSpawnMsgPeer> msgPeer = std::make_unique<AppSpawnMsgPeer>(socket_, connectFd);
     if (msgPeer == nullptr || msgPeer->MsgPeer() != 0) {
-        HiLog::Error(LABEL, "Failed to listen connection %d, %d", errno);
+        HiLog::Error(LABEL, "Failed to listen connection %d, %d", connectFd, errno);
         return;
     }
 
@@ -307,7 +307,7 @@ int32_t AppSpawnServer::SetFileDescriptors()
     // redirect to /dev/null
     int dev_null_fd = open(deviceNull_.c_str(), O_RDWR);
     if (dev_null_fd == -1) {
-        HiLog::Error(LABEL, "open dev_null error: %{public}d", errno));
+        HiLog::Error(LABEL, "open dev_null error: %{public}d", errno);
         return (-errno);
     }
 
