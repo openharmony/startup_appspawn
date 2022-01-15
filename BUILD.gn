@@ -71,11 +71,7 @@ ohos_static_library("appspawn_server") {
 }
 
 ohos_prebuilt_etc("appspawn.rc") {
-  if (use_musl) {
-    source = "appspawn.cfg"
-  } else {
-    source = "appspawn.rc"
-  }
+  source = "appspawn.cfg"
   relative_install_dir = "init"
   subsystem_name = "${subsystem_name}"
   part_name = "${part_name}"
