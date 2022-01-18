@@ -123,6 +123,26 @@ private:
     int32_t SetCapabilities();
 
     /**
+     * Do app sandbox original path mount common
+     */
+    int32_t DoAppSandboxMountOnce(const std::string originPath, const std::string destinationPath);
+
+    /**
+     * Do app sandbox original path mount
+     */
+    int32_t DoAppSandboxMount(const ClientSocket::AppProperty *appProperty, std::string rootPath);
+
+    /**
+     * Do app sandbox mkdir /mnt/sandbox/<packagename>/
+     */
+    void DoAppSandboxMkdir(std::string rootPath, const ClientSocket::AppProperty *appProperty);
+
+    /**
+     * Sets app sandbox property.
+     */
+    int32_t SetAppSandboxProperty(const ClientSocket::AppProperty *appProperty);
+
+    /**
      * Sets app process property.
      */
     bool SetAppProcProperty(int connectFd, const ClientSocket::AppProperty *appProperty, char *longProcName,
