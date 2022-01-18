@@ -19,13 +19,9 @@
 #include <memory>
 #include <csignal>
 #include <sys/wait.h>
-#include <sys/mount.h>
 #include <sys/prctl.h>
 #include <sys/capability.h>
-#include <sys/syscall.h>
 #include <thread>
-#include <string>
-#include <map>
 
 #include "errors.h"
 #include "hilog/log.h"
@@ -34,11 +30,8 @@
 
 #include <dirent.h>
 #include <dlfcn.h>
-#include <sys/stat.h>
-#include <sys/types.h>
 
 #define GRAPHIC_PERMISSION_CHECK
-constexpr static mode_t FILE_MODE = 0711;
 
 namespace OHOS {
 namespace AppSpawn {
@@ -102,14 +95,14 @@ static void InstallSigHandler()
 static void UninstallSigHandler()
 {
     struct sigaction sa = {};
-    sa.sa_handler = nullptr;
+    sa.sa_handler = SIG_DFL;
     int err = sigaction(SIGCHLD, &sa, nullptr);
     if (err < 0) {
         HiLog::Error(LABEL, "Error uninstalling SIGCHLD handler: %d", errno);
     }
 
     struct sigaction sah = {};
-    sah.sa_handler = nullptr;
+    sah.sa_handler = SIG_DFL;
     err = sigaction(SIGHUP, &sah, nullptr);
     if (err < 0) {
         HiLog::Error(LABEL, "Error uninstalling SIGHUP handler: %d", errno);
@@ -393,169 +386,6 @@ void AppSpawnServer::SetServerSocket(const std::shared_ptr<ServerSocket> &server
     socket_ = serverSocket;
 }
 
-int32_t AppSpawnServer::DoAppSandboxMountOnce(const std::string originPath, const std::string destinationPath)
-{
-    int rc = 0;
-
-    rc = mount(originPath.c_str(), destinationPath.c_str(), NULL, MS_BIND, NULL);
-    if (rc) {
-        return rc;
-    }
-
-    rc = mount(NULL, destinationPath.c_str(), NULL, MS_PRIVATE, NULL);
-    if (rc) {
-        return rc;
-    }
-
-    return 0;
-}
-
-int32_t AppSpawnServer::DoAppSandboxMount(const ClientSocket::AppProperty *appProperty, std::string rootPath)
-{
-    std::string oriInstallPath = "/data/app/el1/bundle/";
-    std::string oriDataPath = "/data/app/el2/0/base/";
-    std::string oriDatabasePath = "/data/app/el2/0/database/";
-    std::string oriHistoryPath = "/data/app/el2/100/base/";
-    std::string destAPI7InstallPath = rootPath + "/data/accounts/account_0/applications";
-    std::string destHistoryPath = rootPath + "/data/accounts/account_0/appdata";
-    std::string destDatabasePath = rootPath + "/data/storage/el2/database";
-    std::string destInstallPath = rootPath + "/data/storage/el1/0/bundle";
-    std::string destDataPath = rootPath + "/data/storage/el2/base";
-    struct stat info;
-    int rc = 0;
-
-    oriInstallPath += appProperty->processName;
-    oriDataPath += appProperty->processName;
-    oriDatabasePath += appProperty->processName;
-
-    if (stat(oriHistoryPath.c_str(), &info) == 0) {
-        oriHistoryPath += appProperty->processName;
-        oriHistoryPath += "/history";
-    } else {
-        oriHistoryPath = oriDataPath;
-        oriHistoryPath += "/history";
-    }
-
-    std::map<std::string, std::string> mountMap;
-    mountMap[oriInstallPath] = destAPI7InstallPath;
-    mountMap[oriHistoryPath] = destHistoryPath;
-    mountMap[oriDatabasePath] = destDatabasePath;
-    mountMap[oriInstallPath] = destInstallPath;
-    mountMap[oriDataPath] = destDataPath;
-
-    std::map<std::string, std::string>::iterator iter;
-    for (iter = mountMap.begin(); iter != mountMap.end(); iter++) {
-        rc = DoAppSandboxMountOnce(iter->first.c_str(), iter->second.c_str());
-        if (rc) {
-            return rc;
-        }
-    }
-
-    return 0;
-}
-
-void AppSpawnServer::DoAppSandboxMkdir(std::string sandboxPackagePath, const ClientSocket::AppProperty *appProperty)
-{
-    // to create /mnt/sandbox/<packagename>/data/storage/el1 related path, later should delete this code.
-    std::string dirPath = sandboxPackagePath + "/data/";
-
-    mkdir(dirPath.c_str(), FILE_MODE);
-    dirPath = sandboxPackagePath + "/data/storage";
-    mkdir(dirPath.c_str(), FILE_MODE);
-    dirPath = sandboxPackagePath + "/data/storage/el1";
-    mkdir(dirPath.c_str(), FILE_MODE);
-    dirPath = sandboxPackagePath + "/data/storage/el1/0";
-    mkdir(dirPath.c_str(), FILE_MODE);
-    dirPath = sandboxPackagePath + "/data/storage/el1/0/bundle";
-    mkdir(dirPath.c_str(), FILE_MODE);
-
-    // to create /mnt/sandbox/<packagename>/data/storage/el1 related path, later should delete this code.
-    mkdir(dirPath.c_str(), FILE_MODE);
-    dirPath = sandboxPackagePath + "/data/storage/el2";
-    mkdir(dirPath.c_str(), FILE_MODE);
-    dirPath = sandboxPackagePath + "/data/storage/el2/base";
-    mkdir(dirPath.c_str(), FILE_MODE);
-    dirPath = sandboxPackagePath + "/data/storage/el2/database";
-    mkdir(dirPath.c_str(), FILE_MODE);
-
-    // create history folder for compatibility purpose
-    dirPath = "/data/app/el2/0/base/";
-    dirPath += appProperty->processName;
-    dirPath += "/history";
-    mkdir(dirPath.c_str(), FILE_MODE);
-
-    // create applications folder for compatibility purpose
-    dirPath = sandboxPackagePath + "/data/accounts";
-    mkdir(dirPath.c_str(), FILE_MODE);
-    dirPath = sandboxPackagePath + "/data/accounts/account_0";
-    mkdir(dirPath.c_str(), FILE_MODE);
-    dirPath = sandboxPackagePath + "/data/accounts/account_0/applications";
-    mkdir(dirPath.c_str(), FILE_MODE);
-}
-
-int32_t AppSpawnServer::SetAppSandboxProperty(const ClientSocket::AppProperty *appProperty)
-{
-    int rc = 0;
-
-    // create /mnt/sandbox/<packagename> path， later put it to rootfs module
-    std::string sandboxPackagePath = "/mnt/sandbox/";
-    mkdir(sandboxPackagePath.c_str(), FILE_MODE);
-    sandboxPackagePath += appProperty->processName;
-    mkdir(sandboxPackagePath.c_str(), FILE_MODE);
-
-    // add pid to a new mnt namespace
-    rc = unshare(CLONE_NEWNS);
-    if (rc) {
-        HiLog::Error(LABEL, "unshare failed, packagename is %{public}s", appProperty->processName);
-        return rc;
-    }
-
-    rc = mount(NULL, "/", NULL, MS_REC | MS_SLAVE, NULL);
-    if (rc) {
-        HiLog::Error(LABEL, "set propagation slave failed, packagename is %{public}s", appProperty->processName);
-        return rc;
-    }
-
-    // bind mount "/" to /mnt/sandbox/<packageName> path
-    // rootfs: to do more resouces bind mount here to get more strict resources constraints
-    rc = mount("/", sandboxPackagePath.c_str(), NULL, MS_BIND | MS_REC, NULL);
-    if (rc) {
-        HiLog::Error(LABEL, "mount bind / failed, packagename is %{public}s", appProperty->processName);
-        return rc;
-    }
-
-    // to create /mnt/sandbox/<packagename>/data/storage related path
-    DoAppSandboxMkdir(sandboxPackagePath, appProperty);
-
-    rc = DoAppSandboxMount(appProperty, sandboxPackagePath);
-    if (rc) {
-        HiLog::Error(LABEL, "DoAppSandboxMount failed, packagename is %{public}s", appProperty->processName);
-        return rc;
-    }
-
-    rc = chdir(sandboxPackagePath.c_str());
-    if (rc) {
-        HiLog::Error(LABEL, "chdir failed, packagename is %{public}s, path is %{public}s", \
-            appProperty->processName, sandboxPackagePath.c_str());
-        return rc;
-    }
-
-    rc = syscall(SYS_pivot_root, sandboxPackagePath.c_str(), sandboxPackagePath.c_str());
-    if (rc) {
-        HiLog::Error(LABEL, "pivot root failed, packagename is %{public}s, errno is %{public}d", \
-            appProperty->processName, errno);
-        return rc;
-    }
-
-    rc = umount2(".", MNT_DETACH);
-    if (rc) {
-        HiLog::Error(LABEL, "MNT_DETACH failed, packagename is %{public}s", appProperty->processName);
-        return rc;
-    }
-
-    return ERR_OK;
-}
-
 bool AppSpawnServer::SetAppProcProperty(int connectFd, const ClientSocket::AppProperty *appProperty, char *longProcName,
     int64_t longProcNameLen, const int32_t fd[FDLEN2])
 {
@@ -563,7 +393,6 @@ bool AppSpawnServer::SetAppProcProperty(int connectFd, const ClientSocket::AppPr
         HiLog::Error(LABEL, "appProperty is nullptr");
         return false;
     }
-
     pid_t newPid = getpid();
     HiLog::Debug(LABEL, "AppSpawnServer::Success to fork new process, pid = %{public}d", newPid);
     // close socket connection and peer socket in child process
@@ -573,13 +402,6 @@ bool AppSpawnServer::SetAppProcProperty(int connectFd, const ClientSocket::AppPr
     UninstallSigHandler();
 
     int32_t ret = ERR_OK;
-
-    ret = SetAppSandboxProperty(appProperty);
-    if (FAILED(ret)) {
-        NotifyResToParentProc(fd[1], ret);
-        return false;
-    }
-
     ret = SetKeepCapabilities(appProperty->uid);
     if (FAILED(ret)) {
         NotifyResToParentProc(fd[1], ret);
