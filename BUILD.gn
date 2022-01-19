@@ -20,11 +20,11 @@ config("appspawn_config") {
     "src/include",
     "interfaces/innerkits/include",
     "//utils/native/base/include",
-    "${appexecfwk_path}/interfaces/innerkits/appexecfwk_core/include/appmgr",
+    "${aafwk_path}/frameworks/kits/appkit/native/app/include",
+    "${aafwk_path}/interfaces/innerkits/app_manager/include/appmgr",
     "${appexecfwk_path}/interfaces/innerkits/appexecfwk_core/include/bundlemgr",
     "${appexecfwk_path}/interfaces/innerkits/appexecfwk_base/include",
     "${appexecfwk_path}/interfaces/innerkits/libeventhandler/include",
-    "${appexecfwk_path}/kits/appkit/native/app/include",
     "${appexecfwk_path}/common/log/include",
     "${aafwk_path}/interfaces/innerkits/want/include/ohos/aafwk/content",
     "${aafwk_path}/interfaces/innerkits/want/include",
@@ -58,7 +58,7 @@ ohos_static_library("appspawn_server") {
   ldflags = [ "-Wl,--dynamic-linker,/system/bin/linker64z" ]
   deps = [
     "${aafwk_path}/frameworks/kits/ability/native:abilitykit_native",
-    "${appexecfwk_path}/kits:appkit_native",
+    "${aafwk_path}/frameworks/kits/appkit:appkit_native",
     "//utils/native/base:utils",
   ]
   external_deps = [
