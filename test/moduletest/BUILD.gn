@@ -28,12 +28,13 @@ ohos_moduletest("AppSpawnModuleTest") {
 
   configs = [
     "${appspawn_path}:appspawn_config",
-    "${appexecfwk_path}/services/appmgr:appmgr_config",
+    "${aafwk_path}/services/appmgr:appmgr_config",
   ]
 
   deps = [
+    "${aafwk_path}/interfaces/innerkits/app_manager:app_manager",
+    "${aafwk_path}/services/appmgr:libams",
     "${appexecfwk_path}/interfaces/innerkits/appexecfwk_core:appexecfwk_core",
-    "${appexecfwk_path}/services/appmgr:libams",
     "${appspawn_path}/interfaces/innerkits:appspawn_socket_client",
     "//third_party/googletest:gtest_main",
     "//utils/native/base:utils",
