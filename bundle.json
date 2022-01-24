@@ -1,0 +1,56 @@
+{
+    "name": "@ohos/startup_appspawn",
+    "description": "app start manager",
+    "homePage": "https://gitee.com/openharmony",
+    "version": "3.1",
+    "license": "Apache License 2.0",
+    "repository": "https://gitee.com/openharmony/startup_appspawn",
+    "publishAs": "code-segment",
+    "segment": {
+        "destPath": "base/startup/appspawn_standard"
+    },
+    "dirs": {},
+    "scripts": {},
+    "component": {
+        "name": "appspawn",
+        "subsystem": "startup",
+        "adapted_system_type": [
+            "standard"
+        ],
+        "rom": "",
+        "ram": "",
+        "deps": {
+            "components": [
+                "hiviewdfx_hilog_native",
+                "ipc",                
+                "safwk",
+                "samgr_standard",
+                "utils_base"
+            ]
+        },
+        "build": {
+            "sub_component": [
+                "//base/startup/appspawn_standard:appspawn",
+                "//base/startup/appspawn_standard:appspawn.rc",
+                "//base/startup/appspawn_standard:appspawn_server",
+                "//base/startup/appspawn_standard/interfaces/innerkits:appspawn_socket_client"
+            ],
+            "inner_kits": [
+                {
+                    "header": {
+                        "header_base": "//base/startup/appspawn_standard/interfaces/innerkits/include/",
+                        "header_files": [
+                            "appspawn_socket.h",
+                            "client_socket.h"
+                        ]
+                    },
+                    "name": "//base/startup/appspawn_standard/interfaces/innerkits:appspawn_socket_client"
+                }
+            ],
+            "test": [
+                "//base/startup/appspawn_standard/test:moduletest",
+                "//base/startup/appspawn_standard/test:unittest"
+            ]
+        }
+    }
+}
