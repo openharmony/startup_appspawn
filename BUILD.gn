@@ -62,8 +62,15 @@ ohos_static_library("appspawn_server") {
     "//utils/native/base:utils",
   ]
   external_deps = [
+    "ability_runtime:app_manager",
+    "ability_runtime:want",
+    "appexecfwk_standard:appexecfwk_base",
+    "appexecfwk_standard:appexecfwk_core",
+    "hilog_native:libhilog",
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
+    "safwk:system_ability_fwk",
+    "samgr_standard:samgr_proxy",
   ]
 
   subsystem_name = "${subsystem_name}"
