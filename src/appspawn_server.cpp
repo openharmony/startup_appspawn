@@ -31,6 +31,10 @@
 #include "hilog/log.h"
 #include "main_thread.h"
 #include "securec.h"
+#include "bundle_mgr_interface.h"
+#include "if_system_ability_manager.h"
+#include "iservice_registry.h"
+#include "system_ability_definition.h"
 
 #include <dirent.h>
 #include <dlfcn.h>
@@ -118,6 +122,43 @@ static void UninstallSigHandler()
 #ifdef __cplusplus
 }
 #endif
+
+static sptr<AppExecFwk::IBundleMgr> GetBundleMgrProxy()
+{
+    sptr<ISystemAbilityManager> systemAbilityManager =
+        SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (!systemAbilityManager) {
+        return nullptr;
+    }
+
+    sptr<IRemoteObject> remoteObject = systemAbilityManager->GetSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
+    if (!remoteObject) {
+        return nullptr;
+    }
+
+    return iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
+}
+
+std::vector<std::string> GetApplicationNamesById(int32_t uid)
+{
+    std::vector<std::string> bundleNames;
+    sptr<AppExecFwk::IBundleMgr> mgr = GetBundleMgrProxy();
+    if (mgr != nullptr) {
+        mgr->GetBundlesForUid(uid, bundleNames);
+    }
+
+    return bundleNames;
+}
+
+std::string GetApplicationNameById(int32_t uid)
+{
+    std::vector<std::string> bundleNames = GetApplicationNamesById(uid);
+    if (bundleNames.empty()) {
+        return "";
+    }
+
+    return bundleNames.front();
+}
 
 AppSpawnServer::AppSpawnServer(const std::string &socketName)
 {
@@ -421,9 +462,10 @@ int32_t AppSpawnServer::DoAppSandboxMount(const ClientSocket::AppProperty *appPr
     std::string destDataPath = rootPath + "/data/storage/el2/base";
     int rc = 0;
 
-    oriInstallPath += appProperty->processName;
-    oriDataPath += appProperty->processName;
-    oriDatabasePath += appProperty->processName;
+    std::string bundleName = GetApplicationNameById(appProperty->uid);
+    oriInstallPath += bundleName;
+    oriDataPath += bundleName;
+    oriDatabasePath += bundleName;
 
     std::map<std::string, std::string> mountMap;
     mountMap[oriInstallPath] = destAPI7InstallPath;
@@ -433,7 +475,7 @@ int32_t AppSpawnServer::DoAppSandboxMount(const ClientSocket::AppProperty *appPr
 
     std::map<std::string, std::string>::iterator iter;
     for (iter = mountMap.begin(); iter != mountMap.end(); iter++) {
-        rc = DoAppSandboxMountOnce(iter->first.c_str(), iter->second.c_str());
+        rc = DoAppSandboxMountOnce(iter->second.c_str(), iter->first.c_str());
         if (rc) {
             return rc;
         }
@@ -465,14 +507,6 @@ void AppSpawnServer::DoAppSandboxMkdir(std::string sandboxPackagePath, const Cli
     mkdir(dirPath.c_str(), FILE_MODE);
     dirPath = sandboxPackagePath + "/data/storage/el2/database";
     mkdir(dirPath.c_str(), FILE_MODE);
-
-    // create applications folder for compatibility purpose
-    dirPath = sandboxPackagePath + "/data/accounts";
-    mkdir(dirPath.c_str(), FILE_MODE);
-    dirPath = sandboxPackagePath + "/data/accounts/account_0";
-    mkdir(dirPath.c_str(), FILE_MODE);
-    dirPath = sandboxPackagePath + "/data/accounts/account_0/applications";
-    mkdir(dirPath.c_str(), FILE_MODE);
 }
 
 int32_t AppSpawnServer::SetAppSandboxProperty(const ClientSocket::AppProperty *appProperty)
@@ -482,7 +516,7 @@ int32_t AppSpawnServer::SetAppSandboxProperty(const ClientSocket::AppProperty *a
     // create /mnt/sandbox/<packagename> path， later put it to rootfs module
     std::string sandboxPackagePath = "/mnt/sandbox/";
     mkdir(sandboxPackagePath.c_str(), FILE_MODE);
-    sandboxPackagePath += appProperty->processName;
+    sandboxPackagePath += GetApplicationNameById(appProperty->uid);
     mkdir(sandboxPackagePath.c_str(), FILE_MODE);
 
     // add pid to a new mnt namespace
