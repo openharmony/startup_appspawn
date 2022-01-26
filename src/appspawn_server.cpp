@@ -35,6 +35,10 @@
 #include "if_system_ability_manager.h"
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
+#include "token_setproc.h"
+#ifdef WITH_SELINUX
+#include "hap_restorecon.h"
+#endif
 
 #include <dirent.h>
 #include <dlfcn.h>
@@ -572,6 +576,21 @@ int32_t AppSpawnServer::SetAppSandboxProperty(const ClientSocket::AppProperty *a
     return ERR_OK;
 }
 
+void AppSpawnServer::SetAppAccessToken(const ClientSocket::AppProperty *appProperty)
+{
+    int32_t ret = SetSelfTokenID(appProperty->accessTokenId);
+    if (ret != 0) {
+        HiLog::Error(LABEL, "AppSpawnServer::Failed to set access token id, errno = %{public}d", errno);
+    }
+#ifdef WITH_SELINUX
+    HapContext hapContext;
+    ret = hapContext.HapDomainSetcontext(appProperty->apl, appProperty->processName);
+    if (ret != 0) {
+        HiLog::Error(LABEL, "AppSpawnServer::Failed to hap domain set context, errno = %{public}d", errno);
+    }
+#endif
+}
+
 bool AppSpawnServer::SetAppProcProperty(int connectFd, const ClientSocket::AppProperty *appProperty, char *longProcName,
     int64_t longProcNameLen, const int32_t fd[FDLEN2])
 {
@@ -601,6 +620,8 @@ bool AppSpawnServer::SetAppProcProperty(int connectFd, const ClientSocket::AppPr
         NotifyResToParentProc(fd[1], ret);
         return false;
     }
+
+    SetAppAccessToken(appProperty);
 
     ret = SetProcessName(longProcName, longProcNameLen, appProperty->processName, strlen(appProperty->processName) + 1);
     if (FAILED(ret)) {
