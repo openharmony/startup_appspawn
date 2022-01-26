@@ -165,6 +165,7 @@ private:
 
     void LoadAceLib();
 
+    void SetAppAccessToken(const ClientSocket::AppProperty *appProperty);
 private:
     const std::string deviceNull_ = "/dev/null";
     std::string socketName_ {};

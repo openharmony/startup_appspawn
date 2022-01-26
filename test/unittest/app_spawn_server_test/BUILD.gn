@@ -17,7 +17,9 @@ import("//build/test.gni")
 ohos_unittest("AppSpawnServerOverrideTest") {
   module_out_path = "${module_output_path}"
 
-  include_dirs = []
+  include_dirs = [
+    "//base/security/access_token/interfaces/innerkits/token_setproc/include",
+  ]
 
   sources = [
     "${appspawn_path}/src/appspawn_server.cpp",
@@ -31,7 +33,10 @@ ohos_unittest("AppSpawnServerOverrideTest") {
     "app_spawn_server_override_test.cpp",
   ]
 
-  deps = [ "${appspawn_path}/test:appspawn_test_source" ]
+  deps = [
+    "${appspawn_path}/test:appspawn_test_source",
+    "//base/security/access_token/interfaces/innerkits/token_setproc:libtoken_setproc",
+  ]
 
   external_deps = [
     "ability_runtime:app_manager",
@@ -43,13 +48,16 @@ ohos_unittest("AppSpawnServerOverrideTest") {
     "ipc:ipc_core",
     "safwk:system_ability_fwk",
     "samgr_standard:samgr_proxy",
+    "selinux:libhap_restorecon",
   ]
 }
 
 ohos_unittest("AppSpawnServerMockTest") {
   module_out_path = "${module_output_path}"
 
-  include_dirs = []
+  include_dirs = [
+    "//base/security/access_token/interfaces/innerkits/token_setproc/include",
+  ]
 
   sources = [
     "${appspawn_path}/src/appspawn_msg_peer.cpp",
@@ -63,7 +71,10 @@ ohos_unittest("AppSpawnServerMockTest") {
     "app_spawn_server_mock_test.cpp",
   ]
 
-  deps = [ "${appspawn_path}/test:appspawn_test_source" ]
+  deps = [
+    "${appspawn_path}/test:appspawn_test_source",
+    "//base/security/access_token/interfaces/innerkits/token_setproc:libtoken_setproc",
+  ]
 
   external_deps = [
     "ability_runtime:app_manager",
@@ -75,6 +86,7 @@ ohos_unittest("AppSpawnServerMockTest") {
     "ipc:ipc_core",
     "safwk:system_ability_fwk",
     "samgr_standard:samgr_proxy",
+    "selinux:libhap_restorecon",
   ]
 }
 
