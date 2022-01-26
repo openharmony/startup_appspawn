@@ -52,7 +52,7 @@ ohos_unittest("AppSpawnServerOverrideTest") {
 
   if (build_selinux) {
     external_deps += [ "selinux:libhap_restorecon" ]
-    cflags += [ "-DWITH_SELINUX" ]
+    cflags = [ "-DWITH_SELINUX" ]
   }
 }
 
@@ -94,9 +94,8 @@ ohos_unittest("AppSpawnServerMockTest") {
 
   if (build_selinux) {
     external_deps += [ "selinux:libhap_restorecon" ]
-    cflags += [ "-DWITH_SELINUX" ]
+    cflags = [ "-DWITH_SELINUX" ]
   }
-
 }
 
 group("unittest") {

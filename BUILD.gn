@@ -37,7 +37,7 @@ config("appspawn_config") {
   ]
 
   if (build_selinux) {
-    cflags += [ "-DWITH_SELINUX" ]
+    cflags = [ "-DWITH_SELINUX" ]
   }
 }
 
@@ -48,9 +48,7 @@ ohos_executable("appspawn") {
     "${appspawn_path}:appspawn_server",
     "//base/security/access_token/interfaces/innerkits/token_setproc:libtoken_setproc",
   ]
-  external_deps = [
-    "hiviewdfx_hilog_native:libhilog",
-  ]
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 
   install_enable = true
   subsystem_name = "${subsystem_name}"
