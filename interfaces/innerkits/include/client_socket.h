@@ -87,6 +87,7 @@ public:
     static constexpr int LEN_PROC_NAME = 256;           // process name length
     static constexpr int LEN_SO_PATH = 256;             // load so lib
     static constexpr int MAX_GIDS = 64;
+    static constexpr int APL_MAX_LEN = 32;
 
     struct AppProperty {
         uint32_t uid;                     // the UNIX uid that the child process setuid() to after fork()
@@ -95,6 +96,8 @@ public:
         uint32_t gidCount;                // the size of gidTable
         char processName[LEN_PROC_NAME];  // process name
         char soPath[LEN_SO_PATH];         // so lib path
+        uint32_t accessTokenId;
+        char apl[APL_MAX_LEN];
     };
 
 private:
