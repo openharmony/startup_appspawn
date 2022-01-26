@@ -97,7 +97,7 @@ public:
         char processName[LEN_PROC_NAME];  // process name
         char soPath[LEN_SO_PATH];         // so lib path
         uint32_t accessTokenId;
-	char apl[APL_MAX_LEN];
+        char apl[APL_MAX_LEN];
     };
 
 private:
