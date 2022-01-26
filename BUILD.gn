@@ -50,7 +50,6 @@ ohos_executable("appspawn") {
   ]
   external_deps = [
     "hiviewdfx_hilog_native:libhilog",
-    "selinux:libhap_restorecon",
   ]
 
   install_enable = true
