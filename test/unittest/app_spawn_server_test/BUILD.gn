@@ -17,8 +17,9 @@ import("//build/test.gni")
 ohos_unittest("AppSpawnServerOverrideTest") {
   module_out_path = "${module_output_path}"
 
-  include_dirs = []
-
+  include_dirs = [
+    "//base/security/access_token/interfaces/innerkits/token_setproc/include",
+  ]
   sources = [
     "${appspawn_path}/src/appspawn_server.cpp",
     "${appspawn_path}/src/socket/appspawn_socket.cpp",
@@ -31,8 +32,10 @@ ohos_unittest("AppSpawnServerOverrideTest") {
     "app_spawn_server_override_test.cpp",
   ]
 
-  deps = [ "${appspawn_path}/test:appspawn_test_source" ]
-
+  deps = [
+    "${appspawn_path}/test:appspawn_test_source",
+    "//base/security/access_token/interfaces/innerkits/token_setproc:libtoken_setproc",
+  ]
   external_deps = [
     "ability_runtime:app_manager",
     "ability_runtime:want",
@@ -44,13 +47,19 @@ ohos_unittest("AppSpawnServerOverrideTest") {
     "safwk:system_ability_fwk",
     "samgr_standard:samgr_proxy",
   ]
+
+  if (build_selinux) {
+    external_deps += [ "selinux:libhap_restorecon" ]
+    cflags = [ "-DWITH_SELINUX" ]
+  }
 }
 
 ohos_unittest("AppSpawnServerMockTest") {
   module_out_path = "${module_output_path}"
 
-  include_dirs = []
-
+  include_dirs = [
+    "//base/security/access_token/interfaces/innerkits/token_setproc/include",
+  ]
   sources = [
     "${appspawn_path}/src/appspawn_msg_peer.cpp",
     "${appspawn_path}/src/appspawn_server.cpp",
@@ -63,8 +72,10 @@ ohos_unittest("AppSpawnServerMockTest") {
     "app_spawn_server_mock_test.cpp",
   ]
 
-  deps = [ "${appspawn_path}/test:appspawn_test_source" ]
-
+  deps = [
+    "${appspawn_path}/test:appspawn_test_source",
+    "//base/security/access_token/interfaces/innerkits/token_setproc:libtoken_setproc",
+  ]
   external_deps = [
     "ability_runtime:app_manager",
     "ability_runtime:want",
@@ -76,6 +87,11 @@ ohos_unittest("AppSpawnServerMockTest") {
     "safwk:system_ability_fwk",
     "samgr_standard:samgr_proxy",
   ]
+
+  if (build_selinux) {
+    external_deps += [ "selinux:libhap_restorecon" ]
+    cflags = [ "-DWITH_SELINUX" ]
+  }
 }
 
 group("unittest") {
