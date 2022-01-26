@@ -84,7 +84,7 @@ ohos_static_library("appspawn_server") {
   ]
 
   if (build_selinux) {
-    external_deps = [ "selinux:libhap_restorecon" ]
+    external_deps += [ "selinux:libhap_restorecon" ]
   }
 
   subsystem_name = "${subsystem_name}"
