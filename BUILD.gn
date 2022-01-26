@@ -33,14 +33,21 @@ config("appspawn_config") {
     "${aafwk_path}/frameworks/kits/ability/native/include",
     "${aafwk_path}/services/abilitymgr/include",
     "${distributedschedule_path}/services/dtbschedmgr/include",
+    "//base/security/access_token/interfaces/innerkits/token_setproc/include",
   ]
 }
 
 ohos_executable("appspawn") {
   sources = [ "${appspawn_path}/src/main.cpp" ]
   configs = [ ":appspawn_config" ]
-  deps = [ "${appspawn_path}:appspawn_server" ]
-  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  deps = [
+    "${appspawn_path}:appspawn_server",
+    "//base/security/access_token/interfaces/innerkits/token_setproc:libtoken_setproc",
+  ]
+  external_deps = [
+    "hiviewdfx_hilog_native:libhilog",
+    "selinux:libhap_restorecon",
+  ]
 
   install_enable = true
   subsystem_name = "${subsystem_name}"
@@ -71,6 +78,7 @@ ohos_static_library("appspawn_server") {
     "ipc:ipc_core",
     "safwk:system_ability_fwk",
     "samgr_standard:samgr_proxy",
+    "selinux:libhap_restorecon",
   ]
 
   subsystem_name = "${subsystem_name}"
