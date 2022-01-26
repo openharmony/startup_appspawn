@@ -48,8 +48,12 @@ ohos_unittest("AppSpawnServerOverrideTest") {
     "ipc:ipc_core",
     "safwk:system_ability_fwk",
     "samgr_standard:samgr_proxy",
-    "selinux:libhap_restorecon",
   ]
+
+  if (build_selinux) {
+    external_deps = [ "selinux:libhap_restorecon" ]
+    cflags += [ "-DWITH_SELINUX" ]
+  }
 }
 
 ohos_unittest("AppSpawnServerMockTest") {
@@ -86,8 +90,13 @@ ohos_unittest("AppSpawnServerMockTest") {
     "ipc:ipc_core",
     "safwk:system_ability_fwk",
     "samgr_standard:samgr_proxy",
-    "selinux:libhap_restorecon",
   ]
+
+  if (build_selinux) {
+    external_deps = [ "selinux:libhap_restorecon" ]
+    cflags += [ "-DWITH_SELINUX" ]
+  }
+
 }
 
 group("unittest") {

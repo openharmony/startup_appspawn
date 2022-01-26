@@ -36,7 +36,9 @@
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
 #include "token_setproc.h"
+#ifdef WITH_SELINUX
 #include "hap_restorecon.h"
+#endif
 
 #include <dirent.h>
 #include <dlfcn.h>
@@ -595,11 +597,13 @@ void AppSpawnServer::SetAppAccessToken(const ClientSocket::AppProperty *appPrope
     if (ret != 0) {
         HiLog::Error(LABEL, "AppSpawnServer::Failed to set access token id, errno = %{public}d", errno);
     }
+#ifdef WITH_SELINUX
     HapContext hapContext;
     ret = hapContext.HapDomainSetcontext(appProperty->apl, appProperty->processName);
     if (ret != 0) {
         HiLog::Error(LABEL, "AppSpawnServer::Failed to hap domain set context, errno = %{public}d", errno);
     }
+#endif
 }
 
 bool AppSpawnServer::SetAppProcProperty(int connectFd, const ClientSocket::AppProperty *appProperty, char *longProcName,
