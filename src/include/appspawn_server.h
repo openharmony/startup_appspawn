@@ -123,6 +123,11 @@ private:
     int32_t SetCapabilities();
 
     /**
+     * Create sandbox root folder file
+     */
+    int32_t DoSandboxRootFolderCreate(std::string sandboxPackagePath);
+
+    /**
      * Do app sandbox original path mount common
      */
     int32_t DoAppSandboxMountOnce(const std::string originPath, const std::string destinationPath);

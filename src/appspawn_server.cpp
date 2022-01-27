@@ -44,6 +44,7 @@
 #include <dlfcn.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <unistd.h>
 
 #define GRAPHIC_PERMISSION_CHECK
 constexpr static mode_t FILE_MODE = 0711;
@@ -442,7 +443,7 @@ int32_t AppSpawnServer::DoAppSandboxMountOnce(const std::string originPath, cons
 {
     int rc = 0;
 
-    rc = mount(originPath.c_str(), destinationPath.c_str(), NULL, MS_BIND, NULL);
+    rc = mount(originPath.c_str(), destinationPath.c_str(), NULL, MS_BIND | MS_REC, NULL);
     if (rc) {
         return rc;
     }
@@ -496,6 +497,15 @@ int32_t AppSpawnServer::DoAppSandboxMount(const ClientSocket::AppProperty *appPr
     std::string oriMediaPath = "/storage/media/" +  currentUserId;
     std::string destMediaPath = rootPath + "/storage/media";
     DoAppSandboxMountOnce(oriMediaPath.c_str(), destMediaPath.c_str());
+
+    std::string oriappdataPath = "/data/accounts/account_0/appdata/";
+    std::string destappdataPath = rootPath + oriappdataPath;
+    DoAppSandboxMountOnce(oriappdataPath.c_str(), destappdataPath.c_str());
+
+    std::string oriapplicationsPath = "/data/accounts/account_0/applications/";
+    std::string destapplicationsPath = rootPath + oriapplicationsPath;
+    DoAppSandboxMountOnce(oriapplicationsPath.c_str(), destapplicationsPath.c_str());
+
     return 0;
 }
 
@@ -503,11 +513,8 @@ void AppSpawnServer::DoAppSandboxMkdir(std::string sandboxPackagePath, const Cli
 {
     // to create /mnt/sandbox/<packagename>/data/storage/el1 related path, later should delete this code.
     std::string dirPath = sandboxPackagePath + "/data/";
-
     mkdir(dirPath.c_str(), FILE_MODE);
     dirPath = sandboxPackagePath + "/data/storage";
-    mkdir(dirPath.c_str(), FILE_MODE);
-    dirPath = sandboxPackagePath + "/data/storage/el1";
     mkdir(dirPath.c_str(), FILE_MODE);
     dirPath = sandboxPackagePath + "/data/storage/el1";
     mkdir(dirPath.c_str(), FILE_MODE);
@@ -526,6 +533,89 @@ void AppSpawnServer::DoAppSandboxMkdir(std::string sandboxPackagePath, const Cli
     mkdir(dirPath.c_str(), FILE_MODE);
     dirPath = sandboxPackagePath + "/data/storage/el2/accountless_distributedfile";
     mkdir(dirPath.c_str(), FILE_MODE);
+
+    // create applications folder for compatibility purpose
+    dirPath = sandboxPackagePath + "/data/accounts";
+    mkdir(dirPath.c_str(), FILE_MODE);
+    dirPath = sandboxPackagePath + "/data/accounts/account_0";
+    mkdir(dirPath.c_str(), FILE_MODE);
+    dirPath = sandboxPackagePath + "/data/accounts/account_0/applications/";
+    mkdir(dirPath.c_str(), FILE_MODE);
+    dirPath = sandboxPackagePath + "/data/accounts/account_0/appdata/";
+    mkdir(dirPath.c_str(), FILE_MODE);
+}
+
+int32_t AppSpawnServer::DoSandboxRootFolderCreate(std::string sandboxPackagePath)
+{
+    int rc = mount(NULL, "/", NULL, MS_REC | MS_SLAVE, NULL);
+    if (rc) {
+        return rc;
+    }
+
+    // bind mount sandboxPackagePath to make it a mount point for pivot_root syscall
+    DoAppSandboxMountOnce(sandboxPackagePath.c_str(), sandboxPackagePath.c_str());
+
+    // do /mnt/sandbox/<packageName> path mkdir
+    std::map<std::string, std::string> mountMap;
+    std::vector<std::string> vecInfo;
+    std::string tmpDir = "";
+
+    vecInfo.push_back("/chip-prod");
+    vecInfo.push_back("/chipset");
+    vecInfo.push_back("/config");
+    vecInfo.push_back("/dev");
+    vecInfo.push_back("/lost+found");
+    vecInfo.push_back("/mnt");
+    vecInfo.push_back("/proc");
+    vecInfo.push_back("//storage");
+    vecInfo.push_back("/sys");
+    vecInfo.push_back("/sys-prod");
+    vecInfo.push_back("/system");
+    vecInfo.push_back("/tmp");
+    vecInfo.push_back("/updater");
+    vecInfo.push_back("/vendor");
+
+    for (int i = 0; i < vecInfo.size(); i++) {
+        tmpDir = sandboxPackagePath + vecInfo[i];
+        mkdir(tmpDir.c_str(), FILE_MODE);
+        mountMap[vecInfo[i]] = tmpDir;
+    }
+
+    // bind mount root folder to /mnt/sandbox/<packageName> path
+    std::map<std::string, std::string>::iterator iter;
+    for (iter = mountMap.begin(); iter != mountMap.end(); iter++) {
+        rc = DoAppSandboxMountOnce(iter->first.c_str(), iter->second.c_str());
+        if (rc) {
+            return rc;
+        }
+    }
+
+    // to create symlink at /mnt/sandbox/<packageName> path
+    // bin -> /system/bin
+    // d -> /sys/kernel/debug
+    // etc -> /system/etc
+    // init -> /system/bin/init
+    // lib -> /system/lib
+    // sdcard -> /storage/self/primary
+    tmpDir = sandboxPackagePath + "/bin";
+    symlink("/system/bin", tmpDir.c_str());
+
+    tmpDir = sandboxPackagePath + "/d";
+    symlink("/sys/kernel/debug", tmpDir.c_str());
+
+    tmpDir = sandboxPackagePath + "/etc";
+    symlink("/system/etc", tmpDir.c_str());
+
+    tmpDir = sandboxPackagePath + "/init";
+    symlink("/system/bin/init", tmpDir.c_str());
+
+    tmpDir = sandboxPackagePath + "/lib";
+    symlink("/system/lib", tmpDir.c_str());
+
+    tmpDir = sandboxPackagePath + "/sdcard";
+    symlink("/storage/self/primary", tmpDir.c_str());
+
+    return 0;
 }
 
 int32_t AppSpawnServer::SetAppSandboxProperty(const ClientSocket::AppProperty *appProperty)
@@ -545,17 +635,9 @@ int32_t AppSpawnServer::SetAppSandboxProperty(const ClientSocket::AppProperty *a
         return rc;
     }
 
-    rc = mount(NULL, "/", NULL, MS_REC | MS_SLAVE, NULL);
+    rc = DoSandboxRootFolderCreate(sandboxPackagePath);
     if (rc) {
-        HiLog::Error(LABEL, "set propagation slave failed, packagename is %{public}s", appProperty->processName);
-        return rc;
-    }
-
-    // bind mount "/" to /mnt/sandbox/<packageName> path
-    // rootfs: to do more resouces bind mount here to get more strict resources constraints
-    rc = mount("/", sandboxPackagePath.c_str(), NULL, MS_BIND | MS_REC, NULL);
-    if (rc) {
-        HiLog::Error(LABEL, "mount bind / failed, packagename is %{public}s", appProperty->processName);
+        HiLog::Error(LABEL, "DoSandboxRootFolderCreate failed, packagename is %{public}s", appProperty->processName);
         return rc;
     }
 
