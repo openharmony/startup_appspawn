@@ -486,17 +486,13 @@ int32_t AppSpawnServer::DoAppSandboxMount(const ClientSocket::AppProperty *appPr
     }
 
     // Add distributedfile module support, later reconstruct it
-    std::string oriDistributedPath = "/mnt/hmdfs/" +  currentUserId + "/merge_view/data/" + bundleName;
+    std::string oriDistributedPath = "/mnt/hmdfs/" +  currentUserId + "/account/merge_view/data/" + bundleName;
     std::string destDistributedPath = rootPath + "/data/storage/el2/distributedfiles";
     DoAppSandboxMountOnce(oriDistributedPath.c_str(), destDistributedPath.c_str());
 
-    std::string oriDistributedGroupPath = "/mnt/hmdfs/auth_groups/" +  currentUserId + "/merge_view/data/" + bundleName;
-    std::string destDistributedGroupPath = rootPath + "/data/storage/el2/accountless_distributedfile";
+    std::string oriDistributedGroupPath = "/mnt/hmdfs/" +  currentUserId + "/non_account/merge_view/data/" + bundleName;
+    std::string destDistributedGroupPath = rootPath + "/data/storage/el2/auth_groups";
     DoAppSandboxMountOnce(oriDistributedGroupPath.c_str(), destDistributedGroupPath.c_str());
-
-    std::string oriMediaPath = "/storage/media/" +  currentUserId;
-    std::string destMediaPath = rootPath + "/storage/media";
-    DoAppSandboxMountOnce(oriMediaPath.c_str(), destMediaPath.c_str());
 
     std::string oriappdataPath = "/data/accounts/account_0/appdata/";
     std::string destappdataPath = rootPath + oriappdataPath;
@@ -506,6 +502,22 @@ int32_t AppSpawnServer::DoAppSandboxMount(const ClientSocket::AppProperty *appPr
     std::string destapplicationsPath = rootPath + oriapplicationsPath;
     DoAppSandboxMountOnce(oriapplicationsPath.c_str(), destapplicationsPath.c_str());
 
+    // only bind mount media library app
+    if (bundleName.find("medialibrary") != std::string::npos) {
+        std::string oriMediaPath = "/storage/media/" +  currentUserId;
+        std::string destMediaPath = rootPath + "/storage/media";
+        DoAppSandboxMountOnce(oriMediaPath.c_str(), destMediaPath.c_str());
+    }
+
+    std::string dirPath = rootPath + "/data/storage/el2/base/el3";
+    mkdir(dirPath.c_str(), FILE_MODE);
+    dirPath = rootPath + "/data/storage/el2/base/el3/base";
+    mkdir(dirPath.c_str(), FILE_MODE);
+    dirPath = rootPath + "/data/storage/el2/base/el4";
+    mkdir(dirPath.c_str(), FILE_MODE);
+    dirPath = rootPath + "/data/storage/el2/base/el4/base";
+    mkdir(dirPath.c_str(), FILE_MODE);
+
     return 0;
 }
 
@@ -514,11 +526,19 @@ void AppSpawnServer::DoAppSandboxMkdir(std::string sandboxPackagePath, const Cli
     // to create /mnt/sandbox/<packagename>/data/storage/el1 related path, later should delete this code.
     std::string dirPath = sandboxPackagePath + "/data/";
     mkdir(dirPath.c_str(), FILE_MODE);
+    dirPath = sandboxPackagePath + "/storage/";
+    mkdir(dirPath.c_str(), FILE_MODE);
+    dirPath = sandboxPackagePath + "/storage/media";
+    mkdir(dirPath.c_str(), FILE_MODE);
     dirPath = sandboxPackagePath + "/data/storage";
     mkdir(dirPath.c_str(), FILE_MODE);
     dirPath = sandboxPackagePath + "/data/storage/el1";
     mkdir(dirPath.c_str(), FILE_MODE);
     dirPath = sandboxPackagePath + "/data/storage/el1/bundle";
+    mkdir(dirPath.c_str(), FILE_MODE);
+    dirPath = sandboxPackagePath + "/data/storage/el1/base";
+    mkdir(dirPath.c_str(), FILE_MODE);
+    dirPath = sandboxPackagePath + "/data/storage/el1/database";
     mkdir(dirPath.c_str(), FILE_MODE);
 
     // to create /mnt/sandbox/<packagename>/data/storage/el1 related path, later should delete this code.
@@ -531,7 +551,7 @@ void AppSpawnServer::DoAppSandboxMkdir(std::string sandboxPackagePath, const Cli
     mkdir(dirPath.c_str(), FILE_MODE);
     dirPath = sandboxPackagePath + "/data/storage/el2/distributedfiles";
     mkdir(dirPath.c_str(), FILE_MODE);
-    dirPath = sandboxPackagePath + "/data/storage/el2/accountless_distributedfile";
+    dirPath = sandboxPackagePath + "/data/storage/el2/auth_groups";
     mkdir(dirPath.c_str(), FILE_MODE);
 
     // create applications folder for compatibility purpose
@@ -560,20 +580,12 @@ int32_t AppSpawnServer::DoSandboxRootFolderCreate(std::string sandboxPackagePath
     std::vector<std::string> vecInfo;
     std::string tmpDir = "";
 
-    vecInfo.push_back("/chip-prod");
-    vecInfo.push_back("/chipset");
     vecInfo.push_back("/config");
     vecInfo.push_back("/dev");
-    vecInfo.push_back("/lost+found");
-    vecInfo.push_back("/mnt");
     vecInfo.push_back("/proc");
-    vecInfo.push_back("//storage");
     vecInfo.push_back("/sys");
     vecInfo.push_back("/sys-prod");
     vecInfo.push_back("/system");
-    vecInfo.push_back("/tmp");
-    vecInfo.push_back("/updater");
-    vecInfo.push_back("/vendor");
 
     for (int i = 0; i < vecInfo.size(); i++) {
         tmpDir = sandboxPackagePath + vecInfo[i];
@@ -586,7 +598,7 @@ int32_t AppSpawnServer::DoSandboxRootFolderCreate(std::string sandboxPackagePath
     for (iter = mountMap.begin(); iter != mountMap.end(); iter++) {
         rc = DoAppSandboxMountOnce(iter->first.c_str(), iter->second.c_str());
         if (rc) {
-            return rc;
+            HiLog::Error(LABEL, "move root folder failed, %{public}s", sandboxPackagePath.c_str());
         }
     }
 
@@ -611,9 +623,6 @@ int32_t AppSpawnServer::DoSandboxRootFolderCreate(std::string sandboxPackagePath
 
     tmpDir = sandboxPackagePath + "/lib";
     symlink("/system/lib", tmpDir.c_str());
-
-    tmpDir = sandboxPackagePath + "/sdcard";
-    symlink("/storage/self/primary", tmpDir.c_str());
 
     return 0;
 }
