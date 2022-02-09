@@ -55,11 +55,9 @@ namespace {
 constexpr int32_t ERR_PIPE_FAIL = -100;
 constexpr int32_t MAX_LEN_SHORT_NAME = 16;
 constexpr int32_t WAIT_DELAY_US = 100 * 1000;  // 100ms
-constexpr int32_t GID_MEDIA = 1023;
+constexpr int32_t GID_USER_DATA_RW = 1008;
 constexpr int32_t MAX_GIDS = 64;
 
-constexpr std::string_view BUNDLE_NAME_CAMERA("com.ohos.camera");
-constexpr std::string_view BUNDLE_NAME_PHOTOS("com.ohos.photos");
 constexpr std::string_view BUNDLE_NAME_MEDIA_LIBRARY("com.ohos.medialibrary.MediaLibraryDataA");
 constexpr std::string_view BUNDLE_NAME_SCANNER("com.ohos.medialibrary.MediaScannerAbilityA");
 }  // namespace
@@ -774,13 +772,11 @@ void AppSpawnServer::SpecialHandle(ClientSocket::AppProperty *appProperty)
         HiLog::Error(LABEL, "appProperty is nullptr");
         return;
     }
-    // special handle bundle name "com.ohos.photos" and "com.ohos.camera"
-    if ((strcmp(appProperty->processName, BUNDLE_NAME_CAMERA.data()) == 0) ||
-        (strcmp(appProperty->processName, BUNDLE_NAME_PHOTOS.data()) == 0) ||
-        (strcmp(appProperty->processName, BUNDLE_NAME_MEDIA_LIBRARY.data()) == 0) ||
+    // special handle bundle name medialibrary and scanner
+    if ((strcmp(appProperty->processName, BUNDLE_NAME_MEDIA_LIBRARY.data()) == 0) ||
         (strcmp(appProperty->processName, BUNDLE_NAME_SCANNER.data()) == 0)) {
         if (appProperty->gidCount < MAX_GIDS) {
-            appProperty->gidTable[appProperty->gidCount] = GID_MEDIA;
+            appProperty->gidTable[appProperty->gidCount] = GID_USER_DATA_RW;
             appProperty->gidCount++;
         } else {
             HiLog::Info(LABEL, "gidCount out of bounds !");
