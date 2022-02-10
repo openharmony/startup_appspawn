@@ -85,6 +85,7 @@ public:
 
     static constexpr int APPSPAWN_MSG_MAX_SIZE = 4096;  // appspawn message max size
     static constexpr int LEN_PROC_NAME = 256;           // process name length
+    static constexpr int LEN_BUNDLE_NAME = 256;         // bundle name length
     static constexpr int LEN_SO_PATH = 256;             // load so lib
     static constexpr int MAX_GIDS = 64;
     static constexpr int APL_MAX_LEN = 32;
@@ -95,6 +96,7 @@ public:
         uint32_t gidTable[MAX_GIDS];      // a list of UNIX gids that the child process setgroups() to after fork()
         uint32_t gidCount;                // the size of gidTable
         char processName[LEN_PROC_NAME];  // process name
+        char bundleName[LEN_BUNDLE_NAME]; // bundle name
         char soPath[LEN_SO_PATH];         // so lib path
         uint32_t accessTokenId;
         char apl[APL_MAX_LEN];
