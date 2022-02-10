@@ -563,6 +563,25 @@ void AppSpawnServer::DoAppSandboxMkdir(std::string sandboxPackagePath, const Cli
     mkdir(dirPath.c_str(), FILE_MODE);
 }
 
+int32_t AppSpawnServer::DoSandboxRootFolderCreateAdapt(std::string sandboxPackagePath)
+{
+    int rc = mount(NULL, "/", NULL, MS_REC | MS_SLAVE, NULL);
+    if (rc) {
+        HiLog::Error(LABEL, "set propagation slave failed");
+        return rc;
+    }
+
+    // bind mount "/" to /mnt/sandbox/<packageName> path
+    // rootfs: to do more resouces bind mount here to get more strict resources constraints
+    rc = mount("/", sandboxPackagePath.c_str(), NULL, MS_BIND | MS_REC, NULL);
+    if (rc) {
+        HiLog::Error(LABEL, "mount bind / failed");
+        return rc;
+    }
+
+    return 0;
+}
+
 int32_t AppSpawnServer::DoSandboxRootFolderCreate(std::string sandboxPackagePath)
 {
     int rc = mount(NULL, "/", NULL, MS_REC | MS_SLAVE, NULL);
@@ -642,9 +661,14 @@ int32_t AppSpawnServer::SetAppSandboxProperty(const ClientSocket::AppProperty *a
         return rc;
     }
 
-    rc = DoSandboxRootFolderCreate(sandboxPackagePath);
+    // to make wargnar work
+    if (access("/3rdmodem", F_OK) == 0) {
+        rc = DoSandboxRootFolderCreateAdapt(sandboxPackagePath);
+    } else {
+        rc = DoSandboxRootFolderCreate(sandboxPackagePath);
+    }
     if (rc) {
-        HiLog::Error(LABEL, "DoSandboxRootFolderCreate failed, packagename is %{public}s", appProperty->processName);
+        HiLog::Error(LABEL, "DoSandboxRootFolderCreate failed, %{public}s", appProperty->processName);
         return rc;
     }
 
