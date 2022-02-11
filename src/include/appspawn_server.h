@@ -128,6 +128,11 @@ private:
     int32_t DoSandboxRootFolderCreate(std::string sandboxPackagePath);
 
     /**
+     * Create sandbox root folder file with wargnar device
+     */
+    int32_t DoSandboxRootFolderCreateAdapt(std::string sandboxPackagePath);
+
+    /**
      * Do app sandbox original path mount common
      */
     int32_t DoAppSandboxMountOnce(const std::string originPath, const std::string destinationPath);
