@@ -465,7 +465,7 @@ int32_t AppSpawnServer::DoAppSandboxMount(const ClientSocket::AppProperty *appPr
     std::string destDataPath = rootPath + "/data/storage/el2/base";
     int rc = 0;
 
-    std::string bundleName = GetApplicationNameById(appProperty->uid);
+    std::string bundleName = appProperty->bundleName;
     oriInstallPath += bundleName;
     oriDataPath += bundleName;
     oriDatabasePath += bundleName;
@@ -651,7 +651,7 @@ int32_t AppSpawnServer::SetAppSandboxProperty(const ClientSocket::AppProperty *a
     // create /mnt/sandbox/<packagename> path， later put it to rootfs module
     std::string sandboxPackagePath = "/mnt/sandbox/";
     mkdir(sandboxPackagePath.c_str(), FILE_MODE);
-    sandboxPackagePath += GetApplicationNameById(appProperty->uid);
+    sandboxPackagePath += appProperty->bundleName;
     mkdir(sandboxPackagePath.c_str(), FILE_MODE);
 
     // add pid to a new mnt namespace
