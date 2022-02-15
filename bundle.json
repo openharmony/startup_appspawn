@@ -21,8 +21,9 @@
         "ram": "",
         "deps": {
             "components": [
+                "ability_base",
                 "hiviewdfx_hilog_native",
-                "ipc",                
+                "ipc",
                 "safwk",
                 "samgr_standard",
                 "utils_base"
