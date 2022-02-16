@@ -396,11 +396,14 @@ int32_t AppSpawnServer::DoAppSandboxMountOnce(const std::string originPath, cons
 
     rc = mount(originPath.c_str(), destinationPath.c_str(), NULL, MS_BIND | MS_REC, NULL);
     if (rc) {
+        HiLog::Error(LABEL, "bind mount %{public}s to %{public}s failed %{public}d", originPath.c_str(),
+            destinationPath.c_str(), errno);
         return rc;
     }
 
     rc = mount(NULL, destinationPath.c_str(), NULL, MS_PRIVATE, NULL);
     if (rc) {
+        HiLog::Error(LABEL, "private mount to %{public}s failed %{public}d", destinationPath.c_str(), errno);
         return rc;
     }
 
@@ -410,7 +413,7 @@ int32_t AppSpawnServer::DoAppSandboxMountOnce(const std::string originPath, cons
 int32_t AppSpawnServer::DoAppSandboxMount(const ClientSocket::AppProperty *appProperty, std::string rootPath)
 {
     std::string currentUserId = std::to_string(appProperty->uid / 200000);
-    std::string oriInstallPath = "/data/app/el1/bundle/";
+    std::string oriInstallPath = "/data/app/el1/bundle/public/";
     std::string oriDataPath = "/data/app/el2/" + currentUserId + "/base/";
     std::string oriDatabasePath = "/data/app/el2/" + currentUserId + "/database/";
     std::string destDatabasePath = rootPath + "/data/storage/el2/database";
@@ -429,7 +432,7 @@ int32_t AppSpawnServer::DoAppSandboxMount(const ClientSocket::AppProperty *appPr
     mountMap[destDataPath] = oriDataPath;
 
     std::map<std::string, std::string>::iterator iter;
-    for (iter = mountMap.begin(); iter != mountMap.end(); iter++) {
+    for (iter = mountMap.begin(); iter != mountMap.end(); ++iter) {
         rc = DoAppSandboxMountOnce(iter->second.c_str(), iter->first.c_str());
         if (rc) {
             return rc;
@@ -449,11 +452,23 @@ int32_t AppSpawnServer::DoAppSandboxMount(const ClientSocket::AppProperty *appPr
     std::string destappdataPath = rootPath + oriappdataPath;
     DoAppSandboxMountOnce(oriappdataPath.c_str(), destappdataPath.c_str());
 
-    std::string oriapplicationsPath = "/data/accounts/account_0/applications/";
-    std::string destapplicationsPath = rootPath + oriapplicationsPath;
+    return 0;
+}
+
+int32_t AppSpawnServer::DoAppSandboxMountCustomized(const ClientSocket::AppProperty *appProperty, std::string rootPath)
+{
+    std::string bundleName = appProperty->bundleName;
+    std::string currentUserId = std::to_string(appProperty->uid / 200000);
+
+    // account_0/applications/ dir can still access other packages' data now for compatibility purpose
+    std::string oriapplicationsPath = "/data/app/el1/bundle/public/";
+    std::string destapplicationsPath = rootPath + "/data/accounts/account_0/applications/";
     DoAppSandboxMountOnce(oriapplicationsPath.c_str(), destapplicationsPath.c_str());
 
-    // only bind mount media library app
+    // need permission check for system app here
+    std::string destbundlesPath = rootPath + "/data/bundles/";
+    DoAppSandboxMountOnce(oriapplicationsPath.c_str(), destbundlesPath.c_str());
+
     if (bundleName.find("medialibrary") != std::string::npos) {
         std::string oriMediaPath = "/storage/media/" +  currentUserId;
         std::string destMediaPath = rootPath + "/storage/media";
@@ -491,6 +506,7 @@ void AppSpawnServer::DoAppSandboxMkdir(std::string sandboxPackagePath, const Cli
     mkdirInfo.push_back("/data/accounts/account_0");
     mkdirInfo.push_back("/data/accounts/account_0/applications/");
     mkdirInfo.push_back("/data/accounts/account_0/appdata/");
+    mkdirInfo.push_back("/data/bundles/");
 
     for (int i = 0; i < mkdirInfo.size(); i++) {
         dirPath = sandboxPackagePath + mkdirInfo[i];
@@ -548,7 +564,7 @@ int32_t AppSpawnServer::DoSandboxRootFolderCreate(std::string sandboxPackagePath
 
     // bind mount root folder to /mnt/sandbox/<packageName> path
     std::map<std::string, std::string>::iterator iter;
-    for (iter = mountMap.begin(); iter != mountMap.end(); iter++) {
+    for (iter = mountMap.begin(); iter != mountMap.end(); ++iter) {
         rc = DoAppSandboxMountOnce(iter->first.c_str(), iter->second.c_str());
         if (rc) {
             HiLog::Error(LABEL, "move root folder failed, %{public}s", sandboxPackagePath.c_str());
@@ -610,6 +626,12 @@ int32_t AppSpawnServer::SetAppSandboxProperty(const ClientSocket::AppProperty *a
     rc = DoAppSandboxMount(appProperty, sandboxPackagePath);
     if (rc) {
         HiLog::Error(LABEL, "DoAppSandboxMount failed, packagename is %{public}s", appProperty->processName);
+        return rc;
+    }
+
+    rc = DoAppSandboxMountCustomized(appProperty, sandboxPackagePath);
+    if (rc) {
+        HiLog::Error(LABEL, "DoAppSandboxMountCustomized failed, packagename is %{public}s", appProperty->processName);
         return rc;
     }
 
