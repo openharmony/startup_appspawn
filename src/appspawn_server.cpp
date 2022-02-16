@@ -396,11 +396,14 @@ int32_t AppSpawnServer::DoAppSandboxMountOnce(const std::string originPath, cons
 
     rc = mount(originPath.c_str(), destinationPath.c_str(), NULL, MS_BIND | MS_REC, NULL);
     if (rc) {
+        HiLog::Error(LABEL, "bind mount %{public}s to %{public}s failed %{public}d", originPath.c_str(),
+            destinationPath.c_str(), errno);
         return rc;
     }
 
     rc = mount(NULL, destinationPath.c_str(), NULL, MS_PRIVATE, NULL);
     if (rc) {
+        HiLog::Error(LABEL, "private mount to %{public}s failed %{public}d", destinationPath.c_str(), errno);
         return rc;
     }
 
