@@ -75,16 +75,6 @@ static void SignalHandler([[maybe_unused]] int sig)
     int status;
 
     while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
-        if (WIFEXITED(status) && WEXITSTATUS(status)) {
-            HiLog::Info(LABEL, "Process %{public}d exited cleanly %{public}d", pid, WEXITSTATUS(status));
-        } else if (WIFSIGNALED(status)) {
-            if (WTERMSIG(status) != SIGKILL) {
-                HiLog::Info(LABEL, "Process %{public}d exited due to signal %{public}d", pid, WTERMSIG(status));
-            }
-            if (WCOREDUMP(status)) {
-                HiLog::Info(LABEL, "Process %{public}d dumped core.", pid);
-            }
-        }
     }
 }
 
