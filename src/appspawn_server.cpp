@@ -116,43 +116,6 @@ static void UninstallSigHandler()
 }
 #endif
 
-static sptr<AppExecFwk::IBundleMgr> GetBundleMgrProxy()
-{
-    sptr<ISystemAbilityManager> systemAbilityManager =
-        SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    if (!systemAbilityManager) {
-        return nullptr;
-    }
-
-    sptr<IRemoteObject> remoteObject = systemAbilityManager->GetSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
-    if (!remoteObject) {
-        return nullptr;
-    }
-
-    return iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
-}
-
-std::vector<std::string> GetApplicationNamesById(int32_t uid)
-{
-    std::vector<std::string> bundleNames;
-    sptr<AppExecFwk::IBundleMgr> mgr = GetBundleMgrProxy();
-    if (mgr != nullptr) {
-        mgr->GetBundlesForUid(uid, bundleNames);
-    }
-
-    return bundleNames;
-}
-
-std::string GetApplicationNameById(int32_t uid)
-{
-    std::vector<std::string> bundleNames = GetApplicationNamesById(uid);
-    if (bundleNames.empty()) {
-        return "";
-    }
-
-    return bundleNames.front();
-}
-
 AppSpawnServer::AppSpawnServer(const std::string &socketName)
 {
     socketName_ = socketName;
@@ -251,7 +214,7 @@ bool AppSpawnServer::ServerMain(char *longProcName, int64_t longProcNameLen)
             _exit(0);
         }
 
-        read(fd[0], &buff, sizeof(buff));  // wait child process resutl
+        read(fd[0], &buff, sizeof(buff));  // wait child process result
         close(fd[0]);
         close(fd[1]);
 
@@ -497,60 +460,42 @@ int32_t AppSpawnServer::DoAppSandboxMount(const ClientSocket::AppProperty *appPr
         DoAppSandboxMountOnce(oriMediaPath.c_str(), destMediaPath.c_str());
     }
 
-    std::string dirPath = rootPath + "/data/storage/el2/base/el3";
-    mkdir(dirPath.c_str(), FILE_MODE);
-    dirPath = rootPath + "/data/storage/el2/base/el3/base";
-    mkdir(dirPath.c_str(), FILE_MODE);
-    dirPath = rootPath + "/data/storage/el2/base/el4";
-    mkdir(dirPath.c_str(), FILE_MODE);
-    dirPath = rootPath + "/data/storage/el2/base/el4/base";
-    mkdir(dirPath.c_str(), FILE_MODE);
-
     return 0;
 }
 
 void AppSpawnServer::DoAppSandboxMkdir(std::string sandboxPackagePath, const ClientSocket::AppProperty *appProperty)
 {
-    // to create /mnt/sandbox/<packagename>/data/storage/el1 related path, later should delete this code.
-    std::string dirPath = sandboxPackagePath + "/data/";
-    mkdir(dirPath.c_str(), FILE_MODE);
-    dirPath = sandboxPackagePath + "/storage/";
-    mkdir(dirPath.c_str(), FILE_MODE);
-    dirPath = sandboxPackagePath + "/storage/media";
-    mkdir(dirPath.c_str(), FILE_MODE);
-    dirPath = sandboxPackagePath + "/data/storage";
-    mkdir(dirPath.c_str(), FILE_MODE);
-    dirPath = sandboxPackagePath + "/data/storage/el1";
-    mkdir(dirPath.c_str(), FILE_MODE);
-    dirPath = sandboxPackagePath + "/data/storage/el1/bundle";
-    mkdir(dirPath.c_str(), FILE_MODE);
-    dirPath = sandboxPackagePath + "/data/storage/el1/base";
-    mkdir(dirPath.c_str(), FILE_MODE);
-    dirPath = sandboxPackagePath + "/data/storage/el1/database";
-    mkdir(dirPath.c_str(), FILE_MODE);
+    std::vector<std::string> mkdirInfo;
+    std::string dirPath;
 
+    mkdirInfo.push_back("/data/");
+    mkdirInfo.push_back("/storage/");
+    mkdirInfo.push_back("/storage/media");
+    mkdirInfo.push_back("/data/storage");
     // to create /mnt/sandbox/<packagename>/data/storage/el1 related path, later should delete this code.
-    mkdir(dirPath.c_str(), FILE_MODE);
-    dirPath = sandboxPackagePath + "/data/storage/el2";
-    mkdir(dirPath.c_str(), FILE_MODE);
-    dirPath = sandboxPackagePath + "/data/storage/el2/base";
-    mkdir(dirPath.c_str(), FILE_MODE);
-    dirPath = sandboxPackagePath + "/data/storage/el2/database";
-    mkdir(dirPath.c_str(), FILE_MODE);
-    dirPath = sandboxPackagePath + "/data/storage/el2/distributedfiles";
-    mkdir(dirPath.c_str(), FILE_MODE);
-    dirPath = sandboxPackagePath + "/data/storage/el2/auth_groups";
-    mkdir(dirPath.c_str(), FILE_MODE);
-
+    mkdirInfo.push_back("/data/storage/el1");
+    mkdirInfo.push_back("/data/storage/el1/bundle");
+    mkdirInfo.push_back("/data/storage/el1/base");
+    mkdirInfo.push_back("/data/storage/el1/database");
+    mkdirInfo.push_back("/data/storage/el2");
+    mkdirInfo.push_back("/data/storage/el2/base");
+    mkdirInfo.push_back("/data/storage/el2/base/el3");
+    mkdirInfo.push_back("/data/storage/el2/base/el3/base");
+    mkdirInfo.push_back("/data/storage/el2/base/el4");
+    mkdirInfo.push_back("/data/storage/el2/base/el4/base");
+    mkdirInfo.push_back("/data/storage/el2/database");
+    mkdirInfo.push_back("/data/storage/el2/distributedfiles");
+    mkdirInfo.push_back("/data/storage/el2/auth_groups");
     // create applications folder for compatibility purpose
-    dirPath = sandboxPackagePath + "/data/accounts";
-    mkdir(dirPath.c_str(), FILE_MODE);
-    dirPath = sandboxPackagePath + "/data/accounts/account_0";
-    mkdir(dirPath.c_str(), FILE_MODE);
-    dirPath = sandboxPackagePath + "/data/accounts/account_0/applications/";
-    mkdir(dirPath.c_str(), FILE_MODE);
-    dirPath = sandboxPackagePath + "/data/accounts/account_0/appdata/";
-    mkdir(dirPath.c_str(), FILE_MODE);
+    mkdirInfo.push_back("/data/accounts");
+    mkdirInfo.push_back("/data/accounts/account_0");
+    mkdirInfo.push_back("/data/accounts/account_0/applications/");
+    mkdirInfo.push_back("/data/accounts/account_0/appdata/");
+
+    for (int i = 0; i < mkdirInfo.size(); i++) {
+        dirPath = sandboxPackagePath + mkdirInfo[i];
+        mkdir(dirPath.c_str(), FILE_MODE);
+    }
 }
 
 int32_t AppSpawnServer::DoSandboxRootFolderCreateAdapt(std::string sandboxPackagePath)
@@ -617,20 +562,16 @@ int32_t AppSpawnServer::DoSandboxRootFolderCreate(std::string sandboxPackagePath
     // init -> /system/bin/init
     // lib -> /system/lib
     // sdcard -> /storage/self/primary
-    tmpDir = sandboxPackagePath + "/bin";
-    symlink("/system/bin", tmpDir.c_str());
+    std::map<std::string, std::string> symlinkMap;
+    symlinkMap["/system/bin"] = sandboxPackagePath + "/bin";
+    symlinkMap["/sys/kernel/debug"] = sandboxPackagePath + "/d";
+    symlinkMap["/system/etc"] = sandboxPackagePath + "/etc";
+    symlinkMap["/system/bin/init"] = sandboxPackagePath + "/init";
+    symlinkMap["/system/lib"] = sandboxPackagePath + "/lib";
 
-    tmpDir = sandboxPackagePath + "/d";
-    symlink("/sys/kernel/debug", tmpDir.c_str());
-
-    tmpDir = sandboxPackagePath + "/etc";
-    symlink("/system/etc", tmpDir.c_str());
-
-    tmpDir = sandboxPackagePath + "/init";
-    symlink("/system/bin/init", tmpDir.c_str());
-
-    tmpDir = sandboxPackagePath + "/lib";
-    symlink("/system/lib", tmpDir.c_str());
+    for (iter = symlinkMap.begin(); iter != symlinkMap.end(); ++iter) {
+        symlink(iter->first.c_str(), iter->second.c_str());
+    }
 
     return 0;
 }
