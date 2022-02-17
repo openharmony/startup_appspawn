@@ -48,6 +48,7 @@
 
 #define GRAPHIC_PERMISSION_CHECK
 constexpr static mode_t FILE_MODE = 0711;
+constexpr static mode_t WEBVIEW_FILE_MODE = 0511;
 
 namespace OHOS {
 namespace AppSpawn {
@@ -448,9 +449,29 @@ int32_t AppSpawnServer::DoAppSandboxMount(const ClientSocket::AppProperty *appPr
     std::string destDistributedGroupPath = rootPath + "/data/storage/el2/auth_groups";
     DoAppSandboxMountOnce(oriDistributedGroupPath.c_str(), destDistributedGroupPath.c_str());
 
-    std::string oriappdataPath = "/data/accounts/account_0/appdata/";
+    const std::string oriappdataPath = "/data/accounts/account_0/appdata/";
     std::string destappdataPath = rootPath + oriappdataPath;
     DoAppSandboxMountOnce(oriappdataPath.c_str(), destappdataPath.c_str());
+
+    // to create some useful dir when mount point created
+    std::vector<std::string> mkdirInfo;
+    std::string dirPath;
+    mkdirInfo.push_back("/data/storage/el1/bundle/webview");
+    mkdirInfo.push_back("/data/storage/el2/base/el3");
+    mkdirInfo.push_back("/data/storage/el2/base/el3/base");
+    mkdirInfo.push_back("/data/storage/el2/base/el4");
+    mkdirInfo.push_back("/data/storage/el2/base/el4/base");
+
+    for (int i = 0; i < mkdirInfo.size(); i++) {
+        dirPath = rootPath + mkdirInfo[i];
+        mkdir(dirPath.c_str(), FILE_MODE);
+    }
+
+    // do webview adaption
+    std::string oriwebviewPath = "/data/app/el1/bundle/public/com.ohos.webviewhap";
+    std::string destwebviewPath = destInstallPath + "/webview";
+    chmod(destwebviewPath.c_str(), WEBVIEW_FILE_MODE);
+    DoAppSandboxMountOnce(oriwebviewPath.c_str(), destwebviewPath.c_str());
 
     return 0;
 }
@@ -494,10 +515,6 @@ void AppSpawnServer::DoAppSandboxMkdir(std::string sandboxPackagePath, const Cli
     mkdirInfo.push_back("/data/storage/el1/database");
     mkdirInfo.push_back("/data/storage/el2");
     mkdirInfo.push_back("/data/storage/el2/base");
-    mkdirInfo.push_back("/data/storage/el2/base/el3");
-    mkdirInfo.push_back("/data/storage/el2/base/el3/base");
-    mkdirInfo.push_back("/data/storage/el2/base/el4");
-    mkdirInfo.push_back("/data/storage/el2/base/el4/base");
     mkdirInfo.push_back("/data/storage/el2/database");
     mkdirInfo.push_back("/data/storage/el2/distributedfiles");
     mkdirInfo.push_back("/data/storage/el2/auth_groups");
