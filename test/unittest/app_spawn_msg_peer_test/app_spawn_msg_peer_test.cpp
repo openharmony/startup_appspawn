@@ -14,6 +14,7 @@
  */
 
 #include <gtest/gtest.h>
+#include <cerrno>
 
 #include "mock_server_socket.h"
 #include "appspawn_msg_peer.h"
@@ -82,7 +83,7 @@ HWTEST(AppSpawnMsgPeerTest, App_Spawn_Msg_Peer_002, TestSize.Level0)
     int32_t connectFd = -1;
     std::unique_ptr<AppSpawnMsgPeer> appSpawnMsgPeer = std::make_unique<AppSpawnMsgPeer>(serverSocket, connectFd);
 
-    EXPECT_EQ(-1, appSpawnMsgPeer->MsgPeer());
+    EXPECT_EQ(-EINVAL, appSpawnMsgPeer->MsgPeer());
 
     GTEST_LOG_(INFO) << "App_Spawn_Msg_Peer_002 end";
 }
@@ -103,7 +104,7 @@ HWTEST(AppSpawnMsgPeerTest, App_Spawn_Msg_Peer_003, TestSize.Level0)
     int32_t connectFd = 1;
     std::unique_ptr<AppSpawnMsgPeer> appSpawnMsgPeer = std::make_unique<AppSpawnMsgPeer>(serverSocket, connectFd);
 
-    EXPECT_EQ(-1, appSpawnMsgPeer->MsgPeer());
+    EXPECT_EQ(-EINVAL, appSpawnMsgPeer->MsgPeer());
 
     GTEST_LOG_(INFO) << "App_Spawn_Msg_Peer_003 end";
 }
@@ -124,7 +125,7 @@ HWTEST(AppSpawnMsgPeerTest, App_Spawn_Msg_Peer_004, TestSize.Level0)
     int32_t connectFd = -1;
     std::unique_ptr<AppSpawnMsgPeer> appSpawnMsgPeer = std::make_unique<AppSpawnMsgPeer>(serverSocket, connectFd);
 
-    EXPECT_EQ(-1, appSpawnMsgPeer->Response(1));
+    EXPECT_EQ(-EINVAL, appSpawnMsgPeer->Response(1));
 
     GTEST_LOG_(INFO) << "App_Spawn_Msg_Peer_004 end";
 }
@@ -145,7 +146,7 @@ HWTEST(AppSpawnMsgPeerTest, App_Spawn_Msg_Peer_005, TestSize.Level0)
     int32_t connectFd = 1;
     std::unique_ptr<AppSpawnMsgPeer> appSpawnMsgPeer = std::make_unique<AppSpawnMsgPeer>(serverSocket, connectFd);
 
-    EXPECT_EQ(-1, appSpawnMsgPeer->Response(1));
+    EXPECT_EQ(-EINVAL, appSpawnMsgPeer->Response(1));
 
     GTEST_LOG_(INFO) << "App_Spawn_Msg_Peer_005 end";
 }
@@ -168,7 +169,7 @@ HWTEST(AppSpawnMsgPeerTest, App_Spawn_Msg_Peer_006, TestSize.Level0)
 
     EXPECT_CALL(*mockServerSocket, ReadSocketMessage(_, _, _)).WillOnce(Return(-1));
     EXPECT_CALL(*mockServerSocket, CloseConnection(_)).WillOnce(Return());
-    EXPECT_EQ(-1, appSpawnMsgPeer->MsgPeer());
+    EXPECT_EQ(-EINVAL, appSpawnMsgPeer->MsgPeer());
 
     GTEST_LOG_(INFO) << "App_Spawn_Msg_Peer_006 end";
 }
@@ -191,7 +192,7 @@ HWTEST(AppSpawnMsgPeerTest, App_Spawn_Msg_Peer_007, TestSize.Level0)
 
     EXPECT_CALL(*mockServerSocket, ReadSocketMessage(_, _, _)).WillOnce(Return(sizeof(ClientSocket::AppProperty) + 1));
     EXPECT_CALL(*mockServerSocket, CloseConnection(_)).WillOnce(Return());
-    EXPECT_EQ(-1, appSpawnMsgPeer->MsgPeer());
+    EXPECT_EQ(-EINVAL, appSpawnMsgPeer->MsgPeer());
 
     GTEST_LOG_(INFO) << "App_Spawn_Msg_Peer_007 end";
 }
