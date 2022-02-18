@@ -15,6 +15,7 @@
 
 #include <memory>
 #include <gtest/gtest.h>
+#include <cerrno>
 
 // redefine private and protected since testcase need to invoke and test private function
 #define private public
@@ -86,7 +87,7 @@ HWTEST(ServerSocketTest, Server_Socket_002, TestSize.Level0)
     GTEST_LOG_(INFO) << "Server_Socket_002 start";
 
     std::unique_ptr<ServerSocket> serverSocket = std::make_unique<ServerSocket>("");
-    EXPECT_EQ(-1, serverSocket->RegisterServerSocket());
+    EXPECT_EQ(-EINVAL, serverSocket->RegisterServerSocket());
 
     GTEST_LOG_(INFO) << "Server_Socket_002 end";
 }
@@ -104,7 +105,7 @@ HWTEST(ServerSocketTest, Server_Socket_003, TestSize.Level0)
     GTEST_LOG_(INFO) << "Server_Socket_003 start";
 
     std::unique_ptr<ServerSocket> serverSocket = std::make_unique<ServerSocket>("ServerSocketTest");
-    EXPECT_EQ(-1, serverSocket->WaitForConnection(0));
+    EXPECT_EQ(-ENOTSOCK, serverSocket->WaitForConnection(0));
 
     GTEST_LOG_(INFO) << "Server_Socket_003 end";
 }
@@ -177,7 +178,7 @@ HWTEST(ServerSocketTest, Server_Socket_006, TestSize.Level0)
         "InvalidInvalidInvalidInvalidInvalidInvalidInvalidInvalidInvalidInvalidInvalidInvalid";
     std::unique_ptr<ServerSocket> serverSocket = std::make_unique<ServerSocket>(invalidSocketName.c_str());
 
-    EXPECT_EQ(-1, serverSocket->RegisterServerSocket());
+    EXPECT_EQ(-ENOENT, serverSocket->RegisterServerSocket());
     EXPECT_EQ(-1, serverSocket->GetSocketFd());
 
     GTEST_LOG_(INFO) << "Server_Socket_006 end";

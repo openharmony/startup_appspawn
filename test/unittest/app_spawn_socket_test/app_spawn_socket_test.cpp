@@ -15,6 +15,7 @@
 
 #include <gtest/gtest.h>
 #include <cstring>
+#include <cerrno>
 
 // redefine private and protected since testcase need to invoke and test private function
 #define private public
@@ -111,7 +112,7 @@ HWTEST(AppSpawnSocketTest, App_Spawn_Socket_003, TestSize.Level0)
     std::unique_ptr<AppSpawnSocket> appSpawnSocket = std::make_unique<AppSpawnSocket>("");
     EXPECT_TRUE(appSpawnSocket);
 
-    EXPECT_EQ(-1, appSpawnSocket->PackSocketAddr());
+    EXPECT_EQ(-EINVAL, appSpawnSocket->PackSocketAddr());
 
     GTEST_LOG_(INFO) << "App_Spawn_Socket_003 end";
 }
