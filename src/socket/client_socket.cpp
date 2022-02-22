@@ -36,7 +36,7 @@ int ClientSocket::CreateClient()
         socketFd_ = CreateSocket();
         if (socketFd_ < 0) {
             HiLog::Error(LABEL, "Client: Create socket failed");
-            return -1;
+            return socketFd_;
         }
     }
 
@@ -69,6 +69,7 @@ int ClientSocket::ConnectSocket(int connectFd)
     if ((setsockopt(connectFd, SOL_SOCKET, SO_RCVTIMEO, &SOCKET_TIMEOUT, sizeof(SOCKET_TIMEOUT)) != 0) ||
         (setsockopt(connectFd, SOL_SOCKET, SO_SNDTIMEO, &SOCKET_TIMEOUT, sizeof(SOCKET_TIMEOUT)) != 0)) {
         HiLog::Warn(LABEL, "Client: Failed to set opt of socket %d, err %d", connectFd, errno);
+        return -1;
     }
 
     if (connect(connectFd, reinterpret_cast<struct sockaddr *>(&socketAddr_), socketAddrLen_) < 0) {
