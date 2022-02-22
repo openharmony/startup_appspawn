@@ -50,12 +50,12 @@ int AppSpawnMsgPeer::Response(pid_t pid)
 {
     if ((socket_ == nullptr) || (connectFd_ < 0)) {
         HiLog::Error(LABEL, "Invalid socket params: connectFd %d", connectFd_);
-        return -1;
+        return -EINVAL;
     }
 
     if (socket_->WriteSocketMessage(connectFd_, &pid, sizeof(pid)) != sizeof(pid)) {
         HiLog::Error(LABEL, "Failed to write message: connectFd %d", connectFd_);
-        return -1;
+        return (-errno);
     }
 
     return 0;
@@ -65,14 +65,14 @@ int AppSpawnMsgPeer::MsgPeer()
 {
     if ((socket_ == nullptr) || (connectFd_ < 0)) {
         HiLog::Error(LABEL, "Failed to init socket: connectFd %{public}d", connectFd_);
-        return -1;
+        return -EINVAL;
     }
 
     int32_t msgLen = sizeof(ClientSocket::AppProperty);
     buf_ = std::make_unique<int8_t[]>(msgLen);
     if (buf_ == nullptr) {
         HiLog::Error(LABEL, "buf_ is null pointer!");
-        return -1;
+        return -EINVAL;
     }
 
     int32_t rLen = 0;
@@ -86,7 +86,7 @@ int AppSpawnMsgPeer::MsgPeer()
 
         if ((rLen < 0) || (rLen > msgLen)) {
             HiLog::Error(LABEL, "AppSpawnMsgPeer::Failed to read msg from socket %{public}d", connectFd_);
-            return -1;
+            return -EINVAL;
         }
     }
 

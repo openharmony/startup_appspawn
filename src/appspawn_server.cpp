@@ -191,6 +191,7 @@ bool AppSpawnServer::ServerMain(char *longProcName, int64_t longProcNameLen)
         ClientSocket::AppProperty *appProperty = msg->GetMsg();
         if (!CheckAppProperty(appProperty)) {
             msg->Response(-EINVAL);
+            socket_->CloseConnection(connectFd);
             continue;
         }
 
@@ -199,6 +200,7 @@ bool AppSpawnServer::ServerMain(char *longProcName, int64_t longProcNameLen)
         if (pipe(fd) == -1) {
             HiLog::Error(LABEL, "create pipe fail, errno = %{public}d", errno);
             msg->Response(ERR_PIPE_FAIL);
+            socket_->CloseConnection(connectFd);
             continue;
         }
 
@@ -209,6 +211,7 @@ bool AppSpawnServer::ServerMain(char *longProcName, int64_t longProcNameLen)
             close(fd[0]);
             close(fd[1]);
             msg->Response(-errno);
+            socket_->CloseConnection(connectFd);
             continue;
         } else if (pid == 0) {
             SpecialHandle(appProperty);
@@ -283,6 +286,7 @@ int32_t AppSpawnServer::SetUidGid(
         HiLog::Error(LABEL, "gitTable is nullptr");
         return (-errno);
     }
+
     // set gids
     if (setgroups(gidCount, reinterpret_cast<const gid_t *>(&gitTable[0])) == -1) {
         HiLog::Error(LABEL, "setgroups failed: %{public}d, gids.size=%{public}u", errno, gidCount);
@@ -300,6 +304,7 @@ int32_t AppSpawnServer::SetUidGid(
         HiLog::Error(LABEL, "setuid(%{public}u) failed: %{public}d", uid, errno);
         return (-errno);
     }
+
     return ERR_OK;
 }
 
@@ -342,6 +347,7 @@ int32_t AppSpawnServer::SetCapabilities()
 {
     // init cap
     __user_cap_header_struct cap_header;
+
     if (memset_s(&cap_header, sizeof(cap_header), 0, sizeof(cap_header)) != EOK) {
         HiLog::Error(LABEL, "Failed to memset cap header");
         return -EINVAL;
@@ -376,7 +382,7 @@ int32_t AppSpawnServer::SetCapabilities()
     // set capabilities
     if (capset(&cap_header, &cap_data[0]) == -1) {
         HiLog::Error(LABEL, "capset failed: %{public}d", errno);
-        return errno;
+        return (-errno);
     }
 
     return ERR_OK;
@@ -694,8 +700,8 @@ void AppSpawnServer::SetAppAccessToken(const ClientSocket::AppProperty *appPrope
 bool AppSpawnServer::SetAppProcProperty(int connectFd, const ClientSocket::AppProperty *appProperty, char *longProcName,
     int64_t longProcNameLen, const int32_t fd[FDLEN2])
 {
-    if (appProperty == nullptr) {
-        HiLog::Error(LABEL, "appProperty is nullptr");
+    if (appProperty == nullptr || longProcName == nullptr) {
+        HiLog::Error(LABEL, "appProperty or longProcName paramenter is nullptr");
         return false;
     }
 

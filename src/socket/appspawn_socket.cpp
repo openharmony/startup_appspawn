@@ -50,7 +50,7 @@ int AppSpawnSocket::PackSocketAddr()
 {
     if (socketName_.empty()) {
         HiLog::Error(LABEL, "Invalid socket name: empty");
-        return -1;
+        return -EINVAL;
     }
 
     if (memset_s(&socketAddr_, sizeof(socketAddr_), 0, sizeof(socketAddr_)) != EOK) {
@@ -83,7 +83,7 @@ int AppSpawnSocket::CreateSocket()
     int socketFd = socket(AF_LOCAL, SOCK_SEQPACKET, 0);
     if (socketFd < 0) {
         HiLog::Error(LABEL, "Failed to create socket: %d", errno);
-        return -1;
+        return (-errno);
     }
 
     HiLog::Debug(LABEL, "Created socket with fd %d", socketFd);
@@ -114,7 +114,7 @@ int AppSpawnSocket::ReadSocketMessage(int socketFd, void *buf, int len)
     ssize_t rLen = TEMP_FAILURE_RETRY(read(socketFd, buf, len));
     if (rLen < 0) {
         HiLog::Error(LABEL, "Read message from fd %d error %zd: %d", socketFd, rLen, errno);
-        return -1;
+        return -EFAULT;
     }
 
     return rLen;
@@ -135,7 +135,7 @@ int AppSpawnSocket::WriteSocketMessage(int socketFd, const void *buf, int len)
         HiLog::Debug(LABEL, "socket fd %d, wLen %zd", socketFd, wLen);
         if ((wLen <= 0) && (errno != EINTR)) {
             HiLog::Error(LABEL, "Failed to write message to fd %d, error %zd: %d", socketFd, wLen, errno);
-            return -1;
+            return (-errno);
         }
     }
 
