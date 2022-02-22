@@ -58,6 +58,7 @@ constexpr int32_t MAX_LEN_SHORT_NAME = 16;
 constexpr int32_t WAIT_DELAY_US = 100 * 1000;  // 100ms
 constexpr int32_t GID_USER_DATA_RW = 1008;
 constexpr int32_t MAX_GIDS = 64;
+constexpr int32_t UID_BASE = 200000;
 
 constexpr std::string_view BUNDLE_NAME_MEDIA_LIBRARY("com.ohos.medialibrary.MediaLibraryDataA");
 constexpr std::string_view BUNDLE_NAME_SCANNER("com.ohos.medialibrary.MediaScannerAbilityA");
@@ -413,7 +414,7 @@ int32_t AppSpawnServer::DoAppSandboxMountOnce(const std::string originPath, cons
 
 int32_t AppSpawnServer::DoAppSandboxMount(const ClientSocket::AppProperty *appProperty, std::string rootPath)
 {
-    std::string currentUserId = std::to_string(appProperty->uid / 200000);
+    std::string currentUserId = std::to_string(appProperty->uid / UID_BASE);
     std::string oriInstallPath = "/data/app/el1/bundle/public/";
     std::string oriDataPath = "/data/app/el2/" + currentUserId + "/base/";
     std::string oriDatabasePath = "/data/app/el2/" + currentUserId + "/database/";
@@ -479,7 +480,7 @@ int32_t AppSpawnServer::DoAppSandboxMount(const ClientSocket::AppProperty *appPr
 int32_t AppSpawnServer::DoAppSandboxMountCustomized(const ClientSocket::AppProperty *appProperty, std::string rootPath)
 {
     std::string bundleName = appProperty->bundleName;
-    std::string currentUserId = std::to_string(appProperty->uid / 200000);
+    std::string currentUserId = std::to_string(appProperty->uid / UID_BASE);
 
     // account_0/applications/ dir can still access other packages' data now for compatibility purpose
     std::string oriapplicationsPath = "/data/app/el1/bundle/public/";
