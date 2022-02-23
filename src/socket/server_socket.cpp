@@ -207,6 +207,7 @@ int ServerSocket::WaitForConnection(int connectFd)
     if ((setsockopt(connFd, SOL_SOCKET, SO_RCVTIMEO, &SOCKET_TIMEOUT, sizeof(SOCKET_TIMEOUT)) < 0) ||
         (setsockopt(connFd, SOL_SOCKET, SO_SNDTIMEO, &SOCKET_TIMEOUT, sizeof(SOCKET_TIMEOUT)) < 0)) {
         HiLog::Warn(LABEL, "Server: Failed to set opt of Connection %d, err %d", connFd, errno);
+        close(connFd);
         return (-errno);
     }
 

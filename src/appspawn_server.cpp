@@ -418,26 +418,34 @@ int32_t AppSpawnServer::DoAppSandboxMountOnce(const std::string originPath, cons
     return 0;
 }
 
-int32_t AppSpawnServer::DoAppSandboxMount(const ClientSocket::AppProperty *appProperty, std::string rootPath)
+int32_t AppSpawnServer::DoAppSandboxMount(const ClientSocket::AppProperty *appProperty,
+                                          std::string rootPath)
 {
     std::string currentUserId = std::to_string(appProperty->uid / UID_BASE);
     std::string oriInstallPath = "/data/app/el1/bundle/public/";
-    std::string oriDataPath = "/data/app/el2/" + currentUserId + "/base/";
+    std::string oriel1DataPath = "/data/app/el1/" + currentUserId + "/base/";
+    std::string oriel2DataPath = "/data/app/el2/" + currentUserId + "/base/";
     std::string oriDatabasePath = "/data/app/el2/" + currentUserId + "/database/";
+    const std::string oriappdataPath = "/data/accounts/account_0/appdata/";
     std::string destDatabasePath = rootPath + "/data/storage/el2/database";
     std::string destInstallPath = rootPath + "/data/storage/el1/bundle";
-    std::string destDataPath = rootPath + "/data/storage/el2/base";
+    std::string destel1DataPath = rootPath + "/data/storage/el1/base";
+    std::string destel2DataPath = rootPath + "/data/storage/el2/base";
+    std::string destappdataPath = rootPath + oriappdataPath;
     int rc = 0;
 
     std::string bundleName = appProperty->bundleName;
     oriInstallPath += bundleName;
-    oriDataPath += bundleName;
+    oriel1DataPath += bundleName;
+    oriel2DataPath += bundleName;
     oriDatabasePath += bundleName;
 
     std::map<std::string, std::string> mountMap;
     mountMap[destDatabasePath] = oriDatabasePath;
     mountMap[destInstallPath] = oriInstallPath;
-    mountMap[destDataPath] = oriDataPath;
+    mountMap[destel1DataPath] = oriel1DataPath;
+    mountMap[destel2DataPath] = oriel2DataPath;
+    mountMap[destappdataPath] = oriappdataPath;
 
     std::map<std::string, std::string>::iterator iter;
     for (iter = mountMap.begin(); iter != mountMap.end(); ++iter) {
@@ -446,19 +454,6 @@ int32_t AppSpawnServer::DoAppSandboxMount(const ClientSocket::AppProperty *appPr
             return rc;
         }
     }
-
-    // Add distributedfile module support, later reconstruct it
-    std::string oriDistributedPath = "/mnt/hmdfs/" +  currentUserId + "/account/merge_view/data/" + bundleName;
-    std::string destDistributedPath = rootPath + "/data/storage/el2/distributedfiles";
-    DoAppSandboxMountOnce(oriDistributedPath.c_str(), destDistributedPath.c_str());
-
-    std::string oriDistributedGroupPath = "/mnt/hmdfs/" +  currentUserId + "/non_account/merge_view/data/" + bundleName;
-    std::string destDistributedGroupPath = rootPath + "/data/storage/el2/auth_groups";
-    DoAppSandboxMountOnce(oriDistributedGroupPath.c_str(), destDistributedGroupPath.c_str());
-
-    const std::string oriappdataPath = "/data/accounts/account_0/appdata/";
-    std::string destappdataPath = rootPath + oriappdataPath;
-    DoAppSandboxMountOnce(oriappdataPath.c_str(), destappdataPath.c_str());
 
     // to create some useful dir when mount point created
     std::vector<std::string> mkdirInfo;
@@ -474,12 +469,6 @@ int32_t AppSpawnServer::DoAppSandboxMount(const ClientSocket::AppProperty *appPr
         mkdir(dirPath.c_str(), FILE_MODE);
     }
 
-    // do webview adaption
-    std::string oriwebviewPath = "/data/app/el1/bundle/public/com.ohos.webviewhap";
-    std::string destwebviewPath = destInstallPath + "/webview";
-    chmod(destwebviewPath.c_str(), WEBVIEW_FILE_MODE);
-    DoAppSandboxMountOnce(oriwebviewPath.c_str(), destwebviewPath.c_str());
-
     return 0;
 }
 
@@ -487,6 +476,7 @@ int32_t AppSpawnServer::DoAppSandboxMountCustomized(const ClientSocket::AppPrope
 {
     std::string bundleName = appProperty->bundleName;
     std::string currentUserId = std::to_string(appProperty->uid / UID_BASE);
+    std::string destInstallPath = rootPath + "/data/storage/el1/bundle";
 
     // account_0/applications/ dir can still access other packages' data now for compatibility purpose
     std::string oriapplicationsPath = "/data/app/el1/bundle/public/";
@@ -496,6 +486,21 @@ int32_t AppSpawnServer::DoAppSandboxMountCustomized(const ClientSocket::AppPrope
     // need permission check for system app here
     std::string destbundlesPath = rootPath + "/data/bundles/";
     DoAppSandboxMountOnce(oriapplicationsPath.c_str(), destbundlesPath.c_str());
+
+    // Add distributedfile module support, later reconstruct it
+    std::string oriDistributedPath = "/mnt/hmdfs/" +  currentUserId + "/account/merge_view/data/" + bundleName;
+    std::string destDistributedPath = rootPath + "/data/storage/el2/distributedfiles";
+    DoAppSandboxMountOnce(oriDistributedPath.c_str(), destDistributedPath.c_str());
+
+    std::string oriDistributedGroupPath = "/mnt/hmdfs/" +  currentUserId + "/non_account/merge_view/data/" + bundleName;
+    std::string destDistributedGroupPath = rootPath + "/data/storage/el2/auth_groups";
+    DoAppSandboxMountOnce(oriDistributedGroupPath.c_str(), destDistributedGroupPath.c_str());
+
+    // do webview adaption
+    std::string oriwebviewPath = "/data/app/el1/bundle/public/com.ohos.webviewhap";
+    std::string destwebviewPath = destInstallPath + "/webview";
+    chmod(destwebviewPath.c_str(), WEBVIEW_FILE_MODE);
+    DoAppSandboxMountOnce(oriwebviewPath.c_str(), destwebviewPath.c_str());
 
     if (bundleName.find("medialibrary") != std::string::npos) {
         std::string oriMediaPath = "/storage/media/" +  currentUserId;
