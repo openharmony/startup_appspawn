@@ -34,6 +34,9 @@
                 "//base/startup/appspawn_standard:appspawn",
                 "//base/startup/appspawn_standard:appspawn.rc",
                 "//base/startup/appspawn_standard:appspawn_server",
+                "//base/startup/appspawn_standard:webviewspawn",
+                "//base/startup/appspawn_standard:webviewspawn.rc",
+                "//base/startup/appspawn_standard:webviewspawn_server",
                 "//base/startup/appspawn_standard/interfaces/innerkits:appspawn_socket_client"
             ],
             "inner_kits": [
