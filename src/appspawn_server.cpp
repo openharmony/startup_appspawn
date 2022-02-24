@@ -459,10 +459,6 @@ int32_t AppSpawnServer::DoAppSandboxMount(const ClientSocket::AppProperty *appPr
     std::vector<std::string> mkdirInfo;
     std::string dirPath;
     mkdirInfo.push_back("/data/storage/el1/bundle/webview");
-    mkdirInfo.push_back("/data/storage/el2/base/el3");
-    mkdirInfo.push_back("/data/storage/el2/base/el3/base");
-    mkdirInfo.push_back("/data/storage/el2/base/el4");
-    mkdirInfo.push_back("/data/storage/el2/base/el4/base");
 
     for (int i = 0; i < mkdirInfo.size(); i++) {
         dirPath = rootPath + mkdirInfo[i];
