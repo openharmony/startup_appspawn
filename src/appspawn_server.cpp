@@ -786,7 +786,7 @@ bool AppSpawnServer::SetAppProcProperty(int connectFd, const ClientSocket::AppPr
 
 #ifdef WEBVIEW_SPAWN
     using FuncType = void (*)(const char *cmd);
-    FuncType funcWebViewExecuteProcess = reinterpret_cast<FuncType>(dlsym(webviewHandle, "NWebExecuteProcess"));
+    FuncType funcWebViewExecuteProcess = reinterpret_cast<FuncType>(dlsym(webviewHandle, "WebViewExecuteProcess"));
     if (funcWebViewExecuteProcess == nullptr) {
         HiLog::Error(LABEL, "webviewspawn dlsym ERROR=%{public}s", dlerror());
         return false
