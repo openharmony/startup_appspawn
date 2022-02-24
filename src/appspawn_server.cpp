@@ -160,6 +160,27 @@ void AppSpawnServer::ConnectionPeer()
 
 void AppSpawnServer::LoadAceLib()
 {
+#ifdef WEBVIEW_SPAWN
+    std::string enginelibdir("/data/app/el1/bundle/public/com.ohos.webviewhap/com.ohos.webviewhap/assets/raw_assets/lib/libweb_engine.so");
+    HiLog::Info(LABEL, "MainThread::LoadAbilityLibrary libweb_engine. Start calling dlopen enginelibdir.");
+    void *handle = dlopen(enginelibdir.c_str(), RTLD_NOW | RTLD_GLOBAL);
+    if (handle == nullptr) {
+        HiLog::Error(LABEL, "Fail to dlopen %{public}s, [%{public}s]", enginelibdir.c_str(), dlerror());
+    } else {
+        HiLog::Info(LABEL, "Success to dlopen %{public}s", enginelibdir.c_str());
+    }
+    HiLog::Info(LABEL, "MainThread::LoadAbilityLibrary libweb_engine. End calling dlopen.");
+
+    std::string execlibdir("/data/app/el1/bundle/public/com.ohos.webviewhap/com.ohos.webviewhap/assets/raw_assets/lib/libwebview_exec_proc.so");
+    HiLog::Info(LABEL, "MainThread::LoadAbilityLibrary libwebview_exec_proc. Start calling dlopen execlibdir.");
+    webviewHandle = dlopen(execlibdir.c_str(), RTLD_NOW | RTLD_GLOBAL);
+    if (webviewHandle == nullptr) {
+        HiLog::Error(LABEL, "Fail to dlopen %{public}s, [%{public}s]", execlibdir.c_str(), dlerror());
+    } else {
+        HiLog::Info(LABEL, "Success to dlopen %{public}s", execlibdir.c_str());
+    }
+    HiLog::Info(LABEL, "MainThread::LoadAbilityLibrary libwebview_exec_proc. End calling dlopen.");
+#else
     std::string acelibdir("/system/lib/libace.z.so");
     void *AceAbilityLib = nullptr;
     HiLog::Info(LABEL, "MainThread::LoadAbilityLibrary. Start calling dlopen acelibdir.");
@@ -170,6 +191,7 @@ void AppSpawnServer::LoadAceLib()
         HiLog::Info(LABEL, "Success to dlopen %{public}s", acelibdir.c_str());
     }
     HiLog::Info(LABEL, "MainThread::LoadAbilityLibrary. End calling dlopen.");
+#endif
 }
 
 bool AppSpawnServer::ServerMain(char *longProcName, int64_t longProcNameLen)
@@ -761,7 +783,18 @@ bool AppSpawnServer::SetAppProcProperty(int connectFd, const ClientSocket::AppPr
     }
     // notify success to father process and start app process
     NotifyResToParentProc(fd[1], ret);
+
+#ifdef WEBVIEW_SPAWN
+    using FuncType = void (*)(const char *cmd);
+    FuncType funcWebViewExecuteProcess = reinterpret_cast<FuncType>(dlsym(webviewHandle, "NWebExecuteProcess"));
+    if (funcWebViewExecuteProcess == nullptr) {
+        HiLog::Error(LABEL, "webviewspawn dlsym ERROR=%{public}s", dlerror());
+        return false
+    }
+    funcWebViewExecuteProcess(appProperty->renderCmd);
+#else
     AppExecFwk::MainThread::Start();
+#endif
 
     HiLog::Error(LABEL, "Failed to start process, pid = %{public}d", newPid);
     return false;

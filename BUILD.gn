@@ -34,6 +34,7 @@ config("appspawn_config") {
     "${aafwk_path}/services/abilitymgr/include",
     "${distributedschedule_path}/services/dtbschedmgr/include",
     "//base/security/access_token/interfaces/innerkits/token_setproc/include",
+    "//base/startup/init_lite/interfaces/innerkits/include",
   ]
 
   if (build_selinux) {
@@ -90,6 +91,64 @@ ohos_static_library("appspawn_server") {
 
 ohos_prebuilt_etc("appspawn.rc") {
   source = "appspawn.cfg"
+  relative_install_dir = "init"
+  subsystem_name = "${subsystem_name}"
+  part_name = "${part_name}"
+}
+
+ohos_executable("webviewspawn") {
+  defines = [ "WEBVIEW_SPAWN" ]
+  sources = [ "${appspawn_path}/src/main.cpp" ]
+  configs = [ ":appspawn_config" ]
+  deps = [
+    "${appspawn_path}:webviewspawn_server",
+    "${appspawn_path}:webviewspawn.rc",
+    "//base/security/access_token/interfaces/innerkits/token_setproc:libtoken_setproc",
+  ]
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+
+  install_enable = true
+  subsystem_name = "${subsystem_name}"
+  part_name = "${part_name}"
+}
+
+ohos_static_library("webviewspawn_server") {
+  defines = [ "WEBVIEW_SPAWN" ]
+  sources = [
+    "${appspawn_path}/src/appspawn_msg_peer.cpp",
+    "${appspawn_path}/src/appspawn_server.cpp",
+    "${appspawn_path}/src/socket/appspawn_socket.cpp",
+    "${appspawn_path}/src/socket/server_socket.cpp",
+  ]
+  configs = [ ":appspawn_config" ]
+  ldflags = [ "-Wl,--dynamic-linker,/system/bin/linker64z" ]
+  deps = [
+    "${aafwk_path}/frameworks/kits/ability/native:abilitykit_native",
+    "${aafwk_path}/frameworks/kits/appkit:appkit_native",
+    "//utils/native/base:utils",
+    "//base/startup/init_lite/interfaces/innerkits/socket:libsocket_static",
+  ]
+  external_deps = [
+    "ability_base:want",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
+    "hilog_native:libhilog",
+    "hiviewdfx_hilog_native:libhilog",
+    "ipc:ipc_core",
+    "safwk:system_ability_fwk",
+    "samgr_standard:samgr_proxy",
+  ]
+
+  if (build_selinux) {
+    external_deps += [ "selinux:libhap_restorecon" ]
+  }
+
+  subsystem_name = "${subsystem_name}"
+  part_name = "${part_name}"
+}
+
+ohos_prebuilt_etc("webviewspawn.rc") {
+  source = "webviewspawn.cfg"
   relative_install_dir = "init"
   subsystem_name = "${subsystem_name}"
   part_name = "${part_name}"

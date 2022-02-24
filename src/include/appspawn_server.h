@@ -191,6 +191,9 @@ private:
     std::function<int(const ClientSocket::AppProperty &)> propertyHandler_ = nullptr;
     std::function<void(const std::string &)> errHandlerHook_ = nullptr;
     bool isRunning_ {};
+#ifdef WEBVIEW_SPAWN
+    void *webviewHandle = nullptr;
+#endif
 };
 }  // namespace AppSpawn
 }  // namespace OHOS
