@@ -153,3 +153,14 @@ ohos_prebuilt_etc("webviewspawn.rc") {
   subsystem_name = "${subsystem_name}"
   part_name = "${part_name}"
 }
+
+group("webview") {
+  deps = []
+  if (appspawn_support_webview) {
+    deps += [
+      ":webviewspawn",
+      ":webviewspawn_server",
+      ":webviewspawn.rc"
+    ]
+  }
+}
