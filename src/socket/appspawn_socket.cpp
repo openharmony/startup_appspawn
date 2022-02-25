@@ -74,7 +74,8 @@ int AppSpawnSocket::PackSocketAddr()
     if (socketName_[0] == '/') {
         len = snprintf_s(socketAddr_.sun_path, pathSize, (pathSize - 1), "%s", socketName_.c_str());
     } else {
-        len = snprintf_s(socketAddr_.sun_path, pathSize, (pathSize - 1), "%s%s", socketDir_.c_str(), socketName_.c_str());
+        len = snprintf_s(socketAddr_.sun_path, pathSize, (pathSize - 1), "%s%s",
+            socketDir_.c_str(), socketName_.c_str());
     }
     if (static_cast<int>(pathLen) != len) {
         HiLog::Error(LABEL, "Failed to copy socket path");
