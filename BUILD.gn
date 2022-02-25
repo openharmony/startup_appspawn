@@ -101,8 +101,8 @@ ohos_executable("webviewspawn") {
   sources = [ "${appspawn_path}/src/main.cpp" ]
   configs = [ ":appspawn_config" ]
   deps = [
-    "${appspawn_path}:webviewspawn_server",
     "${appspawn_path}:webviewspawn.rc",
+    "${appspawn_path}:webviewspawn_server",
     "//base/security/access_token/interfaces/innerkits/token_setproc:libtoken_setproc",
   ]
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
@@ -125,8 +125,8 @@ ohos_static_library("webviewspawn_server") {
   deps = [
     "${aafwk_path}/frameworks/kits/ability/native:abilitykit_native",
     "${aafwk_path}/frameworks/kits/appkit:appkit_native",
-    "//utils/native/base:utils",
     "//base/startup/init_lite/interfaces/innerkits/socket:libsocket_static",
+    "//utils/native/base:utils",
   ]
   external_deps = [
     "ability_base:want",
@@ -159,8 +159,8 @@ group("webview") {
   if (appspawn_support_webview) {
     deps += [
       ":webviewspawn",
+      ":webviewspawn.rc",
       ":webviewspawn_server",
-      ":webviewspawn.rc"
     ]
   }
 }
