@@ -17,6 +17,9 @@
         "adapted_system_type": [
             "standard"
         ],
+        "features": [
+            "appspawn_support_webview"
+        ],
         "rom": "",
         "ram": "",
         "deps": {
