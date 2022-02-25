@@ -200,7 +200,7 @@ private:
     std::function<void(const std::string &)> errHandlerHook_ = nullptr;
     bool isRunning_ {};
     bool isStop_ { false };
-    bool isChildDie_{ false };
+    bool isChildDie_ { false };
     pid_t childPid_ {};
     std::map<pid_t, std::string> appMap_;
 };
