@@ -101,7 +101,6 @@ ohos_executable("webviewspawn") {
   sources = [ "${appspawn_path}/src/main.cpp" ]
   configs = [ ":appspawn_config" ]
   deps = [
-    "${appspawn_path}:webviewspawn.rc",
     "${appspawn_path}:webviewspawn_server",
     "//base/security/access_token/interfaces/innerkits/token_setproc:libtoken_setproc",
   ]
@@ -160,7 +159,6 @@ group("webview") {
     deps += [
       ":webviewspawn",
       ":webviewspawn.rc",
-      ":webviewspawn_server",
     ]
   }
 }
