@@ -60,6 +60,7 @@ ohos_unittest("AppSpawnServerMockTest") {
 
   include_dirs = [
     "//base/security/access_token/interfaces/innerkits/token_setproc/include",
+    "//base/startup/init_lite/interfaces/innerkits/include",
   ]
 
   sources = [
@@ -77,6 +78,7 @@ ohos_unittest("AppSpawnServerMockTest") {
   deps = [
     "${appspawn_path}/test:appspawn_test_source",
     "//base/security/access_token/interfaces/innerkits/token_setproc:libtoken_setproc",
+    "//base/startup/init_lite/interfaces/innerkits/socket:libsocket_static",
   ]
 
   external_deps = [
