@@ -51,13 +51,14 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#define APPSPAWN_LOG_FILE "appspawn_server.log"
-#define APPSPAWN_LABEL "APPSPAWN"
-#define APPSPAWN_LOGI(fmt, ...) STARTUP_LOGI(APPSPAWN_LOG_FILE, APPSPAWN_LABEL, fmt, ##__VA_ARGS__)
-#define APPSPAWN_LOGE(fmt, ...) STARTUP_LOGE(APPSPAWN_LOG_FILE, APPSPAWN_LABEL, fmt, ##__VA_ARGS__)
-#define GRAPHIC_PERMISSION_CHECK
 constexpr static mode_t FILE_MODE = 0711;
 constexpr static mode_t WEBVIEW_FILE_MODE = 0511;
+constexpr std::string APPSPAWN_LOG_FILE = "appspawn_server.log"
+constexpr std::string APPSPAWN_LABEL = "APPSPAWN"
+
+#define APPSPAWN_LOGI(fmt, ...) STARTUP_LOGI(APPSPAWN_LOG_FILE.c_str(), APPSPAWN_LABEL.c_str(), fmt, ##__VA_ARGS__)
+#define APPSPAWN_LOGE(fmt, ...) STARTUP_LOGE(APPSPAWN_LOG_FILE.c_str(), APPSPAWN_LABEL.c_str(), fmt, ##__VA_ARGS__)
+#define GRAPHIC_PERMISSION_CHECK
 
 namespace OHOS {
 namespace AppSpawn {
@@ -171,7 +172,7 @@ void AppSpawnServer::ConnectionPeer()
 void AppSpawnServer::WaitRebootEvent()
 {
     APPSPAWN_LOGI("wait 'startup.device.ctl' event");
-    while (isRunning_){
+    while (isRunning_) {
         int ret =  WaitParameter("startup.device.ctl", "stop", WAIT_PARAM_TIME);
         if (ret == 0) {
             std::lock_guard<std::mutex> lock(mut_);
@@ -193,7 +194,7 @@ void AppSpawnServer::HandleSignal()
     if (signalFd < 0) {
         APPSPAWN_LOGE("Error installing SIGHUP handler: %d", errno);
     }
-    while (isRunning_){
+    while (isRunning_) {
         struct signalfd_siginfo fdsi;
         ssize_t ret = read(signalFd, &fdsi, sizeof(fdsi));
         if (ret != sizeof(fdsi) || fdsi.ssi_signo != SIGCHLD) {
