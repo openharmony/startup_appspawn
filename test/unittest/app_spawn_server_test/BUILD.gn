@@ -19,6 +19,9 @@ ohos_unittest("AppSpawnServerOverrideTest") {
 
   include_dirs = [
     "//base/security/access_token/interfaces/innerkits/token_setproc/include",
+    "//base/startup/init_lite/services/log",
+    "//base/startup/init_lite/interfaces/innerkits/include",
+    "//base/startup/syspara_lite/interfaces/innerkits/native/syspara/include",
   ]
 
   sources = [
@@ -36,6 +39,9 @@ ohos_unittest("AppSpawnServerOverrideTest") {
   deps = [
     "${appspawn_path}/test:appspawn_test_source",
     "//base/security/access_token/interfaces/innerkits/token_setproc:libtoken_setproc",
+    "//base/startup/init_lite/interfaces/innerkits:libbegetutil",
+    "//base/startup/init_lite/services/log:init_log",
+    "//base/startup/syspara_lite/interfaces/innerkits/native/syspara:syspara",
   ]
 
   external_deps = [
@@ -60,6 +66,9 @@ ohos_unittest("AppSpawnServerMockTest") {
 
   include_dirs = [
     "//base/security/access_token/interfaces/innerkits/token_setproc/include",
+    "//base/startup/init_lite/services/log",
+    "//base/startup/init_lite/interfaces/innerkits/include",
+    "//base/startup/syspara_lite/interfaces/innerkits/native/syspara/include",
   ]
 
   sources = [
@@ -77,6 +86,9 @@ ohos_unittest("AppSpawnServerMockTest") {
   deps = [
     "${appspawn_path}/test:appspawn_test_source",
     "//base/security/access_token/interfaces/innerkits/token_setproc:libtoken_setproc",
+    "//base/startup/init_lite/interfaces/innerkits:libbegetutil",
+    "//base/startup/init_lite/services/log:init_log",
+    "//base/startup/syspara_lite/interfaces/innerkits/native/syspara:syspara",
   ]
 
   external_deps = [

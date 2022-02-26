@@ -34,6 +34,9 @@ config("appspawn_config") {
     "${aafwk_path}/services/abilitymgr/include",
     "${distributedschedule_path}/services/dtbschedmgr/include",
     "//base/security/access_token/interfaces/innerkits/token_setproc/include",
+    "//base/startup/init_lite/services/log",
+    "//base/startup/init_lite/interfaces/innerkits/include",
+    "//base/startup/syspara_lite/interfaces/innerkits/native/syspara/include",
   ]
 
   if (build_selinux) {
@@ -62,11 +65,15 @@ ohos_static_library("appspawn_server") {
     "${appspawn_path}/src/socket/appspawn_socket.cpp",
     "${appspawn_path}/src/socket/server_socket.cpp",
   ]
+  defines = [ "INIT_AGENT" ]
   configs = [ ":appspawn_config" ]
   ldflags = [ "-Wl,--dynamic-linker,/system/bin/linker64z" ]
   deps = [
     "${aafwk_path}/frameworks/kits/ability/native:abilitykit_native",
     "${aafwk_path}/frameworks/kits/appkit:appkit_native",
+    "//base/startup/init_lite/interfaces/innerkits:libbegetutil",
+    "//base/startup/init_lite/services/log:init_log",
+    "//base/startup/syspara_lite/interfaces/innerkits/native/syspara:syspara",
     "//utils/native/base:utils",
   ]
   external_deps = [

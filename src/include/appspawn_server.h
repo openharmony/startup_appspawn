@@ -18,6 +18,7 @@
 
 #include <queue>
 #include <string>
+#include <map>
 
 #include "appspawn_msg_peer.h"
 #include "server_socket.h"
@@ -160,7 +161,7 @@ private:
     /**
      * Sets app process property.
      */
-    bool SetAppProcProperty(int connectFd, const ClientSocket::AppProperty *appProperty, char *longProcName,
+    bool SetAppProcProperty(const ClientSocket::AppProperty *appProperty, char *longProcName,
         int64_t longProcNameLen, const int32_t fd[FDLEN2]);
 
     /**
@@ -181,6 +182,13 @@ private:
     void LoadAceLib();
 
     void SetAppAccessToken(const ClientSocket::AppProperty *appProperty);
+
+    int StartApp(char *longProcName, int64_t longProcNameLen,
+        ClientSocket::AppProperty *appProperty, int connectFd, pid_t &pid);
+
+    void WaitRebootEvent();
+
+    void HandleSignal();
 private:
     const std::string deviceNull_ = "/dev/null";
     std::string socketName_ {};
@@ -191,6 +199,10 @@ private:
     std::function<int(const ClientSocket::AppProperty &)> propertyHandler_ = nullptr;
     std::function<void(const std::string &)> errHandlerHook_ = nullptr;
     bool isRunning_ {};
+    bool isStop_ { false };
+    bool isChildDie_ { false };
+    pid_t childPid_ {};
+    std::map<pid_t, std::string> appMap_;
 };
 }  // namespace AppSpawn
 }  // namespace OHOS

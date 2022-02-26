@@ -18,6 +18,9 @@
 #include <fcntl.h>
 #include <memory>
 #include <csignal>
+#include <sys/signalfd.h>
+#include <sys/types.h>
+#include <unistd.h>
 #include <sys/wait.h>
 #include <sys/mount.h>
 #include <sys/prctl.h>
@@ -36,6 +39,8 @@
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
 #include "token_setproc.h"
+#include "parameter.h"
+#include "beget_ext.h"
 #ifdef WITH_SELINUX
 #include "hap_restorecon.h"
 #endif
@@ -46,9 +51,12 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#define GRAPHIC_PERMISSION_CHECK
 constexpr static mode_t FILE_MODE = 0711;
 constexpr static mode_t WEBVIEW_FILE_MODE = 0511;
+
+#define APPSPAWN_LOGI(fmt, ...) STARTUP_LOGI("appspawn_server.log", "APPSPAWN", fmt, ##__VA_ARGS__)
+#define APPSPAWN_LOGE(fmt, ...) STARTUP_LOGE("appspawn_server.log", "APPSPAWN", fmt, ##__VA_ARGS__)
+#define GRAPHIC_PERMISSION_CHECK
 
 namespace OHOS {
 namespace AppSpawn {
@@ -59,6 +67,7 @@ constexpr int32_t WAIT_DELAY_US = 100 * 1000;  // 100ms
 constexpr int32_t GID_USER_DATA_RW = 1008;
 constexpr int32_t MAX_GIDS = 64;
 constexpr int32_t UID_BASE = 200000;
+constexpr int32_t WAIT_PARAM_TIME = 1000;
 
 constexpr std::string_view BUNDLE_NAME_MEDIA_LIBRARY("com.ohos.medialibrary.MediaLibraryDataA");
 constexpr std::string_view BUNDLE_NAME_SCANNER("com.ohos.medialibrary.MediaScannerAbilityA");
@@ -158,6 +167,47 @@ void AppSpawnServer::ConnectionPeer()
     }
 }
 
+void AppSpawnServer::WaitRebootEvent()
+{
+    APPSPAWN_LOGI("wait 'startup.device.ctl' event");
+    while (isRunning_) {
+        int ret =  WaitParameter("startup.device.ctl", "stop", WAIT_PARAM_TIME);
+        if (ret == 0) {
+            std::lock_guard<std::mutex> lock(mut_);
+            isStop_ = true;
+            dataCond_.notify_one();
+            break;
+        }
+    }
+}
+
+void AppSpawnServer::HandleSignal()
+{
+    sigset_t mask;
+    sigemptyset(&mask);
+    sigaddset(&mask, SIGCHLD);
+    sigaddset(&mask, SIGHUP);
+    sigprocmask(SIG_BLOCK, &mask, nullptr);
+    int signalFd = signalfd(-1, &mask, SFD_CLOEXEC);
+    if (signalFd < 0) {
+        APPSPAWN_LOGE("Error installing SIGHUP handler: %d", errno);
+    }
+    while (isRunning_) {
+        struct signalfd_siginfo fdsi;
+        ssize_t ret = read(signalFd, &fdsi, sizeof(fdsi));
+        if (ret != sizeof(fdsi) || fdsi.ssi_signo != SIGCHLD) {
+            continue;
+        }
+        std::lock_guard<std::mutex> lock(mut_);
+        isChildDie_ = true;
+        childPid_ = fdsi.ssi_pid;
+        APPSPAWN_LOGI("exit app pid = %d", childPid_);
+        dataCond_.notify_one();
+    }
+    close(signalFd);
+    signalFd = -1;
+}
+
 void AppSpawnServer::LoadAceLib()
 {
     std::string acelibdir("/system/lib/libace.z.so");
@@ -172,6 +222,46 @@ void AppSpawnServer::LoadAceLib()
     HiLog::Info(LABEL, "MainThread::LoadAbilityLibrary. End calling dlopen.");
 }
 
+int AppSpawnServer::StartApp(char *longProcName, int64_t longProcNameLen,
+    ClientSocket::AppProperty *appProperty, int connectFd, pid_t &pid)
+{
+    if (!CheckAppProperty(appProperty)) {
+        return -EINVAL;
+    }
+    int32_t fd[FDLEN2] = {FD_INIT_VALUE, FD_INIT_VALUE};
+    int32_t buff = 0;
+    if (pipe(fd) == -1) {
+        HiLog::Error(LABEL, "create pipe fail, errno = %{public}d", errno);
+        return ERR_PIPE_FAIL;
+    }
+
+    InstallSigHandler();
+    pid = fork();
+    if (pid < 0) {
+        HiLog::Error(LABEL, "AppSpawnServer::Failed to fork new process, errno = %{public}d", errno);
+        close(fd[0]);
+        close(fd[1]);
+        return -errno;
+    } else if (pid == 0) {
+        SpecialHandle(appProperty);
+        // close socket connection and peer socket in child process
+        if (socket_ != NULL) {
+            socket_->CloseConnection(connectFd);
+            socket_->CloseServerMonitor();
+        }
+        close(fd[0]); // close read fd
+        UninstallSigHandler();
+        SetAppProcProperty(appProperty, longProcName, longProcNameLen, fd);
+        _exit(0);
+    }
+    read(fd[0], &buff, sizeof(buff)); // wait child process resutl
+    close(fd[0]);
+    close(fd[1]);
+
+    HiLog::Info(LABEL, "child process init %{public}s", (buff == ERR_OK) ? "success" : "fail");
+    return (buff == ERR_OK) ? 0 : buff;
+}
+
 bool AppSpawnServer::ServerMain(char *longProcName, int64_t longProcNameLen)
 {
     if (socket_->RegisterServerSocket() != 0) {
@@ -179,54 +269,48 @@ bool AppSpawnServer::ServerMain(char *longProcName, int64_t longProcNameLen)
         return false;
     }
     std::thread(&AppSpawnServer::ConnectionPeer, this).detach();
-
     LoadAceLib();
 
+    std::thread(&AppSpawnServer::WaitRebootEvent, this).detach();
+    std::thread(&AppSpawnServer::HandleSignal, this).detach();
     while (isRunning_) {
         std::unique_lock<std::mutex> lock(mut_);
-        dataCond_.wait(lock, [this] { return !this->appQueue_.empty(); });
+        dataCond_.wait(lock, [this] { return !this->appQueue_.empty() || isStop_ || isChildDie_;});
+        if (isStop_) { // finish
+            break;
+        }
+        if (isChildDie_) { // process child die
+            isChildDie_ = false;
+            auto iter = appMap_.find(childPid_);
+            if (iter != appMap_.end()) {
+                appMap_.erase(iter);
+                APPSPAWN_LOGI("delete pid=%d in appMap", iter->first);
+            }
+        }
+        if (this->appQueue_.empty()) {
+            continue;
+        }
         std::unique_ptr<AppSpawnMsgPeer> msg = std::move(appQueue_.front());
         appQueue_.pop();
         int connectFd = msg->GetConnectFd();
         ClientSocket::AppProperty *appProperty = msg->GetMsg();
-        if (!CheckAppProperty(appProperty)) {
-            msg->Response(-EINVAL);
-            socket_->CloseConnection(connectFd);
-            continue;
+        pid_t pid = 0;
+        int ret = StartApp(longProcName, longProcNameLen, appProperty, connectFd, pid);
+        if (ret != 0) {
+            msg->Response(ret);
+        } else {
+            msg->Response(pid);
+            appMap_[pid] = appProperty->processName;
         }
+        socket_->CloseConnection(connectFd); // close socket connection
+        APPSPAWN_LOGI("AppSpawnServer::parent process create app finish, pid = %d %s", pid, appProperty->processName);
+    }
 
-        int32_t fd[FDLEN2] = {FD_INIT_VALUE, FD_INIT_VALUE};
-        int32_t buff = 0;
-        if (pipe(fd) == -1) {
-            HiLog::Error(LABEL, "create pipe fail, errno = %{public}d", errno);
-            msg->Response(ERR_PIPE_FAIL);
-            socket_->CloseConnection(connectFd);
-            continue;
-        }
-
-        InstallSigHandler();
-        pid_t pid = fork();
-        if (pid < 0) {
-            HiLog::Error(LABEL, "AppSpawnServer::Failed to fork new process, errno = %{public}d", errno);
-            close(fd[0]);
-            close(fd[1]);
-            msg->Response(-errno);
-            socket_->CloseConnection(connectFd);
-            continue;
-        } else if (pid == 0) {
-            SpecialHandle(appProperty);
-            SetAppProcProperty(connectFd, appProperty, longProcName, longProcNameLen, fd);
-            _exit(0);
-        }
-
-        read(fd[0], &buff, sizeof(buff));  // wait child process result
-        close(fd[0]);
-        close(fd[1]);
-
-        HiLog::Info(LABEL, "child process init %{public}s", (buff == ERR_OK) ? "success" : "fail");
-        (buff == ERR_OK) ? msg->Response(pid) : msg->Response(buff);  // response to AppManagerService
-        socket_->CloseConnection(connectFd);                          // close socket connection
-        HiLog::Debug(LABEL, "AppSpawnServer::parent process create app finish, pid = %{public}d", pid);
+    while (appMap_.size() > 0) {
+        auto iter = appMap_.begin();
+        APPSPAWN_LOGI("kill app, pid = %d, processName = %s", iter->first, iter->second.c_str());
+        kill(iter->first, SIGKILL);
+        appMap_.erase(iter);
     }
     return false;
 }
@@ -698,22 +782,11 @@ void AppSpawnServer::SetAppAccessToken(const ClientSocket::AppProperty *appPrope
 #endif
 }
 
-bool AppSpawnServer::SetAppProcProperty(int connectFd, const ClientSocket::AppProperty *appProperty, char *longProcName,
+bool AppSpawnServer::SetAppProcProperty(const ClientSocket::AppProperty *appProperty, char *longProcName,
     int64_t longProcNameLen, const int32_t fd[FDLEN2])
 {
-    if (appProperty == nullptr || longProcName == nullptr) {
-        HiLog::Error(LABEL, "appProperty or longProcName paramenter is nullptr");
-        return false;
-    }
-
     pid_t newPid = getpid();
     HiLog::Debug(LABEL, "AppSpawnServer::Success to fork new process, pid = %{public}d", newPid);
-    // close socket connection and peer socket in child process
-    socket_->CloseConnection(connectFd);
-    socket_->CloseServerMonitor();
-    close(fd[0]);  // close read fd
-    UninstallSigHandler();
-
     int32_t ret = ERR_OK;
 
     ret = SetAppSandboxProperty(appProperty);
