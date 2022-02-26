@@ -118,7 +118,10 @@ ohos_executable("webviewspawn") {
 }
 
 ohos_static_library("webviewspawn_server") {
-  defines = [ "WEBVIEW_SPAWN" ]
+  defines = [
+    "INIT_AGENT",
+    "WEBVIEW_SPAWN",
+  ]
   sources = [
     "${appspawn_path}/src/appspawn_msg_peer.cpp",
     "${appspawn_path}/src/appspawn_server.cpp",
@@ -130,7 +133,10 @@ ohos_static_library("webviewspawn_server") {
   deps = [
     "${aafwk_path}/frameworks/kits/ability/native:abilitykit_native",
     "${aafwk_path}/frameworks/kits/appkit:appkit_native",
+    "//base/startup/init_lite/interfaces/innerkits:libbegetutil",
     "//base/startup/init_lite/interfaces/innerkits/socket:libsocket_static",
+    "//base/startup/init_lite/services/log:init_log",
+    "//base/startup/syspara_lite/interfaces/innerkits/native/syspara:syspara",
     "//utils/native/base:utils",
   ]
   external_deps = [
