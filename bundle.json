@@ -17,6 +17,9 @@
         "adapted_system_type": [
             "standard"
         ],
+        "features": [
+            "appspawn_support_webview"
+        ],
         "rom": "",
         "ram": "",
         "deps": {
@@ -34,6 +37,7 @@
                 "//base/startup/appspawn_standard:appspawn",
                 "//base/startup/appspawn_standard:appspawn.rc",
                 "//base/startup/appspawn_standard:appspawn_server",
+                "//base/startup/appspawn_standard:webview",
                 "//base/startup/appspawn_standard/interfaces/innerkits:appspawn_socket_client"
             ],
             "inner_kits": [

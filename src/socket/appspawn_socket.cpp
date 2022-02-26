@@ -58,15 +58,25 @@ int AppSpawnSocket::PackSocketAddr()
         return -1;
     }
 
-    socklen_t pathLen = socketDir_.length() + socketName_.length();
+    socklen_t pathLen = 0;
+    if (socketName_[0] == '/') {
+        pathLen = socketName_.length();
+    } else {
+        pathLen = socketDir_.length() + socketName_.length();
+    }
     socklen_t pathSize = sizeof(socketAddr_.sun_path);
     if (pathLen >= pathSize) {
         HiLog::Error(LABEL, "Invalid socket name: '%s' too long", socketName_.c_str());
         return -1;
     }
 
-    int len =
-        snprintf_s(socketAddr_.sun_path, pathSize, (pathSize - 1), "%s%s", socketDir_.c_str(), socketName_.c_str());
+    int len = 0;
+    if (socketName_[0] == '/') {
+        len = snprintf_s(socketAddr_.sun_path, pathSize, (pathSize - 1), "%s", socketName_.c_str());
+    } else {
+        len = snprintf_s(socketAddr_.sun_path, pathSize, (pathSize - 1), "%s%s",
+            socketDir_.c_str(), socketName_.c_str());
+    }
     if (static_cast<int>(pathLen) != len) {
         HiLog::Error(LABEL, "Failed to copy socket path");
         return -1;

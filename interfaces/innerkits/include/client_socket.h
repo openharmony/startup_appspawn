@@ -89,6 +89,7 @@ public:
     static constexpr int LEN_SO_PATH = 256;             // load so lib
     static constexpr int MAX_GIDS = 64;
     static constexpr int APL_MAX_LEN = 32;
+    static constexpr int RENDER_CMD_MAX_LEN = 1024;
 
     struct AppProperty {
         uint32_t uid;                     // the UNIX uid that the child process setuid() to after fork()
@@ -100,6 +101,7 @@ public:
         char soPath[LEN_SO_PATH];         // so lib path
         uint32_t accessTokenId;
         char apl[APL_MAX_LEN];
+        char renderCmd[RENDER_CMD_MAX_LEN];
     };
 
 private:

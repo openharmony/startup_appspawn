@@ -20,6 +20,7 @@
 #include <sys/socket.h>
 
 #include "hilog/log.h"
+#include "init_socket.h"
 #include "securec.h"
 
 namespace OHOS {
@@ -152,11 +153,16 @@ int ServerSocket::RegisterServerSocket(int &connectFd)
         return -EINVAL;
     }
 
+#ifdef WEBVIEW_SPAWN
+    connectFd = GetControlSocket("WebViewSpawn");
+#else
     connectFd = CreateSocket();
+#endif
     if (connectFd < 0) {
         return connectFd;
     }
 
+#ifndef WEBVIEW_SPAWN
     if ((BindSocket(connectFd) != 0) || (listen(connectFd, listenBacklog_) < 0)) {
         HiLog::Error(LABEL,
             "Server: Register socket fd %d with backlog %d error: %d",
@@ -170,7 +176,7 @@ int ServerSocket::RegisterServerSocket(int &connectFd)
         connectFd = -1;
         return (-errno);
     }
-
+#endif
     HiLog::Debug(LABEL, "Server: Suc to register server socket fd %d", connectFd);
     return 0;
 }

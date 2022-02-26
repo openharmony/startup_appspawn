@@ -203,6 +203,9 @@ private:
     bool isChildDie_ { false };
     pid_t childPid_ {};
     std::map<pid_t, std::string> appMap_;
+#ifdef WEBVIEW_SPAWN
+    void *webviewHandle = nullptr;
+#endif
 };
 }  // namespace AppSpawn
 }  // namespace OHOS

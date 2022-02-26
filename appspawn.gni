@@ -19,3 +19,7 @@ distributedschedule_path = "//foundation/distributedschedule/dmsfwk"
 subsystem_name = "startup"
 part_name = "appspawn"
 module_output_path = "${part_name}/appspawn_l2"
+
+declare_args() {
+  appspawn_support_webview = true
+}

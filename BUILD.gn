@@ -101,3 +101,76 @@ ohos_prebuilt_etc("appspawn.rc") {
   subsystem_name = "${subsystem_name}"
   part_name = "${part_name}"
 }
+
+ohos_executable("webviewspawn") {
+  defines = [ "WEBVIEW_SPAWN" ]
+  sources = [ "${appspawn_path}/src/main.cpp" ]
+  configs = [ ":appspawn_config" ]
+  deps = [
+    "${appspawn_path}:webviewspawn_server",
+    "//base/security/access_token/interfaces/innerkits/token_setproc:libtoken_setproc",
+  ]
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+
+  install_enable = true
+  subsystem_name = "${subsystem_name}"
+  part_name = "${part_name}"
+}
+
+ohos_static_library("webviewspawn_server") {
+  defines = [
+    "INIT_AGENT",
+    "WEBVIEW_SPAWN",
+  ]
+  sources = [
+    "${appspawn_path}/src/appspawn_msg_peer.cpp",
+    "${appspawn_path}/src/appspawn_server.cpp",
+    "${appspawn_path}/src/socket/appspawn_socket.cpp",
+    "${appspawn_path}/src/socket/server_socket.cpp",
+  ]
+  configs = [ ":appspawn_config" ]
+  ldflags = [ "-Wl,--dynamic-linker,/system/bin/linker64z" ]
+  deps = [
+    "${aafwk_path}/frameworks/kits/ability/native:abilitykit_native",
+    "${aafwk_path}/frameworks/kits/appkit:appkit_native",
+    "//base/startup/init_lite/interfaces/innerkits:libbegetutil",
+    "//base/startup/init_lite/interfaces/innerkits/socket:libsocket_static",
+    "//base/startup/init_lite/services/log:init_log",
+    "//base/startup/syspara_lite/interfaces/innerkits/native/syspara:syspara",
+    "//utils/native/base:utils",
+  ]
+  external_deps = [
+    "ability_base:want",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
+    "hilog_native:libhilog",
+    "hiviewdfx_hilog_native:libhilog",
+    "ipc:ipc_core",
+    "safwk:system_ability_fwk",
+    "samgr_standard:samgr_proxy",
+  ]
+
+  if (build_selinux) {
+    external_deps += [ "selinux:libhap_restorecon" ]
+  }
+
+  subsystem_name = "${subsystem_name}"
+  part_name = "${part_name}"
+}
+
+ohos_prebuilt_etc("webviewspawn.rc") {
+  source = "webviewspawn.cfg"
+  relative_install_dir = "init"
+  subsystem_name = "${subsystem_name}"
+  part_name = "${part_name}"
+}
+
+group("webview") {
+  deps = []
+  if (appspawn_support_webview) {
+    deps += [
+      ":webviewspawn",
+      ":webviewspawn.rc",
+    ]
+  }
+}
