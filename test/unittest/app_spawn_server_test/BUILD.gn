@@ -87,6 +87,7 @@ ohos_unittest("AppSpawnServerMockTest") {
     "${appspawn_path}/test:appspawn_test_source",
     "//base/security/access_token/interfaces/innerkits/token_setproc:libtoken_setproc",
     "//base/startup/init_lite/interfaces/innerkits:libbegetutil",
+    "//base/startup/init_lite/interfaces/innerkits/socket:libsocket_static",
     "//base/startup/init_lite/services/log:init_log",
     "//base/startup/syspara_lite/interfaces/innerkits/native/syspara:syspara",
   ]
