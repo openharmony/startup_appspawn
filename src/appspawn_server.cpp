@@ -53,11 +53,9 @@
 
 constexpr static mode_t FILE_MODE = 0711;
 constexpr static mode_t WEBVIEW_FILE_MODE = 0511;
-constexpr std::string APPSPAWN_LOG_FILE = "appspawn_server.log";
-constexpr std::string APPSPAWN_LABEL = "APPSPAWN";
 
-#define APPSPAWN_LOGI(fmt, ...) STARTUP_LOGI(APPSPAWN_LOG_FILE.c_str(), APPSPAWN_LABEL.c_str(), fmt, ##__VA_ARGS__)
-#define APPSPAWN_LOGE(fmt, ...) STARTUP_LOGE(APPSPAWN_LOG_FILE.c_str(), APPSPAWN_LABEL.c_str(), fmt, ##__VA_ARGS__)
+#define APPSPAWN_LOGI(fmt, ...) STARTUP_LOGI("appspawn_server.log", "APPSPAWN", fmt, ##__VA_ARGS__)
+#define APPSPAWN_LOGE(fmt, ...) STARTUP_LOGE("appspawn_server.log", "APPSPAWN", fmt, ##__VA_ARGS__)
 #define GRAPHIC_PERMISSION_CHECK
 
 namespace OHOS {
