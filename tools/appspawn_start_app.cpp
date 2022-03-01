@@ -55,11 +55,8 @@ int main(int argc, char *const argv[])
     (void)strcpy_s(appProperty->apl, sizeof(appProperty->apl), argv[index++]);
     (void)strcpy_s(appProperty->renderCmd, sizeof(appProperty->renderCmd), argv[index++]);
     appProperty->flags = strtoul(argv[index++], nullptr, DECIMAL);
-    if (index >= argc) {
-        HiLog::Error(LABEL, "Invalid arg %{public}d %{public}d", index, argc);
-        return -1;
-    }
     appProperty->gidCount = strtoul(argv[index++], nullptr, DECIMAL);
+    HiLog::Error(LABEL, "gidCount %{public}d %{public}d", index, appProperty->gidCount);
 
     uint32_t i = 0;
     while ((i < appProperty->gidCount) && (i < sizeof(appProperty->gidTable) / sizeof(appProperty->gidTable[0]))) {
@@ -67,10 +64,7 @@ int main(int argc, char *const argv[])
             HiLog::Error(LABEL, "Invalid arg %{public}d %{public}d", index, argc);
             return -1;
         }
-        if (argv[index] == nullptr) {
-            break;
-        }
-        appProperty->gidTable[i] = strtoul(argv[index++], nullptr, DECIMAL);
+        appProperty->gidTable[i++] = strtoul(argv[index++], nullptr, DECIMAL);
     }
     auto appspawnServer = std::make_shared<OHOS::AppSpawn::AppSpawnServer>("AppSpawn");
     if (appspawnServer != nullptr) {
