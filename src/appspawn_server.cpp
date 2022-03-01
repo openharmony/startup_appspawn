@@ -320,7 +320,7 @@ int AppSpawnServer::StartApp(char *longProcName, int64_t longProcNameLen,
         close(fd[0]); // close read fd
         ClearEnvironment();
         UninstallSigHandler();
-        appProperty->flags = 0;
+        appProperty->flags = 1;
         if (appProperty->flags == ClientSocket::APPSPAWN_COLD_BOOT) {
             DoColdStartApp(appProperty, fd[1]);
         } else {
