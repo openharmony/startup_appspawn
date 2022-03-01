@@ -275,17 +275,23 @@ int AppSpawnServer::DoColdStartApp(ClientSocket::AppProperty *appProperty, int f
     APPSPAWN_LOGI("DoColdStartApp::accessTokenId %d %s", appProperty->accessTokenId, access.c_str());
     extractedCmds.push_back(const_cast<char *>(access.c_str()));
     extractedCmds.push_back(const_cast<char *>(appProperty->apl));
-    extractedCmds.push_back(const_cast<char *>(appProperty->renderCmd));
+    APPSPAWN_LOGI("DoColdStartApp renderCmd %s", appProperty->renderCmd);
+    if (strlen(appProperty->renderCmd) != 0) {
+        extractedCmds.push_back(const_cast<char *>(appProperty->renderCmd));
+    } else {
+        extractedCmds.push_back(const_cast<char *>(""));
+    }
     extractedCmds.push_back(const_cast<char *>(std::string(std::to_string(appProperty->flags)).c_str()));
     extractedCmds.push_back(const_cast<char *>(std::string(std::to_string(appProperty->gidCount)).c_str()));
     for (uint32_t i = 0; i < appProperty->gidCount; i++) {
         extractedCmds.push_back(const_cast<char *>(std::string(std::to_string(appProperty->gidTable[i])).c_str()));
     }
     extractedCmds.push_back(nullptr);
-
+    APPSPAWN_LOGI("DoColdStartApp extractedCmds %d", extractedCmds.size());
     int ret = execv(extractedCmds[0], extractedCmds.data());
     if (ret != 0) {
         HiLog::Error(LABEL, "Failed to execv, errno = %{public}d", errno);
+        NotifyResToParentProc(fd, -1);
     }
     return 0;
 }
@@ -852,7 +858,8 @@ void AppSpawnServer::SetAppAccessToken(const ClientSocket::AppProperty *appPrope
     HapContext hapContext;
     ret = hapContext.HapDomainSetcontext(appProperty->apl, appProperty->processName);
     if (ret != 0) {
-        HiLog::Error(LABEL, "AppSpawnServer::Failed to hap domain set context, errno = %{public}d", errno);
+        HiLog::Error(LABEL, "AppSpawnServer::Failed to hap domain set context, errno = %{public}d %{public}s",
+            errno, appProperty->apl);
     } else {
         HiLog::Info(LABEL, "AppSpawnServer::Success to hap domain set context, ret = %{public}d", ret);
     }
