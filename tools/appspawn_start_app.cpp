@@ -56,8 +56,6 @@ int main(int argc, char *const argv[])
     (void)strcpy_s(appProperty->renderCmd, sizeof(appProperty->renderCmd), argv[index++]);
     appProperty->flags = strtoul(argv[index++], nullptr, DECIMAL);
     appProperty->gidCount = strtoul(argv[index++], nullptr, DECIMAL);
-    HiLog::Error(LABEL, "gidCount %{public}d %{public}d", index, appProperty->gidCount);
-
     uint32_t i = 0;
     while ((i < appProperty->gidCount) && (i < sizeof(appProperty->gidTable) / sizeof(appProperty->gidTable[0]))) {
         if (index >= argc) {
