@@ -40,6 +40,7 @@
 #include "system_ability_definition.h"
 #include "token_setproc.h"
 #include "parameter.h"
+#include "parameters.h"
 #include "beget_ext.h"
 #ifdef WITH_SELINUX
 #include "hap_restorecon.h"
@@ -327,8 +328,8 @@ int AppSpawnServer::StartApp(char *longProcName, int64_t longProcNameLen,
         ClearEnvironment();
         UninstallSigHandler();
         SetAppAccessToken(appProperty);
-        appProperty->flags = 1;
-        if (appProperty->flags == ClientSocket::APPSPAWN_COLD_BOOT) {
+        if ((appProperty->flags == ClientSocket::APPSPAWN_COLD_BOOT) &&
+            OHOS::system::GetBoolParameter("appspawn.cold.boot", false)) {
             DoColdStartApp(appProperty, fd[1]);
         } else {
             SetAppProcProperty(appProperty, longProcName, longProcNameLen, fd[1]);
