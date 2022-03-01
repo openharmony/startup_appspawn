@@ -30,7 +30,7 @@ int main(int argc, char *const argv[])
         HiLog::Error(LABEL, "Invalid argc %{public}d", argc);
         return -1;
     }
-
+    HiLog::Debug(LABEL, "AppSpawnServer argc %{public}d app:%{public}s", argc, argv[4]); // 4 name index
     // calculate child process long name size
     uintptr_t start = reinterpret_cast<uintptr_t>(argv[0]);
     uintptr_t end = reinterpret_cast<uintptr_t>(strchr(argv[argc - 1], 0));
@@ -41,7 +41,7 @@ int main(int argc, char *const argv[])
 
     auto appProperty = std::make_unique<OHOS::AppSpawn::ClientSocket::AppProperty>();
     if (appProperty == nullptr) {
-        HiLog::Error(LABEL, "Failed to create app property %{public}s", argv[2]); // 2 name index
+        HiLog::Error(LABEL, "Failed to create app property %{public}s", argv[4]); // 4 name index
         return -1;
     }
     int index = 1;
