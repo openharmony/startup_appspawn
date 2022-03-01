@@ -862,14 +862,9 @@ void AppSpawnServer::SetAppAccessToken(const ClientSocket::AppProperty *appPrope
 bool AppSpawnServer::SetAppProcProperty(const ClientSocket::AppProperty *appProperty, char *longProcName,
     int64_t longProcNameLen, const int32_t fd)
 {
-    APPSPAWN_LOGI("SetAppProcProperty::bundleName %s", appProperty->bundleName);
-    APPSPAWN_LOGI("SetAppProcProperty::apl %s", appProperty->apl);
-    APPSPAWN_LOGI("SetAppProcProperty::uid %d", appProperty->uid);
-    APPSPAWN_LOGI("SetAppProcProperty::gidCound %d", appProperty->gidCount);
-    APPSPAWN_LOGI("SetAppProcProperty::accessTokenId %d", appProperty->accessTokenId);
-
-    pid_t newPid = getpid();
-    HiLog::Debug(LABEL, "AppSpawnServer::Success to fork new process, pid = %{public}d", newPid);
+    APPSPAWN_LOGI("SetAppProcProperty::bundleName %s accessTokenId %d",
+        appProperty->bundleName, appProperty->accessTokenId);
+    HiLog::Debug(LABEL, "AppSpawnServer::Success to fork new process, pid = %{public}d", getpid());
     int32_t ret = ERR_OK;
 
     ret = SetAppSandboxProperty(appProperty);
@@ -885,7 +880,6 @@ bool AppSpawnServer::SetAppProcProperty(const ClientSocket::AppProperty *appProp
     }
 
     SetAppAccessToken(appProperty);
-
     ret = SetProcessName(longProcName, longProcNameLen, appProperty->processName, strlen(appProperty->processName) + 1);
     if (FAILED(ret)) {
         NotifyResToParentProc(fd, ret);
@@ -926,7 +920,7 @@ bool AppSpawnServer::SetAppProcProperty(const ClientSocket::AppProperty *appProp
     AppExecFwk::MainThread::Start();
 #endif
 
-    HiLog::Error(LABEL, "Failed to start process, pid = %{public}d", newPid);
+    HiLog::Error(LABEL, "Failed to start process, pid = %{public}d", getpid());
     return false;
 }
 
