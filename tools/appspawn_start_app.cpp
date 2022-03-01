@@ -41,7 +41,7 @@ int main(int argc, char *const argv[])
 
     auto appProperty = std::make_unique<OHOS::AppSpawn::ClientSocket::AppProperty>();
     if (appProperty == nullptr) {
-        HiLog::Error(LABEL, "Failed to create app property %{public}s", argv[2]);
+        HiLog::Error(LABEL, "Failed to create app property %{public}s", argv[2]); // 2 name index
         return -1;
     }
     int index = 1;
