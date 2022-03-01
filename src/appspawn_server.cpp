@@ -253,7 +253,7 @@ static void ClearEnvironment(void)
     sigemptyset(&mask);
     sigaddset(&mask, SIGCHLD);
     sigaddset(&mask, SIGTERM);
-    sigprocmask(SIG_UNBLOCK, &mask, NULL);
+    sigprocmask(SIG_UNBLOCK, &mask, nullptr);
     return;
 }
 
