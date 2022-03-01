@@ -246,7 +246,6 @@ void AppSpawnServer::LoadAceLib()
 #endif
 }
 
-
 static void ClearEnvironment(void)
 {
     sigset_t mask;
@@ -255,6 +254,40 @@ static void ClearEnvironment(void)
     sigaddset(&mask, SIGTERM);
     sigprocmask(SIG_UNBLOCK, &mask, nullptr);
     return;
+}
+
+int AppSpawnServer::DoColdStartApp(ClientSocket::AppProperty *appProperty, int fd)
+{
+    APPSPAWN_LOGI("DoColdStartApp::appName %s", appProperty->processName);
+    std::vector<char *> extractedCmds;
+    extractedCmds.push_back(const_cast<char *>("/system/bin/appspawntools"));
+    std::string fdStr = std::to_string(fd);
+    APPSPAWN_LOGI("DoColdStartApp::fd %d %s", fd, fdStr.c_str());
+    extractedCmds.push_back(const_cast<char *>(fdStr.c_str()));
+    std::string uidStr = std::to_string(appProperty->uid);
+    APPSPAWN_LOGI("DoColdStartApp::uid %d %s", appProperty->uid, uidStr.c_str());
+    extractedCmds.push_back(const_cast<char *>(uidStr.c_str()));
+    extractedCmds.push_back(const_cast<char *>(std::string(std::to_string(appProperty->gid)).c_str()));
+    extractedCmds.push_back(const_cast<char *>(appProperty->processName));
+    extractedCmds.push_back(const_cast<char *>(appProperty->bundleName));
+    extractedCmds.push_back(const_cast<char *>(appProperty->soPath));
+    std::string access = std::to_string(appProperty->accessTokenId);
+    APPSPAWN_LOGI("DoColdStartApp::accessTokenId %d %s", appProperty->accessTokenId, access.c_str());
+    extractedCmds.push_back(const_cast<char *>(access.c_str()));
+    extractedCmds.push_back(const_cast<char *>(appProperty->apl));
+    extractedCmds.push_back(const_cast<char *>(appProperty->renderCmd));
+    extractedCmds.push_back(const_cast<char *>(std::string(std::to_string(appProperty->flags)).c_str()));
+    extractedCmds.push_back(const_cast<char *>(std::string(std::to_string(appProperty->gidCount)).c_str()));
+    for (uint32_t i = 0; i < appProperty->gidCount; i++) {
+        extractedCmds.push_back(const_cast<char *>(std::string(std::to_string(appProperty->gidTable[i])).c_str()));
+    }
+    extractedCmds.push_back(nullptr);
+
+    int ret = execv(extractedCmds[0], extractedCmds.data());
+    if (ret != 0) {
+        HiLog::Error(LABEL, "Failed to execv, errno = %{public}d", errno);
+    }
+    return 0;
 }
 
 int AppSpawnServer::StartApp(char *longProcName, int64_t longProcNameLen,
@@ -287,7 +320,12 @@ int AppSpawnServer::StartApp(char *longProcName, int64_t longProcNameLen,
         close(fd[0]); // close read fd
         ClearEnvironment();
         UninstallSigHandler();
-        SetAppProcProperty(appProperty, longProcName, longProcNameLen, fd);
+        appProperty->flags = 1;
+        if (appProperty->flags == ClientSocket::APPSPAWN_COLD_BOOT) {
+            DoColdStartApp(appProperty, fd[1]);
+        } else {
+            SetAppProcProperty(appProperty, longProcName, longProcNameLen, fd[1]);
+        }
         _exit(0);
     }
     read(fd[0], &buff, sizeof(buff)); // wait child process resutl
@@ -339,7 +377,8 @@ bool AppSpawnServer::ServerMain(char *longProcName, int64_t longProcNameLen)
             appMap_[pid] = appProperty->processName;
         }
         socket_->CloseConnection(connectFd); // close socket connection
-        APPSPAWN_LOGI("AppSpawnServer::parent process create app finish, pid = %d %s", pid, appProperty->processName);
+        APPSPAWN_LOGI("AppSpawnServer::parent process create app finish, pid = %d uid %d %s %s",
+            pid, appProperty->uid, appProperty->processName, appProperty->bundleName);
     }
 
     while (appMap_.size() > 0) {
@@ -821,21 +860,27 @@ void AppSpawnServer::SetAppAccessToken(const ClientSocket::AppProperty *appPrope
 }
 
 bool AppSpawnServer::SetAppProcProperty(const ClientSocket::AppProperty *appProperty, char *longProcName,
-    int64_t longProcNameLen, const int32_t fd[FDLEN2])
+    int64_t longProcNameLen, const int32_t fd)
 {
+    APPSPAWN_LOGI("SetAppProcProperty::bundleName %s", appProperty->bundleName);
+    APPSPAWN_LOGI("SetAppProcProperty::apl %s", appProperty->apl);
+    APPSPAWN_LOGI("SetAppProcProperty::uid %d", appProperty->uid);
+    APPSPAWN_LOGI("SetAppProcProperty::gidCound %d", appProperty->gidCount);
+    APPSPAWN_LOGI("SetAppProcProperty::accessTokenId %d", appProperty->accessTokenId);
+
     pid_t newPid = getpid();
     HiLog::Debug(LABEL, "AppSpawnServer::Success to fork new process, pid = %{public}d", newPid);
     int32_t ret = ERR_OK;
 
     ret = SetAppSandboxProperty(appProperty);
     if (FAILED(ret)) {
-        NotifyResToParentProc(fd[1], ret);
+        NotifyResToParentProc(fd, ret);
         return false;
     }
 
     ret = SetKeepCapabilities(appProperty->uid);
     if (FAILED(ret)) {
-        NotifyResToParentProc(fd[1], ret);
+        NotifyResToParentProc(fd, ret);
         return false;
     }
 
@@ -843,31 +888,31 @@ bool AppSpawnServer::SetAppProcProperty(const ClientSocket::AppProperty *appProp
 
     ret = SetProcessName(longProcName, longProcNameLen, appProperty->processName, strlen(appProperty->processName) + 1);
     if (FAILED(ret)) {
-        NotifyResToParentProc(fd[1], ret);
+        NotifyResToParentProc(fd, ret);
         return false;
     }
 
 #ifdef GRAPHIC_PERMISSION_CHECK
     ret = SetUidGid(appProperty->uid, appProperty->gid, appProperty->gidTable, appProperty->gidCount);
     if (FAILED(ret)) {
-        NotifyResToParentProc(fd[1], ret);
+        NotifyResToParentProc(fd, ret);
         return false;
     }
 #endif
 
     ret = SetFileDescriptors();
     if (FAILED(ret)) {
-        NotifyResToParentProc(fd[1], ret);
+        NotifyResToParentProc(fd, ret);
         return false;
     }
 
     ret = SetCapabilities();
     if (FAILED(ret)) {
-        NotifyResToParentProc(fd[1], ret);
+        NotifyResToParentProc(fd, ret);
         return false;
     }
     // notify success to father process and start app process
-    NotifyResToParentProc(fd[1], ret);
+    NotifyResToParentProc(fd, ret);
 
 #ifdef WEBVIEW_SPAWN
     using FuncType = void (*)(const char *cmd);
@@ -940,6 +985,18 @@ bool AppSpawnServer::CheckAppProperty(const ClientSocket::AppProperty *appProper
     }
 
     return true;
+}
+
+int AppSpawnServer::AppColdStart(char *longProcName,
+    int64_t longProcNameLen, const ClientSocket::AppProperty *appProperty, int fd)
+{
+    APPSPAWN_LOGI("AppColdStart appName %s", appProperty->bundleName);
+    LoadAceLib();
+    if (!SetAppProcProperty(appProperty, longProcName, longProcNameLen, fd)) {
+        return -1;
+    }
+    APPSPAWN_LOGI("AppColdStart appName %s success", appProperty->bundleName);
+    return 0;
 }
 }  // namespace AppSpawn
 }  // namespace OHOS
