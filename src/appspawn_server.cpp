@@ -862,12 +862,8 @@ void AppSpawnServer::SetAppAccessToken(const ClientSocket::AppProperty *appPrope
 bool AppSpawnServer::SetAppProcProperty(const ClientSocket::AppProperty *appProperty, char *longProcName,
     int64_t longProcNameLen, const int32_t fd)
 {
-    APPSPAWN_LOGI("SetAppProcProperty::bundleName %s accessTokenId %d",
-        appProperty->bundleName, appProperty->accessTokenId);
     HiLog::Debug(LABEL, "AppSpawnServer::Success to fork new process, pid = %{public}d", getpid());
-    int32_t ret = ERR_OK;
-
-    ret = SetAppSandboxProperty(appProperty);
+    int32_t ret = SetAppSandboxProperty(appProperty);
     if (FAILED(ret)) {
         NotifyResToParentProc(fd, ret);
         return false;
