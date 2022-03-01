@@ -246,6 +246,17 @@ void AppSpawnServer::LoadAceLib()
 #endif
 }
 
+
+static void ClearEnvironment(void)
+{
+    sigset_t mask;
+    sigemptyset(&mask);
+    sigaddset(&mask, SIGCHLD);
+    sigaddset(&mask, SIGTERM);
+    sigprocmask(SIG_UNBLOCK, &mask, NULL);
+    return;
+}
+
 int AppSpawnServer::StartApp(char *longProcName, int64_t longProcNameLen,
     ClientSocket::AppProperty *appProperty, int connectFd, pid_t &pid)
 {
@@ -274,6 +285,7 @@ int AppSpawnServer::StartApp(char *longProcName, int64_t longProcNameLen,
             socket_->CloseServerMonitor();
         }
         close(fd[0]); // close read fd
+        ClearEnvironment();
         UninstallSigHandler();
         SetAppProcProperty(appProperty, longProcName, longProcNameLen, fd);
         _exit(0);
@@ -794,14 +806,16 @@ int32_t AppSpawnServer::SetAppSandboxProperty(const ClientSocket::AppProperty *a
 void AppSpawnServer::SetAppAccessToken(const ClientSocket::AppProperty *appProperty)
 {
     int32_t ret = SetSelfTokenID(appProperty->accessTokenId);
-    if (ret != 0) {
-        HiLog::Error(LABEL, "AppSpawnServer::Failed to set access token id, errno = %{public}d", errno);
-    }
+    HiLog::Info(LABEL, "AppSpawnServer::set access token id = %{public}d, ret = %{public}d",
+        appProperty->accessTokenId, ret);
+
 #ifdef WITH_SELINUX
     HapContext hapContext;
     ret = hapContext.HapDomainSetcontext(appProperty->apl, appProperty->processName);
     if (ret != 0) {
         HiLog::Error(LABEL, "AppSpawnServer::Failed to hap domain set context, errno = %{public}d", errno);
+    } else {
+        HiLog::Info(LABEL, "AppSpawnServer::Success to hap domain set context, ret = %{public}d", ret);
     }
 #endif
 }
