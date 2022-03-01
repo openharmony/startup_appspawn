@@ -326,6 +326,7 @@ int AppSpawnServer::StartApp(char *longProcName, int64_t longProcNameLen,
         close(fd[0]); // close read fd
         ClearEnvironment();
         UninstallSigHandler();
+        SetAppAccessToken(appProperty);
         appProperty->flags = 1;
         if (appProperty->flags == ClientSocket::APPSPAWN_COLD_BOOT) {
             DoColdStartApp(appProperty, fd[1]);
@@ -851,8 +852,8 @@ int32_t AppSpawnServer::SetAppSandboxProperty(const ClientSocket::AppProperty *a
 void AppSpawnServer::SetAppAccessToken(const ClientSocket::AppProperty *appProperty)
 {
     int32_t ret = SetSelfTokenID(appProperty->accessTokenId);
-    HiLog::Info(LABEL, "AppSpawnServer::set access token id = %{public}d, ret = %{public}d",
-        appProperty->accessTokenId, ret);
+    HiLog::Info(LABEL, "AppSpawnServer::set access token id = %{public}d, ret = %{public}d %{public}d",
+        appProperty->accessTokenId, ret, getuid());
 
 #ifdef WITH_SELINUX
     HapContext hapContext;
@@ -882,7 +883,6 @@ bool AppSpawnServer::SetAppProcProperty(const ClientSocket::AppProperty *appProp
         return false;
     }
 
-    SetAppAccessToken(appProperty);
     ret = SetProcessName(longProcName, longProcNameLen, appProperty->processName, strlen(appProperty->processName) + 1);
     if (FAILED(ret)) {
         NotifyResToParentProc(fd, ret);
