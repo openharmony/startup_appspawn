@@ -62,7 +62,7 @@ int main(int argc, char *const argv[])
     appProperty->gidCount = strtoul(argv[index++], nullptr, DECIMAL);
 
     uint32_t i = 0;
-    while (i < appProperty->gidCount && i < sizeof(appProperty->gidTable) / sizeof(sizeof(appProperty->gidTable[0]))) {
+    while ((i < appProperty->gidCount) && (i < sizeof(appProperty->gidTable) / sizeof(appProperty->gidTable[0]))) {
         if (index >= argc) {
             HiLog::Error(LABEL, "Invalid arg %{public}d %{public}d", index, argc);
             return -1;
