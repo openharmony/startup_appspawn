@@ -261,28 +261,28 @@ int AppSpawnServer::DoColdStartApp(ClientSocket::AppProperty *appProperty, int f
     APPSPAWN_LOGI("DoColdStartApp::appName %s", appProperty->processName);
     std::vector<char *> extractedCmds;
     extractedCmds.push_back(const_cast<char *>("/system/bin/appspawntools"));
-    std::string fdStr = std::to_string(fd);
-    APPSPAWN_LOGI("DoColdStartApp::fd %d %s", fd, fdStr.c_str());
-    extractedCmds.push_back(const_cast<char *>(fdStr.c_str()));
-    std::string uidStr = std::to_string(appProperty->uid);
-    APPSPAWN_LOGI("DoColdStartApp::uid %d %s", appProperty->uid, uidStr.c_str());
-    extractedCmds.push_back(const_cast<char *>(uidStr.c_str()));
-    extractedCmds.push_back(const_cast<char *>(std::string(std::to_string(appProperty->gid)).c_str()));
+    std::string tmp = std::to_string(fd);
+    APPSPAWN_LOGI("DoColdStartApp::fd %d %s", fd, tmp.c_str());
+    extractedCmds.push_back(const_cast<char *>(tmp.c_str()));
+    std::string uid = std::to_string(appProperty->uid);
+    APPSPAWN_LOGI("DoColdStartApp::uid %d gid %d  %s", appProperty->uid, appProperty->gid, uid.c_str());
+    extractedCmds.push_back(const_cast<char *>(uid.c_str()));
+    std::string gid = std::to_string(appProperty->gid);
+    extractedCmds.push_back(const_cast<char *>(gid.c_str()));
     extractedCmds.push_back(const_cast<char *>(appProperty->processName));
     extractedCmds.push_back(const_cast<char *>(appProperty->bundleName));
     extractedCmds.push_back(const_cast<char *>(appProperty->soPath));
-    std::string access = std::to_string(appProperty->accessTokenId);
-    APPSPAWN_LOGI("DoColdStartApp::accessTokenId %d %s", appProperty->accessTokenId, access.c_str());
-    extractedCmds.push_back(const_cast<char *>(access.c_str()));
+    std::string accessTokenId = std::to_string(appProperty->accessTokenId);
+    APPSPAWN_LOGI("DoColdStartApp::accessTokenId %d %s", appProperty->accessTokenId, accessTokenId.c_str());
+    extractedCmds.push_back(const_cast<char *>(accessTokenId.c_str()));
     extractedCmds.push_back(const_cast<char *>(appProperty->apl));
     APPSPAWN_LOGI("DoColdStartApp renderCmd %s", appProperty->renderCmd);
-    if (strlen(appProperty->renderCmd) != 0) {
-        extractedCmds.push_back(const_cast<char *>(appProperty->renderCmd));
-    } else {
-        extractedCmds.push_back(const_cast<char *>(""));
-    }
-    extractedCmds.push_back(const_cast<char *>(std::string(std::to_string(appProperty->flags)).c_str()));
-    extractedCmds.push_back(const_cast<char *>(std::string(std::to_string(appProperty->gidCount)).c_str()));
+    extractedCmds.push_back(const_cast<char *>(appProperty->renderCmd));
+    std::string flags = std::to_string(appProperty->flags);
+    extractedCmds.push_back(const_cast<char *>(flags.c_str()));
+    std::string gidCount = std::to_string(appProperty->gidCount);
+    APPSPAWN_LOGI("DoColdStartApp gidCount %d %s", appProperty->gidCount, gidCount.c_str());
+    extractedCmds.push_back(const_cast<char *>(gidCount.c_str()));
     for (uint32_t i = 0; i < appProperty->gidCount; i++) {
         extractedCmds.push_back(const_cast<char *>(std::string(std::to_string(appProperty->gidTable[i])).c_str()));
     }
