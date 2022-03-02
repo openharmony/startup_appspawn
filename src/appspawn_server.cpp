@@ -68,7 +68,7 @@ constexpr int32_t WAIT_DELAY_US = 100 * 1000;  // 100ms
 constexpr int32_t GID_USER_DATA_RW = 1008;
 constexpr int32_t MAX_GIDS = 64;
 constexpr int32_t UID_BASE = 200000;
-constexpr int32_t WAIT_PARAM_TIME = 1000;
+constexpr int32_t WAIT_PARAM_TIME = 5;
 
 constexpr std::string_view BUNDLE_NAME_MEDIA_LIBRARY("com.ohos.medialibrary.MediaLibraryDataA");
 constexpr std::string_view BUNDLE_NAME_SCANNER("com.ohos.medialibrary.MediaScannerAbilityA");
@@ -171,13 +171,23 @@ void AppSpawnServer::ConnectionPeer()
 void AppSpawnServer::WaitRebootEvent()
 {
     APPSPAWN_LOGI("wait 'startup.device.ctl' event");
+    std::string getValue = "";
+    int ret = -1;
     while (isRunning_) {
-        int ret =  WaitParameter("startup.device.ctl", "stop", WAIT_PARAM_TIME);
+        ret =  WaitParameter("startup.device.ctl", "stop", WAIT_PARAM_TIME);
         if (ret == 0) {
             std::lock_guard<std::mutex> lock(mut_);
             isStop_ = true;
             dataCond_.notify_one();
             break;
+        } else {
+            ret = OHOS::system::GetStringParameter("startup.device.ctl", getValue, "");
+            if (ret == 0 && getValue == "stop") {
+                std::lock_guard<std::mutex> lock(mut_);
+                isStop_ = true;
+                dataCond_.notify_one();
+                break;
+            }
         }
     }
 }
