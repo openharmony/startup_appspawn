@@ -95,6 +95,20 @@ ohos_static_library("appspawn_server") {
   part_name = "${part_name}"
 }
 
+ohos_executable("appspawntools") {
+  sources = [ "${appspawn_path}/tools/appspawn_start_app.cpp" ]
+  configs = [ ":appspawn_config" ]
+  deps = [
+    "${appspawn_path}:appspawn_server",
+    "//base/security/access_token/interfaces/innerkits/token_setproc:libtoken_setproc",
+  ]
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+
+  install_enable = true
+  subsystem_name = "${subsystem_name}"
+  part_name = "${part_name}"
+}
+
 ohos_prebuilt_etc("appspawn.rc") {
   source = "appspawn.cfg"
   relative_install_dir = "init"
