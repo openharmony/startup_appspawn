@@ -171,18 +171,16 @@ void AppSpawnServer::ConnectionPeer()
 void AppSpawnServer::WaitRebootEvent()
 {
     APPSPAWN_LOGI("wait 'startup.device.ctl' event");
-    std::string getValue = "";
-    int ret = -1;
     while (isRunning_) {
-        ret =  WaitParameter("startup.device.ctl", "stop", WAIT_PARAM_TIME);
+        int ret = WaitParameter("startup.device.ctl", "stop", WAIT_PARAM_TIME);
         if (ret == 0) {
             std::lock_guard<std::mutex> lock(mut_);
             isStop_ = true;
             dataCond_.notify_one();
             break;
         } else {
-            ret = OHOS::system::GetStringParameter("startup.device.ctl", getValue, "");
-            if (ret == 0 && getValue == "stop") {
+            std::string value = OHOS::system::GetParameter("startup.device.ctl", "");
+            if (ret == 0 && value == "stop") {
                 std::lock_guard<std::mutex> lock(mut_);
                 isStop_ = true;
                 dataCond_.notify_one();
