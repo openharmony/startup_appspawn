@@ -70,7 +70,11 @@ public:
      */
     void SetServerSocket(const std::shared_ptr<ServerSocket> &serverSocket);
 
+    int AppColdStart(char *longProcName,
+        int64_t longProcNameLen, const ClientSocket::AppProperty *appProperty, int fd);
 private:
+    int DoColdStartApp(ClientSocket::AppProperty *appProperty, int fd);
+
     static constexpr uint8_t BITLEN32 = 32;
     static constexpr uint8_t FDLEN2 = 2;
     static constexpr uint8_t FD_INIT_VALUE = 0;
@@ -162,7 +166,7 @@ private:
      * Sets app process property.
      */
     bool SetAppProcProperty(const ClientSocket::AppProperty *appProperty, char *longProcName,
-        int64_t longProcNameLen, const int32_t fd[FDLEN2]);
+        int64_t longProcNameLen, const int32_t fd);
 
     /**
      * Notify
