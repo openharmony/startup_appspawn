@@ -180,7 +180,7 @@ void AppSpawnServer::WaitRebootEvent()
             break;
         } else {
             std::string value = OHOS::system::GetParameter("startup.device.ctl", "");
-            if (ret == 0 && value == "stop") {
+            if (value == "stop") {
                 std::lock_guard<std::mutex> lock(mut_);
                 isStop_ = true;
                 dataCond_.notify_one();
