@@ -90,6 +90,7 @@ public:
     static constexpr int MAX_GIDS = 64;
     static constexpr int APL_MAX_LEN = 32;
     static constexpr int RENDER_CMD_MAX_LEN = 1024;
+    static constexpr int APPSPAWN_COLD_BOOT = 0x01;
 
     struct AppProperty {
         uint32_t uid;                     // the UNIX uid that the child process setuid() to after fork()
@@ -102,6 +103,7 @@ public:
         uint32_t accessTokenId;
         char apl[APL_MAX_LEN];
         char renderCmd[RENDER_CMD_MAX_LEN];
+        uint32_t flags;
     };
 
 private:
