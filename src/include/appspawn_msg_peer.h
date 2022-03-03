@@ -37,7 +37,7 @@ public:
     AppSpawnMsgPeer(const std::shared_ptr<ServerSocket> &socket, int connectFd);
 
     /**
-     * Destructor used to destory a AppSpawnMsgPeer
+     * Destructor used to destroy a AppSpawnMsgPeer
      */
     ~AppSpawnMsgPeer();
 
