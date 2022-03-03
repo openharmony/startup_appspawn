@@ -29,7 +29,7 @@ public:
     explicit ClientSocket(const std::string &client);
 
     /**
-     * Destructor used to destory a ClientSocket
+     * Destructor used to destroy a ClientSocket
      */
     virtual ~ClientSocket() = default;
 

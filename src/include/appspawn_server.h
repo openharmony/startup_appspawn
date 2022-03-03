@@ -39,7 +39,7 @@ public:
     explicit AppSpawnServer(const std::string &socketName);
 
     /**
-     * Destructor used to destory a AppSpawnServer
+     * Destructor used to destroy a AppSpawnServer
      */
     ~AppSpawnServer() = default;
 
@@ -93,7 +93,7 @@ private:
     void ConnectionPeer();
 
     /**
-     * Sets a name for an applicaiton process.
+     * Sets a name for an application process.
      *
      * @param longProcName Indicates the length of long process name.
      * @param longProcNameLen Indicates the long process name.
