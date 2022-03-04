@@ -53,7 +53,7 @@
 #include <unistd.h>
 
 constexpr static mode_t FILE_MODE = 0711;
-constexpr static mode_t WEBVIEW_FILE_MODE = 0511;
+constexpr static mode_t NWEB_FILE_MODE = 0511;
 
 #define APPSPAWN_LOGI(fmt, ...) STARTUP_LOGI("appspawn_server.log", "APPSPAWN", fmt, ##__VA_ARGS__)
 #define APPSPAWN_LOGE(fmt, ...) STARTUP_LOGE("appspawn_server.log", "APPSPAWN", fmt, ##__VA_ARGS__)
@@ -607,6 +607,7 @@ int32_t AppSpawnServer::DoAppSandboxMount(const ClientSocket::AppProperty *appPr
     std::string destel1DataPath = rootPath + "/data/storage/el1/base";
     std::string destel2DataPath = rootPath + "/data/storage/el2/base";
     std::string destappdataPath = rootPath + oriappdataPath;
+
     int rc = 0;
 
     std::string bundleName = appProperty->bundleName;
@@ -633,7 +634,7 @@ int32_t AppSpawnServer::DoAppSandboxMount(const ClientSocket::AppProperty *appPr
     // to create some useful dir when mount point created
     std::vector<std::string> mkdirInfo;
     std::string dirPath;
-    mkdirInfo.push_back("/data/storage/el1/bundle/webview");
+    mkdirInfo.push_back("/data/storage/el1/bundle/nweb");
 
     for (int i = 0; i < mkdirInfo.size(); i++) {
         dirPath = rootPath + mkdirInfo[i];
@@ -658,6 +659,10 @@ int32_t AppSpawnServer::DoAppSandboxMountCustomized(const ClientSocket::AppPrope
     std::string destbundlesPath = rootPath + "/data/bundles/";
     DoAppSandboxMountOnce(oriapplicationsPath.c_str(), destbundlesPath.c_str());
 
+    std::string orimntHmdfsPath = "/mnt/hmdfs/";
+    std::string destmntHmdfsPath = rootPath + orimntHmdfsPath;
+    DoAppSandboxMountOnce(orimntHmdfsPath.c_str(), destmntHmdfsPath.c_str());
+
     // Add distributedfile module support, later reconstruct it
     std::string oriDistributedPath = "/mnt/hmdfs/" +  currentUserId + "/account/merge_view/data/" + bundleName;
     std::string destDistributedPath = rootPath + "/data/storage/el2/distributedfiles";
@@ -667,11 +672,11 @@ int32_t AppSpawnServer::DoAppSandboxMountCustomized(const ClientSocket::AppPrope
     std::string destDistributedGroupPath = rootPath + "/data/storage/el2/auth_groups";
     DoAppSandboxMountOnce(oriDistributedGroupPath.c_str(), destDistributedGroupPath.c_str());
 
-    // do webview adaption
-    std::string oriwebviewPath = "/data/app/el1/bundle/public/com.ohos.webviewhap";
-    std::string destwebviewPath = destInstallPath + "/webview";
-    chmod(destwebviewPath.c_str(), WEBVIEW_FILE_MODE);
-    DoAppSandboxMountOnce(oriwebviewPath.c_str(), destwebviewPath.c_str());
+    // do nweb adaption
+    std::string orinwebPath = "/data/app/el1/bundle/public/com.ohos.nweb";
+    std::string destnwebPath = destInstallPath + "/nweb";
+    chmod(destnwebPath.c_str(), NWEB_FILE_MODE);
+    DoAppSandboxMountOnce(orinwebPath.c_str(), destnwebPath.c_str());
 
     if (bundleName.find("medialibrary") != std::string::npos) {
         std::string oriMediaPath = "/storage/media/" +  currentUserId;
@@ -687,6 +692,8 @@ void AppSpawnServer::DoAppSandboxMkdir(std::string sandboxPackagePath, const Cli
     std::vector<std::string> mkdirInfo;
     std::string dirPath;
 
+    mkdirInfo.push_back("/mnt/");
+    mkdirInfo.push_back("/mnt/hmdfs/");
     mkdirInfo.push_back("/data/");
     mkdirInfo.push_back("/storage/");
     mkdirInfo.push_back("/storage/media");
@@ -754,7 +761,6 @@ int32_t AppSpawnServer::DoSandboxRootFolderCreate(std::string sandboxPackagePath
     vecInfo.push_back("/sys");
     vecInfo.push_back("/sys-prod");
     vecInfo.push_back("/system");
-    vecInfo.push_back("/mnt");
 
     for (int i = 0; i < vecInfo.size(); i++) {
         tmpDir = sandboxPackagePath + vecInfo[i];
