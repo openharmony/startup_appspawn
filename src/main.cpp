@@ -27,7 +27,7 @@ int main(int argc, char *const argv[])
         uintptr_t argvSize = end - start;
 
 #ifdef WEBVIEW_SPAWN
-        OHOS::AppSpawn::AppSpawnServer appspawnServer("/dev/unix/socket/WebViewSpawn");
+        OHOS::AppSpawn::AppSpawnServer appspawnServer("/dev/unix/socket/NwebSpawn");
 #else
         OHOS::AppSpawn::AppSpawnServer appspawnServer("AppSpawn");
 #endif
