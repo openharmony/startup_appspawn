@@ -930,12 +930,12 @@ bool AppSpawnServer::SetAppProcProperty(const ClientSocket::AppProperty *appProp
 
 #ifdef NWEB_SPAWN
     using FuncType = void (*)(const char *cmd);
-    FuncType funcWebViewExecuteProcess = reinterpret_cast<FuncType>(dlsym(nwebHandle, "WebViewExecuteProcess"));
-    if (funcWebViewExecuteProcess == nullptr) {
+    FuncType funcNWebRenderMain = reinterpret_cast<FuncType>(dlsym(nwebHandle, "NWebRenderMain"));
+    if (funcNWebRenderMain == nullptr) {
         HiLog::Error(LABEL, "nwebspawn dlsym ERROR=%{public}s", dlerror());
         return false;
     }
-    funcWebViewExecuteProcess(appProperty->renderCmd);
+    funcNWebRenderMain(appProperty->renderCmd);
 #else
     AppExecFwk::MainThread::Start();
 #endif
