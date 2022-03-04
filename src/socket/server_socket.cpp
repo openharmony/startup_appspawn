@@ -154,7 +154,7 @@ int ServerSocket::RegisterServerSocket(int &connectFd)
     }
 
 #ifdef NWEB_SPAWN
-    connectFd = GetControlSocket("NwebSpawn");
+    connectFd = GetControlSocket("NWebSpawn");
 #else
     connectFd = CreateSocket();
 #endif
