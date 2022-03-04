@@ -34,7 +34,7 @@ public:
     explicit ServerSocket(const std::string &server);
 
     /**
-     * Destructor used to destory a ServerSocket
+     * Destructor used to destroy a ServerSocket
      */
     virtual ~ServerSocket();
 

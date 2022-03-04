@@ -298,7 +298,7 @@ int AppSpawnServer::DoColdStartApp(ClientSocket::AppProperty *appProperty, int f
     extractedCmds.push_back(nullptr);
     APPSPAWN_LOGI("DoColdStartApp extractedCmds %d", extractedCmds.size());
     int ret = execv(extractedCmds[0], extractedCmds.data());
-    if (ret != 0) {
+    if (ret) {
         HiLog::Error(LABEL, "Failed to execv, errno = %{public}d", errno);
         NotifyResToParentProc(fd, -1);
     }
@@ -386,7 +386,7 @@ bool AppSpawnServer::ServerMain(char *longProcName, int64_t longProcNameLen)
         ClientSocket::AppProperty *appProperty = msg->GetMsg();
         pid_t pid = 0;
         int ret = StartApp(longProcName, longProcNameLen, appProperty, connectFd, pid);
-        if (ret != 0) {
+        if (ret) {
             msg->Response(ret);
         } else {
             msg->Response(pid);
@@ -723,7 +723,7 @@ int32_t AppSpawnServer::DoSandboxRootFolderCreateAdapt(std::string sandboxPackag
     }
 
     // bind mount "/" to /mnt/sandbox/<packageName> path
-    // rootfs: to do more resouces bind mount here to get more strict resources constraints
+    // rootfs: to do more resources bind mount here to get more strict resources constraints
     rc = mount("/", sandboxPackagePath.c_str(), NULL, MS_BIND | MS_REC, NULL);
     if (rc) {
         HiLog::Error(LABEL, "mount bind / failed");
@@ -867,7 +867,7 @@ void AppSpawnServer::SetAppAccessToken(const ClientSocket::AppProperty *appPrope
 #ifdef WITH_SELINUX
     HapContext hapContext;
     ret = hapContext.HapDomainSetcontext(appProperty->apl, appProperty->processName);
-    if (ret != 0) {
+    if (ret) {
         HiLog::Error(LABEL, "AppSpawnServer::Failed to hap domain set context, errno = %{public}d %{public}s",
             errno, appProperty->apl);
     } else {
