@@ -219,8 +219,8 @@ void AppSpawnServer::HandleSignal()
 
 void AppSpawnServer::LoadAceLib()
 {
-#ifdef WEBVIEW_SPAWN
-    std::string enginelibdir("/data/app/el1/bundle/public/com.ohos.webviewhap"
+#ifdef NWEB_SPAWN
+    std::string enginelibdir("/data/app/el1/bundle/public/com.ohos.nweb"
         "/entry/libs/armeabi/libweb_engine.so");
     HiLog::Info(LABEL, "MainThread::LoadAbilityLibrary libweb_engine. Start calling dlopen enginelibdir.");
     void *handle = dlopen(enginelibdir.c_str(), RTLD_NOW | RTLD_GLOBAL);
@@ -231,16 +231,16 @@ void AppSpawnServer::LoadAceLib()
     }
     HiLog::Info(LABEL, "MainThread::LoadAbilityLibrary libweb_engine. End calling dlopen.");
 
-    std::string execlibdir("/data/app/el1/bundle/public/com.ohos.webviewhap"
-        "/entry/libs/armeabi/libwebview_exec_proc.so");
-    HiLog::Info(LABEL, "MainThread::LoadAbilityLibrary libwebview_exec_proc. Start calling dlopen execlibdir.");
-    webviewHandle = dlopen(execlibdir.c_str(), RTLD_NOW | RTLD_GLOBAL);
-    if (webviewHandle == nullptr) {
+    std::string execlibdir("/data/app/el1/bundle/public/com.ohos.nweb"
+        "/entry/libs/armeabi/libnweb_render.so");
+    HiLog::Info(LABEL, "MainThread::LoadAbilityLibrary libnweb_render. Start calling dlopen execlibdir.");
+    nwebHandle = dlopen(execlibdir.c_str(), RTLD_NOW | RTLD_GLOBAL);
+    if (nwebHandle == nullptr) {
         HiLog::Error(LABEL, "Fail to dlopen %{public}s, [%{public}s]", execlibdir.c_str(), dlerror());
     } else {
         HiLog::Info(LABEL, "Success to dlopen %{public}s", execlibdir.c_str());
     }
-    HiLog::Info(LABEL, "MainThread::LoadAbilityLibrary libwebview_exec_proc. End calling dlopen.");
+    HiLog::Info(LABEL, "MainThread::LoadAbilityLibrary libnweb_render. End calling dlopen.");
 #else
     std::string acelibdir("/system/lib/libace.z.so");
     void *AceAbilityLib = nullptr;
@@ -928,14 +928,14 @@ bool AppSpawnServer::SetAppProcProperty(const ClientSocket::AppProperty *appProp
     // notify success to father process and start app process
     NotifyResToParentProc(fd, ret);
 
-#ifdef WEBVIEW_SPAWN
+#ifdef NWEB_SPAWN
     using FuncType = void (*)(const char *cmd);
-    FuncType funcWebViewExecuteProcess = reinterpret_cast<FuncType>(dlsym(webviewHandle, "WebViewExecuteProcess"));
-    if (funcWebViewExecuteProcess == nullptr) {
-        HiLog::Error(LABEL, "webviewspawn dlsym ERROR=%{public}s", dlerror());
+    FuncType funcNWebRenderMain = reinterpret_cast<FuncType>(dlsym(nwebHandle, "NWebRenderMain"));
+    if (funcNWebRenderMain == nullptr) {
+        HiLog::Error(LABEL, "nwebspawn dlsym ERROR=%{public}s", dlerror());
         return false;
     }
-    funcWebViewExecuteProcess(appProperty->renderCmd);
+    funcNWebRenderMain(appProperty->renderCmd);
 #else
     AppExecFwk::MainThread::Start();
 #endif
