@@ -395,6 +395,7 @@ bool AppSpawnServer::ServerMain(char *longProcName, int64_t longProcNameLen)
         kill(iter->first, SIGKILL);
         appMap_.erase(iter);
     }
+    quick_exit(0);
     return false;
 }
 
