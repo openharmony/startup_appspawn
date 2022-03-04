@@ -207,8 +207,8 @@ private:
     bool isChildDie_ { false };
     pid_t childPid_ {};
     std::map<pid_t, std::string> appMap_;
-#ifdef WEBVIEW_SPAWN
-    void *webviewHandle = nullptr;
+#ifdef NWEB_SPAWN
+    void *nwebHandle = nullptr;
 #endif
 };
 }  // namespace AppSpawn
