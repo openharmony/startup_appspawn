@@ -153,8 +153,8 @@ int ServerSocket::RegisterServerSocket(int &connectFd)
         return -EINVAL;
     }
 
-#ifdef WEBVIEW_SPAWN
-    connectFd = GetControlSocket("WebViewSpawn");
+#ifdef NWEB_SPAWN
+    connectFd = GetControlSocket("NWebSpawn");
 #else
     connectFd = CreateSocket();
 #endif
@@ -162,7 +162,7 @@ int ServerSocket::RegisterServerSocket(int &connectFd)
         return connectFd;
     }
 
-#ifndef WEBVIEW_SPAWN
+#ifndef NWEB_SPAWN
     if ((BindSocket(connectFd) != 0) || (listen(connectFd, listenBacklog_) < 0)) {
         HiLog::Error(LABEL,
             "Server: Register socket fd %d with backlog %d error: %d",
