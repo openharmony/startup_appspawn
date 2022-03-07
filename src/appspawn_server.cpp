@@ -344,6 +344,14 @@ int AppSpawnServer::StartApp(char *longProcName, int64_t longProcNameLen,
     return (buff == ERR_OK) ? 0 : buff;
 }
 
+void AppSpawnServer::QuickExitMain()
+{
+#ifndef TEST_EXIT
+    quick_exit(0);
+#endif
+    return;
+}
+
 bool AppSpawnServer::ServerMain(char *longProcName, int64_t longProcNameLen)
 {
     if (socket_->RegisterServerSocket() != 0) {
@@ -395,9 +403,7 @@ bool AppSpawnServer::ServerMain(char *longProcName, int64_t longProcNameLen)
         kill(iter->first, SIGKILL);
         appMap_.erase(iter);
     }
-#ifndef TEST_EXIT
-    quick_exit(0);
-#endif
+    QuickExitMain();
     return false;
 }
 
