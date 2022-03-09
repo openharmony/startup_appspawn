@@ -659,7 +659,8 @@ int32_t AppSpawnServer::DoAppSandboxMountCustomized(const ClientSocket::AppPrope
     std::string currentUserId = std::to_string(appProperty->uid / UID_BASE);
     std::string destInstallPath = rootPath + "/data/storage/el1/bundle";
 
-    if (bundleName.find("launcher") != std::string::npos || bundleName.find("systemui") != std::string::npos) {
+    if (bundleName.find("launcher") != std::string::npos || bundleName.find("systemui") != std::string::npos ||\
+        bundleName.find("permissionmanager") != std::string::npos || bundleName == "com.ohos.settings") {
         // account_0/applications/ dir can still access other packages' data now for compatibility purpose
         std::string oriapplicationsPath = "/data/app/el1/bundle/public/";
         std::string destapplicationsPath = rootPath + "/data/accounts/account_0/applications/";
