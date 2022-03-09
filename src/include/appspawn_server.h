@@ -193,6 +193,8 @@ private:
     void WaitRebootEvent();
 
     void HandleSignal();
+
+    void QuickExitMain();
 private:
     const std::string deviceNull_ = "/dev/null";
     std::string socketName_ {};

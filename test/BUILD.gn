@@ -35,7 +35,7 @@ group("moduletest") {
 config("appspawn_test_config") {
   configs = []
 
-  defines = []
+  defines = [ "TEST_EXIT" ]
 
   include_dirs = [
     "${appspawn_path}/test/mock/include",
