@@ -221,7 +221,7 @@ void AppSpawnServer::LoadAceLib()
 {
 #ifdef NWEB_SPAWN
     std::string enginelibdir("/data/app/el1/bundle/public/com.ohos.nweb"
-        "/entry/libs/armeabi/libweb_engine.so");
+        "/libs/arm/libweb_engine.so");
     HiLog::Info(LABEL, "MainThread::LoadAbilityLibrary libweb_engine. Start calling dlopen enginelibdir.");
     void *handle = dlopen(enginelibdir.c_str(), RTLD_NOW | RTLD_GLOBAL);
     if (handle == nullptr) {
@@ -232,7 +232,7 @@ void AppSpawnServer::LoadAceLib()
     HiLog::Info(LABEL, "MainThread::LoadAbilityLibrary libweb_engine. End calling dlopen.");
 
     std::string execlibdir("/data/app/el1/bundle/public/com.ohos.nweb"
-        "/entry/libs/armeabi/libnweb_render.so");
+        "/libs/arm/libnweb_render.so");
     HiLog::Info(LABEL, "MainThread::LoadAbilityLibrary libnweb_render. Start calling dlopen execlibdir.");
     nwebHandle = dlopen(execlibdir.c_str(), RTLD_NOW | RTLD_GLOBAL);
     if (nwebHandle == nullptr) {
