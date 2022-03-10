@@ -381,8 +381,8 @@ bool AppSpawnServer::ServerMain(char *longProcName, int64_t longProcNameLen)
             isChildDie_ = false;
             auto iter = appMap_.find(childPid_);
             if (iter != appMap_.end()) {
-                appMap_.erase(iter);
                 APPSPAWN_LOGI("delete pid=%d in appMap", iter->first);
+                appMap_.erase(iter);
             }
         }
         if (this->appQueue_.empty()) {
