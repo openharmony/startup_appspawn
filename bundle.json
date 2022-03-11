@@ -18,7 +18,7 @@
             "standard"
         ],
         "features": [
-            "appspawn_support_webview"
+            "appspawn_support_nweb"
         ],
         "rom": "",
         "ram": "",
@@ -38,7 +38,7 @@
                 "//base/startup/appspawn_standard:appspawn.rc",
                 "//base/startup/appspawn_standard:appspawn_server",
                 "//base/startup/appspawn_standard:appspawntools",
-                "//base/startup/appspawn_standard:webview",
+                "//base/startup/appspawn_standard:nweb",
                 "//base/startup/appspawn_standard/interfaces/innerkits:appspawn_socket_client"
             ],
             "inner_kits": [
