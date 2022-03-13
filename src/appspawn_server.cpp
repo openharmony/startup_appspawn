@@ -239,7 +239,7 @@ void AppSpawnServer::LoadAceLib()
     nwebHandle = dlopen_ns(&dlns, "libnweb_render.so", RTLD_NOW | RTLD_GLOBAL);
 #else
     const std::string RENDER_LIB_DIR = LOAD_LIB_DIR + "/libnweb_render.so";
-    nwebHandle = dlopen(execlibdir.c_str(), RTLD_NOW | RTLD_GLOBAL);
+    nwebHandle = dlopen(RENDER_LIB_DIR.c_str(), RTLD_NOW | RTLD_GLOBAL);
 #endif
     if (nwebHandle == nullptr) {
         HiLog::Error(LABEL, "Fail to dlopen libnweb_render.so, [%{public}s]", dlerror());
