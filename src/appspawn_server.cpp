@@ -220,27 +220,33 @@ void AppSpawnServer::HandleSignal()
 void AppSpawnServer::LoadAceLib()
 {
 #ifdef NWEB_SPAWN
-    std::string enginelibdir("/data/app/el1/bundle/public/com.ohos.nweb"
-        "/libs/arm/libweb_engine.so");
-    HiLog::Info(LABEL, "MainThread::LoadAbilityLibrary libweb_engine. Start calling dlopen enginelibdir.");
-    void *handle = dlopen(enginelibdir.c_str(), RTLD_NOW | RTLD_GLOBAL);
+    const std::string LOAD_LIB_DIR = "/data/app/el1/bundle/public/com.ohos.nweb/libs/arm";
+#ifdef __MUSL__
+    Dl_namespace dlns;
+    dlns_init(&dlns, "nweb_ns");
+    dlns_create(&dlns, LOAD_LIB_DIR.c_str());
+    void *handle = dlopen_ns(&dlns, "libweb_engine.so", RTLD_NOW | RTLD_GLOBAL);
+#else
+    const std::string ENGINE_LIB_DIR = LOAD_LIB_DIR + "/libweb_engine.so";
+    void *handle = dlopen(ENGINE_LIB_DIR.c_str(), RTLD_NOW | RTLD_GLOBAL);
+#endif
     if (handle == nullptr) {
-        HiLog::Error(LABEL, "Fail to dlopen %{public}s, [%{public}s]", enginelibdir.c_str(), dlerror());
+        HiLog::Error(LABEL, "Fail to dlopen libweb_engine.so, [%{public}s]", dlerror());
     } else {
-        HiLog::Info(LABEL, "Success to dlopen %{public}s", enginelibdir.c_str());
+        HiLog::Info(LABEL, "Success to dlopen libweb_engine.so");
     }
-    HiLog::Info(LABEL, "MainThread::LoadAbilityLibrary libweb_engine. End calling dlopen.");
-
-    std::string execlibdir("/data/app/el1/bundle/public/com.ohos.nweb"
-        "/libs/arm/libnweb_render.so");
-    HiLog::Info(LABEL, "MainThread::LoadAbilityLibrary libnweb_render. Start calling dlopen execlibdir.");
-    nwebHandle = dlopen(execlibdir.c_str(), RTLD_NOW | RTLD_GLOBAL);
+#ifdef __MUSL__
+    nwebHandle = dlopen_ns(&dlns, "libnweb_render.so", RTLD_NOW | RTLD_GLOBAL);
+#else
+    const std::string RENDER_LIB_DIR = LOAD_LIB_DIR + "/libnweb_render.so";
+    nwebHandle = dlopen(RENDER_LIB_DIR.c_str(), RTLD_NOW | RTLD_GLOBAL);
+#endif
     if (nwebHandle == nullptr) {
-        HiLog::Error(LABEL, "Fail to dlopen %{public}s, [%{public}s]", execlibdir.c_str(), dlerror());
+        HiLog::Error(LABEL, "Fail to dlopen libnweb_render.so, [%{public}s]", dlerror());
     } else {
-        HiLog::Info(LABEL, "Success to dlopen %{public}s", execlibdir.c_str());
+        HiLog::Info(LABEL, "Success to dlopen libnweb_render.so");
     }
-    HiLog::Info(LABEL, "MainThread::LoadAbilityLibrary libnweb_render. End calling dlopen.");
+
 #else
     std::string acelibdir("/system/lib/libace.z.so");
     void *AceAbilityLib = nullptr;
