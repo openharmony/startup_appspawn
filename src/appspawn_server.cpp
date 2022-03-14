@@ -206,6 +206,12 @@ void AppSpawnServer::HandleSignal()
         if (ret != sizeof(fdsi) || fdsi.ssi_signo != SIGCHLD) {
             continue;
         }
+        pid_t pid;
+        int status;
+        while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
+            APPSPAWN_LOGE("HandleSignal: %d", pid);
+        }
+
         std::lock_guard<std::mutex> lock(mut_);
         isChildDie_ = true;
         childPid_ = fdsi.ssi_pid;
