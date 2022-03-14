@@ -665,17 +665,14 @@ int32_t AppSpawnServer::DoAppSandboxMountCustomized(const ClientSocket::AppPrope
     std::string currentUserId = std::to_string(appProperty->uid / UID_BASE);
     std::string destInstallPath = rootPath + "/data/storage/el1/bundle";
 
-    if (bundleName.find("launcher") != std::string::npos || bundleName.find("systemui") != std::string::npos ||\
-        bundleName.find("permissionmanager") != std::string::npos || bundleName == "com.ohos.settings") {
-        // account_0/applications/ dir can still access other packages' data now for compatibility purpose
-        std::string oriapplicationsPath = "/data/app/el1/bundle/public/";
-        std::string destapplicationsPath = rootPath + "/data/accounts/account_0/applications/";
-        DoAppSandboxMountOnce(oriapplicationsPath.c_str(), destapplicationsPath.c_str());
+    // account_0/applications/ dir can still access other packages' data now for compatibility purpose
+    std::string oriapplicationsPath = "/data/app/el1/bundle/public/";
+    std::string destapplicationsPath = rootPath + "/data/accounts/account_0/applications/";
+    DoAppSandboxMountOnce(oriapplicationsPath.c_str(), destapplicationsPath.c_str());
 
-        // need permission check for system app here
-        std::string destbundlesPath = rootPath + "/data/bundles/";
-        DoAppSandboxMountOnce(oriapplicationsPath.c_str(), destbundlesPath.c_str());
-    }
+    // need permission check for system app here
+    std::string destbundlesPath = rootPath + "/data/bundles/";
+    DoAppSandboxMountOnce(oriapplicationsPath.c_str(), destbundlesPath.c_str());
 
     std::string orimntHmdfsPath = "/mnt/hmdfs/";
     std::string destmntHmdfsPath = rootPath + orimntHmdfsPath;
