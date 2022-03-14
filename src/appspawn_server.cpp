@@ -195,7 +195,6 @@ void AppSpawnServer::HandleSignal()
     sigset_t mask;
     sigemptyset(&mask);
     sigaddset(&mask, SIGCHLD);
-    sigaddset(&mask, SIGHUP);
     sigprocmask(SIG_BLOCK, &mask, nullptr);
     int signalFd = signalfd(-1, &mask, SFD_CLOEXEC);
     if (signalFd < 0) {
@@ -260,7 +259,6 @@ static void ClearEnvironment(void)
     sigset_t mask;
     sigemptyset(&mask);
     sigaddset(&mask, SIGCHLD);
-    sigaddset(&mask, SIGTERM);
     sigprocmask(SIG_UNBLOCK, &mask, nullptr);
     return;
 }
