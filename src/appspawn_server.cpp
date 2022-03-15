@@ -195,7 +195,6 @@ void AppSpawnServer::HandleSignal()
     sigset_t mask;
     sigemptyset(&mask);
     sigaddset(&mask, SIGCHLD);
-    sigaddset(&mask, SIGHUP);
     sigprocmask(SIG_BLOCK, &mask, nullptr);
     int signalFd = signalfd(-1, &mask, SFD_CLOEXEC);
     if (signalFd < 0) {
@@ -207,6 +206,12 @@ void AppSpawnServer::HandleSignal()
         if (ret != sizeof(fdsi) || fdsi.ssi_signo != SIGCHLD) {
             continue;
         }
+        pid_t pid;
+        int status;
+        while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
+            APPSPAWN_LOGE("HandleSignal: %d", pid);
+        }
+
         std::lock_guard<std::mutex> lock(mut_);
         isChildDie_ = true;
         childPid_ = fdsi.ssi_pid;
@@ -266,7 +271,6 @@ static void ClearEnvironment(void)
     sigset_t mask;
     sigemptyset(&mask);
     sigaddset(&mask, SIGCHLD);
-    sigaddset(&mask, SIGTERM);
     sigprocmask(SIG_UNBLOCK, &mask, nullptr);
     return;
 }
