@@ -15,6 +15,7 @@
 
 #include "appspawn_server.h"
 
+#include <dlfcn.h>
 #include <fcntl.h>
 #include <memory>
 #include <csignal>
@@ -266,6 +267,31 @@ void AppSpawnServer::LoadAceLib()
 #endif
 }
 
+static void InitDebugParams(const ClientSocket::AppProperty *appProperty)
+{
+    if (access("/system/lib/libhidebug.so", F_OK) != 0) {
+        HiLog::Error(LABEL, "access failed, errno = %{public}d", errno);
+        return;
+    }
+    void* handle = dlopen("/system/lib/libhidebug.so", RTLD_LAZY);
+    if (handle == nullptr) {
+        HiLog::Error(LABEL, "Failed to dlopen libhidebug.so, %{public}s", dlerror());
+        return;
+    }
+    bool (* initParam)(const char *name);
+    initParam = (bool (*)(const char *name))dlsym(handle, "InitEnvironmentParam");
+    if (initParam == nullptr) {
+        HiLog::Error(LABEL, "Failed to dlsym InitEnvironmentParam, %{public}s", dlerror());
+        dlclose(handle);
+        return;
+    }
+    bool ret = (*initParam)(appProperty->processName);
+    if (!ret) {
+        HiLog::Error(LABEL, "init parameters failed.");
+    }
+    dlclose(handle);
+}
+
 static void ClearEnvironment(void)
 {
     sigset_t mask;
@@ -336,6 +362,7 @@ int AppSpawnServer::StartApp(char *longProcName, int64_t longProcNameLen,
         close(fd[1]);
         return -errno;
     } else if (pid == 0) {
+        InitDebugParams(appProperty);
         SpecialHandle(appProperty);
         // close socket connection and peer socket in child process
         if (socket_ != NULL) {
