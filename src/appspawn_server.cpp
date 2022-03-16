@@ -73,6 +73,8 @@ constexpr int32_t WAIT_PARAM_TIME = 5;
 
 constexpr std::string_view BUNDLE_NAME_MEDIA_LIBRARY("com.ohos.medialibrary.MediaLibraryDataA");
 constexpr std::string_view BUNDLE_NAME_SCANNER("com.ohos.medialibrary.MediaScannerAbilityA");
+constexpr std::string_view APL_SYSTEM_CORE("system_core");
+constexpr std::string_view APL_SYSTEM_BASIC("system_basic");
 }  // namespace
 
 using namespace OHOS::HiviewDFX;
@@ -681,6 +683,7 @@ int32_t AppSpawnServer::DoAppSandboxMount(const ClientSocket::AppProperty *appPr
     std::vector<std::string> mkdirInfo;
     std::string dirPath;
     mkdirInfo.push_back("/data/storage/el1/bundle/nweb");
+    mkdirInfo.push_back("/data/storage/el1/bundle/ohos.global.systemres");
 
     for (int i = 0; i < mkdirInfo.size(); i++) {
         dirPath = rootPath + mkdirInfo[i];
@@ -695,15 +698,23 @@ int32_t AppSpawnServer::DoAppSandboxMountCustomized(const ClientSocket::AppPrope
     std::string bundleName = appProperty->bundleName;
     std::string currentUserId = std::to_string(appProperty->uid / UID_BASE);
     std::string destInstallPath = rootPath + "/data/storage/el1/bundle";
+    bool AuthFlag = false;
+    const std::vector<std::string> AuthAppList = {"com.ohos.launcher", "com.ohos.permissionmanager"};
+    if (std::find(AuthAppList.begin(), AuthAppList.end(), bundleName) != AuthAppList.end()) {
+        AuthFlag = true;
+    }
 
-    // account_0/applications/ dir can still access other packages' data now for compatibility purpose
-    std::string oriapplicationsPath = "/data/app/el1/bundle/public/";
-    std::string destapplicationsPath = rootPath + "/data/accounts/account_0/applications/";
-    DoAppSandboxMountOnce(oriapplicationsPath.c_str(), destapplicationsPath.c_str());
+    if (strcmp(appProperty->apl, APL_SYSTEM_BASIC.data()) == 0 ||
+        strcmp(appProperty->apl, APL_SYSTEM_CORE.data()) == 0 || AuthFlag) {
+        // account_0/applications/ dir can still access other packages' data now for compatibility purpose
+        std::string oriapplicationsPath = "/data/app/el1/bundle/public/";
+        std::string destapplicationsPath = rootPath + "/data/accounts/account_0/applications/";
+        DoAppSandboxMountOnce(oriapplicationsPath.c_str(), destapplicationsPath.c_str());
 
-    // need permission check for system app here
-    std::string destbundlesPath = rootPath + "/data/bundles/";
-    DoAppSandboxMountOnce(oriapplicationsPath.c_str(), destbundlesPath.c_str());
+        // need permission check for system app here
+        std::string destbundlesPath = rootPath + "/data/bundles/";
+        DoAppSandboxMountOnce(oriapplicationsPath.c_str(), destbundlesPath.c_str());
+    }
 
     std::string orimntHmdfsPath = "/mnt/hmdfs/";
     std::string destmntHmdfsPath = rootPath + orimntHmdfsPath;
@@ -723,6 +734,12 @@ int32_t AppSpawnServer::DoAppSandboxMountCustomized(const ClientSocket::AppPrope
     std::string destnwebPath = destInstallPath + "/nweb";
     chmod(destnwebPath.c_str(), NWEB_FILE_MODE);
     DoAppSandboxMountOnce(orinwebPath.c_str(), destnwebPath.c_str());
+
+    // do systemres adaption
+    std::string oriSysresPath = "/data/app/el1/bundle/public/ohos.global.systemres";
+    std::string destSysresPath = destInstallPath + "/ohos.global.systemres";
+    chmod(destSysresPath.c_str(), NWEB_FILE_MODE);
+    DoAppSandboxMountOnce(oriSysresPath.c_str(), destSysresPath.c_str());
 
     if (bundleName.find("medialibrary") != std::string::npos) {
         std::string oriMediaPath = "/storage/media/" +  currentUserId;
