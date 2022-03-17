@@ -649,12 +649,10 @@ int32_t AppSpawnServer::DoAppSandboxMount(const ClientSocket::AppProperty *appPr
     std::string oriel1DataPath = "/data/app/el1/" + currentUserId + "/base/";
     std::string oriel2DataPath = "/data/app/el2/" + currentUserId + "/base/";
     std::string oriDatabasePath = "/data/app/el2/" + currentUserId + "/database/";
-    const std::string oriappdataPath = "/data/accounts/account_0/appdata/";
     std::string destDatabasePath = rootPath + "/data/storage/el2/database";
     std::string destInstallPath = rootPath + "/data/storage/el1/bundle";
     std::string destel1DataPath = rootPath + "/data/storage/el1/base";
     std::string destel2DataPath = rootPath + "/data/storage/el2/base";
-    std::string destappdataPath = rootPath + oriappdataPath;
 
     int rc = 0;
 
@@ -669,7 +667,6 @@ int32_t AppSpawnServer::DoAppSandboxMount(const ClientSocket::AppProperty *appPr
     mountMap[destInstallPath] = oriInstallPath;
     mountMap[destel1DataPath] = oriel1DataPath;
     mountMap[destel2DataPath] = oriel2DataPath;
-    mountMap[destappdataPath] = oriappdataPath;
 
     std::map<std::string, std::string>::iterator iter;
     for (iter = mountMap.begin(); iter != mountMap.end(); ++iter) {
@@ -775,7 +772,6 @@ void AppSpawnServer::DoAppSandboxMkdir(std::string sandboxPackagePath, const Cli
     mkdirInfo.push_back("/data/accounts");
     mkdirInfo.push_back("/data/accounts/account_0");
     mkdirInfo.push_back("/data/accounts/account_0/applications/");
-    mkdirInfo.push_back("/data/accounts/account_0/appdata/");
     mkdirInfo.push_back("/data/bundles/");
 
     for (int i = 0; i < mkdirInfo.size(); i++) {
