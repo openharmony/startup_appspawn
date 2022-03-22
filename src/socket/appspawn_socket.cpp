@@ -66,7 +66,7 @@ int AppSpawnSocket::PackSocketAddr()
     }
     socklen_t pathSize = sizeof(socketAddr_.sun_path);
     if (pathLen >= pathSize) {
-        HiLog::Error(LABEL, "Invalid socket name: '%s' too long", socketName_.c_str());
+        HiLog::Error(LABEL, "Invalid socket name: '%{public}s' too long", socketName_.c_str());
         return -1;
     }
 
@@ -144,7 +144,8 @@ int AppSpawnSocket::WriteSocketMessage(int socketFd, const void *buf, int len)
         wLen = write(socketFd, offset, remain);
         HiLog::Debug(LABEL, "socket fd %{public}d, wLen %zd", socketFd, wLen);
         if ((wLen <= 0) && (errno != EINTR)) {
-            HiLog::Error(LABEL, "Failed to write message to fd %{public}d, error %zd: %{public}d", socketFd, wLen, errno);
+            HiLog::Error(LABEL, "Failed to write message to fd %{public}d, error %zd: %{public}d",
+                socketFd, wLen, errno);
             return (-errno);
         }
     }
