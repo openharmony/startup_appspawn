@@ -80,7 +80,8 @@ int ClientSocket::ConnectSocket(int connectFd)
         return -1;
     }
 
-    HiLog::Debug(LABEL, "Client: Connected on socket fd %{public}d, name '%{public}s'", connectFd, socketAddr_.sun_path);
+    HiLog::Debug(LABEL, "Client: Connected on socket fd %{public}d, name '%{public}s'",
+        connectFd, socketAddr_.sun_path);
     return 0;
 }
 
