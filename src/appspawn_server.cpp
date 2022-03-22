@@ -818,7 +818,7 @@ int32_t AppSpawnServer::DoSandboxRootFolderCreate(std::string sandboxPackagePath
     vecInfo.push_back("/dev");
     vecInfo.push_back("/proc");
     vecInfo.push_back("/sys");
-    vecInfo.push_back("/sys-prod");
+    vecInfo.push_back("/sys_prod");
     vecInfo.push_back("/system");
 
     for (int i = 0; i < vecInfo.size(); i++) {
