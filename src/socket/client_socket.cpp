@@ -40,14 +40,14 @@ int ClientSocket::CreateClient()
         }
     }
 
-    HiLog::Debug(LABEL, "Client: CreateClient socket fd %d", socketFd_);
+    HiLog::Debug(LABEL, "Client: CreateClient socket fd %{public}d", socketFd_);
     return 0;
 }
 
 void ClientSocket::CloseClient()
 {
     if (socketFd_ < 0) {
-        HiLog::Error(LABEL, "Client: Invalid connectFd %d", socketFd_);
+        HiLog::Error(LABEL, "Client: Invalid connectFd %{public}d", socketFd_);
         return;
     }
 
@@ -58,7 +58,7 @@ void ClientSocket::CloseClient()
 int ClientSocket::ConnectSocket(int connectFd)
 {
     if (connectFd < 0) {
-        HiLog::Error(LABEL, "Client: Invalid socket fd: %d", connectFd);
+        HiLog::Error(LABEL, "Client: Invalid socket fd: %{public}d", connectFd);
         return -1;
     }
 
@@ -69,18 +69,18 @@ int ClientSocket::ConnectSocket(int connectFd)
 
     if ((setsockopt(connectFd, SOL_SOCKET, SO_RCVTIMEO, &SOCKET_TIMEOUT, sizeof(SOCKET_TIMEOUT)) != 0) ||
         (setsockopt(connectFd, SOL_SOCKET, SO_SNDTIMEO, &SOCKET_TIMEOUT, sizeof(SOCKET_TIMEOUT)) != 0)) {
-        HiLog::Warn(LABEL, "Client: Failed to set opt of socket %d, err %d", connectFd, errno);
+        HiLog::Warn(LABEL, "Client: Failed to set opt of socket %{public}d, err %{public}d", connectFd, errno);
         CloseSocket(connectFd);
         return -1;
     }
 
     if (connect(connectFd, reinterpret_cast<struct sockaddr *>(&socketAddr_), socketAddrLen_) < 0) {
-        HiLog::Warn(LABEL, "Client: Connect on socket fd %d, failed: %d", connectFd, errno);
+        HiLog::Warn(LABEL, "Client: Connect on socket fd %{public}d, failed: %{public}d", connectFd, errno);
         CloseSocket(connectFd);
         return -1;
     }
 
-    HiLog::Debug(LABEL, "Client: Connected on socket fd %d, name '%s'", connectFd, socketAddr_.sun_path);
+    HiLog::Debug(LABEL, "Client: Connected on socket fd %{public}d, name '%s'", connectFd, socketAddr_.sun_path);
     return 0;
 }
 

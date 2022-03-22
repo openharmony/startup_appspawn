@@ -117,14 +117,14 @@ static void UninstallSigHandler()
     sa.sa_handler = nullptr;
     int err = sigaction(SIGCHLD, &sa, nullptr);
     if (err < 0) {
-        HiLog::Error(LABEL, "Error uninstalling SIGCHLD handler: %d", errno);
+        HiLog::Error(LABEL, "Error uninstalling SIGCHLD handler: %{public}d", errno);
     }
 
     struct sigaction sah = {};
     sah.sa_handler = nullptr;
     err = sigaction(SIGHUP, &sah, nullptr);
     if (err < 0) {
-        HiLog::Error(LABEL, "Error uninstalling SIGHUP handler: %d", errno);
+        HiLog::Error(LABEL, "Error uninstalling SIGHUP handler: %{public}d", errno);
     }
 }
 #ifdef __cplusplus
@@ -142,7 +142,7 @@ void AppSpawnServer::MsgPeer(int connectFd)
 {
     std::unique_ptr<AppSpawnMsgPeer> msgPeer = std::make_unique<AppSpawnMsgPeer>(socket_, connectFd);
     if (msgPeer == nullptr || msgPeer->MsgPeer() != 0) {
-        HiLog::Error(LABEL, "Failed to listen connection %d, %d", connectFd, errno);
+        HiLog::Error(LABEL, "Failed to listen connection %{public}d, %{public}d", connectFd, errno);
         return;
     }
 
@@ -201,7 +201,7 @@ void AppSpawnServer::HandleSignal()
     sigprocmask(SIG_BLOCK, &mask, nullptr);
     int signalFd = signalfd(-1, &mask, SFD_CLOEXEC);
     if (signalFd < 0) {
-        APPSPAWN_LOGE("Error installing SIGHUP handler: %d", errno);
+        APPSPAWN_LOGE("Error installing SIGHUP handler: %{public}d", errno);
     }
     while (isRunning_) {
         struct signalfd_siginfo fdsi;
@@ -212,13 +212,13 @@ void AppSpawnServer::HandleSignal()
         pid_t pid;
         int status;
         while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
-            APPSPAWN_LOGE("HandleSignal: %d", pid);
+            APPSPAWN_LOGE("HandleSignal: %{public}d", pid);
         }
 
         std::lock_guard<std::mutex> lock(mut_);
         isChildDie_ = true;
         childPid_ = fdsi.ssi_pid;
-        APPSPAWN_LOGI("exit app pid = %d", childPid_);
+        APPSPAWN_LOGI("exit app pid = %{public}d", childPid_);
         dataCond_.notify_one();
     }
     close(signalFd);
@@ -309,10 +309,10 @@ int AppSpawnServer::DoColdStartApp(ClientSocket::AppProperty *appProperty, int f
     std::vector<char *> extractedCmds;
     extractedCmds.push_back(const_cast<char *>("/system/bin/appspawntools"));
     std::string tmp = std::to_string(fd);
-    APPSPAWN_LOGI("DoColdStartApp::fd %d %s", fd, tmp.c_str());
+    APPSPAWN_LOGI("DoColdStartApp::fd %{public}d %s", fd, tmp.c_str());
     extractedCmds.push_back(const_cast<char *>(tmp.c_str()));
     std::string uid = std::to_string(appProperty->uid);
-    APPSPAWN_LOGI("DoColdStartApp::uid %d gid %d  %s", appProperty->uid, appProperty->gid, uid.c_str());
+    APPSPAWN_LOGI("DoColdStartApp::uid %{public}d gid %{public}d  %s", appProperty->uid, appProperty->gid, uid.c_str());
     extractedCmds.push_back(const_cast<char *>(uid.c_str()));
     std::string gid = std::to_string(appProperty->gid);
     extractedCmds.push_back(const_cast<char *>(gid.c_str()));
@@ -320,7 +320,7 @@ int AppSpawnServer::DoColdStartApp(ClientSocket::AppProperty *appProperty, int f
     extractedCmds.push_back(const_cast<char *>(appProperty->bundleName));
     extractedCmds.push_back(const_cast<char *>(appProperty->soPath));
     std::string accessTokenId = std::to_string(appProperty->accessTokenId);
-    APPSPAWN_LOGI("DoColdStartApp::accessTokenId %d %s", appProperty->accessTokenId, accessTokenId.c_str());
+    APPSPAWN_LOGI("DoColdStartApp::accessTokenId %{public}d %s", appProperty->accessTokenId, accessTokenId.c_str());
     extractedCmds.push_back(const_cast<char *>(accessTokenId.c_str()));
     extractedCmds.push_back(const_cast<char *>(appProperty->apl));
     APPSPAWN_LOGI("DoColdStartApp renderCmd %s", appProperty->renderCmd);
@@ -328,13 +328,13 @@ int AppSpawnServer::DoColdStartApp(ClientSocket::AppProperty *appProperty, int f
     std::string flags = std::to_string(appProperty->flags);
     extractedCmds.push_back(const_cast<char *>(flags.c_str()));
     std::string gidCount = std::to_string(appProperty->gidCount);
-    APPSPAWN_LOGI("DoColdStartApp gidCount %d %s", appProperty->gidCount, gidCount.c_str());
+    APPSPAWN_LOGI("DoColdStartApp gidCount %{public}d %s", appProperty->gidCount, gidCount.c_str());
     extractedCmds.push_back(const_cast<char *>(gidCount.c_str()));
     for (uint32_t i = 0; i < appProperty->gidCount; i++) {
         extractedCmds.push_back(const_cast<char *>(std::string(std::to_string(appProperty->gidTable[i])).c_str()));
     }
     extractedCmds.push_back(nullptr);
-    APPSPAWN_LOGI("DoColdStartApp extractedCmds %d", extractedCmds.size());
+    APPSPAWN_LOGI("DoColdStartApp extractedCmds %{public}d", extractedCmds.size());
     int ret = execv(extractedCmds[0], extractedCmds.data());
     if (ret) {
         HiLog::Error(LABEL, "Failed to execv, errno = %{public}d", errno);
@@ -420,7 +420,7 @@ bool AppSpawnServer::ServerMain(char *longProcName, int64_t longProcNameLen)
             isChildDie_ = false;
             auto iter = appMap_.find(childPid_);
             if (iter != appMap_.end()) {
-                APPSPAWN_LOGI("delete pid=%d in appMap", iter->first);
+                APPSPAWN_LOGI("delete pid=%{public}d in appMap", iter->first);
                 appMap_.erase(iter);
             }
         }
@@ -440,13 +440,13 @@ bool AppSpawnServer::ServerMain(char *longProcName, int64_t longProcNameLen)
             appMap_[pid] = appProperty->processName;
         }
         socket_->CloseConnection(connectFd); // close socket connection
-        APPSPAWN_LOGI("AppSpawnServer::parent process create app finish, pid = %d uid %d %s %s",
+        APPSPAWN_LOGI("AppSpawnServer::parent process create app finish, pid = %{public}d uid %{public}d %s %s",
             pid, appProperty->uid, appProperty->processName, appProperty->bundleName);
     }
 
     while (appMap_.size() > 0) {
         auto iter = appMap_.begin();
-        APPSPAWN_LOGI("kill app, pid = %d, processName = %s", iter->first, iter->second.c_str());
+        APPSPAWN_LOGI("kill app, pid = %{public}d, processName = %s", iter->first, iter->second.c_str());
         kill(iter->first, SIGKILL);
         appMap_.erase(iter);
     }

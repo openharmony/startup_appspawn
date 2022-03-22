@@ -71,7 +71,7 @@ bool readFileInfo(char *buffer, const int32_t &pid, const char *fileName)
 {
     // Set file path
     char filePath[FILE_PATH_SIZE];
-    if (sprintf_s(filePath, sizeof(filePath), "/proc/%d/%s", pid, fileName) <= 0) {
+    if (sprintf_s(filePath, sizeof(filePath), "/proc/%{public}d/%s", pid, fileName) <= 0) {
         HiLog::Error(LABEL, "filePath sprintf_s fail .");
         return CHECK_ERROR;
     }
@@ -206,7 +206,7 @@ bool checkProcName(const int32_t &pid, const AppSpawnStartMsg &params)
 {
     FILE *fp = nullptr;
     char cmd[CMD_SIZE];
-    if (sprintf_s(cmd, sizeof(cmd), "ps -o ARGS=CMD -p %d |grep -v CMD", pid) <= 0) {
+    if (sprintf_s(cmd, sizeof(cmd), "ps -o ARGS=CMD -p %{public}d |grep -v CMD", pid) <= 0) {
         HiLog::Error(LABEL, "cmd sprintf_s fail .");
         return CHECK_ERROR;
     }
@@ -245,7 +245,7 @@ bool checkProcName(const int32_t &pid, const AppSpawnStartMsg &params)
 bool checkProcessIsDestroyed(const int32_t &pid)
 {
     char filePath[FILE_PATH_SIZE];
-    if (sprintf_s(filePath, sizeof(filePath), "/proc/%d", pid) <= 0) {
+    if (sprintf_s(filePath, sizeof(filePath), "/proc/%{public}d", pid) <= 0) {
         HiLog::Error(LABEL, "filePath sprintf_s fail .");
         return CHECK_ERROR;
     }
