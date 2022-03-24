@@ -70,6 +70,8 @@ constexpr int32_t GID_USER_DATA_RW = 1008;
 constexpr int32_t MAX_GIDS = 64;
 constexpr int32_t UID_BASE = 200000;
 constexpr int32_t WAIT_PARAM_TIME = 5;
+constexpr int32_t RETRY_TIME = 10;
+constexpr int32_t DELAY_US = 10 * 1000;  // 10ms
 
 constexpr std::string_view BUNDLE_NAME_MEDIA_LIBRARY("com.ohos.medialibrary.MediaLibraryDataA");
 constexpr std::string_view BUNDLE_NAME_SCANNER("com.ohos.medialibrary.MediaScannerAbilityA");
@@ -343,6 +345,27 @@ int AppSpawnServer::DoColdStartApp(ClientSocket::AppProperty *appProperty, int f
     return 0;
 }
 
+static int WaitChild(int fd, int pid, ClientSocket::AppProperty *appProperty)
+{
+    int result = 0;
+    int count = 0;
+    while (count < RETRY_TIME) { // wait child process resutl
+        int readLen = read(fd, &result, sizeof(result));
+        if (readLen == sizeof(result)) {
+            break;
+        }
+        usleep(DELAY_US);
+        count++;
+    }
+    if (count >= RETRY_TIME) {
+        APPSPAWN_LOGI("Time out for child %d %s ", appProperty->processName, pid);
+        result = ERR_OK;
+    }
+    HiLog::Info(LABEL, "child process %{public}s %{public}s pid %{public}d",
+        appProperty->processName, (result == ERR_OK) ? "success" : "fail", pid);
+    return (result == ERR_OK) ? 0 : result;
+}
+
 int AppSpawnServer::StartApp(char *longProcName, int64_t longProcNameLen,
     ClientSocket::AppProperty *appProperty, int connectFd, pid_t &pid)
 {
@@ -350,11 +373,11 @@ int AppSpawnServer::StartApp(char *longProcName, int64_t longProcNameLen,
         return -EINVAL;
     }
     int32_t fd[FDLEN2] = {FD_INIT_VALUE, FD_INIT_VALUE};
-    int32_t buff = 0;
     if (pipe(fd) == -1) {
         HiLog::Error(LABEL, "create pipe fail, errno = %{public}d", errno);
         return ERR_PIPE_FAIL;
     }
+    fcntl(fd[0], F_SETFL, O_NONBLOCK);
 
     InstallSigHandler();
     pid = fork();
@@ -383,12 +406,10 @@ int AppSpawnServer::StartApp(char *longProcName, int64_t longProcNameLen,
         }
         _exit(0);
     }
-    read(fd[0], &buff, sizeof(buff)); // wait child process resutl
+    int ret = WaitChild(fd[0], pid, appProperty);
     close(fd[0]);
     close(fd[1]);
-
-    HiLog::Info(LABEL, "child process init %{public}s", (buff == ERR_OK) ? "success" : "fail");
-    return (buff == ERR_OK) ? 0 : buff;
+    return ret;
 }
 
 void AppSpawnServer::QuickExitMain()
