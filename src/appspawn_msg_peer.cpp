@@ -49,12 +49,12 @@ int AppSpawnMsgPeer::GetConnectFd() const
 int AppSpawnMsgPeer::Response(pid_t pid)
 {
     if ((socket_ == nullptr) || (connectFd_ < 0)) {
-        HiLog::Error(LABEL, "Invalid socket params: connectFd %d", connectFd_);
+        HiLog::Error(LABEL, "Invalid socket params: connectFd %{public}d", connectFd_);
         return -EINVAL;
     }
 
     if (socket_->WriteSocketMessage(connectFd_, &pid, sizeof(pid)) != sizeof(pid)) {
-        HiLog::Error(LABEL, "Failed to write message: connectFd %d", connectFd_);
+        HiLog::Error(LABEL, "Failed to write message: connectFd %{public}d", connectFd_);
         return (-errno);
     }
 
