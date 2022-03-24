@@ -108,7 +108,7 @@ protected:
     const std::string socketDir_ = "/dev/socket/";
 #endif
     const unsigned int listenBacklog_ = 50;                   // 50: max num of clients
-    static constexpr struct timeval SOCKET_TIMEOUT = {5, 0};  // 5, 0: { 5 sec, 0 msec } for timeout
+    static constexpr struct timeval SOCKET_TIMEOUT = {2, 0};  // 2, 0: { 2 sec, 0 msec } for timeout
 };
 }  // namespace AppSpawn
 }  // namespace OHOS
