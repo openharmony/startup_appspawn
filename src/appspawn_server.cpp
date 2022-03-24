@@ -351,7 +351,7 @@ static int WaitChild(int fd, int pid, ClientSocket::AppProperty *appProperty)
     int count = 0;
     while (count < RETRY_TIME) { // wait child process resutl
         int readLen = read(fd, &result, sizeof(result));
-        if (readLen == sizeof(result)){
+        if (readLen == sizeof(result)) {
             break;
         }
         usleep(DELAY_US);
