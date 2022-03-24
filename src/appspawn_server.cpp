@@ -119,14 +119,14 @@ static void UninstallSigHandler()
     sa.sa_handler = nullptr;
     int err = sigaction(SIGCHLD, &sa, nullptr);
     if (err < 0) {
-        HiLog::Error(LABEL, "Error uninstalling SIGCHLD handler: %d", errno);
+        HiLog::Error(LABEL, "Error uninstalling SIGCHLD handler: %{public}d", errno);
     }
 
     struct sigaction sah = {};
     sah.sa_handler = nullptr;
     err = sigaction(SIGHUP, &sah, nullptr);
     if (err < 0) {
-        HiLog::Error(LABEL, "Error uninstalling SIGHUP handler: %d", errno);
+        HiLog::Error(LABEL, "Error uninstalling SIGHUP handler: %{public}d", errno);
     }
 }
 #ifdef __cplusplus
@@ -144,7 +144,7 @@ void AppSpawnServer::MsgPeer(int connectFd)
 {
     std::unique_ptr<AppSpawnMsgPeer> msgPeer = std::make_unique<AppSpawnMsgPeer>(socket_, connectFd);
     if (msgPeer == nullptr || msgPeer->MsgPeer() != 0) {
-        HiLog::Error(LABEL, "Failed to listen connection %d, %d", connectFd, errno);
+        HiLog::Error(LABEL, "Failed to listen connection %{public}d, %{public}d", connectFd, errno);
         return;
     }
 
