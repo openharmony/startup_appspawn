@@ -51,7 +51,7 @@ int ServerSocket::VerifyConnection(int connectFd)
 void ServerSocket::CloseConnection(int connectFd)
 {
     if (connectFd < 0) {
-        HiLog::Error(LABEL, "Server: Invalid connectFd %d", connectFd);
+        HiLog::Error(LABEL, "Server: Invalid connectFd %{public}d", connectFd);
         return;
     }
 
@@ -65,7 +65,7 @@ void ServerSocket::CloseConnection(int connectFd)
 
     close(connectFd);
     connectFds_.erase(it);
-    HiLog::Debug(LABEL, "Server: Erase connect fd %d from list", connectFd);
+    HiLog::Debug(LABEL, "Server: Erase connect fd %{public}d from list", connectFd);
 }
 
 void ServerSocket::SaveConnection(int connectFd)
@@ -81,12 +81,12 @@ void ServerSocket::CloseServer()
     std::lock_guard<std::mutex> lock(mutexConnect_);
 
     for (const int &fd : connectFds_) {
-        HiLog::Debug(LABEL, "Server: Closed connection fd %d", fd);
+        HiLog::Debug(LABEL, "Server: Closed connection fd %{public}d", fd);
         close(fd);
     }
 
     if ((unlink(socketAddr_.sun_path) != 0) && (errno != ENOENT)) {
-        HiLog::Error(LABEL, "Server: Failed to unlink, err %d", errno);
+        HiLog::Error(LABEL, "Server: Failed to unlink, err %{public}d", errno);
     }
 
     connectFds_.clear();
@@ -107,7 +107,7 @@ void ServerSocket::CloseServerMonitor()
 int ServerSocket::BindSocket(int connectFd)
 {
     if (connectFd < 0) {
-        HiLog::Error(LABEL, "Server: Invalid socket fd: %d", connectFd);
+        HiLog::Error(LABEL, "Server: Invalid socket fd: %{public}d", connectFd);
         return -EINVAL;
     }
 
@@ -116,7 +116,7 @@ int ServerSocket::BindSocket(int connectFd)
     }
 
     if ((unlink(socketAddr_.sun_path) != 0) && (errno != ENOENT)) {
-        HiLog::Error(LABEL, "Server: Failed to unlink, err %d", errno);
+        HiLog::Error(LABEL, "Server: Failed to unlink, err %{public}d", errno);
         return (-errno);
     }
 
@@ -124,25 +124,25 @@ int ServerSocket::BindSocket(int connectFd)
     if ((setsockopt(connectFd, SOL_SOCKET, SO_REUSEADDR, &reuseAddr, sizeof(reuseAddr)) != 0) ||
         (setsockopt(connectFd, SOL_SOCKET, SO_RCVTIMEO, &SOCKET_TIMEOUT, sizeof(SOCKET_TIMEOUT)) != 0) ||
         (setsockopt(connectFd, SOL_SOCKET, SO_SNDTIMEO, &SOCKET_TIMEOUT, sizeof(SOCKET_TIMEOUT)) != 0)) {
-        HiLog::Warn(LABEL, "Server: Failed to set opt of socket %d, err %d", connectFd, errno);
+        HiLog::Warn(LABEL, "Server: Failed to set opt of socket %{public}d, err %{public}d", connectFd, errno);
         return (-errno);
     }
 
     if (bind(connectFd, reinterpret_cast<struct sockaddr *>(&socketAddr_), socketAddrLen_) < 0) {
-        HiLog::Error(LABEL, "Server: Bind socket fd %d, failed: %d", connectFd, errno);
+        HiLog::Error(LABEL, "Server: Bind socket fd %{public}d, failed: %{public}d", connectFd, errno);
         return (-errno);
     }
 
     if (chown(socketAddr_.sun_path, APPSPAWN_ID_ROOT, APPSPAWN_ID_SYSTEM)) {
-        HiLog::Error(LABEL, "Server: failed to chown socket fd %d, failed: %d", connectFd, errno);
+        HiLog::Error(LABEL, "Server: failed to chown socket fd %{public}d, failed: %{public}d", connectFd, errno);
         return (-errno);
     }
     if (chmod(socketAddr_.sun_path, SOCKET_PERM)) {
-        HiLog::Error(LABEL, "Server: failed to chmod socket fd %d, failed: %d", connectFd, errno);
+        HiLog::Error(LABEL, "Server: failed to chmod socket fd %{public}d, failed: %{public}d", connectFd, errno);
         return (-errno);
     }
 
-    HiLog::Debug(LABEL, "Server: Bind socket fd %d success", connectFd);
+    HiLog::Debug(LABEL, "Server: Bind socket fd %{public}d success", connectFd);
     return 0;
 }
 
@@ -165,26 +165,26 @@ int ServerSocket::RegisterServerSocket(int &connectFd)
 #ifndef NWEB_SPAWN
     if ((BindSocket(connectFd) != 0) || (listen(connectFd, listenBacklog_) < 0)) {
         HiLog::Error(LABEL,
-            "Server: Register socket fd %d with backlog %d error: %d",
+            "Server: Register socket fd %{public}d with backlog %{public}d error: %{public}d",
             connectFd,
             listenBacklog_,
             errno);
         if ((unlink(socketAddr_.sun_path) != 0) && (errno != ENOENT)) {
-            HiLog::Error(LABEL, "Server: Failed to unlink, err %d", errno);
+            HiLog::Error(LABEL, "Server: Failed to unlink, err %{public}d", errno);
         }
         close(connectFd);
         connectFd = -1;
         return (-errno);
     }
 #endif
-    HiLog::Debug(LABEL, "Server: Suc to register server socket fd %d", connectFd);
+    HiLog::Debug(LABEL, "Server: Suc to register server socket fd %{public}d", connectFd);
     return 0;
 }
 
 int ServerSocket::RegisterServerSocket()
 {
     if (socketFd_ >= 0) {
-        HiLog::Info(LABEL, "Server: Already register server socket %d", socketFd_);
+        HiLog::Info(LABEL, "Server: Already register server socket %{public}d", socketFd_);
         return 0;
     }
 
@@ -194,7 +194,7 @@ int ServerSocket::RegisterServerSocket()
 int ServerSocket::WaitForConnection(int connectFd)
 {
     if (connectFd < 0) {
-        HiLog::Error(LABEL, "Server: Invalid args: connectFd %d", connectFd);
+        HiLog::Error(LABEL, "Server: Invalid args: connectFd %{public}d", connectFd);
         return -EINVAL;
     }
 
@@ -212,12 +212,12 @@ int ServerSocket::WaitForConnection(int connectFd)
 
     if ((setsockopt(connFd, SOL_SOCKET, SO_RCVTIMEO, &SOCKET_TIMEOUT, sizeof(SOCKET_TIMEOUT)) < 0) ||
         (setsockopt(connFd, SOL_SOCKET, SO_SNDTIMEO, &SOCKET_TIMEOUT, sizeof(SOCKET_TIMEOUT)) < 0)) {
-        HiLog::Warn(LABEL, "Server: Failed to set opt of Connection %d, err %d", connFd, errno);
+        HiLog::Warn(LABEL, "Server: Failed to set opt of Connection %{public}d, err %{public}d", connFd, errno);
         close(connFd);
         return (-errno);
     }
 
-    HiLog::Debug(LABEL, "Server: Connection accepted, connect fd %d", connFd);
+    HiLog::Debug(LABEL, "Server: Connection accepted, connect fd %{public}d", connFd);
     return connFd;
 }
 

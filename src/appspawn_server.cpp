@@ -70,6 +70,8 @@ constexpr int32_t GID_USER_DATA_RW = 1008;
 constexpr int32_t MAX_GIDS = 64;
 constexpr int32_t UID_BASE = 200000;
 constexpr int32_t WAIT_PARAM_TIME = 5;
+constexpr int32_t RETRY_TIME = 10;
+constexpr int32_t DELAY_US = 10 * 1000;  // 10ms
 
 constexpr std::string_view BUNDLE_NAME_MEDIA_LIBRARY("com.ohos.medialibrary.MediaLibraryDataA");
 constexpr std::string_view BUNDLE_NAME_SCANNER("com.ohos.medialibrary.MediaScannerAbilityA");
@@ -117,14 +119,14 @@ static void UninstallSigHandler()
     sa.sa_handler = nullptr;
     int err = sigaction(SIGCHLD, &sa, nullptr);
     if (err < 0) {
-        HiLog::Error(LABEL, "Error uninstalling SIGCHLD handler: %d", errno);
+        HiLog::Error(LABEL, "Error uninstalling SIGCHLD handler: %{public}d", errno);
     }
 
     struct sigaction sah = {};
     sah.sa_handler = nullptr;
     err = sigaction(SIGHUP, &sah, nullptr);
     if (err < 0) {
-        HiLog::Error(LABEL, "Error uninstalling SIGHUP handler: %d", errno);
+        HiLog::Error(LABEL, "Error uninstalling SIGHUP handler: %{public}d", errno);
     }
 }
 #ifdef __cplusplus
@@ -142,7 +144,7 @@ void AppSpawnServer::MsgPeer(int connectFd)
 {
     std::unique_ptr<AppSpawnMsgPeer> msgPeer = std::make_unique<AppSpawnMsgPeer>(socket_, connectFd);
     if (msgPeer == nullptr || msgPeer->MsgPeer() != 0) {
-        HiLog::Error(LABEL, "Failed to listen connection %d, %d", connectFd, errno);
+        HiLog::Error(LABEL, "Failed to listen connection %{public}d, %{public}d", connectFd, errno);
         return;
     }
 
@@ -671,12 +673,10 @@ int32_t AppSpawnServer::DoAppSandboxMount(const ClientSocket::AppProperty *appPr
     std::string oriel1DataPath = "/data/app/el1/" + currentUserId + "/base/";
     std::string oriel2DataPath = "/data/app/el2/" + currentUserId + "/base/";
     std::string oriDatabasePath = "/data/app/el2/" + currentUserId + "/database/";
-    const std::string oriappdataPath = "/data/accounts/account_0/appdata/";
     std::string destDatabasePath = rootPath + "/data/storage/el2/database";
     std::string destInstallPath = rootPath + "/data/storage/el1/bundle";
     std::string destel1DataPath = rootPath + "/data/storage/el1/base";
     std::string destel2DataPath = rootPath + "/data/storage/el2/base";
-    std::string destappdataPath = rootPath + oriappdataPath;
 
     int rc = 0;
 
@@ -691,7 +691,6 @@ int32_t AppSpawnServer::DoAppSandboxMount(const ClientSocket::AppProperty *appPr
     mountMap[destInstallPath] = oriInstallPath;
     mountMap[destel1DataPath] = oriel1DataPath;
     mountMap[destel2DataPath] = oriel2DataPath;
-    mountMap[destappdataPath] = oriappdataPath;
 
     std::map<std::string, std::string>::iterator iter;
     for (iter = mountMap.begin(); iter != mountMap.end(); ++iter) {
@@ -797,7 +796,6 @@ void AppSpawnServer::DoAppSandboxMkdir(std::string sandboxPackagePath, const Cli
     mkdirInfo.push_back("/data/accounts");
     mkdirInfo.push_back("/data/accounts/account_0");
     mkdirInfo.push_back("/data/accounts/account_0/applications/");
-    mkdirInfo.push_back("/data/accounts/account_0/appdata/");
     mkdirInfo.push_back("/data/bundles/");
 
     for (int i = 0; i < mkdirInfo.size(); i++) {
@@ -844,7 +842,7 @@ int32_t AppSpawnServer::DoSandboxRootFolderCreate(std::string sandboxPackagePath
     vecInfo.push_back("/dev");
     vecInfo.push_back("/proc");
     vecInfo.push_back("/sys");
-    vecInfo.push_back("/sys-prod");
+    vecInfo.push_back("/sys_prod");
     vecInfo.push_back("/system");
 
     for (int i = 0; i < vecInfo.size(); i++) {

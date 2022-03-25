@@ -66,7 +66,7 @@ int AppSpawnSocket::PackSocketAddr()
     }
     socklen_t pathSize = sizeof(socketAddr_.sun_path);
     if (pathLen >= pathSize) {
-        HiLog::Error(LABEL, "Invalid socket name: '%s' too long", socketName_.c_str());
+        HiLog::Error(LABEL, "Invalid socket name: '%{public}s' too long", socketName_.c_str());
         return -1;
     }
 
@@ -92,18 +92,18 @@ int AppSpawnSocket::CreateSocket()
 {
     int socketFd = socket(AF_LOCAL, SOCK_SEQPACKET, 0);
     if (socketFd < 0) {
-        HiLog::Error(LABEL, "Failed to create socket: %d", errno);
+        HiLog::Error(LABEL, "Failed to create socket: %{public}d", errno);
         return (-errno);
     }
 
-    HiLog::Debug(LABEL, "Created socket with fd %d", socketFd);
+    HiLog::Debug(LABEL, "Created socket with fd %{public}d", socketFd);
     return socketFd;
 }
 
 void AppSpawnSocket::CloseSocket(int &socketFd)
 {
     if (socketFd >= 0) {
-        HiLog::Debug(LABEL, "Closed socket with fd %d", socketFd);
+        HiLog::Debug(LABEL, "Closed socket with fd %{public}d", socketFd);
         close(socketFd);
         socketFd = -1;
     }
@@ -112,7 +112,7 @@ void AppSpawnSocket::CloseSocket(int &socketFd)
 int AppSpawnSocket::ReadSocketMessage(int socketFd, void *buf, int len)
 {
     if (socketFd < 0 || len <= 0 || buf == nullptr) {
-        HiLog::Error(LABEL, "Invalid args: socket %d, len %d, buf might be nullptr", socketFd, len);
+        HiLog::Error(LABEL, "Invalid args: socket %{public}d, len %{public}d, buf might be nullptr", socketFd, len);
         return -1;
     }
 
@@ -123,7 +123,7 @@ int AppSpawnSocket::ReadSocketMessage(int socketFd, void *buf, int len)
 
     ssize_t rLen = TEMP_FAILURE_RETRY(read(socketFd, buf, len));
     if (rLen < 0) {
-        HiLog::Error(LABEL, "Read message from fd %d error %zd: %d", socketFd, rLen, errno);
+        HiLog::Error(LABEL, "Read message from fd %{public}d error %zd: %{public}d", socketFd, rLen, errno);
         return -EFAULT;
     }
 
@@ -133,7 +133,7 @@ int AppSpawnSocket::ReadSocketMessage(int socketFd, void *buf, int len)
 int AppSpawnSocket::WriteSocketMessage(int socketFd, const void *buf, int len)
 {
     if (socketFd < 0 || len <= 0 || buf == nullptr) {
-        HiLog::Error(LABEL, "Invalid args: socket %d, len %d, buf might be nullptr", socketFd, len);
+        HiLog::Error(LABEL, "Invalid args: socket %{public}d, len %{public}d, buf might be nullptr", socketFd, len);
         return -1;
     }
 
@@ -142,9 +142,10 @@ int AppSpawnSocket::WriteSocketMessage(int socketFd, const void *buf, int len)
     const uint8_t *offset = reinterpret_cast<const uint8_t *>(buf);
     for (ssize_t wLen = 0; remain > 0; offset += wLen, remain -= wLen, written += wLen) {
         wLen = write(socketFd, offset, remain);
-        HiLog::Debug(LABEL, "socket fd %d, wLen %zd", socketFd, wLen);
+        HiLog::Debug(LABEL, "socket fd %{public}d, wLen %zd", socketFd, wLen);
         if ((wLen <= 0) && (errno != EINTR)) {
-            HiLog::Error(LABEL, "Failed to write message to fd %d, error %zd: %d", socketFd, wLen, errno);
+            HiLog::Error(LABEL, "Failed to write message to fd %{public}d, error %zd: %{public}d",
+                socketFd, wLen, errno);
             return (-errno);
         }
     }
