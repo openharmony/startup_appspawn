@@ -324,12 +324,12 @@ static int WaitChild(int fd, int pid, ClientSocket::AppProperty *appProperty)
     FD_SET(fd, &rd);
     tv.tv_sec = 1;
     tv.tv_usec = 0;
-    int ret = select(1, &rd, nullptr, nullptr, &tv);
+    int ret = select(fd + 1, &rd, nullptr, nullptr, &tv);
     if (ret == 0) { // timeout
-        APPSPAWN_LOGI("Time out for child %d %s ", appProperty->processName, pid);
+        APPSPAWN_LOGI("Time out for child %s %d", appProperty->processName, pid);
         result = ERR_OK;
     } else if (ret == -1) {
-        APPSPAWN_LOGI("Error for child %d %s ", appProperty->processName, pid);
+        APPSPAWN_LOGI("Error for child %s %d", appProperty->processName, pid);
         result = ERR_OK;
     } else {
         ret = read(fd, &result, sizeof(result));
