@@ -70,8 +70,6 @@ constexpr int32_t GID_USER_DATA_RW = 1008;
 constexpr int32_t MAX_GIDS = 64;
 constexpr int32_t UID_BASE = 200000;
 constexpr int32_t WAIT_PARAM_TIME = 5;
-constexpr int32_t RETRY_TIME = 10;
-constexpr int32_t DELAY_US = 10 * 1000;  // 10ms
 
 constexpr std::string_view BUNDLE_NAME_MEDIA_LIBRARY("com.ohos.medialibrary.MediaLibraryDataA");
 constexpr std::string_view BUNDLE_NAME_SCANNER("com.ohos.medialibrary.MediaScannerAbilityA");
