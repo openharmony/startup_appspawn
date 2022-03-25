@@ -341,6 +341,30 @@ int AppSpawnServer::DoColdStartApp(ClientSocket::AppProperty *appProperty, int f
     return 0;
 }
 
+static int WaitChild(int fd, int pid, ClientSocket::AppProperty *appProperty)
+{
+    int result = ERR_OK;
+    fd_set rd;
+    struct timeval tv;
+    FD_ZERO(&rd);
+    FD_SET(fd, &rd);
+    tv.tv_sec = 1;
+    tv.tv_usec = 0;
+    int ret = select(fd + 1, &rd, nullptr, nullptr, &tv);
+    if (ret == 0) { // timeout
+        APPSPAWN_LOGI("Time out for child %s %d", appProperty->processName, pid);
+        result = ERR_OK;
+    } else if (ret == -1) {
+        APPSPAWN_LOGI("Error for child %s %d", appProperty->processName, pid);
+        result = ERR_OK;
+    } else {
+        ret = read(fd, &result, sizeof(result));
+    }
+    APPSPAWN_LOGI("child process %s %s pid %d",
+        appProperty->processName, (result == ERR_OK) ? "success" : "fail", pid);
+    return (result == ERR_OK) ? 0 : result;
+}
+
 int AppSpawnServer::StartApp(char *longProcName, int64_t longProcNameLen,
     ClientSocket::AppProperty *appProperty, int connectFd, pid_t &pid)
 {
@@ -348,11 +372,11 @@ int AppSpawnServer::StartApp(char *longProcName, int64_t longProcNameLen,
         return -EINVAL;
     }
     int32_t fd[FDLEN2] = {FD_INIT_VALUE, FD_INIT_VALUE};
-    int32_t buff = 0;
     if (pipe(fd) == -1) {
         HiLog::Error(LABEL, "create pipe fail, errno = %{public}d", errno);
         return ERR_PIPE_FAIL;
     }
+    fcntl(fd[0], F_SETFL, O_NDELAY);
 
     InstallSigHandler();
     pid = fork();
@@ -381,12 +405,10 @@ int AppSpawnServer::StartApp(char *longProcName, int64_t longProcNameLen,
         }
         _exit(0);
     }
-    read(fd[0], &buff, sizeof(buff)); // wait child process resutl
+    int ret = WaitChild(fd[0], pid, appProperty);
     close(fd[0]);
     close(fd[1]);
-
-    HiLog::Info(LABEL, "child process init %{public}s", (buff == ERR_OK) ? "success" : "fail");
-    return (buff == ERR_OK) ? 0 : buff;
+    return ret;
 }
 
 void AppSpawnServer::QuickExitMain()
