@@ -35,7 +35,6 @@
 #include "hilog/log.h"
 #include "main_thread.h"
 #include "securec.h"
-#include "bundle_mgr_interface.h"
 #include "if_system_ability_manager.h"
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
