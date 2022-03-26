@@ -66,8 +66,6 @@ ohos_source_set("appspawn_test_source") {
 
   external_deps = [
     "ability_base:want",
-    "bundle_framework:appexecfwk_base",
-    "bundle_framework:appexecfwk_core",
     "hiviewdfx_hilog_native:libhilog",
   ]
 }
