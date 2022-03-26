@@ -77,6 +77,7 @@ ohos_static_library("appspawn_server") {
     "ability_base:want",
     "hilog_native:libhilog",
     "hiviewdfx_hilog_native:libhilog",
+    "ipc:ipc_core",
   ]
 
   if (build_selinux) {
@@ -149,6 +150,7 @@ ohos_static_library("nwebspawn_server") {
     "ability_base:want",
     "hilog_native:libhilog",
     "hiviewdfx_hilog_native:libhilog",
+    "ipc:ipc_core",
   ]
 
   if (build_selinux) {

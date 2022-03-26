@@ -35,7 +35,6 @@
 #include "hilog/log.h"
 #include "main_thread.h"
 #include "securec.h"
-#include "iservice_registry.h"
 #include "system_ability_definition.h"
 #include "token_setproc.h"
 #include "parameter.h"
