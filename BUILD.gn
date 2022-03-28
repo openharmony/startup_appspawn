@@ -78,8 +78,6 @@ ohos_static_library("appspawn_server") {
     "hilog_native:libhilog",
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
-    "safwk:system_ability_fwk",
-    "samgr_standard:samgr_proxy",
   ]
 
   if (build_selinux) {
@@ -153,8 +151,6 @@ ohos_static_library("nwebspawn_server") {
     "hilog_native:libhilog",
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
-    "safwk:system_ability_fwk",
-    "samgr_standard:samgr_proxy",
   ]
 
   if (build_selinux) {
