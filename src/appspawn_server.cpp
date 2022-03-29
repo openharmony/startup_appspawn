@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -487,7 +487,7 @@ int32_t AppSpawnServer::SetProcessName(
     }
 
     // process short name max length 16 bytes.
-    if (len > MAX_LEN_SHORT_NAME) {
+    if (len >= MAX_LEN_SHORT_NAME) {
         if (strncpy_s(shortName, MAX_LEN_SHORT_NAME, processName, MAX_LEN_SHORT_NAME - 1) != EOK) {
             HiLog::Error(LABEL, "strncpy_s short name error: %{public}d", errno);
             return -EINVAL;
@@ -1014,9 +1014,7 @@ bool AppSpawnServer::SetAppProcProperty(const ClientSocket::AppProperty *appProp
 #else
     AppExecFwk::MainThread::Start();
 #endif
-
-    HiLog::Error(LABEL, "Failed to start process, pid = %{public}d", getpid());
-    return false;
+    return true;
 }
 
 void AppSpawnServer::NotifyResToParentProc(const int32_t fd, const int32_t value)
