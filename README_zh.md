@@ -27,5 +27,4 @@ base/startup/appspawn_standard
 
 appspawn应用孵化器组件
 
-**startup_appspawn**
-
+**[startup_appspawn](https://gitee.com/openharmony/startup_appspawn/blob/master/README_zh.md)**

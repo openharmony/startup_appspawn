@@ -23,15 +23,4 @@ base/startup/appspawn_standard
 
 Startup subsystem
 
-hmf/startup/syspara\_lite
-
-**hmf/startup/appspawn_standard**
-
-hmf/startup/appspawn\_lite
-
-hmf/startup/bootstrap\_lite
-
-hmf/startup/startup
-
-hmf/startup/systemrestore
-
+**[appspawn_standard](https://gitee.com/openharmony/startup_appspawn/blob/master/README.md)**
