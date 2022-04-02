@@ -52,8 +52,8 @@
 constexpr static mode_t FILE_MODE = 0711;
 constexpr static mode_t NWEB_FILE_MODE = 0511;
 
-#define APPSPAWN_LOGI(fmt, ...) STARTUP_LOGI("appspawn_server.log", "APPSPAWN", fmt, ##__VA_ARGS__)
-#define APPSPAWN_LOGE(fmt, ...) STARTUP_LOGE("appspawn_server.log", "APPSPAWN", fmt, ##__VA_ARGS__)
+#define APPSPAWN_LOGI(fmt, ...) STARTUP_LOGI(0, "APPSPAWN", fmt, ##__VA_ARGS__)
+#define APPSPAWN_LOGE(fmt, ...) STARTUP_LOGE(0, "APPSPAWN", fmt, ##__VA_ARGS__)
 #define GRAPHIC_PERMISSION_CHECK
 
 namespace OHOS {
