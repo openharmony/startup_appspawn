@@ -252,7 +252,11 @@ void AppSpawnServer::LoadAceLib()
     }
 
 #else
+#ifdef __aarch64__
+    std::string acelibdir("/system/lib64/libace.z.so");
+#else
     std::string acelibdir("/system/lib/libace.z.so");
+#endif
     void *AceAbilityLib = nullptr;
     HiLog::Info(LABEL, "MainThread::LoadAbilityLibrary. Start calling dlopen acelibdir.");
     AceAbilityLib = dlopen(acelibdir.c_str(), RTLD_NOW | RTLD_GLOBAL);
@@ -267,11 +271,16 @@ void AppSpawnServer::LoadAceLib()
 
 static void InitDebugParams(const ClientSocket::AppProperty *appProperty)
 {
-    if (access("/system/lib/libhidebug.so", F_OK) != 0) {
+#ifdef __aarch64__
+    const char *debugSoPath = "/system/lib64/libhidebug.so";
+#else
+    const char *debugSoPath = "/system/lib/libhidebug.so";
+#endif
+    if (access(debugSoPath, F_OK) != 0) {
         HiLog::Error(LABEL, "access failed, errno = %{public}d", errno);
         return;
     }
-    void* handle = dlopen("/system/lib/libhidebug.so", RTLD_LAZY);
+    void* handle = dlopen(debugSoPath, RTLD_LAZY);
     if (handle == nullptr) {
         HiLog::Error(LABEL, "Failed to dlopen libhidebug.so, %{public}s", dlerror());
         return;
@@ -866,7 +875,11 @@ int32_t AppSpawnServer::DoSandboxRootFolderCreate(std::string sandboxPackagePath
     symlinkMap["/sys/kernel/debug"] = sandboxPackagePath + "/d";
     symlinkMap["/system/etc"] = sandboxPackagePath + "/etc";
     symlinkMap["/system/bin/init"] = sandboxPackagePath + "/init";
+#ifdef __aarch64__
+    symlinkMap["/system/lib64"] = sandboxPackagePath + "/lib64";
+#else
     symlinkMap["/system/lib"] = sandboxPackagePath + "/lib";
+#endif
 
     for (iter = symlinkMap.begin(); iter != symlinkMap.end(); ++iter) {
         symlink(iter->first.c_str(), iter->second.c_str());
