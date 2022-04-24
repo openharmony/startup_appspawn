@@ -56,6 +56,18 @@ constexpr static mode_t NWEB_FILE_MODE = 0511;
 #define APPSPAWN_LOGE(fmt, ...) STARTUP_LOGE(0, "APPSPAWN", fmt, ##__VA_ARGS__)
 #define GRAPHIC_PERMISSION_CHECK
 
+#ifdef NWEB_SPAWN
+#define RENDER_PROCESS_MAX_NUM 16
+#define RENDER_PROCESS_ARRAY_IDLE 0
+
+typedef struct {
+    int32_t pid;
+    int exitStatus;
+} RenderProcessNode;
+
+static RenderProcessNode g_renderProcessArray[RENDER_PROCESS_MAX_NUM];
+#endif
+
 namespace OHOS {
 namespace AppSpawn {
 namespace {
@@ -86,6 +98,7 @@ static void SignalHandler([[maybe_unused]] int sig)
     int status;
 
     while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
+        APPSPAWN_LOGE("SignalHandler HandleSignal: %d, status: %d", pid, status);
     }
 }
 
@@ -189,6 +202,52 @@ void AppSpawnServer::WaitRebootEvent()
     }
 }
 
+#ifdef NWEB_SPAWN
+static void DumpRenderProcessExitedArray()
+{
+    APPSPAWN_LOGI("dump render process exited array:");
+    for (int i = 0; i < RENDER_PROCESS_MAX_NUM; i++) {
+        APPSPAWN_LOGI("[pid, exitedStatus] = [%d, %d]",
+            g_renderProcessArray[i].pid, g_renderProcessArray[i].exitStatus);
+    }
+}
+
+static void RecordRenderProcessExitedStatus(pid_t pid, int status)
+{
+    int i = 0;
+    for (; i < RENDER_PROCESS_MAX_NUM; i++) {
+        if (g_renderProcessArray[i].pid == RENDER_PROCESS_ARRAY_IDLE) {
+            g_renderProcessArray[i].exitStatus = status;
+            g_renderProcessArray[i].pid = pid;
+            break;
+        }
+    }
+    if (i == RENDER_PROCESS_MAX_NUM) {
+        APPSPAWN_LOGE("no empty space in render process exited array");
+        DumpRenderProcessExitedArray();
+    }
+}
+
+static int GetRenderProcessTerminationStatus(int32_t pid, int *status)
+{
+    if (status == nullptr) {
+        return -EINVAL;
+    }
+
+    for (int i = 0; i < RENDER_PROCESS_MAX_NUM; i++) {
+        if (g_renderProcessArray[i].pid == pid) {
+            *status = g_renderProcessArray[i].exitStatus;
+            g_renderProcessArray[i].pid = RENDER_PROCESS_ARRAY_IDLE;
+            return 0;
+        }
+    }
+    APPSPAWN_LOGE("not find pid[%d] in render process exited arrary", pid);
+    DumpRenderProcessExitedArray();
+
+    return -EINVAL;
+}
+#endif
+
 void AppSpawnServer::HandleSignal()
 {
     sigset_t mask;
@@ -208,7 +267,11 @@ void AppSpawnServer::HandleSignal()
         pid_t pid;
         int status;
         while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
-            APPSPAWN_LOGE("HandleSignal: %d", pid);
+#ifdef NWEB_SPAWN
+            std::lock_guard<std::mutex> lock(mut_);  // to protect thread sync when access render process exited map
+            RecordRenderProcessExitedStatus(pid, status);
+#endif
+            APPSPAWN_LOGE("HandleSignal: %d, status: %d", pid, status);
         }
 
         std::lock_guard<std::mutex> lock(mut_);
@@ -426,6 +489,37 @@ void AppSpawnServer::QuickExitMain()
     return;
 }
 
+void AppSpawnServer::ProcessAppSpawnMsg(char *longProcName, int64_t longProcNameLen,
+                                        const std::unique_ptr<AppSpawnMsgPeer> &msg)
+{
+    int connectFd = msg->GetConnectFd();
+    ClientSocket::AppProperty *appProperty = msg->GetMsg();
+#ifdef NWEB_SPAWN
+    if (appProperty->code == ClientSocket::GET_RENDER_TERMINATION_STATUS) {
+        int exitStatus = 0;
+        int ret = GetRenderProcessTerminationStatus(appProperty->pid, &exitStatus);
+        if (ret) {
+            msg->Response(ret);
+        } else {
+            msg->Response(exitStatus);
+        }
+        APPSPAWN_LOGI("AppSpawnServer::get render process termination status, status = %d pid = %d uid %d %s %s",
+            exitStatus, appProperty->pid, appProperty->uid, appProperty->processName, appProperty->bundleName);
+        return;
+    }
+#endif
+    pid_t pid = 0;
+    int ret = StartApp(longProcName, longProcNameLen, appProperty, connectFd, pid);
+    if (ret) {
+        msg->Response(ret);
+    } else {
+        msg->Response(pid);
+        appMap_[pid] = appProperty->processName;
+    }
+    APPSPAWN_LOGI("AppSpawnServer::parent process create app finish, pid = %d uid %d %s %s",
+        pid, appProperty->uid, appProperty->processName, appProperty->bundleName);
+}
+
 bool AppSpawnServer::ServerMain(char *longProcName, int64_t longProcNameLen)
 {
     if (socket_->RegisterServerSocket() != 0) {
@@ -457,18 +551,8 @@ bool AppSpawnServer::ServerMain(char *longProcName, int64_t longProcNameLen)
         std::unique_ptr<AppSpawnMsgPeer> msg = std::move(appQueue_.front());
         appQueue_.pop();
         int connectFd = msg->GetConnectFd();
-        ClientSocket::AppProperty *appProperty = msg->GetMsg();
-        pid_t pid = 0;
-        int ret = StartApp(longProcName, longProcNameLen, appProperty, connectFd, pid);
-        if (ret) {
-            msg->Response(ret);
-        } else {
-            msg->Response(pid);
-            appMap_[pid] = appProperty->processName;
-        }
+        ProcessAppSpawnMsg(longProcName, longProcNameLen, msg);
         socket_->CloseConnection(connectFd); // close socket connection
-        APPSPAWN_LOGI("AppSpawnServer::parent process create app finish, pid = %d uid %d %s %s",
-            pid, appProperty->uid, appProperty->processName, appProperty->bundleName);
     }
 
     while (appMap_.size() > 0) {
