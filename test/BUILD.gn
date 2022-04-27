@@ -18,11 +18,9 @@ group("unittest") {
   testonly = true
 
   deps = [
-    "unittest/app_spawn_msg_peer_test:unittest",
-    "unittest/app_spawn_server_test:unittest",
     "unittest/app_spawn_socket_test:unittest",
+    "unittest/app_spawn_standard_test:unittest",
     "unittest/client_socket_test:unittest",
-    "unittest/server_socket_test:unittest",
   ]
 }
 
@@ -39,7 +37,7 @@ config("appspawn_test_config") {
 
   include_dirs = [
     "${appspawn_path}/test/mock/include",
-    "${appspawn_path}/src/include",
+    "${appspawn_path}/common",
     "${appspawn_path}/interfaces/innerkits/include",
   ]
 }
@@ -66,6 +64,8 @@ ohos_source_set("appspawn_test_source") {
 
   external_deps = [
     "ability_base:want",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
     "hiviewdfx_hilog_native:libhilog",
   ]
 }

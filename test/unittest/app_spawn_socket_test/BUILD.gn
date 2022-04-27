@@ -17,7 +17,8 @@ import("//build/test.gni")
 ohos_unittest("AppSpawnSocketTest") {
   module_out_path = "${module_output_path}"
 
-  sources = [ "${appspawn_path}/src/socket/appspawn_socket.cpp" ]
+  sources =
+      [ "${appspawn_path}/interfaces/innerkits/client/appspawn_socket.cpp" ]
 
   sources += [ "app_spawn_socket_test.cpp" ]
 
