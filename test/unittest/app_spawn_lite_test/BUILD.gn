@@ -58,7 +58,7 @@ unittest("AppSpawnLiteTest") {
   ]
 
   deps += [
-    "//foundation/ace/ace_engine_lite/frameworks:ace_lite",
+    "//foundation/arkui/ace_engine_lite/frameworks:ace_lite",
     "//foundation/graphic/surface:lite_surface",
     "//foundation/graphic/ui:lite_ui",
     "//foundation/graphic/utils:lite_graphic_utils",
