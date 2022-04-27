@@ -12,8 +12,8 @@
 # limitations under the License.
 
 appspawn_path = "//base/startup/appspawn_standard"
+appexecfwk_path = "//foundation/appexecfwk/standard"
 aafwk_path = "//foundation/aafwk/standard"
-communication_path = "//foundation/communication/ipc"
 subsystem_name = "startup"
 part_name = "appspawn"
 module_output_path = "${part_name}/appspawn_l2"

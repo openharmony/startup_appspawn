@@ -21,10 +21,10 @@ config("exported_header_files") {
 
 ohos_static_library("appspawn_socket_client") {
   sources = [
-    "${appspawn_path}/src/socket/appspawn_socket.cpp",
-    "${appspawn_path}/src/socket/client_socket.cpp",
+    "client/appspawn_socket.cpp",
+    "client/client_socket.cpp",
   ]
-  include_dirs = [ "${appspawn_path}/include" ]
+  include_dirs = [ "include" ]
   public_configs = [ ":exported_header_files" ]
   deps = [ "//utils/native/base:utils" ]
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]

@@ -1,0 +1,60 @@
+# Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//base/startup/appspawn_standard/appspawn.gni")
+import("//build/test.gni")
+
+ohos_unittest("AppSpawnStandardTest") {
+  module_out_path = "${module_output_path}"
+
+  defines = [
+    "usleep(time) = MockSleep(time)",
+    "APPSPAWN_TEST",
+  ]
+
+  include_dirs = [
+    "${appspawn_path}/standard/",
+    "${appspawn_path}/common/",
+  ]
+
+  configs = [ "${appspawn_path}:appspawn_config" ]
+
+  sources = [
+    "${appspawn_path}/adapter/appspawn_ace.cpp",
+    "${appspawn_path}/standard/appspawn_process.c",
+    "${appspawn_path}/standard/appspawn_service.c",
+    "app_spawn_standard_test.cpp",
+  ]
+
+  deps = [
+    "${appspawn_path}:appspawn_server",
+    "${appspawn_path}/test:appspawn_test_source",
+    "//base/startup/init_lite/interfaces/innerkits:libbegetutil",
+    "//base/startup/init_lite/interfaces/innerkits/sandbox:libsandbox",
+    "//foundation/aafwk/standard/frameworks/kits/appkit:appkit_native",
+  ]
+
+  external_deps = [
+    "ability_base:want",
+    "ability_runtime:app_manager",
+    "hiviewdfx_hilog_native:libhilog",
+    "ipc:ipc_core",
+    "utils_base:utils",
+  ]
+}
+
+group("unittest") {
+  testonly = true
+
+  deps = [ ":AppSpawnStandardTest" ]
+}
