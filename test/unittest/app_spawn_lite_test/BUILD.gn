@@ -23,24 +23,52 @@ unittest("AppSpawnLiteTest") {
   ]
 
   include_dirs = [
+    "//base/startup/appspawn_standard/interfaces/innerkits/include",
+    "//base/startup/appspawn_standard/common/",
     "//base/startup/appspawn_standard/lite/",
+    "//base/startup/init_lite/interfaces/innerkits/include",
     "//base/hiviewdfx/hilog_lite/interfaces/native/innerkits/hilog",
+    "//foundation/distributedschedule/samgr_lite/interfaces/kits/samgr",
+    "//foundation/distributedschedule/samgr_lite/interfaces/kits/registry",
     "//third_party/bounds_checking_function/include/",
     "//third_party/cJSON",
+    "${aafwk_lite_path}/interfaces/innerkits/abilitymgr_lite",
+    "//utils/native/lite/include",
   ]
 
   sources = [
+    "//base/startup/appspawn_standard/common/appspawn_server.c",
     "//base/startup/appspawn_standard/lite/appspawn_message.c",
+    "//base/startup/appspawn_standard/lite/appspawn_process.c",
+    "//base/startup/appspawn_standard/lite/appspawn_service.c",
     "app_spawn_lite_test.cpp",
   ]
 
-  deps = [
-    "//base/hiviewdfx/hilog_lite/frameworks/featured:hilog_shared",
-    "//build/lite/config/component/cJSON:cjson_shared",
-    "//third_party/bounds_checking_function:libsec_shared",
-  ]
-}
+  defines = [ "APPSPAWN_TEST" ]
 
+  deps = [
+    "${aafwk_lite_path}/frameworks/ability_lite:aafwk_abilitykit_lite",
+    "//base/hiviewdfx/hilog_lite/frameworks/featured:hilog_shared",
+    "//base/startup/init_lite/interfaces/innerkits:libbegetutil",
+    "//build/lite/config/component/cJSON:cjson_shared",
+    "//foundation/communication/ipc_lite:liteipc_adapter",
+    "//foundation/distributedschedule/samgr_lite/samgr:samgr",
+    "//third_party/bounds_checking_function:libsec_shared",
+    "//utils/native/lite/kv_store:kv_store",
+  ]
+
+  deps += [
+    "//foundation/ace/ace_engine_lite/frameworks:ace_lite",
+    "//foundation/graphic/surface:lite_surface",
+    "//foundation/graphic/ui:lite_ui",
+    "//foundation/graphic/utils:lite_graphic_utils",
+  ]
+
+  if (ohos_kernel_type == "liteos_a") {
+    deps += [ "//base/hiviewdfx/hilog_lite/frameworks/featured:hilog_shared" ]
+  }
+}
+ 
 group("unittest") {
-  deps = [ ":appspawn_test" ]
+  deps = [ ":AppSpawnLiteTest" ]
 }

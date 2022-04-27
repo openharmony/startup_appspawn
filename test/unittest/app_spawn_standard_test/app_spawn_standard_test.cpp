@@ -179,7 +179,7 @@ HWTEST(AppSpawnStandardTest, App_Spawn_Standard_004, TestSize.Level0)
     }
     client->property.flags = 0;
 
-    char* argv[] = {(char*)"AppSpawnStandardTest4", (char*)"test4"};
+    char* argv[] = {const_cast<char*>("AppSpawnStandardTest4"), const_cast<char*>("test4")};
     int argc = sizeof(argv)/sizeof(argv[0]);
 
     EXPECT_EQ(GetAppSpawnClientFromArg(argc, argv, client), -1);

@@ -15,12 +15,14 @@
 #include <cerrno>
 #include <cstdio>
 #include <cstdlib>
-#include <string>
+#include <cstring>
 #include <sys/types.h>
 #include <ctime>
 #include <vector>
 #include "gtest/gtest.h"
 #include "appspawn_message.h"
+#include "appspawn_service.h"
+#include "appspawn_msg.h"
 
 using namespace testing::ext;
 
@@ -46,17 +48,28 @@ public:
         g_badStrings.push_back(std::string("\"\"\"\"\"\"\"\"\"\"\"\"\"\"\""));
         g_badStrings.push_back(std::string("............................................."));
         g_badStrings.push_back(std::string("....%%%....^..***@##.../*--++......$$&&....."));
+        StructuralFormatErrJson();
+        StructuralFieldMisJson();
+        StructuralFieldInvalidJson();
+        printf("[----------] AppSpawnLiteTest, message func test setup.\n");
+    }
+
+    static void TearDownTestCase()
+    {
+        g_badStrings.clear();
+        g_goodStrings.clear();
+        printf("[----------] AppSpawnLiteTest, message func test teardown.\n");
+    }
+    void SetUp() {}
+    void TearDown() {}
+
+    static void StructuralFormatErrJson(void)
+    {
         // looks like json but format error
         g_badStrings.push_back(std::string(
             "{bundleName\":\"nameV\",\"identityID\":\"1\",\"uID\":10,\"gID\":10,\"capability\":[0]}"));
         g_badStrings.push_back(std::string(
             "{\"bundleName:\"nameV\",\"identityID\":\"1\",\"uID\":10,\"gID\":10,\"capability\":[0]}"));
-        g_badStrings.push_back(std::string(
-            "{\"bundleName\":nameV\",\"identityID\":\"1\",\"uID\":10,\"gID\":10,\"capability\":[0]}"));
-        g_badStrings.push_back(std::string(
-            "{\"bundleName\":\"nameV,\"identityID\":\"1\",\"uID\":10,\"gID\":10,\"capability\":[0]}"));
-        g_badStrings.push_back(std::string(
-            "{\"bundleName\":\"nameV\",identityID\":\"1\",\"uID\":10,\"gID\":10,\"capability\":[0]}"));
         g_badStrings.push_back(std::string(
             "{\"bundleName\":\"nameV\",\"identityID:\"1\",\"uID\":10,\"gID\":10,\"capability\":[0]}"));
         g_badStrings.push_back(std::string(
@@ -67,12 +80,6 @@ public:
             "{\"bundleName\":\"nameV\",\"identityID\":\"1\",uID\":10,\"gID\":10,\"capability\":[0]}"));
         g_badStrings.push_back(std::string(
             "{\"bundleName\":\"nameV\",\"identityID\":\"1\",\"uID:10,\"gID\":10,\"capability\":[0]}"));
-        g_badStrings.push_back(std::string(
-            "{\"bundleName\":\"nameV\",\"identityID\":\"1\",\"uID\":10,gID\":10,\"capability\":[0]}"));
-        g_badStrings.push_back(std::string(
-            "{\"bundleName\":\"nameV\",\"identityID\":\"1\",\"uID\":10,\"gID:10,\"capability\":[0]}"));
-        g_badStrings.push_back(std::string(
-            "{\"bundleName\":\"nameV\",\"identityID\":\"1\",\"uID\":10,\"gID\":10,capability\":[0]}"));
         g_badStrings.push_back(std::string(
             "{\"bundleName\":\"nameV\",\"identityID\":\"1\",\"uID\":10,\"gID\":10,\"capability:[0]}"));
         g_badStrings.push_back(std::string(
@@ -92,12 +99,6 @@ public:
         g_badStrings.push_back(std::string(
             "{\"bundleName\":\"nameV\",\"identityID\"\"1\",\"uID\":10,\"gID\":10,\"capability\":[0]}"));
         g_badStrings.push_back(std::string(
-            "{\"bundleName\":\"nameV\",\"identityID\":\"1\"\"uID\":10,\"gID\":10,\"capability\":[0]}"));
-        g_badStrings.push_back(std::string(
-            "{\"bundleName\":\"nameV\",\"identityID\":\"1\",\"uID\"10,\"gID\":10,\"capability\":[0]}"));
-        g_badStrings.push_back(std::string(
-            "{\"bundleName\":\"nameV\",\"identityID\":\"1\",\"uID\":10\"gID\":10,\"capability\":[0]}"));
-        g_badStrings.push_back(std::string(
             "{\"bundleName\":\"nameV\",\"identityID\":\"1\",\"uID\":10,\"gID\"10,\"capability\":[0]}"));
         g_badStrings.push_back(std::string(
             "{\"bundleName\":\"nameV\",\"identityID\":\"1\",\"uID\":10,\"gID\":10\"capability\":[0]}"));
@@ -109,6 +110,10 @@ public:
             "{\"bundleName\":\"nameV\",\"identityID\":\"1\",\"uID\":10,\"gID\":10,\"capability\":[0],}"));
         g_badStrings.push_back(std::string(
             "{\"bundleName\":\"nameV\",\"identityID\":\"1\",\"uID\":10,\"gID\":10,\"capability\":[0,]}"));
+    }
+
+    static void StructuralFieldMisJson(void)
+    {
         // json format correct but fields missing
         g_badStrings.push_back(std::string(
             "{\"bundleName\":\"nameV\",\"identityID\":\"1234\",\"uID\":1000,\"gID\":1000,\"capability\":[0]}"));
@@ -132,6 +137,10 @@ public:
             "{\"bundleName\":\"nameV\",\"identityID\":\"1234\",\"uID\":1000,\"gID\":1000,\"\":[0]}"));
         g_badStrings.push_back(std::string(
             "{\"bundleName\":\"nameV\",\"identityID\":\"1234\",\"uID\":1000,\"gID\":1000}"));
+    }
+
+    static void StructuralFieldInvalidJson(void)
+    {
         // field value invalid
         g_badStrings.push_back(std::string(
             "{\"bundleName\":\"\",\"identityID\":\"1234\",\"uID\":1000,\"gID\":1000,\"capability\":[0]}"));
@@ -167,17 +176,7 @@ public:
             "{\"bundleName\":\"testvalid3\",\"identityID\":\"999\",\"uID\":1002,\"gID\":1002,\"capability\":[]}"));
         g_goodStrings.push_back(std::string(
             "{\"bundleName\":\"testvalid3\",\"identityID\":\"3\",\"uID\":1002,\"gID\":1002,\"capability\":[1,2]}"));
-        printf("[----------] AppSpawnLiteTest, message func test setup.\n");
     }
-
-    static void TearDownTestCase()
-    {
-        g_badStrings.clear();
-        g_goodStrings.clear();
-        printf("[----------] AppSpawnLiteTest, message func test teardown.\n");
-    }
-    void SetUp() {}
-    void TearDown() {}
 };
 
 /*
@@ -217,7 +216,7 @@ HWTEST_F(AppSpawnLiteTest, msgFuncFreeTest_002, TestSize.Level1)
     msgSt.capsCnt = MALLOC_TEST_LENGTH;
     FreeMessageSt(&msgSt);
     EXPECT_EQ(msgSt.capsCnt, 0);
-
+ 
     msgSt.uID = TEST_UID;
     FreeMessageSt(&msgSt);
     EXPECT_EQ(msgSt.uID, -1);
@@ -317,7 +316,7 @@ HWTEST_F(AppSpawnLiteTest, msgFuncSplitTest_001, TestSize.Level1)
 HWTEST_F(AppSpawnLiteTest, msgFuncSplitTest_002, TestSize.Level1)
 {
     MessageSt msgSt = {0};
-
+ 
     struct timespec tmStart = {0};
     GetCurrentTime(&tmStart);
 
@@ -337,7 +336,7 @@ HWTEST_F(AppSpawnLiteTest, msgFuncSplitTest_002, TestSize.Level1)
     long timeUsed = (tmEnd.tv_sec - tmStart.tv_sec) * NANOSECONDS_PER_SECOND + (tmEnd.tv_nsec - tmStart.tv_nsec);
     printf("[----------] AppSpawnLiteTest, msgFuncSplitTest_002, total time %ld ns, strCnt %u.\n", \
         timeUsed, g_goodStrings.size());
-
+ 
     // parse one good string and check all results
     std::string validStr =
         "{\"bundleName\":\"validName\",\"identityID\":\"135\",\"uID\":999,\"gID\":888,\"capability\":[0, 1, 5]}";
@@ -368,32 +367,27 @@ HWTEST_F(AppSpawnLiteTest, SetContentFunctionTest_001, TestSize.Level0)
     GTEST_LOG_(INFO) << "SetContentFunctionTest_001 start";
     AppSpawnContent *content = AppSpawnCreateContent("AppSpawn", NULL, 0, 0);
     SetContentFunction(content);
-    char *longProcName = "SetContentFunctionTest_001";
-    int64_t longProcNameLen = 1024;
 
-    std::unique_ptr<AppSpawnClientExt> clientExt = std::make_unique<AppSpawnClientExt>();
-    clientExt->client.id = 1;
-    clientExt->client.flag = 0;
-    clientExt->fd[0] = 123;
-    clientExt->fd[1] = 456;
-    clientExt->property.uid = 10002;
-    clientExt->property.gid = 1000;
-    clientExt->property.gidCount = 1;
-    strcpy_s(clientExt->property.processName, APP_LEN_PROC_NAME, "com.ohos.settingsdata");
-    strcpy_s(clientExt->property.bundleName, APP_LEN_BUNDLE_NAME, "com.ohos.settingsdata");
-    strcpy_s(clientExt->property.soPath, APP_LEN_SO_PATH, " ");
-    clientExt->property.accessTokenId = 671201800;
-    strcpy_s(clientExt->property.apl, APP_APL_MAX_LEN, "system_core");
-    strcpy_s(clientExt->property.renderCmd, APP_RENDER_CMD_MAX_LEN, " ");
+    string longProcName = "SetContentFunctionTest_001";
+    int64_t longProcNameLen = longProcName.length();
 
-    clientExt->property.flags = 0;
+    AppSpawnClientLite *liteClient = (AppSpawnClientLite *)malloc(sizeof(AppSpawnClientLite));
+    EXPECT_TRUE(liteClient);
+    liteClient->client.id = 1;
+    liteClient->client.flags = 0;
 
-    content->setProcessName(content, clientExt->client, longProcName, longProcNameLen);
-    content->setKeepCapabilities(content, clientExt->client);
-    content->setUidGid(content, clientExt->client);
-    content->setCapabilities(content, clientExt->client);
-    content->runChildProcessor(content, clientExt->client);
+    std::string validStr =
+        "{\"bundleName\":\"validName\",\"identityID\":\"135\",\"uID\":999,\"gID\":888,\"capability\":[0, 1, 5]}";
+    int ret = SplitMessage(validStr.c_str(), validStr.length(), &liteClient->message);
+    EXPECT_EQ(ret, 0);
 
+    EXPECT_EQ(content->setProcessName(content, &liteClient->client, (char*)longProcName.c_str(),
+        longProcNameLen), 0);
+    EXPECT_EQ(content->setKeepCapabilities(content, &liteClient->client), 0);
+    EXPECT_EQ(content->setUidGid(content, &liteClient->client), 0);
+    EXPECT_EQ(content->setCapabilities(content, &liteClient->client), 0);
+    content->runChildProcessor(content, &liteClient->client);
+    free(liteClient);
     GTEST_LOG_(INFO) << "SetContentFunctionTest_001 end";
 }
 }  // namespace OHOS
