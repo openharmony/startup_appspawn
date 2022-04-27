@@ -68,7 +68,7 @@ unittest("AppSpawnLiteTest") {
     deps += [ "//base/hiviewdfx/hilog_lite/frameworks/featured:hilog_shared" ]
   }
 }
- 
+
 group("unittest") {
   deps = [ ":AppSpawnLiteTest" ]
 }
