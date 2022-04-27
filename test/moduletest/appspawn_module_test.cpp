@@ -72,11 +72,11 @@ bool readFileInfo(char *buffer, const int32_t &pid, const char *fileName)
     // Set file path
     char filePath[FILE_PATH_SIZE];
     if (sprintf_s(filePath, sizeof(filePath), "/proc/%d/%s", pid, fileName) <= 0) {
-        HiLog::Error(LABEL, "filePath sprintf_s failed.");
+        HiLog::Error(LABEL, "filePath sprintf_s fail .");
         return CHECK_ERROR;
     }
     if (!checkFileIsExists(filePath)) {
-        HiLog::Error(LABEL, "file %{public}s not exists.", fileName);
+        HiLog::Error(LABEL, "file %{public}s is not exists .", fileName);
         return CHECK_ERROR;
     }
     // Open file
@@ -207,7 +207,7 @@ bool checkProcName(const int32_t &pid, const AppSpawnStartMsg &params)
     FILE *fp = nullptr;
     char cmd[CMD_SIZE];
     if (sprintf_s(cmd, sizeof(cmd), "ps -o ARGS=CMD -p %d |grep -v CMD", pid) <= 0) {
-        HiLog::Error(LABEL, "cmd sprintf_s failed.");
+        HiLog::Error(LABEL, "cmd sprintf_s fail .");
         return CHECK_ERROR;
     }
     if(strlen(cmd) > CMD_SIZE) {
@@ -246,12 +246,12 @@ bool checkProcessIsDestroyed(const int32_t &pid)
 {
     char filePath[FILE_PATH_SIZE];
     if (sprintf_s(filePath, sizeof(filePath), "/proc/%d", pid) <= 0) {
-        HiLog::Error(LABEL, "filePath sprintf_s failed.");
+        HiLog::Error(LABEL, "filePath sprintf_s fail .");
         return CHECK_ERROR;
     }
 
     if (checkFileIsExists(filePath)) {
-        HiLog::Error(LABEL, "File %{public}d not exists.", pid);
+        HiLog::Error(LABEL, "File %{public}d is not exists .", pid);
         return CHECK_ERROR;
     }
 
@@ -332,7 +332,8 @@ void AppSpawnModuleTest::TearDownTestCase()
 void AppSpawnModuleTest::SetUp()
 {
     newPid = 0;
-    if (memset_s(buffer, sizeof(buffer), 0x00, BUFFER_SIZE) != EOK) {
+    auto ret = memset_s(buffer, sizeof(buffer), 0x00, BUFFER_SIZE);
+    if (ret != EOK) {
         HiLog::Error(LABEL, "memset_s is failed.");
     }
 }
@@ -365,7 +366,7 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_listen_001, TestSize.Level0)
  * FunctionPoints: Process start message monitoring.
  * EnvConditions: AppSpawn main process has started.
  *                The socket server has been established.
- * CaseDescription: 1. Establish a socket client and connect with the AppSpawn server
+ * CaseDescription: 1. Establish a socket client and connect with the Appspawn server
  */
 HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_listen_002, TestSize.Level0)
 {

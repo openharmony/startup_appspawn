@@ -17,6 +17,7 @@
 #define APPSPAWN_SOCKET_CLIENT_H
 
 #include "appspawn_socket.h"
+#include "appspawn_msg.h"
 #include "nocopyable.h"
 
 namespace OHOS {
@@ -83,36 +84,17 @@ public:
         APP_TYPE_NATIVE        // Native C++ app
     };
 
-    static constexpr int APPSPAWN_MSG_MAX_SIZE = 4096;  // appspawn message max size
-    static constexpr int LEN_PROC_NAME = 256;           // process name length
-    static constexpr int LEN_BUNDLE_NAME = 256;         // bundle name length
-    static constexpr int LEN_SO_PATH = 256;             // load so lib
-    static constexpr int MAX_GIDS = 64;
-    static constexpr int APL_MAX_LEN = 32;
-    static constexpr int RENDER_CMD_MAX_LEN = 1024;
-    static constexpr int APPSPAWN_COLD_BOOT = 0x01;
+    static constexpr int APPSPAWN_MSG_MAX_SIZE = APP_MSG_MAX_SIZE;  // appspawn message max size
+    static constexpr int LEN_PROC_NAME = APP_LEN_PROC_NAME;         // process name length
+    static constexpr int LEN_BUNDLE_NAME = APP_LEN_BUNDLE_NAME;     // bundle name length
+    static constexpr int LEN_SO_PATH = APP_LEN_SO_PATH;             // load so lib
+    static constexpr int MAX_GIDS = APP_MAX_GIDS;
+    static constexpr int APL_MAX_LEN = APP_APL_MAX_LEN;
+    static constexpr int RENDER_CMD_MAX_LEN = APP_RENDER_CMD_MAX_LEN;
+    static constexpr int APPSPAWN_COLD_BOOT = APP_COLD_BOOT;
 
-    enum AppOperateCode {
-        DEFAULT = 0,
-        GET_RENDER_TERMINATION_STATUS,
-    };
-
-    struct AppProperty {
-        uint32_t uid;                     // the UNIX uid that the child process setuid() to after fork()
-        uint32_t gid;                     // the UNIX gid that the child process setgid() to after fork()
-        uint32_t gidTable[MAX_GIDS];      // a list of UNIX gids that the child process setgroups() to after fork()
-        uint32_t gidCount;                // the size of gidTable
-        char processName[LEN_PROC_NAME];  // process name
-        char bundleName[LEN_BUNDLE_NAME]; // bundle name
-        char soPath[LEN_SO_PATH];         // so lib path
-        uint32_t accessTokenId;
-        char apl[APL_MAX_LEN];
-        char renderCmd[RENDER_CMD_MAX_LEN];
-        uint32_t flags;
-        int32_t pid;                     // query render process exited status by render process pid
-        AppOperateCode code;
-    };
-
+    using AppProperty = AppParameter;
+    using AppOperateCode = AppOperateType;
 private:
     /**
      * Connects a client socket.

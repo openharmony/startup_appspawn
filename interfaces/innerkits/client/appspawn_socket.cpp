@@ -90,7 +90,7 @@ int AppSpawnSocket::PackSocketAddr()
 
 int AppSpawnSocket::CreateSocket()
 {
-    int socketFd = socket(AF_LOCAL, SOCK_SEQPACKET, 0);
+    int socketFd = socket(AF_UNIX, SOCK_STREAM, 0); // SOCK_SEQPACKET
     if (socketFd < 0) {
         HiLog::Error(LABEL, "Failed to create socket: %{public}d", errno);
         return (-errno);
@@ -123,7 +123,7 @@ int AppSpawnSocket::ReadSocketMessage(int socketFd, void *buf, int len)
 
     ssize_t rLen = TEMP_FAILURE_RETRY(read(socketFd, buf, len));
     if (rLen < 0) {
-        HiLog::Error(LABEL, "Read message from fd %{public}d error %zd: %{public}d", socketFd, rLen, errno);
+        HiLog::Error(LABEL, "Read message from fd %{public}d error %{public}zd: %{public}d", socketFd, rLen, errno);
         return -EFAULT;
     }
 
