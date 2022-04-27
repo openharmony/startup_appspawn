@@ -167,10 +167,12 @@ static void RunChildProcessor(AppSpawnContent *content, AppSpawnClient *client)
         appProperty->message.bundleName, appProperty->message.identityID, appProperty->message.uID,
         appProperty->message.gID);
 
+#ifndef APPSPAWN_TEST
     if (AbilityMain(appProperty->message.identityID) != 0) {
         APPSPAWN_LOGE("[appspawn] AbilityMain execute failed, pid %d.", getpid());
         exit(0x7f);  // 0x7f: user specified
     }
+#endif
 }
 
 void SetContentFunction(AppSpawnContent *content)
