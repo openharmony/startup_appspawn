@@ -20,8 +20,8 @@ ohos_unittest("ClientSocketTest") {
   defines = [ "usleep(time) = MockSleep(time)" ]
 
   sources = [
-    "${appspawn_path}/src/socket/appspawn_socket.cpp",
-    "${appspawn_path}/src/socket/client_socket.cpp",
+    "${appspawn_path}/interfaces/innerkits/client/appspawn_socket.cpp",
+    "${appspawn_path}/interfaces/innerkits/client/client_socket.cpp",
   ]
 
   sources += [ "client_socket_test.cpp" ]

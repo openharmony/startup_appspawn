@@ -37,7 +37,6 @@
                 "//base/startup/appspawn_standard:appspawn",
                 "//base/startup/appspawn_standard:appspawn.rc",
                 "//base/startup/appspawn_standard:appspawn_server",
-		"//base/startup/appspawn_standard:appspawntools",
                 "//base/startup/appspawn_standard:nweb",
                 "//base/startup/appspawn_standard/interfaces/innerkits:appspawn_socket_client"
             ],

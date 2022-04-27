@@ -23,6 +23,7 @@ ohos_moduletest("AppSpawnModuleTest") {
     "//utils/native/base/include",
     "//third_party/zlib/contrib/minizip",
     "//third_party/zlib",
+    "${appexecfwk_path}/interfaces/innerkits/appexecfwk_base/include",
   ]
 
   configs = [
@@ -33,6 +34,7 @@ ohos_moduletest("AppSpawnModuleTest") {
   deps = [
     "${aafwk_path}/interfaces/innerkits/app_manager:app_manager",
     "${aafwk_path}/services/appmgr:libams",
+    "${appexecfwk_path}/interfaces/innerkits/appexecfwk_core:appexecfwk_core",
     "${appspawn_path}/interfaces/innerkits:appspawn_socket_client",
     "//third_party/googletest:gtest_main",
     "//utils/native/base:utils",
