@@ -47,6 +47,7 @@ ohos_unittest("AppSpawnStandardTest") {
   external_deps = [
     "ability_base:want",
     "ability_runtime:app_manager",
+    "eventhandler:libeventhandler",
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
     "utils_base:utils",
