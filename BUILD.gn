@@ -24,10 +24,6 @@ config("appspawn_config") {
     "//utils/native/base/include",
     "${aafwk_path}/frameworks/kits/appkit/native/app/include",
     "${aafwk_path}/interfaces/innerkits/app_manager/include/appmgr",
-    "${appexecfwk_path}/interfaces/innerkits/libeventhandler/include",
-    "${appexecfwk_path}/common/log/include",
-    "${appexecfwk_path}/interfaces/innerkits/appexecfwk_core/include/bundlemgr",
-    "${appexecfwk_path}/interfaces/innerkits/appexecfwk_base/include",
     "${aafwk_path}/interfaces/innerkits/want/include/ohos/aafwk/content",
     "${aafwk_path}/interfaces/innerkits/want/include",
     "${aafwk_path}/interfaces/innerkits/ability_manager/include",
@@ -62,6 +58,7 @@ ohos_executable("appspawn") {
   external_deps = [
     "ability_base:want",
     "ability_runtime:app_manager",
+    "eventhandler:libeventhandler",
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
     "utils_base:utils",
