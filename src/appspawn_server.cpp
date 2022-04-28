@@ -56,18 +56,6 @@ constexpr static mode_t NWEB_FILE_MODE = 0511;
 #define APPSPAWN_LOGE(fmt, ...) STARTUP_LOGE(0, "APPSPAWN", fmt, ##__VA_ARGS__)
 #define GRAPHIC_PERMISSION_CHECK
 
-#ifdef NWEB_SPAWN
-#define RENDER_PROCESS_MAX_NUM 16
-#define RENDER_PROCESS_ARRAY_IDLE 0
-
-typedef struct {
-    int32_t pid;
-    int exitStatus;
-} RenderProcessNode;
-
-static RenderProcessNode g_renderProcessArray[RENDER_PROCESS_MAX_NUM];
-#endif
-
 namespace OHOS {
 namespace AppSpawn {
 namespace {
@@ -92,14 +80,37 @@ static constexpr HiLogLabel LABEL = {LOG_CORE, 0, "AppSpawnServer"};
 extern "C" {
 #endif
 
+#ifdef NWEB_SPAWN
+static int GetRenderProcessTerminationStatus(int32_t pid, int *status)
+{
+    if (status == nullptr) {
+        return -EINVAL;
+    }
+
+    if (kill(pid, SIGKILL) != 0) {
+        APPSPAWN_LOGE("unable to kill render process, pid: %d", pid);
+    }
+
+    pid_t exitPid = waitpid(pid, status, 0);
+    if (exitPid != pid) {
+        APPSPAWN_LOGE("SignalHandler HandleSignal: %d, status: %d", pid, status);
+        return -EINVAL;
+    }
+
+    return 0;
+}
+#endif
+
 static void SignalHandler([[maybe_unused]] int sig)
 {
+#ifndef NWEB_SPAWN
     pid_t pid;
     int status;
 
     while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
         APPSPAWN_LOGE("SignalHandler HandleSignal: %d, status: %d", pid, status);
     }
+#endif
 }
 
 static void InstallSigHandler()
@@ -202,52 +213,6 @@ void AppSpawnServer::WaitRebootEvent()
     }
 }
 
-#ifdef NWEB_SPAWN
-static void DumpRenderProcessExitedArray()
-{
-    APPSPAWN_LOGI("dump render process exited array:");
-    for (int i = 0; i < RENDER_PROCESS_MAX_NUM; i++) {
-        APPSPAWN_LOGI("[pid, exitedStatus] = [%d, %d]",
-            g_renderProcessArray[i].pid, g_renderProcessArray[i].exitStatus);
-    }
-}
-
-static void RecordRenderProcessExitedStatus(pid_t pid, int status)
-{
-    int i = 0;
-    for (; i < RENDER_PROCESS_MAX_NUM; i++) {
-        if (g_renderProcessArray[i].pid == RENDER_PROCESS_ARRAY_IDLE) {
-            g_renderProcessArray[i].exitStatus = status;
-            g_renderProcessArray[i].pid = pid;
-            break;
-        }
-    }
-    if (i == RENDER_PROCESS_MAX_NUM) {
-        APPSPAWN_LOGE("no empty space in render process exited array");
-        DumpRenderProcessExitedArray();
-    }
-}
-
-static int GetRenderProcessTerminationStatus(int32_t pid, int *status)
-{
-    if (status == nullptr) {
-        return -EINVAL;
-    }
-
-    for (int i = 0; i < RENDER_PROCESS_MAX_NUM; i++) {
-        if (g_renderProcessArray[i].pid == pid) {
-            *status = g_renderProcessArray[i].exitStatus;
-            g_renderProcessArray[i].pid = RENDER_PROCESS_ARRAY_IDLE;
-            return 0;
-        }
-    }
-    APPSPAWN_LOGE("not find pid[%d] in render process exited arrary", pid);
-    DumpRenderProcessExitedArray();
-
-    return -EINVAL;
-}
-#endif
-
 void AppSpawnServer::HandleSignal()
 {
     sigset_t mask;
@@ -264,16 +229,13 @@ void AppSpawnServer::HandleSignal()
         if (ret != sizeof(fdsi) || fdsi.ssi_signo != SIGCHLD) {
             continue;
         }
+#ifndef NWEB_SPAWN
         pid_t pid;
         int status;
         while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
-#ifdef NWEB_SPAWN
-            std::lock_guard<std::mutex> lock(mut_);  // to protect thread sync when access render process exited map
-            RecordRenderProcessExitedStatus(pid, status);
-#endif
             APPSPAWN_LOGE("HandleSignal: %d, status: %d", pid, status);
         }
-
+#endif
         std::lock_guard<std::mutex> lock(mut_);
         isChildDie_ = true;
         childPid_ = fdsi.ssi_pid;
