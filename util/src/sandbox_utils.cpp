@@ -516,12 +516,13 @@ bool SandboxUtils::CheckAppSandboxSwitchStatus(const ClientSocket::AppProperty *
 int32_t SandboxUtils::SetAppSandboxProperty(const ClientSocket::AppProperty *appProperty)
 {
     std::string sandboxPackagePath = "/mnt/sandbox/";
+    mkdir(sandboxPackagePath.c_str(), FILE_MODE);
     const std::string bundleName = appProperty->bundleName;
     sandboxPackagePath += bundleName;
-    int rc = 0;
+    mkdir(sandboxPackagePath.c_str(), FILE_MODE);
 
     // add pid to a new mnt namespace
-    rc = unshare(CLONE_NEWNS);
+    int rc = unshare(CLONE_NEWNS);
     if (rc) {
         HiLog::Error(LABEL, "unshare failed, packagename is %{public}s", bundleName.c_str());
         return rc;
