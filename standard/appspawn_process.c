@@ -382,5 +382,7 @@ void SetContentFunction(AppSpawnContent *content)
     content->setAppSandbox = SetAppSandboxProperty;
     content->setAppAccessToken = SetAppAccessToken;
     content->coldStartApp = ColdStartApp;
+#ifdef APPSPAWN_SUPPORT_SANDBOX
     content->registerAppSandbox = RegisterAppSandbox;
+#endif
 }
