@@ -31,6 +31,7 @@ void RunChildProcessor(AppSpawnContent *content, AppSpawnClient *client);
 void RegisterAppSandbox(struct AppSpawnContent_ *content, AppSpawnClient *client);
 int GetRenderProcessTerminationStatus(int32_t pid, int *status);
 void RecordRenderProcessExitedStatus(pid_t pid, int status);
+void LoadAppSandboxConfig(void);
 #ifdef __cplusplus
 }
 #endif
