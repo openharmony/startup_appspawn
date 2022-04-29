@@ -516,8 +516,10 @@ bool SandboxUtils::CheckAppSandboxSwitchStatus(const ClientSocket::AppProperty *
 int32_t SandboxUtils::SetAppSandboxProperty(const ClientSocket::AppProperty *appProperty)
 {
     std::string sandboxPackagePath = "/mnt/sandbox/";
+    mkdir(sandboxPackagePath.c_str(), FILE_MODE);
     const std::string bundleName = appProperty->bundleName;
     sandboxPackagePath += bundleName;
+    mkdir(sandboxPackagePath.c_str(), FILE_MODE);
     int rc = 0;
 
     // add pid to a new mnt namespace
