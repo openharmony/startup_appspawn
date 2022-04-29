@@ -32,6 +32,7 @@
 #include "appspawn_adapter.h"
 #include "securec.h"
 
+
 #define DEVICE_NULL_STR "/dev/null"
 
 static int SetProcessName(struct AppSpawnContent_ *content, AppSpawnClient *client,
