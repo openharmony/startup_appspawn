@@ -39,6 +39,7 @@ config("appspawn_test_config") {
     "${appspawn_path}/test/mock/include",
     "${appspawn_path}/common",
     "${appspawn_path}/interfaces/innerkits/include",
+    "${appspawn_path}/util/include",
   ]
 }
 
