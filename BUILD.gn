@@ -22,6 +22,7 @@ config("appspawn_config") {
     "adapter",
     "interfaces/innerkits/include",
     "//utils/native/base/include",
+    "util/include",
     "${aafwk_path}/frameworks/kits/appkit/native/app/include",
     "${aafwk_path}/interfaces/innerkits/app_manager/include/appmgr",
     "${aafwk_path}/interfaces/innerkits/want/include/ohos/aafwk/content",
@@ -38,6 +39,7 @@ config("appspawn_config") {
     "//base/startup/init_lite/interfaces/innerkits/include",
     "//base/startup/init_lite/interfaces/innerkits/sandbox/include",
     "//base/startup/syspara_lite/interfaces/innerkits/native/syspara/include",
+    "//third_party/json/include",
   ]
 
   if (build_selinux) {
@@ -77,6 +79,8 @@ ohos_static_library("appspawn_server") {
     "${appspawn_path}/common/appspawn_server.c",
     "${appspawn_path}/standard/appspawn_process.c",
     "${appspawn_path}/standard/appspawn_service.c",
+    "${appspawn_path}/util/src/json_utils.cpp",
+    "${appspawn_path}/util/src/sandbox_utils.cpp",
   ]
   defines = [
     "GRAPHIC_PERMISSION_CHECK",
@@ -115,12 +119,15 @@ ohos_executable("nwebspawn") {
   sources = [
     "${appspawn_path}/adapter/appspawn_nweb.cpp",
     "${appspawn_path}/standard/main.c",
+    "${appspawn_path}/util/src/json_utils.cpp",
+    "${appspawn_path}/util/src/sandbox_utils.cpp",
   ]
   configs = [ ":appspawn_config" ]
   deps = [
     "${appspawn_path}:appspawn_server",
     "//base/startup/init_lite/interfaces/innerkits/sandbox:libsandbox",
   ]
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 
   install_enable = true
   subsystem_name = "${subsystem_name}"

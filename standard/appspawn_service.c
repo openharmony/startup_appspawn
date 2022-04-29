@@ -14,6 +14,7 @@
  */
 
 #include "appspawn_service.h"
+#include "appspawn_adapter.h"
 
 #include <fcntl.h>
 #include <sys/capability.h>
@@ -352,6 +353,9 @@ static void AppSpawnInit(AppSpawnContent *content)
     content->notifyResToParent = NotifyResToParent;
     // set private function
     SetContentFunction(content);
+
+    // load app sandbox config
+    LoadAppSandboxConfig();
 }
 
 void AppSpawnColdRun(AppSpawnContent *content, int argc, char *const argv[])
