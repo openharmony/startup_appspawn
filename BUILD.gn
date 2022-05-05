@@ -114,6 +114,43 @@ ohos_prebuilt_etc("appspawn.rc") {
   part_name = "${part_name}"
 }
 
+ohos_static_library("nwebspawn_server") {
+  sources = [
+    "${appspawn_path}/adapter/appspawn_adapter.cpp",
+    "${appspawn_path}/adapter/appspawn_log.cpp",
+    "${appspawn_path}/adapter/appspawn_sandbox.cpp",
+    "${appspawn_path}/common/appspawn_server.c",
+    "${appspawn_path}/standard/appspawn_process.c",
+    "${appspawn_path}/standard/appspawn_service.c",
+    "${appspawn_path}/util/src/json_utils.cpp",
+    "${appspawn_path}/util/src/sandbox_utils.cpp",
+  ]
+  defines = [
+    "GRAPHIC_PERMISSION_CHECK",
+    "INIT_AGENT",
+    "NWEB_SPAWN",
+  ]
+  configs = [ ":appspawn_config" ]
+  ldflags = [ "-Wl,--dynamic-linker,/system/bin/linker64z" ]
+  deps = [
+    "//base/security/access_token/interfaces/innerkits/token_setproc:libtoken_setproc",
+    "//base/startup/init_lite/interfaces/innerkits:libbegetutil",
+    "//base/startup/init_lite/interfaces/innerkits/sandbox:libsandbox",
+    "//base/startup/init_lite/services/loopevent:loopevent",
+    "//base/startup/init_lite/services/utils:libinit_tools",
+    "//base/startup/syspara_lite/interfaces/innerkits/native/syspara:syspara",
+    "//third_party/libuv:uv_static",
+    "//utils/native/base:utils",
+  ]
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
+  if (build_selinux) {
+    external_deps += [ "selinux:libhap_restorecon" ]
+  }
+
+  subsystem_name = "${subsystem_name}"
+  part_name = "${part_name}"
+}
+
 ohos_executable("nwebspawn") {
   defines = [ "NWEB_SPAWN" ]
   sources = [
@@ -124,7 +161,7 @@ ohos_executable("nwebspawn") {
   ]
   configs = [ ":appspawn_config" ]
   deps = [
-    "${appspawn_path}:appspawn_server",
+    "${appspawn_path}:nwebspawn_server",
     "//base/startup/init_lite/interfaces/innerkits/sandbox:libsandbox",
   ]
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
