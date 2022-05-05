@@ -227,7 +227,7 @@ static int GetProcessTerminationStatus(AppSpawnClientExt *appProperty)
     if (appProperty == NULL) {
         return -1;
     }
-    if (appProperty->property.code == AppOperateType::GET_RENDER_TERMINATION_STATUS) {
+    if (appProperty->property.code == GET_RENDER_TERMINATION_STATUS) {
         int exitStatus = 0;
         int ret = GetRenderProcessTerminationStatus(appProperty->property.pid, &exitStatus);
         if (ret) {
