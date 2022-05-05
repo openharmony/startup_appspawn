@@ -23,7 +23,7 @@
 extern "C" {
 #endif
 
-#ifdef __MUSL__
+#if defined(__MUSL__) || defined(NWEB_SPAWN)
 #define  SOCKET_DIR "/dev/unix/socket/"
 #else
 #define  SOCKET_DIR "/dev/socket/"
