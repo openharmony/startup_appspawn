@@ -31,7 +31,7 @@ config("appspawn_config") {
     "${aafwk_path}/interfaces/innerkits/base/include",
     "${aafwk_path}/frameworks/kits/ability/native/include",
     "${aafwk_path}/services/abilitymgr/include",
-    "//base/global/resmgr_standard/interfaces/innerkits/include",
+    "//base/global/resource_management/interfaces/innerkits/include",
     "//base/security/access_token/interfaces/innerkits/token_setproc/include",
     "//base/startup/init_lite/services/log",
     "//base/startup/init_lite/services/include",
