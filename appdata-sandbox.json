@@ -7,32 +7,32 @@
                     "src-path" : "/config",
                     "sandbox-path" : "/config",
                     "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "true"
+                    "check-action-status": "false"
                 }, {
                     "src-path" : "/dev",
                     "sandbox-path" : "/dev",
                     "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "true"
+                    "check-action-status": "false"
                 }, {
                     "src-path" : "/proc",
                     "sandbox-path" : "/proc",
                     "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "true"
+                    "check-action-status": "false"
                 }, {
                     "src-path" : "/sys",
                     "sandbox-path" : "/sys",
                     "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "true"
+                    "check-action-status": "false"
                 }, {
                     "src-path" : "/sys_prod",
                     "sandbox-path" : "/sys_prod",
                     "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "true"
+                    "check-action-status": "false"
                 }, {
                     "src-path" : "/system",
                     "sandbox-path" : "/system",
                     "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "true"
+                    "check-action-status": "false"
                 }, {
                     "src-path" : "/data/app/el1/bundle/public/<PackageName>",
                     "sandbox-path" : "/data/storage/el1/bundle",
@@ -83,23 +83,23 @@
             "symbol-links" : [{
                     "target-name" : "/system/bin",
                     "link-name" : "/bin",
-                    "check-action-status": "true"
+                    "check-action-status": "false"
                 }, {
                     "target-name" : "/system/lib",
                     "link-name" : "/lib",
-                    "check-action-status": "true"
+                    "check-action-status": "false"
                 }, {
                     "target-name" : "/system/etc",
                     "link-name" : "/etc",
-                    "check-action-status": "true"
+                    "check-action-status": "false"
                 }, {
                     "target-name" : "/system/bin/init",
                     "link-name" : "/init",
-                    "check-action-status": "true"
+                    "check-action-status": "false"
                 }, {
                     "target-name" : "/sys/kernel/debug",
                     "link-name" : "/d",
-                    "check-action-status": "true"
+                    "check-action-status": "false"
                 }
             ]
         }],
