@@ -146,6 +146,18 @@
             ],
             "symbol-links" : []
         }],
+        "com.ohos.medialibrary.medialibrarydata" : [{
+            "sandbox-switch": "ON",
+            "sandbox-root" : "/mnt/sandbox/<PackageName>",
+            "mount-bind-paths" : [{
+                    "src-path" : "/storage/media/<currentUserId>",
+                    "sandbox-path" : "/storage/media",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }
+            ],
+            "symbol-links" : []
+        }],
         "com.ohos.launcher" : [{
             "sandbox-switch": "ON",
             "sandbox-root" : "/mnt/sandbox/<PackageName>",
