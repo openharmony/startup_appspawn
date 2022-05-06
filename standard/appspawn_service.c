@@ -169,7 +169,8 @@ static void HandleSpecial(AppSpawnClientExt *appProperty)
     // special handle bundle name medialibrary and scanner
     const char *specialBundleNames[] = {
         "com.ohos.medialibrary.MediaLibraryDataA",
-        "com.ohos.medialibrary.MediaScannerAbilityA"
+        "com.ohos.medialibrary.MediaScannerAbilityA",
+        "com.ohos.medialibrary.medialibrarydata"
     };
     for (size_t i = 0; i < sizeof(specialBundleNames) / sizeof(specialBundleNames[0]); i++) {
         if (strcmp(appProperty->property.processName, specialBundleNames[i]) == 0) {
