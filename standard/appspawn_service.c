@@ -402,6 +402,9 @@ static void AppSpawnRun(AppSpawnContent *content, int argc, char *const argv[])
     HashMapDestory(appSpawnContent->appMap);
     free(content);
     g_appSpawnContent = NULL;
+#ifndef APPSPAWN_TEST
+    quick_exit(0);
+#endif
 }
 
 static int CreateHashForApp(AppSpawnContentExt *appSpawnContent)
