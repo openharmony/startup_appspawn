@@ -136,15 +136,15 @@ static void SignalHandler(const struct signalfd_siginfo *siginfo)
     APPSPAWN_LOGI("SignalHandler signum %d", siginfo->ssi_signo);
     switch (siginfo->ssi_signo) {
         case SIGCHLD: {  // delete pid from app map
+#ifndef NWEB_SPAWN
+            // nwebspawn will invoke waitpid and remove appinfo at GetRenderProcessTerminationStatus.
             pid_t pid;
             int status;
             while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
                 APPSPAWN_LOGI("SignalHandler pid %d status %d", pid, status);
                 RemoveAppInfo(pid);
-#ifdef NWEB_SPAWN
-                RecordRenderProcessExitedStatus(pid, status);
-#endif
             }
+#endif
             break;
         }
         case SIGTERM: {  // appswapn killed, use kill without parameter
@@ -221,28 +221,40 @@ static void StartColdApp(AppSpawnClientExt *appProperty)
     }
 }
 
-static int GetProcessTerminationStatus(AppSpawnClientExt *appProperty)
-{
 #ifdef NWEB_SPAWN
-    if (appProperty == NULL) {
+static int GetRenderProcessTerminationStatus(int32_t pid, int *status)
+{
+    if (status == NULL) {
         return -1;
     }
-    if (appProperty->property.code == GET_RENDER_TERMINATION_STATUS) {
-        int exitStatus = 0;
-        int ret = GetRenderProcessTerminationStatus(appProperty->property.pid, &exitStatus);
-        if (ret) {
-            SendResponse(appProperty, (char *)&ret, sizeof(ret));
-        } else {
-            SendResponse(appProperty, (char *)&exitStatus, sizeof(exitStatus));
-        }
-        APPSPAWN_LOGI("AppSpawnServer::get render process termination status, status = %d pid = %d uid %d %s %s",
-            exitStatus, appProperty->property.pid, appProperty->property.uid,
-            appProperty->property.processName, appProperty->property.bundleName);
-        return 0;
+
+    if (kill(pid, SIGKILL) != 0) {
+        APPSPAWN_LOGE("unable to kill render process, pid: %d", pid);
     }
-#endif
-    return -1;
+
+    pid_t exitPid = waitpid(pid, status, 0);
+    if (exitPid != pid) {
+        APPSPAWN_LOGE("waitpid failed, return : %d, pid: %d, status: %d", exitPid, pid, *status);
+        return -1;
+    }
+    RemoveAppInfo(pid);
+    return 0;
 }
+
+static void GetProcessTerminationStatus(AppSpawnClientExt *appProperty)
+{
+    int exitStatus = 0;
+    int ret = GetRenderProcessTerminationStatus(appProperty->property.pid, &exitStatus);
+    if (ret) {
+        SendResponse(appProperty, (char *)&ret, sizeof(ret));
+    } else {
+        SendResponse(appProperty, (char *)&exitStatus, sizeof(exitStatus));
+    }
+    APPSPAWN_LOGI("AppSpawnServer::get render process termination status, status = %d pid = %d uid %d %s %s",
+        exitStatus, appProperty->property.pid, appProperty->property.uid,
+        appProperty->property.processName, appProperty->property.bundleName);
+}
+#endif
 
 static void OnReceiveRequest(const TaskHandle taskHandle, const uint8_t *buffer, uint32_t buffLen)
 {
@@ -254,6 +266,13 @@ static void OnReceiveRequest(const TaskHandle taskHandle, const uint8_t *buffer,
     int ret = memcpy_s(&appProperty->property, sizeof(appProperty->property), buffer, buffLen);
     APPSPAWN_CHECK(ret == 0, LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
         return, "Invalid buffer buffLen %u", buffLen);
+#ifdef NWEB_SPAWN
+    // get render process termination status, only nwebspawn need this logic.
+    if (appProperty->property.code == GET_RENDER_TERMINATION_STATUS) {
+        GetProcessTerminationStatus(appProperty);
+        return;
+    }
+#endif
     APPSPAWN_CHECK(appProperty->property.gidCount <= APP_MAX_GIDS && strlen(appProperty->property.processName) > 0,
         LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
         return, "Invalid property %u", appProperty->property.gidCount);
@@ -264,9 +283,7 @@ static void OnReceiveRequest(const TaskHandle taskHandle, const uint8_t *buffer,
         g_appSpawnContent->timer = NULL;
     }
 
-    // cold start app
     StartColdApp(appProperty);
-
     // create pipe for commication from child
     if (pipe(appProperty->fd) == -1) {
         APPSPAWN_LOGE("create pipe fail, errno = %d", errno);
@@ -276,22 +293,17 @@ static void OnReceiveRequest(const TaskHandle taskHandle, const uint8_t *buffer,
     APPSPAWN_LOGI("OnReceiveRequest client.id %d appProperty %d processname %s buffLen %d flags 0x%x",
         appProperty->client.id, appProperty->property.uid, appProperty->property.processName,
         buffLen, appProperty->property.flags);
-
     fcntl(appProperty->fd[0], F_SETFL, O_NONBLOCK);
-
-    // get render process termination status
-    APPSPAWN_CHECK(GetProcessTerminationStatus(appProperty) != 0, return, "Invalid appspawn content");
 
     pid_t pid = 0;
     int result = AppSpawnProcessMsg(&g_appSpawnContent->content, &appProperty->client, &pid);
-    if (result == 0) {  // wait child process resutl
+    if (result == 0) {  // wait child process result
         result = WaitChild(appProperty->fd[0], pid, appProperty);
     }
     close(appProperty->fd[0]);
     close(appProperty->fd[1]);
     APPSPAWN_LOGI("child process %s %s pid %d",
         appProperty->property.processName, (result == 0) ? "success" : "fail", pid);
-    // send response
     if (result == 0) {
         AddAppInfo(pid, appProperty->property.processName);
         SendResponse(appProperty, (char *)&pid, sizeof(pid));
