@@ -59,9 +59,9 @@ executable("appspawn") {
     "//base/startup/init_lite/interfaces/innerkits:libbegetutil",
     "//build/lite/config/component/cJSON:cjson_shared",
     "//foundation/communication/ipc_lite:liteipc_adapter",
+    "//foundation/distributeddatamgr/appdatamgr/frameworks/native/kv_store:kv_store",
     "//foundation/distributedschedule/samgr_lite/samgr:samgr",
     "//third_party/bounds_checking_function:libsec_shared",
-    "//utils/native/lite/kv_store:kv_store",
   ]
 
   if (enable_ohos_appexecfwk_feature_ability == true) {
