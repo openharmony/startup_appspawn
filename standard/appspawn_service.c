@@ -466,9 +466,6 @@ AppSpawnContent *AppSpawnCreateContent(const char *socketName, char *longProcNam
             return NULL, "Failed to snprintf_s %d", ret);
         int socketId = GetControlSocket(socketName);
         APPSPAWN_LOGI("get socket form env %s socketId %d", socketName, socketId);
-        if (socketId > 0) {
-            appSpawnContent->flags |= FLAGS_ON_DEMAND;
-        }
 
         LE_StreamServerInfo info = {};
         info.baseInfo.flags = TASK_STREAM | TASK_PIPE | TASK_SERVER;
