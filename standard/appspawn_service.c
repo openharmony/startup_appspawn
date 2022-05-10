@@ -33,6 +33,10 @@
 #include "parameter.h"
 #include "securec.h"
 
+#ifdef REPORT_EVENT
+#include "event_reporter.h"
+#endif
+
 static AppSpawnContentExt *g_appSpawnContent = NULL;
 
 static const int TV_SEC = 60;
@@ -131,6 +135,24 @@ static int SendResponse(AppSpawnClientExt *client, const char *buff, size_t buff
     return LE_Send(LE_GetDefaultLoop(), client->stream, handle, buffSize);
 }
 
+#ifdef REPORT_EVENT
+static void PrintProcessExitInfo(pid_t pid, uid_t uid, int status)
+{
+    HashNode *node = HashMapGet(g_appSpawnContent->appMap, (const void *)&pid);
+    APPSPAWN_CHECK(node != NULL, return, "Handle SIGCHLD from pid:%d status:%d", pid, status);
+    AppInfo *appInfo = HASHMAP_ENTRY(node, AppInfo, node);
+    APPSPAWN_CHECK(appInfo != NULL, return, "Handle SIGCHLD from pid:%d status:%d", pid, status);
+    if (WIFSIGNALED(status)) {
+        APPSPAWN_LOGW("%s with pid %d exit with signal:%d", appInfo->name, pid, WTERMSIG(status));
+    }
+    if (WIFEXITED(status)) {
+        APPSPAWN_LOGW("%s with pid %d exit with code:%d", appInfo->name, pid, WEXITSTATUS(status));
+    }
+
+    ReportProcessExitInfo(appInfo->name, pid, uid, status);
+}
+#endif
+
 static void SignalHandler(const struct signalfd_siginfo *siginfo)
 {
     APPSPAWN_LOGI("SignalHandler signum %d", siginfo->ssi_signo);
@@ -142,6 +164,9 @@ static void SignalHandler(const struct signalfd_siginfo *siginfo)
             int status;
             while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
                 APPSPAWN_LOGI("SignalHandler pid %d status %d", pid, status);
+#ifdef REPORT_EVENT
+                PrintProcessExitInfo(pid, siginfo->ssi_uid, status);
+#endif
                 RemoveAppInfo(pid);
             }
 #endif
