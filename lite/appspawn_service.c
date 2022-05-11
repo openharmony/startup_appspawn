@@ -22,7 +22,7 @@
 #include "appspawn_server.h"
 #include "iproxy_server.h"
 #include "iunknown.h"
-#include "liteipc_adapter.h"
+#include "ipc_skeleton.h"
 #include "message.h"
 #include "ohos_errno.h"
 #include "ohos_init.h"
