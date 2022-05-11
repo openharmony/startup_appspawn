@@ -23,7 +23,7 @@
             "components": [
                 "hilog_lite",
                 "samgr_lite",
-                "ipc_lite",
+                "ipc_single",
                 "kv_store",
                 "aafwk_lite",
                 "ace_engine_lite",

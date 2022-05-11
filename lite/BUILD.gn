@@ -57,7 +57,7 @@ executable("appspawn") {
     "${aafwk_lite_path}/frameworks/ability_lite:aafwk_abilitykit_lite",
     "//base/startup/init_lite/interfaces/innerkits:libbegetutil",
     "//build/lite/config/component/cJSON:cjson_shared",
-    "//foundation/communication/ipc_lite:liteipc_adapter",
+    "//foundation/communication/ipc/interfaces/innerkits/c/ipc:ipc_single",
     "//foundation/distributedschedule/samgr_lite/samgr:samgr",
     "//third_party/bounds_checking_function:libsec_shared",
     "//utils/native/lite/kv_store:kv_store",
