@@ -18,18 +18,6 @@
 #include <dlfcn.h>
 #include <string>
 
-#ifdef NWEB_SPAWN
-#define RENDER_PROCESS_MAX_NUM 16
-#define RENDER_PROCESS_ARRAY_IDLE 0
-
-typedef struct {
-    int32_t pid;
-    int exitStatus;
-} RenderProcessNode;
-
-static RenderProcessNode g_renderProcessArray[RENDER_PROCESS_MAX_NUM];
-#endif
-
 void *g_nwebHandle = nullptr;
 
 void LoadExtendLib(AppSpawnContent *content)
@@ -72,47 +60,4 @@ void RunChildProcessor(AppSpawnContent *content, AppSpawnClient *client)
         return;
     }
     funcNWebRenderMain(appProperty->property.renderCmd);
-}
-
-static void DumpRenderProcessExitedArray()
-{
-    APPSPAWN_LOGI("dump render process exited array:");
-    for (int i = 0; i < RENDER_PROCESS_MAX_NUM; i++) {
-        APPSPAWN_LOGI("[pid, exitedStatus] = [%d, %d]",
-            g_renderProcessArray[i].pid, g_renderProcessArray[i].exitStatus);
-    }
-}
-
-void RecordRenderProcessExitedStatus(pid_t pid, int status)
-{
-    int i = 0;
-    for (; i < RENDER_PROCESS_MAX_NUM; i++) {
-        if (g_renderProcessArray[i].pid == RENDER_PROCESS_ARRAY_IDLE) {
-            g_renderProcessArray[i].exitStatus = status;
-            g_renderProcessArray[i].pid = pid;
-            break;
-        }
-    }
-    if (i == RENDER_PROCESS_MAX_NUM) {
-        APPSPAWN_LOGE("no empty space in render process exited array");
-        DumpRenderProcessExitedArray();
-    }
-}
-
-int GetRenderProcessTerminationStatus(int32_t pid, int *status)
-{
-    if (status == nullptr) {
-        return -1;
-    }
-
-    for (int i = 0; i < RENDER_PROCESS_MAX_NUM; i++) {
-        if (g_renderProcessArray[i].pid == pid) {
-            *status = g_renderProcessArray[i].exitStatus;
-            g_renderProcessArray[i].pid = RENDER_PROCESS_ARRAY_IDLE;
-            return 0;
-        }
-    }
-    APPSPAWN_LOGE("not find pid[%d] in render process exited arrary", pid);
-    DumpRenderProcessExitedArray();
-    return -1;
 }
