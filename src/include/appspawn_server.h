@@ -195,6 +195,10 @@ private:
     void HandleSignal();
 
     void QuickExitMain();
+
+    void ProcessAppSpawnMsg(char *longProcName, int64_t longProcNameLen,
+                            const std::unique_ptr<AppSpawnMsgPeer> &msg);
+
 private:
     const std::string deviceNull_ = "/dev/null";
     std::string socketName_ {};
