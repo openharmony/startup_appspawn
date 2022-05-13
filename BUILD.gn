@@ -103,6 +103,11 @@ ohos_static_library("appspawn_server") {
     external_deps += [ "selinux:libhap_restorecon" ]
   }
 
+  if (appspawn_report_event) {
+    cflags = [ "-DREPORT_EVENT" ]
+    deps += [ "adapter/sysevent:event_reporter" ]
+  }
+
   subsystem_name = "${subsystem_name}"
   part_name = "${part_name}"
 }
