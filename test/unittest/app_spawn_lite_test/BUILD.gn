@@ -51,7 +51,7 @@ unittest("AppSpawnLiteTest") {
     "//base/hiviewdfx/hilog_lite/frameworks/featured:hilog_shared",
     "//base/startup/init_lite/interfaces/innerkits:libbegetutil",
     "//build/lite/config/component/cJSON:cjson_shared",
-    "//foundation/communication/ipc_lite:liteipc_adapter",
+    "//foundation/communication/ipc/interfaces/innerkits/c/ipc:ipc_single",
     "//foundation/distributeddatamgr/appdatamgr/frameworks/native/kv_store:kv_store",
     "//foundation/distributedschedule/samgr_lite/samgr:samgr",
     "//third_party/bounds_checking_function:libsec_shared",

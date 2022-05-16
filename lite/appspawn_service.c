@@ -22,12 +22,13 @@
 #include "appspawn_server.h"
 #include "iproxy_server.h"
 #include "iunknown.h"
-#include "liteipc_adapter.h"
+#include "ipc_skeleton.h"
 #include "message.h"
 #include "ohos_errno.h"
 #include "ohos_init.h"
 #include "samgr_lite.h"
 #include "service.h"
+#include "securec.h"
 
 static const int INVALID_PID = -1;
 static const int CLIENT_ID = 100;
@@ -84,29 +85,15 @@ static int GetMessageSt(MessageSt *msgSt, IpcIo *req)
     if (msgSt == NULL || req == NULL) {
         return EC_FAILURE;
     }
-#ifdef __LINUX__
+
     size_t len = 0;
-    char *str = IpcIoPopString(req, &len);
+    char* str = ReadString(req, &len);
     if (str == NULL || len == 0) {
         APPSPAWN_LOGE("[appspawn] invoke, get data failed.");
         return EC_FAILURE;
     }
 
     int ret = SplitMessage(str, len, msgSt);  // after split message, str no need to free(linux version)
-#else
-    BuffPtr *dataPtr = IpcIoPopDataBuff(req);
-    if (dataPtr == NULL) {
-        APPSPAWN_LOGE("[appspawn] invoke, get data failed.");
-        return EC_FAILURE;
-    }
-
-    int ret = SplitMessage((char *)dataPtr->buff, dataPtr->buffSz, msgSt);
-
-    // release buffer
-    if (FreeBuffer(NULL, dataPtr->buff) != LITEIPC_OK) {
-        APPSPAWN_LOGE("[appspawn] invoke, free buffer failed!");
-    }
-#endif
     return ret;
 }
 
@@ -118,8 +105,11 @@ AppSpawnContent *AppSpawnCreateContent(const char *socketName, char *longProcNam
     APPSPAWN_LOGI("AppSpawnCreateContent %s", socketName);
     AppSpawnContentLite *appSpawnContent = (AppSpawnContentLite *)malloc(sizeof(AppSpawnContentLite));
     APPSPAWN_CHECK(appSpawnContent != NULL, return NULL, "Failed to alloc memory for appspawn");
+    int ret = memset_s(appSpawnContent, sizeof(AppSpawnContentLite), 0, sizeof(AppSpawnContentLite));
+    APPSPAWN_CHECK(ret == 0, free(appSpawnContent);
+        return NULL, "Failed to memset conent");
     appSpawnContent->content.longProcName = NULL;
-    appSpawnContent->content.longProcNameLen = NULL;
+    appSpawnContent->content.longProcNameLen = 0;
     g_appSpawnContentLite = appSpawnContent;
     return appSpawnContent;
 }
@@ -136,30 +126,29 @@ static int Invoke(IServerProxy *iProxy, int funcId, void *origin, IpcIo *req, Ip
 
     if (reply == NULL || funcId != ID_CALL_CREATE_SERVICE || req == NULL) {
         APPSPAWN_LOGE("[appspawn] invoke, funcId %d invalid, reply %d.", funcId, INVALID_PID);
-        IpcIoPushInt64(reply, INVALID_PID);
+        WriteInt64(reply, INVALID_PID);
         return EC_BADPTR;
     }
-
-    AppSpawnClientLite *client = (AppSpawnClientLite *)malloc(sizeof(AppSpawnClientLite));
-    APPSPAWN_CHECK(client != NULL, return -1, "malloc AppSpawnClientLite Failed");
-    client->client.id = CLIENT_ID;
-    client->client.flags = 0;
-    if (GetMessageSt(&client->message, req) != EC_SUCCESS) {
+    APPSPAWN_LOGI("[appspawn] invoke.");
+    AppSpawnClientLite client = {};
+    client.client.id = CLIENT_ID;
+    client.client.flags = 0;
+    if (GetMessageSt(&client.message, req) != EC_SUCCESS) {
         APPSPAWN_LOGE("[appspawn] invoke, parse failed! reply %d.", INVALID_PID);
-        IpcIoPushInt64(reply, INVALID_PID);
+        WriteInt64(reply, INVALID_PID);
         return EC_FAILURE;
     }
 
-    APPSPAWN_LOGI("[appspawn] invoke, msg<%s,%s,%d,%d %d>", client->message.bundleName, client->message.identityID,
-        client->message.uID, client->message.gID, client->message.capsCnt);
+    APPSPAWN_LOGI("[appspawn] invoke, msg<%s,%s,%d,%d %d>", client.message.bundleName, client.message.identityID,
+        client.message.uID, client.message.gID, client.message.capsCnt);
 
     pid_t newPid = 0;
-    int ret = AppSpawnProcessMsg(g_appSpawnContentLite, &client->client, &newPid);
+    int ret = AppSpawnProcessMsg(&g_appSpawnContentLite->content, &client.client, &newPid);
     if (ret != 0) {
         newPid = -1;
     }
-    FreeMessageSt(&client->message);
-    IpcIoPushInt64(reply, newPid);
+    FreeMessageSt(&client.message);
+    WriteInt64(reply, newPid);
 
 #ifdef OHOS_DEBUG
     struct timespec tmEnd = {0};
