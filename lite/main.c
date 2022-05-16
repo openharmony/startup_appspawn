@@ -67,7 +67,11 @@ int main(int argc, char * const argv[])
     sleep(1);
     APPSPAWN_LOGI("[appspawn] main, enter.");
 
-    AppSpawnContent *content = AppSpawnCreateContent("AppSpawn", NULL, 0, 0);
+    AppSpawnContent *content = AppSpawnCreateContent(APPSPAWN_SERVICE_NAME, NULL, 0, 0);
+    if (content == NULL) {
+        APPSPAWN_LOGE("Failed to create content for appspawn");
+        return -1;
+    }
     SetContentFunction(content);
     // 1. ipc module init
     HOS_SystemInit();
