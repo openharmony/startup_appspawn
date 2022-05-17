@@ -431,10 +431,6 @@ int32_t SandboxUtils::SetCommonAppSandboxProperty(const ClientSocket::AppPropert
 
     if (strcmp(appProperty->apl, APL_SYSTEM_BASIC.data()) == 0 ||
         strcmp(appProperty->apl, APL_SYSTEM_CORE.data()) == 0) {
-        // account_0/applications/ dir can still access other packages' data now for compatibility purpose
-        std::string destapplicationsPath = sandboxPackagePath + SANDBOX_APP_INSTALL_PATH;
-        DoAppSandboxMountOnce(PHYSICAL_APP_INSTALL_PATH.c_str(), destapplicationsPath.c_str(), BASIC_MOUNT_FLAGS);
-
         // need permission check for system app here
         std::string destbundlesPath = sandboxPackagePath + DATA_BUNDLES;
         DoAppSandboxMountOnce(PHYSICAL_APP_INSTALL_PATH.c_str(), destbundlesPath.c_str(), BASIC_MOUNT_FLAGS);
@@ -480,7 +476,6 @@ int32_t SandboxUtils::DoSandboxRootFolderCreate(const ClientSocket::AppProperty 
 bool SandboxUtils::CheckTotalSandboxSwitchStatus(const ClientSocket::AppProperty *appProperty)
 {
     nlohmann::json wholeConfig = SandboxUtils::GetJsonConfig();
-    HiLog::Error(LABEL, "CheckAppSandboxSwitchStatus total start, %{public}s", appProperty->bundleName);
 
     nlohmann::json commonAppConfig = wholeConfig[COMMON_PREFIX][0];
     if (commonAppConfig.find(TOP_SANDBOX_SWITCH_PREFIX) != commonAppConfig.end()) {
@@ -500,7 +495,6 @@ bool SandboxUtils::CheckAppSandboxSwitchStatus(const ClientSocket::AppProperty *
 {
     nlohmann::json wholeConfig = SandboxUtils::GetJsonConfig();
     bool rc = true;
-    HiLog::Error(LABEL, "CheckAppSandboxSwitchStatus start, %{public}s", appProperty->bundleName);
 
     nlohmann::json privateAppConfig = wholeConfig[PRIVATE_PREFIX][0];
     if (privateAppConfig.find(appProperty->bundleName) != privateAppConfig.end()) {
@@ -532,10 +526,8 @@ int32_t SandboxUtils::SetAppSandboxProperty(const ClientSocket::AppProperty *app
     if (access(WARGNAR_DEVICE_PATH, F_OK) == 0 || (CheckTotalSandboxSwitchStatus(appProperty) == false) ||
         (CheckAppSandboxSwitchStatus(appProperty) == false)) {
         rc = DoSandboxRootFolderCreateAdapt(sandboxPackagePath);
-        HiLog::Error(LABEL, "CheckAppSandboxSwitchStatus 1111, %{public}d", rc);
     } else {
         rc = DoSandboxRootFolderCreate(appProperty, sandboxPackagePath);
-        HiLog::Error(LABEL, "CheckAppSandboxSwitchStatus 2222, %{public}d", rc);
     }
     if (rc) {
         HiLog::Error(LABEL, "DoSandboxRootFolderCreate failed, %{public}s", bundleName.c_str());
