@@ -156,11 +156,6 @@
             "sandbox-root" : "/mnt/sandbox/<PackageName>",
             "mount-bind-paths" : [{
                     "src-path" : "/data/app/el1/bundle/public/",
-                    "sandbox-path" : "/data/accounts/account_0/applications/",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "true"
-                }, {
-                    "src-path" : "/data/app/el1/bundle/public/",
                     "sandbox-path" : "/data/bundles/",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "true"
@@ -173,11 +168,6 @@
             "sandbox-root" : "/mnt/sandbox/<PackageName>",
             "mount-bind-paths" : [{
                     "src-path" : "/data/app/el1/bundle/public/",
-                    "sandbox-path" : "/data/accounts/account_0/applications/",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "true"
-                }, {
-                    "src-path" : "/data/app/el1/bundle/public/",
                     "sandbox-path" : "/data/bundles/",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "true"
@@ -189,11 +179,6 @@
             "sandbox-switch": "OFF",
             "sandbox-root" : "/mnt/sandbox/<PackageName>",
             "mount-bind-paths" : [{
-                    "src-path" : "/data/app/el1/bundle/public/",
-                    "sandbox-path" : "/data/accounts/account_0/applications/",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "true"
-                }, {
                     "src-path" : "/data/app/el1/bundle/public/",
                     "sandbox-path" : "/data/bundles/",
                     "sandbox-flags" : [ "bind", "rec" ],
