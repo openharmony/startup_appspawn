@@ -92,6 +92,11 @@ public:
     static constexpr int RENDER_CMD_MAX_LEN = 1024;
     static constexpr int APPSPAWN_COLD_BOOT = 0x01;
 
+    enum AppOperateCode {
+        DEFAULT = 0,
+        GET_RENDER_TERMINATION_STATUS,
+    };
+
     struct AppProperty {
         uint32_t uid;                     // the UNIX uid that the child process setuid() to after fork()
         uint32_t gid;                     // the UNIX gid that the child process setgid() to after fork()
@@ -104,6 +109,8 @@ public:
         char apl[APL_MAX_LEN];
         char renderCmd[RENDER_CMD_MAX_LEN];
         uint32_t flags;
+        int32_t pid;                     // query render process exited status by render process pid
+        AppOperateCode code;
     };
 
 private:

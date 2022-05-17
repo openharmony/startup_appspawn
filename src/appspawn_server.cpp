@@ -82,13 +82,36 @@ static constexpr HiLogLabel LABEL = {LOG_CORE, 0, "AppSpawnServer"};
 extern "C" {
 #endif
 
+#ifdef NWEB_SPAWN
+static int GetRenderProcessTerminationStatus(int32_t pid, int *status)
+{
+    if (status == nullptr) {
+        return -EINVAL;
+    }
+
+    if (kill(pid, SIGKILL) != 0) {
+        APPSPAWN_LOGE("unable to kill render process, pid: %d", pid);
+    }
+
+    pid_t exitPid = waitpid(pid, status, 0);
+    if (exitPid != pid) {
+        APPSPAWN_LOGE("SignalHandler HandleSignal: %d, status: %d", pid, status);
+        return -EINVAL;
+    }
+
+    return 0;
+}
+#endif
+
 static void SignalHandler([[maybe_unused]] int sig)
 {
+#ifndef NWEB_SPAWN
     pid_t pid;
     int status;
 
     while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
     }
+#endif
 }
 
 static void InstallSigHandler()
@@ -207,12 +230,13 @@ void AppSpawnServer::HandleSignal()
         if (ret != sizeof(fdsi) || fdsi.ssi_signo != SIGCHLD) {
             continue;
         }
+#ifndef NWEB_SPAWN
         pid_t pid;
         int status;
         while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
             APPSPAWN_LOGE("HandleSignal: %d", pid);
         }
-
+#endif
         std::lock_guard<std::mutex> lock(mut_);
         isChildDie_ = true;
         childPid_ = fdsi.ssi_pid;
@@ -419,6 +443,37 @@ void AppSpawnServer::QuickExitMain()
     return;
 }
 
+void AppSpawnServer::ProcessAppSpawnMsg(char *longProcName, int64_t longProcNameLen,
+                                        const std::unique_ptr<AppSpawnMsgPeer> &msg)
+{
+    int connectFd = msg->GetConnectFd();
+    ClientSocket::AppProperty *appProperty = msg->GetMsg();
+#ifdef NWEB_SPAWN
+    if (appProperty->code == ClientSocket::GET_RENDER_TERMINATION_STATUS) {
+        int exitStatus = 0;
+        int ret = GetRenderProcessTerminationStatus(appProperty->pid, &exitStatus);
+        if (ret) {
+            msg->Response(ret);
+        } else {
+            msg->Response(exitStatus);
+        }
+        APPSPAWN_LOGI("AppSpawnServer::get render process termination status, status = %d pid = %d uid %d %s %s",
+            exitStatus, appProperty->pid, appProperty->uid, appProperty->processName, appProperty->bundleName);
+        return;
+    }
+#endif
+    pid_t pid = 0;
+    int ret = StartApp(longProcName, longProcNameLen, appProperty, connectFd, pid);
+    if (ret) {
+        msg->Response(ret);
+    } else {
+        msg->Response(pid);
+        appMap_[pid] = appProperty->processName;
+    }
+    APPSPAWN_LOGI("AppSpawnServer::parent process create app finish, pid = %d uid %d %s %s",
+        pid, appProperty->uid, appProperty->processName, appProperty->bundleName);
+}
+
 bool AppSpawnServer::ServerMain(char *longProcName, int64_t longProcNameLen)
 {
     if (socket_->RegisterServerSocket() != 0) {
@@ -450,18 +505,8 @@ bool AppSpawnServer::ServerMain(char *longProcName, int64_t longProcNameLen)
         std::unique_ptr<AppSpawnMsgPeer> msg = std::move(appQueue_.front());
         appQueue_.pop();
         int connectFd = msg->GetConnectFd();
-        ClientSocket::AppProperty *appProperty = msg->GetMsg();
-        pid_t pid = 0;
-        int ret = StartApp(longProcName, longProcNameLen, appProperty, connectFd, pid);
-        if (ret != 0) {
-            msg->Response(ret);
-        } else {
-            msg->Response(pid);
-            appMap_[pid] = appProperty->processName;
-        }
+        ProcessAppSpawnMsg(longProcName, longProcNameLen, msg);
         socket_->CloseConnection(connectFd); // close socket connection
-        APPSPAWN_LOGI("AppSpawnServer::parent process create app finish, pid = %d uid %d %s %s",
-            pid, appProperty->uid, appProperty->processName, appProperty->bundleName);
     }
 
     while (appMap_.size() > 0) {
