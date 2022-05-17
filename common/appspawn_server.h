@@ -36,6 +36,8 @@ extern "C" {
 #define WAIT_DELAY_US (100 * 1000)  // 100ms
 #define GID_USER_DATA_RW 1008
 
+#define GID_FILE_EXTENSION_HAP 1006
+
 typedef struct AppSpawnClient_ {
     uint32_t id;
     int32_t flags;
