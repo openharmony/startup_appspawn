@@ -70,6 +70,7 @@ namespace {
 
 
 nlohmann::json SandboxUtils::appSandboxConfig_;
+nlohmann::json SandboxUtils::productSandboxConfig_;
 
 void SandboxUtils::StoreJsonConfig(nlohmann::json &appSandboxConfig)
 {
@@ -79,6 +80,16 @@ void SandboxUtils::StoreJsonConfig(nlohmann::json &appSandboxConfig)
 nlohmann::json SandboxUtils::GetJsonConfig()
 {
     return SandboxUtils::appSandboxConfig_;
+}
+
+void SandboxUtils::StoreProductJsonConfig(nlohmann::json &productSandboxConfig)
+{
+    SandboxUtils::productSandboxConfig_ = productSandboxConfig;
+}
+
+nlohmann::json SandboxUtils::GetProductJsonConfig()
+{
+    return SandboxUtils::productSandboxConfig_;
 }
 
 void SandboxUtils::MakeDirRecursive(const std::string path, mode_t mode)
@@ -389,10 +400,10 @@ int32_t SandboxUtils::DoSandboxFileCommonSymlink(const ClientSocket::AppProperty
     return ret;
 }
 
-int32_t SandboxUtils::SetPrivateAppSandboxProperty(const ClientSocket::AppProperty *appProperty)
+int32_t SandboxUtils::SetPrivateAppSandboxProperty_(const ClientSocket::AppProperty *appProperty,
+                                                    nlohmann::json &config)
 {
-    nlohmann::json config = SandboxUtils::GetJsonConfig();
-    int ret;
+    int ret = 0;
 
     ret = DoSandboxFilePrivateBind(appProperty, config);
     if (ret) {
@@ -403,30 +414,70 @@ int32_t SandboxUtils::SetPrivateAppSandboxProperty(const ClientSocket::AppProper
     ret = DoSandboxFilePrivateSymlink(appProperty, config);
     if (ret) {
         HiLog::Error(LABEL, "DoSandboxFilePrivateSymlink failed");
+    }
+
+    return ret;
+}
+
+int32_t SandboxUtils::SetPrivateAppSandboxProperty(const ClientSocket::AppProperty *appProperty)
+{
+    nlohmann::json productConfig = SandboxUtils::GetProductJsonConfig();
+    nlohmann::json config = SandboxUtils::GetJsonConfig();
+    int ret = 0;
+
+    ret = SetPrivateAppSandboxProperty_(appProperty, config);
+    if (ret) {
+        HiLog::Error(LABEL, "parse adddata-sandbox config failed");
         return ret;
     }
 
-    return 0;
+    ret = SetPrivateAppSandboxProperty_(appProperty, productConfig);
+    if (ret) {
+        HiLog::Error(LABEL, "parse product-sandbox config failed");
+    }
+
+    return ret;
+}
+
+int32_t SandboxUtils::SetCommonAppSandboxProperty_(const ClientSocket::AppProperty *appProperty,
+                                                   nlohmann::json &config)
+{
+    int rc = 0;
+
+    rc = DoSandboxFileCommonBind(appProperty, config);
+    if (rc) {
+        HiLog::Error(LABEL, "DoSandboxFileCommonBind failed, %{public}s", appProperty->bundleName);
+        return rc;
+    }
+
+    // if sandbox switch is off, don't do symlink work again
+    if (CheckAppSandboxSwitchStatus(appProperty) == true && (CheckTotalSandboxSwitchStatus(appProperty) == true)) {
+        rc = DoSandboxFileCommonSymlink(appProperty, config);
+        if (rc) {
+            HiLog::Error(LABEL, "DoSandboxFileCommonSymlink failed, %{public}s", appProperty->bundleName);
+        }
+    }
+
+    return rc;
 }
 
 int32_t SandboxUtils::SetCommonAppSandboxProperty(const ClientSocket::AppProperty *appProperty,
                                                   std::string &sandboxPackagePath)
 {
     nlohmann::json jsonConfig = SandboxUtils::GetJsonConfig();
+    nlohmann::json productConfig = SandboxUtils::GetProductJsonConfig();
+    int ret = 0;
 
-    int rc = DoSandboxFileCommonBind(appProperty, jsonConfig);
-    if (rc) {
-        HiLog::Error(LABEL, "DoSandboxFileCommonBind failed, %{public}s", sandboxPackagePath.c_str());
-        return rc;
+    ret = SetCommonAppSandboxProperty_(appProperty, jsonConfig);
+    if (ret) {
+        HiLog::Error(LABEL, "parse appdata config for common failed, %{public}s", sandboxPackagePath.c_str());
+        return ret;
     }
 
-    // if sandbox switch is off, don't do symlink work again
-    if (CheckAppSandboxSwitchStatus(appProperty) == true && (CheckTotalSandboxSwitchStatus(appProperty) == true)) {
-        rc = DoSandboxFileCommonSymlink(appProperty, jsonConfig);
-        if (rc) {
-            HiLog::Error(LABEL, "DoSandboxFileCommonSymlink failed, %{public}s", sandboxPackagePath.c_str());
-            return rc;
-        }
+    ret = SetCommonAppSandboxProperty_(appProperty, productConfig);
+    if (ret) {
+        HiLog::Error(LABEL, "parse product config for common failed, %{public}s", sandboxPackagePath.c_str());
+        return ret;
     }
 
     if (strcmp(appProperty->apl, APL_SYSTEM_BASIC.data()) == 0 ||
