@@ -44,6 +44,7 @@ bool g_isAppSandboxCreated = false;
 
 namespace {
     const std::string APP_JSON_CONFIG("/system/etc/sandbox/appdata-sandbox.json");
+    const std::string PRODUCT_JSON_CONFIG("/system/etc/sandbox/product-sandbox.json");
 }
 
 void LoadAppSandboxConfig(void)
@@ -55,6 +56,12 @@ void LoadAppSandboxConfig(void)
         HiLog::Error(LABEL, "AppSpawnServer::Failed to load app private sandbox config");
     }
     SandboxUtils::StoreJsonConfig(appSandboxConfig);
+
+    rc = JsonUtils::GetJsonObjFromJson(appSandboxConfig, PRODUCT_JSON_CONFIG);
+    if (!rc) {
+        HiLog::Error(LABEL, "AppSpawnServer::Failed to load app product sandbox config");
+    }
+    SandboxUtils::StoreProductJsonConfig(appSandboxConfig);
 }
 
 static void RegisterSandbox(AppSpawnContentExt *appSpawnContent, const char *sandbox)
