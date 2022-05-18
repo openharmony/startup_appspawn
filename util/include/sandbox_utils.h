@@ -28,6 +28,8 @@ class SandboxUtils {
 public:
     static void StoreJsonConfig(nlohmann::json &appSandboxConfig);
     static nlohmann::json GetJsonConfig();
+    static void StoreProductJsonConfig(nlohmann::json &productSandboxConfig);
+    static nlohmann::json GetProductJsonConfig();
     static int32_t SetAppSandboxProperty(const ClientSocket::AppProperty *appProperty);
 
 private:
@@ -55,9 +57,14 @@ private:
     static bool CheckAppSandboxSwitchStatus(const ClientSocket::AppProperty *appProperty);
     static bool GetSbxSwitchStatusByConfig(nlohmann::json &config);
     static unsigned long GetMountFlagsFromConfig(const std::vector<std::string> &vec);
+    static int32_t SetCommonAppSandboxProperty_(const ClientSocket::AppProperty *appProperty,
+                                         nlohmann::json &config);
+    static int32_t SetPrivateAppSandboxProperty_(const ClientSocket::AppProperty *appProperty,
+                                          nlohmann::json &config);
 
 private:
     static nlohmann::json appSandboxConfig_;
+    static nlohmann::json productSandboxConfig_;
 };
 } // namespace AppSpawn
 } // namespace OHOS
