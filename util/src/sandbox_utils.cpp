@@ -141,7 +141,7 @@ static std::vector<std::string> split(std::string &str, const std::string &patte
     str += pattern;
     size_t size = str.size();
 
-    for (int i = 0; i < int(size); i++) {
+    for (unsigned int i = 0; i < size; i++) {
         pos = str.find(pattern, i);
         if (pos < size) {
             std::string s = str.substr(i, pos - i);
@@ -252,9 +252,9 @@ int SandboxUtils::DoAllMntPointsMount(const ClientSocket::AppProperty *appProper
 
     nlohmann::json mountPoints = appConfig[MOUNT_PREFIX];
     std::string sandboxRoot = GetSbxPathByConfig(appProperty, appConfig);
-    int mountPointSize = mountPoints.size();
+    unsigned int mountPointSize = mountPoints.size();
 
-    for (int i = 0; i < mountPointSize; i++) {
+    for (unsigned int i = 0; i < mountPointSize; i++) {
         nlohmann::json mntPoint = mountPoints[i];
 
         // Check the validity of the mount configuration
@@ -296,9 +296,9 @@ int SandboxUtils::DoAllSymlinkPointslink(const ClientSocket::AppProperty *appPro
 
     nlohmann::json symlinkPoints = appConfig[SYMLINK_PREFIX];
     std::string sandboxRoot = GetSbxPathByConfig(appProperty, appConfig);
-    int symlinkPointSize = symlinkPoints.size();
+    unsigned int symlinkPointSize = symlinkPoints.size();
 
-    for (int i = 0; i < symlinkPointSize; i++) {
+    for (unsigned int i = 0; i < symlinkPointSize; i++) {
         nlohmann::json symPoint = symlinkPoints[i];
 
         // Check the validity of the symlink configuration
