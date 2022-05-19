@@ -34,12 +34,6 @@
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
-                    "src-path" : "/system/app",
-                    "sandbox-path" : "/test/app",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false",
-                    "app-apl-name" : "normal"
-                }, {
                     "src-path" : "/system/fonts",
                     "sandbox-path" : "/system/fonts",
                     "sandbox-flags" : [ "bind", "rec" ],
