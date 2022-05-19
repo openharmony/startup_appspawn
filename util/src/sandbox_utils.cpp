@@ -277,7 +277,7 @@ int SandboxUtils::DoAllMntPointsMount(const ClientSocket::AppProperty *appProper
 
         if (mntPoint[APP_APL_NAME] != nullptr) {
             std::string  app_apl_name = mntPoint[APP_APL_NAME];
-            const char * p_app_apl = nullptr;
+            const char *p_app_apl = nullptr;
             p_app_apl = app_apl_name.c_str();
             if (!strcmp(p_app_apl, appProperty->apl)) {
                     continue;
