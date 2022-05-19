@@ -20,7 +20,7 @@ ohos_prebuilt_etc("appdata-sandbox.json") {
   } else {
     source = "//base/startup/appspawn_standard/appdata-sandbox.json"
   }
-  
+
   subsystem_name = "${subsystem_name}"
   part_name = "${part_name}"
   module_install_dir = "etc/sandbox"
@@ -33,8 +33,8 @@ ohos_prebuilt_etc("product-sandbox.json") {
 }
 
 group("etc_files") {
-    deps = [
-        ":appdata-sandbox.json",
-        ":product-sandbox.json"
-    ]
+  deps = [
+    ":appdata-sandbox.json",
+    ":product-sandbox.json",
+  ]
 }
