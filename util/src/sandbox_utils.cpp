@@ -66,8 +66,8 @@ namespace {
     const char *WARGNAR_DEVICE_PATH = "/3rdmodem";
     const char *APP_BASE = "app-base";
     const char *APP_RESOURCES = "app-resources";
+    const char *APP_APL_NAME = "app-apl-name";
 }
-
 
 nlohmann::json SandboxUtils::appSandboxConfig_;
 nlohmann::json SandboxUtils::productSandboxConfig_;
@@ -273,6 +273,15 @@ int SandboxUtils::DoAllMntPointsMount(const ClientSocket::AppProperty *appProper
             || mntPoint.find(SANDBOX_FLAGS) == mntPoint.end()) {
             HiLog::Error(LABEL, "read mount config failed, app name is %{public}s", appProperty->bundleName);
             continue;
+        }
+
+        if (mntPoint[APP_APL_NAME] != nullptr) {
+            std::string  app_apl_name = mntPoint[APP_APL_NAME];
+            const char * p_app_apl = nullptr;
+            p_app_apl = app_apl_name.c_str();
+            if (!strcmp(p_app_apl, appProperty->apl)) {
+                    continue;
+            }
         }
 
         std::string srcPath = ConvertToRealPath(appProperty, mntPoint[SRC_PATH].get<std::string>());
