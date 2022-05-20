@@ -43,7 +43,11 @@ bool g_isPrivAppSandboxCreated = false;
 bool g_isAppSandboxCreated = false;
 
 namespace {
+#ifdef __aarch64__
+    const std::string APP_JSON_CONFIG("/system/etc/sandbox/appdata-sandbox64.json");
+#else
     const std::string APP_JSON_CONFIG("/system/etc/sandbox/appdata-sandbox.json");
+#endif
     const std::string PRODUCT_JSON_CONFIG("/system/etc/sandbox/product-sandbox.json");
 }
 
