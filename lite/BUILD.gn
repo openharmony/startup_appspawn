@@ -38,7 +38,10 @@ executable("appspawn") {
     "-Wno-format-extra-args",
   ]
 
-  defines = [ "_GNU_SOURCE" ]
+  defines = [
+    "_GNU_SOURCE",
+    "OHOS_LITE",
+  ]
 
   include_dirs = [
     ".",
