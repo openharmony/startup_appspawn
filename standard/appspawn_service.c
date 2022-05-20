@@ -166,6 +166,14 @@ static void ProcessTimer(const TimerHandle taskHandle, void *context)
 
 static void HandleSpecial(AppSpawnClientExt *appProperty)
 {
+    const char *fileExtensionHapBundleName = "com.ohos.FileExtension.FileExtensionData";
+    if (strcmp(appProperty->property.bundleName, fileExtensionHapBundleName) == 0) {
+        if (appProperty->property.gidCount < APP_MAX_GIDS) {
+            appProperty->property.gidTable[appProperty->property.gidCount] = GID_FILE_EXTENSION_HAP;
+            appProperty->property.gidCount++;
+        }
+    }
+
     // special handle bundle name medialibrary and scanner
     const char *specialBundleNames[] = {
         "com.ohos.medialibrary.MediaLibraryDataA",
