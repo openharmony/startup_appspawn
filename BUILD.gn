@@ -51,8 +51,8 @@ ohos_executable("appspawn") {
   ]
   configs = [ ":appspawn_config" ]
   deps = [
+    "${aafwk_kits_path}/appkit:appkit_native",
     "${appspawn_path}:appspawn_server",
-    "//foundation/aafwk/standard/frameworks/kits/appkit:appkit_native",
   ]
   external_deps = [
     "ability_base:want",
