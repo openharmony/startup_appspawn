@@ -3,7 +3,7 @@
         "top-sandbox-switch": "ON",
         "app-base" : [{
             "sandbox-root" : "/mnt/sandbox/<PackageName>",
-            "mount-bind-paths" : [{
+            "mount-paths" : [{
                     "src-path" : "/config",
                     "sandbox-path" : "/config",
                     "sandbox-flags" : [ "bind", "rec" ],
@@ -150,7 +150,7 @@
         }],
         "app-resources" : [{
             "sandbox-root" : "/mnt/sandbox/<PackageName>",
-            "mount-bind-paths" : [{
+            "mount-paths" : [{
                     "src-path" : "/data/app/el1/bundle/public/com.ohos.nweb",
                     "sandbox-path" : "/data/storage/el1/bundle/nweb",
                     "sandbox-flags" : [ "bind", "rec" ],
@@ -170,7 +170,7 @@
         "com.ohos.medialibrary.MediaLibraryDataA" : [{
             "sandbox-switch": "ON",
             "sandbox-root" : "/mnt/sandbox/<PackageName>",
-            "mount-bind-paths" : [{
+            "mount-paths" : [{
                     "src-path" : "/storage/media/<currentUserId>",
                     "sandbox-path" : "/storage/media",
                     "sandbox-flags" : [ "bind", "rec" ],
@@ -182,7 +182,7 @@
         "com.ohos.medialibrary.MediaScannerAbilityA" : [{
             "sandbox-switch": "ON",
             "sandbox-root" : "/mnt/sandbox/<PackageName>",
-            "mount-bind-paths" : [{
+            "mount-paths" : [{
                     "src-path" : "/storage/media/<currentUserId>",
                     "sandbox-path" : "/storage/media",
                     "sandbox-flags" : [ "bind", "rec" ],
@@ -194,7 +194,7 @@
         "com.ohos.launcher" : [{
             "sandbox-switch": "ON",
             "sandbox-root" : "/mnt/sandbox/<PackageName>",
-            "mount-bind-paths" : [{
+            "mount-paths" : [{
                     "src-path" : "/data/app/el1/bundle/public/",
                     "sandbox-path" : "/data/bundles/",
                     "sandbox-flags" : [ "bind", "rec" ],
@@ -206,7 +206,7 @@
         "com.ohos.permissionmanager" : [{
             "sandbox-switch": "ON",
             "sandbox-root" : "/mnt/sandbox/<PackageName>",
-            "mount-bind-paths" : [{
+            "mount-paths" : [{
                     "src-path" : "/data/app/el1/bundle/public/",
                     "sandbox-path" : "/data/bundles/",
                     "sandbox-flags" : [ "bind", "rec" ],
@@ -218,10 +218,23 @@
         "ohos.samples.ecg" : [{
             "sandbox-switch": "OFF",
             "sandbox-root" : "/mnt/sandbox/<PackageName>",
-            "mount-bind-paths" : [{
+            "mount-paths" : [{
                     "src-path" : "/data/app/el1/bundle/public/",
                     "sandbox-path" : "/data/bundles/",
                     "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "true"
+                }
+            ],
+            "symbol-links" : []
+        }],
+        "ohos.samples.dlp" : [{
+            "sandbox-switch": "OFF",
+            "sandbox-root" : "/mnt/sandbox/<PackageName>",
+            "mount-paths" : [{
+                    "src-path" : "/dev/fuse",
+                    "sandbox-path" : "/data/fuse",
+                    "sandbox-flags" : [ "rec" ],
+                    "fs-type": "fusefs",
                     "check-action-status": "true"
                 }
             ],
