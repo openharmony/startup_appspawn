@@ -158,7 +158,6 @@ static void SignalHandler(const struct signalfd_siginfo *siginfo)
     APPSPAWN_LOGI("SignalHandler signum %d", siginfo->ssi_signo);
     switch (siginfo->ssi_signo) {
         case SIGCHLD: {  // delete pid from app map
-#ifndef NWEB_SPAWN
             // nwebspawn will invoke waitpid and remove appinfo at GetRenderProcessTerminationStatus.
             pid_t pid;
             int status;
@@ -169,7 +168,6 @@ static void SignalHandler(const struct signalfd_siginfo *siginfo)
 #endif
                 RemoveAppInfo(pid);
             }
-#endif
             break;
         }
         case SIGTERM: {  // appswapn killed, use kill without parameter
@@ -257,7 +255,7 @@ static int GetRenderProcessTerminationStatus(int32_t pid, int *status)
         APPSPAWN_LOGE("unable to kill render process, pid: %d", pid);
     }
 
-    pid_t exitPid = waitpid(pid, status, 0);
+    pid_t exitPid = waitpid(pid, status, WNOHANG);
     if (exitPid != pid) {
         APPSPAWN_LOGE("waitpid failed, return : %d, pid: %d, status: %d", exitPid, pid, *status);
         return -1;
