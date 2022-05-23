@@ -16,12 +16,15 @@
 #include "sandbox_utils.h"
 #include "json_utils.h"
 #include "hilog/log.h"
+#include "securec.h"
 
 #include <unistd.h>
 #include <sys/wait.h>
 #include <sys/mount.h>
 #include <sys/stat.h>
 #include <sys/syscall.h>
+#include <sys/types.h>
+#include <fcntl.h>
 #include <cerrno>
 #include <dirent.h>
 #include <dlfcn.h>
@@ -37,6 +40,8 @@ namespace OHOS {
 namespace AppSpawn {
 namespace {
     constexpr int32_t UID_BASE = 200000;
+    constexpr int32_t FUSE_OPTIONS_MAX_LEN = 128;
+    constexpr int32_t DLP_FUSE_FD = 1000;
     constexpr static mode_t FILE_MODE = 0711;
     constexpr static mode_t BASIC_MOUNT_FLAGS = MS_REC | MS_BIND;
     constexpr std::string_view APL_SYSTEM_CORE("system_core");
@@ -206,7 +211,7 @@ unsigned long SandboxUtils::GetMountFlagsFromConfig(const std::vector<std::strin
                                                           {"nodev", MS_NODEV}, {"MS_NODEV", MS_NODEV},
                                                           {"noexec", MS_NOEXEC}, {"MS_NOEXEC", MS_NOEXEC},
                                                           {"noatime", MS_NOATIME}, {"MS_NOATIME", MS_NOATIME},
-                                                          {"lazytime", MS_LAZYTIME}, {"MS_LAZYTIME", MS_LAZYTIME},};
+                                                          {"lazytime", MS_LAZYTIME}, {"MS_LAZYTIME", MS_LAZYTIME}};
     unsigned long mountFlags = 0;
 
     for (unsigned int i = 0; i < vec.size(); i++) {
@@ -261,6 +266,73 @@ bool SandboxUtils::GetSbxSwitchStatusByConfig(nlohmann::json &config)
     return true;
 }
 
+static bool CheckMountConfig(nlohmann::json &mntPoint, const ClientSocket::AppProperty *appProperty)
+{
+    if (mntPoint.find(SRC_PATH) == mntPoint.end() || mntPoint.find(SANDBOX_PATH) == mntPoint.end()
+            || mntPoint.find(SANDBOX_FLAGS) == mntPoint.end()) {
+        HiLog::Error(LABEL, "read mount config failed, app name is %{public}s", appProperty->bundleName);
+        return false;
+    }
+
+    if (mntPoint[APP_APL_NAME] != nullptr) {
+        std::string  app_apl_name = mntPoint[APP_APL_NAME];
+        const char *p_app_apl = nullptr;
+        p_app_apl = app_apl_name.c_str();
+        if (!strcmp(p_app_apl, appProperty->apl)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+static int32_t DoDlpAppMountStrategy(const std::string &srcPath, const std::string &sandboxPath,
+                                     const std::string &fsType, unsigned long mountFlags)
+{
+    int fd = open("/dev/fuse", O_RDWR);
+    if (fd == -1) {
+        HiLog::Error(LABEL, "open /dev/fuse failed, errno is %{public}d", errno);
+        return -EINVAL;
+    }
+
+    char options[FUSE_OPTIONS_MAX_LEN];
+    (void)sprintf_s(options, sizeof(options), "fd=%d,rootmode=40000,user_id=0,group_id=0", fd);
+
+    int ret = mount(srcPath.c_str(), sandboxPath.c_str(), fsType.c_str(), mountFlags, options);
+    if (ret) {
+        HiLog::Error(LABEL, "DoDlpAppMountStrategy failed, bind mount %{public}s to %{public}s"
+                     "failed %{public}d", srcPath.c_str(), sandboxPath.c_str(), errno);
+        return ret;
+    }
+
+    /* close DLP_FUSE_FD and dup FD to it */
+    close(DLP_FUSE_FD);
+    ret = dup2(fd, DLP_FUSE_FD);
+    if (ret) {
+        HiLog::Error(LABEL, "dup fuse fd %{public}d failed, errno is %{public}d",
+                     fd, errno);
+    }
+
+    return ret;
+}
+
+static int32_t HandleSpecialAppMount(const std::string &srcPath, const std::string &sandboxPath,
+                                     const std::string &fsType, unsigned long mountFlags,
+                                     const std::string &bundleName)
+{
+    /* dlp application mount strategy */
+    /* dlp is an example, we should change to real bundle name later */
+    if (bundleName.find("dlp") != -1) {
+        if (fsType.empty()) {
+            return -1;
+        } else {
+            return DoDlpAppMountStrategy(srcPath, sandboxPath, fsType, mountFlags);
+        }
+    }
+
+    return -1;
+}
+
 int SandboxUtils::DoAllMntPointsMount(const ClientSocket::AppProperty *appProperty, nlohmann::json &appConfig)
 {
     if (appConfig.find(MOUNT_PREFIX) == appConfig.end()) {
@@ -276,33 +348,28 @@ int SandboxUtils::DoAllMntPointsMount(const ClientSocket::AppProperty *appProper
     for (unsigned int i = 0; i < mountPointSize; i++) {
         nlohmann::json mntPoint = mountPoints[i];
 
-        // Check the validity of the mount configuration
-        if (mntPoint.find(SRC_PATH) == mntPoint.end() || mntPoint.find(SANDBOX_PATH) == mntPoint.end()
-            || mntPoint.find(SANDBOX_FLAGS) == mntPoint.end()) {
-            HiLog::Error(LABEL, "read mount config failed, app name is %{public}s", appProperty->bundleName);
+        if (CheckMountConfig(mntPoint, appProperty) == false) {
             continue;
-        }
-
-        if (mntPoint[APP_APL_NAME] != nullptr) {
-            std::string  app_apl_name = mntPoint[APP_APL_NAME];
-            const char *p_app_apl = nullptr;
-            p_app_apl = app_apl_name.c_str();
-            if (!strcmp(p_app_apl, appProperty->apl)) {
-                    continue;
-            }
         }
 
         std::string srcPath = ConvertToRealPath(appProperty, mntPoint[SRC_PATH].get<std::string>());
         std::string sandboxPath = sandboxRoot + ConvertToRealPath(appProperty,
                                                                   mntPoint[SANDBOX_PATH].get<std::string>());
         unsigned long mountFlags = GetMountFlagsFromConfig(mntPoint[SANDBOX_FLAGS].get<std::vector<std::string>>());
+        std::string fsType = "";
+        if (mntPoint.find(FS_TYPE) != mntPoint.end()) {
+            fsType = mntPoint[FS_TYPE].get<std::string>();
+        }
 
         int ret = 0;
-        if (mntPoint.find(FS_TYPE) == mntPoint.end()) {
-            ret = DoAppSandboxMountOnce(srcPath.c_str(), sandboxPath.c_str(), "", mountFlags, nullptr);
-        } else {
-            std::string fsType = mntPoint[FS_TYPE].get<std::string>();
-            ret = DoAppSandboxMountOnce(srcPath.c_str(), sandboxPath.c_str(), fsType.c_str(), mountFlags, nullptr);
+        /* if app mount failed for special strategy, we need deal with common mount config */
+        ret = HandleSpecialAppMount(srcPath, sandboxPath, fsType, mountFlags, appProperty->bundleName);
+        if (ret) {
+            if (fsType.empty()) {
+                ret = DoAppSandboxMountOnce(srcPath.c_str(), sandboxPath.c_str(), nullptr, mountFlags, nullptr);
+            } else {
+                ret = DoAppSandboxMountOnce(srcPath.c_str(), sandboxPath.c_str(), fsType.c_str(), mountFlags, nullptr);
+            }
         }
         if (ret) {
             HiLog::Error(LABEL, "DoAppSandboxMountOnce failed, %{public}s", sandboxPath.c_str());
