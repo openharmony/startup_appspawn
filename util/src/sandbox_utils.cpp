@@ -111,8 +111,9 @@ void SandboxUtils::MakeDirRecursive(const std::string path, mode_t mode)
     } while (index < size);
 }
 
-int32_t SandboxUtils::DoAppSandboxMountOnce(const std::string originPath, const std::string destinationPath,
-                                            const std::string fsType, unsigned long mountFlags)
+int32_t SandboxUtils::DoAppSandboxMountOnce(const char *originPath, const char *destinationPath,
+                                            const char *fsType, unsigned long mountFlags,
+                                            const char *options)
 {
     int ret = 0;
 
@@ -120,20 +121,16 @@ int32_t SandboxUtils::DoAppSandboxMountOnce(const std::string originPath, const 
     MakeDirRecursive(destinationPath, FILE_MODE);
 
     // to mount fs and bind mount files or directory
-    if (fsType.empty()) {
-        ret = mount(originPath.c_str(), destinationPath.c_str(), NULL, mountFlags, NULL);
-    } else {
-        ret = mount(originPath.c_str(), destinationPath.c_str(), fsType.c_str(), mountFlags, NULL);
-    }
+    ret = mount(originPath, destinationPath, fsType, mountFlags, options);
     if (ret) {
-        HiLog::Error(LABEL, "bind mount %{public}s to %{public}s failed %{public}d", originPath.c_str(),
-            destinationPath.c_str(), errno);
+        HiLog::Error(LABEL, "bind mount %{public}s to %{public}s failed %{public}d", originPath,
+            destinationPath, errno);
         return ret;
     }
 
-    ret = mount(NULL, destinationPath.c_str(), NULL, MS_PRIVATE, NULL);
+    ret = mount(NULL, destinationPath, NULL, MS_PRIVATE, NULL);
     if (ret) {
-        HiLog::Error(LABEL, "private mount to %{public}s failed %{public}d", destinationPath.c_str(), errno);
+        HiLog::Error(LABEL, "private mount to %{public}s failed %{public}d", destinationPath, errno);
         return ret;
     }
 
@@ -302,10 +299,10 @@ int SandboxUtils::DoAllMntPointsMount(const ClientSocket::AppProperty *appProper
 
         int ret = 0;
         if (mntPoint.find(FS_TYPE) == mntPoint.end()) {
-            ret = DoAppSandboxMountOnce(srcPath.c_str(), sandboxPath.c_str(), "", mountFlags);
+            ret = DoAppSandboxMountOnce(srcPath.c_str(), sandboxPath.c_str(), "", mountFlags, nullptr);
         } else {
             std::string fsType = mntPoint[FS_TYPE].get<std::string>();
-            ret = DoAppSandboxMountOnce(srcPath.c_str(), sandboxPath.c_str(), fsType.c_str(), mountFlags);
+            ret = DoAppSandboxMountOnce(srcPath.c_str(), sandboxPath.c_str(), fsType.c_str(), mountFlags, nullptr);
         }
         if (ret) {
             HiLog::Error(LABEL, "DoAppSandboxMountOnce failed, %{public}s", sandboxPath.c_str());
@@ -510,7 +507,8 @@ int32_t SandboxUtils::SetCommonAppSandboxProperty(const ClientSocket::AppPropert
         strcmp(appProperty->apl, APL_SYSTEM_CORE.data()) == 0) {
         // need permission check for system app here
         std::string destbundlesPath = sandboxPackagePath + DATA_BUNDLES;
-        DoAppSandboxMountOnce(PHYSICAL_APP_INSTALL_PATH.c_str(), destbundlesPath.c_str(), "", BASIC_MOUNT_FLAGS);
+        DoAppSandboxMountOnce(PHYSICAL_APP_INSTALL_PATH.c_str(), destbundlesPath.c_str(), "", BASIC_MOUNT_FLAGS,
+                              nullptr);
     }
 
     return 0;
@@ -545,7 +543,8 @@ int32_t SandboxUtils::DoSandboxRootFolderCreate(const ClientSocket::AppProperty 
         return rc;
     }
 
-    DoAppSandboxMountOnce(sandboxPackagePath.c_str(), sandboxPackagePath.c_str(), "", BASIC_MOUNT_FLAGS);
+    DoAppSandboxMountOnce(sandboxPackagePath.c_str(), sandboxPackagePath.c_str(), "",
+                          BASIC_MOUNT_FLAGS, nullptr);
 
     return 0;
 }
