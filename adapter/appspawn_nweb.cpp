@@ -15,10 +15,23 @@
 
 #include "appspawn_adapter.h"
 
+#include <algorithm>
+#include <ctime>
 #include <dlfcn.h>
+#include <map>
 #include <string>
 
+struct RenderProcessNode {
+    RenderProcessNode(time_t now, int exit):recordTime_(now), exitStatus_(exit) {}
+    time_t recordTime_;
+    int exitStatus_;
+};
+
+namespace {
+constexpr int32_t RENDER_PROCESS_MAX_NUM = 16;
+std::map<int32_t, RenderProcessNode> g_renderProcessMap;
 void *g_nwebHandle = nullptr;
+}
 
 void LoadExtendLib(AppSpawnContent *content)
 {
@@ -60,4 +73,50 @@ void RunChildProcessor(AppSpawnContent *content, AppSpawnClient *client)
         return;
     }
     funcNWebRenderMain(appProperty->property.renderCmd);
+}
+
+static void DumpRenderProcessExitedMap()
+{
+    APPSPAWN_LOGI("dump render process exited array:");
+    for (auto& it : g_renderProcessMap) {
+        APPSPAWN_LOGV("[pid, time, exitedStatus] = [%d, %ld, %d]",
+            it.first, it.second.recordTime_, it.second.exitStatus_);
+    }
+}
+
+void RecordRenderProcessExitedStatus(pid_t pid, int status)
+{
+    if (g_renderProcessMap.size() < RENDER_PROCESS_MAX_NUM) {
+        RenderProcessNode node(time(nullptr), status);
+        g_renderProcessMap.insert({pid, node});
+        return;
+    }
+
+    APPSPAWN_LOGV("render process map size reach max, need to erase oldest data.");
+    DumpRenderProcessExitedMap();
+    auto oldestData = std::min_element(g_renderProcessMap.begin(), g_renderProcessMap.end(),
+        [](const std::pair<int32_t, RenderProcessNode>& left, const std::pair<int32_t, RenderProcessNode>& right) {
+            return left.second.recordTime_ < right.second.recordTime_;
+        });
+    g_renderProcessMap.erase(oldestData);
+    RenderProcessNode node(time(nullptr), status);
+    g_renderProcessMap.insert({pid, node});
+    DumpRenderProcessExitedMap();
+}
+
+int GetRenderProcessTerminationStatus(int32_t pid, int *status)
+{
+    if (status == nullptr) {
+        return -1;
+    }
+
+    auto it = g_renderProcessMap.find(pid);
+    if (it != g_renderProcessMap.end()) {
+        *status = it->second.exitStatus_;
+        g_renderProcessMap.erase(it);
+        return 0;
+    }
+    APPSPAWN_LOGE("not find pid[%d] in render process exited map", pid);
+    DumpRenderProcessExitedMap();
+    return -1;
 }
