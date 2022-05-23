@@ -204,7 +204,12 @@ unsigned long SandboxUtils::GetMountFlagsFromConfig(const std::vector<std::strin
                                                           {"shared", MS_SHARED}, {"MS_SHARED", MS_SHARED},
                                                           {"unbindable", MS_UNBINDABLE},
                                                           {"MS_UNBINDABLE", MS_UNBINDABLE},
-                                                          {"remount", MS_REMOUNT}, {"MS_REMOUNT", MS_REMOUNT}};
+                                                          {"remount", MS_REMOUNT}, {"MS_REMOUNT", MS_REMOUNT},
+                                                          {"nosuid", MS_NOSUID}, {"MS_NOSUID", MS_NOSUID},
+                                                          {"nodev", MS_NODEV}, {"MS_NODEV", MS_NODEV},
+                                                          {"noexec", MS_NOEXEC}, {"MS_NOEXEC", MS_NOEXEC},
+                                                          {"noatime", MS_NOATIME}, {"MS_NOATIME", MS_NOATIME},
+                                                          {"lazytime", MS_LAZYTIME}, {"MS_LAZYTIME", MS_LAZYTIME},};
     unsigned long mountFlags = 0;
 
     for (unsigned int i = 0; i < vec.size(); i++) {
