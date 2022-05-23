@@ -49,24 +49,25 @@ namespace {
     const std::string SANDBOX_DIR = "/mnt/sandbox/";
     const std::string STATUS_CHECK = "true";
     const std::string SBX_SWITCH_CHECK = "ON";
+    const char *ACTION_STATUS = "check-action-status";
+    const char *APP_BASE = "app-base";
+    const char *APP_RESOURCES = "app-resources";
+    const char *APP_APL_NAME = "app-apl-name";
     const char *COMMON_PREFIX = "common";
+    const char *DEST_MODE = "dest-mode";
+    const char *FS_TYPE = "fs-type";
+    const char *LINK_NAME = "link-name";
+    const char *MOUNT_PREFIX = "mount-paths";
     const char *PRIVATE_PREFIX = "individual";
     const char *SRC_PATH = "src-path";
     const char *SANDBOX_PATH = "sandbox-path";
     const char *SANDBOX_FLAGS = "sandbox-flags";
-    const char *DEST_MODE = "dest-mode";
-    const char *ACTION_STATUS = "check-action-status";
-    const char *TARGET_NAME = "target-name";
-    const char *LINK_NAME = "link-name";
-    const char *MOUNT_PREFIX = "mount-bind-paths";
     const char *SANDBOX_SWITCH_PREFIX = "sandbox-switch";
-    const char *TOP_SANDBOX_SWITCH_PREFIX = "top-sandbox-switch";
     const char *SYMLINK_PREFIX = "symbol-links";
     const char *SANDBOX_ROOT_PREFIX = "sandbox-root";
+    const char *TOP_SANDBOX_SWITCH_PREFIX = "top-sandbox-switch";
+    const char *TARGET_NAME = "target-name";
     const char *WARGNAR_DEVICE_PATH = "/3rdmodem";
-    const char *APP_BASE = "app-base";
-    const char *APP_RESOURCES = "app-resources";
-    const char *APP_APL_NAME = "app-apl-name";
 }
 
 nlohmann::json SandboxUtils::appSandboxConfig_;
@@ -111,14 +112,19 @@ void SandboxUtils::MakeDirRecursive(const std::string path, mode_t mode)
 }
 
 int32_t SandboxUtils::DoAppSandboxMountOnce(const std::string originPath, const std::string destinationPath,
-                                            unsigned long mountFlags)
+                                            const std::string fsType, unsigned long mountFlags)
 {
     int ret = 0;
 
     // To make sure destinationPath exist
     MakeDirRecursive(destinationPath, FILE_MODE);
 
-    ret = mount(originPath.c_str(), destinationPath.c_str(), NULL, mountFlags, NULL);
+    // to mount fs and bind mount files or directory
+    if (fsType.empty()) {
+        ret = mount(originPath.c_str(), destinationPath.c_str(), NULL, mountFlags, NULL);
+    } else {
+        ret = mount(originPath.c_str(), destinationPath.c_str(), fsType.c_str(), mountFlags, NULL);
+    }
     if (ret) {
         HiLog::Error(LABEL, "bind mount %{public}s to %{public}s failed %{public}d", originPath.c_str(),
             destinationPath.c_str(), errno);
@@ -289,7 +295,13 @@ int SandboxUtils::DoAllMntPointsMount(const ClientSocket::AppProperty *appProper
                                                                   mntPoint[SANDBOX_PATH].get<std::string>());
         unsigned long mountFlags = GetMountFlagsFromConfig(mntPoint[SANDBOX_FLAGS].get<std::vector<std::string>>());
 
-        int ret = DoAppSandboxMountOnce(srcPath.c_str(), sandboxPath.c_str(), mountFlags);
+        int ret = 0;
+        if (mntPoint.find(FS_TYPE) == mntPoint.end()) {
+            ret = DoAppSandboxMountOnce(srcPath.c_str(), sandboxPath.c_str(), "", mountFlags);
+        } else {
+            std::string fsType = mntPoint[FS_TYPE].get<std::string>();
+            ret = DoAppSandboxMountOnce(srcPath.c_str(), sandboxPath.c_str(), fsType.c_str(), mountFlags);
+        }
         if (ret) {
             HiLog::Error(LABEL, "DoAppSandboxMountOnce failed, %{public}s", sandboxPath.c_str());
 
@@ -493,7 +505,7 @@ int32_t SandboxUtils::SetCommonAppSandboxProperty(const ClientSocket::AppPropert
         strcmp(appProperty->apl, APL_SYSTEM_CORE.data()) == 0) {
         // need permission check for system app here
         std::string destbundlesPath = sandboxPackagePath + DATA_BUNDLES;
-        DoAppSandboxMountOnce(PHYSICAL_APP_INSTALL_PATH.c_str(), destbundlesPath.c_str(), BASIC_MOUNT_FLAGS);
+        DoAppSandboxMountOnce(PHYSICAL_APP_INSTALL_PATH.c_str(), destbundlesPath.c_str(), "", BASIC_MOUNT_FLAGS);
     }
 
     return 0;
@@ -528,7 +540,7 @@ int32_t SandboxUtils::DoSandboxRootFolderCreate(const ClientSocket::AppProperty 
         return rc;
     }
 
-    DoAppSandboxMountOnce(sandboxPackagePath.c_str(), sandboxPackagePath.c_str(), BASIC_MOUNT_FLAGS);
+    DoAppSandboxMountOnce(sandboxPackagePath.c_str(), sandboxPackagePath.c_str(), "", BASIC_MOUNT_FLAGS);
 
     return 0;
 }
