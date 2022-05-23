@@ -78,15 +78,75 @@ constexpr std::string_view BUNDLE_NAME_SCANNER("com.ohos.medialibrary.MediaScann
 using namespace OHOS::HiviewDFX;
 static constexpr HiLogLabel LABEL = {LOG_CORE, 0, "AppSpawnServer"};
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #ifdef NWEB_SPAWN
-static int GetRenderProcessTerminationStatus(int32_t pid, int *status)
+struct RenderProcessNode {
+    RenderProcessNode(time_t now, int exit):recordTime_(now), exitStatus_(exit) {}
+    time_t recordTime_;
+    int exitStatus_;
+};
+
+namespace {
+constexpr int32_t RENDER_PROCESS_MAX_NUM = 16;
+std::map<int32_t, RenderProcessNode> g_renderProcessMap;
+std::mutex g_mapMut;
+}
+
+static void DumpRenderProcessExitedMap()
+{
+    APPSPAWN_LOGI("dump render process exited array:");
+    for (auto& it : g_renderProcessMap) {
+        APPSPAWN_LOGI("[pid, time, exitedStatus] = [%d, %ld, %d]",
+            it.first, it.second.recordTime_, it.second.exitStatus_);
+    }
+}
+
+void RecordRenderProcessExitedStatus(pid_t pid, int status)
+{
+    if (g_renderProcessMap.size() < RENDER_PROCESS_MAX_NUM) {
+        RenderProcessNode node(time(nullptr), status);
+        g_renderProcessMap.insert({pid, node});
+        return;
+    }
+
+    APPSPAWN_LOGI("render process map size reach max, need to erase oldest data.");
+    DumpRenderProcessExitedMap();
+    auto oldestData = std::min_element(g_renderProcessMap.begin(), g_renderProcessMap.end(),
+        [](const std::pair<int32_t, RenderProcessNode>& left, const std::pair<int32_t, RenderProcessNode>& right) {
+            return left.second.recordTime_ < right.second.recordTime_;
+        });
+    g_renderProcessMap.erase(oldestData);
+    RenderProcessNode node(time(nullptr), status);
+    g_renderProcessMap.insert({pid, node});
+    DumpRenderProcessExitedMap();
+}
+
+int GetRenderProcessTerminationStatus(int32_t pid, int *status)
+{
+    if (status == nullptr) {
+        return -1;
+    }
+
+    auto it = g_renderProcessMap.find(pid);
+    if (it != g_renderProcessMap.end()) {
+        *status = it->second.exitStatus_;
+        g_renderProcessMap.erase(it);
+        return 0;
+    }
+    APPSPAWN_LOGE("not find pid[%d] in render process exited map", pid);
+    DumpRenderProcessExitedMap();
+    return -1;
+}
+
+static int GetProcessStatusInner(int32_t pid, int *status)
 {
     if (status == nullptr) {
         return -EINVAL;
+    }
+
+    std::lock_guard<std::mutex> lock(g_mapMut);
+    if (GetRenderProcessTerminationStatus(pid, status) == 0) {
+        // this shows that the parent process has recived SIGCHLD signal.
+        return 0;
     }
 
     if (kill(pid, SIGKILL) != 0) {
@@ -101,8 +161,22 @@ static int GetRenderProcessTerminationStatus(int32_t pid, int *status)
 
     return 0;
 }
+
+static void HandleSigChldSignal()
+{
+    std::lock_guard<std::mutex> lock(g_mapMut);
+    pid_t pid;
+    int status;
+    while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
+        APPSPAWN_LOGI("nweb HandleSigChldSignal pid: %d, status: %d", pid, status);
+        RecordRenderProcessExitedStatus(pid, status);
+    }
+}
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 static void SignalHandler([[maybe_unused]] int sig)
 {
 #ifndef NWEB_SPAWN
@@ -111,6 +185,8 @@ static void SignalHandler([[maybe_unused]] int sig)
 
     while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
     }
+#else
+    std::thread(HandleSigChldSignal).detach();
 #endif
 }
 
@@ -236,6 +312,8 @@ void AppSpawnServer::HandleSignal()
         while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
             APPSPAWN_LOGE("HandleSignal: %d", pid);
         }
+#else
+        std::thread(HandleSigChldSignal).detach();
 #endif
         std::lock_guard<std::mutex> lock(mut_);
         isChildDie_ = true;
@@ -451,7 +529,7 @@ void AppSpawnServer::ProcessAppSpawnMsg(char *longProcName, int64_t longProcName
 #ifdef NWEB_SPAWN
     if (appProperty->code == ClientSocket::GET_RENDER_TERMINATION_STATUS) {
         int exitStatus = 0;
-        int ret = GetRenderProcessTerminationStatus(appProperty->pid, &exitStatus);
+        int ret = GetProcessStatusInner(appProperty->pid, &exitStatus);
         if (ret) {
             msg->Response(ret);
         } else {
