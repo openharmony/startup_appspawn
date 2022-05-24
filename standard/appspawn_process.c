@@ -161,10 +161,7 @@ static void InitDebugParams(struct AppSpawnContent_ *content, AppSpawnClient *cl
         dlclose(handle);
         return;
     }
-    bool ret = (*initParam)(appProperty->property.processName);
-    if (!ret) {
-        APPSPAWN_LOGV("init parameters failed.");
-    }
+    (*initParam)(appProperty->property.processName);
     dlclose(handle);
 }
 
