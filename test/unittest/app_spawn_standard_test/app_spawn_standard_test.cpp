@@ -137,7 +137,10 @@ HWTEST(AppSpawnStandardTest, App_Spawn_Standard_003, TestSize.Level0)
     EXPECT_EQ(content->setKeepCapabilities(content, &clientExt->client), 0);
     EXPECT_EQ(content->setUidGid(content, &clientExt->client), 0);
     EXPECT_EQ(content->setCapabilities(content, &clientExt->client), 0);
+    content->setAppSandbox(content, &clientExt->client);
     content->setAppAccessToken(content, &clientExt->client);
+    EXPECT_EQ(content->coldStartApp(content, &clientExt->client), 0);
+    DoStartApp(content, &clientExt->client, (char*)longProcName.c_str(), longProcNameLen);
     free(content);
     GTEST_LOG_(INFO) << "App_Spawn_Standard_003 end";
 }
