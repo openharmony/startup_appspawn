@@ -69,6 +69,11 @@
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
+                    "src-path" : "/vendor/lib/chipsetsdk",
+                    "sandbox-path" : "/vendor/lib/chipsetsdk",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
                     "src-path" : "/data/app/el1/bundle/public/<PackageName>",
                     "sandbox-path" : "/data/storage/el1/bundle",
                     "sandbox-flags" : [ "bind", "rec" ],
