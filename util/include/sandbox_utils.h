@@ -34,8 +34,9 @@ public:
 
 private:
     static void MakeDirRecursive(const std::string path, mode_t mode);
-    static int32_t DoAppSandboxMountOnce(const std::string originPath, const std::string destinationPath,
-                                         const std::string fsType, unsigned long mountFlags);
+    static int32_t DoAppSandboxMountOnce(const char *originPath, const char *destinationPath,
+                                         const char *fsType, unsigned long mountFlags,
+                                         const char *options);
     static int32_t DoSandboxFileCommonBind(const ClientSocket::AppProperty *appProperty, nlohmann::json &wholeConfig);
     static int32_t DoSandboxFileCommonSymlink(const ClientSocket::AppProperty *appProperty,
                                               nlohmann::json &wholeConfig);
