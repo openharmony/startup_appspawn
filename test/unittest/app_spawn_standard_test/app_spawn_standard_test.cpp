@@ -83,11 +83,8 @@ HWTEST(AppSpawnStandardTest, App_Spawn_Standard_002, TestSize.Level0)
         GTEST_LOG_(INFO) << "strcpy_s failed";
     }
     pid_t pid = 100;
-    AppSpawnContentExt* appSpawnContent = (AppSpawnContentExt*)malloc(sizeof(AppSpawnContentExt));
+    AppSpawnContentExt* appSpawnContent = (AppSpawnContentExt*)calloc(1, sizeof(AppSpawnContentExt));
     EXPECT_TRUE(appSpawnContent);
-    if (strcpy_s(appSpawnContent->content.longProcName, longProcNameLen, longProcName.c_str()) != 0) {
-        GTEST_LOG_(INFO) << "strcpy_s failed";
-    };
     appSpawnContent->content.longProcNameLen = longProcNameLen;
     appSpawnContent->timer = NULL;
     appSpawnContent->content.runAppSpawn = NULL;
@@ -102,8 +99,8 @@ HWTEST(AppSpawnStandardTest, App_Spawn_Standard_002, TestSize.Level0)
 HWTEST(AppSpawnStandardTest, App_Spawn_Standard_003, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Standard_003 start";
-    string longProcName = "AppSpawnStandardTest3";
-    int64_t longProcNameLen = longProcName.length();
+    char longProcName[124] = "AppSpawnStandardTest3";
+    int64_t longProcNameLen = 124; // 124 is str length
     std::unique_ptr<AppSpawnClientExt> clientExt = std::make_unique<AppSpawnClientExt>();
 
     clientExt->client.id = 1;
@@ -130,21 +127,20 @@ HWTEST(AppSpawnStandardTest, App_Spawn_Standard_003, TestSize.Level0)
         GTEST_LOG_(INFO) << "strcpy_s failed";
     }
     clientExt->property.flags = 0;
-
-    AppSpawnContent *content = AppSpawnCreateContent("AppSpawn", (char*)longProcName.c_str(), longProcNameLen, 1);
+    AppSpawnContent *content = AppSpawnCreateContent("AppSpawn", longProcName, longProcNameLen, 1);
     content->loadExtendLib = LoadExtendLib;
     content->runChildProcessor = RunChildProcessor;
 
     SetContentFunction(content);
     content->clearEnvironment(content, &clientExt->client);
-    EXPECT_EQ(content->setProcessName(content, &clientExt->client, (char*)longProcName.c_str(), longProcNameLen), 0);
+    EXPECT_EQ(content->setProcessName(content, &clientExt->client, longProcName, longProcNameLen), 0);
     EXPECT_EQ(content->setKeepCapabilities(content, &clientExt->client), 0);
     EXPECT_EQ(content->setUidGid(content, &clientExt->client), 0);
     EXPECT_EQ(content->setCapabilities(content, &clientExt->client), 0);
     content->setAppSandbox(content, &clientExt->client);
     content->setAppAccessToken(content, &clientExt->client);
     EXPECT_EQ(content->coldStartApp(content, &clientExt->client), 0);
-    DoStartApp(content, &clientExt->client, (char*)longProcName.c_str(), longProcNameLen);
+    DoStartApp(content, &clientExt->client, longProcName, longProcNameLen);
     free(content);
     GTEST_LOG_(INFO) << "App_Spawn_Standard_003 end";
 }
