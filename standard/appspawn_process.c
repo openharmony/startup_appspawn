@@ -146,7 +146,6 @@ static void InitDebugParams(struct AppSpawnContent_ *content, AppSpawnClient *cl
     const char *debugSoPath = "/system/lib/libhidebug.so";
 #endif
     if (access(debugSoPath, F_OK) != 0) {
-        APPSPAWN_LOGE("access failed, errno = %d", errno);
         return;
     }
     void *handle = dlopen(debugSoPath, RTLD_LAZY);
