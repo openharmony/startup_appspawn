@@ -68,11 +68,13 @@ int DoStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client, char *l
         APPSPAWN_CHECK(ret == 0, NotifyResToParent(content, client, ret);
             return ret, "Failed to setUidGid");
     }
+#ifndef APPSPAWN_TEST
     if (content->setFileDescriptors) {
         ret = content->setFileDescriptors(content, client);
         APPSPAWN_CHECK(ret == 0, NotifyResToParent(content, client, ret);
             return ret, "Failed to setFileDescriptors");
     }
+#endif
     if (content->setCapabilities) {
         ret = content->setCapabilities(content, client);
         APPSPAWN_CHECK(ret == 0, NotifyResToParent(content, client, ret);
