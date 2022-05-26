@@ -27,8 +27,6 @@
 #include <unistd.h>
 #include <vector>
 
-#include "sandbox.h"
-#include "sandbox_namespace.h"
 #include "json_utils.h"
 #include "sandbox_utils.h"
 #include "hilog/log.h"
@@ -66,59 +64,6 @@ void LoadAppSandboxConfig(void)
         HiLog::Error(LABEL, "AppSpawnServer::Failed to load app product sandbox config");
     }
     SandboxUtils::StoreProductJsonConfig(appSandboxConfig);
-}
-
-static void RegisterSandbox(AppSpawnContentExt *appSpawnContent, const char *sandbox)
-{
-    if (sandbox == nullptr) {
-        APPSPAWN_LOGE("AppSpawnServer::invalid parameters");
-        return;
-    }
-    APPSPAWN_LOGE("RegisterSandbox %s", sandbox);
-    InitDefaultNamespace();
-    if (!InitSandboxWithName(sandbox)) {
-        CloseDefaultNamespace();
-        APPSPAWN_LOGE("AppSpawnServer::Failed to init sandbox with name %s", sandbox);
-        return;
-    }
-
-    DumpSandboxByName(sandbox);
-    if (PrepareSandbox(sandbox) != 0) {
-        APPSPAWN_LOGE("AppSpawnServer::Failed to prepare sandbox %s", sandbox);
-        DestroySandbox(sandbox);
-        CloseDefaultNamespace();
-        return;
-    }
-    if (EnterDefaultNamespace() < 0) {
-        APPSPAWN_LOGE("AppSpawnServer::Failed to set default namespace");
-        DestroySandbox(sandbox);
-        CloseDefaultNamespace();
-        return;
-    }
-    CloseDefaultNamespace();
-    if (strcmp(sandbox, "app") == 0) {
-        appSpawnContent->flags |= FLAGS_SANDBOX_APP;
-    } else if (strcmp(sandbox, "priv-app") == 0) {
-        appSpawnContent->flags |= FLAGS_SANDBOX_PRIVATE;
-    }
-}
-
-void RegisterAppSandbox(struct AppSpawnContent_ *content, AppSpawnClient *client)
-{
-    AppSpawnClientExt *appProperty = (AppSpawnClientExt *)client;
-    AppSpawnContentExt *appSpawnContent = (AppSpawnContentExt *)content;
-    APPSPAWN_CHECK(appSpawnContent != NULL, return, "Invalid appspawn content");
-
-    if ((appSpawnContent->flags & FLAGS_SANDBOX_PRIVATE) != FLAGS_SANDBOX_PRIVATE) {
-        if (strcmp("system_basic", appProperty->property.apl) == 0) {
-            RegisterSandbox(appSpawnContent, "priv-app");
-        }
-    }
-    if ((appSpawnContent->flags & FLAGS_SANDBOX_APP) != FLAGS_SANDBOX_APP) {
-        if (strcmp("normal", appProperty->property.apl) == 0) {
-            RegisterSandbox(appSpawnContent, "app");
-        }
-    }
 }
 
 int32_t SetAppSandboxProperty(struct AppSpawnContent_ *content, AppSpawnClient *client)
