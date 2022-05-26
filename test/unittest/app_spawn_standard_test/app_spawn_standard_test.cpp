@@ -89,7 +89,6 @@ HWTEST(AppSpawnStandardTest, App_Spawn_Standard_002, TestSize.Level0)
     appSpawnContent->timer = NULL;
     appSpawnContent->content.runAppSpawn = NULL;
     appSpawnContent->content.initAppSpawn = NULL;
-    appSpawnContent->content.registerAppSandbox = NULL;
     AppSpawnProcessMsg(&appSpawnContent->content, &client->client, &pid);
     free(appSpawnContent);
     free(client);
