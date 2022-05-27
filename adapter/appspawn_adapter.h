@@ -28,7 +28,6 @@ int32_t SetAppSandboxProperty(struct AppSpawnContent_ *content, AppSpawnClient *
 void SetAppAccessToken(struct AppSpawnContent_ *content, AppSpawnClient *client);
 void LoadExtendLib(AppSpawnContent *content);
 void RunChildProcessor(AppSpawnContent *content, AppSpawnClient *client);
-void RegisterAppSandbox(struct AppSpawnContent_ *content, AppSpawnClient *client);
 int GetRenderProcessTerminationStatus(int32_t pid, int *status);
 void RecordRenderProcessExitedStatus(pid_t pid, int status);
 void LoadAppSandboxConfig(void);
