@@ -34,7 +34,6 @@ config("appspawn_config") {
     "//base/startup/init_lite/services/include",
     "//base/startup/init_lite/services/loopevent/include",
     "//base/startup/init_lite/interfaces/innerkits/include",
-    "//base/startup/init_lite/interfaces/innerkits/sandbox/include",
     "//base/startup/syspara_lite/interfaces/innerkits/native/syspara/include",
     "//third_party/json/include",
   ]
@@ -88,7 +87,6 @@ ohos_static_library("appspawn_server") {
   deps = [
     "//base/security/access_token/interfaces/innerkits/token_setproc:libtoken_setproc",
     "//base/startup/init_lite/interfaces/innerkits:libbegetutil",
-    "//base/startup/init_lite/interfaces/innerkits/sandbox:libsandbox",
     "//base/startup/init_lite/services/loopevent:loopevent",
     "//base/startup/init_lite/services/utils:libinit_tools",
     "//base/startup/syspara_lite/interfaces/innerkits/native/syspara:syspara",
@@ -137,7 +135,6 @@ ohos_static_library("nwebspawn_server") {
   deps = [
     "//base/security/access_token/interfaces/innerkits/token_setproc:libtoken_setproc",
     "//base/startup/init_lite/interfaces/innerkits:libbegetutil",
-    "//base/startup/init_lite/interfaces/innerkits/sandbox:libsandbox",
     "//base/startup/init_lite/services/loopevent:loopevent",
     "//base/startup/init_lite/services/utils:libinit_tools",
     "//base/startup/syspara_lite/interfaces/innerkits/native/syspara:syspara",
@@ -162,10 +159,7 @@ ohos_executable("nwebspawn") {
     "${appspawn_path}/util/src/sandbox_utils.cpp",
   ]
   configs = [ ":appspawn_config" ]
-  deps = [
-    "${appspawn_path}:nwebspawn_server",
-    "//base/startup/init_lite/interfaces/innerkits/sandbox:libsandbox",
-  ]
+  deps = [ "${appspawn_path}:nwebspawn_server" ]
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 
   install_enable = true

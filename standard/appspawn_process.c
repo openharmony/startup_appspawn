@@ -28,7 +28,6 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-#include "sandbox.h"
 #include "appspawn_adapter.h"
 #include "securec.h"
 
@@ -378,7 +377,4 @@ void SetContentFunction(AppSpawnContent *content)
     content->setAppSandbox = SetAppSandboxProperty;
     content->setAppAccessToken = SetAppAccessToken;
     content->coldStartApp = ColdStartApp;
-#ifdef APPSPAWN_SUPPORT_SANDBOX
-    content->registerAppSandbox = RegisterAppSandbox;
-#endif
 }
