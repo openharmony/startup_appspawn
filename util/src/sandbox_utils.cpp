@@ -98,11 +98,12 @@ nlohmann::json SandboxUtils::GetProductJsonConfig()
     return SandboxUtils::productSandboxConfig_;
 }
 
-void SandboxUtils::MakeDirRecursive(const std::string path, mode_t mode)
+static void MakeDirRecursive(const std::string path, mode_t mode)
 {
     size_t size = path.size();
-    if (size == 0)
+    if (size == 0) {
         return;
+    }
 
     size_t index = 0;
     do {
@@ -286,7 +287,8 @@ static bool CheckMountConfig(nlohmann::json &mntPoint, const ClientSocket::AppPr
     return true;
 }
 
-static int32_t DoDlpAppMountStrategy(const std::string &srcPath, const std::string &sandboxPath,
+static int32_t DoDlpAppMountStrategy(const ClientSocket::AppProperty *appProperty,
+                                     const std::string &srcPath, const std::string &sandboxPath,
                                      const std::string &fsType, unsigned long mountFlags)
 {
     int fd = open("/dev/fuse", O_RDWR);
@@ -296,7 +298,11 @@ static int32_t DoDlpAppMountStrategy(const std::string &srcPath, const std::stri
     }
 
     char options[FUSE_OPTIONS_MAX_LEN];
-    (void)sprintf_s(options, sizeof(options), "fd=%d,rootmode=40000,user_id=0,group_id=0", fd);
+    (void)sprintf_s(options, sizeof(options), "fd=%d,rootmode=40000,user_id=%d,group_id=%d", fd,
+                    appProperty->uid, appProperty->gid);
+
+    // To make sure destinationPath exist
+    MakeDirRecursive(sandboxPath, FILE_MODE);
 
     int ret = mount(srcPath.c_str(), sandboxPath.c_str(), fsType.c_str(), mountFlags, options);
     if (ret) {
@@ -305,10 +311,16 @@ static int32_t DoDlpAppMountStrategy(const std::string &srcPath, const std::stri
         return ret;
     }
 
+    ret = mount(NULL, sandboxPath.c_str(), NULL, MS_PRIVATE, NULL);
+    if (ret) {
+        HiLog::Error(LABEL, "private mount to %{public}s failed %{public}d", sandboxPath.c_str(), errno);
+        return ret;
+    }
+
     /* close DLP_FUSE_FD and dup FD to it */
     close(DLP_FUSE_FD);
     ret = dup2(fd, DLP_FUSE_FD);
-    if (ret) {
+    if (ret == -1) {
         HiLog::Error(LABEL, "dup fuse fd %{public}d failed, errno is %{public}d",
                      fd, errno);
     }
@@ -316,17 +328,19 @@ static int32_t DoDlpAppMountStrategy(const std::string &srcPath, const std::stri
     return ret;
 }
 
-static int32_t HandleSpecialAppMount(const std::string &srcPath, const std::string &sandboxPath,
-                                     const std::string &fsType, unsigned long mountFlags,
-                                     const std::string &bundleName)
+static int32_t HandleSpecialAppMount(const ClientSocket::AppProperty *appProperty,
+                                     const std::string &srcPath, const std::string &sandboxPath,
+                                     const std::string &fsType, unsigned long mountFlags)
 {
+    std::string bundleName = appProperty->bundleName;
+
     /* dlp application mount strategy */
     /* dlp is an example, we should change to real bundle name later */
     if (bundleName.find("dlp") != -1) {
         if (fsType.empty()) {
             return -1;
         } else {
-            return DoDlpAppMountStrategy(srcPath, sandboxPath, fsType, mountFlags);
+            return DoDlpAppMountStrategy(appProperty, srcPath, sandboxPath, fsType, mountFlags);
         }
     }
 
@@ -363,8 +377,8 @@ int SandboxUtils::DoAllMntPointsMount(const ClientSocket::AppProperty *appProper
 
         int ret = 0;
         /* if app mount failed for special strategy, we need deal with common mount config */
-        ret = HandleSpecialAppMount(srcPath, sandboxPath, fsType, mountFlags, appProperty->bundleName);
-        if (ret) {
+        ret = HandleSpecialAppMount(appProperty, srcPath, sandboxPath, fsType, mountFlags);
+        if (ret < 0) {
             if (fsType.empty()) {
                 ret = DoAppSandboxMountOnce(srcPath.c_str(), sandboxPath.c_str(), nullptr, mountFlags, nullptr);
             } else {
