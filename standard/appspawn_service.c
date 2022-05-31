@@ -93,6 +93,12 @@ static void AddAppInfo(pid_t pid, const char *processName)
     APPSPAWN_LOGI("Add %s, pid=%d success", processName, pid);
 }
 
+static void ProcessTimer(const TimerHandle taskHandle, void *context)
+{
+    APPSPAWN_LOGI("timeout stop appspawn");
+    LE_StopLoop(LE_GetDefaultLoop());
+}
+
 static void RemoveAppInfo(pid_t pid)
 {
     HashNode *node = HashMapGet(g_appSpawnContent->appMap, (const void *)&pid);
@@ -101,6 +107,16 @@ static void RemoveAppInfo(pid_t pid)
     APPSPAWN_CHECK(appInfo != NULL, return, "Invalid node %d", pid);
     HashMapRemove(g_appSpawnContent->appMap, (const void *)&pid);
     free(appInfo);
+    if ((g_appSpawnContent->flags & FLAGS_ON_DEMAND) != FLAGS_ON_DEMAND) {
+        return;
+    }
+
+    if (g_appSpawnContent->timer == NULL && HashMapIsEmpty(g_appSpawnContent->appMap) != 0) {
+        APPSPAWN_LOGI("Start time for appspawn");
+        int ret = LE_CreateTimer(LE_GetDefaultLoop(), &g_appSpawnContent->timer, ProcessTimer, NULL);
+        APPSPAWN_CHECK(ret == 0, return, "Failed to create time");
+        LE_StartTimer(LE_GetDefaultLoop(), g_appSpawnContent->timer, 30000, 1);  // 30000 30s
+    }
 }
 
 static void KillProcess(const HashNode *node, const void *context)
@@ -183,12 +199,6 @@ static void SignalHandler(const struct signalfd_siginfo *siginfo)
             APPSPAWN_LOGI("SigHandler, unsupported signal %d.", siginfo->ssi_signo);
             break;
     }
-}
-
-static void ProcessTimer(const TimerHandle taskHandle, void *context)
-{
-    APPSPAWN_LOGI("timeout stop appspawn");
-    LE_StopLoop(LE_GetDefaultLoop());
 }
 
 static void HandleSpecial(AppSpawnClientExt *appProperty)
@@ -342,11 +352,6 @@ static void OnReceiveRequest(const TaskHandle taskHandle, const uint8_t *buffer,
     } else {
         SendResponse(appProperty, (char *)&result, sizeof(result));
     }
-    if (g_appSpawnContent->timer == NULL && ((g_appSpawnContent->flags & FLAGS_ON_DEMAND) == FLAGS_ON_DEMAND)) {
-        ret = LE_CreateTimer(LE_GetDefaultLoop(), &g_appSpawnContent->timer, ProcessTimer, NULL);
-        APPSPAWN_CHECK(ret == 0, return, "Failed to create time");
-        LE_StartTimer(LE_GetDefaultLoop(), g_appSpawnContent->timer, 30000, 1);  // 30000 30s
-    }
 }
 
 static int OnConnection(const LoopHandle loopHandle, const TaskHandle server)
@@ -498,6 +503,9 @@ AppSpawnContent *AppSpawnCreateContent(const char *socketName, char *longProcNam
             return NULL, "Failed to snprintf_s %d", ret);
         int socketId = GetControlSocket(socketName);
         APPSPAWN_LOGI("get socket form env %s socketId %d", socketName, socketId);
+        if (socketId > 0) {
+            appSpawnContent->flags |= FLAGS_ON_DEMAND;
+        }
 
         LE_StreamServerInfo info = {};
         info.baseInfo.flags = TASK_STREAM | TASK_PIPE | TASK_SERVER;
