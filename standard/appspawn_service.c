@@ -206,10 +206,11 @@ static void HandleSpecial(AppSpawnClientExt *appProperty)
     // special handle bundle name medialibrary and scanner
     const char *specialBundleNames[] = {
         "com.ohos.medialibrary.MediaLibraryDataA",
-        "com.ohos.medialibrary.MediaScannerAbilityA"
+        "com.ohos.medialibrary.MediaScannerAbilityA",
+        "com.ohos.medialibrary.medialibrarydata"
     };
     for (size_t i = 0; i < sizeof(specialBundleNames) / sizeof(specialBundleNames[0]); i++) {
-        if (strcmp(appProperty->property.processName, specialBundleNames[i]) == 0) {
+        if (strcmp(appProperty->property.bundleName, specialBundleNames[i]) == 0) {
             if (appProperty->property.gidCount < APP_MAX_GIDS) {
                 appProperty->property.gidTable[appProperty->property.gidCount] = GID_USER_DATA_RW;
                 appProperty->property.gidCount++;
