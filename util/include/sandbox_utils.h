@@ -33,7 +33,6 @@ public:
     static int32_t SetAppSandboxProperty(const ClientSocket::AppProperty *appProperty);
 
 private:
-    static void MakeDirRecursive(const std::string path, mode_t mode);
     static int32_t DoAppSandboxMountOnce(const char *originPath, const char *destinationPath,
                                          const char *fsType, unsigned long mountFlags,
                                          const char *options);
