@@ -11,9 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-aafwk_kits_path = "//foundation/aafwk/standard/frameworks/kits"
+aafwk_kits_path = "//foundation/ability/ability_runtime/frameworks/kits"
 appspawn_path = "//base/startup/appspawn_standard"
-aafwk_path = "//foundation/aafwk/standard"
+aafwk_path = "//foundation/ability/ability_runtime"
 subsystem_name = "startup"
 part_name = "appspawn"
 module_output_path = "${part_name}/appspawn_l2"
