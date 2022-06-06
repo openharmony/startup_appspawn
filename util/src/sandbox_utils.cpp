@@ -54,6 +54,7 @@ namespace {
     const std::string SANDBOX_DIR = "/mnt/sandbox/";
     const std::string STATUS_CHECK = "true";
     const std::string SBX_SWITCH_CHECK = "ON";
+    const std::string DLP_BUNDLENAME = "com.ohos.dlpmanager";
     const char *ACTION_STATUS = "check-action-status";
     const char *APP_BASE = "app-base";
     const char *APP_RESOURCES = "app-resources";
@@ -336,7 +337,7 @@ static int32_t HandleSpecialAppMount(const ClientSocket::AppProperty *appPropert
 
     /* dlp application mount strategy */
     /* dlp is an example, we should change to real bundle name later */
-    if (bundleName.find("dlp") != -1) {
+    if (bundleName.find(DLP_BUNDLENAME) != -1) {
         if (fsType.empty()) {
             return -1;
         } else {
