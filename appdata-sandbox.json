@@ -239,7 +239,7 @@
             ],
             "symbol-links" : []
         }],
-        "ohos.samples.dlp" : [{
+        "com.ohos.dlpmanager" : [{
             "sandbox-switch": "ON",
             "sandbox-root" : "/mnt/sandbox/<PackageName>",
             "mount-paths" : [{
