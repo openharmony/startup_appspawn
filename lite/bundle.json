@@ -4,10 +4,10 @@
     "homePage": "https://gitee.com/openharmony",
     "version": "3.1",
     "license": "Apache License 2.0",
-    "repository": "https://gitee.com/openharmony/appspawn_standard",
+    "repository": "https://gitee.com/openharmony/appspawn",
     "publishAs": "code-segment",
     "segment": {
-        "destPath": "base/startup/appspawn_standard/lite"
+        "destPath": "base/startup/appspawn/lite"
     },
     "dirs": {},
     "scripts": {},
@@ -37,10 +37,10 @@
         },
         "build": {
             "sub_component": [
-                "//base/startup/appspawn_standard/lite:appspawn_lite"
+                "//base/startup/appspawn/lite:appspawn_lite"
             ],
             "test": [
-                "//base/startup/appspawn_standard/test/unittest/app_spawn_lite_test:unittest"
+                "//base/startup/appspawn/test/unittest/app_spawn_lite_test:unittest"
             ]
         }
     }
