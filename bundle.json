@@ -7,7 +7,7 @@
     "repository": "https://gitee.com/openharmony/startup_appspawn",
     "publishAs": "code-segment",
     "segment": {
-        "destPath": "base/startup/appspawn_standard"
+        "destPath": "base/startup/appspawn"
     },
     "dirs": {},
     "scripts": {},
@@ -23,7 +23,7 @@
         "rom": "",
         "ram": "",
         "hisysevent_config": [
-            "//base/startup/appspawn_standard/startup_events.yaml"
+            "//base/startup/appspawn/startup_events.yaml"
         ],
         "deps": {
             "components": [
@@ -38,28 +38,28 @@
         },
         "build": {
             "sub_component": [
-                "//base/startup/appspawn_standard:appspawn",
-                "//base/startup/appspawn_standard:appspawn.rc",
-                "//base/startup/appspawn_standard:appspawn_server",
-                "//base/startup/appspawn_standard:nweb",
-                "//base/startup/appspawn_standard/etc:etc_files",
-                "//base/startup/appspawn_standard/interfaces/innerkits:appspawn_socket_client"
+                "//base/startup/appspawn:appspawn",
+                "//base/startup/appspawn:appspawn.rc",
+                "//base/startup/appspawn:appspawn_server",
+                "//base/startup/appspawn:nweb",
+                "//base/startup/appspawn/etc:etc_files",
+                "//base/startup/appspawn/interfaces/innerkits:appspawn_socket_client"
             ],
             "inner_kits": [
                 {
                     "header": {
-                        "header_base": "//base/startup/appspawn_standard/interfaces/innerkits/include/",
+                        "header_base": "//base/startup/appspawn/interfaces/innerkits/include/",
                         "header_files": [
                             "appspawn_socket.h",
                             "client_socket.h"
                         ]
                     },
-                    "name": "//base/startup/appspawn_standard/interfaces/innerkits:appspawn_socket_client"
+                    "name": "//base/startup/appspawn/interfaces/innerkits:appspawn_socket_client"
                 }
             ],
             "test": [
-                "//base/startup/appspawn_standard/test:moduletest",
-                "//base/startup/appspawn_standard/test:unittest"
+                "//base/startup/appspawn/test:moduletest",
+                "//base/startup/appspawn/test:unittest"
             ]
         }
     }
