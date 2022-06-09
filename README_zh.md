@@ -22,10 +22,10 @@ base/startup/appspawn_standard
 │      └─include         # 应用孵化器头文件
 ├─lite                   # 小型系统应用孵化器源码
 ├─standard               # 标准系统应用孵化器源码
-├─test                   # 应用孵化器组件测试代码
+├─test                   # 应用孵化器组件测试源码
 └─util
     ├─include            # 应用孵化器工具类头文件
-    └─src                # 应用孵化器工具类头源码
+    └─src                # 应用孵化器工具类源码
 ```
 
 ## 使用说明
