@@ -28,14 +28,15 @@ struct RenderProcessNode {
 };
 
 namespace {
-constexpr int32_t RENDER_PROCESS_MAX_NUM = 16;
-std::map<int32_t, RenderProcessNode> g_renderProcessMap;
-void *g_nwebHandle = nullptr;
+    constexpr int32_t RENDER_PROCESS_MAX_NUM = 16;
+    std::map<int32_t, RenderProcessNode> g_renderProcessMap;
+    void *g_nwebHandle = nullptr;
 }
 
 void LoadExtendLib(AppSpawnContent *content)
 {
     const std::string LOAD_LIB_DIR = "/data/app/el1/bundle/public/com.ohos.nweb/libs/arm";
+
 #ifdef __MUSL__
     Dl_namespace dlns;
     dlns_init(&dlns, "nweb_ns");
@@ -50,6 +51,7 @@ void LoadExtendLib(AppSpawnContent *content)
     } else {
         APPSPAWN_LOGI("Success to dlopen libweb_engine.so");
     }
+
 #ifdef __MUSL__
     g_nwebHandle = dlopen_ns(&dlns, "libnweb_render.so", RTLD_NOW | RTLD_GLOBAL);
 #else
@@ -67,17 +69,20 @@ void RunChildProcessor(AppSpawnContent *content, AppSpawnClient *client)
 {
     AppSpawnClientExt *appProperty = (AppSpawnClientExt *)client;
     using FuncType = void (*)(const char *cmd);
+
     FuncType funcNWebRenderMain = reinterpret_cast<FuncType>(dlsym(g_nwebHandle, "NWebRenderMain"));
     if (funcNWebRenderMain == nullptr) {
         APPSPAWN_LOGI("webviewspawn dlsym ERROR=%s", dlerror());
         return;
     }
+
     funcNWebRenderMain(appProperty->property.renderCmd);
 }
 
 static void DumpRenderProcessExitedMap()
 {
     APPSPAWN_LOGI("dump render process exited array:");
+
     for (auto& it : g_renderProcessMap) {
         APPSPAWN_LOGV("[pid, time, exitedStatus] = [%d, %ld, %d]",
             it.first, it.second.recordTime_, it.second.exitStatus_);
@@ -98,6 +103,7 @@ void RecordRenderProcessExitedStatus(pid_t pid, int status)
         [](const std::pair<int32_t, RenderProcessNode>& left, const std::pair<int32_t, RenderProcessNode>& right) {
             return left.second.recordTime_ < right.second.recordTime_;
         });
+
     g_renderProcessMap.erase(oldestData);
     RenderProcessNode node(time(nullptr), status);
     g_renderProcessMap.insert({pid, node});
@@ -116,6 +122,7 @@ int GetRenderProcessTerminationStatus(int32_t pid, int *status)
         g_renderProcessMap.erase(it);
         return 0;
     }
+
     APPSPAWN_LOGE("not find pid[%d] in render process exited map", pid);
     DumpRenderProcessExitedMap();
     return -1;

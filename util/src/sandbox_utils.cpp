@@ -99,7 +99,7 @@ nlohmann::json SandboxUtils::GetProductJsonConfig()
     return SandboxUtils::productSandboxConfig_;
 }
 
-static void MakeDirRecursive(const std::string path, mode_t mode)
+static void MakeDirRecursive(const std::string &path, mode_t mode)
 {
     size_t size = path.size();
     if (size == 0) {
