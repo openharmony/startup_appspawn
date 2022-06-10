@@ -41,7 +41,6 @@ ohos_unittest("AppSpawnStandardTest") {
     "${appspawn_path}:appspawn_server",
     "${appspawn_path}/test:appspawn_test_source",
     "//base/startup/init_lite/interfaces/innerkits:libbegetutil",
-    "//base/startup/init_lite/interfaces/innerkits/sandbox:libsandbox",
   ]
 
   external_deps = [
