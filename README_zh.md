@@ -13,7 +13,7 @@
 ## 目录
 
 ```
-base/startup/appspawn_standard
+base/startup/appspawn
 ├── include                    # 应用孵化器组件头文件
 ├── parameter                  # 应用孵化器组件系统参数
 ├── src                        # 应用孵化器组件源文件

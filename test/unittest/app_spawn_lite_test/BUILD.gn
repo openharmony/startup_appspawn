@@ -23,9 +23,9 @@ unittest("AppSpawnLiteTest") {
   ]
 
   include_dirs = [
-    "//base/startup/appspawn_standard/interfaces/innerkits/include",
-    "//base/startup/appspawn_standard/common/",
-    "//base/startup/appspawn_standard/lite/",
+    "//base/startup/appspawn/interfaces/innerkits/include",
+    "//base/startup/appspawn/common/",
+    "//base/startup/appspawn/lite/",
     "//base/startup/init_lite/interfaces/innerkits/include",
     "//base/hiviewdfx/hilog_lite/interfaces/native/innerkits/hilog",
     "//foundation/distributedschedule/samgr_lite/interfaces/kits/samgr",
@@ -37,10 +37,10 @@ unittest("AppSpawnLiteTest") {
   ]
 
   sources = [
-    "//base/startup/appspawn_standard/common/appspawn_server.c",
-    "//base/startup/appspawn_standard/lite/appspawn_message.c",
-    "//base/startup/appspawn_standard/lite/appspawn_process.c",
-    "//base/startup/appspawn_standard/lite/appspawn_service.c",
+    "//base/startup/appspawn/common/appspawn_server.c",
+    "//base/startup/appspawn/lite/appspawn_message.c",
+    "//base/startup/appspawn/lite/appspawn_process.c",
+    "//base/startup/appspawn/lite/appspawn_service.c",
     "app_spawn_lite_test.cpp",
   ]
 

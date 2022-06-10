@@ -46,7 +46,7 @@ executable("appspawn") {
   include_dirs = [
     ".",
     "../common",
-    "//base/startup/appspawn_standard/interfaces/innerkits/include",
+    "//base/startup/appspawn/interfaces/innerkits/include",
     "//base/startup/init_lite/interfaces/innerkits/include",
     "//foundation/distributedschedule/samgr_lite/interfaces/kits/samgr",
     "//foundation/distributedschedule/samgr_lite/interfaces/kits/registry",
@@ -86,6 +86,7 @@ executable("appspawn") {
 
 if (ohos_build_type == "debug") {
   group("unittest") {
-    deps = [ "//base/startup/appspawn_standard/test/unittest/app_spawn_lite_test:unittest" ]
+    deps =
+        [ "//base/startup/appspawn/test/unittest/app_spawn_lite_test:unittest" ]
   }
 }
