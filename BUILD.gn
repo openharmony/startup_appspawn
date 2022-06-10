@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import("//base/startup/appspawn_standard/appspawn.gni")
+import("//base/startup/appspawn/appspawn.gni")
 import("//build/ohos.gni")
 
 config("appspawn_config") {
@@ -87,10 +87,6 @@ ohos_static_library("appspawn_server") {
   deps = [
     "//base/security/access_token/interfaces/innerkits/token_setproc:libtoken_setproc",
     "//base/startup/init_lite/interfaces/innerkits:libbegetutil",
-    "//base/startup/init_lite/services/loopevent:loopevent",
-    "//base/startup/init_lite/services/utils:libinit_tools",
-    "//base/startup/syspara_lite/interfaces/innerkits/native/syspara:syspara",
-    "//third_party/libuv:uv_static",
     "//utils/native/base:utils",
   ]
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
@@ -135,10 +131,6 @@ ohos_static_library("nwebspawn_server") {
   deps = [
     "//base/security/access_token/interfaces/innerkits/token_setproc:libtoken_setproc",
     "//base/startup/init_lite/interfaces/innerkits:libbegetutil",
-    "//base/startup/init_lite/services/loopevent:loopevent",
-    "//base/startup/init_lite/services/utils:libinit_tools",
-    "//base/startup/syspara_lite/interfaces/innerkits/native/syspara:syspara",
-    "//third_party/libuv:uv_static",
     "//utils/native/base:utils",
   ]
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
