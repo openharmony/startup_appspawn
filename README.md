@@ -11,7 +11,7 @@ Appspawn is responsible for creating application process and setting process inf
 ## Directory Structure<a name="section161941989596"></a>
 
 ```
-base/startup/appspawn_standard
+base/startup/appspawn
 ├── include                    # include directory
 ├── parameter                  # system parameters
 ├── src                        # source code
@@ -23,4 +23,4 @@ base/startup/appspawn_standard
 
 Startup subsystem
 
-**[appspawn_standard](https://gitee.com/openharmony/startup_appspawn/blob/master/README.md)**
+**[appspawn](https://gitee.com/openharmony/startup_appspawn/blob/master/README.md)**
