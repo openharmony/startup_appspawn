@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+#include <signal.h>
 #include "appspawn_adapter.h"
 #include "appspawn_msg.h"
 #include "appspawn_server.h"
@@ -22,6 +22,7 @@ int main(int argc, char *const argv[])
     if (argc <= 0) {
         return 0;
     }
+    (void)signal(SIGPIPE, SIG_IGN);
     uint32_t argvSize = 0;
     char *buffer = (char *)argv[0];
     int mode = 0;

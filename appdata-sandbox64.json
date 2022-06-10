@@ -40,7 +40,7 @@
                     "check-action-status": "false"
                 }, {
                     "src-path" : "/system/lib",
-                    "sandbox-path" : "/lib",
+                    "sandbox-path" : "/system/lib",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
@@ -137,6 +137,10 @@
                 }, {
                     "target-name" : "/system/lib64",
                     "link-name" : "/lib64",
+                    "check-action-status": "false"
+                }, {
+                    "target-name" : "/system/lib",
+                    "link-name" : "/lib",
                     "check-action-status": "false"
                 }, {
                     "target-name" : "/system/etc",
