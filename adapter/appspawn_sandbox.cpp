@@ -15,15 +15,7 @@
 
 #include "appspawn_adapter.h"
 
-#include <cerrno>
-#include <fcntl.h>
-#include <map>
-#include <sched.h>
 #include <string>
-#include <sys/mount.h>
-#include <sys/stat.h>
-#include <sys/syscall.h>
-#include <sys/types.h>
 #include <unistd.h>
 #include <vector>
 
@@ -36,9 +28,6 @@ using namespace OHOS;
 using namespace OHOS::HiviewDFX;
 using namespace OHOS::AppSpawn;
 static constexpr HiLogLabel LABEL = {LOG_CORE, 0, "AppSpawn_SandboxUtil"};
-
-bool g_isPrivAppSandboxCreated = false;
-bool g_isAppSandboxCreated = false;
 
 namespace {
 #ifdef __aarch64__

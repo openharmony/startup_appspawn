@@ -62,7 +62,7 @@ typedef struct AppSpawnContent_ {
     int (*setUidGid)(struct AppSpawnContent_ *content, AppSpawnClient *client);
     int (*setCapabilities)(struct AppSpawnContent_ *content, AppSpawnClient *client);
 
-    int (*notifyResToParent)(struct AppSpawnContent_ *content, AppSpawnClient *client, int result);
+    void (*notifyResToParent)(struct AppSpawnContent_ *content, AppSpawnClient *client, int result);
     void (*runChildProcessor)(struct AppSpawnContent_ *content, AppSpawnClient *client);
 
     // for cold start

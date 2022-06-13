@@ -14,6 +14,7 @@
  */
 
 #include "appspawn_service.h"
+#include "appspawn_adapter.h"
 
 #include <fcntl.h>
 #include <stdbool.h>
@@ -28,9 +29,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-#include "appspawn_adapter.h"
 #include "securec.h"
-
 
 #define DEVICE_NULL_STR "/dev/null"
 
@@ -272,7 +271,7 @@ static int ColdStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client
         argv[PARAM_INDEX] = param;
         argv[0] = param + originLen;
         ret = strcpy_s(argv[0], APP_LEN_PROC_NAME, "/system/bin/appspawn");
-        APPSPAWN_CHECK(ret >= 0, break, "Invalid strdup");
+        APPSPAWN_CHECK(ret >= 0, break, "Invalid strcpy");
         argv[START_INDEX] = strdup("cold-start");
         APPSPAWN_CHECK(argv[START_INDEX] != NULL, break, "Invalid strdup");
         argv[FD_INDEX] = strdup(buffer);
@@ -319,6 +318,7 @@ int GetAppSpawnClientFromArg(int argc, char *const argv[], AppSpawnClientExt *cl
     APPSPAWN_LOGV("GetAppSpawnClientFromArg %s ", argv[PARAM_INDEX]);
     char *end = NULL;
     char *start = strtok_r(argv[PARAM_INDEX], ":", &end);
+
     // clientid
     APPSPAWN_CHECK(start != NULL, return -1, "Failed to get client id");
     client->client.id = atoi(start);
@@ -328,6 +328,7 @@ int GetAppSpawnClientFromArg(int argc, char *const argv[], AppSpawnClientExt *cl
     start = strtok_r(NULL, ":", &end);
     APPSPAWN_CHECK(start != NULL, return -1, "Failed to get gid");
     client->property.gid = atoi(start);
+
     // gidCount
     start = strtok_r(NULL, ":", &end);
     APPSPAWN_CHECK(start != NULL, return -1, "Failed to get gidCount");
@@ -337,6 +338,7 @@ int GetAppSpawnClientFromArg(int argc, char *const argv[], AppSpawnClientExt *cl
         APPSPAWN_CHECK(start != NULL, return -1, "Failed to get gidTable");
         client->property.gidTable[i] = atoi(start);
     }
+
     // processname
     start = strtok_r(NULL, ":", &end);
     APPSPAWN_CHECK(start != NULL, return -1, "Failed to get processName");
@@ -350,6 +352,7 @@ int GetAppSpawnClientFromArg(int argc, char *const argv[], AppSpawnClientExt *cl
     APPSPAWN_CHECK(start != NULL, return -1, "Failed to get soPath");
     ret = strcpy_s(client->property.soPath, sizeof(client->property.soPath), start);
     APPSPAWN_CHECK(ret == 0, return -1, "Failed to strcpy soPath");
+
     // accesstoken
     start = strtok_r(NULL, ":", &end);
     APPSPAWN_CHECK(start != NULL, return -1, "Failed to get accessTokenId");
@@ -362,6 +365,7 @@ int GetAppSpawnClientFromArg(int argc, char *const argv[], AppSpawnClientExt *cl
     APPSPAWN_CHECK(start != NULL, return -1, "Failed to get renderCmd");
     ret = strcpy_s(client->property.renderCmd, sizeof(client->property.renderCmd), start);
     APPSPAWN_CHECK(ret == 0, return -1, "Failed to strcpy renderCmd");
+
     return 0;
 }
 
