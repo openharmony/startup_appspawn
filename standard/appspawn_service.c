@@ -15,6 +15,7 @@
 
 #include "appspawn_service.h"
 #include "appspawn_adapter.h"
+#include "appspawn_server.h"
 
 #include <fcntl.h>
 #include <sys/capability.h>
@@ -27,7 +28,6 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-#include "appspawn_server.h"
 #include "init_hashmap.h"
 #include "init_socket.h"
 #include "parameter.h"
@@ -158,6 +158,7 @@ static void PrintProcessExitInfo(pid_t pid, uid_t uid, int status)
     APPSPAWN_CHECK(node != NULL, return, "Handle SIGCHLD from pid:%d status:%d", pid, status);
     AppInfo *appInfo = HASHMAP_ENTRY(node, AppInfo, node);
     APPSPAWN_CHECK(appInfo != NULL, return, "Handle SIGCHLD from pid:%d status:%d", pid, status);
+
     if (WIFSIGNALED(status)) {
         APPSPAWN_LOGW("%s with pid %d exit with signal:%d", appInfo->name, pid, WTERMSIG(status));
     }
@@ -209,6 +210,7 @@ static void HandleSpecial(AppSpawnClientExt *appProperty)
         "com.ohos.medialibrary.MediaScannerAbilityA",
         "com.ohos.medialibrary.medialibrarydata"
     };
+
     for (size_t i = 0; i < sizeof(specialBundleNames) / sizeof(specialBundleNames[0]); i++) {
         if (strcmp(appProperty->property.bundleName, specialBundleNames[i]) == 0) {
             if (appProperty->property.gidCount < APP_MAX_GIDS) {
@@ -231,6 +233,7 @@ static int WaitChild(int fd, int pid, const AppSpawnClientExt *appProperty)
     FD_SET(fd, &rd);
     tv.tv_sec = TV_SEC;
     tv.tv_usec = 0;
+
     int ret = select(fd + 1, &rd, NULL, NULL, &tv);
     if (ret == 0) {  // timeout
         APPSPAWN_LOGI("Time out for child %s %d fd %d", appProperty->property.processName, pid, fd);
@@ -241,6 +244,7 @@ static int WaitChild(int fd, int pid, const AppSpawnClientExt *appProperty)
     } else {
         (void)read(fd, &result, sizeof(result));
     }
+
     return result;
 }
 
@@ -249,6 +253,7 @@ static void StartColdApp(AppSpawnClientExt *appProperty)
     if (appProperty == NULL) {
         return;
     }
+
     if (appProperty->property.flags & 0x01) {
         char cold[10] = {0};  // 10 cold
         int ret = GetParameter("appspawn.cold.boot", "false", cold, sizeof(cold));
@@ -280,6 +285,7 @@ static int GetProcessTerminationStatusInner(int32_t pid, int *status)
         APPSPAWN_LOGE("waitpid failed, return : %d, pid: %d, status: %d", exitPid, pid, *status);
         return -1;
     }
+
     RemoveAppInfo(pid);
     return 0;
 }
@@ -306,9 +312,11 @@ static void OnReceiveRequest(const TaskHandle taskHandle, const uint8_t *buffer,
     AppSpawnClientExt *appProperty = (AppSpawnClientExt *)LE_GetUserData(taskHandle);
     APPSPAWN_CHECK(appProperty != NULL, LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
         return, "alloc client Failed");
+
     int ret = memcpy_s(&appProperty->property, sizeof(appProperty->property), buffer, buffLen);
     APPSPAWN_CHECK(ret == 0, LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
         return, "Invalid buffer buffLen %u", buffLen);
+
 #ifdef NWEB_SPAWN
     // get render process termination status, only nwebspawn need this logic.
     if (appProperty->property.code == GET_RENDER_TERMINATION_STATUS) {
@@ -316,6 +324,7 @@ static void OnReceiveRequest(const TaskHandle taskHandle, const uint8_t *buffer,
         return;
     }
 #endif
+
     APPSPAWN_CHECK(appProperty->property.gidCount <= APP_MAX_GIDS && strlen(appProperty->property.processName) > 0,
         LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
         return, "Invalid property %u", appProperty->property.gidCount);
@@ -333,6 +342,7 @@ static void OnReceiveRequest(const TaskHandle taskHandle, const uint8_t *buffer,
         LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
         return;
     }
+
     APPSPAWN_LOGI("OnReceiveRequest client.id %d appProperty %d processname %s buffLen %d flags 0x%x",
         appProperty->client.id, appProperty->property.uid, appProperty->property.processName,
         buffLen, appProperty->property.flags);
@@ -369,10 +379,12 @@ static int OnConnection(const LoopHandle loopHandle, const TaskHandle server)
     info.disConntectComplete = NULL;
     info.sendMessageComplete = SendMessageComplete;
     info.recvMessage = OnReceiveRequest;
+
     LE_STATUS ret = LE_AcceptStreamClient(LE_GetDefaultLoop(), server, &stream, &info);
     APPSPAWN_CHECK(ret == 0, return -1, "Failed to alloc stream");
     AppSpawnClientExt *client = (AppSpawnClientExt *)LE_GetUserData(stream);
     APPSPAWN_CHECK(client != NULL, return -1, "Failed to alloc stream");
+
     client->stream = stream;
     client->client.id = ++clientId;
     client->client.flags = 0;
@@ -380,7 +392,7 @@ static int OnConnection(const LoopHandle loopHandle, const TaskHandle server)
     return 0;
 }
 
-static int NotifyResToParent(struct AppSpawnContent_ *content, AppSpawnClient *client, int result)
+static void NotifyResToParent(struct AppSpawnContent_ *content, AppSpawnClient *client, int result)
 {
     AppSpawnClientExt *appProperty = (AppSpawnClientExt *)client;
     int fd = appProperty->fd[1];
@@ -388,7 +400,6 @@ static int NotifyResToParent(struct AppSpawnContent_ *content, AppSpawnClient *c
     write(appProperty->fd[1], &result, sizeof(result));
     // close write
     close(fd);
-    return 0;
 }
 
 static void AppSpawnInit(AppSpawnContent *content)
@@ -425,6 +436,7 @@ void AppSpawnColdRun(AppSpawnContent *content, int argc, char *const argv[])
     if (ret == 0 && content->runChildProcessor != NULL) {
         content->runChildProcessor(content, &client->client);
     }
+
     APPSPAWN_LOGI("App exit %d.", getpid());
     free(client);
     free(appSpawnContent);
@@ -436,6 +448,7 @@ static void AppSpawnRun(AppSpawnContent *content, int argc, char *const argv[])
     APPSPAWN_LOGI("AppSpawnRun");
     AppSpawnContentExt *appSpawnContent = (AppSpawnContentExt *)content;
     APPSPAWN_CHECK(appSpawnContent != NULL, return, "Invalid appspawn content");
+
     LE_STATUS status = LE_CreateSignalTask(LE_GetDefaultLoop(), &appSpawnContent->sigHandler, SignalHandler);
     if (status == 0) {
         status = LE_AddSignal(LE_GetDefaultLoop(), appSpawnContent->sigHandler, SIGCHLD);
@@ -514,6 +527,7 @@ AppSpawnContent *AppSpawnCreateContent(const char *socketName, char *longProcNam
         info.server = path;
         info.baseInfo.close = NULL;
         info.incommingConntect = OnConnection;
+
         ret = LE_CreateStreamServer(LE_GetDefaultLoop(), &appSpawnContent->server, &info);
         APPSPAWN_CHECK(ret == 0, free(appSpawnContent);
             return NULL, "Failed to create socket for %s", path);
