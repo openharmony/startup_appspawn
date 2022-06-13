@@ -24,11 +24,13 @@
 
 #include "hilog/log.h"
 #include "securec.h"
-
-static AppspawnLogLevel g_logLevel = AppspawnLogLevel::INFO;
-static constexpr int MAX_LOG_SIZE = 1024;
-static constexpr int BASE_YEAR = 1900;
-static constexpr OHOS::HiviewDFX::HiLogLabel LABEL = {LOG_CORE, 0, APPSPAWN_LABEL};
+namespace {
+    AppspawnLogLevel g_logLevel = AppspawnLogLevel::INFO;
+    constexpr int MAX_LOG_SIZE = 1024;
+    constexpr int BASE_YEAR = 1900;
+    constexpr OHOS::HiviewDFX::HiLogLabel LABEL = {LOG_CORE, 0, APPSPAWN_LABEL};
+    const char *APPSPAWN_LOG_PATH = "/data/init_agent/appspawn.log";
+}
 
 void AppspawnLogPrint(AppspawnLogLevel logLevel, const char *file, int line, const char *fmt, ...)
 {
@@ -70,7 +72,7 @@ void AppspawnLogPrint(AppspawnLogLevel logLevel, const char *file, int line, con
         return;
     }
     struct tm *t = localtime(&second);
-    FILE *outfile = fopen("/data/init_agent/appspawn.log", "a+");
+    FILE *outfile = fopen(APPSPAWN_LOG_PATH, "a+");
     if (t == nullptr || outfile == nullptr) {
         return;
     }

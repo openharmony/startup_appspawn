@@ -28,12 +28,14 @@ static int NotifyResToParent(struct AppSpawnContent_ *content, AppSpawnClient *c
     if (content->notifyResToParent != NULL) {
         content->notifyResToParent(content, client, result);
     }
+
     return 0;
 }
 
 static void ProcessExit(void)
 {
     APPSPAWN_LOGI("App exit %d.", getpid());
+
 #ifdef OHOS_LITE
     _exit(0x7f); // 0x7f user exit
 #else
@@ -47,16 +49,19 @@ int DoStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client, char *l
 {
     APPSPAWN_LOGI("DoStartApp id %d longProcNameLen %u", client->id, longProcNameLen);
     int32_t ret = 0;
+
     if (content->setAppSandbox) {
         ret = content->setAppSandbox(content, client);
         APPSPAWN_CHECK(ret == 0, NotifyResToParent(content, client, ret);
             return ret, "Failed to set app sandbox");
     }
+
     if (content->setKeepCapabilities) {
         ret = content->setKeepCapabilities(content, client);
         APPSPAWN_CHECK(ret == 0, NotifyResToParent(content, client, ret);
             return ret, "Failed to set KeepCapabilities");
     }
+
     if (content->setProcessName) {
         ret = content->setProcessName(content, client, longProcName, longProcNameLen);
         APPSPAWN_CHECK(ret == 0, NotifyResToParent(content, client, ret);
@@ -68,6 +73,7 @@ int DoStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client, char *l
         APPSPAWN_CHECK(ret == 0, NotifyResToParent(content, client, ret);
             return ret, "Failed to setUidGid");
     }
+
 #ifndef APPSPAWN_TEST
     if (content->setFileDescriptors) {
         ret = content->setFileDescriptors(content, client);
@@ -75,11 +81,13 @@ int DoStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client, char *l
             return ret, "Failed to setFileDescriptors");
     }
 #endif
+
     if (content->setCapabilities) {
         ret = content->setCapabilities(content, client);
         APPSPAWN_CHECK(ret == 0, NotifyResToParent(content, client, ret);
             return ret, "Failed to setCapabilities");
     }
+
     // notify success to father process and start app process
     NotifyResToParent(content, client, 0);
     return 0;
@@ -104,9 +112,11 @@ int AppSpawnProcessMsg(struct AppSpawnContent_ *content, AppSpawnClient *client,
         if (content->clearEnvironment != NULL) {
             content->clearEnvironment(content, client);
         }
+
         if (content->setAppAccessToken != NULL) {
             content->setAppAccessToken(content, client);
         }
+
         int ret = -1;
         if (client->flags & APP_COLD_START) {
             if (content->coldStartApp != NULL && content->coldStartApp(content, client) == 0) {
@@ -118,6 +128,7 @@ int AppSpawnProcessMsg(struct AppSpawnContent_ *content, AppSpawnClient *client,
         } else {
             ret = DoStartApp(content, client, content->longProcName, content->longProcNameLen);
         }
+
 #ifdef OHOS_DEBUG
         struct timespec tmEnd = {0};
         GetCurTime(&tmEnd);
@@ -125,6 +136,7 @@ int AppSpawnProcessMsg(struct AppSpawnContent_ *content, AppSpawnClient *client,
         long timeUsed = (tmEnd.tv_sec - tmStart.tv_sec) * 1000000000L + (tmEnd.tv_nsec - tmStart.tv_nsec);
         APPSPAWN_LOGI("App timeused %d %ld ns.", getpid(), timeUsed);
 #endif  // OHOS_DEBUG
+
         if (ret == 0 && content->runChildProcessor != NULL) {
             content->runChildProcessor(content, client);
         }
@@ -140,6 +152,7 @@ void GetCurTime(struct timespec *tmCur)
     if (tmCur == NULL) {
         return;
     }
+
     if (clock_gettime(CLOCK_REALTIME, tmCur) != 0) {
         APPSPAWN_LOGE("[appspawn] invoke, get time failed! err %d", errno);
     }

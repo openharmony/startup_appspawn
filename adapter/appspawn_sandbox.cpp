@@ -53,6 +53,7 @@ void LoadAppSandboxConfig(void)
 {
     // load sandbox config
     nlohmann::json appSandboxConfig;
+
     bool rc = JsonUtils::GetJsonObjFromJson(appSandboxConfig, APP_JSON_CONFIG);
     if (!rc) {
         HiLog::Error(LABEL, "AppSpawnServer::Failed to load app private sandbox config");
@@ -69,6 +70,7 @@ void LoadAppSandboxConfig(void)
 int32_t SetAppSandboxProperty(struct AppSpawnContent_ *content, AppSpawnClient *client)
 {
     APPSPAWN_CHECK(client != NULL, return -1, "Invalid appspwn client");
+
     AppSpawnClientExt *appProperty = (AppSpawnClientExt *)client;
     return SandboxUtils::SetAppSandboxProperty(&appProperty->property);
 }
