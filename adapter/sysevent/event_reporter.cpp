@@ -26,6 +26,7 @@ constexpr char KEY_PID[] = "PID";
 constexpr char KEY_UID[] = "UID";
 constexpr char KEY_STATUS[] = "STATUS";
 constexpr int32_t MAX_NAME_LENGTH = 1024;
+
 void ReportProcessExitInfo(const char* processName, int pid, int uid, int status)
 {
     std::string pname = "Unknown";
