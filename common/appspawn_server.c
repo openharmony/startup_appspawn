@@ -23,13 +23,11 @@
 #include <time.h>
 #endif // OHOS_DEBUG
 
-static int NotifyResToParent(struct AppSpawnContent_ *content, AppSpawnClient *client, int result)
+static void NotifyResToParent(struct AppSpawnContent_ *content, AppSpawnClient *client, int result)
 {
     if (content->notifyResToParent != NULL) {
         content->notifyResToParent(content, client, result);
     }
-
-    return 0;
 }
 
 static void ProcessExit(void)

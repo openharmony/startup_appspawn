@@ -22,10 +22,12 @@ int main(int argc, char *const argv[])
     if (argc <= 0) {
         return 0;
     }
+
     (void)signal(SIGPIPE, SIG_IGN);
     uint32_t argvSize = 0;
     char *buffer = (char *)argv[0];
     int mode = 0;
+
     if ((argc > PARAM_INDEX) && (strcmp(argv[START_INDEX], "cold-start") == 0)) {
         buffer = argv[0];
         argvSize = APP_LEN_PROC_NAME;
@@ -39,15 +41,18 @@ int main(int argc, char *const argv[])
         }
         argvSize = end - start;
     }
+
     APPSPAWN_LOGI("AppSpawnCreateContent argc %d mode %d %u", argc, mode, argvSize);
     AppSpawnContent *content = AppSpawnCreateContent(APPSPAWN_SOCKET_NAME, argv[0], argvSize, mode);
     APPSPAWN_CHECK(content != NULL, return -1, "Invalid content for appspawn");
     APPSPAWN_CHECK(content->initAppSpawn != NULL, return -1, "Invalid content for appspawn");
     APPSPAWN_CHECK(content->runAppSpawn != NULL, return -1, "Invalid content for appspawn");
+
     // set common operation
     content->loadExtendLib = LoadExtendLib;
     content->runChildProcessor = RunChildProcessor;
     content->initAppSpawn(content);
     content->runAppSpawn(content, argc, argv);
+
     return 0;
 }

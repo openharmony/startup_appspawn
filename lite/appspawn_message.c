@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #include "appspawn_message.h"
+
 #include <errno.h>
 #include <limits.h>
 #include <stdlib.h>
@@ -145,6 +146,7 @@ static int GetCaps(const cJSON *curItem, MessageSt *msgSt)
             return EC_INVALID;
         }
     }
+
     msgSt->capsCnt = capsCnt;
     return EC_SUCCESS;
 }
