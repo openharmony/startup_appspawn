@@ -13,13 +13,14 @@
  * limitations under the License.
  */
 
+#include "appspawn_message.h"
+#include "appspawn_server.h"
+
 #ifdef OHOS_DEBUG
 #include <errno.h>
 #include <time.h>
 #endif  // OHOS_DEBUG
 
-#include "appspawn_message.h"
-#include "appspawn_server.h"
 #include "iproxy_server.h"
 #include "iunknown.h"
 #include "ipc_skeleton.h"
@@ -45,7 +46,7 @@ typedef struct AppSpawnService {
 
 static const char *GetName(Service *service)
 {
-    (void)service;
+    UNUSED(service);
     APPSPAWN_LOGI("[appspawn] get service name %s.", APPSPAWN_SERVICE_NAME);
     return APPSPAWN_SERVICE_NAME;
 }
@@ -67,15 +68,15 @@ static BOOL Initialize(Service *service, Identity identity)
 
 static BOOL MessageHandle(Service *service, Request *msg)
 {
-    (void)service;
-    (void)msg;
+    UNUSED(service);
+    UNUSED(msg);
     APPSPAWN_LOGE("[appspawn] message handle not support yet!");
     return FALSE;
 }
 
 static TaskConfig GetTaskConfig(Service *service)
 {
-    (void)service;
+    UNUSED(service);
     TaskConfig config = {LEVEL_HIGH, PRI_BELOW_NORMAL, 0x800, 20, SHARED_TASK};
     return config;
 }
@@ -121,8 +122,8 @@ static int Invoke(IServerProxy *iProxy, int funcId, void *origin, IpcIo *req, Ip
     GetCurTime(&tmStart);
 #endif  // OHOS_DEBUG
 
-    (void)iProxy;
-    (void)origin;
+    UNUSED(iProxy);
+    UNUSED(origin);
 
     if (reply == NULL || funcId != ID_CALL_CREATE_SERVICE || req == NULL) {
         APPSPAWN_LOGE("[appspawn] invoke, funcId %d invalid, reply %d.", funcId, INVALID_PID);
