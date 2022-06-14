@@ -70,7 +70,6 @@ ohos_executable("appspawn") {
 ohos_static_library("appspawn_server") {
   sources = [
     "${appspawn_path}/adapter/appspawn_adapter.cpp",
-    "${appspawn_path}/adapter/appspawn_log.cpp",
     "${appspawn_path}/adapter/appspawn_sandbox.cpp",
     "${appspawn_path}/common/appspawn_server.c",
     "${appspawn_path}/standard/appspawn_process.c",
@@ -113,7 +112,6 @@ ohos_prebuilt_etc("appspawn.rc") {
 ohos_static_library("nwebspawn_server") {
   sources = [
     "${appspawn_path}/adapter/appspawn_adapter.cpp",
-    "${appspawn_path}/adapter/appspawn_log.cpp",
     "${appspawn_path}/adapter/appspawn_sandbox.cpp",
     "${appspawn_path}/common/appspawn_server.c",
     "${appspawn_path}/standard/appspawn_process.c",

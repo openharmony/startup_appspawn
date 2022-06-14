@@ -20,14 +20,11 @@
 #include <cerrno>
 #include <iostream>
 
-#include "hilog/log.h"
+#include "appspawn_server.h"
 #include "securec.h"
 
 namespace OHOS {
 namespace AppSpawn {
-using namespace OHOS::HiviewDFX;
-static constexpr HiLogLabel LABEL = {LOG_CORE, 0, "ClientSocket"};
-
 ClientSocket::ClientSocket(const std::string &client) : AppSpawnSocket(client)
 {}
 
@@ -35,20 +32,17 @@ int ClientSocket::CreateClient()
 {
     if (socketFd_ < 0) {
         socketFd_ = CreateSocket();
-        if (socketFd_ < 0) {
-            HiLog::Error(LABEL, "Client: Create socket failed");
-            return socketFd_;
-        }
+        APPSPAWN_CHECK(socketFd_ >= 0, return socketFd_, "Client: Create socket failed");
     }
 
-    HiLog::Debug(LABEL, "Client: CreateClient socket fd %{public}d", socketFd_);
+    APPSPAWN_LOGV("Client: CreateClient socket fd %d", socketFd_);
     return 0;
 }
 
 void ClientSocket::CloseClient()
 {
     if (socketFd_ < 0) {
-        HiLog::Error(LABEL, "Client: Invalid connectFd %{public}d", socketFd_);
+        APPSPAWN_LOGE("Client: Invalid connectFd %d", socketFd_);
         return;
     }
 
@@ -59,27 +53,22 @@ void ClientSocket::CloseClient()
 int ClientSocket::ConnectSocket(int connectFd)
 {
     if (connectFd < 0) {
-        HiLog::Error(LABEL, "Client: Invalid socket fd: %{public}d", connectFd);
+        APPSPAWN_LOGE("Client: Invalid socket fd: %d", connectFd);
         return -1;
     }
 
-    if (PackSocketAddr() != 0) {
-        return -1;
-    }
+    APPSPAWN_CHECK(PackSocketAddr() == 0, return -1,  "pack socket failed");
 
-    if ((setsockopt(connectFd, SOL_SOCKET, SO_RCVTIMEO, &SOCKET_TIMEOUT, sizeof(SOCKET_TIMEOUT)) != 0) ||
-        (setsockopt(connectFd, SOL_SOCKET, SO_SNDTIMEO, &SOCKET_TIMEOUT, sizeof(SOCKET_TIMEOUT)) != 0)) {
-        HiLog::Warn(LABEL, "Client: Failed to set opt of socket %{public}d, err %{public}d", connectFd, errno);
-        return -1;
-    }
+    bool isRet = (setsockopt(connectFd, SOL_SOCKET, SO_RCVTIMEO, &SOCKET_TIMEOUT, sizeof(SOCKET_TIMEOUT)) != 0) ||
+        (setsockopt(connectFd, SOL_SOCKET, SO_SNDTIMEO, &SOCKET_TIMEOUT, sizeof(SOCKET_TIMEOUT)) != 0);
+    APPSPAWN_CHECK(!isRet, return (-1), "Client: Failed to set opt of socket %d, err %d", connectFd, errno);
 
     if (connect(connectFd, reinterpret_cast<struct sockaddr *>(&socketAddr_), socketAddrLen_) < 0) {
-        HiLog::Warn(LABEL, "Client: Connect on socket fd %{public}d, failed: %{public}d", connectFd, errno);
+        APPSPAWN_LOGW("Client: Connect on socket fd %d, failed: %d", connectFd, errno);
         return -1;
     }
 
-    HiLog::Debug(LABEL, "Client: Connected on socket fd %{public}d, name '%{public}s'",
-        connectFd, socketAddr_.sun_path);
+    APPSPAWN_LOGV("Client: Connected on socket fd %d, name '%s'", connectFd, socketAddr_.sun_path);
     return 0;
 }
 
