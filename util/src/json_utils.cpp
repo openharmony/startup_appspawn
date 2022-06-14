@@ -14,105 +14,39 @@
  */
 
 #include "json_utils.h"
-#include <fstream>
+#include "appspawn_server.h"
+
 #include <sstream>
-#include "hilog/log.h"
+#include <fstream>
 
 using namespace std;
 using namespace OHOS;
-using namespace OHOS::HiviewDFX;
-static constexpr HiLogLabel LABEL = {LOG_CORE, 0, "AppSpawn_JsonUtil"};
 
 namespace OHOS {
 namespace AppSpawn {
 bool JsonUtils::GetJsonObjFromJson(nlohmann::json &jsonObj, const std::string &jsonPath)
 {
-    if (jsonPath.length() > PATH_MAX) {
-        HiLog::Error(LABEL, "jsonPath is too long");
-        return false;
-    }
-
+    APPSPAWN_CHECK(jsonPath.length() <= PATH_MAX, return false, "jsonPath is too long");
     std::ifstream jsonFileStream;
     jsonFileStream.open(jsonPath.c_str(), std::ios::in);
-    if (!jsonFileStream.is_open()) {
-        HiLog::Error(LABEL, "Open json file failed.");
-        return false;
-    }
-
+    APPSPAWN_CHECK(jsonFileStream.is_open(), return false, "Open json file failed.");
     std::ostringstream buf;
     char ch;
     while (buf && jsonFileStream.get(ch)) {
         buf.put(ch);
     }
     jsonFileStream.close();
-
     jsonObj = nlohmann::json::parse(buf.str(), nullptr, false);
-    if (!jsonObj.is_structured()) {
-        HiLog::Error(LABEL, "Parse json file into jsonObj failed.");
-        return false;
-    }
+    APPSPAWN_CHECK(jsonObj.is_structured(), return false, "Parse json file into jsonObj failed.");
     return true;
 }
 
 bool JsonUtils::GetStringFromJson(const nlohmann::json &json, const std::string &key, std::string &value)
 {
-    if (!json.is_object()) {
-        HiLog::Error(LABEL, "json is not object.");
-        return false;
-    }
-    if (json.find(key) != json.end() && json.at(key).is_string()) {
-        HiLog::Error(LABEL, "Find key[%{public}s] successful.", key.c_str());
-        value = json.at(key).get<std::string>();
-        return true;
-    }
-
-    return false;
-}
-
-bool JsonUtils::GetIntFromJson(const nlohmann::json &json, const std::string &key, int &value)
-{
-    if (!json.is_object()) {
-        HiLog::Error(LABEL, "json is not object.");
-        return false;
-    }
-    if (json.find(key) != json.end() && json.at(key).is_number()) {
-        HiLog::Error(LABEL, "Find key[%{public}s] successful.", key.c_str());
-        value = json.at(key).get<int>();
-        return true;
-    }
-
-    return false;
-}
-
-bool JsonUtils::GetStringVecFromJson(const nlohmann::json &json, const std::string &key,
-                                     std::vector<std::string> &value)
-{
-    if (!json.is_object()) {
-        HiLog::Error(LABEL, "json is not object.");
-        return false;
-    }
-    if (json.find(key) != json.end() && json.at(key).is_array()) {
-        HiLog::Error(LABEL, "Find key[%{public}s] successful.", key.c_str());
-        value = json.at(key).get<std::vector<std::string>>();
-        return true;
-    }
-
-    return false;
-}
-
-bool JsonUtils::ParseObjVecFromJson(const nlohmann::json &json, const std::string &key,
-                                    std::vector<nlohmann::json> &value)
-{
-    if (!json.is_object()) {
-        HiLog::Error(LABEL, "json is not object.");
-        return false;
-    }
-    if (json.find(key) != json.end() && json.at(key).is_array()) {
-        HiLog::Error(LABEL, "Find key[%{public}s] successful.", key.c_str());
-        value = json.at(key).get<std::vector<nlohmann::json>>();
-        return true;
-    }
-
+    APPSPAWN_CHECK(json.is_object(), return false, "json is not object.");
+    bool isRet = json.find(key) != json.end() && json.at(key).is_string();
+    APPSPAWN_CHECK(!isRet, value = json.at(key).get<std::string>();
+        return true, "Find key[%s] successful.", key.c_str());
     return false;
 }
 } // namespace AppSpawn

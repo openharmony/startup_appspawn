@@ -72,6 +72,7 @@ typedef struct AppSpawnContent_ {
 AppSpawnContent *AppSpawnCreateContent(const char *socketName, char *longProcName, uint32_t longProcNameLen, int cold);
 int AppSpawnProcessMsg(struct AppSpawnContent_ *content, AppSpawnClient *client, pid_t *childPid);
 int DoStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client, char *longProcName, uint32_t longProcNameLen);
+int ForkChildProc(struct AppSpawnContent_ *content, AppSpawnClient *client, pid_t pid);
 
 #ifdef OHOS_DEBUG
 void GetCurTime(struct timespec* tmCur);
@@ -107,6 +108,11 @@ void AppspawnLogPrint(AppspawnLogLevel logLevel, const char *file, int line, con
     if (!(retCode)) {                    \
         APPSPAWN_LOGE(__VA_ARGS__);         \
         exper;                           \
+    }
+
+#define APPSPAWN_CHECK_ONLY_LOG(retCode, ...) \
+    if (!(retCode)) {                    \
+        APPSPAWN_LOGE(__VA_ARGS__);      \
     }
 
 #ifdef __cplusplus

@@ -16,6 +16,7 @@
 #include "appspawn_adapter.h"
 #include "appspawn_msg.h"
 #include "appspawn_server.h"
+#include "appspawn_service.h"
 
 int main(int argc, char *const argv[])
 {
