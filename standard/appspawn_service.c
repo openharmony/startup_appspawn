@@ -203,6 +203,14 @@ static void SignalHandler(const struct signalfd_siginfo *siginfo)
 
 static void HandleSpecial(AppSpawnClientExt *appProperty)
 {
+    const char *fileExtensionHapBundleName = "com.ohos.UserFile.ExternalFileManager";
+    if (strcmp(appProperty->property.bundleName, fileExtensionHapBundleName) == 0) {
+        if (appProperty->property.gidCount < APP_MAX_GIDS) {
+            appProperty->property.gidTable[appProperty->property.gidCount] = GID_FILE_ACCESS;
+            appProperty->property.gidCount++;
+        }
+    }
+
     // special handle bundle name medialibrary and scanner
     const char *specialBundleNames[] = {
         "com.ohos.medialibrary.MediaLibraryDataA",
