@@ -272,7 +272,7 @@ static int GetProcessTerminationStatusInner(int32_t pid, int *status)
     }
 
     if (GetRenderProcessTerminationStatus(pid, status) == 0) {
-        // this shows that the parent process has recived SIGCHLD signal.
+        // this shows that the parent process has received SIGCHLD signal.
         return 0;
     }
 
