@@ -25,7 +25,7 @@
                 "samgr_lite",
                 "ipc_single",
                 "kv_store",
-                "aafwk_lite",
+                "ability_lite",
                 "ace_engine_lite",
                 "surface",
                 "ui"
