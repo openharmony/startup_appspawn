@@ -108,7 +108,7 @@ AppSpawnContent *AppSpawnCreateContent(const char *socketName, char *longProcNam
     APPSPAWN_CHECK(appSpawnContent != NULL, return NULL, "Failed to alloc memory for appspawn");
     int ret = memset_s(appSpawnContent, sizeof(AppSpawnContentLite), 0, sizeof(AppSpawnContentLite));
     APPSPAWN_CHECK(ret == 0, free(appSpawnContent);
-        return NULL, "Failed to memset conent");
+        return NULL, "Failed to memset content");
     appSpawnContent->content.longProcName = NULL;
     appSpawnContent->content.longProcNameLen = 0;
     g_appSpawnContentLite = appSpawnContent;
