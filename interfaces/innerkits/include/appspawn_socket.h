@@ -39,7 +39,7 @@ public:
     explicit AppSpawnSocket(const std::string &name);
 
     /**
-     * Destructor used to destory a AppSpawnSocket
+     * Destructor used to destroy a AppSpawnSocket
      */
     virtual ~AppSpawnSocket();
 
