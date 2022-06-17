@@ -15,13 +15,13 @@
 
 #include <fcntl.h>
 #include <unistd.h>
+
 #include <cstdio>
 
 #include "gtest/gtest.h"
-#include "securec.h"
-
 #include "app_spawn_client.h"
 #include "hilog/log.h"
+#include "securec.h"
 
 using namespace testing::ext;
 using namespace OHOS;

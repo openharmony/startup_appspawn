@@ -14,22 +14,25 @@
  */
 
 #include "sandbox_utils.h"
-#include "json_utils.h"
-#include "hilog/log.h"
-#include "securec.h"
 
+#include <dirent.h>
+#include <dlfcn.h>
+#include <fcntl.h>
 #include <unistd.h>
-#include <sys/wait.h>
+
 #include <sys/mount.h>
 #include <sys/stat.h>
 #include <sys/syscall.h>
 #include <sys/types.h>
-#include <fcntl.h>
+#include <sys/wait.h>
+
 #include <cerrno>
-#include <dirent.h>
-#include <dlfcn.h>
 #include <fstream>
 #include <sstream>
+
+#include "hilog/log.h"
+#include "json_utils.h"
+#include "securec.h"
 
 using namespace std;
 using namespace OHOS;
