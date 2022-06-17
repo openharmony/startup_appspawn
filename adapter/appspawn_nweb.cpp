@@ -13,13 +13,14 @@
  * limitations under the License.
  */
 
-#include "appspawn_adapter.h"
+#include <dlfcn.h>
 
 #include <algorithm>
 #include <ctime>
-#include <dlfcn.h>
 #include <map>
 #include <string>
+
+#include "appspawn_adapter.h"
 
 struct RenderProcessNode {
     RenderProcessNode(time_t now, int exit):recordTime_(now), exitStatus_(exit) {}

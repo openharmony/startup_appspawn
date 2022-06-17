@@ -17,10 +17,10 @@
 
 #include <cerrno>
 
-#include "token_setproc.h"
 #ifdef WITH_SELINUX
 #include "hap_restorecon.h"
 #endif
+#include "token_setproc.h"
 
 void SetAppAccessToken(struct AppSpawnContent_ *content, AppSpawnClient *client)
 {

@@ -13,8 +13,9 @@
  * limitations under the License.
  */
 
-#include <memory>
 #include <gtest/gtest.h>
+
+#include <memory>
 
 // redefine private and protected since testcase need to invoke and test private function
 #define private public

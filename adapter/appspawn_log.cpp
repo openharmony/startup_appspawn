@@ -15,15 +15,18 @@
  
 #include "appspawn_server.h"
 
-#include <cerrno>
-#include <ctime>
-#include <cstdarg>
 #include <fcntl.h>
-#include <sys/stat.h>
 #include <unistd.h>
+
+#include <sys/stat.h>
+
+#include <cerrno>
+#include <cstdarg>
+#include <ctime>
 
 #include "hilog/log.h"
 #include "securec.h"
+
 namespace {
     AppspawnLogLevel g_logLevel = AppspawnLogLevel::INFO;
     constexpr int MAX_LOG_SIZE = 1024;
