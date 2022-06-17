@@ -12,10 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <memory>
+
 #include <gtest/gtest.h>
+
 #include <cstring>
 #include <cerrno>
+#include <memory>
 
 // redefine private and protected since testcase need to invoke and test private function
 #define private public
@@ -24,9 +26,9 @@
 #undef private
 #undef protected
 
-#include "securec.h"
 #include "appspawn_adapter.h"
 #include "appspawn_server.h"
+#include "securec.h"
 
 using namespace testing;
 using namespace testing::ext;

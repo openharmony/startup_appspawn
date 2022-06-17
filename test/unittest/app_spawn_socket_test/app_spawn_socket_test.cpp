@@ -14,8 +14,9 @@
  */
 
 #include <gtest/gtest.h>
-#include <cstring>
+
 #include <cerrno>
+#include <cstring>
 
 // redefine private and protected since testcase need to invoke and test private function
 #define private public
