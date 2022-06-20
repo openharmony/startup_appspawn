@@ -76,6 +76,8 @@ namespace {
     const char *SANDBOX_ROOT_PREFIX = "sandbox-root";
     const char *TOP_SANDBOX_SWITCH_PREFIX = "top-sandbox-switch";
     const char *TARGET_NAME = "target-name";
+    const char *FLAGS_POINT = "flags-point";
+    const char *FLAGS = "flags";
     const char *WARGNAR_DEVICE_PATH = "/3rdmodem";
 }
 
@@ -469,6 +471,66 @@ int32_t SandboxUtils::DoSandboxFilePrivateSymlink(const ClientSocket::AppPropert
     return 0;
 }
 
+static int ConvertFlagStr(const std::string &flagStr)
+{
+    const std::map<std::string, int> flagsMap = {{"0", 0}, {"START_FLAGS_BACKUP", 1}};
+
+    if (flagsMap.count(flagStr)) {
+        return flagsMap.at(flagStr);
+    }
+
+    return -1;
+}
+
+int32_t SandboxUtils::HandleFlagsPoint(const ClientSocket::AppProperty *appProperty,
+                                       nlohmann::json &appConfig)
+{
+    if (appConfig.find(FLAGS_POINT) == appConfig.end()) {
+        return 0;
+    }
+
+    nlohmann::json flagsPoints = appConfig[FLAGS_POINT];
+    unsigned int flagsPointSize = flagsPoints.size();
+
+    for (unsigned int i = 0; i < flagsPointSize; i++) {
+        nlohmann::json flagPoint = flagsPoints[i];
+
+        if (flagPoint.find(FLAGS) != flagPoint.end()) {
+            std::string flagsStr = flagPoint[FLAGS].get<std::string>();
+            int flag = ConvertFlagStr(flagsStr);
+            if (appProperty->flags == flag) {
+                return DoAllMntPointsMount(appProperty, flagPoint);
+            }
+        } else {
+            HiLog::Error(LABEL, "read flags config failed, app name is %{public}s", appProperty->bundleName);
+        }
+    }
+
+    return 0;
+}
+
+int32_t SandboxUtils::DoSandboxFilePrivateFlagsPointHandle(const ClientSocket::AppProperty *appProperty,
+                                                           nlohmann::json &wholeConfig)
+{
+    nlohmann::json privateAppConfig = wholeConfig[PRIVATE_PREFIX][0];
+    if (privateAppConfig.find(appProperty->bundleName) != privateAppConfig.end()) {
+        return HandleFlagsPoint(appProperty, privateAppConfig[appProperty->bundleName][0]);
+    }
+
+    return 0;
+}
+
+int32_t SandboxUtils::DoSandboxFileCommonFlagsPointHandle(const ClientSocket::AppProperty *appProperty,
+                                                          nlohmann::json &wholeConfig)
+{
+    nlohmann::json commonConfig = wholeConfig[COMMON_PREFIX][0];
+    if (commonConfig.find(APP_RESOURCES) != commonConfig.end()) {
+        return HandleFlagsPoint(appProperty, commonConfig[APP_RESOURCES][0]);
+    }
+
+    return 0;
+}
+
 int32_t SandboxUtils::DoSandboxFileCommonBind(const ClientSocket::AppProperty *appProperty, nlohmann::json &wholeConfig)
 {
     nlohmann::json commonConfig = wholeConfig[COMMON_PREFIX][0];
@@ -524,6 +586,11 @@ int32_t SandboxUtils::SetPrivateAppSandboxProperty_(const ClientSocket::AppPrope
         HiLog::Error(LABEL, "DoSandboxFilePrivateSymlink failed");
     }
 
+    ret = DoSandboxFilePrivateFlagsPointHandle(appProperty, config);
+    if (ret) {
+        HiLog::Error(LABEL, "DoSandboxFilePrivateFlagsPointHandle failed");
+    }
+
     return ret;
 }
 
@@ -563,7 +630,13 @@ int32_t SandboxUtils::SetCommonAppSandboxProperty_(const ClientSocket::AppProper
         rc = DoSandboxFileCommonSymlink(appProperty, config);
         if (rc) {
             HiLog::Error(LABEL, "DoSandboxFileCommonSymlink failed, %{public}s", appProperty->bundleName);
+            return rc;
         }
+    }
+
+    rc = DoSandboxFileCommonFlagsPointHandle(appProperty, config);
+    if (rc) {
+        HiLog::Error(LABEL, "DoSandboxFilePrivateFlagsPointHandle failed");
     }
 
     return rc;

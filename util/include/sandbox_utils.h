@@ -42,6 +42,12 @@ private:
     static int32_t DoSandboxFilePrivateBind(const ClientSocket::AppProperty *appProperty, nlohmann::json &wholeConfig);
     static int32_t DoSandboxFilePrivateSymlink(const ClientSocket::AppProperty *appProperty,
                                                nlohmann::json &wholeConfig);
+    static int32_t DoSandboxFilePrivateFlagsPointHandle(const ClientSocket::AppProperty *appProperty,
+                                                        nlohmann::json &wholeConfig);
+    static int32_t DoSandboxFileCommonFlagsPointHandle(const ClientSocket::AppProperty *appProperty,
+                                                       nlohmann::json &wholeConfig);
+    static int32_t HandleFlagsPoint(const ClientSocket::AppProperty *appProperty,
+                                           nlohmann::json &wholeConfig);
     static int32_t SetPrivateAppSandboxProperty(const ClientSocket::AppProperty *appProperty);
     static int32_t SetCommonAppSandboxProperty(const ClientSocket::AppProperty *appProperty,
                                                       std::string &sandboxPackagePath);
