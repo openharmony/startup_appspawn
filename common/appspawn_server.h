@@ -34,6 +34,7 @@ extern "C" {
 #define ERR_PIPE_FAIL (-100)
 #define MAX_LEN_SHORT_NAME 16
 #define WAIT_DELAY_US (100 * 1000)  // 100ms
+#define GID_FILE_ACCESS 1006  // only used for ExternalFileManager.hap
 #define GID_USER_DATA_RW 1008
 
 typedef struct AppSpawnClient_ {
