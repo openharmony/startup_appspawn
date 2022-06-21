@@ -78,7 +78,6 @@ namespace {
     const char *TARGET_NAME = "target-name";
     const char *FLAGS_POINT = "flags-point";
     const char *FLAGS = "flags";
-    const char *WARGNAR_DEVICE_PATH = "/3rdmodem";
 }
 
 nlohmann::json SandboxUtils::appSandboxConfig_;
@@ -757,7 +756,7 @@ int32_t SandboxUtils::SetAppSandboxProperty(const ClientSocket::AppProperty *app
     }
 
     // to make wargnar work and check app sandbox switch
-    if (access(WARGNAR_DEVICE_PATH, F_OK) == 0 || (CheckTotalSandboxSwitchStatus(appProperty) == false) ||
+    if ((CheckTotalSandboxSwitchStatus(appProperty) == false) ||
         (CheckAppSandboxSwitchStatus(appProperty) == false)) {
         rc = DoSandboxRootFolderCreateAdapt(sandboxPackagePath);
     } else {
