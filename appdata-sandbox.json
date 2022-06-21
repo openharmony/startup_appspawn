@@ -255,7 +255,7 @@
         "com.ohos.UserFile.ExternalFileManager" : [{
             "sandbox-switch": "ON",
             "sandbox-root" : "/mnt/sandbox/<PackageName>",
-            "mount-bind-paths" : [{
+            "mount-paths" : [{
                     "src-path" : "/data/service/el1/public/storage_daemon/share/public",
                     "sandbox-path" : "/data/storage/el1/bundle/storage_daemon",
                     "sandbox-flags" : [ "bind", "rec" ],
