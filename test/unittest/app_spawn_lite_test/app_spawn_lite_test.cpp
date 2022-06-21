@@ -12,17 +12,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+#include <sys/types.h>
+
 #include <cerrno>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <sys/types.h>
 #include <ctime>
 #include <vector>
+
 #include "gtest/gtest.h"
 #include "appspawn_message.h"
-#include "appspawn_service.h"
 #include "appspawn_msg.h"
+#include "appspawn_service.h"
 
 using namespace testing::ext;
 

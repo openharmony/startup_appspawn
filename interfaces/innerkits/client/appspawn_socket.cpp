@@ -15,9 +15,10 @@
 
 #include "appspawn_socket.h"
 
+#include <sys/socket.h>
+
 #include <cerrno>
 #include <iostream>
-#include <sys/socket.h>
 
 #include "hilog/log.h"
 #include "pubdef.h"
