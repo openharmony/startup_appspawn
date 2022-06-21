@@ -206,8 +206,6 @@ static void HandleSpecial(AppSpawnClientExt *appProperty)
 {
     // special handle bundle name medialibrary and scanner
     const char *specialBundleNames[] = {
-        "com.ohos.medialibrary.MediaLibraryDataA",
-        "com.ohos.medialibrary.MediaScannerAbilityA",
         "com.ohos.medialibrary.medialibrarydata"
     };
 
