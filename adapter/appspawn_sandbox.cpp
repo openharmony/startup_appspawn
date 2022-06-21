@@ -15,13 +15,14 @@
 
 #include "appspawn_adapter.h"
 
-#include <string>
 #include <unistd.h>
+
+#include <string>
 #include <vector>
 
+#include "hilog/log.h"
 #include "json_utils.h"
 #include "sandbox_utils.h"
-#include "hilog/log.h"
 
 using namespace std;
 using namespace OHOS;
