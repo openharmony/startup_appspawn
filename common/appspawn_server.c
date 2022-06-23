@@ -33,11 +33,10 @@ static void NotifyResToParent(struct AppSpawnContent_ *content, AppSpawnClient *
 static void ProcessExit(void)
 {
     APPSPAWN_LOGI("App exit %d.", getpid());
-
+#ifndef APPSPAWN_TEST
 #ifdef OHOS_LITE
     _exit(0x7f); // 0x7f user exit
 #else
-#ifndef APPSPAWN_TEST
     quick_exit(0);
 #endif
 #endif
@@ -72,13 +71,11 @@ int DoStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client, char *l
             return ret, "Failed to setUidGid");
     }
 
-#ifndef APPSPAWN_TEST
     if (content->setFileDescriptors) {
         ret = content->setFileDescriptors(content, client);
         APPSPAWN_CHECK(ret == 0, NotifyResToParent(content, client, ret);
             return ret, "Failed to setFileDescriptors");
     }
-#endif
 
     if (content->setCapabilities) {
         ret = content->setCapabilities(content, client);
@@ -91,13 +88,8 @@ int DoStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client, char *l
     return 0;
 }
 
-int AppSpawnProcessMsg(struct AppSpawnContent_ *content, AppSpawnClient *client, pid_t *childPid)
+int ForkChildProc(struct AppSpawnContent_ *content, AppSpawnClient *client, pid_t pid)
 {
-    APPSPAWN_CHECK(content != NULL, return -1, "Invalid content for appspawn");
-    APPSPAWN_CHECK(client != NULL && childPid != NULL, return -1, "Invalid client for appspawn");
-    APPSPAWN_LOGI("AppSpawnProcessMsg id %d 0x%x", client->id, client->flags);
-
-    pid_t pid = fork();
     if (pid < 0) {
         return -errno;
     } else if (pid == 0) {
@@ -118,7 +110,9 @@ int AppSpawnProcessMsg(struct AppSpawnContent_ *content, AppSpawnClient *client,
         int ret = -1;
         if (client->flags & APP_COLD_START) {
             if (content->coldStartApp != NULL && content->coldStartApp(content, client) == 0) {
+#ifndef APPSPAWN_TEST
                 _exit(0x7f); // 0x7f user exit
+#endif
                 return -1;
             } else {
                 ret = DoStartApp(content, client, content->longProcName, content->longProcNameLen);
@@ -140,6 +134,21 @@ int AppSpawnProcessMsg(struct AppSpawnContent_ *content, AppSpawnClient *client,
         }
         ProcessExit();
     }
+    return 0;
+}
+
+int AppSpawnProcessMsg(struct AppSpawnContent_ *content, AppSpawnClient *client, pid_t *childPid)
+{
+    APPSPAWN_CHECK(content != NULL, return -1, "Invalid content for appspawn");
+    APPSPAWN_CHECK(client != NULL && childPid != NULL, return -1, "Invalid client for appspawn");
+    APPSPAWN_LOGI("AppSpawnProcessMsg id %d 0x%x", client->id, client->flags);
+#ifndef APPSPAWN_TEST
+    pid_t pid = fork();
+#else
+    pid_t pid = 0;
+#endif
+    int ret = ForkChildProc(content, client, pid);
+    APPSPAWN_CHECK(ret == 0, return ret, "fork child process error: %d", ret);
     *childPid = pid;
     return 0;
 }

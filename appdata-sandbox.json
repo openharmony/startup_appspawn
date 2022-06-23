@@ -162,35 +162,21 @@
                     "check-action-status": "false"
                 }
             ],
+            "flags-point" : [{
+                "flags": "NOT_SUPPORTED",
+                "mount-paths" : [{
+                    "src-path" : "/data/app/el1/bundle/public/",
+                    "sandbox-path" : "/data/bundles/",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "true"
+                    }
+                ]}
+            ],
             "symbol-links" : [
             ]
         }]
     }],
     "individual" : [{
-        "com.ohos.medialibrary.MediaLibraryDataA" : [{
-            "sandbox-switch": "ON",
-            "sandbox-root" : "/mnt/sandbox/<PackageName>",
-            "mount-paths" : [{
-                    "src-path" : "/storage/media/<currentUserId>",
-                    "sandbox-path" : "/storage/media",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }
-            ],
-            "symbol-links" : []
-        }],
-        "com.ohos.medialibrary.MediaScannerAbilityA" : [{
-            "sandbox-switch": "ON",
-            "sandbox-root" : "/mnt/sandbox/<PackageName>",
-            "mount-paths" : [{
-                    "src-path" : "/storage/media/<currentUserId>",
-                    "sandbox-path" : "/storage/media",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }
-            ],
-            "symbol-links" : []
-        }],
         "com.ohos.medialibrary.medialibrarydata" : [{
             "sandbox-switch": "ON",
             "sandbox-root" : "/mnt/sandbox/<PackageName>",
@@ -228,14 +214,26 @@
             "symbol-links" : []
         }],
         "ohos.samples.ecg" : [{
-            "sandbox-switch": "OFF",
+            "sandbox-switch": "ON",
             "sandbox-root" : "/mnt/sandbox/<PackageName>",
-            "mount-paths" : [{
-                    "src-path" : "/data/app/el1/bundle/public/",
-                    "sandbox-path" : "/data/bundles/",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "true"
-                }
+            "mount-paths" : [],
+            "flags-point" : [{
+                    "flags": "NOT_SUPPORTED",
+                    "mount-paths" : [{
+                        "src-path" : "/data/app/el1/bundle/public/",
+                        "sandbox-path" : "/data/bundles/",
+                        "sandbox-flags" : [ "bind", "rec" ],
+                        "check-action-status": "true"
+                        }
+                    ]}, {
+                    "flags": "START_FLAGS_BACKUP",
+                    "mount-paths" : [{
+                        "src-path" : "/data/app/el1/bundle/public/",
+                        "sandbox-path" : "/data/bundles/",
+                        "sandbox-flags" : [ "bind", "rec" ],
+                        "check-action-status": "true"
+                        }
+                    ]}
             ],
             "symbol-links" : []
         }],

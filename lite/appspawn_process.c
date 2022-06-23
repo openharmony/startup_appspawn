@@ -143,12 +143,14 @@ static int SetCapabilities(struct AppSpawnContent_ *content, AppSpawnClient *cli
         return -1;
     }
 
+#ifndef APPSPAWN_TEST
     unsigned int tmpCaps[] = {17};  // 17 means CAP_SYS_RAWIO
     unsigned int tmpsCapCnt = sizeof(tmpCaps) / sizeof(tmpCaps[0]);
     if (SetCapability(tmpsCapCnt, tmpCaps) != 0) {
         APPSPAWN_LOGE("[appspawn] setrlimit failed, err: %d.", errno);
         return -1;
     }
+#endif
 #else
     if (SetCapability(appProperty->message.capsCnt, appProperty->message.caps) != 0) {
         APPSPAWN_LOGE("[appspawn] SetCapability failed, err: %d.", errno);

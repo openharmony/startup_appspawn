@@ -54,4 +54,4 @@ void FreeMessageSt(MessageSt *targetSt);
 #endif
 #endif
 
-#endif  // BASE_STARTUP_APPSPAWN_SERVICE_H
+#endif  // BASE_STARTUP_APPSPAWN_MESSAGE_H

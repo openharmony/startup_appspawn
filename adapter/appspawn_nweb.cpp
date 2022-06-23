@@ -20,8 +20,8 @@
 #include <map>
 #include <string>
 
+#include "appspawn_service.h"
 #include "appspawn_adapter.h"
-
 struct RenderProcessNode {
     RenderProcessNode(time_t now, int exit):recordTime_(now), exitStatus_(exit) {}
     time_t recordTime_;
