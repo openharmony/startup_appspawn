@@ -39,7 +39,11 @@
 
 static AppSpawnContentExt *g_appSpawnContent = NULL;
 
+#ifdef APPSPAWN_TEST
+static const int TV_SEC = 1;
+#else
 static const int TV_SEC = 60;
+#endif
 
 static int AppInfoHashNodeCompare(const HashNode *node1, const HashNode *node2)
 {
@@ -76,7 +80,7 @@ static void AppInfoHashNodeFree(const HashNode *node)
     free(testNode);
 }
 
-static void AddAppInfo(pid_t pid, const char *processName)
+APPSPAWN_STATIC void AddAppInfo(pid_t pid, const char *processName)
 {
     size_t len = strlen(processName) + 1;
     AppInfo *node = (AppInfo *)malloc(sizeof(AppInfo) + len + 1);
@@ -93,7 +97,7 @@ static void AddAppInfo(pid_t pid, const char *processName)
     APPSPAWN_LOGI("Add %s, pid=%d success", processName, pid);
 }
 
-static void ProcessTimer(const TimerHandle taskHandle, void *context)
+APPSPAWN_STATIC void ProcessTimer(const TimerHandle taskHandle, void *context)
 {
     APPSPAWN_LOGI("timeout stop appspawn");
     LE_StopLoop(LE_GetDefaultLoop());
@@ -133,7 +137,7 @@ static void OnClose(const TaskHandle taskHandle)
     APPSPAWN_LOGI("OnClose client.id %d ", client->client.id);
 }
 
-static void SendMessageComplete(const TaskHandle taskHandle, BufferHandle handle)
+APPSPAWN_STATIC void SendMessageComplete(const TaskHandle taskHandle, BufferHandle handle)
 {
     AppSpawnClientExt *client = (AppSpawnClientExt *)LE_GetUserData(taskHandle);
     APPSPAWN_CHECK(client != NULL, return, "Failed to get client");
@@ -170,30 +174,41 @@ static void PrintProcessExitInfo(pid_t pid, uid_t uid, int status)
 }
 #endif
 
-static void SignalHandler(const struct signalfd_siginfo *siginfo)
+static void HandleDiedPid(pid_t pid, uid_t uid, int status)
+{
+    APPSPAWN_LOGI("SignalHandler pid %d status %d", pid, status);
+#ifdef REPORT_EVENT
+    PrintProcessExitInfo(pid, uid, status);
+#endif
+#ifdef NWEB_SPAWN
+    // nwebspawn will invoke waitpid and remove appinfo at GetProcessTerminationStatusInner when
+    // GetProcessTerminationStatusInner is called before the parent process receives the SIGCHLD signal.
+    RecordRenderProcessExitedStatus(pid, status);
+#endif
+    RemoveAppInfo(pid);
+}
+
+APPSPAWN_STATIC void SignalHandler(const struct signalfd_siginfo *siginfo)
 {
     APPSPAWN_LOGI("SignalHandler signum %d", siginfo->ssi_signo);
     switch (siginfo->ssi_signo) {
         case SIGCHLD: {  // delete pid from app map
+#ifndef APPSPAWN_TEST
             pid_t pid;
             int status;
             while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
-                APPSPAWN_LOGI("SignalHandler pid %d status %d", pid, status);
-#ifdef REPORT_EVENT
-                PrintProcessExitInfo(pid, siginfo->ssi_uid, status);
-#endif
-#ifdef NWEB_SPAWN
-                // nwebspawn will invoke waitpid and remove appinfo at GetProcessTerminationStatusInner when
-                // GetProcessTerminationStatusInner is called before the parent process receives the SIGCHLD signal.
-                RecordRenderProcessExitedStatus(pid, status);
-#endif
-                RemoveAppInfo(pid);
+                HandleDiedPid(pid, siginfo->ssi_uid, status);
             }
+#else
+            HandleDiedPid(siginfo->ssi_pid, siginfo->ssi_uid, 0);
+#endif
             break;
         }
         case SIGTERM: {  // appswapn killed, use kill without parameter
             HashMapTraverse(g_appSpawnContent->appMap, KillProcess, NULL);
+#ifndef APPSPAWN_TEST
             LE_StopLoop(LE_GetDefaultLoop());
+#endif
             break;
         }
         default:
@@ -246,7 +261,7 @@ static int WaitChild(int fd, int pid, const AppSpawnClientExt *appProperty)
     return result;
 }
 
-static void StartColdApp(AppSpawnClientExt *appProperty)
+static void CheckColdAppEnabled(AppSpawnClientExt *appProperty)
 {
     if (appProperty == NULL) {
         return;
@@ -303,7 +318,7 @@ static void GetProcessTerminationStatus(AppSpawnClientExt *appProperty)
 }
 #endif
 
-static void OnReceiveRequest(const TaskHandle taskHandle, const uint8_t *buffer, uint32_t buffLen)
+APPSPAWN_STATIC void OnReceiveRequest(const TaskHandle taskHandle, const uint8_t *buffer, uint32_t buffLen)
 {
     APPSPAWN_CHECK(buffer != NULL && buffLen >= sizeof(AppParameter), LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
         return, "Invalid buffer buffLen %u", buffLen);
@@ -333,7 +348,7 @@ static void OnReceiveRequest(const TaskHandle taskHandle, const uint8_t *buffer,
         g_appSpawnContent->timer = NULL;
     }
 
-    StartColdApp(appProperty);
+    CheckColdAppEnabled(appProperty);
     // create pipe for commication from child
     if (pipe(appProperty->fd) == -1) {
         APPSPAWN_LOGE("create pipe fail, errno = %d", errno);
@@ -363,7 +378,14 @@ static void OnReceiveRequest(const TaskHandle taskHandle, const uint8_t *buffer,
     }
 }
 
-static int OnConnection(const LoopHandle loopHandle, const TaskHandle server)
+#ifdef APPSPAWN_TEST
+TaskHandle g_testClientHandle = NULL;
+TaskHandle GetTestClientHandle()
+{
+    return g_testClientHandle;
+}
+#endif
+APPSPAWN_STATIC int OnConnection(const LoopHandle loopHandle, const TaskHandle server)
 {
     static uint32_t clientId = 0;
     APPSPAWN_LOGI("OnConnection ");
@@ -372,6 +394,9 @@ static int OnConnection(const LoopHandle loopHandle, const TaskHandle server)
     TaskHandle stream;
     LE_StreamInfo info = {};
     info.baseInfo.flags = TASK_STREAM | TASK_PIPE | TASK_CONNECT;
+#ifdef APPSPAWN_TEST
+    info.baseInfo.flags |= TASK_TEST;
+#endif
     info.baseInfo.close = OnClose;
     info.baseInfo.userDataSize = sizeof(AppSpawnClientExt);
     info.disConntectComplete = NULL;
@@ -387,6 +412,9 @@ static int OnConnection(const LoopHandle loopHandle, const TaskHandle server)
     client->client.id = ++clientId;
     client->client.flags = 0;
     APPSPAWN_LOGI("OnConnection client fd %d Id %d", LE_GetSocketFd(stream), client->client.id);
+#ifdef APPSPAWN_TEST
+    g_testClientHandle = stream;
+#endif
     return 0;
 }
 
@@ -409,6 +437,7 @@ static void AppSpawnInit(AppSpawnContent *content)
     if (content->loadExtendLib) {
         content->loadExtendLib(content);
     }
+
     content->notifyResToParent = NotifyResToParent;
     // set private function
     SetContentFunction(content);
@@ -455,8 +484,9 @@ static void AppSpawnRun(AppSpawnContent *content, int argc, char *const argv[])
     if (status != 0) {
         APPSPAWN_LOGE("Failed to add signal %d", status);
     }
-
+#ifndef APPSPAWN_TEST
     LE_RunLoop(LE_GetDefaultLoop());
+#endif
     APPSPAWN_LOGI("AppSpawnRun exit ");
     LE_CloseSignalTask(LE_GetDefaultLoop(), appSpawnContent->sigHandler);
     // release resource

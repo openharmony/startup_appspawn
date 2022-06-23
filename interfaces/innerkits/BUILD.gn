@@ -24,9 +24,16 @@ ohos_static_library("appspawn_socket_client") {
     "client/appspawn_socket.cpp",
     "client/client_socket.cpp",
   ]
-  include_dirs = [ "include" ]
+  include_dirs = [
+    "include",
+    "//base/startup/appspawn/common",
+  ]
+
   public_configs = [ ":exported_header_files" ]
-  deps = [ "//utils/native/base:utils" ]
+  deps = [
+    "//base/startup/init_lite/interfaces/innerkits:libbegetutil",
+    "//utils/native/base:utils",
+  ]
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 
   subsystem_name = "${subsystem_name}"
