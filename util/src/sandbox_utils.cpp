@@ -30,14 +30,12 @@
 #include <fstream>
 #include <sstream>
 
-#include "hilog/log.h"
 #include "json_utils.h"
 #include "securec.h"
+#include "appspawn_server.h"
 
 using namespace std;
 using namespace OHOS;
-using namespace OHOS::HiviewDFX;
-static constexpr HiLogLabel LABEL = {LOG_CORE, 0, "AppSpawn_SandboxUtil"};
 
 namespace OHOS {
 namespace AppSpawn {
@@ -116,10 +114,8 @@ static void MakeDirRecursive(const std::string &path, mode_t mode)
         size_t pathIndex = path.find_first_of('/', index);
         index = pathIndex == std::string::npos ? size : pathIndex + 1;
         std::string dir = path.substr(0, index);
-        if (access(dir.c_str(), F_OK) < 0 && mkdir(dir.c_str(), mode) < 0) {
-            HiLog::Error(LABEL, "mkdir %{public}s error", dir.c_str());
-            return;
-        }
+        APPSPAWN_CHECK(!(access(dir.c_str(), F_OK) < 0 && mkdir(dir.c_str(), mode) < 0),
+            return, "mkdir %s error", dir.c_str());
     } while (index < size);
 }
 
@@ -127,25 +123,17 @@ int32_t SandboxUtils::DoAppSandboxMountOnce(const char *originPath, const char *
                                             const char *fsType, unsigned long mountFlags,
                                             const char *options)
 {
-    int ret = 0;
-
     // To make sure destinationPath exist
     MakeDirRecursive(destinationPath, FILE_MODE);
-
+#ifndef APPSPAWN_TEST
+    int ret = 0;
     // to mount fs and bind mount files or directory
     ret = mount(originPath, destinationPath, fsType, mountFlags, options);
-    if (ret) {
-        HiLog::Error(LABEL, "bind mount %{public}s to %{public}s failed %{public}d", originPath,
+    APPSPAWN_CHECK(ret == 0, return ret,  "bind mount %s to %s failed %d", originPath,
             destinationPath, errno);
-        return ret;
-    }
-
     ret = mount(NULL, destinationPath, NULL, MS_PRIVATE, NULL);
-    if (ret) {
-        HiLog::Error(LABEL, "private mount to %{public}s failed %{public}d", destinationPath, errno);
-        return ret;
-    }
-
+    APPSPAWN_CHECK(ret == 0, return ret, "private mount to %s failed %d", destinationPath, errno);
+#endif
     return 0;
 }
 
@@ -251,8 +239,8 @@ std::string SandboxUtils::GetSbxPathByConfig(const ClientSocket::AppProperty *ap
         sandboxRoot = ConvertToRealPath(appProperty, sandboxRoot);
     } else {
         sandboxRoot = SANDBOX_DIR + appProperty->bundleName;
-        HiLog::Error(LABEL, "read sandbox-root config failed, set sandbox-root to default root"
-            "app name is %{public}s", appProperty->bundleName);
+        APPSPAWN_LOGE("read sandbox-root config failed, set sandbox-root to default root"
+            "app name is %s", appProperty->bundleName);
     }
 
     return sandboxRoot;
@@ -275,11 +263,9 @@ bool SandboxUtils::GetSbxSwitchStatusByConfig(nlohmann::json &config)
 
 static bool CheckMountConfig(nlohmann::json &mntPoint, const ClientSocket::AppProperty *appProperty)
 {
-    if (mntPoint.find(SRC_PATH) == mntPoint.end() || mntPoint.find(SANDBOX_PATH) == mntPoint.end()
-            || mntPoint.find(SANDBOX_FLAGS) == mntPoint.end()) {
-        HiLog::Error(LABEL, "read mount config failed, app name is %{public}s", appProperty->bundleName);
-        return false;
-    }
+    bool istrue = mntPoint.find(SRC_PATH) == mntPoint.end() || mntPoint.find(SANDBOX_PATH) == mntPoint.end()
+            || mntPoint.find(SANDBOX_FLAGS) == mntPoint.end();
+    APPSPAWN_CHECK(!istrue, return false, "read mount config failed, app name is %s", appProperty->bundleName);
 
     if (mntPoint[APP_APL_NAME] != nullptr) {
         std::string  app_apl_name = mntPoint[APP_APL_NAME];
@@ -298,10 +284,7 @@ static int32_t DoDlpAppMountStrategy(const ClientSocket::AppProperty *appPropert
                                      const std::string &fsType, unsigned long mountFlags)
 {
     int fd = open("/dev/fuse", O_RDWR);
-    if (fd == -1) {
-        HiLog::Error(LABEL, "open /dev/fuse failed, errno is %{public}d", errno);
-        return -EINVAL;
-    }
+    APPSPAWN_CHECK(fd != -1, return -EINVAL, "open /dev/fuse failed, errno is %d", errno);
 
     char options[FUSE_OPTIONS_MAX_LEN];
     (void)sprintf_s(options, sizeof(options), "fd=%d,rootmode=40000,user_id=%d,group_id=%d", fd,
@@ -310,27 +293,19 @@ static int32_t DoDlpAppMountStrategy(const ClientSocket::AppProperty *appPropert
     // To make sure destinationPath exist
     MakeDirRecursive(sandboxPath, FILE_MODE);
 
-    int ret = mount(srcPath.c_str(), sandboxPath.c_str(), fsType.c_str(), mountFlags, options);
-    if (ret) {
-        HiLog::Error(LABEL, "DoDlpAppMountStrategy failed, bind mount %{public}s to %{public}s"
-                     "failed %{public}d", srcPath.c_str(), sandboxPath.c_str(), errno);
-        return ret;
-    }
+    int ret = 0;
+#ifndef APPSPAWN_TEST
+    ret = mount(srcPath.c_str(), sandboxPath.c_str(), fsType.c_str(), mountFlags, options);
+    APPSPAWN_CHECK(ret == 0, return ret, "DoDlpAppMountStrategy failed, bind mount %s to %s"
+        "failed %d", srcPath.c_str(), sandboxPath.c_str(), errno);
 
     ret = mount(NULL, sandboxPath.c_str(), NULL, MS_PRIVATE, NULL);
-    if (ret) {
-        HiLog::Error(LABEL, "private mount to %{public}s failed %{public}d", sandboxPath.c_str(), errno);
-        return ret;
-    }
-
+    APPSPAWN_CHECK(ret == 0, return ret, "private mount to %s failed %d", sandboxPath.c_str(), errno);
+#endif
     /* close DLP_FUSE_FD and dup FD to it */
     close(DLP_FUSE_FD);
     ret = dup2(fd, DLP_FUSE_FD);
-    if (ret == -1) {
-        HiLog::Error(LABEL, "dup fuse fd %{public}d failed, errno is %{public}d",
-                     fd, errno);
-    }
-
+    APPSPAWN_CHECK_ONLY_LOG(ret != -1, "dup fuse fd %d failed, errno is %d", fd, errno);
     return ret;
 }
 
@@ -356,8 +331,8 @@ static int32_t HandleSpecialAppMount(const ClientSocket::AppProperty *appPropert
 int SandboxUtils::DoAllMntPointsMount(const ClientSocket::AppProperty *appProperty, nlohmann::json &appConfig)
 {
     if (appConfig.find(MOUNT_PREFIX) == appConfig.end()) {
-        HiLog::Debug(LABEL, "mount config is not found, maybe reuslt sandbox launch failed"
-            "app name is %{public}s", appProperty->bundleName);
+        APPSPAWN_LOGV("mount config is not found, maybe reuslt sandbox launch failed"
+            "app name is %s", appProperty->bundleName);
         return 0;
     }
 
@@ -392,7 +367,7 @@ int SandboxUtils::DoAllMntPointsMount(const ClientSocket::AppProperty *appProper
             }
         }
         if (ret) {
-            HiLog::Error(LABEL, "DoAppSandboxMountOnce failed, %{public}s", sandboxPath.c_str());
+            APPSPAWN_LOGE("DoAppSandboxMountOnce failed, %s", sandboxPath.c_str());
 
             std::string actionStatus = STATUS_CHECK;
             (void)JsonUtils::GetStringFromJson(mntPoint, ACTION_STATUS, actionStatus);
@@ -409,11 +384,8 @@ int SandboxUtils::DoAllMntPointsMount(const ClientSocket::AppProperty *appProper
 
 int SandboxUtils::DoAllSymlinkPointslink(const ClientSocket::AppProperty *appProperty, nlohmann::json &appConfig)
 {
-    if (appConfig.find(SYMLINK_PREFIX) == appConfig.end()) {
-        HiLog::Debug(LABEL, "symlink config is not found, maybe reuslt sandbox launch failed"
-            "app name is %{public}s", appProperty->bundleName);
-        return 0;
-    }
+    APPSPAWN_CHECK(appConfig.find(SYMLINK_PREFIX) != appConfig.end(), return 0, "symlink config is not found,"
+        "maybe reuslt sandbox launch failed app name is %s", appProperty->bundleName);
 
     nlohmann::json symlinkPoints = appConfig[SYMLINK_PREFIX];
     std::string sandboxRoot = GetSbxPathByConfig(appProperty, appConfig);
@@ -424,17 +396,17 @@ int SandboxUtils::DoAllSymlinkPointslink(const ClientSocket::AppProperty *appPro
 
         // Check the validity of the symlink configuration
         if (symPoint.find(TARGET_NAME) == symPoint.end() || symPoint.find(LINK_NAME) == symPoint.end()) {
-            HiLog::Error(LABEL, "read symlink config failed, app name is %{public}s", appProperty->bundleName);
+            APPSPAWN_LOGE("read symlink config failed, app name is %s", appProperty->bundleName);
             continue;
         }
 
         std::string targetName = ConvertToRealPath(appProperty, symPoint[TARGET_NAME].get<std::string>());
         std::string linkName = sandboxRoot + ConvertToRealPath(appProperty, symPoint[LINK_NAME].get<std::string>());
-        HiLog::Debug(LABEL, "symlink, from %{public}s to %{public}s", targetName.c_str(), linkName.c_str());
+        APPSPAWN_LOGV("symlink, from %s to %s", targetName.c_str(), linkName.c_str());
 
         int ret = symlink(targetName.c_str(), linkName.c_str());
         if (ret && errno != EEXIST) {
-            HiLog::Error(LABEL, "symlink failed, %{public}s, errno is %{public}d", linkName.c_str(), errno);
+            APPSPAWN_LOGE("symlink failed, %s, errno is %d", linkName.c_str(), errno);
 
             std::string actionStatus = STATUS_CHECK;
             (void)JsonUtils::GetStringFromJson(symPoint, ACTION_STATUS, actionStatus);
@@ -502,7 +474,7 @@ int32_t SandboxUtils::HandleFlagsPoint(const ClientSocket::AppProperty *appPrope
                 return DoAllMntPointsMount(appProperty, flagPoint);
             }
         } else {
-            HiLog::Error(LABEL, "read flags config failed, app name is %{public}s", appProperty->bundleName);
+            APPSPAWN_LOGE("read flags config failed, app name is %s", appProperty->bundleName);
         }
     }
 
@@ -576,20 +548,13 @@ int32_t SandboxUtils::SetPrivateAppSandboxProperty_(const ClientSocket::AppPrope
     int ret = 0;
 
     ret = DoSandboxFilePrivateBind(appProperty, config);
-    if (ret) {
-        HiLog::Error(LABEL, "DoSandboxFilePrivateBind failed");
-        return ret;
-    }
+    APPSPAWN_CHECK(ret == 0, return ret, "DoSandboxFilePrivateBind failed");
 
     ret = DoSandboxFilePrivateSymlink(appProperty, config);
-    if (ret) {
-        HiLog::Error(LABEL, "DoSandboxFilePrivateSymlink failed");
-    }
+    APPSPAWN_CHECK_ONLY_LOG(ret == 0, "DoSandboxFilePrivateSymlink failed");
 
     ret = DoSandboxFilePrivateFlagsPointHandle(appProperty, config);
-    if (ret) {
-        HiLog::Error(LABEL, "DoSandboxFilePrivateFlagsPointHandle failed");
-    }
+    APPSPAWN_CHECK_ONLY_LOG(ret == 0, "DoSandboxFilePrivateFlagsPointHandle failed");
 
     return ret;
 }
@@ -601,15 +566,9 @@ int32_t SandboxUtils::SetPrivateAppSandboxProperty(const ClientSocket::AppProper
     int ret = 0;
 
     ret = SetPrivateAppSandboxProperty_(appProperty, config);
-    if (ret) {
-        HiLog::Error(LABEL, "parse adddata-sandbox config failed");
-        return ret;
-    }
-
+    APPSPAWN_CHECK(ret == 0, return ret, "parse adddata-sandbox config failed");
     ret = SetPrivateAppSandboxProperty_(appProperty, productConfig);
-    if (ret) {
-        HiLog::Error(LABEL, "parse product-sandbox config failed");
-    }
+    APPSPAWN_CHECK_ONLY_LOG(ret == 0, "parse product-sandbox config failed");
 
     return ret;
 }
@@ -620,24 +579,16 @@ int32_t SandboxUtils::SetCommonAppSandboxProperty_(const ClientSocket::AppProper
     int rc = 0;
 
     rc = DoSandboxFileCommonBind(appProperty, config);
-    if (rc) {
-        HiLog::Error(LABEL, "DoSandboxFileCommonBind failed, %{public}s", appProperty->bundleName);
-        return rc;
-    }
+    APPSPAWN_CHECK(rc == 0, return rc, "DoSandboxFileCommonBind failed, %s", appProperty->bundleName);
 
     // if sandbox switch is off, don't do symlink work again
     if (CheckAppSandboxSwitchStatus(appProperty) == true && (CheckTotalSandboxSwitchStatus(appProperty) == true)) {
         rc = DoSandboxFileCommonSymlink(appProperty, config);
-        if (rc) {
-            HiLog::Error(LABEL, "DoSandboxFileCommonSymlink failed, %{public}s", appProperty->bundleName);
-            return rc;
-        }
+        APPSPAWN_CHECK(rc == 0, return rc, "DoSandboxFileCommonSymlink failed, %s", appProperty->bundleName);
     }
 
     rc = DoSandboxFileCommonFlagsPointHandle(appProperty, config);
-    if (rc) {
-        HiLog::Error(LABEL, "DoSandboxFilePrivateFlagsPointHandle failed");
-    }
+    APPSPAWN_CHECK_ONLY_LOG(rc == 0, "DoSandboxFilePrivateFlagsPointHandle failed");
 
     return rc;
 }
@@ -650,16 +601,10 @@ int32_t SandboxUtils::SetCommonAppSandboxProperty(const ClientSocket::AppPropert
     int ret = 0;
 
     ret = SetCommonAppSandboxProperty_(appProperty, jsonConfig);
-    if (ret) {
-        HiLog::Error(LABEL, "parse appdata config for common failed, %{public}s", sandboxPackagePath.c_str());
-        return ret;
-    }
+    APPSPAWN_CHECK(ret == 0, return ret, "parse appdata config for common failed, %s", sandboxPackagePath.c_str());
 
     ret = SetCommonAppSandboxProperty_(appProperty, productConfig);
-    if (ret) {
-        HiLog::Error(LABEL, "parse product config for common failed, %{public}s", sandboxPackagePath.c_str());
-        return ret;
-    }
+    APPSPAWN_CHECK(ret == 0, return ret, "parse product config for common failed, %s", sandboxPackagePath.c_str());
 
     if (strcmp(appProperty->apl, APL_SYSTEM_BASIC.data()) == 0 ||
         strcmp(appProperty->apl, APL_SYSTEM_CORE.data()) == 0) {
@@ -674,33 +619,30 @@ int32_t SandboxUtils::SetCommonAppSandboxProperty(const ClientSocket::AppPropert
 
 int32_t SandboxUtils::DoSandboxRootFolderCreateAdapt(std::string &sandboxPackagePath)
 {
+#ifndef APPSPAWN_TEST
     int rc = mount(NULL, "/", NULL, MS_REC | MS_SLAVE, NULL);
-    if (rc) {
-        HiLog::Error(LABEL, "set propagation slave failed");
-        return rc;
-    }
-
+    APPSPAWN_CHECK(rc == 0, return rc, "set propagation slave failed");
+#endif
     MakeDirRecursive(sandboxPackagePath, FILE_MODE);
 
     // bind mount "/" to /mnt/sandbox/<packageName> path
     // rootfs: to do more resources bind mount here to get more strict resources constraints
+#ifndef APPSPAWN_TEST
     rc = mount("/", sandboxPackagePath.c_str(), NULL, BASIC_MOUNT_FLAGS, NULL);
-    if (rc) {
-        HiLog::Error(LABEL, "mount bind / failed, %{public}d", errno);
-        return rc;
-    }
-
+    APPSPAWN_CHECK(rc == 0, return rc, "mount bind / failed, %d", errno);
+#endif
     return 0;
 }
 
 int32_t SandboxUtils::DoSandboxRootFolderCreate(const ClientSocket::AppProperty *appProperty,
                                                 std::string &sandboxPackagePath)
 {
+#ifndef APPSPAWN_TEST
     int rc = mount(NULL, "/", NULL, MS_REC | MS_SLAVE, NULL);
     if (rc) {
         return rc;
     }
-
+#endif
     DoAppSandboxMountOnce(sandboxPackagePath.c_str(), sandboxPackagePath.c_str(), "",
                           BASIC_MOUNT_FLAGS, nullptr);
 
@@ -734,7 +676,7 @@ bool SandboxUtils::CheckAppSandboxSwitchStatus(const ClientSocket::AppProperty *
     if (privateAppConfig.find(appProperty->bundleName) != privateAppConfig.end()) {
         nlohmann::json appConfig = privateAppConfig[appProperty->bundleName][0];
         rc = GetSbxSwitchStatusByConfig(appConfig);
-        HiLog::Error(LABEL, "CheckAppSandboxSwitchStatus middle, %{public}d", rc);
+        APPSPAWN_LOGE("CheckAppSandboxSwitchStatus middle, %d", rc);
     }
 
     // default sandbox switch is on
@@ -751,10 +693,7 @@ int32_t SandboxUtils::SetAppSandboxProperty(const ClientSocket::AppProperty *app
 
     // add pid to a new mnt namespace
     int rc = unshare(CLONE_NEWNS);
-    if (rc) {
-        HiLog::Error(LABEL, "unshare failed, packagename is %{public}s", bundleName.c_str());
-        return rc;
-    }
+    APPSPAWN_CHECK(rc == 0, return rc, "unshare failed, packagename is %s", bundleName.c_str());
 
     // to make wargnar work and check app sandbox switch
     if (access(WARGNAR_DEVICE_PATH, F_OK) == 0 || (CheckTotalSandboxSwitchStatus(appProperty) == false) ||
@@ -763,43 +702,26 @@ int32_t SandboxUtils::SetAppSandboxProperty(const ClientSocket::AppProperty *app
     } else {
         rc = DoSandboxRootFolderCreate(appProperty, sandboxPackagePath);
     }
-    if (rc) {
-        HiLog::Error(LABEL, "DoSandboxRootFolderCreate failed, %{public}s", bundleName.c_str());
-        return rc;
-    }
+    APPSPAWN_CHECK(rc == 0, return rc, "DoSandboxRootFolderCreate failed, %s", bundleName.c_str());
 
     rc = SetCommonAppSandboxProperty(appProperty, sandboxPackagePath);
-    if (rc) {
-        HiLog::Error(LABEL, "SetCommonAppSandboxProperty failed, packagename is %{public}s", bundleName.c_str());
-        return rc;
-    }
+    APPSPAWN_CHECK(rc == 0, return rc, "SetCommonAppSandboxProperty failed, packagename is %s", bundleName.c_str());
 
     rc = SetPrivateAppSandboxProperty(appProperty);
-    if (rc) {
-        HiLog::Error(LABEL, "SetPrivateAppSandboxProperty failed, packagename is %{public}s", bundleName.c_str());
-        return rc;
-    }
+    APPSPAWN_CHECK(rc == 0, return rc, "SetPrivateAppSandboxProperty failed, packagename is %s", bundleName.c_str());
 
     rc = chdir(sandboxPackagePath.c_str());
-    if (rc) {
-        HiLog::Error(LABEL, "chdir failed, packagename is %{public}s, path is %{public}s", \
-            bundleName.c_str(), sandboxPackagePath.c_str());
-        return rc;
-    }
+    APPSPAWN_CHECK(rc == 0, return rc, "chdir failed, packagename is %s, path is %s",
+        bundleName.c_str(), sandboxPackagePath.c_str());
 
+#ifndef APPSPAWN_TEST
     rc = syscall(SYS_pivot_root, sandboxPackagePath.c_str(), sandboxPackagePath.c_str());
-    if (rc) {
-        HiLog::Error(LABEL, "pivot root failed, packagename is %{public}s, errno is %{public}d", \
-            bundleName.c_str(), errno);
-        return rc;
-    }
+    APPSPAWN_CHECK(rc == 0, return rc, "pivot root failed, packagename is %s, errno is %d",
+        bundleName.c_str(), errno);
+#endif
 
     rc = umount2(".", MNT_DETACH);
-    if (rc) {
-        HiLog::Error(LABEL, "MNT_DETACH failed, packagename is %{public}s", bundleName.c_str());
-        return rc;
-    }
-
+    APPSPAWN_CHECK(rc == 0, return rc, "MNT_DETACH failed, packagename is %s", bundleName.c_str());
     return 0;
 }
 } // namespace AppSpawn

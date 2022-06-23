@@ -14,59 +14,7 @@
 import("//base/startup/appspawn/appspawn.gni")
 import("//build/test.gni")
 
-group("unittest") {
-  testonly = true
-
-  deps = [
-    "unittest/app_spawn_socket_test:unittest",
-    "unittest/app_spawn_standard_test:unittest",
-    "unittest/client_socket_test:unittest",
-  ]
-}
-
 group("moduletest") {
   testonly = true
-
   deps = [ "moduletest:moduletest" ]
-}
-
-config("appspawn_test_config") {
-  configs = []
-
-  defines = [ "TEST_EXIT" ]
-
-  include_dirs = [
-    "${appspawn_path}/test/mock/include",
-    "${appspawn_path}/common",
-    "${appspawn_path}/interfaces/innerkits/include",
-    "${appspawn_path}/util/include",
-  ]
-}
-
-ohos_source_set("appspawn_test_source") {
-  testonly = true
-
-  sources = []
-
-  include_dirs = [ "//third_party/json/include" ]
-
-  public_configs = [
-    "//utils/native/base:utils_config",
-    ":appspawn_test_config",
-  ]
-
-  public_deps = [
-    "//third_party/googletest:gmock_main",
-    "//third_party/googletest:gtest_main",
-    "//utils/native/base:utils",
-  ]
-
-  deps = []
-
-  external_deps = [
-    "ability_base:want",
-    "bundle_framework:appexecfwk_base",
-    "bundle_framework:appexecfwk_core",
-    "hiviewdfx_hilog_native:libhilog",
-  ]
 }

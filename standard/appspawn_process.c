@@ -39,18 +39,14 @@ static int SetProcessName(struct AppSpawnContent_ *content, AppSpawnClient *clie
     AppSpawnClientExt *appPropertyExt = (AppSpawnClientExt *)client;
     AppParameter *appProperty = &appPropertyExt->property;
     int len = strlen(appProperty->processName);
-    if (longProcName == NULL || len <= 0) {
-        APPSPAWN_LOGE("process name is nullptr or length error");
-        return -EINVAL;
-    }
+    bool isRet = longProcName == NULL || len <= 0;
+    APPSPAWN_CHECK(!isRet, return -EINVAL, "process name is nullptr or length error");
 
     char shortName[MAX_LEN_SHORT_NAME] = {0};
     // process short name max length 16 bytes.
     if (len >= MAX_LEN_SHORT_NAME) {
-        if (strncpy_s(shortName, MAX_LEN_SHORT_NAME, appProperty->processName, MAX_LEN_SHORT_NAME - 1) != EOK) {
-            APPSPAWN_LOGE("strncpy_s short name error: %d", errno);
-            return -EINVAL;
-        }
+        isRet = strncpy_s(shortName, MAX_LEN_SHORT_NAME, appProperty->processName, MAX_LEN_SHORT_NAME - 1) != EOK;
+        APPSPAWN_CHECK(!isRet, return -EINVAL, "strncpy_s short name error: %d", errno);
     } else {
         if (strncpy_s(shortName, MAX_LEN_SHORT_NAME, appProperty->processName, len) != EOK) {
             APPSPAWN_LOGE("strncpy_s short name error: %d", errno);
@@ -59,22 +55,17 @@ static int SetProcessName(struct AppSpawnContent_ *content, AppSpawnClient *clie
     }
 
     // set short name
-    if (prctl(PR_SET_NAME, shortName) == -1) {
-        APPSPAWN_LOGE("prctl(PR_SET_NAME) error: %d", errno);
-        return (-errno);
-    }
+    isRet = prctl(PR_SET_NAME, shortName) == -1;
+    APPSPAWN_CHECK(!isRet, return -errno, "prctl(PR_SET_NAME) error: %d", errno);
 
     // reset longProcName
-    if (memset_s(longProcName, (size_t)longProcNameLen, 0, (size_t)longProcNameLen) != EOK) {
-        APPSPAWN_LOGE("Failed to memset long process name");
-        return -EINVAL;
-    }
+    isRet = memset_s(longProcName, (size_t)longProcNameLen, 0, (size_t)longProcNameLen) != EOK;
+    APPSPAWN_CHECK(!isRet, return -EINVAL, "Failed to memset long process name");
 
     // set long process name
-    if (strncpy_s(longProcName, sizeof(appProperty->processName) - 1, appProperty->processName, len) != EOK) {
-        APPSPAWN_LOGE("strncpy_s long name error: %d longProcNameLen %u", errno, longProcNameLen);
-        return -EINVAL;
-    }
+    isRet = strncpy_s(longProcName, sizeof(appProperty->processName) - 1, appProperty->processName, len) != EOK;
+    APPSPAWN_CHECK(!isRet, return -EINVAL, "strncpy_s long name error: %d longProcNameLen %u", errno, longProcNameLen);
+
     return 0;
 }
 
@@ -83,10 +74,8 @@ static int SetKeepCapabilities(struct AppSpawnContent_ *content, AppSpawnClient 
     AppSpawnClientExt *appProperty = (AppSpawnClientExt *)client;
     // set keep capabilities when user not root.
     if (appProperty->property.uid != 0) {
-        if (prctl(PR_SET_KEEPCAPS, 1, 0, 0, 0) == -1) {
-            APPSPAWN_LOGE("set keepcaps failed: %d", errno);
-            return (-errno);
-        }
+        bool isRet = prctl(PR_SET_KEEPCAPS, 1, 0, 0, 0) == -1;
+        APPSPAWN_CHECK(!isRet, return -errno, "set keepcaps failed: %d", errno);
     }
     return 0;
 }
@@ -96,18 +85,15 @@ static int SetCapabilities(struct AppSpawnContent_ *content, AppSpawnClient *cli
     // init cap
     struct __user_cap_header_struct cap_header;
 
-    if (memset_s(&cap_header, sizeof(cap_header), 0, sizeof(cap_header)) != EOK) {
-        APPSPAWN_LOGE("Failed to memset cap header");
-        return -EINVAL;
-    }
+    bool isRet = memset_s(&cap_header, sizeof(cap_header), 0, sizeof(cap_header)) != EOK;
+    APPSPAWN_CHECK(!isRet, return -EINVAL, "Failed to memset cap header");
+
     cap_header.version = _LINUX_CAPABILITY_VERSION_3;
     cap_header.pid = 0;
 
     struct __user_cap_data_struct cap_data[2];
-    if (memset_s(&cap_data, sizeof(cap_data), 0, sizeof(cap_data)) != EOK) {
-        APPSPAWN_LOGE("Failed to memset cap data");
-        return -EINVAL;
-    }
+    isRet = memset_s(&cap_data, sizeof(cap_data), 0, sizeof(cap_data)) != EOK;
+    APPSPAWN_CHECK(!isRet, return -EINVAL, "Failed to memset cap data");
 
     // init inheritable permitted effective zero
 #ifdef GRAPHIC_PERMISSION_CHECK
@@ -128,51 +114,48 @@ static int SetCapabilities(struct AppSpawnContent_ *content, AppSpawnClient *cli
     cap_data[1].effective = (__u32)(effective >> BITLEN32);
 
     // set capabilities
-    if (capset(&cap_header, &cap_data[0]) == -1) {
-        APPSPAWN_LOGE("capset failed: %d", errno);
-        return (-errno);
-    }
+    isRet = capset(&cap_header, &cap_data[0]) == -1;
+    APPSPAWN_CHECK(!isRet, return -errno, "capset failed: %d", errno);
     return 0;
 }
 
 static void InitDebugParams(struct AppSpawnContent_ *content, AppSpawnClient *client)
 {
+#ifndef APPSPAWN_TEST
     AppSpawnClientExt *appProperty = (AppSpawnClientExt *)client;
 #ifdef __aarch64__
     const char *debugSoPath = "/system/lib64/libhidebug.so";
 #else
     const char *debugSoPath = "/system/lib/libhidebug.so";
 #endif
-    if (access(debugSoPath, F_OK) != 0) {
-        return;
-    }
+    bool isRet = access(debugSoPath, F_OK) != 0;
+    APPSPAWN_CHECK(!isRet, return, "access failed, errno = %d", errno);
+
     void *handle = dlopen(debugSoPath, RTLD_LAZY);
-    if (handle == NULL) {
-        APPSPAWN_LOGE("Failed to dlopen libhidebug.so, %s", dlerror());
-        return;
-    }
+    APPSPAWN_CHECK(handle != NULL, return, "Failed to dlopen libhidebug.so, %s", dlerror());
+
     bool (*initParam)(const char *name);
     initParam = (bool (*)(const char *name))dlsym(handle, "InitEnvironmentParam");
-    if (initParam == NULL) {
-        APPSPAWN_LOGE("Failed to dlsym InitEnvironmentParam, %s", dlerror());
-        dlclose(handle);
-        return;
-    }
+    APPSPAWN_CHECK(initParam != NULL, dlclose(handle);
+        return, "Failed to dlsym InitEnvironmentParam, %s", dlerror());
     (*initParam)(appProperty->property.processName);
     dlclose(handle);
+#endif
 }
 
 static void ClearEnvironment(AppSpawnContent *content, AppSpawnClient *client)
 {
     APPSPAWN_LOGI("ClearEnvironment id %d", client->id);
-    AppSpawnClientExt *appProperty = (AppSpawnClientExt *)client;
     sigset_t mask;
     sigemptyset(&mask);
     sigaddset(&mask, SIGCHLD);
     sigaddset(&mask, SIGTERM);
     sigprocmask(SIG_UNBLOCK, &mask, NULL);
     // close child fd
+#ifndef APPSPAWN_TEST
+    AppSpawnClientExt *appProperty = (AppSpawnClientExt *)client;
     close(appProperty->fd[0]);
+#endif
     InitDebugParams(content, client);
     return;
 }
@@ -182,28 +165,23 @@ static int SetUidGid(struct AppSpawnContent_ *content, AppSpawnClient *client)
 #ifdef GRAPHIC_PERMISSION_CHECK
     AppSpawnClientExt *appProperty = (AppSpawnClientExt *)client;
     // set gids
-    if (setgroups(appProperty->property.gidCount, (const gid_t *)(&appProperty->property.gidTable[0])) == -1) {
-        APPSPAWN_LOGE("setgroups failed: %d, gids.size=%u", errno, appProperty->property.gidCount);
-        return (-errno);
-    }
+    bool isRet = setgroups(appProperty->property.gidCount, (const gid_t *)(&appProperty->property.gidTable[0])) == -1;
+    APPSPAWN_CHECK(!isRet, return -errno, "setgroups failed: %d, gids.size=%u", errno, appProperty->property.gidCount);
 
     // set gid
-    if (setresgid(appProperty->property.gid, appProperty->property.gid, appProperty->property.gid) == -1) {
-        APPSPAWN_LOGE("setgid(%u) failed: %d", appProperty->property.gid, errno);
-        return (-errno);
-    }
+    isRet = setresgid(appProperty->property.gid, appProperty->property.gid, appProperty->property.gid) == -1;
+    APPSPAWN_CHECK(!isRet, return -errno, "setgid(%u) failed: %d", appProperty->property.gid, errno);
 
     // If the effective user ID is changed from 0 to nonzero, then all capabilities are cleared from the effective set
-    if (setresuid(appProperty->property.uid, appProperty->property.uid, appProperty->property.uid) == -1) {
-        APPSPAWN_LOGE("setuid(%u) failed: %d", appProperty->property.uid, errno);
-        return (-errno);
-    }
+    isRet = setresuid(appProperty->property.uid, appProperty->property.uid, appProperty->property.uid) == -1;
+    APPSPAWN_CHECK(!isRet, return -errno, "setuid(%u) failed: %d", appProperty->property.uid, errno);
 #endif
     return 0;
 }
 
 static int32_t SetFileDescriptors(struct AppSpawnContent_ *content, AppSpawnClient *client)
 {
+#ifndef APPSPAWN_TEST
     // close stdin stdout stderr
     close(STDIN_FILENO);
     close(STDOUT_FILENO);
@@ -233,7 +211,7 @@ static int32_t SetFileDescriptors(struct AppSpawnContent_ *content, AppSpawnClie
         APPSPAWN_LOGE("dup2 STDERR error: %d", errno);
         return (-errno);
     };
-
+#endif
     return 0;
 }
 

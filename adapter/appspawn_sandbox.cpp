@@ -20,15 +20,13 @@
 #include <string>
 #include <vector>
 
-#include "hilog/log.h"
+#include "appspawn_service.h"
 #include "json_utils.h"
 #include "sandbox_utils.h"
 
 using namespace std;
 using namespace OHOS;
-using namespace OHOS::HiviewDFX;
 using namespace OHOS::AppSpawn;
-static constexpr HiLogLabel LABEL = {LOG_CORE, 0, "AppSpawn_SandboxUtil"};
 
 namespace {
 #ifdef __aarch64__
@@ -43,24 +41,18 @@ void LoadAppSandboxConfig(void)
 {
     // load sandbox config
     nlohmann::json appSandboxConfig;
-
     bool rc = JsonUtils::GetJsonObjFromJson(appSandboxConfig, APP_JSON_CONFIG);
-    if (!rc) {
-        HiLog::Error(LABEL, "AppSpawnServer::Failed to load app private sandbox config");
-    }
+    APPSPAWN_CHECK_ONLY_LOG(rc, "AppSpawnServer::Failed to load app private sandbox config");
     SandboxUtils::StoreJsonConfig(appSandboxConfig);
 
     rc = JsonUtils::GetJsonObjFromJson(appSandboxConfig, PRODUCT_JSON_CONFIG);
-    if (!rc) {
-        HiLog::Error(LABEL, "AppSpawnServer::Failed to load app product sandbox config");
-    }
+    APPSPAWN_CHECK_ONLY_LOG(rc, "AppSpawnServer::Failed to load app product sandbox config");
     SandboxUtils::StoreProductJsonConfig(appSandboxConfig);
 }
 
 int32_t SetAppSandboxProperty(struct AppSpawnContent_ *content, AppSpawnClient *client)
 {
     APPSPAWN_CHECK(client != NULL, return -1, "Invalid appspwn client");
-
     AppSpawnClientExt *appProperty = (AppSpawnClientExt *)client;
     return SandboxUtils::SetAppSandboxProperty(&appProperty->property);
 }
