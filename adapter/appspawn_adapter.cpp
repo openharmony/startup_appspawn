@@ -17,6 +17,7 @@
 
 #include <cerrno>
 
+#include "appspawn_service.h"
 #ifdef WITH_SELINUX
 #include "hap_restorecon.h"
 #endif
