@@ -26,7 +26,7 @@ unittest("AppSpawnLiteTest") {
     "//base/startup/appspawn/interfaces/innerkits/include",
     "//base/startup/appspawn/common/",
     "//base/startup/appspawn/lite/",
-    "//base/startup/init_lite/interfaces/innerkits/include",
+    "//base/startup/init/interfaces/innerkits/include",
     "//base/hiviewdfx/hilog_lite/interfaces/native/innerkits/hilog",
     "//foundation/distributedschedule/samgr_lite/interfaces/kits/samgr",
     "//foundation/distributedschedule/samgr_lite/interfaces/kits/registry",
@@ -49,7 +49,7 @@ unittest("AppSpawnLiteTest") {
   deps = [
     "${aafwk_lite_path}/frameworks/ability_lite:aafwk_abilitykit_lite",
     "//base/hiviewdfx/hilog_lite/frameworks/featured:hilog_shared",
-    "//base/startup/init_lite/interfaces/innerkits:libbegetutil",
+    "//base/startup/init/interfaces/innerkits:libbegetutil",
     "//build/lite/config/component/cJSON:cjson_shared",
     "//foundation/communication/ipc/interfaces/innerkits/c/ipc:ipc_single",
     "//foundation/distributeddatamgr/appdatamgr/kv_store/interfaces/inner_api/kv_store:kv_store",
