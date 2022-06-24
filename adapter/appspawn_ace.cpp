@@ -15,7 +15,7 @@
 
 #include "appspawn_adapter.h"
 
-#include "main_thread.h"
+#include "foundation/ability/ability_runtime/interfaces/kits/native/appkit/app/main_thread.h"
 
 void LoadExtendLib(AppSpawnContent *content)
 {
