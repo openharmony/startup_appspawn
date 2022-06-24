@@ -82,7 +82,7 @@ ohos_unittest("AppSpawn_ut") {
   configs = [ "//base/startup/appspawn/test/unittest:utest_config" ]
 
   deps = [
-    "${aafwk_kits_path}/appkit:appkit_native",
+    "${aafwk_path}/frameworks/native/appkit:appkit_native",
     "//base/security/access_token/interfaces/innerkits/token_setproc:libtoken_setproc",
   ]
 
