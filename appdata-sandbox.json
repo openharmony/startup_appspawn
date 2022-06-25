@@ -249,6 +249,24 @@
                 }
             ],
             "symbol-links" : []
+        }],
+        "com.ohos.UserFile.ExternalFileManager" : [{
+            "sandbox-switch": "ON",
+            "sandbox-root" : "/mnt/sandbox/<PackageName>",
+            "mount-paths" : [{
+                    "src-path" : "/data/service/el1/public/storage_daemon/share/public",
+                    "sandbox-path" : "/data/storage/el1/bundle/storage_daemon",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "true"
+                },
+                {
+                    "src-path" : "/mnt/external",
+                    "sandbox-path" : "/mnt/external",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "true"
+                }
+            ],
+            "symbol-links" : []
         }]
     }]
 }
