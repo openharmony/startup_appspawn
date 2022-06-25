@@ -129,8 +129,8 @@ int32_t SandboxUtils::DoAppSandboxMountOnce(const char *originPath, const char *
     int ret = 0;
     // to mount fs and bind mount files or directory
     ret = mount(originPath, destinationPath, fsType, mountFlags, options);
-    APPSPAWN_CHECK(ret == 0, return ret,  "bind mount %s to %s failed %d", originPath,
-            destinationPath, errno);
+    APPSPAWN_CHECK(ret == 0, return ret,  "bind mount %s to %s failed %d, just DEBUG MESSAGE here",
+                   originPath, destinationPath, errno);
     ret = mount(NULL, destinationPath, NULL, MS_PRIVATE, NULL);
     APPSPAWN_CHECK(ret == 0, return ret, "private mount to %s failed %d", destinationPath, errno);
 #endif
@@ -367,11 +367,10 @@ int SandboxUtils::DoAllMntPointsMount(const ClientSocket::AppProperty *appProper
             }
         }
         if (ret) {
-            APPSPAWN_LOGE("DoAppSandboxMountOnce failed, %s", sandboxPath.c_str());
-
             std::string actionStatus = STATUS_CHECK;
             (void)JsonUtils::GetStringFromJson(mntPoint, ACTION_STATUS, actionStatus);
             if (actionStatus == STATUS_CHECK) {
+                APPSPAWN_LOGE("DoAppSandboxMountOnce failed, %s", sandboxPath.c_str());
                 return ret;
             }
         }
