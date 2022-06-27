@@ -29,10 +29,14 @@ void SetAppAccessToken(struct AppSpawnContent_ *content, AppSpawnClient *client)
     int32_t ret = SetSelfTokenID(appProperty->property.accessTokenId);
     APPSPAWN_LOGI("AppSpawnServer::set access token id = %d, ret = %d %d",
         appProperty->property.accessTokenId, ret, getuid());
+}
 
+void SetSelinuxCon(struct AppSpawnContent_ *content, AppSpawnClient *client)
+{
 #ifdef WITH_SELINUX
+    AppSpawnClientExt *appProperty = (AppSpawnClientExt *)client;
     HapContext hapContext;
-    ret = hapContext.HapDomainSetcontext(appProperty->property.apl, appProperty->property.processName);
+    int32_t ret = hapContext.HapDomainSetcontext(appProperty->property.apl, appProperty->property.processName);
     if (ret != 0) {
         APPSPAWN_LOGE("AppSpawnServer::Failed to hap domain set context, errno = %d %s",
             errno, appProperty->property.apl);
