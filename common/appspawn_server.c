@@ -108,7 +108,12 @@ int ForkChildProc(struct AppSpawnContent_ *content, AppSpawnClient *client, pid_
         }
 
         int ret = -1;
+#ifdef ASAN_DETECTOR
+        if ((content->getWrapBundleNameValue != NULL && content->getWrapBundleNameValue(content, client) == 0)
+            || (client->flags & APP_COLD_START)) {
+#else
         if (client->flags & APP_COLD_START) {
+#endif
             if (content->coldStartApp != NULL && content->coldStartApp(content, client) == 0) {
 #ifndef APPSPAWN_TEST
                 _exit(0x7f); // 0x7f user exit
