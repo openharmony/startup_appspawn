@@ -68,6 +68,9 @@ typedef struct AppSpawnContent_ {
 
     // for cold start
     int (*coldStartApp)(struct AppSpawnContent_ *content, AppSpawnClient *client);
+#ifdef ASAN_DETECTOR
+    int (*getWrapBundleNameValue)(struct AppSpawnContent_ *content, AppSpawnClient *client);
+#endif
 } AppSpawnContent;
 
 AppSpawnContent *AppSpawnCreateContent(const char *socketName, char *longProcName, uint32_t longProcNameLen, int cold);
