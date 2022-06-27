@@ -30,6 +30,7 @@
 #include <unistd.h>
 
 #include "securec.h"
+#include "parameter.h"
 
 #define DEVICE_NULL_STR "/dev/null"
 
@@ -227,6 +228,25 @@ static void Free(char **argv)
     free(argv);
 }
 
+#ifdef ASAN_DETECTOR
+#define WRAP_VALUE_MAX_LENGTH 96
+static int GetWrapBundleNameValue(struct AppSpawnContent_ *content, AppSpawnClient *client)
+{
+    AppParameter *appProperty = &((AppSpawnClientExt *)client)->property;
+    char wrapBundleNameKey[WRAP_VALUE_MAX_LENGTH] = {0};
+    char wrapBundleNameValue[WRAP_VALUE_MAX_LENGTH] = {0};
+
+    int len = sprintf_s(wrapBundleNameKey, WRAP_VALUE_MAX_LENGTH, "wrap.%s", appProperty->bundleName);
+    APPSPAWN_CHECK(len > 0 && (len < WRAP_VALUE_MAX_LENGTH), return -1, "Invalid to format wrapBundleNameKey");
+
+    int ret = GetParameter(wrapBundleNameKey, "", wrapBundleNameValue, WRAP_VALUE_MAX_LENGTH);
+    APPSPAWN_CHECK(ret > 0 && (!strcmp(wrapBundleNameValue, "asan_wrapper")), return -1,
+                   "Not wrap %s.", appProperty->bundleName);
+    APPSPAWN_LOGI("Asan: GetParameter %s the value is %s.", wrapBundleNameKey, wrapBundleNameValue);
+    return 0;
+}
+#endif
+
 static int ColdStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client)
 {
     AppParameter *appProperty = &((AppSpawnClientExt *)client)->property;
@@ -248,7 +268,15 @@ static int ColdStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client
     do {
         argv[PARAM_INDEX] = param;
         argv[0] = param + originLen;
+#ifdef ASAN_DETECTOR
+        if (GetWrapBundleNameValue(content, client) == 0) {
+            ret = strcpy_s(argv[0], APP_LEN_PROC_NAME, "/system/asan/bin/appspawn");
+        } else {
+            ret = strcpy_s(argv[0], APP_LEN_PROC_NAME, "/system/bin/appspawn");
+        }
+#else
         ret = strcpy_s(argv[0], APP_LEN_PROC_NAME, "/system/bin/appspawn");
+#endif
         APPSPAWN_CHECK(ret >= 0, break, "Invalid strcpy");
         argv[START_INDEX] = strdup("cold-start");
         APPSPAWN_CHECK(argv[START_INDEX] != NULL, break, "Invalid strdup");
@@ -359,4 +387,7 @@ void SetContentFunction(AppSpawnContent *content)
     content->setAppSandbox = SetAppSandboxProperty;
     content->setAppAccessToken = SetAppAccessToken;
     content->coldStartApp = ColdStartApp;
+#ifdef ASAN_DETECTOR
+    content->getWrapBundleNameValue = GetWrapBundleNameValue;
+#endif
 }

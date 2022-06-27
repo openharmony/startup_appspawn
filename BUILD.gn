@@ -77,6 +77,10 @@ ohos_static_library("appspawn_server") {
     "GRAPHIC_PERMISSION_CHECK",
     "INIT_AGENT",
   ]
+
+  if (asan_detector) {
+    defines += [ "ASAN_DETECTOR" ]
+  }
   configs = [ ":appspawn_config" ]
   ldflags = [ "-Wl,--dynamic-linker,/system/bin/linker64z" ]
   deps = [
