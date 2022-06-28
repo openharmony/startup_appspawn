@@ -26,6 +26,7 @@ extern "C" {
 
 int32_t SetAppSandboxProperty(struct AppSpawnContent_ *content, AppSpawnClient *client);
 void SetAppAccessToken(struct AppSpawnContent_ *content, AppSpawnClient *client);
+void SetSelinuxCon(struct AppSpawnContent_ *content, AppSpawnClient *client);
 void LoadExtendLib(AppSpawnContent *content);
 void RunChildProcessor(AppSpawnContent *content, AppSpawnClient *client);
 int GetRenderProcessTerminationStatus(int32_t pid, int *status);
