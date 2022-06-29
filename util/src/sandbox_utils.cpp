@@ -52,6 +52,7 @@ namespace {
     const std::string DATA_BUNDLES = "/data/bundles/";
     const std::string USERID = "<currentUserId>";
     const std::string PACKAGE_NAME = "<PackageName>";
+    const std::string PACKAGE_NAME_INDEX = "<PackageName_index>";
     const std::string SANDBOX_DIR = "/mnt/sandbox/";
     const std::string STATUS_CHECK = "true";
     const std::string SBX_SWITCH_CHECK = "ON";
@@ -220,6 +221,12 @@ unsigned long SandboxUtils::GetMountFlagsFromConfig(const std::vector<std::strin
 
 string SandboxUtils::ConvertToRealPath(const ClientSocket::AppProperty *appProperty, std::string path)
 {
+    if (path.find(PACKAGE_NAME_INDEX) != -1) {
+        std::string bundleNameIndex = appProperty->bundleName;
+        bundleNameIndex = bundleNameIndex + "_" + std::to_string(appProperty->bundleIndex);
+        path = replace_all(path, PACKAGE_NAME_INDEX, bundleNameIndex);
+    }
+
     if (path.find(PACKAGE_NAME) != -1) {
         path = replace_all(path, PACKAGE_NAME, appProperty->bundleName);
     }
@@ -261,19 +268,29 @@ bool SandboxUtils::GetSbxSwitchStatusByConfig(nlohmann::json &config)
     return true;
 }
 
-static bool CheckMountConfig(nlohmann::json &mntPoint, const ClientSocket::AppProperty *appProperty)
+static bool CheckMountConfig(nlohmann::json &mntPoint, const ClientSocket::AppProperty *appProperty,
+                             bool checkFlag)
 {
     bool istrue = mntPoint.find(SRC_PATH) == mntPoint.end() || mntPoint.find(SANDBOX_PATH) == mntPoint.end()
             || mntPoint.find(SANDBOX_FLAGS) == mntPoint.end();
     APPSPAWN_CHECK(!istrue, return false, "read mount config failed, app name is %s", appProperty->bundleName);
 
     if (mntPoint[APP_APL_NAME] != nullptr) {
-        std::string  app_apl_name = mntPoint[APP_APL_NAME];
+        std::string app_apl_name = mntPoint[APP_APL_NAME];
         const char *p_app_apl = nullptr;
         p_app_apl = app_apl_name.c_str();
         if (!strcmp(p_app_apl, appProperty->apl)) {
             return false;
         }
+    }
+
+    const std::string configSrcPath = mntPoint[SRC_PATH].get<std::string>();
+    // special handle wps and don't use /data/app/xxx/<Package> config
+    if (checkFlag && (configSrcPath.find("/data/app") != std::string::npos &&
+        (configSrcPath.find("/base") != std::string::npos ||
+         configSrcPath.find("/database") != std::string::npos
+        ) && configSrcPath.find(PACKAGE_NAME) != std::string::npos)) {
+        return false;
     }
 
     return true;
@@ -328,12 +345,34 @@ static int32_t HandleSpecialAppMount(const ClientSocket::AppProperty *appPropert
     return -1;
 }
 
+static int ConvertFlagStr(const std::string &flagStr)
+{
+    const std::map<std::string, int> flagsMap = {{"0", 0}, {"START_FLAGS_BACKUP", 1},
+                                                 {"DLP_MANAGER", 2}};
+
+    if (flagsMap.count(flagStr)) {
+        return flagsMap.at(flagStr);
+    }
+
+    return -1;
+}
+
 int SandboxUtils::DoAllMntPointsMount(const ClientSocket::AppProperty *appProperty, nlohmann::json &appConfig)
 {
+    std::string bundleName = appProperty->bundleName;
     if (appConfig.find(MOUNT_PREFIX) == appConfig.end()) {
         APPSPAWN_LOGV("mount config is not found, maybe reuslt sandbox launch failed"
-            "app name is %s", appProperty->bundleName);
+            "app name is %s", bundleName.c_str());
         return 0;
+    }
+
+    bool checkFlag = false;
+    if (appConfig.find(FLAGS) != appConfig.end()) {
+        std::string flagsStr = appConfig[FLAGS].get<std::string>();
+        if (ConvertFlagStr(flagsStr) == appProperty->flags &&
+            bundleName.find("wps") != std::string::npos) {
+            checkFlag = true;
+        }
     }
 
     nlohmann::json mountPoints = appConfig[MOUNT_PREFIX];
@@ -343,7 +382,7 @@ int SandboxUtils::DoAllMntPointsMount(const ClientSocket::AppProperty *appProper
     for (unsigned int i = 0; i < mountPointSize; i++) {
         nlohmann::json mntPoint = mountPoints[i];
 
-        if (CheckMountConfig(mntPoint, appProperty) == false) {
+        if (CheckMountConfig(mntPoint, appProperty, checkFlag) == false) {
             continue;
         }
 
@@ -440,17 +479,6 @@ int32_t SandboxUtils::DoSandboxFilePrivateSymlink(const ClientSocket::AppPropert
     }
 
     return 0;
-}
-
-static int ConvertFlagStr(const std::string &flagStr)
-{
-    const std::map<std::string, int> flagsMap = {{"0", 0}, {"START_FLAGS_BACKUP", 1}};
-
-    if (flagsMap.count(flagStr)) {
-        return flagsMap.at(flagStr);
-    }
-
-    return -1;
 }
 
 int32_t SandboxUtils::HandleFlagsPoint(const ClientSocket::AppProperty *appProperty,
