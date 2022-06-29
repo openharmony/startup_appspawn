@@ -113,16 +113,6 @@
                     "sandbox-path" : "/data/storage/el2/auth_groups",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
-                }, {
-                    "src-path" : "/data/app/el1/bundle/public/com.ohos.nweb",
-                    "sandbox-path" : "/data/storage/el1/bundle/nweb",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/data/app/el1/bundle/public/ohos.global.systemres",
-                    "sandbox-path" : "/data/storage/el1/bundle/ohos.global.systemres",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
                 }
             ],
             "symbol-links" : [{
@@ -164,6 +154,7 @@
             ],
             "flags-point" : [{
                 "flags": "NOT_SUPPORTED",
+                "sandbox-root" : "/mnt/sandbox/<PackageName>",
                 "mount-paths" : [{
                     "src-path" : "/data/app/el1/bundle/public/",
                     "sandbox-path" : "/data/bundles/",
@@ -219,6 +210,7 @@
             "mount-paths" : [],
             "flags-point" : [{
                     "flags": "NOT_SUPPORTED",
+                    "sandbox-root" : "/mnt/sandbox/<PackageName>",
                     "mount-paths" : [{
                         "src-path" : "/data/app/el1/bundle/public/",
                         "sandbox-path" : "/data/bundles/",
@@ -227,6 +219,7 @@
                         }
                     ]}, {
                     "flags": "START_FLAGS_BACKUP",
+                    "sandbox-root" : "/mnt/sandbox/<PackageName>",
                     "mount-paths" : [{
                         "src-path" : "/data/app/el1/bundle/public/",
                         "sandbox-path" : "/data/bundles/",
