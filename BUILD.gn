@@ -23,7 +23,7 @@ config("appspawn_config") {
     "interfaces/innerkits/include",
     "//utils/native/base/include",
     "util/include",
-    "${aafwk_path}/interfaces/kits/native/appkit/app",
+    "${ability_runtime_path}/interfaces/kits/native/appkit/app",
     "//base/global/resource_management/interfaces/inner_api/include",
     "//base/security/access_token/interfaces/innerkits/token_setproc/include",
     "//base/startup/init_lite/services/log",
@@ -46,7 +46,7 @@ ohos_executable("appspawn") {
   ]
   configs = [ ":appspawn_config" ]
   deps = [
-    "${aafwk_path}/frameworks/native/appkit:appkit_native",
+    "${ability_runtime_path}/frameworks/native/appkit:appkit_native",
     "${appspawn_path}:appspawn_server",
   ]
   external_deps = [
