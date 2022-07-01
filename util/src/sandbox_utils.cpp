@@ -221,17 +221,17 @@ unsigned long SandboxUtils::GetMountFlagsFromConfig(const std::vector<std::strin
 
 string SandboxUtils::ConvertToRealPath(const ClientSocket::AppProperty *appProperty, std::string path)
 {
-    if (path.find(PACKAGE_NAME_INDEX) != -1) {
+    if (path.find(PACKAGE_NAME_INDEX) != std::string::npos) {
         std::string bundleNameIndex = appProperty->bundleName;
         bundleNameIndex = bundleNameIndex + "_" + std::to_string(appProperty->bundleIndex);
         path = replace_all(path, PACKAGE_NAME_INDEX, bundleNameIndex);
     }
 
-    if (path.find(PACKAGE_NAME) != -1) {
+    if (path.find(PACKAGE_NAME) != std::string::npos) {
         path = replace_all(path, PACKAGE_NAME, appProperty->bundleName);
     }
 
-    if (path.find(USERID) != -1) {
+    if (path.find(USERID) != std::string::npos) {
         path = replace_all(path, USERID, std::to_string(appProperty->uid / UID_BASE));
     }
 
@@ -334,7 +334,7 @@ static int32_t HandleSpecialAppMount(const ClientSocket::AppProperty *appPropert
 
     /* dlp application mount strategy */
     /* dlp is an example, we should change to real bundle name later */
-    if (bundleName.find(DLP_BUNDLENAME) != -1) {
+    if (bundleName.find(DLP_BUNDLENAME) != std::string::npos) {
         if (fsType.empty()) {
             return -1;
         } else {
