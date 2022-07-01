@@ -36,11 +36,11 @@ config("utest_config") {
     "${appspawn_path}/interfaces/innerkits/include",
     "${appspawn_path}/util/include",
     "//utils/native/base/include",
-    "${aafwk_path}/frameworks/kits/appkit/native/app/include",
-    "${aafwk_path}/interfaces/innerkits/app_manager/include/appmgr",
-    "${aafwk_path}/interfaces/innerkits/ability_manager/include",
-    "${aafwk_path}/frameworks/kits/ability/native/include",
-    "${aafwk_path}/services/abilitymgr/include",
+    "ability_runtime_kits_path/appkit/native/app/include",
+    "${ability_runtime_path}/interfaces/innerkits/app_manager/include/appmgr",
+    "${ability_runtime_path}/interfaces/innerkits/ability_manager/include",
+    "ability_runtime_kits_path/ability/native/include",
+    "${ability_runtime_path}/services/abilitymgr/include",
     "//base/global/resource_management/interfaces/inner_api/include",
     "//base/security/access_token/interfaces/innerkits/token_setproc/include",
     "//base/startup/init_lite/services/log",
@@ -82,7 +82,7 @@ ohos_unittest("AppSpawn_ut") {
   configs = [ "//base/startup/appspawn/test/unittest:utest_config" ]
 
   deps = [
-    "${aafwk_path}/frameworks/native/appkit:appkit_native",
+    "${ability_runtime_path}/frameworks/native/appkit:appkit_native",
     "//base/security/access_token/interfaces/innerkits/token_setproc:libtoken_setproc",
   ]
 
