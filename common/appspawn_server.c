@@ -24,6 +24,8 @@
 #include <time.h>
 #endif // OHOS_DEBUG
 
+#define DEFAULT_UMASK 002
+
 static void NotifyResToParent(struct AppSpawnContent_ *content, AppSpawnClient *client, int result)
 {
     if (content->notifyResToParent != NULL) {
@@ -54,7 +56,7 @@ int DoStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client, char *l
             return ret, "Failed to set app sandbox");
     }
 
-    (void)umask(0002);
+    (void)umask(DEFAULT_UMASK);
     if (content->setKeepCapabilities) {
         ret = content->setKeepCapabilities(content, client);
         APPSPAWN_CHECK(ret == 0, NotifyResToParent(content, client, ret);
