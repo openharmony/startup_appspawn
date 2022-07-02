@@ -34,7 +34,7 @@
 #include "appspawn_service.h"
 #include "securec.h"
 
-#define DEFAULT_UMASK 022
+#define DEFAULT_UMASK 002
 #define CAP_NUM 2
 #define ENV_TITLE "LD_LIBRARY_PATH="
 #define UPPER_BOUND_GID 999
