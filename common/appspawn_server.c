@@ -24,7 +24,7 @@
 #include <time.h>
 #endif // OHOS_DEBUG
 
-#define DEFAULT_UMASK 002
+#define DEFAULT_UMASK 0002
 
 static void NotifyResToParent(struct AppSpawnContent_ *content, AppSpawnClient *client, int result)
 {
