@@ -351,7 +351,7 @@ static int ConvertFlagStr(const std::string &flagStr)
                                                  {"DLP_MANAGER", 2}};
 
     if (flagsMap.count(flagStr)) {
-        return flagsMap.at(flagStr);
+        return 1 << flagsMap.at(flagStr);
     }
 
     return -1;
@@ -369,7 +369,7 @@ int SandboxUtils::DoAllMntPointsMount(const ClientSocket::AppProperty *appProper
     bool checkFlag = false;
     if (appConfig.find(FLAGS) != appConfig.end()) {
         std::string flagsStr = appConfig[FLAGS].get<std::string>();
-        if (ConvertFlagStr(flagsStr) == appProperty->flags &&
+        if ((ConvertFlagStr(flagsStr) & appProperty->flags) &&
             bundleName.find("wps") != std::string::npos) {
             checkFlag = true;
         }
@@ -497,7 +497,7 @@ int32_t SandboxUtils::HandleFlagsPoint(const ClientSocket::AppProperty *appPrope
         if (flagPoint.find(FLAGS) != flagPoint.end()) {
             std::string flagsStr = flagPoint[FLAGS].get<std::string>();
             int flag = ConvertFlagStr(flagsStr);
-            if (appProperty->flags == flag) {
+            if (appProperty->flags & flag) {
                 return DoAllMntPointsMount(appProperty, flagPoint);
             }
         } else {
