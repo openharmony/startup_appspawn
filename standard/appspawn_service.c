@@ -91,7 +91,7 @@ APPSPAWN_STATIC void AddAppInfo(pid_t pid, const char *processName)
     APPSPAWN_CHECK(ret == 0, free(node);
         return, "Failed to strcpy process name");
     HASHMAPInitNode(&node->node);
-    ret = HashMapAdd(g_appSpawnContent->appMap, &node->node);
+    ret = OH_HashMapAdd(g_appSpawnContent->appMap, &node->node);
     APPSPAWN_CHECK(ret == 0, free(node);
         return, "Failed to add appinfo to hash");
     APPSPAWN_LOGI("Add %s, pid=%d success", processName, pid);
@@ -105,17 +105,17 @@ APPSPAWN_STATIC void ProcessTimer(const TimerHandle taskHandle, void *context)
 
 static void RemoveAppInfo(pid_t pid)
 {
-    HashNode *node = HashMapGet(g_appSpawnContent->appMap, (const void *)&pid);
+    HashNode *node = OH_HashMapGet(g_appSpawnContent->appMap, (const void *)&pid);
     APPSPAWN_CHECK(node != NULL, return, "Invalid node %d", pid);
     AppInfo *appInfo = HASHMAP_ENTRY(node, AppInfo, node);
     APPSPAWN_CHECK(appInfo != NULL, return, "Invalid node %d", pid);
-    HashMapRemove(g_appSpawnContent->appMap, (const void *)&pid);
+    OH_HashMapRemove(g_appSpawnContent->appMap, (const void *)&pid);
     free(appInfo);
     if ((g_appSpawnContent->flags & FLAGS_ON_DEMAND) != FLAGS_ON_DEMAND) {
         return;
     }
 
-    if (g_appSpawnContent->timer == NULL && HashMapIsEmpty(g_appSpawnContent->appMap) != 0) {
+    if (g_appSpawnContent->timer == NULL && OH_HashMapIsEmpty(g_appSpawnContent->appMap) != 0) {
         APPSPAWN_LOGI("Start time for appspawn");
         int ret = LE_CreateTimer(LE_GetDefaultLoop(), &g_appSpawnContent->timer, ProcessTimer, NULL);
         APPSPAWN_CHECK(ret == 0, return, "Failed to create time");
@@ -158,7 +158,7 @@ static int SendResponse(AppSpawnClientExt *client, const char *buff, size_t buff
 #ifdef REPORT_EVENT
 static void PrintProcessExitInfo(pid_t pid, uid_t uid, int status)
 {
-    HashNode *node = HashMapGet(g_appSpawnContent->appMap, (const void *)&pid);
+    HashNode *node = OH_HashMapGet(g_appSpawnContent->appMap, (const void *)&pid);
     APPSPAWN_CHECK(node != NULL, return, "Handle SIGCHLD from pid:%d status:%d", pid, status);
     AppInfo *appInfo = HASHMAP_ENTRY(node, AppInfo, node);
     APPSPAWN_CHECK(appInfo != NULL, return, "Handle SIGCHLD from pid:%d status:%d", pid, status);
@@ -205,7 +205,7 @@ APPSPAWN_STATIC void SignalHandler(const struct signalfd_siginfo *siginfo)
             break;
         }
         case SIGTERM: {  // appswapn killed, use kill without parameter
-            HashMapTraverse(g_appSpawnContent->appMap, KillProcess, NULL);
+            OH_HashMapTraverse(g_appSpawnContent->appMap, KillProcess, NULL);
 #ifndef APPSPAWN_TEST
             LE_StopLoop(LE_GetDefaultLoop());
 #endif
@@ -498,7 +498,7 @@ static void AppSpawnRun(AppSpawnContent *content, int argc, char *const argv[])
     APPSPAWN_LOGI("AppSpawnRun exit ");
     LE_CloseSignalTask(LE_GetDefaultLoop(), appSpawnContent->sigHandler);
     // release resource
-    HashMapDestory(appSpawnContent->appMap);
+    OH_HashMapDestory(appSpawnContent->appMap);
     free(content);
     g_appSpawnContent = NULL;
 #ifndef APPSPAWN_TEST
@@ -516,7 +516,7 @@ static int CreateHashForApp(AppSpawnContentExt *appSpawnContent)
         AppInfoHashNodeFree,
         APP_HASH_BUTT
     };
-    int ret = HashMapCreate(&appSpawnContent->appMap, &hashInfo);
+    int ret = OH_HashMapCreate(&appSpawnContent->appMap, &hashInfo);
     APPSPAWN_CHECK(ret == 0, free(appSpawnContent); return -1, "Failed to create hash for app");
     return 0;
 }
