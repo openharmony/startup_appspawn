@@ -36,7 +36,11 @@ namespace {
 
 void LoadExtendLib(AppSpawnContent *content)
 {
+#ifdef webview_arm64
+    const std::string LOAD_LIB_DIR = "/data/app/el1/bundle/public/com.ohos.nweb/libs/arm64";
+#else
     const std::string LOAD_LIB_DIR = "/data/app/el1/bundle/public/com.ohos.nweb/libs/arm";
+#endif
 
 #ifdef __MUSL__
     Dl_namespace dlns;
