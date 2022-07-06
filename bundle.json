@@ -28,12 +28,15 @@
         "deps": {
             "components": [
                 "ability_base",
-                "hisysevent_native",
-                "hiviewdfx_hilog_native",
+                "utils_base",
                 "ipc",
-                "safwk",
-                "samgr_standard",
-                "utils_base"
+                "selinux",
+                "hiviewdfx_hilog_native",
+                "init",
+                "ability_runtime",
+                "access_token",
+                "common",
+                "eventhandler"
             ]
         },
         "build": {
