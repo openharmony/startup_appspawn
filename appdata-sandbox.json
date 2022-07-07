@@ -243,6 +243,12 @@
             ],
             "symbol-links" : []
         }],
+        "com.ohos.camera" : [{
+            "sandbox-switch": "OFF",
+            "sandbox-root" : "/mnt/sandbox/<PackageName>",
+            "mount-paths" : [],
+            "symbol-links" : []
+        }],
         "com.ohos.UserFile.ExternalFileManager" : [{
             "sandbox-switch": "ON",
             "sandbox-root" : "/mnt/sandbox/<PackageName>",
