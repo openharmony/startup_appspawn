@@ -142,6 +142,9 @@ ohos_static_library("nwebspawn_server") {
 
 ohos_executable("nwebspawn") {
   defines = [ "NWEB_SPAWN" ]
+  if (target_cpu == "arm64") {
+    defines += [ "webview_arm64" ]
+  }
   sources = [
     "${appspawn_path}/adapter/appspawn_nweb.cpp",
     "${appspawn_path}/standard/main.c",
