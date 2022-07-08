@@ -115,7 +115,7 @@ static void MakeDirRecursive(const std::string &path, mode_t mode)
         index = pathIndex == std::string::npos ? size : pathIndex + 1;
         std::string dir = path.substr(0, index);
         APPSPAWN_CHECK(!(access(dir.c_str(), F_OK) < 0 && mkdir(dir.c_str(), mode) < 0),
-            return, "mkdir %s error", dir.c_str());
+            return, "mkdir %s failed, error is %d", dir.c_str(), errno);
     } while (index < size);
 }
 
