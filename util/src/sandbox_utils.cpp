@@ -43,7 +43,7 @@ namespace {
     constexpr int32_t UID_BASE = 200000;
     constexpr int32_t FUSE_OPTIONS_MAX_LEN = 128;
     constexpr int32_t DLP_FUSE_FD = 1000;
-    constexpr static mode_t FILE_MODE = 0711;
+    constexpr static mode_t FILE_MODE = 0771;
     constexpr static mode_t BASIC_MOUNT_FLAGS = MS_REC | MS_BIND;
     constexpr std::string_view APL_SYSTEM_CORE("system_core");
     constexpr std::string_view APL_SYSTEM_BASIC("system_basic");
@@ -116,7 +116,7 @@ static void MakeDirRecursive(const std::string &path, mode_t mode)
         index = pathIndex == std::string::npos ? size : pathIndex + 1;
         std::string dir = path.substr(0, index);
         APPSPAWN_CHECK(!(access(dir.c_str(), F_OK) < 0 && mkdir(dir.c_str(), mode) < 0),
-            return, "mkdir %s error", dir.c_str());
+            return, "mkdir %s failed, error is %d", dir.c_str(), errno);
     } while (index < size);
 }
 
