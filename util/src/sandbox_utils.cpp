@@ -43,7 +43,7 @@ namespace {
     constexpr int32_t UID_BASE = 200000;
     constexpr int32_t FUSE_OPTIONS_MAX_LEN = 128;
     constexpr int32_t DLP_FUSE_FD = 1000;
-    constexpr static mode_t FILE_MODE = 0771;
+    constexpr static mode_t FILE_MODE = 0711;
     constexpr static mode_t BASIC_MOUNT_FLAGS = MS_REC | MS_BIND;
     constexpr std::string_view APL_SYSTEM_CORE("system_core");
     constexpr std::string_view APL_SYSTEM_BASIC("system_basic");
