@@ -15,11 +15,7 @@
 
 #include "appspawn_adapter.h"
 
-#include <unistd.h>
-
 #include <string>
-#include <vector>
-
 #include "appspawn_service.h"
 #include "json_utils.h"
 #include "sandbox_utils.h"
