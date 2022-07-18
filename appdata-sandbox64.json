@@ -74,8 +74,8 @@
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
-                    "src-path" : "/vendor/lib64/chipsetsdk",
-                    "sandbox-path" : "/vendor/lib64/chipsetsdk",
+                    "src-path" : "/vendor/lib64",
+                    "sandbox-path" : "/vendor/lib64",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
@@ -258,18 +258,6 @@
                     "check-action-status": "false"
                 }
             ],
-            "symbol-links" : []
-        }],
-        "com.ohos.camera" : [{
-            "sandbox-switch": "OFF",
-            "sandbox-root" : "/mnt/sandbox/<PackageName>",
-            "mount-paths" : [],
-            "symbol-links" : []
-        }],
-        "com.example.Browser" : [{
-            "sandbox-switch": "OFF",
-            "sandbox-root" : "/mnt/sandbox/<PackageName>",
-            "mount-paths" : [],
             "symbol-links" : []
         }],
         "com.ohos.UserFile.ExternalFileManager" : [{
