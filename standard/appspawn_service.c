@@ -99,6 +99,7 @@ APPSPAWN_STATIC void AddAppInfo(pid_t pid, const char *processName)
 
 APPSPAWN_STATIC void ProcessTimer(const TimerHandle taskHandle, void *context)
 {
+    UNUSED(context);
     APPSPAWN_LOGI("timeout stop appspawn");
     LE_StopLoop(LE_GetDefaultLoop());
 }
