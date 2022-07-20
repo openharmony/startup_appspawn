@@ -50,7 +50,7 @@ executable("appspawn") {
     "//base/startup/init_lite/interfaces/innerkits/include",
     "//foundation/distributedschedule/samgr_lite/interfaces/kits/samgr",
     "//foundation/distributedschedule/samgr_lite/interfaces/kits/registry",
-    "${aafwk_lite_path}/interfaces/innerkits/abilitymgr_lite",
+    "${aafwk_lite_path}/interfaces/inner_api/abilitymgr_lite",
     "//third_party/bounds_checking_function/include/",
     "//third_party/cJSON",
     "//utils/native/lite/include",
