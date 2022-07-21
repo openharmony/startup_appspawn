@@ -34,6 +34,7 @@ void SetAppAccessToken(struct AppSpawnContent_ *content, AppSpawnClient *client)
 void SetSelinuxCon(struct AppSpawnContent_ *content, AppSpawnClient *client)
 {
 #ifdef WITH_SELINUX
+    UNUSED(content);
     AppSpawnClientExt *appProperty = (AppSpawnClientExt *)client;
     HapContext hapContext;
     int32_t ret = hapContext.HapDomainSetcontext(appProperty->property.apl, appProperty->property.processName);
