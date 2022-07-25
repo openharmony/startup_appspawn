@@ -32,6 +32,7 @@ config("appspawn_config") {
     "//base/startup/init/interfaces/innerkits/include",
     "//base/startup/syspara_lite/interfaces/innerkits/native/syspara/include",
     "//third_party/json/include",
+    "//base/startup/init_lite/services/modules/seccomp/include",
   ]
 
   if (build_selinux) {
@@ -96,8 +97,14 @@ ohos_static_library("appspawn_server") {
     external_deps += [ "selinux:libhap_restorecon" ]
   }
 
+  cflags = []
+  if (build_seccomp) {
+    cflags += [ "-DWITH_SECCOMP" ]
+    deps += [ "//base/startup/init_lite/services/modules/seccomp:seccomp" ]
+  }
+
   if (appspawn_report_event) {
-    cflags = [ "-DREPORT_EVENT" ]
+    cflags += [ "-DREPORT_EVENT" ]
     deps += [ "adapter/sysevent:event_reporter" ]
   }
 
@@ -137,6 +144,12 @@ ohos_static_library("nwebspawn_server") {
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
   if (build_selinux) {
     external_deps += [ "selinux:libhap_restorecon" ]
+  }
+
+  cflags = []
+  if (build_seccomp) {
+    cflags += [ "-DWITH_SECCOMP" ]
+    deps += [ "//base/startup/init_lite/services/modules/seccomp:seccomp" ]
   }
 
   subsystem_name = "${subsystem_name}"
