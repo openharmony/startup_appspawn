@@ -114,9 +114,9 @@ int ForkChildProc(struct AppSpawnContent_ *content, AppSpawnClient *client, pid_
         int ret = -1;
 #ifdef ASAN_DETECTOR
         if ((content->getWrapBundleNameValue != NULL && content->getWrapBundleNameValue(content, client) == 0)
-            || (client->flags & APP_COLD_START)) {
+            || ((client->flags & APP_COLD_START) != 0)) {
 #else
-        if (client->flags & APP_COLD_START) {
+        if ((client->flags & APP_COLD_START) != 0) {
 #endif
             if (content->coldStartApp != NULL && content->coldStartApp(content, client) == 0) {
 #ifndef APPSPAWN_TEST
