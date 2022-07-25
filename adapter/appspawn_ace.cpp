@@ -26,9 +26,9 @@ void LoadExtendLib(AppSpawnContent *content)
 #endif
     APPSPAWN_LOGI("MainThread::LoadAbilityLibrary. Start calling dlopen acelibdir.");
 #ifndef APPSPAWN_TEST
-    void *AceAbilityLib = NULL;
-    AceAbilityLib = dlopen(acelibdir, RTLD_NOW | RTLD_GLOBAL);
-    APPSPAWN_CHECK(AceAbilityLib != NULL, return, "Fail to dlopen %s, [%s]", acelibdir, dlerror());
+    void *aceAbilityLib = NULL;
+    aceAbilityLib = dlopen(acelibdir, RTLD_NOW | RTLD_GLOBAL);
+    APPSPAWN_CHECK(aceAbilityLib != NULL, return, "Fail to dlopen %s, [%s]", acelibdir, dlerror());
 #endif
     APPSPAWN_LOGI("Success to dlopen %s", acelibdir);
     APPSPAWN_LOGI("MainThread::LoadAbilityLibrary. End calling dlopen");
