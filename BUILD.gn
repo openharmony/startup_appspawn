@@ -26,10 +26,10 @@ config("appspawn_config") {
     "${ability_runtime_path}/interfaces/kits/native/appkit/app",
     "//base/global/resource_management/interfaces/inner_api/include",
     "//base/security/access_token/interfaces/innerkits/token_setproc/include",
-    "//base/startup/init_lite/services/log",
-    "//base/startup/init_lite/services/include",
-    "//base/startup/init_lite/services/loopevent/include",
-    "//base/startup/init_lite/interfaces/innerkits/include",
+    "//base/startup/init/services/log",
+    "//base/startup/init/services/include",
+    "//base/startup/init/services/loopevent/include",
+    "//base/startup/init/interfaces/innerkits/include",
     "//base/startup/syspara_lite/interfaces/innerkits/native/syspara/include",
     "//third_party/json/include",
   ]
@@ -85,7 +85,7 @@ ohos_static_library("appspawn_server") {
   ldflags = [ "-Wl,--dynamic-linker,/system/bin/linker64z" ]
   deps = [
     "//base/security/access_token/interfaces/innerkits/token_setproc:libtoken_setproc",
-    "//base/startup/init_lite/interfaces/innerkits:libbegetutil",
+    "//base/startup/init/interfaces/innerkits:libbegetutil",
     "//utils/native/base:utils",
   ]
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
@@ -128,7 +128,7 @@ ohos_static_library("nwebspawn_server") {
   ldflags = [ "-Wl,--dynamic-linker,/system/bin/linker64z" ]
   deps = [
     "//base/security/access_token/interfaces/innerkits/token_setproc:libtoken_setproc",
-    "//base/startup/init_lite/interfaces/innerkits:libbegetutil",
+    "//base/startup/init/interfaces/innerkits:libbegetutil",
     "//utils/native/base:utils",
   ]
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
