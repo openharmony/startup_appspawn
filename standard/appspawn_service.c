@@ -407,7 +407,7 @@ APPSPAWN_STATIC int OnConnection(const LoopHandle loopHandle, const TaskHandle s
 #endif
     info.baseInfo.close = OnClose;
     info.baseInfo.userDataSize = sizeof(AppSpawnClientExt);
-    info.disConntectComplete = NULL;
+    info.disConnectComplete = NULL;
     info.sendMessageComplete = SendMessageComplete;
     info.recvMessage = OnReceiveRequest;
 
