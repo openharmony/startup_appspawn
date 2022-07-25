@@ -25,7 +25,7 @@ base/startup/appspawn_standard
 ├─test                   # 应用孵化器组件测试源码
 └─util
     ├─include            # 应用孵化器工具类头文件
-    └─src                # 应用孵化器工具类源码
+    └─src                # 应用孵化器工具类源码, 含json处理库及应用沙箱实现源码
 ```
 
 ## 使用说明
@@ -66,7 +66,8 @@ base/startup/appspawn_standard
   | accessTokenId | 即应用进程权限控制的token id。 |
   | apl | 即应用进程权限控制的apl，最大32字节. |
   | renderCmd | 即图形图像渲染命令， 最大1024字节。 |
-  | flags | 即冷启动标志位。 |
+  | flags | 启动标志位, 目前包含冷启动标志位，DLP应用标志位，备份恢复标志位。 |
+  | index | 临时沙箱index |
   | pid | 即渲染进程pid，查询渲染进程退出状态。 |
   | AppOperateType | 即App操作类型，0： 默认状态； 1：获取渲染终止状态。 |
 
