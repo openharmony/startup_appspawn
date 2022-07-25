@@ -52,9 +52,12 @@ ohos_executable("appspawn") {
   external_deps = [
     "ability_base:want",
     "ability_runtime:app_manager",
+    "ability_runtime:runtime",
     "eventhandler:libeventhandler",
     "hiviewdfx_hilog_native:libhilog",
+    "init:libbegetutil",
     "ipc:ipc_core",
+    "napi:ace_napi",
     "utils_base:utils",
   ]
 
