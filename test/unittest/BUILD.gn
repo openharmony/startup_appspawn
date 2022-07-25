@@ -89,13 +89,14 @@ ohos_unittest("AppSpawn_ut") {
   external_deps = [
     "ability_base:want",
     "ability_runtime:app_manager",
+    "ability_runtime:runtime",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "eventhandler:libeventhandler",
     "hiviewdfx_hilog_native:libhilog",
-    "hiviewdfx_hilog_native:libhilog",
     "init:libbegetutil",
     "ipc:ipc_core",
+    "napi:ace_napi",
     "utils_base:utils",
   ]
 }
