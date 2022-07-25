@@ -61,7 +61,7 @@ executable("appspawn") {
     "//base/startup/init/interfaces/innerkits:libbegetutil",
     "//build/lite/config/component/cJSON:cjson_shared",
     "//foundation/communication/ipc/interfaces/innerkits/c/ipc:ipc_single",
-    "//foundation/distributeddatamgr/appdatamgr/kv_store/interfaces/inner_api/kv_store:kv_store",
+    "//foundation/distributeddatamgr/kv_store/interfaces/inner_api/kv_store:kv_store",
     "//foundation/distributedschedule/samgr_lite/samgr:samgr",
     "//third_party/bounds_checking_function:libsec_shared",
   ]
