@@ -47,7 +47,7 @@ executable("appspawn") {
     ".",
     "../common",
     "//base/startup/appspawn/interfaces/innerkits/include",
-    "//base/startup/init_lite/interfaces/innerkits/include",
+    "//base/startup/init/interfaces/innerkits/include",
     "//foundation/distributedschedule/samgr_lite/interfaces/kits/samgr",
     "//foundation/distributedschedule/samgr_lite/interfaces/kits/registry",
     "${aafwk_lite_path}/interfaces/inner_api/abilitymgr_lite",
@@ -58,7 +58,7 @@ executable("appspawn") {
 
   deps = [
     "${aafwk_lite_path}/frameworks/ability_lite:aafwk_abilitykit_lite",
-    "//base/startup/init_lite/interfaces/innerkits:libbegetutil",
+    "//base/startup/init/interfaces/innerkits:libbegetutil",
     "//build/lite/config/component/cJSON:cjson_shared",
     "//foundation/communication/ipc/interfaces/innerkits/c/ipc:ipc_single",
     "//foundation/distributeddatamgr/appdatamgr/kv_store/interfaces/inner_api/kv_store:kv_store",
