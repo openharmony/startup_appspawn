@@ -32,7 +32,6 @@ config("appspawn_config") {
     "//base/startup/init/interfaces/innerkits/include",
     "//base/startup/syspara_lite/interfaces/innerkits/native/syspara/include",
     "//third_party/json/include",
-    "//base/startup/init_lite/services/modules/seccomp/include",
   ]
 
   if (build_selinux) {
@@ -100,7 +99,7 @@ ohos_static_library("appspawn_server") {
   cflags = []
   if (build_seccomp) {
     cflags += [ "-DWITH_SECCOMP" ]
-    deps += [ "//base/startup/init_lite/services/modules/seccomp:seccomp" ]
+    external_deps += [ "init:seccomp" ]
   }
 
   if (appspawn_report_event) {
@@ -149,7 +148,7 @@ ohos_static_library("nwebspawn_server") {
   cflags = []
   if (build_seccomp) {
     cflags += [ "-DWITH_SECCOMP" ]
-    deps += [ "//base/startup/init_lite/services/modules/seccomp:seccomp" ]
+    external_deps += [ "init:seccomp" ]
   }
 
   subsystem_name = "${subsystem_name}"

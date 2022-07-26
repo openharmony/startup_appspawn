@@ -32,6 +32,7 @@ void RunChildProcessor(AppSpawnContent *content, AppSpawnClient *client);
 int GetRenderProcessTerminationStatus(int32_t pid, int *status);
 void RecordRenderProcessExitedStatus(pid_t pid, int status);
 void LoadAppSandboxConfig(void);
+void SetUidGidFilter(struct AppSpawnContent_ *content);
 #ifdef __cplusplus
 }
 #endif
