@@ -18,13 +18,8 @@
 #include "appspawn_server.h"
 
 #include <fcntl.h>
-#include <sys/capability.h>
-#include <sys/mount.h>
-#include <sys/prctl.h>
 #include <sys/signalfd.h>
 #include <sys/stat.h>
-#include <sys/syscall.h>
-#include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
 

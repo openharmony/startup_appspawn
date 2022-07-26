@@ -16,12 +16,9 @@
 #include "client_socket.h"
 
 #include <sys/socket.h>
-
 #include <cerrno>
-#include <iostream>
 
 #include "appspawn_server.h"
-#include "securec.h"
 
 namespace OHOS {
 namespace AppSpawn {
