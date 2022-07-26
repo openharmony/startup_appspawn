@@ -33,10 +33,6 @@
 #include "parameter.h"
 #include "securec.h"
 
-#ifdef WITH_SECCOMP
-#include "seccomp_policy.h"
-#endif
-
 #ifdef REPORT_EVENT
 #include "event_reporter.h"
 #endif
@@ -441,17 +437,6 @@ static void NotifyResToParent(struct AppSpawnContent_ *content, AppSpawnClient *
     close(fd);
 }
 
-#ifdef WITH_SECCOMP
-bool SetUidGidFliter(void)
-{
-    if (!SetSeccompPolicy(APPSPAWN)) {
-        APPSPAWN_LOGE("SetSeccompPolicy APPSPAWN failed");
-        return false;
-    }
-    return true;
-}
-#endif
-
 static void AppSpawnInit(AppSpawnContent *content)
 {
     AppSpawnContentExt *appSpawnContent = (AppSpawnContentExt *)content;
@@ -467,9 +452,9 @@ static void AppSpawnInit(AppSpawnContent *content)
     SetContentFunction(content);
 
     // set uid gid filetr
-#ifdef WITH_SECCOMP
-    APPSPAWN_CHECK(SetUidGidFliter() == true, return, "SetUidGidFliter failed");
-#endif
+    if (content->setUidGidFilter) {
+        content->setUidGidFilter(content);
+    }
 
     // load app sandbox config
     LoadAppSandboxConfig();
