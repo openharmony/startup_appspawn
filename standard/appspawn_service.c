@@ -562,7 +562,7 @@ AppSpawnContent *AppSpawnCreateContent(const char *socketName, char *longProcNam
         info.socketId = socketId;
         info.server = path;
         info.baseInfo.close = NULL;
-        info.incommingConntect = OnConnection;
+        info.incommingConnect = OnConnection;
 
         ret = LE_CreateStreamServer(LE_GetDefaultLoop(), &appSpawnContent->server, &info);
         APPSPAWN_CHECK(ret == 0, free(appSpawnContent);
