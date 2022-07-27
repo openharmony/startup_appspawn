@@ -89,6 +89,7 @@ ohos_static_library("appspawn_server") {
   deps = [
     "//base/security/access_token/interfaces/innerkits/token_setproc:libtoken_setproc",
     "//base/startup/init/interfaces/innerkits:libbegetutil",
+    "//foundation/communication/netmanager_base/services/netmanagernative/netsys_client:netsys_client",
     "//utils/native/base:utils",
   ]
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
@@ -132,6 +133,7 @@ ohos_static_library("nwebspawn_server") {
   deps = [
     "//base/security/access_token/interfaces/innerkits/token_setproc:libtoken_setproc",
     "//base/startup/init/interfaces/innerkits:libbegetutil",
+    "//foundation/communication/netmanager_base/services/netmanagernative/netsys_client:netsys_client",
     "//utils/native/base:utils",
   ]
   external_deps = [ "hiviewdfx_hilog_native:libhilog" ]

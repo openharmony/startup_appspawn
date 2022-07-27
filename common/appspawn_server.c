@@ -26,6 +26,29 @@
 
 #define DEFAULT_UMASK 0002
 
+#ifndef APPSPAWN_TEST
+#ifndef OHOS_LITE
+void DisallowInternet(void);
+#endif
+#endif
+
+static void SetInternetPermission(AppSpawnClient *client)
+{
+#ifndef APPSPAWN_TEST
+#ifndef OHOS_LITE
+    if (client == NULL) {
+        return;
+    }
+
+    APPSPAWN_LOGI("SetInternetPermission id %d setAllowInternet %hhu allowInternet %hhu", client->id,
+                  client->setAllowInternet, client->allowInternet);
+    if (client->setAllowInternet == 1 && client->allowInternet == 0) {
+        DisallowInternet();
+    }
+#endif
+#endif
+}
+
 static void NotifyResToParent(struct AppSpawnContent_ *content, AppSpawnClient *client, int result)
 {
     if (content->notifyResToParent != NULL) {
@@ -47,6 +70,8 @@ static void ProcessExit(void)
 
 int DoStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client, char *longProcName, uint32_t longProcNameLen)
 {
+    SetInternetPermission(client);
+
     APPSPAWN_LOGI("DoStartApp id %d longProcNameLen %u", client->id, longProcNameLen);
     int32_t ret = 0;
 

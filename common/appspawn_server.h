@@ -40,6 +40,14 @@ extern "C" {
 typedef struct AppSpawnClient_ {
     uint32_t id;
     uint32_t flags;
+#ifndef APPSPAWN_TEST
+#ifndef OHOS_LITE
+    uint8_t setAllowInternet;
+    uint8_t allowInternet;
+    uint8_t reserved1;
+    uint8_t reserved2;
+#endif
+#endif
 } AppSpawnClient;
 
 #define MAX_SOCKEYT_NAME_LEN 128
