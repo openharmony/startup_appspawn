@@ -16,9 +16,7 @@
 #include "appspawn_socket.h"
 
 #include <sys/socket.h>
-
 #include <cerrno>
-#include <iostream>
 
 #include "appspawn_server.h"
 #include "pubdef.h"
