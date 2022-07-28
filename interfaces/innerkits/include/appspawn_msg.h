@@ -72,6 +72,14 @@ typedef struct AppParameter_ {
     int32_t pid;                     // query render process exited status by render process pid
     int32_t bundleIndex;
     AppOperateType code;
+#ifndef APPSPAWN_TEST
+#ifndef OHOS_LITE
+    uint8_t setAllowInternet;
+    uint8_t allowInternet; // hap sockect allowed
+    uint8_t reserved1;
+    uint8_t reserved2;
+#endif
+#endif
 } AppParameter;
 
 #ifdef __cplusplus

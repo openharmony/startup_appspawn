@@ -18,13 +18,35 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <sys/stat.h>
-#include <sys/types.h>
 #include <unistd.h>
 #ifdef OHOS_DEBUG
 #include <time.h>
 #endif // OHOS_DEBUG
 
 #define DEFAULT_UMASK 0002
+
+#ifndef APPSPAWN_TEST
+#ifndef OHOS_LITE
+void DisallowInternet(void);
+#endif
+#endif
+
+static void SetInternetPermission(AppSpawnClient *client)
+{
+#ifndef APPSPAWN_TEST
+#ifndef OHOS_LITE
+    if (client == NULL) {
+        return;
+    }
+
+    APPSPAWN_LOGI("SetInternetPermission id %d setAllowInternet %hhu allowInternet %hhu", client->id,
+                  client->setAllowInternet, client->allowInternet);
+    if (client->setAllowInternet == 1 && client->allowInternet == 0) {
+        DisallowInternet();
+    }
+#endif
+#endif
+}
 
 static void NotifyResToParent(struct AppSpawnContent_ *content, AppSpawnClient *client, int result)
 {
@@ -47,6 +69,8 @@ static void ProcessExit(void)
 
 int DoStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client, char *longProcName, uint32_t longProcNameLen)
 {
+    SetInternetPermission(client);
+
     APPSPAWN_LOGI("DoStartApp id %d longProcNameLen %u", client->id, longProcNameLen);
     int32_t ret = 0;
 
@@ -114,9 +138,9 @@ int ForkChildProc(struct AppSpawnContent_ *content, AppSpawnClient *client, pid_
         int ret = -1;
 #ifdef ASAN_DETECTOR
         if ((content->getWrapBundleNameValue != NULL && content->getWrapBundleNameValue(content, client) == 0)
-            || (client->flags & APP_COLD_START)) {
+            || ((client->flags & APP_COLD_START) != 0)) {
 #else
-        if (client->flags & APP_COLD_START) {
+        if ((client->flags & APP_COLD_START) != 0) {
 #endif
             if (content->coldStartApp != NULL && content->coldStartApp(content, client) == 0) {
 #ifndef APPSPAWN_TEST

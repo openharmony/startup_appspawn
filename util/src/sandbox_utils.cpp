@@ -15,8 +15,6 @@
 
 #include "sandbox_utils.h"
 
-#include <dirent.h>
-#include <dlfcn.h>
 #include <fcntl.h>
 #include <unistd.h>
 
@@ -24,11 +22,7 @@
 #include <sys/stat.h>
 #include <sys/syscall.h>
 #include <sys/types.h>
-#include <sys/wait.h>
-
 #include <cerrno>
-#include <fstream>
-#include <sstream>
 
 #include "json_utils.h"
 #include "securec.h"
@@ -366,7 +360,7 @@ int SandboxUtils::DoAllMntPointsMount(const ClientSocket::AppProperty *appProper
 
     bool checkFlag = false;
     if (appConfig.find(FLAGS) != appConfig.end()) {
-        if ((ConvertFlagStr(appConfig[FLAGS].get<std::string>()) & appProperty->flags) &&
+        if (((ConvertFlagStr(appConfig[FLAGS].get<std::string>()) & appProperty->flags) != 0) &&
             bundleName.find("wps") != std::string::npos) {
             checkFlag = true;
         }
@@ -494,7 +488,7 @@ int32_t SandboxUtils::HandleFlagsPoint(const ClientSocket::AppProperty *appPrope
         if (flagPoint.find(FLAGS) != flagPoint.end()) {
             std::string flagsStr = flagPoint[FLAGS].get<std::string>();
             uint32_t flag = ConvertFlagStr(flagsStr);
-            if (appProperty->flags & flag) {
+            if ((appProperty->flags & flag) != 0) {
                 return DoAllMntPointsMount(appProperty, flagPoint);
             }
         } else {
