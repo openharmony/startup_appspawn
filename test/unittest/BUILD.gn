@@ -47,7 +47,6 @@ config("utest_config") {
     "//base/startup/init/services/include",
     "//base/startup/init/services/loopevent/include",
     "//base/startup/init/interfaces/innerkits/include",
-    "//base/startup/syspara_lite/interfaces/innerkits/native/syspara/include",
     "//third_party/json/include",
   ]
 }
