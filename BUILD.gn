@@ -21,7 +21,7 @@ config("appspawn_config") {
     "standard",
     "adapter",
     "interfaces/innerkits/include",
-    "//utils/native/base/include",
+    "//commonlibrary/c_utils/base/include",
     "util/include",
     "${ability_runtime_path}/interfaces/kits/native/appkit/app",
     "//base/global/resource_management/interfaces/inner_api/include",
@@ -52,12 +52,12 @@ ohos_executable("appspawn") {
     "ability_base:want",
     "ability_runtime:app_manager",
     "ability_runtime:runtime",
+    "c_utils:utils",
     "eventhandler:libeventhandler",
     "hiviewdfx_hilog_native:libhilog",
     "init:libbegetutil",
     "ipc:ipc_core",
     "napi:ace_napi",
-    "utils_base:utils",
   ]
 
   install_enable = true
@@ -89,9 +89,9 @@ ohos_static_library("appspawn_server") {
     "//base/security/access_token/interfaces/innerkits/token_setproc:libtoken_setproc",
     "//base/startup/init/interfaces/innerkits:libbegetutil",
     "//foundation/communication/netmanager_base/services/netmanagernative/netsys_client:netsys_client",
-    "//utils/native/base:utils",
   ]
   external_deps = [
+    "c_utils:utils",
     "hiviewdfx_hilog_native:libhilog",
     "init:libbegetutil",
   ]
@@ -135,9 +135,9 @@ ohos_static_library("nwebspawn_server") {
   deps = [
     "//base/security/access_token/interfaces/innerkits/token_setproc:libtoken_setproc",
     "//foundation/communication/netmanager_base/services/netmanagernative/netsys_client:netsys_client",
-    "//utils/native/base:utils",
   ]
   external_deps = [
+    "c_utils:utils",
     "hiviewdfx_hilog_native:libhilog",
     "init:libbegetutil",
   ]
