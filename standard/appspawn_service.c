@@ -222,7 +222,7 @@ static void HandleSpecial(AppSpawnClientExt *appProperty)
             appProperty->property.gidCount++;
         }
     }
-    
+
     // special handle bundle name medialibrary and scanner
     const char *specialBundleNames[] = {
         "com.ohos.medialibrary.medialibrarydata"
@@ -374,6 +374,7 @@ APPSPAWN_STATIC void OnReceiveRequest(const TaskHandle taskHandle, const uint8_t
     APPSPAWN_LOGI("OnReceiveRequest client.id %d appProperty %d processname %s buffLen %d flags 0x%x",
         appProperty->client.id, appProperty->property.uid, appProperty->property.processName,
         buffLen, appProperty->property.flags);
+    appProperty->client.flags = appProperty->property.flags;
     fcntl(appProperty->fd[0], F_SETFL, O_NONBLOCK);
 
     pid_t pid = 0;
