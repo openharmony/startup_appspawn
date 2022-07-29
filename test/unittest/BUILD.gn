@@ -35,7 +35,7 @@ config("utest_config") {
     "${appspawn_path}/adapter",
     "${appspawn_path}/interfaces/innerkits/include",
     "${appspawn_path}/util/include",
-    "//utils/native/base/include",
+    "//commonlibrary/c_utils/base/include",
     "ability_runtime_kits_path/appkit/native/app/include",
     "${ability_runtime_path}/interfaces/innerkits/app_manager/include/appmgr",
     "${ability_runtime_path}/interfaces/innerkits/ability_manager/include",
@@ -91,12 +91,12 @@ ohos_unittest("AppSpawn_ut") {
     "ability_runtime:runtime",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
+    "c_utils:utils",
     "eventhandler:libeventhandler",
     "hiviewdfx_hilog_native:libhilog",
     "init:libbegetutil",
     "ipc:ipc_core",
     "napi:ace_napi",
-    "utils_base:utils",
   ]
 }
 

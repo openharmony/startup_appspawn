@@ -20,7 +20,7 @@ ohos_moduletest("AppSpawnModuleTest") {
   sources = [ "${appspawn_path}/test/moduletest/appspawn_module_test.cpp" ]
 
   include_dirs = [
-    "//utils/native/base/include",
+    "//commonlibrary/c_utils/base/include",
     "//third_party/zlib/contrib/minizip",
     "//third_party/zlib",
   ]
@@ -34,11 +34,11 @@ ohos_moduletest("AppSpawnModuleTest") {
     "${ability_runtime_path}/services/appmgr:libappms",
     "${appspawn_path}/interfaces/innerkits:appspawn_socket_client",
     "//third_party/googletest:gtest_main",
-    "//utils/native/base:utils",
   ]
 
   external_deps = [
     "bundle_framework:appexecfwk_base",
+    "c_utils:utils",
     "hiviewdfx_hilog_native:libhilog",
   ]
 }
