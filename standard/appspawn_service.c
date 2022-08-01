@@ -462,6 +462,11 @@ static void AppSpawnInit(AppSpawnContent *content)
     // set private function
     SetContentFunction(content);
 
+    // set uid gid filetr
+    if (content->setUidGidFilter) {
+        content->setUidGidFilter(content);
+    }
+
     // load app sandbox config
     LoadAppSandboxConfig();
 }

@@ -99,8 +99,14 @@ ohos_static_library("appspawn_server") {
     external_deps += [ "selinux:libhap_restorecon" ]
   }
 
+  cflags = []
+  if (build_seccomp) {
+    cflags += [ "-DWITH_SECCOMP" ]
+    external_deps += [ "init:seccomp" ]
+  }
+
   if (appspawn_report_event) {
-    cflags = [ "-DREPORT_EVENT" ]
+    cflags += [ "-DREPORT_EVENT" ]
     deps += [ "adapter/sysevent:event_reporter" ]
   }
 
@@ -143,6 +149,12 @@ ohos_static_library("nwebspawn_server") {
   ]
   if (build_selinux) {
     external_deps += [ "selinux:libhap_restorecon" ]
+  }
+
+  cflags = []
+  if (build_seccomp) {
+    cflags += [ "-DWITH_SECCOMP" ]
+    external_deps += [ "init:seccomp" ]
   }
 
   subsystem_name = "${subsystem_name}"
