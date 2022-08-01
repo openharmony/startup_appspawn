@@ -60,6 +60,7 @@ typedef struct AppSpawnContent_ {
     void (*loadExtendLib)(struct AppSpawnContent_ *content);
     void (*initAppSpawn)(struct AppSpawnContent_ *content);
     void (*runAppSpawn)(struct AppSpawnContent_ *content, int argc, char *const argv[]);
+    void (*setUidGidFilter)(struct AppSpawnContent_ *content);
 
     // for child
     void (*clearEnvironment)(struct AppSpawnContent_ *content, AppSpawnClient *client);
