@@ -161,6 +161,32 @@
                     "check-action-status": "false"
                 }
             ],
+            "flags-point" : [{
+                    "flags": "DLP_MANAGER",
+                    "sandbox-root" : "/mnt/sandbox/<PackageName>",
+                    "mount-paths" : [{
+                        "src-path" : "/data/app/el2/<currentUserId>/base/<PackageName_index>",
+                        "sandbox-path" : "/data/storage/el2/base",
+                        "sandbox-flags" : [ "bind", "rec" ],
+                        "check-action-status": "false"
+                    },{
+                        "src-path" : "/data/app/el1/<currentUserId>/database/<PackageName_index>",
+                        "sandbox-path" : "/data/storage/el1/database",
+                        "sandbox-flags" : [ "bind", "rec" ],
+                        "check-action-status": "false"
+                    }, {
+                        "src-path" : "/data/app/el2/<currentUserId>/database/<PackageName_index>",
+                        "sandbox-path" : "/data/storage/el2/database",
+                        "sandbox-flags" : [ "bind", "rec" ],
+                        "check-action-status": "false"
+                    }, {
+                        "src-path" : "/data/app/el1/<currentUserId>/base/<PackageName_index>",
+                        "sandbox-path" : "/data/storage/el1/base",
+                        "sandbox-flags" : [ "bind", "rec" ],
+                        "check-action-status": "false"
+                    }
+                    ]}
+            ],
             "symbol-links" : [
             ]
         }]
@@ -211,39 +237,6 @@
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "true"
                 }
-            ],
-            "symbol-links" : []
-        }],
-        "com.ohos.wps" : [{
-            "sandbox-switch": "ON",
-            "sandbox-root" : "/mnt/sandbox/<PackageName>",
-            "mount-paths" : [
-            ],
-            "flags-point" : [{
-                    "flags": "DLP_MANAGER",
-                    "sandbox-root" : "/mnt/sandbox/<PackageName>",
-                    "mount-paths" : [{
-                        "src-path" : "/data/app/el2/<currentUserId>/base/<PackageName_index>",
-                        "sandbox-path" : "/data/storage/el2/base",
-                        "sandbox-flags" : [ "bind", "rec" ],
-                        "check-action-status": "false"
-                    },{
-                        "src-path" : "/data/app/el1/<currentUserId>/database/<PackageName_index>",
-                        "sandbox-path" : "/data/storage/el1/database",
-                        "sandbox-flags" : [ "bind", "rec" ],
-                        "check-action-status": "false"
-                    }, {
-                        "src-path" : "/data/app/el2/<currentUserId>/database/<PackageName_index>",
-                        "sandbox-path" : "/data/storage/el2/database",
-                        "sandbox-flags" : [ "bind", "rec" ],
-                        "check-action-status": "false"
-                    }, {
-                        "src-path" : "/data/app/el1/<currentUserId>/base/<PackageName_index>",
-                        "sandbox-path" : "/data/storage/el1/base",
-                        "sandbox-flags" : [ "bind", "rec" ],
-                        "check-action-status": "false"
-                    }
-                    ]}
             ],
             "symbol-links" : []
         }],
