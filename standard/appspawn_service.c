@@ -415,7 +415,7 @@ APPSPAWN_STATIC int OnConnection(const LoopHandle loopHandle, const TaskHandle s
 #endif
     info.baseInfo.close = OnClose;
     info.baseInfo.userDataSize = sizeof(AppSpawnClientExt);
-    info.disConntectComplete = NULL;
+    info.disConnectComplete = NULL;
     info.sendMessageComplete = SendMessageComplete;
     info.recvMessage = OnReceiveRequest;
 
@@ -579,7 +579,7 @@ AppSpawnContent *AppSpawnCreateContent(const char *socketName, char *longProcNam
         info.socketId = socketId;
         info.server = path;
         info.baseInfo.close = NULL;
-        info.incommingConntect = OnConnection;
+        info.incommingConnect = OnConnection;
 
         ret = LE_CreateStreamServer(LE_GetDefaultLoop(), &appSpawnContent->server, &info);
         APPSPAWN_CHECK(ret == 0, free(appSpawnContent);
