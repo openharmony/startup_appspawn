@@ -335,14 +335,13 @@ APPSPAWN_STATIC void SetInternetPermission(AppSpawnClientExt *appProperty)
 APPSPAWN_STATIC void OnReceiveRequest(const TaskHandle taskHandle, const uint8_t *buffer, uint32_t buffLen)
 {
     APPSPAWN_CHECK(buffer != NULL && buffLen >= sizeof(AppParameter), LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
-        return, "Invalid buffer buffLen %u", buffLen);
+        return, "Invalid buffLen %u", buffLen);
     AppSpawnClientExt *appProperty = (AppSpawnClientExt *)LE_GetUserData(taskHandle);
     APPSPAWN_CHECK(appProperty != NULL, LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
         return, "alloc client Failed");
 
     int ret = memcpy_s(&appProperty->property, sizeof(appProperty->property), buffer, buffLen);
-    APPSPAWN_CHECK(ret == 0, LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
-        return, "Invalid buffer buffLen %u", buffLen);
+    APPSPAWN_CHECK(ret == 0, LE_CloseTask(LE_GetDefaultLoop(), taskHandle); return, "Invalid buffLen %u", buffLen);
 
 #ifdef NWEB_SPAWN
     // get render process termination status, only nwebspawn need this logic.

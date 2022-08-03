@@ -31,7 +31,7 @@ void DisallowInternet(void);
 #endif
 #endif
 
-static void SetInternetPermission(AppSpawnClient *client)
+static void SetInternetPermission(const AppSpawnClient *client)
 {
 #ifndef APPSPAWN_TEST
 #ifndef OHOS_LITE
