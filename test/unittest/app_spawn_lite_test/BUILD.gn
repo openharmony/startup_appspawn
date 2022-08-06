@@ -28,8 +28,8 @@ unittest("AppSpawnLiteTest") {
     "//base/startup/appspawn/lite/",
     "//base/startup/init/interfaces/innerkits/include",
     "//base/hiviewdfx/hilog_lite/interfaces/native/innerkits/hilog",
-    "//foundation/distributedschedule/samgr_lite/interfaces/kits/samgr",
-    "//foundation/distributedschedule/samgr_lite/interfaces/kits/registry",
+    "//foundation/systemabilitymgr/samgr_lite/interfaces/kits/samgr",
+    "//foundation/systemabilitymgr/samgr_lite/interfaces/kits/registry",
     "//third_party/bounds_checking_function/include/",
     "//third_party/cJSON",
     "${aafwk_lite_path}/interfaces/inner_api/abilitymgr_lite",
@@ -53,7 +53,7 @@ unittest("AppSpawnLiteTest") {
     "//build/lite/config/component/cJSON:cjson_shared",
     "//foundation/communication/ipc/interfaces/innerkits/c/ipc:ipc_single",
     "//foundation/distributeddatamgr/kv_store/interfaces/inner_api/kv_store:kv_store",
-    "//foundation/distributedschedule/samgr_lite/samgr:samgr",
+    "//foundation/systemabilitymgr/samgr_lite/samgr:samgr",
     "//third_party/bounds_checking_function:libsec_shared",
   ]
 
