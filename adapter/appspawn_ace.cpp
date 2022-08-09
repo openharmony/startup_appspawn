@@ -15,6 +15,7 @@
 
 #include "appspawn_adapter.h"
 
+#include "hitrace_meter.h"
 #include "js_runtime.h"
 #include "parameters.h"
 #include "runtime.h"
@@ -44,7 +45,7 @@ void LoadExtendLib(AppSpawnContent *content)
     }
 
     APPSPAWN_LOGI("LoadExtendLib: Start preload JS VM");
-
+    SetTraceDisabled(true);
     OHOS::AbilityRuntime::Runtime::Options options;
     options.lang = OHOS::AbilityRuntime::Runtime::Language::JS;
     options.loadAce = true;
@@ -53,6 +54,7 @@ void LoadExtendLib(AppSpawnContent *content)
     auto runtime = OHOS::AbilityRuntime::Runtime::Create(options);
     if (!runtime) {
         APPSPAWN_LOGE("LoadExtendLib: Failed to create runtime");
+        SetTraceDisabled(false);
         return;
     }
 
@@ -63,7 +65,7 @@ void LoadExtendLib(AppSpawnContent *content)
 
     // Save preloaded runtime
     OHOS::AbilityRuntime::Runtime::SavePreloaded(std::move(runtime));
-
+    SetTraceDisabled(false);
     APPSPAWN_LOGI("LoadExtendLib: End preload JS VM");
 }
 
