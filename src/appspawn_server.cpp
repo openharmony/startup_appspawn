@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -559,7 +559,9 @@ bool AppSpawnServer::ServerMain(char *longProcName, int64_t longProcNameLen)
         return false;
     }
     std::thread(&AppSpawnServer::ConnectionPeer, this).detach();
+#ifndef APPSPAWN_UT
     LoadAceLib();
+#endif
 
     std::thread(&AppSpawnServer::WaitRebootEvent, this).detach();
     std::thread(&AppSpawnServer::HandleSignal, this).detach();
@@ -637,7 +639,7 @@ int32_t AppSpawnServer::SetProcessName(
     }
 
     // set long process name
-    if (strncpy_s(longProcName, len, processName, len) != EOK) {
+    if (strncpy_s(longProcName, longProcNameLen, processName, len) != EOK) {
         HiLog::Error(LABEL, "strncpy_s long name error: %{public}d", errno);
         return -EINVAL;
     }
@@ -1170,6 +1172,17 @@ int32_t AppSpawnServer::SetKeepCapabilities(uint32_t uid)
     return ERR_OK;
 }
 
+static int CheckBundleName(const std::string &bundleName)
+{
+    if (bundleName.empty() || bundleName.size() > ClientSocket::LEN_BUNDLE_NAME) {
+        return -1;
+    }
+    if (bundleName.find('\\') != std::string::npos || bundleName.find('/') != std::string::npos) {
+        return -1;
+    }
+    return 0;
+}
+
 bool AppSpawnServer::CheckAppProperty(const ClientSocket::AppProperty *appProperty)
 {
     if (appProperty == nullptr) {
@@ -1182,11 +1195,15 @@ bool AppSpawnServer::CheckAppProperty(const ClientSocket::AppProperty *appProper
         return false;
     }
 
-    if (strlen(appProperty->processName) == 0) {
-        HiLog::Error(LABEL, "process name length is 0");
+    if (CheckBundleName(appProperty->processName) != 0) {
+        HiLog::Error(LABEL, "process name error");
         return false;
     }
 
+    if (CheckBundleName(appProperty->bundleName) != 0) {
+        HiLog::Error(LABEL, "bundle name error");
+        return false;
+    }
     return true;
 }
 
