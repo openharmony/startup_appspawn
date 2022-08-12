@@ -213,7 +213,7 @@ HWTEST_F(AppSpawnServerOverrideTest, App_Spawn_Server_Override_007, TestSize.Lev
     char processName[32] = "processName0123456789";
     int32_t len = sizeof(processName);
 
-    EXPECT_EQ(0, appSpawnServer_->SetProcessName(longProcName, longProcNameLen, processName, len));
+    EXPECT_NE(0, appSpawnServer_->SetProcessName(longProcName, longProcNameLen, processName, len));
 
     GTEST_LOG_(INFO) << "App_Spawn_Server_Override_007 end";
 }
