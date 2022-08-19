@@ -701,10 +701,24 @@ bool SandboxUtils::CheckAppSandboxSwitchStatus(const ClientSocket::AppProperty *
     return rc;
 }
 
+static int CheckBundleName(const std::string bundleName)
+{
+    if (bundleName.empty() || bundleName.size() > APP_LEN_BUNDLE_NAME) {
+        return -1;
+    }
+    if (bundleName.find('\\') != std::string::npos || bundleName.find('/') != std::string::npos) {
+        return -1;
+    }
+    return 0;
+}
+
 int32_t SandboxUtils::SetAppSandboxProperty(const ClientSocket::AppProperty *appProperty)
 {
     std::string sandboxPackagePath = "/mnt/sandbox/";
     mkdir(sandboxPackagePath.c_str(), FILE_MODE);
+    if (appProperty == nullptr || CheckBundleName(appProperty->bundleName) != 0) {
+        return -1;
+    }
     const std::string bundleName = appProperty->bundleName;
     sandboxPackagePath += bundleName;
     mkdir(sandboxPackagePath.c_str(), FILE_MODE);
