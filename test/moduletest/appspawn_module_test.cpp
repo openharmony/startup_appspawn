@@ -400,7 +400,8 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_fork_001, TestSize.Level0)
     std::shared_ptr<AppExecFwk::AppSpawnSocket> appSpawnSocket = std::make_shared<AppExecFwk::AppSpawnSocket>();
     appSpawnClient->SetSocket(appSpawnSocket);
     EXPECT_EQ(ERR_OK, appSpawnClient->OpenConnection());
-    AppSpawnStartMsg params = {10003, 10004, {10003, 10004}, "processName-fork_001", "soPath"};
+    AppSpawnStartMsg params = {10003, 10004, {10003, 10004},
+        "processName-fork_001", "soPath", 0, "system_core", "moduleTestProcessName-fork_001"};
 
     appSpawnClient->StartProcess(params, newPid);
     // 0 < newPid, new process fork success
@@ -430,8 +431,10 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_fork_002, TestSize.Level0)
     std::shared_ptr<AppExecFwk::AppSpawnSocket> appSpawnSocket = std::make_shared<AppExecFwk::AppSpawnSocket>();
     appSpawnClient->SetSocket(appSpawnSocket);
     EXPECT_EQ(ERR_OK, appSpawnClient->OpenConnection());
-    AppSpawnStartMsg params = {10003, 10004, {10003, 10004}, "processName-fork_002", "soPath"};
+    AppSpawnStartMsg params = {10003, 10004, {10003, 10004},
+        "processName-fork_002", "soPath", 0, "system_core", "moduleTestProcessName-fork_002"};
 
+    GTEST_LOG_(INFO) << "AppSpawn_HF_fork_002 start " << params.procName.size();
     appSpawnClient->StartProcess(params, newPid);
     // 0 < newPid, new process fork success
     GTEST_LOG_(INFO) << "newPid :" << newPid << ".";
@@ -460,7 +463,8 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_setUid_001, TestSize.Level0)
     std::shared_ptr<AppExecFwk::AppSpawnSocket> appSpawnSocket = std::make_shared<AppExecFwk::AppSpawnSocket>();
     appSpawnClient->SetSocket(appSpawnSocket);
     EXPECT_EQ(ERR_OK, appSpawnClient->OpenConnection());
-    AppSpawnStartMsg params = {10003, 10004, {10003, 10004}, "processName-setUid_001", "soPath"};
+    AppSpawnStartMsg params = {10003, 10004, {10003, 10004},
+        "processName-setUid_001", "soPath", 0, "system_core", "moduleTestProcessName-setUid_001"};
 
     appSpawnClient->StartProcess(params, newPid);
     // 0 < newPid, new process fork success
@@ -492,7 +496,8 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_setUid_002, TestSize.Level0)
     std::shared_ptr<AppExecFwk::AppSpawnSocket> appSpawnSocket = std::make_shared<AppExecFwk::AppSpawnSocket>();
     appSpawnClient->SetSocket(appSpawnSocket);
     EXPECT_EQ(ERR_OK, appSpawnClient->OpenConnection());
-    AppSpawnStartMsg params = {10003, 10004, {10003, 10004}, "processName-setUid_002", "soPath"};
+    AppSpawnStartMsg params = {10003, 10004, {10003, 10004},
+        "processName-setUid_002", "soPath", 0, "system_core", "moduleTestProcessName-setUid_002"};
 
     appSpawnClient->StartProcess(params, newPid);
     // 0 < newPid, new process fork success
@@ -524,7 +529,8 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_setUid_003, TestSize.Level0)
     std::shared_ptr<AppExecFwk::AppSpawnSocket> appSpawnSocket = std::make_shared<AppExecFwk::AppSpawnSocket>();
     appSpawnClient->SetSocket(appSpawnSocket);
     EXPECT_EQ(ERR_OK, appSpawnClient->OpenConnection());
-    AppSpawnStartMsg params = {10003, 10004, {10003, 10004}, "processName-setUid_003", "soPath"};
+    AppSpawnStartMsg params = {10003, 10004, {10003, 10004},
+        "processName-setUid_003", "soPath", 0, "system_core", "moduleTestProcessName-setUid_003"};
 
     appSpawnClient->StartProcess(params, newPid);
     // 0 < newPid, new process fork success
@@ -556,7 +562,8 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_setUid_004, TestSize.Level0)
     std::shared_ptr<AppExecFwk::AppSpawnSocket> appSpawnSocket = std::make_shared<AppExecFwk::AppSpawnSocket>();
     appSpawnClient->SetSocket(appSpawnSocket);
     EXPECT_EQ(ERR_OK, appSpawnClient->OpenConnection());
-    AppSpawnStartMsg params = {10003, 10004, {10003, 10004}, "processName-setUid_004", "soPath"};
+    AppSpawnStartMsg params = {10003, 10004, {10003, 10004},
+        "processName-setUid_004", "soPath", 0, "system_core", "moduleTestProcessName-setUid_004"};
 
     appSpawnClient->StartProcess(params, newPid);
     // 0 < newPid, new process fork success
@@ -588,7 +595,8 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_setUid_005, TestSize.Level0)
     std::shared_ptr<AppExecFwk::AppSpawnSocket> appSpawnSocket = std::make_shared<AppExecFwk::AppSpawnSocket>();
     appSpawnClient->SetSocket(appSpawnSocket);
     EXPECT_EQ(ERR_OK, appSpawnClient->OpenConnection());
-    AppSpawnStartMsg params = {10003, 10004, {10003, 10004}, "processName-setUid_005", "soPath"};
+    AppSpawnStartMsg params = {10003, 10004, {10003, 10004},
+        "processName-setUid_005", "soPath", 0, "system_core", "moduleTestProcessName-setUid_005"};
 
     appSpawnClient->StartProcess(params, newPid);
     // 0 < newPid, new process fork success
@@ -620,7 +628,8 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_setUid_006, TestSize.Level0)
     std::shared_ptr<AppExecFwk::AppSpawnSocket> appSpawnSocket = std::make_shared<AppExecFwk::AppSpawnSocket>();
     appSpawnClient->SetSocket(appSpawnSocket);
     EXPECT_EQ(ERR_OK, appSpawnClient->OpenConnection());
-    AppSpawnStartMsg params = {10003, 10004, {10003, 10004}, "processName-setUid_006", "soPath"};
+    AppSpawnStartMsg params = {10003, 10004, {10003, 10004},
+        "processName-setUid_006", "soPath", 0, "system_core", "moduleTestProcessName-setUid_006"};
 
     appSpawnClient->StartProcess(params, newPid);
     // 0 < newPid, new process fork success
@@ -652,7 +661,8 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_setUid_007, TestSize.Level0)
     std::shared_ptr<AppExecFwk::AppSpawnSocket> appSpawnSocket = std::make_shared<AppExecFwk::AppSpawnSocket>();
     appSpawnClient->SetSocket(appSpawnSocket);
     EXPECT_EQ(ERR_OK, appSpawnClient->OpenConnection());
-    AppSpawnStartMsg params = {10003, 10004, {10003, 10004}, "processName-setUid_007", "soPath"};
+    AppSpawnStartMsg params = {10003, 10004, {10003, 10004},
+        "processName-setUid_007", "soPath", 0, "system_core", "moduleTestProcessName-setUid_007"};
 
     appSpawnClient->StartProcess(params, newPid);
     // 0 < newPid, new process fork success
@@ -684,7 +694,8 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_setUid_008, TestSize.Level0)
     std::shared_ptr<AppExecFwk::AppSpawnSocket> appSpawnSocket = std::make_shared<AppExecFwk::AppSpawnSocket>();
     appSpawnClient->SetSocket(appSpawnSocket);
     EXPECT_EQ(ERR_OK, appSpawnClient->OpenConnection());
-    AppSpawnStartMsg params = {10003, 10004, {10003, 10004}, "processName-setUid_008", "soPath"};
+    AppSpawnStartMsg params = {10003, 10004, {10003, 10004},
+        "processName-setUid_008", "soPath", 0, "system_core", "moduleTestProcessName-setUid_008"};
 
     appSpawnClient->StartProcess(params, newPid);
     // 0 < newPid, new process fork success
@@ -716,7 +727,8 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_setProcName_001, TestSize.Level0)
     std::shared_ptr<AppExecFwk::AppSpawnSocket> appSpawnSocket = std::make_shared<AppExecFwk::AppSpawnSocket>();
     appSpawnClient->SetSocket(appSpawnSocket);
     EXPECT_EQ(ERR_OK, appSpawnClient->OpenConnection());
-    AppSpawnStartMsg params = {10003, 10004, {10003, 10004}, "processName-setProcName_001", "soPath"};
+    AppSpawnStartMsg params = {10003, 10004, {10003, 10004},
+        "processName-setProcName_001", "soPath", 0, "system_core", "moduleTestProcessName-setProcName_001"};
 
     appSpawnClient->StartProcess(params, newPid);
     // 0 < newPid, new process fork success
@@ -749,7 +761,8 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_setProcName_002, TestSize.Level0)
     std::shared_ptr<AppExecFwk::AppSpawnSocket> appSpawnSocket = std::make_shared<AppExecFwk::AppSpawnSocket>();
     appSpawnClient->SetSocket(appSpawnSocket);
     EXPECT_EQ(ERR_OK, appSpawnClient->OpenConnection());
-    AppSpawnStartMsg params = {10003, 10004, {10003, 10004}, "processName-setProcName_002", "soPath"};
+    AppSpawnStartMsg params = {10003, 10004, {10003, 10004},
+        "processName-setProcName_002", "soPath", 0, "system_core", "moduleTestProcessName-setProcName_002"};
 
     appSpawnClient->StartProcess(params, newPid);
     // 0 < newPid, new process fork success
@@ -780,7 +793,8 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_recycleProc_001, TestSize.Level0)
     std::shared_ptr<AppExecFwk::AppSpawnSocket> appSpawnSocket = std::make_shared<AppExecFwk::AppSpawnSocket>();
     appSpawnClient->SetSocket(appSpawnSocket);
     EXPECT_EQ(ERR_OK, appSpawnClient->OpenConnection());
-    AppSpawnStartMsg params = {10003, 10004, {10003, 10004}, "processName-recycleProc_001", "soPath"};
+    AppSpawnStartMsg params = {10003, 10004, {10003, 10004},
+        "processName-recycleProc_001", "soPath", 0, "system_core", "moduleTestProcessName-recycleProc_001"};
 
     appSpawnClient->StartProcess(params, newPid);
     // 0 < newPid, new process fork success
@@ -814,7 +828,8 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_recycleProc_002, TestSize.Level0)
     std::shared_ptr<AppExecFwk::AppSpawnSocket> appSpawnSocket = std::make_shared<AppExecFwk::AppSpawnSocket>();
     appSpawnClient->SetSocket(appSpawnSocket);
     EXPECT_EQ(ERR_OK, appSpawnClient->OpenConnection());
-    AppSpawnStartMsg params = {10003, 10004, {10003, 10004}, "processName-recycleProc_002", "soPath"};
+    AppSpawnStartMsg params = {10003, 10004, {10003, 10004},
+        "processName-recycleProc_002", "soPath", 0, "system_core", "moduleTestProcessName-recycleProc_002"};
 
     appSpawnClient->StartProcess(params, newPid);
     // 0 < newPid, new process fork success

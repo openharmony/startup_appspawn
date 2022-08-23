@@ -25,6 +25,7 @@ using namespace OHOS;
 using namespace OHOS::AppSpawn;
 
 namespace {
+const std::string MODULE_TEST_BUNDLE_NAME("moduleTestProcessName");
 #ifdef __aarch64__
     const std::string APP_JSON_CONFIG("/system/etc/sandbox/appdata-sandbox64.json");
 #else
@@ -50,5 +51,11 @@ int32_t SetAppSandboxProperty(struct AppSpawnContent_ *content, AppSpawnClient *
 {
     APPSPAWN_CHECK(client != NULL, return -1, "Invalid appspwn client");
     AppSpawnClientExt *appProperty = (AppSpawnClientExt *)client;
-    return SandboxUtils::SetAppSandboxProperty(&appProperty->property);
+    int ret = SandboxUtils::SetAppSandboxProperty(&appProperty->property);
+    // for module test do not create sandbox
+    if (strncmp(appProperty->property.bundleName,
+        MODULE_TEST_BUNDLE_NAME.c_str(), MODULE_TEST_BUNDLE_NAME.size()) == 0) {
+        return 0;
+    }
+    return ret;
 }
