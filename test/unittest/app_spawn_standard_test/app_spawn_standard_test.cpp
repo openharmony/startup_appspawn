@@ -108,6 +108,13 @@ void AppSpawnStandardTest::SetUp()
 void AppSpawnStandardTest::TearDown()
 {}
 
+/**
+* @tc.name: App_Spawn_Standard_002
+* @tc.desc: fork app son process and set content.
+* @tc.type: FUNC
+* @tc.require:issueI5NTX6
+* @tc.author:
+*/
 HWTEST(AppSpawnStandardTest, App_Spawn_Standard_002, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Standard_002 start";
@@ -159,6 +166,13 @@ HWTEST(AppSpawnStandardTest, App_Spawn_Standard_002, TestSize.Level0)
     GTEST_LOG_(INFO) << "App_Spawn_Standard_002 end";
 }
 
+/**
+* @tc.name: App_Spawn_Standard_003
+* @tc.desc:  Verify set Arg if GetAppSpawnClient succeed.
+* @tc.type: FUNC
+* @tc.require:issueI5NTX6
+* @tc.author:
+*/
 HWTEST(AppSpawnStandardTest, App_Spawn_Standard_003, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Standard_003 start";
@@ -197,6 +211,13 @@ HWTEST(AppSpawnStandardTest, App_Spawn_Standard_003, TestSize.Level0)
     GTEST_LOG_(INFO) << "App_Spawn_Standard_003 end";
 }
 
+/**
+* @tc.name: App_Spawn_Standard_004
+* @tc.desc: App cold start.
+* @tc.type: FUNC
+* @tc.require:issueI5NTX6
+* @tc.author:
+*/
 HWTEST(AppSpawnStandardTest, App_Spawn_Standard_004, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Standard_004 start";
@@ -219,6 +240,13 @@ HWTEST(AppSpawnStandardTest, App_Spawn_Standard_004, TestSize.Level0)
     GTEST_LOG_(INFO) << "App_Spawn_Standard_004 end";
 }
 
+/**
+* @tc.name: App_Spawn_Standard_005
+* @tc.desc: Verify start App.
+* @tc.type: FUNC
+* @tc.require:issueI5NTX6
+* @tc.author:
+*/
 HWTEST(AppSpawnStandardTest, App_Spawn_Standard_005, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Standard_005 start";
@@ -286,6 +314,13 @@ static AppSpawnContentExt *TestClient(int cold, AppOperateType code, const std::
     return content;
 }
 
+/**
+* @tc.name: App_Spawn_Standard_006
+* @tc.desc: start App.
+* @tc.type: FUNC
+* @tc.require:issueI5NTX6
+* @tc.author:
+*/
 HWTEST(AppSpawnStandardTest, App_Spawn_Standard_006, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Standard_006 start";
@@ -295,6 +330,13 @@ HWTEST(AppSpawnStandardTest, App_Spawn_Standard_006, TestSize.Level0)
     GTEST_LOG_(INFO) << "App_Spawn_Standard_006 end";
 }
 
+/**
+* @tc.name: App_Spawn_Standard_07
+* @tc.desc: Verify signal deal function.
+* @tc.type: FUNC
+* @tc.require:issueI5NTX6
+* @tc.author:
+*/
 HWTEST(AppSpawnStandardTest, App_Spawn_Standard_07, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Standard_07 start";
@@ -322,6 +364,13 @@ HWTEST(AppSpawnStandardTest, App_Spawn_Standard_07, TestSize.Level0)
     GTEST_LOG_(INFO) << "App_Spawn_Standard_07 end";
 }
 
+/**
+* @tc.name: App_Spawn_Standard_005
+* @tc.desc: load system config SetAppSandboxProperty by App ohos.samples.ecg.
+* @tc.type: FUNC
+* @tc.require:issueI5NTX6
+* @tc.author:
+*/
 HWTEST(AppSpawnStandardTest, App_Spawn_Standard_08, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Standard_08 start";
@@ -355,6 +404,13 @@ HWTEST(AppSpawnStandardTest, App_Spawn_Standard_08, TestSize.Level0)
     GTEST_LOG_(INFO) << "App_Spawn_Standard_08 end";
 }
 
+/**
+* @tc.name: App_Spawn_Standard_09
+* @tc.desc: load system config SetAppSandboxProperty by App com.ohos.dlpmanager.
+* @tc.type: FUNC
+* @tc.require:issueI5NTX6
+* @tc.author:
+*/
 HWTEST(AppSpawnStandardTest, App_Spawn_Standard_09, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Standard_09 start";
@@ -387,6 +443,13 @@ HWTEST(AppSpawnStandardTest, App_Spawn_Standard_09, TestSize.Level0)
     GTEST_LOG_(INFO) << "App_Spawn_Standard_09 end";
 }
 
+/**
+* @tc.name: App_Spawn_Standard_10
+* @tc.desc: parse config define by self Set App Sandbox Property.
+* @tc.type: FUNC
+* @tc.require:issueI5NTX6
+* @tc.author:
+*/
 HWTEST(AppSpawnStandardTest, App_Spawn_Standard_10, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Standard_10 start";
