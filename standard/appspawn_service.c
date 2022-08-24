@@ -515,6 +515,7 @@ static void AppSpawnRun(AppSpawnContent *content, int argc, char *const argv[])
     LE_CloseSignalTask(LE_GetDefaultLoop(), appSpawnContent->sigHandler);
     // release resource
     OH_HashMapDestory(appSpawnContent->appMap);
+    LE_CloseSignalTask(LE_GetDefaultLoop(), appSpawnContent->server);
     free(content);
     g_appSpawnContent = NULL;
 #ifndef APPSPAWN_TEST
