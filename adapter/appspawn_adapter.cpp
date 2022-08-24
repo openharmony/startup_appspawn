@@ -70,7 +70,15 @@ int SetSeccompFilter(struct AppSpawnContent_ *content, AppSpawnClient *client)
         APPSPAWN_LOGE("NwebspawnServer::Failed to set NWEBSPAWN seccomp filter");
         return -1;
     } else {
-        APPSPAWN_LOGE("NwebspawnServer::Success to set NWEBSPAWN seccomp filter");
+        APPSPAWN_LOGI("NwebspawnServer::Success to set NWEBSPAWN seccomp filter");
+        return 0;
+    }
+#else
+    if (!SetSeccompPolicy(APP)) {
+        APPSPAWN_LOGE("AppSpawnServer::Failed to set APP seccomp filter");
+        return -1;
+    } else {
+        APPSPAWN_LOGI("AppSpawnServer::Success to set APP seccomp filter");
         return 0;
     }
 #endif
