@@ -19,12 +19,14 @@
 
 #include <fcntl.h>
 #include <sys/signalfd.h>
+#include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
 #include "init_hashmap.h"
 #include "init_socket.h"
+#include "init_utils.h"
 #include "parameter.h"
 #include "securec.h"
 
@@ -423,6 +425,18 @@ APPSPAWN_STATIC int OnConnection(const LoopHandle loopHandle, const TaskHandle s
     AppSpawnClientExt *client = (AppSpawnClientExt *)LE_GetUserData(stream);
     APPSPAWN_CHECK(client != NULL, return -1, "Failed to alloc stream");
 
+    struct ucred cred = {-1, -1, -1};
+    socklen_t credSize  = sizeof(struct ucred);
+    if (getsockopt(LE_GetSocketFd(stream), SOL_SOCKET, SO_PEERCRED, &cred, &credSize) < 0) {
+        APPSPAWN_LOGE("get cred failed!");
+        return -1;
+    }
+
+    if (cred.uid != DecodeUid("foundation")  && cred.uid != DecodeUid("root")) {
+        APPSPAWN_LOGE("OnConnection client fd %d is nerverallow!", LE_GetSocketFd(stream));
+        return -1;
+    }
+
     client->stream = stream;
     client->client.id = ++clientId;
     client->client.flags = 0;
@@ -585,9 +599,14 @@ AppSpawnContent *AppSpawnCreateContent(const char *socketName, char *longProcNam
         APPSPAWN_CHECK(ret == 0, free(appSpawnContent);
             return NULL, "Failed to create socket for %s", path);
         // create socket
-        ret = chmod(path, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
+        ret = chmod(path, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
         APPSPAWN_CHECK(ret == 0, free(appSpawnContent);
             return NULL, "Failed to chmod %s, err %d. ", path, errno);
+
+        ret = lchown(path, 0, 4000); // 4000 is appspawn gid
+        APPSPAWN_CHECK(ret == 0, free(appSpawnContent);
+            return NULL, "Failed to lchown %s, err %d. ", path, errno);
+
         APPSPAWN_LOGI("AppSpawnCreateContent path %s fd %d", path, LE_GetSocketFd(appSpawnContent->server));
     }
     g_appSpawnContent = appSpawnContent;
