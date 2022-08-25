@@ -28,7 +28,9 @@ ohos_static_library("appspawn_socket_client") {
     "include",
     "//base/startup/appspawn/common",
   ]
-
+  if (is_asan) {
+    defines += [ "APPSPAWN_ASAN" ]
+  }
   public_configs = [ ":exported_header_files" ]
   deps = [ "//base/startup/init/interfaces/innerkits:libbegetutil" ]
   external_deps = [
