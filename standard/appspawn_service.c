@@ -425,6 +425,7 @@ APPSPAWN_STATIC int OnConnection(const LoopHandle loopHandle, const TaskHandle s
     AppSpawnClientExt *client = (AppSpawnClientExt *)LE_GetUserData(stream);
     APPSPAWN_CHECK(client != NULL, return -1, "Failed to alloc stream");
 
+#ifndef APPSPAWN_TEST
     struct ucred cred = {-1, -1, -1};
     socklen_t credSize  = sizeof(struct ucred);
     if (getsockopt(LE_GetSocketFd(stream), SOL_SOCKET, SO_PEERCRED, &cred, &credSize) < 0) {
@@ -436,6 +437,7 @@ APPSPAWN_STATIC int OnConnection(const LoopHandle loopHandle, const TaskHandle s
         APPSPAWN_LOGE("OnConnection client fd %d is nerverallow!", LE_GetSocketFd(stream));
         return -1;
     }
+#endif
 
     client->stream = stream;
     client->client.id = ++clientId;
