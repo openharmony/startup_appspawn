@@ -31,8 +31,10 @@ extern "C" {
 
 #ifdef NWEB_SPAWN
 #define APPSPAWN_SOCKET_NAME "NWebSpawn"
+#define APPSPAWN_SERVER_NAME "nwebspawn"
 #else
 #define APPSPAWN_SOCKET_NAME "AppSpawn"
+#define APPSPAWN_SERVER_NAME "appspawn"
 #endif
 
 enum AppType {
