@@ -28,6 +28,7 @@ ohos_static_library("appspawn_socket_client") {
     "include",
     "//base/startup/appspawn/common",
   ]
+  defines = []
   if (is_asan) {
     defines += [ "APPSPAWN_ASAN" ]
   }
