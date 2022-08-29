@@ -19,6 +19,10 @@
 #include <errno.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <signal.h>
+#undef _GNU_SOURCE
+#define _GNU_SOURCE
+#include <sched.h>
 #ifdef OHOS_DEBUG
 #include <time.h>
 #endif // OHOS_DEBUG
@@ -30,6 +34,8 @@
 void DisallowInternet(void);
 #endif
 #endif
+
+#define SANDBOX_STACK_SIZE (1024 * 1024 * 8)
 
 static void SetInternetPermission(const AppSpawnClient *client)
 {
@@ -74,7 +80,7 @@ int DoStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client, char *l
     APPSPAWN_LOGI("DoStartApp id %d longProcNameLen %u", client->id, longProcNameLen);
     int32_t ret = 0;
 
-    if (client->flags != UI_SERVICE_DIALOG && content->setAppSandbox) {
+    if ((client->cloneFlags & CLONE_NEWNS) && (content->setAppSandbox)) {
         ret = content->setAppSandbox(content, client);
         APPSPAWN_CHECK(ret == 0, NotifyResToParent(content, client, ret);
             return ret, "Failed to set app sandbox");
@@ -122,73 +128,96 @@ int DoStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client, char *l
     return 0;
 }
 
-int ForkChildProc(struct AppSpawnContent_ *content, AppSpawnClient *client, pid_t pid)
+int AppSpawnChild(void *arg)
 {
-    if (pid < 0) {
-        return -errno;
-    } else if (pid == 0) {
+    APPSPAWN_CHECK(arg != NULL, return -1, "Invalid arg for appspawn child");
+    AppSandboxArg *sandbox = (AppSandboxArg *)arg;
+    struct AppSpawnContent_ *content = sandbox->content;
+    AppSpawnClient *client = sandbox->client;
+
 #ifdef OHOS_DEBUG
-        struct timespec tmStart = {0};
-        GetCurTime(&tmStart);
+    struct timespec tmStart = {0};
+    GetCurTime(&tmStart);
 #endif // OHOS_DEBUG
 
-        // close socket id and signal for child
-        if (content->clearEnvironment != NULL) {
-            content->clearEnvironment(content, client);
-        }
+    // close socket id and signal for child
+    if (content->clearEnvironment != NULL) {
+        content->clearEnvironment(content, client);
+    }
 
-        if (content->setAppAccessToken != NULL) {
-            content->setAppAccessToken(content, client);
-        }
+    if (content->setAppAccessToken != NULL) {
+        content->setAppAccessToken(content, client);
+    }
 
-        int ret = -1;
+    int ret = -1;
 #ifdef ASAN_DETECTOR
-        if ((content->getWrapBundleNameValue != NULL && content->getWrapBundleNameValue(content, client) == 0)
-            || ((client->flags & APP_COLD_START) != 0)) {
+    if ((content->getWrapBundleNameValue != NULL && content->getWrapBundleNameValue(content, client) == 0)
+        || ((client->flags & APP_COLD_START) != 0)) {
 #else
-        if ((client->flags & APP_COLD_START) != 0) {
+    if ((client->flags & APP_COLD_START) != 0) {
 #endif
-            if (content->coldStartApp != NULL && content->coldStartApp(content, client) == 0) {
+        if (content->coldStartApp != NULL && content->coldStartApp(content, client) == 0) {
 #ifndef APPSPAWN_TEST
-                _exit(0x7f); // 0x7f user exit
+            _exit(0x7f); // 0x7f user exit
 #endif
-                return -1;
-            } else {
-                ret = DoStartApp(content, client, content->longProcName, content->longProcNameLen);
-            }
+            return -1;
         } else {
             ret = DoStartApp(content, client, content->longProcName, content->longProcNameLen);
         }
+    } else {
+        ret = DoStartApp(content, client, content->longProcName, content->longProcNameLen);
+    }
 
 #ifdef OHOS_DEBUG
-        struct timespec tmEnd = {0};
-        GetCurTime(&tmEnd);
-        // 1s = 1000000000ns
-        long timeUsed = (tmEnd.tv_sec - tmStart.tv_sec) * 1000000000L + (tmEnd.tv_nsec - tmStart.tv_nsec);
-        APPSPAWN_LOGI("App timeused %d %ld ns.", getpid(), timeUsed);
+    struct timespec tmEnd = {0};
+    GetCurTime(&tmEnd);
+    // 1s = 1000000000ns
+    long timeUsed = (tmEnd.tv_sec - tmStart.tv_sec) * 1000000000L + (tmEnd.tv_nsec - tmStart.tv_nsec);
+    APPSPAWN_LOGI("App timeused %d %ld ns.", getpid(), timeUsed);
 #endif  // OHOS_DEBUG
 
-        if (ret == 0 && content->runChildProcessor != NULL) {
-            content->runChildProcessor(content, client);
-        }
-        ProcessExit();
+    if (ret == 0 && content->runChildProcessor != NULL) {
+        content->runChildProcessor(content, client);
     }
+    ProcessExit();
     return 0;
 }
 
-int AppSpawnProcessMsg(struct AppSpawnContent_ *content, AppSpawnClient *client, pid_t *childPid)
+int AppSpawnProcessMsg(AppSandboxArg *sandbox, pid_t *childPid)
 {
-    APPSPAWN_CHECK(content != NULL, return -1, "Invalid content for appspawn");
-    APPSPAWN_CHECK(client != NULL && childPid != NULL, return -1, "Invalid client for appspawn");
-    APPSPAWN_LOGI("AppSpawnProcessMsg id %d 0x%x", client->id, client->flags);
+    pid_t pid;
+    APPSPAWN_CHECK(sandbox != NULL && sandbox->content != NULL, return -1, "Invalid content for appspawn");
+    APPSPAWN_CHECK(sandbox->client != NULL && childPid != NULL, return -1, "Invalid client for appspawn");
+    APPSPAWN_LOGI("AppSpawnProcessMsg id %d 0x%x", sandbox->client->id, sandbox->client->flags);
+
 #ifndef APPSPAWN_TEST
-    pid_t pid = fork();
-#else
-    pid_t pid = 0;
-#endif
-    int ret = ForkChildProc(content, client, pid);
-    APPSPAWN_CHECK(ret == 0, return ret, "fork child process error: %d", ret);
+    AppSpawnClient *client = sandbox->client;
+    if (client->cloneFlags & CLONE_NEWPID) {
+        APPSPAWN_CHECK(client->cloneFlags & CLONE_NEWNS, return -1, "clone flags error");
+        char *childStack = (char *)malloc(SANDBOX_STACK_SIZE);
+        APPSPAWN_CHECK(childStack != NULL, return -1, "malloc failed");
+
+        pid = clone(AppSpawnChild, childStack + SANDBOX_STACK_SIZE, client->cloneFlags | SIGCHLD, (void *)sandbox);
+        if (pid > 0) {
+            free(childStack);
+            *childPid = pid;
+            return 0;
+        }
+
+        client->cloneFlags &= ~CLONE_NEWPID;
+        free(childStack);
+    }
+
+    pid = fork();
+    APPSPAWN_CHECK(pid >= 0, return -errno, "fork child process error: %d", -errno);
     *childPid = pid;
+#else
+    pid = 0;
+    *childPid = pid;
+#endif
+    if (pid == 0) {
+        AppSpawnChild((void *)sandbox);
+    }
     return 0;
 }
 

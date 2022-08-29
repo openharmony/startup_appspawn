@@ -26,11 +26,14 @@ namespace OHOS {
 namespace AppSpawn {
 class SandboxUtils {
 public:
+    static void StoreNamespaceJsonConfig(nlohmann::json &appNamespaceConfig);
+    static nlohmann::json GetNamespaceJsonConfig(void);
     static void StoreJsonConfig(nlohmann::json &appSandboxConfig);
     static nlohmann::json GetJsonConfig();
     static void StoreProductJsonConfig(nlohmann::json &productSandboxConfig);
     static nlohmann::json GetProductJsonConfig();
     static int32_t SetAppSandboxProperty(const ClientSocket::AppProperty *appProperty);
+    static int32_t GetNamespaceFlagsFromConfig(const char *bundleName);
 
 private:
     static int32_t DoAppSandboxMountOnce(const char *originPath, const char *destinationPath,
@@ -69,6 +72,7 @@ private:
                                           nlohmann::json &config);
 
 private:
+    static nlohmann::json appNamespaceConfig_;
     static nlohmann::json appSandboxConfig_;
     static nlohmann::json productSandboxConfig_;
 };

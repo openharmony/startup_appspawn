@@ -41,6 +41,7 @@ extern "C" {
 typedef struct AppSpawnClient_ {
     uint32_t id;
     uint32_t flags;
+    uint32_t cloneFlags;
 #ifndef APPSPAWN_TEST
 #ifndef OHOS_LITE
     uint8_t setAllowInternet;
@@ -84,10 +85,15 @@ typedef struct AppSpawnContent_ {
     int (*setSeccompFilter)(struct AppSpawnContent_ *content, AppSpawnClient *client);
 } AppSpawnContent;
 
+typedef struct {
+    struct AppSpawnContent_ *content;
+    AppSpawnClient *client;
+} AppSandboxArg;
+
 AppSpawnContent *AppSpawnCreateContent(const char *socketName, char *longProcName, uint32_t longProcNameLen, int cold);
-int AppSpawnProcessMsg(struct AppSpawnContent_ *content, AppSpawnClient *client, pid_t *childPid);
+int AppSpawnProcessMsg(AppSandboxArg *sandbox, pid_t *childPid);
 int DoStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client, char *longProcName, uint32_t longProcNameLen);
-int ForkChildProc(struct AppSpawnContent_ *content, AppSpawnClient *client, pid_t pid);
+int AppSpawnChild(void *arg);
 
 #ifdef OHOS_DEBUG
 void GetCurTime(struct timespec* tmCur);
