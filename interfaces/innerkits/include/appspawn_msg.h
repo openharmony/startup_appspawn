@@ -58,6 +58,7 @@ typedef enum AppOperateType_ {
 #define FD_INIT_VALUE 0
 
 typedef struct AppParameter_ {
+    uint32_t cloneFlags;
     uint32_t uid;                     // the UNIX uid that the child process setuid() to after fork()
     uint32_t gid;                     // the UNIX gid that the child process setgid() to after fork()
     uint32_t gidTable[APP_MAX_GIDS];      // a list of UNIX gids that the child process setgroups() to after fork()
