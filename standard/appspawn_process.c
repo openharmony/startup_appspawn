@@ -65,7 +65,7 @@ static int SetProcessName(struct AppSpawnContent_ *content, AppSpawnClient *clie
     APPSPAWN_CHECK(!isRet, return -EINVAL, "Failed to memset long process name");
 
     // set long process name
-    isRet = strncpy_s(longProcName, sizeof(appProperty->processName) - 1, appProperty->processName, len) != EOK;
+    isRet = strncpy_s(longProcName, longProcNameLen, appProperty->processName, len) != EOK;
     APPSPAWN_CHECK(!isRet, return -EINVAL, "strncpy_s long name error: %d longProcNameLen %u", errno, longProcNameLen);
 
     return 0;
