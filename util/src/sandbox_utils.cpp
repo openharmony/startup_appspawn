@@ -71,10 +71,23 @@ namespace {
     const char *TARGET_NAME = "target-name";
     const char *FLAGS_POINT = "flags-point";
     const char *FLAGS = "flags";
+    const char *SANDBOX_NAMESPACE = "sandbox-namespace";
+    const char *SANDBOX_CLONE_FLAGS = "clone-flags";
 }
 
+nlohmann::json SandboxUtils::appNamespaceConfig_;
 nlohmann::json SandboxUtils::appSandboxConfig_;
 nlohmann::json SandboxUtils::productSandboxConfig_;
+
+void SandboxUtils::StoreNamespaceJsonConfig(nlohmann::json &appNamespaceConfig)
+{
+    SandboxUtils::appNamespaceConfig_ = appNamespaceConfig;
+}
+
+nlohmann::json SandboxUtils::GetNamespaceJsonConfig(void)
+{
+    return SandboxUtils::appNamespaceConfig_;
+}
 
 void SandboxUtils::StoreJsonConfig(nlohmann::json &appSandboxConfig)
 {
@@ -94,6 +107,39 @@ void SandboxUtils::StoreProductJsonConfig(nlohmann::json &productSandboxConfig)
 nlohmann::json SandboxUtils::GetProductJsonConfig()
 {
     return SandboxUtils::productSandboxConfig_;
+}
+
+static int32_t NamespaceFlagsFromConfig(const std::vector<std::string> &vec)
+{
+    const std::map<std::string, int32_t> NamespaceFlagsMap = { {"mnt", CLONE_NEWNS}, {"pid", CLONE_NEWPID} };
+    int32_t cloneFlags = 0;
+
+    for (unsigned int j = 0; j < vec.size(); j++) {
+        if (NamespaceFlagsMap.count(vec[j])) {
+            cloneFlags |= NamespaceFlagsMap.at(vec[j]);
+        }
+    }
+    return cloneFlags;
+}
+
+int32_t SandboxUtils::GetNamespaceFlagsFromConfig(const char *bundleName)
+{
+    nlohmann::json config = SandboxUtils::GetNamespaceJsonConfig();
+    int32_t cloneFlags = CLONE_NEWNS;
+
+    if (config.find(SANDBOX_NAMESPACE) == config.end()) {
+        APPSPAWN_LOGE("namespace config is not found");
+        return 0;
+    }
+
+    nlohmann::json namespaceApp = config[SANDBOX_NAMESPACE][0];
+    if (namespaceApp.find(bundleName) == namespaceApp.end()) {
+        return cloneFlags;
+    }
+
+    nlohmann::json app = namespaceApp[bundleName][0];
+    cloneFlags |= NamespaceFlagsFromConfig(app[SANDBOX_CLONE_FLAGS].get<std::vector<std::string>>());
+    return cloneFlags;
 }
 
 static void MakeDirRecursive(const std::string &path, mode_t mode)
@@ -723,9 +769,13 @@ int32_t SandboxUtils::SetAppSandboxProperty(const ClientSocket::AppProperty *app
     sandboxPackagePath += bundleName;
     mkdir(sandboxPackagePath.c_str(), FILE_MODE);
 
-    // add pid to a new mnt namespace
-    int rc = unshare(CLONE_NEWNS);
-    APPSPAWN_CHECK(rc == 0, return rc, "unshare failed, packagename is %s", bundleName.c_str());
+    int rc;
+    // when CLONE_NEWPID is enabled, CLONE_NEWNS must be enabled.
+    if (!(appProperty->cloneFlags & CLONE_NEWPID)) {
+        // add pid to a new mnt namespace
+        rc = unshare(CLONE_NEWNS);
+        APPSPAWN_CHECK(rc == 0, return rc, "unshare failed, packagename is %s", bundleName.c_str());
+    }
 
     // to make wargnar work and check app sandbox switch
     if ((CheckTotalSandboxSwitchStatus(appProperty) == false) ||

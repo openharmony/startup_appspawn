@@ -22,6 +22,7 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <sched.h>
 
 #include "init_hashmap.h"
 #include "init_socket.h"
@@ -376,13 +377,30 @@ APPSPAWN_STATIC void OnReceiveRequest(const TaskHandle taskHandle, const uint8_t
     appProperty->client.flags = appProperty->property.flags;
     fcntl(appProperty->fd[0], F_SETFL, O_NONBLOCK);
 
+    /* Clone support only one parameter, so need to package application parameters */
+    AppSandboxArg *sandboxArg = (AppSandboxArg *)malloc(sizeof(AppSandboxArg));
+    if (sandboxArg == NULL) {
+        close(appProperty->fd[0]);
+        close(appProperty->fd[1]);
+        LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
+        return;
+    }
+    (void)memset_s(sandboxArg, sizeof(AppSandboxArg), 0, sizeof(AppSandboxArg));
+
     pid_t pid = 0;
-    int result = AppSpawnProcessMsg(&g_appSpawnContent->content, &appProperty->client, &pid);
+    sandboxArg->content = &g_appSpawnContent->content;
+    sandboxArg->client = &appProperty->client;
+    sandboxArg->client->cloneFlags = 0;
+    if (appProperty->client.flags != UI_SERVICE_DIALOG) {
+        sandboxArg->client->cloneFlags = GetAppNamespaceFlags(appProperty->property.bundleName);
+    }
+    int result = AppSpawnProcessMsg(sandboxArg, &pid);
     if (result == 0) {  // wait child process result
         result = WaitChild(appProperty->fd[0], pid, appProperty);
     }
     close(appProperty->fd[0]);
     close(appProperty->fd[1]);
+    free(sandboxArg);
     APPSPAWN_LOGI("child process %s %s pid %d",
         appProperty->property.processName, (result == 0) ? "success" : "fail", pid);
     if (result == 0) {

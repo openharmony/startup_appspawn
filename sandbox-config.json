@@ -1,0 +1,19 @@
+{
+    "sandbox-namespace" : [{
+        "com.ohos.note" : [{
+            "clone-flags": [ "mnt", "pid" ]
+        }],
+        "com.ohos.screenlock" : [{
+            "clone-flags": [ "mnt", "pid" ]
+        }],
+        "ohos.samples.flashlight" : [{
+            "clone-flags": [ "mnt", "pid" ]
+        }],
+        "ohos.samples.ecg" : [{
+            "clone-flags": [ "mnt", "pid" ]
+        }],
+        "ohos.samples.clock" : [{
+            "clone-flags": [ "mnt", "pid" ]
+        }]
+    }]
+}

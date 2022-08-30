@@ -123,6 +123,7 @@ HWTEST(AppSpawnStandardTest, App_Spawn_Standard_002, TestSize.Level0)
     AppSpawnClientExt* client = (AppSpawnClientExt*)malloc(sizeof(AppSpawnClientExt));
     client->client.id = 8; // 8 is client id
     client->client.flags = 0;
+    client->client.cloneFlags = CLONE_NEWNS;
     client->fd[0] = 100; // 100 is fd
     client->fd[1] = 200; // 200 is fd
     client->property.uid = 10000; // 10000 is uid
@@ -149,8 +150,11 @@ HWTEST(AppSpawnStandardTest, App_Spawn_Standard_002, TestSize.Level0)
     content->loadExtendLib = LoadExtendLib;
     content->runChildProcessor = RunChildProcessor;
     SetContentFunction(content);
-    EXPECT_EQ(ForkChildProc(content, &client->client, 0), 0);
-    EXPECT_NE(ForkChildProc(content, &client->client, -1), 0);
+    AppSandboxArg *sandboxArg = (AppSandboxArg *)malloc(sizeof(AppSandboxArg));
+    sandboxArg->content = content;
+    sandboxArg->client = &client->client;
+    EXPECT_EQ(AppSpawnChild(sandboxArg), 0);
+    free(sandboxArg);
 
     content->clearEnvironment(content, &client->client);
     EXPECT_EQ(content->setProcessName(content, &client->client, (char *)longProcName, longProcNameLen), 0);
