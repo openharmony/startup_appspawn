@@ -134,6 +134,7 @@ static int Invoke(IServerProxy *iProxy, int funcId, void *origin, IpcIo *req, Ip
     AppSpawnClientLite client = {};
     client.client.id = CLIENT_ID;
     client.client.flags = 0;
+    client.client.cloneFlags = 0;
     if (GetMessageSt(&client.message, req) != EC_SUCCESS) {
         APPSPAWN_LOGE("[appspawn] invoke, parse failed! reply %d.", INVALID_PID);
         WriteInt64(reply, INVALID_PID);
@@ -142,14 +143,24 @@ static int Invoke(IServerProxy *iProxy, int funcId, void *origin, IpcIo *req, Ip
 
     APPSPAWN_LOGI("[appspawn] invoke, msg<%s,%s,%d,%d %d>", client.message.bundleName, client.message.identityID,
         client.message.uID, client.message.gID, client.message.capsCnt);
+    /* Clone support only one parameter, so need to package application parameters */
+    AppSandboxArg *sandboxArg = (AppSandboxArg *)malloc(sizeof(AppSandboxArg));
+    if (sandboxArg == NULL) {
+        WriteInt64(reply, INVALID_PID);
+        return EC_FAILURE;
+    }
+    (void)memset_s(sandboxArg, sizeof(AppSandboxArg), 0, sizeof(AppSandboxArg));
 
     pid_t newPid = 0;
-    int ret = AppSpawnProcessMsg(&g_appSpawnContentLite->content, &client.client, &newPid);
+    sandboxArg->content = &g_appSpawnContentLite->content;
+    sandboxArg->client = &client.client;
+    int ret = AppSpawnProcessMsg(sandboxArg, &newPid);
     if (ret != 0) {
         newPid = -1;
     }
     FreeMessageSt(&client.message);
     WriteInt64(reply, newPid);
+    free(sandboxArg);
 
 #ifdef OHOS_DEBUG
     struct timespec tmEnd = {0};

@@ -25,7 +25,8 @@ using namespace OHOS;
 using namespace OHOS::AppSpawn;
 
 namespace {
-const std::string MODULE_TEST_BUNDLE_NAME("moduleTestProcessName");
+    const std::string MODULE_TEST_BUNDLE_NAME("moduleTestProcessName");
+    const std::string NAMESPACE_JSON_CONFIG("/system/etc/sandbox/sandbox-config.json");
 #ifdef __aarch64__
     const std::string APP_JSON_CONFIG("/system/etc/sandbox/appdata-sandbox64.json");
 #else
@@ -45,12 +46,18 @@ void LoadAppSandboxConfig(void)
     rc = JsonUtils::GetJsonObjFromJson(appSandboxConfig, PRODUCT_JSON_CONFIG);
     APPSPAWN_CHECK_ONLY_LOG(rc, "AppSpawnServer::Failed to load app product sandbox config");
     SandboxUtils::StoreProductJsonConfig(appSandboxConfig);
+
+    nlohmann::json appNamespaceConfig;
+    rc = JsonUtils::GetJsonObjFromJson(appNamespaceConfig, NAMESPACE_JSON_CONFIG);
+    APPSPAWN_CHECK_ONLY_LOG(rc, "AppSpawnServer::Failed to load app sandbox namespace config");
+    SandboxUtils::StoreNamespaceJsonConfig(appNamespaceConfig);
 }
 
 int32_t SetAppSandboxProperty(struct AppSpawnContent_ *content, AppSpawnClient *client)
 {
     APPSPAWN_CHECK(client != NULL, return -1, "Invalid appspwn client");
     AppSpawnClientExt *appProperty = (AppSpawnClientExt *)client;
+    appProperty->property.cloneFlags = client->cloneFlags;
     int ret = SandboxUtils::SetAppSandboxProperty(&appProperty->property);
     // for module test do not create sandbox
     if (strncmp(appProperty->property.bundleName,
@@ -59,3 +66,9 @@ int32_t SetAppSandboxProperty(struct AppSpawnContent_ *content, AppSpawnClient *
     }
     return ret;
 }
+
+int32_t GetAppNamespaceFlags(const char *bundleName)
+{
+    return SandboxUtils::GetNamespaceFlagsFromConfig(bundleName);
+}
+
