@@ -504,4 +504,76 @@ HWTEST(AppSpawnStandardTest, App_Spawn_Standard_10, TestSize.Level0)
     OHOS::AppSpawn::SandboxUtils::SetAppSandboxProperty(m_appProperty);
     GTEST_LOG_(INFO) << "App_Spawn_Standard_10 end";
 }
+
+/**
+* @tc.name: App_Spawn_Standard_11
+* @tc.desc: parse namespace config define by self set app sandbox property.
+* @tc.type: FUNC
+* @tc.require: issueI5OE8Q
+* @tc.author:
+*/
+HWTEST(AppSpawnStandardTest, App_Spawn_Standard_011, TestSize.Level0)
+{
+    GTEST_LOG_(INFO) << "App_Spawn_Standard_011 start";
+    std::string namespace_jsconfig = "{ \
+        \"sandbox-namespace\":[{ \
+            \"com.ohos.app1\":[{ \
+                \"clone-flags\": [ \"mnt\" ] \
+            }], \
+            \"com.ohos.app2\":[{ \
+                \"clone-flags\": [ \"pid\" ] \
+            }],\
+            \"com.ohos.app3\":[{ \
+                \"clone-flags\": [ \"mnt\", \"pid\" ] \
+            }] \
+        }] \
+    }";
+    nlohmann::json namespace_config = nlohmann::json::parse(namespace_jsconfig.c_str());
+
+    OHOS::AppSpawn::SandboxUtils::StoreNamespaceJsonConfig(namespace_config);
+    int32_t cloneFlags = GetAppNamespaceFlags("com.ohos.app1");
+    EXPECT_TRUE(cloneFlags & CLONE_NEWNS);
+
+    cloneFlags = GetAppNamespaceFlags("com.ohos.app2");
+    EXPECT_TRUE(cloneFlags & CLONE_NEWNS);
+    EXPECT_TRUE(cloneFlags & CLONE_NEWPID);
+
+    cloneFlags = GetAppNamespaceFlags("com.ohos.app3");
+    EXPECT_TRUE(cloneFlags & CLONE_NEWNS);
+    EXPECT_TRUE(cloneFlags & CLONE_NEWPID);
+
+    cloneFlags = GetAppNamespaceFlags("com.ohos.app4");
+    EXPECT_TRUE(cloneFlags & CLONE_NEWNS);
+
+    GTEST_LOG_(INFO) << "App_Spawn_Standard_011 end";
+}
+
+
+/**
+* @tc.name: App_Spawn_Standard_012
+* @tc.desc: Create an application process parameter check.
+* @tc.type: FUNC
+* @tc.require: issueI5OE8Q
+* @tc.author:
+*/
+HWTEST(AppSpawnStandardTest, App_Spawn_Standard_012, TestSize.Level0)
+{
+    GTEST_LOG_(INFO) << "App_Spawn_Standard_012 start";
+    AppSpawnContent_ appContent = {0};
+    AppSpawnClient appClient = {0};
+    pid_t pid = -1;
+    AppSandboxArg *sandboxArg = (AppSandboxArg *)malloc(sizeof(AppSandboxArg));
+    EXPECT_TRUE(sandboxArg != nullptr);
+    (void)memset_s(sandboxArg, sizeof(AppSandboxArg), 0, sizeof(AppSandboxArg));
+    int ret = AppSpawnProcessMsg(sandboxArg, &pid);
+    EXPECT_TRUE(ret < 0);
+    sandboxArg->content = &appContent;
+    ret = AppSpawnProcessMsg(sandboxArg, &pid);
+    EXPECT_TRUE(ret < 0);
+    sandboxArg->client = &appClient;
+    ret = AppSpawnProcessMsg(sandboxArg, NULL);
+    EXPECT_TRUE(ret < 0);
+    free(sandboxArg);
+    GTEST_LOG_(INFO) << "App_Spawn_Standard_012 end";
+}
 } // namespace OHOS
