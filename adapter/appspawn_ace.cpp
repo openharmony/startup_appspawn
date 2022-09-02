@@ -38,7 +38,11 @@ void LoadExtendLib(AppSpawnContent *content)
     APPSPAWN_LOGI("LoadExtendLib: Success to dlopen %s", acelibdir);
     APPSPAWN_LOGI("LoadExtendLib: End calling dlopen");
 
+#ifndef APPSPAWN_TEST
     bool preload = OHOS::system::GetBoolParameter("const.appspawn.preload", true);
+#else
+    bool preload = OHOS::system::GetBoolParameter("const.appspawn.preload", false);
+#endif
     if (!preload) {
         APPSPAWN_LOGI("LoadExtendLib: Do not preload JS VM");
         return;
