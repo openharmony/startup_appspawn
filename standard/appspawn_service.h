@@ -16,6 +16,7 @@
 #ifndef APPSPAWN_SERVICE_H
 #define APPSPAWN_SERVICE_H
 
+#include <unistd.h>
 #include "appspawn_msg.h"
 #include "appspawn_server.h"
 #include "init_hashmap.h"
@@ -47,6 +48,7 @@ typedef struct {
     TaskHandle stream;
     int32_t fd[2];  // 2 fd count
     AppParameter property;
+    pid_t pid;
 } AppSpawnClientExt;
 
 typedef struct {
