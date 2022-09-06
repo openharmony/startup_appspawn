@@ -43,6 +43,9 @@ ohos_executable("appspawn") {
     "${appspawn_path}/adapter/appspawn_ace.cpp",
     "${appspawn_path}/standard/main.c",
   ]
+  if (asan_detector) {
+    defines = [ "ASAN_DETECTOR" ]
+  }
   configs = [ ":appspawn_config" ]
   deps = [
     "${ability_runtime_path}/frameworks/native/appkit:appkit_native",
