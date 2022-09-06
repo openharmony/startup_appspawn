@@ -79,6 +79,7 @@ ohos_static_library("appspawn_server") {
   defines = [
     "GRAPHIC_PERMISSION_CHECK",
     "INIT_AGENT",
+    "APPSPAWN_CHECK_GID_UID",
   ]
 
   if (asan_detector) {
