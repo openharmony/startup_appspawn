@@ -66,6 +66,7 @@ void LoadExtendLib(AppSpawnContent *content)
     runtime->PreloadSystemModule("application.Ability");
     runtime->PreloadSystemModule("application.Context");
     runtime->PreloadSystemModule("application.AbilityContext");
+    runtime->PreloadSystemModule("request");
 
     // Save preloaded runtime
     OHOS::AbilityRuntime::Runtime::SavePreloaded(std::move(runtime));
