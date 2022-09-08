@@ -43,7 +43,7 @@ ohos_executable("appspawn") {
     "${appspawn_path}/adapter/appspawn_ace.cpp",
     "${appspawn_path}/standard/main.c",
   ]
-  if (asan_detector) {
+  if (asan_detector || is_asan) {
     defines = [ "ASAN_DETECTOR" ]
   }
   configs = [ ":appspawn_config" ]
@@ -85,7 +85,7 @@ ohos_static_library("appspawn_server") {
     "APPSPAWN_CHECK_GID_UID",
   ]
 
-  if (asan_detector) {
+  if (asan_detector || is_asan) {
     defines += [ "ASAN_DETECTOR" ]
   }
   configs = [ ":appspawn_config" ]
