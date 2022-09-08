@@ -74,7 +74,7 @@ int ClientSocket::ConnectSocket(int connectFd)
     if (value != TIMEOUT_DEF && value != 0) {
         timeout.tv_sec = value;
     }
-    APPSPAWN_LOGI("Client: Connected on socket fd %d, timeout %d", connectFd, value);
+    APPSPAWN_LOGI("Client: Connected on socket fd %d value %d", connectFd, value);
     bool isRet = (setsockopt(connectFd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) != 0) ||
         (setsockopt(connectFd, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout)) != 0);
     APPSPAWN_CHECK(!isRet, return (-1), "Client: Failed to set opt of socket %d, err %d", connectFd, errno);
