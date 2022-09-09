@@ -37,19 +37,19 @@ namespace {
 void LoadExtendLib(AppSpawnContent *content)
 {
 #ifdef webview_arm64
-    const std::string LOAD_LIB_DIR = "/data/app/el1/bundle/public/com.ohos.nweb/libs/arm64";
+    const std::string loadLibDir = "/data/app/el1/bundle/public/com.ohos.nweb/libs/arm64";
 #else
-    const std::string LOAD_LIB_DIR = "/data/app/el1/bundle/public/com.ohos.nweb/libs/arm";
+    const std::string loadLibDir = "/data/app/el1/bundle/public/com.ohos.nweb/libs/arm";
 #endif
 
 #ifdef __MUSL__
     Dl_namespace dlns;
     dlns_init(&dlns, "nweb_ns");
-    dlns_create(&dlns, LOAD_LIB_DIR.c_str());
+    dlns_create(&dlns, loadLibDir.c_str());
     void *handle = dlopen_ns(&dlns, "libweb_engine.so", RTLD_NOW | RTLD_GLOBAL);
 #else
-    const std::string ENGINE_LIB_DIR = LOAD_LIB_DIR + "/libweb_engine.so";
-    void *handle = dlopen(ENGINE_LIB_DIR.c_str(), RTLD_NOW | RTLD_GLOBAL);
+    const std::string engineLibDir = loadLibDir + "/libweb_engine.so";
+    void *handle = dlopen(engineLibDir.c_str(), RTLD_NOW | RTLD_GLOBAL);
 #endif
     if (handle == nullptr) {
         APPSPAWN_LOGE("Fail to dlopen libweb_engine.so, [%s]", dlerror());
@@ -60,8 +60,8 @@ void LoadExtendLib(AppSpawnContent *content)
 #ifdef __MUSL__
     g_nwebHandle = dlopen_ns(&dlns, "libnweb_render.so", RTLD_NOW | RTLD_GLOBAL);
 #else
-    const std::string RENDER_LIB_DIR = LOAD_LIB_DIR + "/libnweb_render.so";
-    g_nwebHandle = dlopen(RENDER_LIB_DIR.c_str(), RTLD_NOW | RTLD_GLOBAL);
+    const std::string renderLibDir = loadLibDir + "/libnweb_render.so";
+    g_nwebHandle = dlopen(renderLibDir.c_str(), RTLD_NOW | RTLD_GLOBAL);
 #endif
     if (g_nwebHandle == nullptr) {
         APPSPAWN_LOGE("Fail to dlopen libnweb_render.so, [%s]", dlerror());
