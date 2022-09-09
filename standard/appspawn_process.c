@@ -180,7 +180,9 @@ static int SetUidGid(struct AppSpawnContent_ *content, AppSpawnClient *client)
         ret = syscall(SYS_setresgid, appProperty->property.gid, appProperty->property.gid, appProperty->property.gid);
         APPSPAWN_CHECK(ret == 0, return -errno, "setgid(%u) failed: %d", appProperty->property.gid, errno);
 
-        // If the effective user ID is changed from 0 to nonzero, then all capabilities are cleared from the effective set
+        /* If the effective user ID is changed from 0 to nonzero,
+         * then all capabilities are cleared from the effective set
+         */
         ret = syscall(SYS_setresuid, appProperty->property.uid, appProperty->property.uid, appProperty->property.uid);
         APPSPAWN_CHECK(ret == 0, return -errno, "setuid(%u) failed: %d", appProperty->property.uid, errno);
     } else {
@@ -188,7 +190,9 @@ static int SetUidGid(struct AppSpawnContent_ *content, AppSpawnClient *client)
         isRet = setresgid(appProperty->property.gid, appProperty->property.gid, appProperty->property.gid) == -1;
         APPSPAWN_CHECK(!isRet, return -errno, "setgid(%u) failed: %d", appProperty->property.gid, errno);
 
-        // If the effective user ID is changed from 0 to nonzero, then all capabilities are cleared from the effective set
+        /* If the effective user ID is changed from 0 to nonzero,
+         * then all capabilities are cleared from the effective set
+         */
         isRet = setresuid(appProperty->property.uid, appProperty->property.uid, appProperty->property.uid) == -1;
         APPSPAWN_CHECK(!isRet, return -errno, "setuid(%u) failed: %d", appProperty->property.uid, errno);
     }
