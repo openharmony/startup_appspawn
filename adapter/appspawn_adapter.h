@@ -33,7 +33,7 @@ int GetRenderProcessTerminationStatus(int32_t pid, int *status);
 void RecordRenderProcessExitedStatus(pid_t pid, int status);
 void LoadAppSandboxConfig(void);
 void SetUidGidFilter(struct AppSpawnContent_ *content);
-int SetSeccompFilter(struct AppSpawnContent_ *content, AppSpawnClient *client);
+void SetSeccompFilter(struct AppSpawnContent_ *content, AppSpawnClient *client);
 int32_t GetAppNamespaceFlags(const char *bundleName);
 
 #ifdef __cplusplus

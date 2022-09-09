@@ -82,7 +82,7 @@ typedef struct AppSpawnContent_ {
 #ifdef ASAN_DETECTOR
     int (*getWrapBundleNameValue)(struct AppSpawnContent_ *content, AppSpawnClient *client);
 #endif
-    int (*setSeccompFilter)(struct AppSpawnContent_ *content, AppSpawnClient *client);
+    void (*setSeccompFilter)(struct AppSpawnContent_ *content, AppSpawnClient *client);
 } AppSpawnContent;
 
 typedef struct {

@@ -54,7 +54,7 @@ void SetSelinuxCon(struct AppSpawnContent_ *content, AppSpawnClient *client)
 void SetUidGidFilter(struct AppSpawnContent_ *content)
 {
 #ifdef WITH_SECCOMP
-    if (!SetSeccompPolicy(APPSPAWN)) {
+    if (!SetSeccompPolicyWithName(APPSPAWN_NAME)) {
         APPSPAWN_LOGE("AppSpawnServer::Failed to set APPSPAWN seccomp filter");
     } else {
         APPSPAWN_LOGI("AppSpawnServer::Success to set APPSPAWN seccomp filter");
@@ -62,26 +62,21 @@ void SetUidGidFilter(struct AppSpawnContent_ *content)
 #endif
 }
 
-int SetSeccompFilter(struct AppSpawnContent_ *content, AppSpawnClient *client)
+void SetSeccompFilter(struct AppSpawnContent_ *content, AppSpawnClient *client)
 {
 #ifdef WITH_SECCOMP
 #ifdef NWEB_SPAWN
-    if (!SetSeccompPolicy(NWEBSPAWN)) {
+    if (!SetSeccompPolicyWithName(NWEBSPAWN_NAME)) {
         APPSPAWN_LOGE("NwebspawnServer::Failed to set NWEBSPAWN seccomp filter");
-        return -1;
     } else {
         APPSPAWN_LOGI("NwebspawnServer::Success to set NWEBSPAWN seccomp filter");
-        return 0;
     }
 #else
-    if (!SetSeccompPolicy(APP)) {
+    if (!SetSeccompPolicyWithName(APP_NAME)) {
         APPSPAWN_LOGE("AppSpawnServer::Failed to set APP seccomp filter");
-        return -1;
     } else {
         APPSPAWN_LOGI("AppSpawnServer::Success to set APP seccomp filter");
-        return 0;
     }
 #endif
 #endif
-    return 0;
 }
