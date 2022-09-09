@@ -19,8 +19,14 @@
 #include <cerrno>
 
 #include "appspawn_server.h"
+#include "parameters.h"
 
 namespace OHOS {
+#ifdef APPSPAWN_ASAN
+static constexpr int TIMEOUT_DEF = 5;
+#else
+static constexpr int TIMEOUT_DEF = 2;
+#endif
 namespace AppSpawn {
 ClientSocket::ClientSocket(const std::string &client) : AppSpawnSocket(client)
 {}
@@ -63,16 +69,20 @@ int ClientSocket::ConnectSocket(int connectFd)
 
     APPSPAWN_CHECK(PackSocketAddr() == 0, return -1,  "pack socket failed");
 
-    bool isRet = (setsockopt(connectFd, SOL_SOCKET, SO_RCVTIMEO, &SOCKET_TIMEOUT, sizeof(SOCKET_TIMEOUT)) != 0) ||
-        (setsockopt(connectFd, SOL_SOCKET, SO_SNDTIMEO, &SOCKET_TIMEOUT, sizeof(SOCKET_TIMEOUT)) != 0);
+    struct timeval timeout = {TIMEOUT_DEF, 0};
+    int value = OHOS::system::GetIntParameter("persist.appspawn.client.timeout", TIMEOUT_DEF);
+    if (value != TIMEOUT_DEF && value != 0) {
+        timeout.tv_sec = value;
+    }
+    APPSPAWN_LOGI("Client: Connected on socket fd %d value %d", connectFd, value);
+    bool isRet = (setsockopt(connectFd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) != 0) ||
+        (setsockopt(connectFd, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout)) != 0);
     APPSPAWN_CHECK(!isRet, return (-1), "Client: Failed to set opt of socket %d, err %d", connectFd, errno);
 
     if (connect(connectFd, reinterpret_cast<struct sockaddr *>(&socketAddr_), socketAddrLen_) < 0) {
         APPSPAWN_LOGW("Client: Connect on socket fd %d, failed: %d", connectFd, errno);
         return -1;
     }
-
-    APPSPAWN_LOGV("Client: Connected on socket fd %d, name '%s'", connectFd, socketAddr_.sun_path);
     return 0;
 }
 
