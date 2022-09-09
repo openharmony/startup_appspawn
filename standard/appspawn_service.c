@@ -133,14 +133,19 @@ static void OnClose(const TaskHandle taskHandle)
 {
     AppSpawnClientExt *client = (AppSpawnClientExt *)LE_GetUserData(taskHandle);
     APPSPAWN_CHECK(client != NULL, return, "Failed to get client");
-    APPSPAWN_LOGI("OnClose client.id %d ", client->client.id);
 }
 
 APPSPAWN_STATIC void SendMessageComplete(const TaskHandle taskHandle, BufferHandle handle)
 {
     AppSpawnClientExt *client = (AppSpawnClientExt *)LE_GetUserData(taskHandle);
     APPSPAWN_CHECK(client != NULL, return, "Failed to get client");
-    APPSPAWN_LOGI("SendMessageComplete client.id %d ", client->client.id);
+    APPSPAWN_LOGI("SendMessageComplete client.id %d result %d pid %d",
+        client->client.id, LE_GetSendResult(handle), client->pid);
+    if (LE_GetSendResult(handle) != 0 && client->pid > 0) {
+        kill(client->pid, SIGKILL);
+        APPSPAWN_LOGI("Send message fail err:%d kill app [ %d %s]",
+            LE_GetSendResult(handle), client->pid, client->property.bundleName);
+    }
 }
 
 static int SendResponse(AppSpawnClientExt *client, const char *buff, size_t buffSize)
@@ -276,9 +281,9 @@ static void CheckColdAppEnabled(AppSpawnClientExt *appProperty)
 
     if ((appProperty->property.flags & 0x01) != 0) {
         char cold[10] = {0};  // 10 cold
-        int ret = GetParameter("appspawn.cold.boot", "false", cold, sizeof(cold));
+        int ret = GetParameter("startup.appspawn.cold.boot", "0", cold, sizeof(cold));
         APPSPAWN_LOGV("appspawn.cold.boot %s %d ", cold, ret);
-        if (ret > 0 && (strcmp(cold, "true") == 0 || strcmp(cold, "1") == 0 || strcmp(cold, "enable") == 0)) {
+        if (ret > 0 && strcmp(cold, "1") == 0) {
             appProperty->client.flags |= APP_COLD_START;
         }
     }
@@ -364,7 +369,7 @@ APPSPAWN_STATIC void OnReceiveRequest(const TaskHandle taskHandle, const uint8_t
         LE_StopTimer(LE_GetDefaultLoop(), g_appSpawnContent->timer);
         g_appSpawnContent->timer = NULL;
     }
-
+    appProperty->pid = 0;
     CheckColdAppEnabled(appProperty);
     // create pipe for commication from child
     if (pipe(appProperty->fd) == -1) {
@@ -389,25 +394,24 @@ APPSPAWN_STATIC void OnReceiveRequest(const TaskHandle taskHandle, const uint8_t
     }
     (void)memset_s(sandboxArg, sizeof(AppSandboxArg), 0, sizeof(AppSandboxArg));
 
-    pid_t pid = 0;
     sandboxArg->content = &g_appSpawnContent->content;
     sandboxArg->client = &appProperty->client;
     sandboxArg->client->cloneFlags = 0;
     if (appProperty->client.flags != UI_SERVICE_DIALOG) {
         sandboxArg->client->cloneFlags = GetAppNamespaceFlags(appProperty->property.bundleName);
     }
-    int result = AppSpawnProcessMsg(sandboxArg, &pid);
+    int result = AppSpawnProcessMsg(sandboxArg, &appProperty->pid);
     if (result == 0) {  // wait child process result
-        result = WaitChild(appProperty->fd[0], pid, appProperty);
+        result = WaitChild(appProperty->fd[0], appProperty->pid, appProperty);
     }
     close(appProperty->fd[0]);
     close(appProperty->fd[1]);
     free(sandboxArg);
     APPSPAWN_LOGI("child process %s %s pid %d",
-        appProperty->property.processName, (result == 0) ? "success" : "fail", pid);
+        appProperty->property.processName, (result == 0) ? "success" : "fail", appProperty->pid);
     if (result == 0) {
-        AddAppInfo(pid, appProperty->property.processName);
-        SendResponse(appProperty, (char *)&pid, sizeof(pid));
+        AddAppInfo(appProperty->pid, appProperty->property.processName);
+        SendResponse(appProperty, (char *)&appProperty->pid, sizeof(appProperty->pid));
     } else {
         SendResponse(appProperty, (char *)&result, sizeof(result));
     }
@@ -423,7 +427,6 @@ TaskHandle GetTestClientHandle()
 APPSPAWN_STATIC int OnConnection(const LoopHandle loopHandle, const TaskHandle server)
 {
     static uint32_t clientId = 0;
-    APPSPAWN_LOGI("OnConnection ");
     APPSPAWN_CHECK(server != NULL, return -1, "Error server");
 
     TaskHandle stream;
