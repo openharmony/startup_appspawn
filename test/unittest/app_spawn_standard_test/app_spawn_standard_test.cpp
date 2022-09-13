@@ -457,7 +457,7 @@ HWTEST(AppSpawnStandardTest, App_Spawn_Standard_09, TestSize.Level0)
 HWTEST(AppSpawnStandardTest, App_Spawn_Standard_10, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Standard_10 start";
-    std::string m_jsconfig = "{ \
+    std::string mJsconfig = "{ \
         \"common\":[{ \
             \"top-sandbox-switch\": \"ON\", \
             \"app-base\":[{ \
@@ -474,7 +474,7 @@ HWTEST(AppSpawnStandardTest, App_Spawn_Standard_10, TestSize.Level0)
         }], \
         \"individual\": [] \
     }";
-    nlohmann::json j_config = nlohmann::json::parse(m_jsconfig.c_str());
+    nlohmann::json j_config = nlohmann::json::parse(mJsconfig.c_str());
 
     OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config);
 
@@ -515,7 +515,7 @@ HWTEST(AppSpawnStandardTest, App_Spawn_Standard_10, TestSize.Level0)
 HWTEST(AppSpawnStandardTest, App_Spawn_Standard_011, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Standard_011 start";
-    std::string namespace_jsconfig = "{ \
+    std::string namespaceJsconfig = "{ \
         \"sandbox-namespace\":[{ \
             \"com.ohos.app1\":[{ \
                 \"clone-flags\": [ \"mnt\" ] \
@@ -528,7 +528,7 @@ HWTEST(AppSpawnStandardTest, App_Spawn_Standard_011, TestSize.Level0)
             }] \
         }] \
     }";
-    nlohmann::json namespace_config = nlohmann::json::parse(namespace_jsconfig.c_str());
+    nlohmann::json namespace_config = nlohmann::json::parse(namespaceJsconfig.c_str());
 
     OHOS::AppSpawn::SandboxUtils::StoreNamespaceJsonConfig(namespace_config);
     int32_t cloneFlags = GetAppNamespaceFlags("com.ohos.app1");

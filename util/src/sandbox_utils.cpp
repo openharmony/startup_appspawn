@@ -181,9 +181,11 @@ static std::string& replace_all(std::string& str, const std::string& old_value, 
 {
     while (true) {
         std::string::size_type pos(0);
-        if ((pos = str.find(old_value)) != std::string::npos)
+        if ((pos = str.find(old_value)) != std::string::npos) {
             str.replace(pos, old_value.length(), new_value);
-        else break;
+        } else {
+            break;
+        }
     }
     return str;
 }
