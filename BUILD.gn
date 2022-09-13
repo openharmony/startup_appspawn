@@ -140,6 +140,7 @@ ohos_static_library("nwebspawn_server") {
     "GRAPHIC_PERMISSION_CHECK",
     "INIT_AGENT",
     "NWEB_SPAWN",
+    "APPSPAWN_CHECK_GID_UID",
   ]
   configs = [ ":appspawn_config" ]
   ldflags = [ "-Wl,--dynamic-linker,/system/bin/linker64z" ]
