@@ -531,7 +531,7 @@ HWTEST(AppSpawnStandardTest, App_Spawn_Standard_011, TestSize.Level0)
     nlohmann::json namespace_config = nlohmann::json::parse(namespaceJsconfig.c_str());
 
     OHOS::AppSpawn::SandboxUtils::StoreNamespaceJsonConfig(namespace_config);
-    int32_t cloneFlags = GetAppNamespaceFlags("com.ohos.app1");
+    uint32_t cloneFlags = GetAppNamespaceFlags("com.ohos.app1");
     EXPECT_TRUE(cloneFlags & CLONE_NEWNS);
 
     cloneFlags = GetAppNamespaceFlags("com.ohos.app2");
