@@ -303,8 +303,8 @@ static int ColdStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client
         argv[FD_INDEX] = strdup(buffer);
         APPSPAWN_CHECK(argv[FD_INDEX] != NULL, break, "Invalid strdup");
 
-        len = sprintf_s(param + startLen, originLen - startLen, "%u:%u:%u:%u",
-            ((AppSpawnClientExt *)client)->client.id,
+        len = sprintf_s(param + startLen, originLen - startLen, "%u:%u:%u:%u:%u",
+            ((AppSpawnClientExt *)client)->client.id, ((AppSpawnClientExt *)client)->client.cloneFlags,
             appProperty->uid, appProperty->gid, appProperty->gidCount);
         APPSPAWN_CHECK(len > 0 && (len < (originLen - startLen)), break, "Invalid to format");
         startLen += len;
@@ -348,6 +348,9 @@ int GetAppSpawnClientFromArg(int argc, char *const argv[], AppSpawnClientExt *cl
     // clientid
     APPSPAWN_CHECK(start != NULL, return -1, "Failed to get client id");
     client->client.id = atoi(start);
+    start = strtok_r(NULL, ":", &end);
+    APPSPAWN_CHECK(start != NULL, return -1, "Failed to get client cloneFlags");
+    client->client.cloneFlags = atoi(start);
     start = strtok_r(NULL, ":", &end);
     APPSPAWN_CHECK(start != NULL, return -1, "Failed to get uid");
     client->property.uid = atoi(start);
