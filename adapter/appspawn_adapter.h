@@ -34,7 +34,7 @@ void RecordRenderProcessExitedStatus(pid_t pid, int status);
 void LoadAppSandboxConfig(void);
 void SetUidGidFilter(struct AppSpawnContent_ *content);
 void SetSeccompFilter(struct AppSpawnContent_ *content, AppSpawnClient *client);
-int32_t GetAppNamespaceFlags(const char *bundleName);
+uint32_t GetAppNamespaceFlags(const char *bundleName);
 
 #ifdef __cplusplus
 }
