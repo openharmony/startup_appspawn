@@ -28,6 +28,7 @@ config("appspawn_config") {
     "//base/security/access_token/interfaces/innerkits/token_setproc/include",
     "//base/startup/init/services/log",
     "//base/startup/init/services/include",
+    "//base/startup/init/services/include/param",
     "//base/startup/init/services/loopevent/include",
     "//base/startup/init/interfaces/innerkits/include",
     "//third_party/json/include",

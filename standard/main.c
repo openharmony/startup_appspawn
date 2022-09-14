@@ -18,6 +18,7 @@
 #include "appspawn_server.h"
 #include "appspawn_service.h"
 #include "securec.h"
+#include "init_param.h"
 
 int main(int argc, char *const argv[])
 {
@@ -60,6 +61,7 @@ int main(int argc, char *const argv[])
     content->runChildProcessor = RunChildProcessor;
     content->setUidGidFilter = SetUidGidFilter;
     content->initAppSpawn(content);
+    SystemSetParameter("bootevent.appspawn.started", "true");
     content->runAppSpawn(content, argc, argv);
 
     return 0;
