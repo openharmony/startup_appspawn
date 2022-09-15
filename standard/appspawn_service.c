@@ -517,6 +517,7 @@ void AppSpawnColdRun(AppSpawnContent *content, int argc, char *const argv[])
 
     AppSpawnClientExt *client = (AppSpawnClientExt *)malloc(sizeof(AppSpawnClientExt));
     APPSPAWN_CHECK(client != NULL, return, "Failed to alloc memory for client");
+    (void)memset_s(client, sizeof(AppSpawnClientExt), 0, sizeof(AppSpawnClientExt));
     int ret = GetAppSpawnClientFromArg(argc, argv, client);
     APPSPAWN_CHECK(ret == 0, free(client);
         return, "Failed to get client from arg");
