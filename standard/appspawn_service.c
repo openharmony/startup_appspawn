@@ -607,13 +607,10 @@ AppSpawnContent *AppSpawnCreateContent(const char *socketName, char *longProcNam
 
         char path[128] = {0};  // 128 max path
         int ret = snprintf_s(path, sizeof(path), sizeof(path) - 1, "%s%s", SOCKET_DIR, socketName);
-        APPSPAWN_CHECK(ret >= 0, free(appSpawnContent);
-            return NULL, "Failed to snprintf_s %d", ret);
+        APPSPAWN_CHECK(ret >= 0, free(appSpawnContent); return NULL, "Failed to snprintf_s %d", ret);
         int socketId = GetControlSocket(socketName);
         APPSPAWN_LOGI("get socket form env %s socketId %d", socketName, socketId);
-        if (socketId > 0) {
-            appSpawnContent->flags |= FLAGS_ON_DEMAND;
-        }
+        APPSPAWN_CHECK_ONLY_EXPER(socketId <= 0, appSpawnContent->flags |= FLAGS_ON_DEMAND);
 
         LE_StreamServerInfo info = {};
         info.baseInfo.flags = TASK_STREAM | TASK_PIPE | TASK_SERVER;
@@ -623,16 +620,13 @@ AppSpawnContent *AppSpawnCreateContent(const char *socketName, char *longProcNam
         info.incommingConnect = OnConnection;
 
         ret = LE_CreateStreamServer(LE_GetDefaultLoop(), &appSpawnContent->server, &info);
-        APPSPAWN_CHECK(ret == 0, free(appSpawnContent);
-            return NULL, "Failed to create socket for %s", path);
+        APPSPAWN_CHECK(ret == 0, free(appSpawnContent); return NULL, "Failed to create socket for %s", path);
         // create socket
         ret = chmod(path, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
-        APPSPAWN_CHECK(ret == 0, free(appSpawnContent);
-            return NULL, "Failed to chmod %s, err %d. ", path, errno);
+        APPSPAWN_CHECK(ret == 0, free(appSpawnContent); return NULL, "Failed to chmod %s, err %d. ", path, errno);
 #ifndef APPSPAWN_CHECK_GID_UID
         ret = lchown(path, 0, 4000); // 4000 is appspawn gid
-        APPSPAWN_CHECK(ret == 0, free(appSpawnContent);
-            return NULL, "Failed to lchown %s, err %d. ", path, errno);
+        APPSPAWN_CHECK(ret == 0, free(appSpawnContent); return NULL, "Failed to lchown %s, err %d. ", path, errno);
 #endif
         APPSPAWN_LOGI("AppSpawnCreateContent path %s fd %d", path, LE_GetSocketFd(appSpawnContent->server));
     }
