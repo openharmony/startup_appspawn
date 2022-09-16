@@ -67,7 +67,7 @@ int32_t SetAppSandboxProperty(struct AppSpawnContent_ *content, AppSpawnClient *
     return ret;
 }
 
-int32_t GetAppNamespaceFlags(const char *bundleName)
+uint32_t GetAppNamespaceFlags(const char *bundleName)
 {
     return SandboxUtils::GetNamespaceFlagsFromConfig(bundleName);
 }

@@ -109,10 +109,10 @@ nlohmann::json SandboxUtils::GetProductJsonConfig()
     return SandboxUtils::productSandboxConfig_;
 }
 
-static int32_t NamespaceFlagsFromConfig(const std::vector<std::string> &vec)
+static uint32_t NamespaceFlagsFromConfig(const std::vector<std::string> &vec)
 {
     const std::map<std::string, int32_t> NamespaceFlagsMap = { {"mnt", CLONE_NEWNS}, {"pid", CLONE_NEWPID} };
-    int32_t cloneFlags = 0;
+    uint32_t cloneFlags = 0;
 
     for (unsigned int j = 0; j < vec.size(); j++) {
         if (NamespaceFlagsMap.count(vec[j])) {
@@ -122,10 +122,10 @@ static int32_t NamespaceFlagsFromConfig(const std::vector<std::string> &vec)
     return cloneFlags;
 }
 
-int32_t SandboxUtils::GetNamespaceFlagsFromConfig(const char *bundleName)
+uint32_t SandboxUtils::GetNamespaceFlagsFromConfig(const char *bundleName)
 {
     nlohmann::json config = SandboxUtils::GetNamespaceJsonConfig();
-    int32_t cloneFlags = CLONE_NEWNS;
+    uint32_t cloneFlags = CLONE_NEWNS;
 
     if (config.find(SANDBOX_NAMESPACE) == config.end()) {
         APPSPAWN_LOGE("namespace config is not found");
