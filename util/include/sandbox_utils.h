@@ -33,7 +33,7 @@ public:
     static void StoreProductJsonConfig(nlohmann::json &productSandboxConfig);
     static nlohmann::json GetProductJsonConfig();
     static int32_t SetAppSandboxProperty(const ClientSocket::AppProperty *appProperty);
-    static int32_t GetNamespaceFlagsFromConfig(const char *bundleName);
+    static uint32_t GetNamespaceFlagsFromConfig(const char *bundleName);
 
 private:
     static int32_t DoAppSandboxMountOnce(const char *originPath, const char *destinationPath,
