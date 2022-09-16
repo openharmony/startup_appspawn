@@ -16,8 +16,6 @@ import("//build/test.gni")
 
 config("utest_config") {
   cflags = [
-    "-fprofile-arcs",
-    "-ftest-coverage",
     "-Wno-implicit-fallthrough",
     "-Wno-unused-function",
   ]
@@ -25,8 +23,6 @@ config("utest_config") {
     "-Wno-implicit-fallthrough",
     "-fexceptions",
   ]
-
-  ldflags = [ "--coverage" ]
 
   include_dirs = [
     "${appspawn_path}/test/mock/include",
