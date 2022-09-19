@@ -32,6 +32,10 @@ config("appspawn_config") {
     "//base/startup/init/services/loopevent/include",
     "//base/startup/init/interfaces/innerkits/include",
     "//third_party/json/include",
+    "//base/notification/eventhandler/interfaces/inner_api",
+    "//foundation/communication/ipc/interfaces/innerkits/ipc_core/include",
+    "//foundation/arkui/napi",
+    "//third_party/libuv/include",
   ]
 
   if (build_selinux) {
@@ -54,15 +58,10 @@ ohos_executable("appspawn") {
   ]
   external_deps = [
     "ability_base:want",
-    "ability_runtime:app_manager",
     "ability_runtime:runtime",
     "c_utils:utils",
-    "eventhandler:libeventhandler",
     "hitrace_native:hitrace_meter",
-    "hiviewdfx_hilog_native:libhilog",
     "init:libbegetutil",
-    "ipc:ipc_core",
-    "napi:ace_napi",
   ]
 
   install_enable = true
@@ -98,7 +97,6 @@ ohos_static_library("appspawn_server") {
   ]
   external_deps = [
     "c_utils:utils",
-    "hiviewdfx_hilog_native:libhilog",
     "init:libbegetutil",
   ]
   if (build_selinux) {
@@ -151,7 +149,6 @@ ohos_static_library("nwebspawn_server") {
   ]
   external_deps = [
     "c_utils:utils",
-    "hiviewdfx_hilog_native:libhilog",
     "init:libbegetutil",
   ]
   if (build_selinux) {
@@ -181,7 +178,6 @@ ohos_executable("nwebspawn") {
   ]
   configs = [ ":appspawn_config" ]
   deps = [ "${appspawn_path}:nwebspawn_server" ]
-  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 
   install_enable = true
   subsystem_name = "${subsystem_name}"
