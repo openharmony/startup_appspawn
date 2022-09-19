@@ -131,6 +131,11 @@ void AppspawnLogPrint(AppspawnLogLevel logLevel, const char *file, int line, con
         exper;                           \
     }
 
+#define APPSPAWN_CHECK_ONLY_EXPER(retCode, exper) \
+    if (!(retCode)) {                  \
+        exper;                 \
+    }                         \
+
 #define APPSPAWN_CHECK_ONLY_LOG(retCode, ...) \
     if (!(retCode)) {                    \
         APPSPAWN_LOGE(__VA_ARGS__);      \
