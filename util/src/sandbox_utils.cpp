@@ -111,7 +111,7 @@ nlohmann::json SandboxUtils::GetProductJsonConfig()
 
 static uint32_t NamespaceFlagsFromConfig(const std::vector<std::string> &vec)
 {
-    const std::map<std::string, int32_t> NamespaceFlagsMap = { {"mnt", CLONE_NEWNS}, {"pid", CLONE_NEWPID} };
+    const std::map<std::string, uint32_t> NamespaceFlagsMap = { {"mnt", CLONE_NEWNS}, {"pid", CLONE_NEWPID} };
     uint32_t cloneFlags = 0;
 
     for (unsigned int j = 0; j < vec.size(); j++) {
