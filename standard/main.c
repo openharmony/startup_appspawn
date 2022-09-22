@@ -28,16 +28,18 @@ int main(int argc, char *const argv[])
 
     (void)signal(SIGPIPE, SIG_IGN);
     uint32_t argvSize = 0;
+    char *buffer = (char *)argv[0];
     int mode = 0;
 
     if ((argc > PARAM_INDEX) && (strcmp(argv[START_INDEX], "cold-start") == 0)) {
+        buffer = argv[0];
         argvSize = APP_LEN_PROC_NAME;
         mode = 1;
     } else {
         // calculate child process long name size
         uintptr_t start = (uintptr_t)argv[0];
         uintptr_t end = (uintptr_t)strchr(argv[argc - 1], 0);
-        if (end == 0) {
+        if (end <= 0) {
             return -1;
         }
         argvSize = end - start;

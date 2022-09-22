@@ -150,7 +150,7 @@ APPSPAWN_STATIC void SendMessageComplete(const TaskHandle taskHandle, BufferHand
 
 static int SendResponse(AppSpawnClientExt *client, const char *buff, size_t buffSize)
 {
-    APPSPAWN_CHECK(buff != NULL, return -1, "Invalid content buff");
+    APPSPAWN_CHECK(buffSize >= 0 && buff != 0, return -1, "Invalid content buffSize %d", buffSize);
     uint32_t bufferSize = buffSize;
     BufferHandle handle = LE_CreateBuffer(LE_GetDefaultLoop(), bufferSize);
     char *buffer = (char *)LE_GetBufferInfo(handle, NULL, &bufferSize);
@@ -543,7 +543,7 @@ static void AppSpawnRun(AppSpawnContent *content, int argc, char *const argv[])
 
     LE_STATUS status = LE_CreateSignalTask(LE_GetDefaultLoop(), &appSpawnContent->sigHandler, SignalHandler);
     if (status == 0) {
-        (void)LE_AddSignal(LE_GetDefaultLoop(), appSpawnContent->sigHandler, SIGCHLD);
+        status = LE_AddSignal(LE_GetDefaultLoop(), appSpawnContent->sigHandler, SIGCHLD);
         status = LE_AddSignal(LE_GetDefaultLoop(), appSpawnContent->sigHandler, SIGTERM);
     }
     if (status != 0) {
