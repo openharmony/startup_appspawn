@@ -749,7 +749,7 @@ bool SandboxUtils::CheckAppSandboxSwitchStatus(const ClientSocket::AppProperty *
     return rc;
 }
 
-static int CheckBundleName(const std::string bundleName)
+static int CheckBundleName(const std::string &bundleName)
 {
     if (bundleName.empty() || bundleName.size() > APP_LEN_BUNDLE_NAME) {
         return -1;
