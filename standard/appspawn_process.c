@@ -176,7 +176,8 @@ static int SetUidGid(struct AppSpawnContent_ *content, AppSpawnClient *client)
          * after clone, the C library has not cleaned up the multi-thread information, so need to call syscall.
          */
         // set gid
-        long ret = syscall(SYS_setresgid, appProperty->property.gid, appProperty->property.gid, appProperty->property.gid);
+        long ret = syscall(SYS_setresgid, appProperty->property.gid,
+            appProperty->property.gid, appProperty->property.gid);
         APPSPAWN_CHECK(ret == 0, return -errno, "setgid(%u) failed: %d", appProperty->property.gid, errno);
 
         /* If the effective user ID is changed from 0 to nonzero,
