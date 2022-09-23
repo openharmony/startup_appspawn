@@ -337,8 +337,7 @@ static int ColdStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client
 
 int GetAppSpawnClientFromArg(int argc, char *const argv[], AppSpawnClientExt *client)
 {
-    APPSPAWN_CHECK(argv != NULL, return -1, "Invalid arg");
-    APPSPAWN_CHECK(argc > PARAM_INDEX, return -1, "Invalid argc %d", argc);
+    APPSPAWN_CHECK(argv != NULL && argc > PARAM_INDEX, return -1, "Invalid argv argc %d", argc);
 
     client->fd[1] = atoi(argv[FD_INDEX]);
     APPSPAWN_LOGV("GetAppSpawnClientFromArg %s ", argv[PARAM_INDEX]);
