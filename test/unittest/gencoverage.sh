@@ -1,4 +1,4 @@
-#! /bin/bash
+#!/bin/bash
 # Copyright (c) 2022 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 # Usage:
 # ./prepare_testdata.sh path
 # path is the rootdir of ohos projects.
+set -e
 
 if [ $# -lt 1 ];then
     echo "Usage $0 <product name>"
@@ -122,7 +123,7 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-if [ ! -f ${ohos_init}/g.sh ]; then
+if [ ! -f "${ohos_init}/g.sh" ]; then
     echo "create g.sh"
     touch ${ohos_init}/g.sh
     echo "${ohos_root}/prebuilts/clang/ohos/linux-x86_64/llvm/bin/llvm-cov gcov \$@" > ${ohos_init}/g.sh
