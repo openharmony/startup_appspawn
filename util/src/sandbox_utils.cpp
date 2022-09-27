@@ -51,6 +51,7 @@ namespace {
     const std::string STATUS_CHECK = "true";
     const std::string SBX_SWITCH_CHECK = "ON";
     const std::string DLP_BUNDLENAME = "com.ohos.dlpmanager";
+    const std::string INTERNAL = "__internal__";
     const char *ACTION_STATUS = "check-action-status";
     const char *APP_BASE = "app-base";
     const char *APP_RESOURCES = "app-resources";
@@ -73,6 +74,12 @@ namespace {
     const char *FLAGS = "flags";
     const char *SANDBOX_NAMESPACE = "sandbox-namespace";
     const char *SANDBOX_CLONE_FLAGS = "clone-flags";
+#ifndef NWEB_SPAWN
+    const std::string SANDBOX_ROOT_DIR = "/mnt/sandbox/";
+#else
+    const std::string OHOS_RENDER = "__internal__.com.ohos.render";
+    const std::string SANDBOX_ROOT_DIR = "/mnt/sandbox/com.ohos.render/";
+#endif
 }
 
 nlohmann::json SandboxUtils::appNamespaceConfig_;
@@ -625,6 +632,26 @@ int32_t SandboxUtils::SetPrivateAppSandboxProperty_(const ClientSocket::AppPrope
     return ret;
 }
 
+int32_t SandboxUtils::SetRenderSandboxProperty(const ClientSocket::AppProperty *appProperty,
+                                               std::string &sandboxPackagePath)
+{
+#ifdef NWEB_SPAWN
+    nlohmann::json config = SandboxUtils::GetJsonConfig();
+    nlohmann::json privateAppConfig = config[PRIVATE_PREFIX][0];
+
+    int ret = 0;
+    if (privateAppConfig.find(OHOS_RENDER) != privateAppConfig.end()) {
+        ret = DoAllMntPointsMount(appProperty, privateAppConfig[OHOS_RENDER][0]);
+        APPSPAWN_CHECK(ret == 0, return ret, "DoAllMntPointsMount failed, %s",
+            appProperty->bundleName);
+        ret = DoAllSymlinkPointslink(appProperty, privateAppConfig[OHOS_RENDER][0]);
+        APPSPAWN_CHECK(ret == 0, return ret, "DoAllSymlinkPointslink  failed, %s",
+            appProperty->bundleName);
+    }
+#endif
+    return 0;
+}
+
 int32_t SandboxUtils::SetPrivateAppSandboxProperty(const ClientSocket::AppProperty *appProperty)
 {
     nlohmann::json productConfig = SandboxUtils::GetProductJsonConfig();
@@ -715,6 +742,14 @@ int32_t SandboxUtils::DoSandboxRootFolderCreate(const ClientSocket::AppProperty 
     return 0;
 }
 
+bool SandboxUtils::CheckBundleNameForPrivate(const std::string &bundleName)
+{
+    if (bundleName.find(INTERNAL) != std::string::npos) {
+        return false;
+    }
+    return true;
+}
+
 bool SandboxUtils::CheckTotalSandboxSwitchStatus(const ClientSocket::AppProperty *appProperty)
 {
     nlohmann::json wholeConfig = SandboxUtils::GetJsonConfig();
@@ -762,16 +797,14 @@ static int CheckBundleName(const std::string &bundleName)
 
 int32_t SandboxUtils::SetAppSandboxProperty(const ClientSocket::AppProperty *appProperty)
 {
-    std::string sandboxPackagePath = "/mnt/sandbox/";
-    mkdir(sandboxPackagePath.c_str(), FILE_MODE);
     if (appProperty == nullptr || CheckBundleName(appProperty->bundleName) != 0) {
         return -1;
     }
+    std::string sandboxPackagePath = SANDBOX_ROOT_DIR;
     const std::string bundleName = appProperty->bundleName;
     sandboxPackagePath += bundleName;
-    mkdir(sandboxPackagePath.c_str(), FILE_MODE);
-
-    int rc;
+    MakeDirRecursive(sandboxPackagePath.c_str(), FILE_MODE);
+    int rc = 0;
     // when CLONE_NEWPID is enabled, CLONE_NEWNS must be enabled.
     if (!(appProperty->cloneFlags & CLONE_NEWPID)) {
         // add pid to a new mnt namespace
@@ -787,13 +820,24 @@ int32_t SandboxUtils::SetAppSandboxProperty(const ClientSocket::AppProperty *app
         rc = DoSandboxRootFolderCreate(appProperty, sandboxPackagePath);
     }
     APPSPAWN_CHECK(rc == 0, return rc, "DoSandboxRootFolderCreate failed, %s", bundleName.c_str());
-
+#ifndef NWEB_SPAWN
     rc = SetCommonAppSandboxProperty(appProperty, sandboxPackagePath);
-    APPSPAWN_CHECK(rc == 0, return rc, "SetCommonAppSandboxProperty failed, packagename is %s", bundleName.c_str());
-
-    rc = SetPrivateAppSandboxProperty(appProperty);
-    APPSPAWN_CHECK(rc == 0, return rc, "SetPrivateAppSandboxProperty failed, packagename is %s", bundleName.c_str());
-
+    APPSPAWN_CHECK(rc == 0, return rc, "SetCommonAppSandboxProperty failed, packagename is %s",
+        bundleName.c_str());
+    if (CheckBundleNameForPrivate(bundleName)) {
+        rc = SetPrivateAppSandboxProperty(appProperty);
+        APPSPAWN_CHECK(rc == 0, return rc, "SetPrivateAppSandboxProperty failed, packagename is %s",
+            bundleName.c_str());
+    }
+#else
+    // rendering process can be created by different apps,
+    // and the bundle names of these apps are different,
+    // so we can't use the method SetPrivateAppSandboxProperty
+    // which mount dirs by using bundle name.
+    rc = SetRenderSandboxProperty(appProperty, sandboxPackagePath);
+    APPSPAWN_CHECK(rc == 0, return rc, "SetRenderSandboxProperty failed, packagename is %s",
+        sandboxPackagePath.c_str());
+#endif
     rc = chdir(sandboxPackagePath.c_str());
     APPSPAWN_CHECK(rc == 0, return rc, "chdir failed, packagename is %s, path is %s",
         bundleName.c_str(), sandboxPackagePath.c_str());
