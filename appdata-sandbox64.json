@@ -152,10 +152,6 @@
                     "link-name" : "/etc",
                     "check-action-status": "false"
                 }, {
-                    "target-name" : "/system/bin/init",
-                    "link-name" : "/init",
-                    "check-action-status": "false"
-                }, {
                     "target-name" : "/sys/kernel/debug",
                     "link-name" : "/d",
                     "check-action-status": "false"
