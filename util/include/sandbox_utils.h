@@ -64,12 +64,15 @@ private:
     static std::string GetSbxPathByConfig(const ClientSocket::AppProperty *appProperty, nlohmann::json &config);
     static bool CheckTotalSandboxSwitchStatus(const ClientSocket::AppProperty *appProperty);
     static bool CheckAppSandboxSwitchStatus(const ClientSocket::AppProperty *appProperty);
+    static bool CheckBundleNameForPrivate(const std::string &bundleName);
     static bool GetSbxSwitchStatusByConfig(nlohmann::json &config);
     static unsigned long GetMountFlagsFromConfig(const std::vector<std::string> &vec);
     static int32_t SetCommonAppSandboxProperty_(const ClientSocket::AppProperty *appProperty,
                                          nlohmann::json &config);
     static int32_t SetPrivateAppSandboxProperty_(const ClientSocket::AppProperty *appProperty,
                                           nlohmann::json &config);
+    static int32_t SetRenderSandboxProperty(const ClientSocket::AppProperty *appProperty,
+                                            std::string &sandboxPackagePath);
 
 private:
     static nlohmann::json appNamespaceConfig_;
