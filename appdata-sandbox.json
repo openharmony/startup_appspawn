@@ -305,6 +305,53 @@
                 }
             ],
             "symbol-links" : []
+        }],
+        "__internal__.com.ohos.render" : [{
+            "sandbox-switch": "ON",
+            "sandbox-root" : "/mnt/sandbox/com.ohos.render/<PackageName>",
+            "mount-paths" : [{
+                    "src-path" : "/dev",
+                    "sandbox-path" : "/dev",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/proc",
+                    "sandbox-path" : "/proc",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/sys",
+                    "sandbox-path" : "/sys",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/system/fonts",
+                    "sandbox-path" : "/system/fonts",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/system/etc",
+                    "sandbox-path" : "/system/etc",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/data/app/el2/<currentUserId>/base/<PackageName>",
+                    "sandbox-path" : "/data/storage/el2/base",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "true"
+                }, {
+                    "src-path" : "/data/app/el1/bundle/public/com.ohos.nweb",
+                    "sandbox-path" : "/data/storage/el1/bundle/nweb",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }
+            ],
+            "symbol-links" : [ {
+                    "target-name" : "/system/etc",
+                    "link-name" : "/etc",
+                    "check-action-status": "false"
+                }
+            ]
         }]
     }]
 }
