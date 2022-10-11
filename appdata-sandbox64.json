@@ -170,6 +170,11 @@
                     "sandbox-path" : "/data/storage/el1/bundle/ohos.global.systemres",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
+                }, {
+                    "src-path" : "/system/app/ohos.global.systemres",
+                    "sandbox-path" : "/data/storage/el1/bundle/systemResources",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
                 }
             ],
             "flags-point" : [{
