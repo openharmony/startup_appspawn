@@ -1,4 +1,4 @@
-# appspawn应用孵化器组件
+# appspawn应用孵化器部件
 
 ## 简介
 
