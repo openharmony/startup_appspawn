@@ -288,7 +288,7 @@ HWTEST(AppSpawnSocketTest, App_Spawn_Socket_010, TestSize.Level0)
     write(fd[1], content.c_str(), len);
 
     EXPECT_EQ(len, appSpawnSocket->ReadSocketMessage(fd[0], buff.get(), len));
-    EXPECT_EQ(0, strncmp(content.c_str(), (const char *)(buff.get()), len));
+    EXPECT_EQ(0, strncmp(content.c_str(), reinterpret_cast<const char *>(buff.get()), len));
 
     // close pipe
     close(fd[0]);
@@ -419,7 +419,7 @@ HWTEST(AppSpawnSocketTest, App_Spawn_Socket_015, TestSize.Level0)
 
     EXPECT_EQ(len, appSpawnSocket->WriteSocketMessage(fd[1], content.c_str(), len));
     read(fd[0], buff.get(), len);
-    EXPECT_EQ(0, strncmp(content.c_str(), (const char *)(buff.get()), len));
+    EXPECT_EQ(0, strncmp(content.c_str(), reinterpret_cast<const char *>(buff.get()), len));
 
     // close pipe
     close(fd[0]);

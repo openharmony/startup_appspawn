@@ -639,9 +639,8 @@ int32_t SandboxUtils::SetRenderSandboxProperty(const ClientSocket::AppProperty *
     nlohmann::json config = SandboxUtils::GetJsonConfig();
     nlohmann::json privateAppConfig = config[PRIVATE_PREFIX][0];
 
-    int ret = 0;
     if (privateAppConfig.find(OHOS_RENDER) != privateAppConfig.end()) {
-        ret = DoAllMntPointsMount(appProperty, privateAppConfig[OHOS_RENDER][0]);
+        int ret = DoAllMntPointsMount(appProperty, privateAppConfig[OHOS_RENDER][0]);
         APPSPAWN_CHECK(ret == 0, return ret, "DoAllMntPointsMount failed, %s",
             appProperty->bundleName);
         ret = DoAllSymlinkPointslink(appProperty, privateAppConfig[OHOS_RENDER][0]);
