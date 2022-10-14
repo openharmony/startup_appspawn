@@ -98,7 +98,7 @@ public:
     using AppSpawnSocket::WriteSocketMessage;
 
     static constexpr uid_t APPSPAWN_ID_ROOT = 0;         // chown owner
-    static constexpr gid_t APPSPAWN_ID_SYSTEM = 1000;    // chown group
+    static constexpr gid_t APPSPAWN_GROUP_ID = 4000;     // chown group
     static constexpr mode_t SOCKET_PERM = 0660;  // root system can read and write appspawn socket
 
 private:
