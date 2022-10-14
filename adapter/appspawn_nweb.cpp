@@ -72,7 +72,7 @@ void LoadExtendLib(AppSpawnContent *content)
 
 void RunChildProcessor(AppSpawnContent *content, AppSpawnClient *client)
 {
-    AppSpawnClientExt *appProperty = (AppSpawnClientExt *)client;
+    AppSpawnClientExt *appProperty = reinterpret_cast<AppSpawnClientExt *>(client);
     using FuncType = void (*)(const char *cmd);
 
     FuncType funcNWebRenderMain = reinterpret_cast<FuncType>(dlsym(g_nwebHandle, "NWebRenderMain"));

@@ -29,7 +29,7 @@
 
 void SetAppAccessToken(struct AppSpawnContent_ *content, AppSpawnClient *client)
 {
-    AppSpawnClientExt *appProperty = (AppSpawnClientExt *)client;
+    AppSpawnClientExt *appProperty = reinterpret_cast<AppSpawnClientExt *>(client);
     int32_t ret = SetSelfTokenID(appProperty->property.accessTokenId);
     APPSPAWN_LOGI("AppSpawnServer::set access token id = %d, ret = %d %d",
         appProperty->property.accessTokenId, ret, getuid());
@@ -39,7 +39,7 @@ void SetSelinuxCon(struct AppSpawnContent_ *content, AppSpawnClient *client)
 {
 #ifdef WITH_SELINUX
     UNUSED(content);
-    AppSpawnClientExt *appProperty = (AppSpawnClientExt *)client;
+    AppSpawnClientExt *appProperty = reinterpret_cast<AppSpawnClientExt *>(client);
     HapContext hapContext;
     int32_t ret = hapContext.HapDomainSetcontext(appProperty->property.apl, appProperty->property.processName);
     if (ret != 0) {
