@@ -381,7 +381,6 @@ APPSPAWN_STATIC void OnReceiveRequest(const TaskHandle taskHandle, const uint8_t
     APPSPAWN_LOGI("OnReceiveRequest client.id %d appProperty %d processname %s buffLen %d flags 0x%x",
         appProperty->client.id, appProperty->property.uid, appProperty->property.processName,
         buffLen, appProperty->property.flags);
-    appProperty->client.flags = appProperty->property.flags;
     fcntl(appProperty->fd[0], F_SETFL, O_NONBLOCK);
 
     /* Clone support only one parameter, so need to package application parameters */
@@ -397,9 +396,7 @@ APPSPAWN_STATIC void OnReceiveRequest(const TaskHandle taskHandle, const uint8_t
     sandboxArg->content = &g_appSpawnContent->content;
     sandboxArg->client = &appProperty->client;
     sandboxArg->client->cloneFlags = 0;
-    if (appProperty->client.flags != UI_SERVICE_DIALOG) {
-        sandboxArg->client->cloneFlags = GetAppNamespaceFlags(appProperty->property.bundleName);
-    }
+    sandboxArg->client->cloneFlags = GetAppNamespaceFlags(appProperty->property.bundleName);
     int result = AppSpawnProcessMsg(sandboxArg, &appProperty->pid);
     if (result == 0) {  // wait child process result
         result = WaitChild(appProperty->fd[0], appProperty->pid, appProperty);

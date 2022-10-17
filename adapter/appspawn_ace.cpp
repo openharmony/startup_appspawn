@@ -78,23 +78,6 @@ void RunChildProcessor(AppSpawnContent *content, AppSpawnClient *client)
 {
     APPSPAWN_LOGI("AppExecFwk::MainThread::Start");
 #ifndef APPSPAWN_TEST
-    if (client->flags == UI_SERVICE_DIALOG) {
-        APPSPAWN_LOGI("UiServiceDialogImpl dlopen and call InitAceDialog()");
-        constexpr char libName[] = "libuiservicedialog.z.so";
-        constexpr char funName[] = "OHOS_ACE_InitDialog";
-        void* libHandle = dlopen(libName, RTLD_LAZY);
-        if (libHandle == nullptr) {
-            APPSPAWN_LOGE("Failed to open %s, error: %s", libName, dlerror());
-            return;
-        }
-        auto func = reinterpret_cast<void(*)()>(dlsym(libHandle, funName));
-        if (func == nullptr) {
-            APPSPAWN_LOGE("Failed to get func %s, error: %s", funName, dlerror());
-            return;
-        }
-        func();
-    } else {
-        OHOS::AppExecFwk::MainThread::Start();
-    }
+    OHOS::AppExecFwk::MainThread::Start();
 #endif
 }

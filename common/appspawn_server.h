@@ -36,7 +36,6 @@ extern "C" {
 #define WAIT_DELAY_US (100 * 1000)  // 100ms
 #define GID_FILE_ACCESS 1006  // only used for ExternalFileManager.hap
 #define GID_USER_DATA_RW 1008
-#define UI_SERVICE_DIALOG 0x10
 
 typedef struct AppSpawnClient_ {
     uint32_t id;
