@@ -19,6 +19,7 @@
 #include "appspawn_service.h"
 #include "securec.h"
 #include "init_param.h"
+#include "syspara/parameter.h"
 
 int main(int argc, char *const argv[])
 {
@@ -29,7 +30,8 @@ int main(int argc, char *const argv[])
     (void)signal(SIGPIPE, SIG_IGN);
     uint32_t argvSize = 0;
     int mode = 0;
-
+    int32_t loglevel = GetIntParameter("persist.init.debug.loglevel", INIT_ERROR);
+    SetInitLogLevel(loglevel);
     if ((argc > PARAM_INDEX) && (strcmp(argv[START_INDEX], "cold-start") == 0)) {
         argvSize = APP_LEN_PROC_NAME;
         mode = 1;
