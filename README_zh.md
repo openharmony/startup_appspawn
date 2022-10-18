@@ -1,11 +1,10 @@
-# appspawn应用孵化器组件
+# appspawn应用孵化器部件
 
 ## 简介
 
 应用孵化器，负责接受应用程序框架的命令孵化应用进程，设置其对应权限，并调用应用程序框架的入口。
 
-其主要的结构及流程如下图所示：
-
+**图1** appspawn应用孵化器组件框架图
 ![](figures/appspawn.png)
 
 ## 目录
@@ -28,7 +27,7 @@ base/startup/appspawn_standard
     └─src                # 应用孵化器工具类源码, 含json处理库及应用沙箱实现源码
 ```
 
-## 使用说明
+## 说明
 
 ### 小型系统
 
@@ -53,33 +52,14 @@ base/startup/appspawn_standard
 ### 标准系统
   appspawn注册的服务名称为“appspawn”。appspawn 通过监听本地socket，接收来自客户端的请求消息。
 
-  **表 2**  标准系统字段说明
-  | 字段名 | 说明 |
-  | -------- | -------- |
-  | processName | 即将启动的应用服务进程名，最大256字节。 |
-  | bundleName | 即将启动的应用程序包名，最大256字节。 |
-  | soPath | 即应用程序指定的动态库的路径，最大256字节。 |
-  | uid | 即将启动的应用进程的uid。 |
-  | gid | 即将启动的应用进程的gid。 |
-  | gidTable | 即将启动的应用进程组信息，长度由gidCount指定，最大支持64个进程组，必须为正值。 |
-  | gidCount | 即将启动的应用进程组个数。 |
-  | accessTokenId | 即应用进程权限控制的token id。 |
-  | apl | 即应用进程权限控制的apl，最大32字节. |
-  | renderCmd | 即图形图像渲染命令， 最大1024字节。 |
-  | flags | 启动标志位, 目前包含冷启动标志位，DLP应用标志位，备份恢复标志位。 |
-  | index | 临时沙箱index |
-  | pid | 即渲染进程pid，查询渲染进程退出状态。 |
-  | AppOperateType | 即App操作类型，0： 默认状态； 1：获取渲染终止状态。 |
+  详细使用说明参考开发指南：[appspawn应用孵化组件](https://gitee.com/openharmony/docs/blob/master/zh-cn/device-dev/subsystems/subsys-boot-appspawn.md)
 
 ## 限制与约束
 仅支持小型系统和标准系统。
 
 ## 相关仓
+**[startup\_appspawn](https://gitee.com/openharmony/startup_appspawn)**
 
-[startup\_syspara\_lite](https://gitee.com/openharmony/startup_syspara_lite/blob/master/README_zh.md)
+[startup\_init\_lite](https://gitee.com/openharmony/startup_init_lite)
 
-**[startup_appspawn](https://gitee.com/openharmony/startup_appspawn/blob/master/README_zh.md)**
-
-[startup\_bootstrap\_lite](https://gitee.com/openharmony/startup_bootstrap_lite/blob/master/README_zh.md)
-
-[startup\_init\_lite](https://gitee.com/openharmony/startup_init_lite/blob/master/README_zh.md)
+[startup\_bootstrap\_lite](https://gitee.com/openharmony/startup_bootstrap_lite)
