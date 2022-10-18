@@ -118,7 +118,7 @@ static void RemoveAppInfo(pid_t pid)
         APPSPAWN_LOGI("Start time for appspawn");
         int ret = LE_CreateTimer(LE_GetDefaultLoop(), &g_appSpawnContent->timer, ProcessTimer, NULL);
         APPSPAWN_CHECK(ret == 0, return, "Failed to create time");
-        LE_StartTimer(LE_GetDefaultLoop(), g_appSpawnContent->timer, 30000, 1);  // 30000 30s
+        LE_StartTimer(LE_GetDefaultLoop(), g_appSpawnContent->timer, 60000, 1);  // 60000 60s
     }
 }
 
