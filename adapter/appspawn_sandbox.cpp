@@ -56,7 +56,7 @@ void LoadAppSandboxConfig(void)
 int32_t SetAppSandboxProperty(struct AppSpawnContent_ *content, AppSpawnClient *client)
 {
     APPSPAWN_CHECK(client != NULL, return -1, "Invalid appspwn client");
-    AppSpawnClientExt *appProperty = (AppSpawnClientExt *)client;
+    AppSpawnClientExt *appProperty = reinterpret_cast<AppSpawnClientExt *>(client);
     appProperty->property.cloneFlags = client->cloneFlags;
     int ret = SandboxUtils::SetAppSandboxProperty(&appProperty->property);
     // for module test do not create sandbox
