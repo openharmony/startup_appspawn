@@ -133,6 +133,11 @@
                     "sandbox-path" : "/data/storage/el2/auth_groups",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
+                }, {
+                    "src-path" : "/data/local/ark-cache/<PackageName>",
+                    "sandbox-path" : "/data/storage/ark-cache",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
                 }
             ],
             "symbol-links" : [{
