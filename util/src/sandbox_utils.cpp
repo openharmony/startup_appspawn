@@ -352,7 +352,7 @@ static int32_t DoDlpAppMountStrategy(const ClientSocket::AppProperty *appPropert
     APPSPAWN_CHECK(fd != -1, return -EINVAL, "open /dev/fuse failed, errno is %d", errno);
 
     char options[FUSE_OPTIONS_MAX_LEN];
-    (void)sprintf_s(options, sizeof(options), "fd=%d,rootmode=40000,user_id=%d,group_id=%d", fd,
+    (void)sprintf_s(options, sizeof(options), "fd=%d,rootmode=40000,user_id=%d,group_id=%d,allow_other", fd,
                     appProperty->uid, appProperty->gid);
 
     // To make sure destinationPath exist
