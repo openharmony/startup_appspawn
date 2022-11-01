@@ -63,6 +63,7 @@ private:
     static std::string ConvertToRealPath(const ClientSocket::AppProperty *appProperty, std::string sandboxRoot);
     static std::string GetSbxPathByConfig(const ClientSocket::AppProperty *appProperty, nlohmann::json &config);
     static bool CheckTotalSandboxSwitchStatus(const ClientSocket::AppProperty *appProperty);
+    static void CheckAndPrepareSrcPath(const ClientSocket::AppProperty *appProperty, const std::string &srcPath);
     static bool CheckAppSandboxSwitchStatus(const ClientSocket::AppProperty *appProperty);
     static bool GetSbxSwitchStatusByConfig(nlohmann::json &config);
     static unsigned long GetMountFlagsFromConfig(const std::vector<std::string> &vec);
