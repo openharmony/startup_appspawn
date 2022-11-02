@@ -62,6 +62,7 @@ private:
     static int DoAllSymlinkPointslink(const ClientSocket::AppProperty *appProperty, nlohmann::json &appConfig);
     static std::string ConvertToRealPath(const ClientSocket::AppProperty *appProperty, std::string sandboxRoot);
     static std::string GetSbxPathByConfig(const ClientSocket::AppProperty *appProperty, nlohmann::json &config);
+    static void CheckAndPrepareSrcPath(const ClientSocket::AppProperty *appProperty, const std::string &srcPath);
     static bool CheckTotalSandboxSwitchStatus(const ClientSocket::AppProperty *appProperty);
     static bool CheckAppSandboxSwitchStatus(const ClientSocket::AppProperty *appProperty);
     static bool CheckBundleNameForPrivate(const std::string &bundleName);
