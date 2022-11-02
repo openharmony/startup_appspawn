@@ -37,10 +37,15 @@ namespace {
     constexpr int32_t UID_BASE = 200000;
     constexpr int32_t FUSE_OPTIONS_MAX_LEN = 128;
     constexpr int32_t DLP_FUSE_FD = 1000;
+    constexpr int32_t DATABASE_DIR_GID = 3012;
+    constexpr int32_t DFS_GID = 1009;
     constexpr static mode_t FILE_MODE = 0711;
+    constexpr static mode_t BASE_FOLDER_FILE_MODE = 0700;
+    constexpr static mode_t DATABASE_FOLDER_FILE_MODE = S_IRWXU | S_IRWXG;
     constexpr static mode_t BASIC_MOUNT_FLAGS = MS_REC | MS_BIND;
     constexpr std::string_view APL_SYSTEM_CORE("system_core");
     constexpr std::string_view APL_SYSTEM_BASIC("system_basic");
+    const std::string PACKAGE_ITEMS[] = {{"cache"}, {"files"}, {"temp"}, {"preferences"}, {"haps"}};
     const std::string PHYSICAL_APP_INSTALL_PATH = "/data/app/el1/bundle/public/";
     const std::string SANDBOX_APP_INSTALL_PATH = "/data/accounts/account_0/applications/";
     const std::string DATA_BUNDLES = "/data/bundles/";
@@ -53,11 +58,16 @@ namespace {
     const std::string DLP_BUNDLENAME = "com.ohos.dlpmanager";
     const std::string INTERNAL = "__internal__";
     const char *ACTION_STATUS = "check-action-status";
+    const char *ACCOUNT_PREFIX = "/account/data/";
+    const char *ACCOUNT_NON_PREFIX = "/non_account/data/";
     const char *APP_BASE = "app-base";
     const char *APP_RESOURCES = "app-resources";
     const char *APP_APL_NAME = "app-apl-name";
+    const char *BASE_PREFIX = "/base";
     const char *COMMON_PREFIX = "common";
+    const char *DATABASE_PREFIX = "/database";
     const char *DEST_MODE = "dest-mode";
+    const char *EL2_PREFIX = "/data/app/el2";
     const char *FS_TYPE = "fs-type";
     const char *LINK_NAME = "link-name";
     const char *MOUNT_PREFIX = "mount-paths";
@@ -66,6 +76,7 @@ namespace {
     const char *SANDBOX_PATH = "sandbox-path";
     const char *SANDBOX_FLAGS = "sandbox-flags";
     const char *SANDBOX_SWITCH_PREFIX = "sandbox-switch";
+    const char *SERVICE_EL2_PREFIX = "/data/serivce/el2";
     const char *SYMLINK_PREFIX = "symbol-links";
     const char *SANDBOX_ROOT_PREFIX = "sandbox-root";
     const char *TOP_SANDBOX_SWITCH_PREFIX = "top-sandbox-switch";
@@ -147,6 +158,12 @@ uint32_t SandboxUtils::GetNamespaceFlagsFromConfig(const char *bundleName)
     nlohmann::json app = namespaceApp[bundleName][0];
     cloneFlags |= NamespaceFlagsFromConfig(app[SANDBOX_CLONE_FLAGS].get<std::vector<std::string>>());
     return cloneFlags;
+}
+
+static void MkdirAndChown(const std::string &srcPath, mode_t filemode, uint32_t uid, uint32_t gid)
+{
+    mkdir(srcPath.c_str(), filemode);
+    chown(srcPath.c_str(), uid, gid);
 }
 
 static void MakeDirRecursive(const std::string &path, mode_t mode)
@@ -405,6 +422,48 @@ static uint32_t ConvertFlagStr(const std::string &flagStr)
     return 0;
 }
 
+/* Check and Create physical /data/app/el2 path when BMS failed to create related package folder */
+void SandboxUtils::CheckAndPrepareSrcPath(const ClientSocket::AppProperty *appProperty, const std::string &srcPath)
+{
+    if (access(srcPath.c_str(), F_OK) == 0) {
+        return;
+    }
+
+    if (srcPath.find(EL2_PREFIX) != -1) {
+        if (srcPath.find(BASE_PREFIX) != -1) {
+            MakeDirRecursive(srcPath.c_str(), BASE_FOLDER_FILE_MODE);
+            chown(srcPath.c_str(), appProperty->uid, appProperty->gid);
+
+            for (const std::string &packageItem : PACKAGE_ITEMS) {
+                const std::string newPath = srcPath + "/" + packageItem;
+                MkdirAndChown(newPath, BASE_FOLDER_FILE_MODE, appProperty->uid, appProperty->gid);
+            }
+        } else if (srcPath.find(DATABASE_PREFIX) != -1) {
+            MakeDirRecursive(srcPath.c_str(), DATABASE_FOLDER_FILE_MODE);
+            /* Add S_ISGID mode and change group owner to DATABASE */
+            chmod(srcPath.c_str(), DATABASE_FOLDER_FILE_MODE | S_ISGID);
+            chown(srcPath.c_str(), appProperty->uid, DATABASE_DIR_GID);
+        } else {
+            APPSPAWN_LOGI("failed to access path: %s", srcPath.c_str());
+        }
+    }
+
+    if (srcPath.find(SERVICE_EL2_PREFIX) != -1) {
+        if (srcPath.find(ACCOUNT_PREFIX) != -1) {
+            MakeDirRecursive(srcPath.c_str(), DATABASE_FOLDER_FILE_MODE);
+            chmod(srcPath.c_str(), DATABASE_FOLDER_FILE_MODE | S_ISGID);
+            chown(srcPath.c_str(), appProperty->uid, appProperty->gid);
+        } else if (srcPath.find(ACCOUNT_NON_PREFIX) != -1) {
+            MakeDirRecursive(srcPath.c_str(), DATABASE_FOLDER_FILE_MODE);
+            /* Add S_ISGID mode and change group owner to DFS */
+            chmod(srcPath.c_str(), DATABASE_FOLDER_FILE_MODE | S_ISGID);
+            chown(srcPath.c_str(), appProperty->uid, DFS_GID);
+        } else {
+            APPSPAWN_LOGI("failed to access path: %s", srcPath.c_str());
+        }
+    }
+}
+
 int SandboxUtils::DoAllMntPointsMount(const ClientSocket::AppProperty *appProperty, nlohmann::json &appConfig)
 {
     std::string bundleName = appProperty->bundleName;
@@ -442,6 +501,8 @@ int SandboxUtils::DoAllMntPointsMount(const ClientSocket::AppProperty *appProper
         }
 
         int ret = 0;
+        /* check and prepare /data/app/el2 base and database package path to avoid BMS failed to create this folder */
+        CheckAndPrepareSrcPath(appProperty, srcPath);
         /* if app mount failed for special strategy, we need deal with common mount config */
         ret = HandleSpecialAppMount(appProperty, srcPath, sandboxPath, fsType, mountFlags);
         if (ret < 0) {
