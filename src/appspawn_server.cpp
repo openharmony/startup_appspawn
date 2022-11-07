@@ -268,7 +268,7 @@ int32_t AppSpawnServer::SetProcessName(
     }
 
     // set long process name
-    if (strncpy_s(longProcName, len, processName, len) != EOK) {
+    if (strncpy_s(longProcName, longProcNameLen, processName, len) != EOK) {
         HiLog::Error(LABEL, "strncpy_s long name error: %{public}d", strerror_r(errno, err_string, ERR_STRING_SZ));
         return -EINVAL;
     }
@@ -489,6 +489,17 @@ int32_t AppSpawnServer::SetKeepCapabilities(uint32_t uid)
     return ERR_OK;
 }
 
+static int CheckProcessName(const std::string &processName)
+{
+    if (processName.empty() || processName.size() > ClientSocket::LEN_PROC_NAME) {
+        return -1;
+    }
+    if (processName.find('\\') != std::string::npos || processName.find('/') != std::string::npos) {
+        return -1;
+    }
+    return 0;
+}
+
 bool AppSpawnServer::CheckAppProperty(const ClientSocket::AppProperty *appProperty)
 {
     if (appProperty == nullptr) {
@@ -501,8 +512,8 @@ bool AppSpawnServer::CheckAppProperty(const ClientSocket::AppProperty *appProper
         return false;
     }
 
-    if (strlen(appProperty->processName) == 0) {
-        HiLog::Error(LABEL, "process name length is 0");
+    if (CheckProcessName(appProperty->processName) != 0) {
+        HiLog::Error(LABEL, "process name error");
         return false;
     }
 
