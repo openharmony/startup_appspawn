@@ -29,6 +29,16 @@
 
 using namespace testing::ext;
 
+pid_t AppSpawnFork(int (*childFunc)(void *arg), void *args)
+{
+    pid_t pid = fork();
+    if (pid == 0) {
+        childFunc((void *)args);
+        _exit(0x7f); // 0x7f user exit
+    }
+    return pid;
+}
+
 namespace OHOS {
 const unsigned int MALLOC_TEST_LENGTH = 10;
 const long NANOSECONDS_PER_SECOND = 1000000000;
