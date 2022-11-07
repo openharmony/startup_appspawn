@@ -14,16 +14,10 @@
  */
 
 #include <gtest/gtest.h>
-
 #include <memory>
 
-// redefine private and protected since testcase need to invoke and test private function
-#define private public
-#define protected public
 #include "client_socket.h"
-#undef private
-#undef protected
-
+#include "parameter.h"
 #include "securec.h"
 
 using namespace testing;
@@ -267,6 +261,7 @@ HWTEST(ClientSocketTest, Client_Socket_010, TestSize.Level0)
     int32_t len = -1;
     std::unique_ptr<uint8_t[]> buff = std::make_unique<uint8_t[]>(10);
 
+    SetParameter("persist.appspawn.client.timeout", "1");
     EXPECT_EQ(0, clientSocket->CreateClient());
     EXPECT_LE(0, clientSocket->GetSocketFd());
     EXPECT_EQ(-1, clientSocket->ReadSocketMessage(buff.get(), len));
@@ -295,4 +290,20 @@ HWTEST(ClientSocketTest, Client_Socket_011, TestSize.Level0)
     EXPECT_EQ(-1, clientSocket->GetSocketFd());
 
     GTEST_LOG_(INFO) << "Client_Socket_011 end";
+}
+
+HWTEST(ClientSocketTest, Client_Socket_012, TestSize.Level0)
+{
+    GTEST_LOG_(INFO) << "Client_Socket_012 start";
+
+    std::unique_ptr<ClientSocket> clientSocket = std::make_unique<ClientSocket>("/data/init_unittest/ClientSocketTest");
+
+    EXPECT_EQ(-1, clientSocket->GetSocketFd());
+    EXPECT_EQ(0, clientSocket->CreateClient());
+    int32_t socketFd = clientSocket->GetSocketFd();
+    EXPECT_EQ(0, clientSocket->CreateClient());
+    EXPECT_EQ(socketFd, clientSocket->GetSocketFd());
+    EXPECT_EQ(-1, clientSocket->ConnectSocket());
+
+    GTEST_LOG_(INFO) << "Client_Socket_012 end";
 }
