@@ -368,11 +368,38 @@
                     "sandbox-path" : "/data/storage/el1/bundle/nweb",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
+                }, {
+                    "src-path" : "/system/bin",
+                    "sandbox-path" : "/system/bin",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/system/lib",
+                    "sandbox-path" : "/system/lib",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/system/lib64",
+                    "sandbox-path" : "/system/lib64",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
                 }
             ],
             "symbol-links" : [ {
                     "target-name" : "/system/etc",
                     "link-name" : "/etc",
+                    "check-action-status": "false"
+                }, {
+                    "target-name" : "/system/bin",
+                    "link-name" : "/bin",
+                    "check-action-status": "false"
+                }, {
+                    "target-name" : "/system/lib",
+                    "link-name" : "/lib",
+                    "check-action-status": "false"
+                }, {
+                    "target-name" : "/system/lib64",
+                    "link-name" : "/lib64",
                     "check-action-status": "false"
                 }
             ]
