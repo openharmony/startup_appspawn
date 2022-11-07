@@ -92,7 +92,7 @@
                     "src-path" : "/data/app/el2/<currentUserId>/base/<PackageName>",
                     "sandbox-path" : "/data/storage/el2/base",
                     "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "true"
+                    "check-action-status": "false"
                 },{
                     "src-path" : "/data/app/el1/<currentUserId>/database/<PackageName>",
                     "sandbox-path" : "/data/storage/el1/database",
@@ -102,7 +102,7 @@
                     "src-path" : "/data/app/el2/<currentUserId>/database/<PackageName>",
                     "sandbox-path" : "/data/storage/el2/database",
                     "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "true"
+                    "check-action-status": "false"
                 }, {
                     "src-path" : "/data/app/el1/<currentUserId>/base/<PackageName>",
                     "sandbox-path" : "/data/storage/el1/base",
