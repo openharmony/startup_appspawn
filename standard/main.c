@@ -61,7 +61,6 @@ int main(int argc, char *const argv[])
     // set common operation
     content->loadExtendLib = LoadExtendLib;
     content->runChildProcessor = RunChildProcessor;
-    content->setUidGidFilter = SetUidGidFilter;
     content->initAppSpawn(content);
     SystemSetParameter("bootevent.appspawn.started", "true");
     content->runAppSpawn(content, argc, argv);

@@ -21,9 +21,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-#ifdef OHOS_DEBUG
 #include <time.h>
-#endif  // OHOS_DEBUG
 
 #ifdef __cplusplus
 extern "C" {
@@ -41,14 +39,6 @@ typedef struct AppSpawnClient_ {
     uint32_t id;
     uint32_t flags;
     uint32_t cloneFlags;
-#ifndef APPSPAWN_TEST
-#ifndef OHOS_LITE
-    uint8_t setAllowInternet;
-    uint8_t allowInternet;
-    uint8_t reserved1;
-    uint8_t reserved2;
-#endif
-#endif
 } AppSpawnClient;
 
 #define MAX_SOCKEYT_NAME_LEN 128
@@ -78,10 +68,9 @@ typedef struct AppSpawnContent_ {
 
     // for cold start
     int (*coldStartApp)(struct AppSpawnContent_ *content, AppSpawnClient *client);
-#ifdef ASAN_DETECTOR
     int (*getWrapBundleNameValue)(struct AppSpawnContent_ *content, AppSpawnClient *client);
-#endif
     void (*setSeccompFilter)(struct AppSpawnContent_ *content, AppSpawnClient *client);
+    void (*handleInternetPermission)(const AppSpawnClient *client);
 } AppSpawnContent;
 
 typedef struct {
@@ -92,26 +81,8 @@ typedef struct {
 AppSpawnContent *AppSpawnCreateContent(const char *socketName, char *longProcName, uint32_t longProcNameLen, int cold);
 int AppSpawnProcessMsg(AppSandboxArg *sandbox, pid_t *childPid);
 int DoStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client, char *longProcName, uint32_t longProcNameLen);
-int AppSpawnChild(void *arg);
-
-#ifdef OHOS_DEBUG
-void GetCurTime(struct timespec* tmCur);
-#endif
-
-typedef enum {
-    DEBUG = 0,
-    INFO,
-    WARN,
-    ERROR,
-    FATAL,
-} AppspawnLogLevel;
-
-void AppspawnLogPrint(AppspawnLogLevel logLevel, const char *file, int line, const char *fmt, ...);
-
-#ifndef FILE_NAME
-#define FILE_NAME   (strrchr((__FILE__), '/') ? strrchr((__FILE__), '/') + 1 : (__FILE__))
-#endif
-
+long long DiffTime(struct timespec *startTime);
+pid_t AppSpawnFork(int (*childFunc)(void *arg), void *args);
 #define UNUSED(x) (void)(x)
 
 #ifndef APPSPAWN_LABEL

@@ -35,7 +35,9 @@ void LoadAppSandboxConfig(void);
 void SetUidGidFilter(struct AppSpawnContent_ *content);
 void SetSeccompFilter(struct AppSpawnContent_ *content, AppSpawnClient *client);
 uint32_t GetAppNamespaceFlags(const char *bundleName);
+void HandleInternetPermission(const AppSpawnClient *client);
 
+void DisallowInternet(void);
 #ifdef __cplusplus
 }
 #endif

@@ -178,8 +178,10 @@ static void MakeDirRecursive(const std::string &path, mode_t mode)
         size_t pathIndex = path.find_first_of('/', index);
         index = pathIndex == std::string::npos ? size : pathIndex + 1;
         std::string dir = path.substr(0, index);
+#ifndef APPSPAWN_TEST
         APPSPAWN_CHECK(!(access(dir.c_str(), F_OK) < 0 && mkdir(dir.c_str(), mode) < 0),
             return, "mkdir %s failed, error is %d", dir.c_str(), errno);
+#endif
     } while (index < size);
 }
 
@@ -341,7 +343,7 @@ static bool CheckMountConfig(nlohmann::json &mntPoint, const ClientSocket::AppPr
     APPSPAWN_CHECK(!istrue, return false, "read mount config failed, app name is %s", appProperty->bundleName);
 
     if (mntPoint[APP_APL_NAME] != nullptr) {
-        std::string app_apl_name = mntPoint[APP_APL_NAME];
+        std::string app_apl_name = mntPoint[APP_APL_NAME].get<std::string>();
         const char *p_app_apl = nullptr;
         p_app_apl = app_apl_name.c_str();
         if (!strcmp(p_app_apl, appProperty->apl)) {
@@ -898,18 +900,19 @@ int32_t SandboxUtils::SetAppSandboxProperty(const ClientSocket::AppProperty *app
     APPSPAWN_CHECK(rc == 0, return rc, "SetRenderSandboxProperty failed, packagename is %s",
         sandboxPackagePath.c_str());
 #endif
+
+#ifndef APPSPAWN_TEST
     rc = chdir(sandboxPackagePath.c_str());
     APPSPAWN_CHECK(rc == 0, return rc, "chdir failed, packagename is %s, path is %s",
         bundleName.c_str(), sandboxPackagePath.c_str());
 
-#ifndef APPSPAWN_TEST
     rc = syscall(SYS_pivot_root, sandboxPackagePath.c_str(), sandboxPackagePath.c_str());
     APPSPAWN_CHECK(rc == 0, return rc, "pivot root failed, packagename is %s, errno is %d",
         bundleName.c_str(), errno);
-#endif
 
     rc = umount2(".", MNT_DETACH);
     APPSPAWN_CHECK(rc == 0, return rc, "MNT_DETACH failed, packagename is %s", bundleName.c_str());
+#endif
     return 0;
 }
 } // namespace AppSpawn

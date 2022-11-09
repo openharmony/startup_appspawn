@@ -26,7 +26,6 @@
 #include "seccomp_policy.h"
 #endif
 
-
 void SetAppAccessToken(struct AppSpawnContent_ *content, AppSpawnClient *client)
 {
     AppSpawnClientExt *appProperty = reinterpret_cast<AppSpawnClientExt *>(client);
@@ -55,9 +54,9 @@ void SetUidGidFilter(struct AppSpawnContent_ *content)
 {
 #ifdef WITH_SECCOMP
     if (!SetSeccompPolicyWithName(APPSPAWN_NAME)) {
-        APPSPAWN_LOGE("AppSpawnServer::Failed to set APPSPAWN seccomp filter");
+        APPSPAWN_LOGE("Failed to set APPSPAWN seccomp filter");
     } else {
-        APPSPAWN_LOGI("AppSpawnServer::Success to set APPSPAWN seccomp filter");
+        APPSPAWN_LOGI("Success to set APPSPAWN seccomp filter");
     }
 #endif
 }
@@ -66,17 +65,24 @@ void SetSeccompFilter(struct AppSpawnContent_ *content, AppSpawnClient *client)
 {
 #ifdef WITH_SECCOMP
 #ifdef NWEB_SPAWN
-    if (!SetSeccompPolicyWithName(NWEBSPAWN_NAME)) {
-        APPSPAWN_LOGE("NwebspawnServer::Failed to set NWEBSPAWN seccomp filter");
-    } else {
-        APPSPAWN_LOGI("NwebspawnServer::Success to set NWEBSPAWN seccomp filter");
-    }
+    const char *appName = NWEBSPAWN_NAME;
 #else
-    if (!SetSeccompPolicyWithName(APP_NAME)) {
-        APPSPAWN_LOGE("AppSpawnServer::Failed to set APP seccomp filter");
+    const char *appName = APP_NAME;
+#endif
+    if (!SetSeccompPolicyWithName(appName)) {
+        APPSPAWN_LOGE("Failed to set %s seccomp filter", appName);
     } else {
-        APPSPAWN_LOGI("AppSpawnServer::Success to set APP seccomp filter");
+        APPSPAWN_LOGI("Success to set %s seccomp filter", appName);
     }
 #endif
-#endif
+}
+
+void HandleInternetPermission(const AppSpawnClient *client)
+{
+    AppSpawnClientExt *appPropertyExt = (AppSpawnClientExt *)client;
+    APPSPAWN_LOGI("HandleInternetPermission id %d setAllowInternet %hhu allowInternet %hhu",
+        client->id, appPropertyExt->setAllowInternet, appPropertyExt->allowInternet);
+    if (appPropertyExt->setAllowInternet == 1 && appPropertyExt->allowInternet == 0) {
+        DisallowInternet();
+    }
 }
