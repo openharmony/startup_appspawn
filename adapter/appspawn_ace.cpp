@@ -22,6 +22,12 @@
 
 #include "foundation/ability/ability_runtime/interfaces/kits/native/appkit/app/main_thread.h"
 
+#ifdef ASAN_DETECTOR
+static const bool DEFAULT_PRELOAD_VALUE = false;
+#else
+static const bool DEFAULT_PRELOAD_VALUE = true;
+#endif
+
 void LoadExtendLib(AppSpawnContent *content)
 {
 #ifdef __aarch64__
@@ -30,19 +36,12 @@ void LoadExtendLib(AppSpawnContent *content)
     const char *acelibdir("/system/lib/libace.z.so");
 #endif
     APPSPAWN_LOGI("LoadExtendLib: Start calling dlopen acelibdir.");
-#ifndef APPSPAWN_TEST
     void *aceAbilityLib = NULL;
     aceAbilityLib = dlopen(acelibdir, RTLD_NOW | RTLD_GLOBAL);
     APPSPAWN_CHECK(aceAbilityLib != NULL, return, "Fail to dlopen %s, [%s]", acelibdir, dlerror());
-#endif
     APPSPAWN_LOGI("LoadExtendLib: Success to dlopen %s", acelibdir);
-    APPSPAWN_LOGI("LoadExtendLib: End calling dlopen");
 
-#if defined(APPSPAWN_TEST) || defined(ASAN_DETECTOR)
-    bool preload = OHOS::system::GetBoolParameter("const.appspawn.preload", false);
-#else
-    bool preload = OHOS::system::GetBoolParameter("const.appspawn.preload", true);
-#endif
+    bool preload = OHOS::system::GetBoolParameter("const.appspawn.preload", DEFAULT_PRELOAD_VALUE);
     if (!preload) {
         APPSPAWN_LOGI("LoadExtendLib: Do not preload JS VM");
         return;
@@ -50,6 +49,7 @@ void LoadExtendLib(AppSpawnContent *content)
 
     APPSPAWN_LOGI("LoadExtendLib: Start preload JS VM");
     SetTraceDisabled(true);
+#ifndef APPSPAWN_TEST
     OHOS::AbilityRuntime::Runtime::Options options;
     options.lang = OHOS::AbilityRuntime::Runtime::Language::JS;
     options.loadAce = true;
@@ -67,9 +67,9 @@ void LoadExtendLib(AppSpawnContent *content)
     runtime->PreloadSystemModule("application.Context");
     runtime->PreloadSystemModule("application.AbilityContext");
     runtime->PreloadSystemModule("request");
-
     // Save preloaded runtime
     OHOS::AbilityRuntime::Runtime::SavePreloaded(std::move(runtime));
+#endif
     SetTraceDisabled(false);
     APPSPAWN_LOGI("LoadExtendLib: End preload JS VM");
 }

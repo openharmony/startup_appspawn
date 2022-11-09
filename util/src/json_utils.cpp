@@ -45,9 +45,13 @@ bool JsonUtils::GetStringFromJson(const nlohmann::json &json, const std::string 
 {
     APPSPAWN_CHECK(json.is_object(), return false, "json is not object.");
     bool isRet = json.find(key) != json.end() && json.at(key).is_string();
-    APPSPAWN_CHECK(!isRet, value = json.at(key).get<std::string>();
-        return true, "Find key[%s] successful.", key.c_str());
-    return false;
+    if (isRet) {
+        value = json.at(key).get<std::string>();
+        APPSPAWN_LOGI("Find key[%s] : %s successful.", key.c_str(), value.c_str());
+        return true;
+    } else {
+        return false;
+    }
 }
 } // namespace AppSpawn
 } // namespace OHOS

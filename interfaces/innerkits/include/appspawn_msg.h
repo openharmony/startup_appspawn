@@ -24,7 +24,11 @@ extern "C" {
 #endif
 
 #if defined(__MUSL__) || defined(NWEB_SPAWN)
+#ifndef APPSPAWN_TEST
 #define  SOCKET_DIR "/dev/unix/socket/"
+#else
+#define  SOCKET_DIR "/data/appspawn_ut/dev/unix/socket/"
+#endif
 #else
 #define  SOCKET_DIR "/dev/socket/"
 #endif
@@ -75,13 +79,11 @@ typedef struct AppParameter_ {
     int32_t pid;                     // query render process exited status by render process pid
     int32_t bundleIndex;
     AppOperateType code;
-#ifndef APPSPAWN_TEST
 #ifndef OHOS_LITE
     uint8_t setAllowInternet;
     uint8_t allowInternet; // hap sockect allowed
     uint8_t reserved1;
     uint8_t reserved2;
-#endif
 #endif
 } AppParameter;
 

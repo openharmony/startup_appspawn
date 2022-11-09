@@ -46,15 +46,9 @@ static int SetProcessName(struct AppSpawnContent_ *content, AppSpawnClient *clie
 
     char shortName[MAX_LEN_SHORT_NAME] = {0};
     // process short name max length 16 bytes.
-    if (len >= MAX_LEN_SHORT_NAME) {
-        isRet = strncpy_s(shortName, MAX_LEN_SHORT_NAME, appProperty->processName, MAX_LEN_SHORT_NAME - 1) != EOK;
-        APPSPAWN_CHECK(!isRet, return -EINVAL, "strncpy_s short name error: %d", errno);
-    } else {
-        if (strncpy_s(shortName, MAX_LEN_SHORT_NAME, appProperty->processName, len) != EOK) {
-            APPSPAWN_LOGE("strncpy_s short name error: %d", errno);
-            return -EINVAL;
-        }
-    }
+    size_t copyLen = (len >= MAX_LEN_SHORT_NAME) ? MAX_LEN_SHORT_NAME - 1 : len;
+    isRet = strncpy_s(shortName, MAX_LEN_SHORT_NAME, appProperty->processName, copyLen) != EOK;
+    APPSPAWN_CHECK(!isRet, return -EINVAL, "strncpy_s short name error: %d", errno);
 
     // set short name
     isRet = prctl(PR_SET_NAME, shortName) == -1;
@@ -155,10 +149,8 @@ static void ClearEnvironment(AppSpawnContent *content, AppSpawnClient *client)
     sigaddset(&mask, SIGTERM);
     sigprocmask(SIG_UNBLOCK, &mask, NULL);
     // close child fd
-#ifndef APPSPAWN_TEST
     AppSpawnClientExt *appProperty = (AppSpawnClientExt *)client;
     close(appProperty->fd[0]);
-#endif
     InitDebugParams(content, client);
     return;
 }
@@ -288,15 +280,13 @@ static int ColdStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client
     do {
         argv[PARAM_INDEX] = param;
         argv[0] = param + originLen;
+        const char *appSpawnPath = "/system/bin/appspawn";
 #ifdef ASAN_DETECTOR
         if (GetWrapBundleNameValue(content, client) == 0) {
-            ret = strcpy_s(argv[0], APP_LEN_PROC_NAME, "/system/asan/bin/appspawn");
-        } else {
-            ret = strcpy_s(argv[0], APP_LEN_PROC_NAME, "/system/bin/appspawn");
+            appSpawnPath = "/system/asan/bin/appspawn";
         }
-#else
-        ret = strcpy_s(argv[0], APP_LEN_PROC_NAME, "/system/bin/appspawn");
 #endif
+        ret = strcpy_s(argv[0], APP_LEN_PROC_NAME, appSpawnPath);
         APPSPAWN_CHECK(ret >= 0, break, "Invalid strcpy");
         ret = -1;
         argv[START_INDEX] = strdup("cold-start");
@@ -327,6 +317,8 @@ static int ColdStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client
         argv[NULL_INDEX] = NULL;
 #ifndef APPSPAWN_TEST
         ret = execv(argv[0], argv);
+#else
+        ret = -1;
 #endif
         if (ret) {
             APPSPAWN_LOGE("Failed to execv, errno = %d", errno);
@@ -414,4 +406,6 @@ void SetContentFunction(AppSpawnContent *content)
     content->getWrapBundleNameValue = GetWrapBundleNameValue;
 #endif
     content->setSeccompFilter = SetSeccompFilter;
+    content->setUidGidFilter = SetUidGidFilter;
+    content->handleInternetPermission = HandleInternetPermission;
 }

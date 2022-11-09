@@ -23,35 +23,22 @@
 #undef _GNU_SOURCE
 #define _GNU_SOURCE
 #include <sched.h>
-#ifdef OHOS_DEBUG
 #include <time.h>
-#endif // OHOS_DEBUG
 
 #define DEFAULT_UMASK 0002
-
-#ifndef APPSPAWN_TEST
-#ifndef OHOS_LITE
-void DisallowInternet(void);
-#endif
-#endif
-
 #define SANDBOX_STACK_SIZE (1024 * 1024 * 8)
 
-static void SetInternetPermission(const AppSpawnClient *client)
+long long DiffTime(struct timespec *startTime)
 {
-#ifndef APPSPAWN_TEST
-#ifndef OHOS_LITE
-    if (client == NULL) {
-        return;
+    struct timespec tmEnd = {0};
+    clock_gettime(CLOCK_REALTIME, &tmEnd);
+    long long diff = (long long)((tmEnd.tv_sec - startTime->tv_sec) * 1000000); // 1000000 1000ms
+    if (tmEnd.tv_nsec > startTime->tv_nsec) {
+        diff += (tmEnd.tv_nsec - startTime->tv_nsec) / 1000; // 1000 ms
+    } else {
+        diff -= (startTime->tv_nsec - tmEnd.tv_nsec) / 1000; // 1000 ms
     }
-
-    APPSPAWN_LOGI("SetInternetPermission id %d setAllowInternet %hhu allowInternet %hhu", client->id,
-                  client->setAllowInternet, client->allowInternet);
-    if (client->setAllowInternet == 1 && client->allowInternet == 0) {
-        DisallowInternet();
-    }
-#endif
-#endif
+    return diff;
 }
 
 static void NotifyResToParent(struct AppSpawnContent_ *content, AppSpawnClient *client, int result)
@@ -64,10 +51,10 @@ static void NotifyResToParent(struct AppSpawnContent_ *content, AppSpawnClient *
 static void ProcessExit(void)
 {
     APPSPAWN_LOGI("App exit %d.", getpid());
-#ifndef APPSPAWN_TEST
 #ifdef OHOS_LITE
     _exit(0x7f); // 0x7f user exit
 #else
+#ifndef APPSPAWN_TEST
     quick_exit(0);
 #endif
 #endif
@@ -75,10 +62,11 @@ static void ProcessExit(void)
 
 int DoStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client, char *longProcName, uint32_t longProcNameLen)
 {
-    SetInternetPermission(client);
-
-    APPSPAWN_LOGI("DoStartApp id %d longProcNameLen %u", client->id, longProcNameLen);
     int32_t ret = 0;
+    APPSPAWN_LOGI("DoStartApp id %d longProcNameLen %u", client->id, longProcNameLen);
+    if (content->handleInternetPermission != NULL) {
+        content->handleInternetPermission(client);
+    }
 
     if ((client->cloneFlags & CLONE_NEWNS) && (content->setAppSandbox)) {
         ret = content->setAppSandbox(content, client);
@@ -126,7 +114,7 @@ int DoStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client, char *l
     return 0;
 }
 
-int AppSpawnChild(void *arg)
+static int AppSpawnChild(void *arg)
 {
     APPSPAWN_CHECK(arg != NULL, return -1, "Invalid arg for appspawn child");
     AppSandboxArg *sandbox = (AppSandboxArg *)arg;
@@ -135,9 +123,8 @@ int AppSpawnChild(void *arg)
 
 #ifdef OHOS_DEBUG
     struct timespec tmStart = {0};
-    GetCurTime(&tmStart);
-#endif // OHOS_DEBUG
-
+    clock_gettime(CLOCK_REALTIME, &tmStart);
+#endif
     // close socket id and signal for child
     if (content->clearEnvironment != NULL) {
         content->clearEnvironment(content, client);
@@ -148,38 +135,35 @@ int AppSpawnChild(void *arg)
     }
 
     int ret = -1;
-#ifdef ASAN_DETECTOR
-    if ((content->getWrapBundleNameValue != NULL && content->getWrapBundleNameValue(content, client) == 0)
-        || ((client->flags & APP_COLD_START) != 0)) {
-#else
-    if ((client->flags & APP_COLD_START) != 0) {
-#endif
+    if ((content->getWrapBundleNameValue != NULL && content->getWrapBundleNameValue(content, client) == 0) ||
+        ((client->flags & APP_COLD_START) != 0)) {
+        // cold start fail, to start normal
         if (content->coldStartApp != NULL && content->coldStartApp(content, client) == 0) {
-#ifndef APPSPAWN_TEST
-            _exit(0x7f); // 0x7f user exit
-#endif
-            return -1;
-        } else {
-            ret = DoStartApp(content, client, content->longProcName, content->longProcNameLen);
+            return 0;
         }
-    } else {
-        ret = DoStartApp(content, client, content->longProcName, content->longProcNameLen);
     }
-
+    ret = DoStartApp(content, client, content->longProcName, content->longProcNameLen);
 #ifdef OHOS_DEBUG
-    struct timespec tmEnd = {0};
-    GetCurTime(&tmEnd);
-    // 1s = 1000000000ns
-    long timeUsed = (tmEnd.tv_sec - tmStart.tv_sec) * 1000000000L + (tmEnd.tv_nsec - tmStart.tv_nsec);
-    APPSPAWN_LOGI("App timeused %d %ld ns.", getpid(), timeUsed);
-#endif  // OHOS_DEBUG
-
+    long long diff = DiffTime(&tmStart);
+    APPSPAWN_LOGI("App timeused %d %lld ns.", getpid(), diff);
+#endif
     if (ret == 0 && content->runChildProcessor != NULL) {
         content->runChildProcessor(content, client);
     }
-    ProcessExit();
     return 0;
 }
+
+#ifndef APPSPAWN_TEST
+pid_t AppSpawnFork(int (*childFunc)(void *arg), void *args)
+{
+    pid_t pid = fork();
+    if (pid == 0) {
+        childFunc((void *)args);
+        ProcessExit();
+    }
+    return pid;
+}
+#endif
 
 int AppSpawnProcessMsg(AppSandboxArg *sandbox, pid_t *childPid)
 {
@@ -188,7 +172,7 @@ int AppSpawnProcessMsg(AppSandboxArg *sandbox, pid_t *childPid)
     APPSPAWN_CHECK(sandbox->client != NULL && childPid != NULL, return -1, "Invalid client for appspawn");
     APPSPAWN_LOGI("AppSpawnProcessMsg id %d 0x%x", sandbox->client->id, sandbox->client->flags);
 
-#ifndef APPSPAWN_TEST
+#ifndef OHOS_LITE
     AppSpawnClient *client = sandbox->client;
     if (client->cloneFlags & CLONE_NEWPID) {
         APPSPAWN_CHECK(client->cloneFlags & CLONE_NEWNS, return -1, "clone flags error");
@@ -205,29 +189,9 @@ int AppSpawnProcessMsg(AppSandboxArg *sandbox, pid_t *childPid)
         client->cloneFlags &= ~CLONE_NEWPID;
         free(childStack);
     }
-
-    pid = fork();
-    APPSPAWN_CHECK(pid >= 0, return -errno, "fork child process error: %d", -errno);
-    *childPid = pid;
-#else
-    pid = 0;
-    *childPid = pid;
 #endif
-    if (pid == 0) {
-        AppSpawnChild((void *)sandbox);
-    }
+    *childPid = AppSpawnFork(AppSpawnChild, (void *)sandbox);
+    APPSPAWN_CHECK(*childPid >= 0, return -errno, "fork child process error: %d", -errno);
     return 0;
 }
 
-#ifdef OHOS_DEBUG
-void GetCurTime(struct timespec *tmCur)
-{
-    if (tmCur == NULL) {
-        return;
-    }
-
-    if (clock_gettime(CLOCK_REALTIME, tmCur) != 0) {
-        APPSPAWN_LOGE("[appspawn] invoke, get time failed! err %d", errno);
-    }
-}
-#endif  // OHOS_DEBUG

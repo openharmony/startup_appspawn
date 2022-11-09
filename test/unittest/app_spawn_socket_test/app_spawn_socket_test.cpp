@@ -14,17 +14,12 @@
  */
 
 #include <gtest/gtest.h>
-
 #include <cerrno>
 #include <cstring>
 
-// redefine private and protected since testcase need to invoke and test private function
-#define private public
-#define protected public
 #include "appspawn_socket.h"
-#undef private
-#undef protected
-
+#include "beget_ext.h"
+#include "parameter.h"
 #include "securec.h"
 
 using namespace testing;
@@ -40,7 +35,10 @@ public:
 };
 
 void AppSpawnSocketTest::SetUpTestCase()
-{}
+{
+    int32_t loglevel = GetIntParameter("persist.init.debug.loglevel", 0);
+    SetInitLogLevel((InitLogLevel)loglevel);
+}
 
 void AppSpawnSocketTest::TearDownTestCase()
 {}
