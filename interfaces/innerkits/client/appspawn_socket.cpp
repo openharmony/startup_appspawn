@@ -45,9 +45,7 @@ int AppSpawnSocket::GetSocketFd() const
 int AppSpawnSocket::PackSocketAddr()
 {
     APPSPAWN_CHECK(!socketName_.empty(), return -EINVAL, "Invalid socket name: empty");
-
-    APPSPAWN_CHECK(memset_s(&socketAddr_, sizeof(socketAddr_), 0, sizeof(socketAddr_)) == EOK,
-        return -1, "Failed to memset socket addr");
+    (void)memset_s(&socketAddr_, sizeof(socketAddr_), 0, sizeof(socketAddr_));
 
     socklen_t pathLen = 0;
     if (socketName_[0] == '/') {

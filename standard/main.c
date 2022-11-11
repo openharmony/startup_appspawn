@@ -43,7 +43,9 @@ int main(int argc, char *const argv[])
             return -1;
         }
         argvSize = end - start;
-
+        if (argvSize > APP_MSG_MAX_SIZE) {
+            return -1;
+        }
         int isRet = memset_s(argv[0], argvSize, 0, (size_t)argvSize) != EOK;
         APPSPAWN_CHECK(!isRet, return -EINVAL, "Failed to memset argv[0]");
         isRet = strncpy_s(argv[0], argvSize, APPSPAWN_SERVER_NAME, strlen(APPSPAWN_SERVER_NAME)) != EOK;
@@ -59,7 +61,6 @@ int main(int argc, char *const argv[])
     // set common operation
     content->loadExtendLib = LoadExtendLib;
     content->runChildProcessor = RunChildProcessor;
-    content->setUidGidFilter = SetUidGidFilter;
     content->initAppSpawn(content);
     SystemSetParameter("bootevent.appspawn.started", "true");
     content->runAppSpawn(content, argc, argv);

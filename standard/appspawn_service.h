@@ -49,6 +49,10 @@ typedef struct {
     int32_t fd[2];  // 2 fd count
     AppParameter property;
     pid_t pid;
+    uint8_t setAllowInternet;
+    uint8_t allowInternet;
+    uint8_t reserved1;
+    uint8_t reserved2;
 } AppSpawnClientExt;
 
 typedef struct {
