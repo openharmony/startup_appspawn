@@ -102,7 +102,7 @@
                     "src-path" : "/data/app/el2/<currentUserId>/base/<PackageName>",
                     "sandbox-path" : "/data/storage/el2/base",
                     "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "true"
+                    "check-action-status": "false"
                 },{
                     "src-path" : "/data/app/el1/<currentUserId>/database/<PackageName>",
                     "sandbox-path" : "/data/storage/el1/database",
@@ -112,7 +112,7 @@
                     "src-path" : "/data/app/el2/<currentUserId>/database/<PackageName>",
                     "sandbox-path" : "/data/storage/el2/database",
                     "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "true"
+                    "check-action-status": "false"
                 }, {
                     "src-path" : "/data/app/el1/<currentUserId>/base/<PackageName>",
                     "sandbox-path" : "/data/storage/el1/base",
@@ -131,6 +131,11 @@
                 }, {
                     "src-path" : "/mnt/hmdfs/<currentUserId>/non_account/merge_view/data/",
                     "sandbox-path" : "/data/storage/el2/auth_groups",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/data/local/ark-cache/<PackageName>",
+                    "sandbox-path" : "/data/storage/ark-cache",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }
@@ -363,11 +368,38 @@
                     "sandbox-path" : "/data/storage/el1/bundle/nweb",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
+                }, {
+                    "src-path" : "/system/bin",
+                    "sandbox-path" : "/system/bin",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/system/lib",
+                    "sandbox-path" : "/system/lib",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/system/lib64",
+                    "sandbox-path" : "/system/lib64",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
                 }
             ],
             "symbol-links" : [ {
                     "target-name" : "/system/etc",
                     "link-name" : "/etc",
+                    "check-action-status": "false"
+                }, {
+                    "target-name" : "/system/bin",
+                    "link-name" : "/bin",
+                    "check-action-status": "false"
+                }, {
+                    "target-name" : "/system/lib",
+                    "link-name" : "/lib",
+                    "check-action-status": "false"
+                }, {
+                    "target-name" : "/system/lib64",
+                    "link-name" : "/lib64",
                     "check-action-status": "false"
                 }
             ]

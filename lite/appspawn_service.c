@@ -15,11 +15,8 @@
 
 #include "appspawn_message.h"
 #include "appspawn_server.h"
-
-#ifdef OHOS_DEBUG
 #include <errno.h>
 #include <time.h>
-#endif  // OHOS_DEBUG
 
 #include "iproxy_server.h"
 #include "iunknown.h"
@@ -119,8 +116,8 @@ static int Invoke(IServerProxy *iProxy, int funcId, void *origin, IpcIo *req, Ip
 {
 #ifdef OHOS_DEBUG
     struct timespec tmStart = {0};
-    GetCurTime(&tmStart);
-#endif  // OHOS_DEBUG
+    clock_gettime(CLOCK_REALTIME, &tmStart);
+#endif
 
     UNUSED(iProxy);
     UNUSED(origin);
@@ -163,11 +160,8 @@ static int Invoke(IServerProxy *iProxy, int funcId, void *origin, IpcIo *req, Ip
     free(sandboxArg);
 
 #ifdef OHOS_DEBUG
-    struct timespec tmEnd = {0};
-    GetCurTime(&tmEnd);
-    // 1s = 1000000000ns
-    long timeUsed = (tmEnd.tv_sec - tmStart.tv_sec) * 1000000000L + (tmEnd.tv_nsec - tmStart.tv_nsec);
-    APPSPAWN_LOGI("[appspawn] invoke, reply pid %d, timeused %ld ns.", newPid, timeUsed);
+    long long diff = DiffTime(&tmStart);
+    APPSPAWN_LOGI("[appspawn] invoke, reply pid %d, timeused %lld ns.", newPid, diff);
 #else
     APPSPAWN_LOGI("[appspawn] invoke, reply pid %d.", newPid);
 #endif  // OHOS_DEBUG
