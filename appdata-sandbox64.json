@@ -388,6 +388,11 @@
                     "sandbox-path" : "/system/lib64",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
+                }, {
+                    "src-path" : "/system/app/com.ohos.nweb",
+                    "sandbox-path" : "/system/app/com.ohos.nweb",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
                 }
             ],
             "symbol-links" : [ {
