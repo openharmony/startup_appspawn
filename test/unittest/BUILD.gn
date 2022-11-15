@@ -18,11 +18,15 @@ config("utest_config") {
   cflags = [
     "-Wno-implicit-fallthrough",
     "-Wno-unused-function",
+    "-Dprivate=public",
+    "-Dprotected=public",
   ]
+
   cflags_cc = [
     "-Wno-implicit-fallthrough",
     "-fexceptions",
   ]
+  ldflags = [ "--coverage" ]
 
   include_dirs = [
     "${appspawn_path}/test/mock/include",
@@ -70,6 +74,7 @@ ohos_unittest("AppSpawn_ut") {
 
   sources += [
     "${appspawn_path}/test/unittest/app_spawn_socket_test/app_spawn_socket_test.cpp",
+    "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_sandbox_test.cpp",
     "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_standard_test.cpp",
     "${appspawn_path}/test/unittest/client_socket_test/client_socket_test.cpp",
   ]
