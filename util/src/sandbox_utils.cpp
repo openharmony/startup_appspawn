@@ -34,62 +34,62 @@ using namespace OHOS;
 namespace OHOS {
 namespace AppSpawn {
 namespace {
-    constexpr int32_t UID_BASE = 200000;
-    constexpr int32_t FUSE_OPTIONS_MAX_LEN = 128;
-    constexpr int32_t DLP_FUSE_FD = 1000;
-    constexpr int32_t DATABASE_DIR_GID = 3012;
-    constexpr int32_t DFS_GID = 1009;
-    constexpr static mode_t FILE_MODE = 0711;
-    constexpr static mode_t BASE_FOLDER_FILE_MODE = 0700;
-    constexpr static mode_t DATABASE_FOLDER_FILE_MODE = S_IRWXU | S_IRWXG;
-    constexpr static mode_t BASIC_MOUNT_FLAGS = MS_REC | MS_BIND;
-    constexpr std::string_view APL_SYSTEM_CORE("system_core");
-    constexpr std::string_view APL_SYSTEM_BASIC("system_basic");
-    const std::string PACKAGE_ITEMS[] = {{"cache"}, {"files"}, {"temp"}, {"preferences"}, {"haps"}};
-    const std::string PHYSICAL_APP_INSTALL_PATH = "/data/app/el1/bundle/public/";
-    const std::string SANDBOX_APP_INSTALL_PATH = "/data/accounts/account_0/applications/";
-    const std::string DATA_BUNDLES = "/data/bundles/";
-    const std::string USERID = "<currentUserId>";
-    const std::string PACKAGE_NAME = "<PackageName>";
-    const std::string PACKAGE_NAME_INDEX = "<PackageName_index>";
-    const std::string SANDBOX_DIR = "/mnt/sandbox/";
-    const std::string STATUS_CHECK = "true";
-    const std::string SBX_SWITCH_CHECK = "ON";
-    const std::string DLP_BUNDLENAME = "com.ohos.dlpmanager";
-    const std::string INTERNAL = "__internal__";
-    const char *ACTION_STATUS = "check-action-status";
-    const char *ACCOUNT_PREFIX = "/account/data/";
-    const char *ACCOUNT_NON_PREFIX = "/non_account/data/";
-    const char *APP_BASE = "app-base";
-    const char *APP_RESOURCES = "app-resources";
-    const char *APP_APL_NAME = "app-apl-name";
-    const char *BASE_PREFIX = "/base";
-    const char *COMMON_PREFIX = "common";
-    const char *DATABASE_PREFIX = "/database";
-    const char *DEST_MODE = "dest-mode";
-    const char *EL2_PREFIX = "/data/app/el2";
-    const char *FS_TYPE = "fs-type";
-    const char *LINK_NAME = "link-name";
-    const char *MOUNT_PREFIX = "mount-paths";
-    const char *PRIVATE_PREFIX = "individual";
-    const char *SRC_PATH = "src-path";
-    const char *SANDBOX_PATH = "sandbox-path";
-    const char *SANDBOX_FLAGS = "sandbox-flags";
-    const char *SANDBOX_SWITCH_PREFIX = "sandbox-switch";
-    const char *SERVICE_EL2_PREFIX = "/data/serivce/el2";
-    const char *SYMLINK_PREFIX = "symbol-links";
-    const char *SANDBOX_ROOT_PREFIX = "sandbox-root";
-    const char *TOP_SANDBOX_SWITCH_PREFIX = "top-sandbox-switch";
-    const char *TARGET_NAME = "target-name";
-    const char *FLAGS_POINT = "flags-point";
-    const char *FLAGS = "flags";
-    const char *SANDBOX_NAMESPACE = "sandbox-namespace";
-    const char *SANDBOX_CLONE_FLAGS = "clone-flags";
+    constexpr int32_t g_uidBase = 200000;
+    constexpr int32_t g_fuseOptionsMaxLen = 128;
+    constexpr int32_t g_dlpFuseFd = 1000;
+    constexpr int32_t g_databaseDirGid = 3012;
+    constexpr int32_t g_dfsGid = 1009;
+    constexpr static mode_t g_fileMode = 0711;
+    constexpr static mode_t g_baseFolderFileMode = 0700;
+    constexpr static mode_t g_databaseFolderFileMode = S_IRWXU | S_IRWXG;
+    constexpr static mode_t g_basicMountFlags = MS_REC | MS_BIND;
+    constexpr std::string_view g_aplSystemCore("system_core");
+    constexpr std::string_view g_aplSystemBasic("system_basic");
+    const std::string g_packageItems[] = {{"cache"}, {"files"}, {"temp"}, {"preferences"}, {"haps"}};
+    const std::string g_physicalAppInstallPath = "/data/app/el1/bundle/public/";
+    const std::string g_sandBoxAppInstallPath = "/data/accounts/account_0/applications/";
+    const std::string g_dataBundles = "/data/bundles/";
+    const std::string g_userId = "<currentUserId>";
+    const std::string g_packageName = "<PackageName>";
+    const std::string g_packageNameIndex = "<PackageName_index>";
+    const std::string g_sandBoxDir = "/mnt/sandbox/";
+    const std::string g_statusCheck = "true";
+    const std::string g_sbxSwitchCheck = "ON";
+    const std::string g_dlpBundleName = "com.ohos.dlpmanager";
+    const std::string g_internal = "__internal__";
+    const char *g_actionStatuc = "check-action-status";
+    const char *g_accountPrefix = "/account/data/";
+    const char *g_accountNonPrefix = "/non_account/data/";
+    const char *g_appBase = "app-base";
+    const char *g_appResources = "app-resources";
+    const char *g_appAplName = "app-apl-name";
+    const char *g_basePrefix = "/base";
+    const char *g_commonPrefix = "common";
+    const char *g_databasePrefix = "/database";
+    const char *g_destMode = "dest-mode";
+    const char *g_el2Prefix = "/data/app/el2";
+    const char *g_fsType = "fs-type";
+    const char *g_linkName = "link-name";
+    const char *g_mountPrefix = "mount-paths";
+    const char *g_privatePrefix = "individual";
+    const char *g_srcPath = "src-path";
+    const char *g_sandBoxPath = "sandbox-path";
+    const char *g_sandBoxFlags = "sandbox-flags";
+    const char *g_sandBoxSwitchPrefix = "sandbox-switch";
+    const char *g_serviceEl2Prefix = "/data/serivce/el2";
+    const char *g_symlinkPrefix = "symbol-links";
+    const char *g_sandboxRootPrefix = "sandbox-root";
+    const char *g_topSandBoxSwitchPrefix = "top-sandbox-switch";
+    const char *g_targetName = "target-name";
+    const char *g_flagePoint = "flags-point";
+    const char *g_flags = "flags";
+    const char *g_sandBoxNameSpace = "sandbox-namespace";
+    const char *g_sandBoxCloneFlags = "clone-flags";
 #ifndef NWEB_SPAWN
-    const std::string SANDBOX_ROOT_DIR = "/mnt/sandbox/";
+    const std::string g_sandBoxRootDir = "/mnt/sandbox/";
 #else
-    const std::string OHOS_RENDER = "__internal__.com.ohos.render";
-    const std::string SANDBOX_ROOT_DIR = "/mnt/sandbox/com.ohos.render/";
+    const std::string g_ohosRender = "__internal__.com.ohos.render";
+    const std::string g_sandBoxRootDir = "/mnt/sandbox/com.ohos.render/";
 #endif
 }
 
@@ -145,18 +145,18 @@ uint32_t SandboxUtils::GetNamespaceFlagsFromConfig(const char *bundleName)
     nlohmann::json config = SandboxUtils::GetNamespaceJsonConfig();
     uint32_t cloneFlags = CLONE_NEWNS;
 
-    if (config.find(SANDBOX_NAMESPACE) == config.end()) {
+    if (config.find(g_sandBoxNameSpace) == config.end()) {
         APPSPAWN_LOGE("namespace config is not found");
         return 0;
     }
 
-    nlohmann::json namespaceApp = config[SANDBOX_NAMESPACE][0];
+    nlohmann::json namespaceApp = config[g_sandBoxNameSpace][0];
     if (namespaceApp.find(bundleName) == namespaceApp.end()) {
         return cloneFlags;
     }
 
     nlohmann::json app = namespaceApp[bundleName][0];
-    cloneFlags |= NamespaceFlagsFromConfig(app[SANDBOX_CLONE_FLAGS].get<std::vector<std::string>>());
+    cloneFlags |= NamespaceFlagsFromConfig(app[g_sandBoxCloneFlags].get<std::vector<std::string>>());
     return cloneFlags;
 }
 
@@ -188,7 +188,7 @@ int32_t SandboxUtils::DoAppSandboxMountOnce(const char *originPath, const char *
                                             const char *options)
 {
     // To make sure destinationPath exist
-    MakeDirRecursive(destinationPath, FILE_MODE);
+    MakeDirRecursive(destinationPath, g_fileMode);
 #ifndef APPSPAWN_TEST
     int ret = 0;
     // to mount fs and bind mount files or directory
@@ -242,7 +242,7 @@ void SandboxUtils::DoSandboxChmod(nlohmann::json jsonConfig, std::string &sandbo
     std::string fileModeStr;
     mode_t mode = 0;
 
-    bool rc = JsonUtils::GetStringFromJson(jsonConfig, DEST_MODE, fileModeStr);
+    bool rc = JsonUtils::GetStringFromJson(jsonConfig, g_destMode, fileModeStr);
     if (rc == false) {
         return;
     }
@@ -286,18 +286,18 @@ unsigned long SandboxUtils::GetMountFlagsFromConfig(const std::vector<std::strin
 
 string SandboxUtils::ConvertToRealPath(const ClientSocket::AppProperty *appProperty, std::string path)
 {
-    if (path.find(PACKAGE_NAME_INDEX) != std::string::npos) {
+    if (path.find(g_packageNameIndex) != std::string::npos) {
         std::string bundleNameIndex = appProperty->bundleName;
         bundleNameIndex = bundleNameIndex + "_" + std::to_string(appProperty->bundleIndex);
-        path = replace_all(path, PACKAGE_NAME_INDEX, bundleNameIndex);
+        path = replace_all(path, g_packageNameIndex, bundleNameIndex);
     }
 
-    if (path.find(PACKAGE_NAME) != std::string::npos) {
-        path = replace_all(path, PACKAGE_NAME, appProperty->bundleName);
+    if (path.find(g_packageName) != std::string::npos) {
+        path = replace_all(path, g_packageName, appProperty->bundleName);
     }
 
-    if (path.find(USERID) != std::string::npos) {
-        path = replace_all(path, USERID, std::to_string(appProperty->uid / UID_BASE));
+    if (path.find(g_userId) != std::string::npos) {
+        path = replace_all(path, g_userId, std::to_string(appProperty->uid / g_uidBase));
     }
 
     return path;
@@ -306,11 +306,11 @@ string SandboxUtils::ConvertToRealPath(const ClientSocket::AppProperty *appPrope
 std::string SandboxUtils::GetSbxPathByConfig(const ClientSocket::AppProperty *appProperty, nlohmann::json &config)
 {
     std::string sandboxRoot = "";
-    if (config.find(SANDBOX_ROOT_PREFIX) != config.end()) {
-        sandboxRoot = config[SANDBOX_ROOT_PREFIX].get<std::string>();
+    if (config.find(g_sandboxRootPrefix) != config.end()) {
+        sandboxRoot = config[g_sandboxRootPrefix].get<std::string>();
         sandboxRoot = ConvertToRealPath(appProperty, sandboxRoot);
     } else {
-        sandboxRoot = SANDBOX_DIR + appProperty->bundleName;
+        sandboxRoot = g_sandBoxDir + appProperty->bundleName;
         APPSPAWN_LOGE("read sandbox-root config failed, set sandbox-root to default root"
             "app name is %s", appProperty->bundleName);
     }
@@ -320,9 +320,9 @@ std::string SandboxUtils::GetSbxPathByConfig(const ClientSocket::AppProperty *ap
 
 bool SandboxUtils::GetSbxSwitchStatusByConfig(nlohmann::json &config)
 {
-    if (config.find(SANDBOX_SWITCH_PREFIX) != config.end()) {
-        std::string switchStatus = config[SANDBOX_SWITCH_PREFIX].get<std::string>();
-        if (switchStatus == SBX_SWITCH_CHECK) {
+    if (config.find(g_sandBoxSwitchPrefix) != config.end()) {
+        std::string switchStatus = config[g_sandBoxSwitchPrefix].get<std::string>();
+        if (switchStatus == g_sbxSwitchCheck) {
             return true;
         } else {
             return false;
@@ -336,12 +336,12 @@ bool SandboxUtils::GetSbxSwitchStatusByConfig(nlohmann::json &config)
 static bool CheckMountConfig(nlohmann::json &mntPoint, const ClientSocket::AppProperty *appProperty,
                              bool checkFlag)
 {
-    bool istrue = mntPoint.find(SRC_PATH) == mntPoint.end() || mntPoint.find(SANDBOX_PATH) == mntPoint.end()
-            || mntPoint.find(SANDBOX_FLAGS) == mntPoint.end();
+    bool istrue = mntPoint.find(g_srcPath) == mntPoint.end() || mntPoint.find(g_sandBoxPath) == mntPoint.end()
+            || mntPoint.find(g_sandBoxFlags) == mntPoint.end();
     APPSPAWN_CHECK(!istrue, return false, "read mount config failed, app name is %s", appProperty->bundleName);
 
-    if (mntPoint[APP_APL_NAME] != nullptr) {
-        std::string app_apl_name = mntPoint[APP_APL_NAME];
+    if (mntPoint[g_appAplName] != nullptr) {
+        std::string app_apl_name = mntPoint[g_appAplName];
         const char *p_app_apl = nullptr;
         p_app_apl = app_apl_name.c_str();
         if (!strcmp(p_app_apl, appProperty->apl)) {
@@ -349,12 +349,12 @@ static bool CheckMountConfig(nlohmann::json &mntPoint, const ClientSocket::AppPr
         }
     }
 
-    const std::string configSrcPath = mntPoint[SRC_PATH].get<std::string>();
+    const std::string configSrcPath = mntPoint[g_srcPath].get<std::string>();
     // special handle wps and don't use /data/app/xxx/<Package> config
     if (checkFlag && (configSrcPath.find("/data/app") != std::string::npos &&
         (configSrcPath.find("/base") != std::string::npos ||
          configSrcPath.find("/database") != std::string::npos
-        ) && configSrcPath.find(PACKAGE_NAME) != std::string::npos)) {
+        ) && configSrcPath.find(g_packageName) != std::string::npos)) {
         return false;
     }
 
@@ -368,12 +368,12 @@ static int32_t DoDlpAppMountStrategy(const ClientSocket::AppProperty *appPropert
     int fd = open("/dev/fuse", O_RDWR);
     APPSPAWN_CHECK(fd != -1, return -EINVAL, "open /dev/fuse failed, errno is %d", errno);
 
-    char options[FUSE_OPTIONS_MAX_LEN];
+    char options[g_fuseOptionsMaxLen];
     (void)sprintf_s(options, sizeof(options), "fd=%d,rootmode=40000,user_id=%d,group_id=%d,allow_other", fd,
                     appProperty->uid, appProperty->gid);
 
     // To make sure destinationPath exist
-    MakeDirRecursive(sandboxPath, FILE_MODE);
+    MakeDirRecursive(sandboxPath, g_fileMode);
 
     int ret = 0;
 #ifndef APPSPAWN_TEST
@@ -384,9 +384,9 @@ static int32_t DoDlpAppMountStrategy(const ClientSocket::AppProperty *appPropert
     ret = mount(NULL, sandboxPath.c_str(), NULL, MS_PRIVATE, NULL);
     APPSPAWN_CHECK(ret == 0, return ret, "private mount to %s failed %d", sandboxPath.c_str(), errno);
 #endif
-    /* close DLP_FUSE_FD and dup FD to it */
-    close(DLP_FUSE_FD);
-    ret = dup2(fd, DLP_FUSE_FD);
+    /* close g_dlpFuseFd and dup FD to it */
+    close(g_dlpFuseFd);
+    ret = dup2(fd, g_dlpFuseFd);
     APPSPAWN_CHECK_ONLY_LOG(ret != -1, "dup fuse fd %d failed, errno is %d", fd, errno);
     return ret;
 }
@@ -399,7 +399,7 @@ static int32_t HandleSpecialAppMount(const ClientSocket::AppProperty *appPropert
 
     /* dlp application mount strategy */
     /* dlp is an example, we should change to real bundle name later */
-    if (bundleName.find(DLP_BUNDLENAME) != std::string::npos) {
+    if (bundleName.find(g_dlpBundleName) != std::string::npos) {
         if (fsType.empty()) {
             return -1;
         } else {
@@ -429,35 +429,35 @@ void SandboxUtils::CheckAndPrepareSrcPath(const ClientSocket::AppProperty *appPr
         return;
     }
 
-    if (srcPath.find(EL2_PREFIX) != -1) {
-        if (srcPath.find(BASE_PREFIX) != -1) {
-            MakeDirRecursive(srcPath.c_str(), BASE_FOLDER_FILE_MODE);
+    if (srcPath.find(g_el2Prefix) != std::string::npos) {
+        if (srcPath.find(g_basePrefix) != std::string::npos) {
+            MakeDirRecursive(srcPath.c_str(), g_baseFolderFileMode);
             chown(srcPath.c_str(), appProperty->uid, appProperty->gid);
 
-            for (const std::string &packageItem : PACKAGE_ITEMS) {
+            for (const std::string &packageItem : g_packageItems) {
                 const std::string newPath = srcPath + "/" + packageItem;
-                MkdirAndChown(newPath, BASE_FOLDER_FILE_MODE, appProperty->uid, appProperty->gid);
+                MkdirAndChown(newPath, g_baseFolderFileMode, appProperty->uid, appProperty->gid);
             }
-        } else if (srcPath.find(DATABASE_PREFIX) != -1) {
-            MakeDirRecursive(srcPath.c_str(), DATABASE_FOLDER_FILE_MODE);
+        } else if (srcPath.find(g_databasePrefix) != std::string::npos) {
+            MakeDirRecursive(srcPath.c_str(), g_databaseFolderFileMode);
             /* Add S_ISGID mode and change group owner to DATABASE */
-            chmod(srcPath.c_str(), DATABASE_FOLDER_FILE_MODE | S_ISGID);
-            chown(srcPath.c_str(), appProperty->uid, DATABASE_DIR_GID);
+            chmod(srcPath.c_str(), g_databaseFolderFileMode | S_ISGID);
+            chown(srcPath.c_str(), appProperty->uid, g_databaseDirGid);
         } else {
             APPSPAWN_LOGI("failed to access path: %s", srcPath.c_str());
         }
     }
 
-    if (srcPath.find(SERVICE_EL2_PREFIX) != -1) {
-        if (srcPath.find(ACCOUNT_PREFIX) != -1) {
-            MakeDirRecursive(srcPath.c_str(), DATABASE_FOLDER_FILE_MODE);
-            chmod(srcPath.c_str(), DATABASE_FOLDER_FILE_MODE | S_ISGID);
+    if (srcPath.find(g_serviceEl2Prefix) != std::string::npos) {
+        if (srcPath.find(g_accountPrefix) != std::string::npos) {
+            MakeDirRecursive(srcPath.c_str(), g_databaseFolderFileMode);
+            chmod(srcPath.c_str(), g_databaseFolderFileMode | S_ISGID);
             chown(srcPath.c_str(), appProperty->uid, appProperty->gid);
-        } else if (srcPath.find(ACCOUNT_NON_PREFIX) != -1) {
-            MakeDirRecursive(srcPath.c_str(), DATABASE_FOLDER_FILE_MODE);
+        } else if (srcPath.find(g_accountNonPrefix) != std::string::npos) {
+            MakeDirRecursive(srcPath.c_str(), g_databaseFolderFileMode);
             /* Add S_ISGID mode and change group owner to DFS */
-            chmod(srcPath.c_str(), DATABASE_FOLDER_FILE_MODE | S_ISGID);
-            chown(srcPath.c_str(), appProperty->uid, DFS_GID);
+            chmod(srcPath.c_str(), g_databaseFolderFileMode | S_ISGID);
+            chown(srcPath.c_str(), appProperty->uid, g_dfsGid);
         } else {
             APPSPAWN_LOGI("failed to access path: %s", srcPath.c_str());
         }
@@ -467,20 +467,20 @@ void SandboxUtils::CheckAndPrepareSrcPath(const ClientSocket::AppProperty *appPr
 int SandboxUtils::DoAllMntPointsMount(const ClientSocket::AppProperty *appProperty, nlohmann::json &appConfig)
 {
     std::string bundleName = appProperty->bundleName;
-    if (appConfig.find(MOUNT_PREFIX) == appConfig.end()) {
+    if (appConfig.find(g_mountPrefix) == appConfig.end()) {
         APPSPAWN_LOGV("mount config is not found, app name is %s", bundleName.c_str());
         return 0;
     }
 
     bool checkFlag = false;
-    if (appConfig.find(FLAGS) != appConfig.end()) {
-        if (((ConvertFlagStr(appConfig[FLAGS].get<std::string>()) & appProperty->flags) != 0) &&
+    if (appConfig.find(g_flags) != appConfig.end()) {
+        if (((ConvertFlagStr(appConfig[g_flags].get<std::string>()) & appProperty->flags) != 0) &&
             bundleName.find("wps") != std::string::npos) {
             checkFlag = true;
         }
     }
 
-    nlohmann::json mountPoints = appConfig[MOUNT_PREFIX];
+    nlohmann::json mountPoints = appConfig[g_mountPrefix];
     std::string sandboxRoot = GetSbxPathByConfig(appProperty, appConfig);
     unsigned int mountPointSize = mountPoints.size();
 
@@ -491,13 +491,13 @@ int SandboxUtils::DoAllMntPointsMount(const ClientSocket::AppProperty *appProper
             continue;
         }
 
-        std::string srcPath = ConvertToRealPath(appProperty, mntPoint[SRC_PATH].get<std::string>());
+        std::string srcPath = ConvertToRealPath(appProperty, mntPoint[g_srcPath].get<std::string>());
         std::string sandboxPath = sandboxRoot + ConvertToRealPath(appProperty,
-                                                                  mntPoint[SANDBOX_PATH].get<std::string>());
-        unsigned long mountFlags = GetMountFlagsFromConfig(mntPoint[SANDBOX_FLAGS].get<std::vector<std::string>>());
+                                                                  mntPoint[g_sandBoxPath].get<std::string>());
+        unsigned long mountFlags = GetMountFlagsFromConfig(mntPoint[g_sandBoxFlags].get<std::vector<std::string>>());
         std::string fsType = "";
-        if (mntPoint.find(FS_TYPE) != mntPoint.end()) {
-            fsType = mntPoint[FS_TYPE].get<std::string>();
+        if (mntPoint.find(g_fsType) != mntPoint.end()) {
+            fsType = mntPoint[g_fsType].get<std::string>();
         }
 
         int ret = 0;
@@ -513,9 +513,9 @@ int SandboxUtils::DoAllMntPointsMount(const ClientSocket::AppProperty *appProper
             }
         }
         if (ret) {
-            std::string actionStatus = STATUS_CHECK;
-            (void)JsonUtils::GetStringFromJson(mntPoint, ACTION_STATUS, actionStatus);
-            if (actionStatus == STATUS_CHECK) {
+            std::string actionStatus = g_statusCheck;
+            (void)JsonUtils::GetStringFromJson(mntPoint, g_actionStatuc, actionStatus);
+            if (actionStatus == g_statusCheck) {
                 APPSPAWN_LOGE("DoAppSandboxMountOnce failed, %s", sandboxPath.c_str());
                 return ret;
             }
@@ -529,10 +529,10 @@ int SandboxUtils::DoAllMntPointsMount(const ClientSocket::AppProperty *appProper
 
 int SandboxUtils::DoAllSymlinkPointslink(const ClientSocket::AppProperty *appProperty, nlohmann::json &appConfig)
 {
-    APPSPAWN_CHECK(appConfig.find(SYMLINK_PREFIX) != appConfig.end(), return 0, "symlink config is not found,"
+    APPSPAWN_CHECK(appConfig.find(g_symlinkPrefix) != appConfig.end(), return 0, "symlink config is not found,"
         "maybe reuslt sandbox launch failed app name is %s", appProperty->bundleName);
 
-    nlohmann::json symlinkPoints = appConfig[SYMLINK_PREFIX];
+    nlohmann::json symlinkPoints = appConfig[g_symlinkPrefix];
     std::string sandboxRoot = GetSbxPathByConfig(appProperty, appConfig);
     unsigned int symlinkPointSize = symlinkPoints.size();
 
@@ -540,22 +540,22 @@ int SandboxUtils::DoAllSymlinkPointslink(const ClientSocket::AppProperty *appPro
         nlohmann::json symPoint = symlinkPoints[i];
 
         // Check the validity of the symlink configuration
-        if (symPoint.find(TARGET_NAME) == symPoint.end() || symPoint.find(LINK_NAME) == symPoint.end()) {
+        if (symPoint.find(g_targetName) == symPoint.end() || symPoint.find(g_linkName) == symPoint.end()) {
             APPSPAWN_LOGE("read symlink config failed, app name is %s", appProperty->bundleName);
             continue;
         }
 
-        std::string targetName = ConvertToRealPath(appProperty, symPoint[TARGET_NAME].get<std::string>());
-        std::string linkName = sandboxRoot + ConvertToRealPath(appProperty, symPoint[LINK_NAME].get<std::string>());
+        std::string targetName = ConvertToRealPath(appProperty, symPoint[g_targetName].get<std::string>());
+        std::string linkName = sandboxRoot + ConvertToRealPath(appProperty, symPoint[g_linkName].get<std::string>());
         APPSPAWN_LOGV("symlink, from %s to %s", targetName.c_str(), linkName.c_str());
 
         int ret = symlink(targetName.c_str(), linkName.c_str());
         if (ret && errno != EEXIST) {
             APPSPAWN_LOGE("symlink failed, %s, errno is %d", linkName.c_str(), errno);
 
-            std::string actionStatus = STATUS_CHECK;
-            (void)JsonUtils::GetStringFromJson(symPoint, ACTION_STATUS, actionStatus);
-            if (actionStatus == STATUS_CHECK) {
+            std::string actionStatus = g_statusCheck;
+            (void)JsonUtils::GetStringFromJson(symPoint, g_actionStatuc, actionStatus);
+            if (actionStatus == g_statusCheck) {
                 return ret;
             }
         }
@@ -569,7 +569,7 @@ int SandboxUtils::DoAllSymlinkPointslink(const ClientSocket::AppProperty *appPro
 int32_t SandboxUtils::DoSandboxFilePrivateBind(const ClientSocket::AppProperty *appProperty,
                                                nlohmann::json &wholeConfig)
 {
-    nlohmann::json privateAppConfig = wholeConfig[PRIVATE_PREFIX][0];
+    nlohmann::json privateAppConfig = wholeConfig[g_privatePrefix][0];
     if (privateAppConfig.find(appProperty->bundleName) != privateAppConfig.end()) {
         return DoAllMntPointsMount(appProperty, privateAppConfig[appProperty->bundleName][0]);
     }
@@ -580,7 +580,7 @@ int32_t SandboxUtils::DoSandboxFilePrivateBind(const ClientSocket::AppProperty *
 int32_t SandboxUtils::DoSandboxFilePrivateSymlink(const ClientSocket::AppProperty *appProperty,
                                                   nlohmann::json &wholeConfig)
 {
-    nlohmann::json privateAppConfig = wholeConfig[PRIVATE_PREFIX][0];
+    nlohmann::json privateAppConfig = wholeConfig[g_privatePrefix][0];
     if (privateAppConfig.find(appProperty->bundleName) != privateAppConfig.end()) {
         return DoAllSymlinkPointslink(appProperty, privateAppConfig[appProperty->bundleName][0]);
     }
@@ -591,18 +591,18 @@ int32_t SandboxUtils::DoSandboxFilePrivateSymlink(const ClientSocket::AppPropert
 int32_t SandboxUtils::HandleFlagsPoint(const ClientSocket::AppProperty *appProperty,
                                        nlohmann::json &appConfig)
 {
-    if (appConfig.find(FLAGS_POINT) == appConfig.end()) {
+    if (appConfig.find(g_flagePoint) == appConfig.end()) {
         return 0;
     }
 
-    nlohmann::json flagsPoints = appConfig[FLAGS_POINT];
+    nlohmann::json flagsPoints = appConfig[g_flagePoint];
     unsigned int flagsPointSize = flagsPoints.size();
 
     for (unsigned int i = 0; i < flagsPointSize; i++) {
         nlohmann::json flagPoint = flagsPoints[i];
 
-        if (flagPoint.find(FLAGS) != flagPoint.end()) {
-            std::string flagsStr = flagPoint[FLAGS].get<std::string>();
+        if (flagPoint.find(g_flags) != flagPoint.end()) {
+            std::string flagsStr = flagPoint[g_flags].get<std::string>();
             uint32_t flag = ConvertFlagStr(flagsStr);
             if ((appProperty->flags & flag) != 0) {
                 return DoAllMntPointsMount(appProperty, flagPoint);
@@ -618,7 +618,7 @@ int32_t SandboxUtils::HandleFlagsPoint(const ClientSocket::AppProperty *appPrope
 int32_t SandboxUtils::DoSandboxFilePrivateFlagsPointHandle(const ClientSocket::AppProperty *appProperty,
                                                            nlohmann::json &wholeConfig)
 {
-    nlohmann::json privateAppConfig = wholeConfig[PRIVATE_PREFIX][0];
+    nlohmann::json privateAppConfig = wholeConfig[g_privatePrefix][0];
     if (privateAppConfig.find(appProperty->bundleName) != privateAppConfig.end()) {
         return HandleFlagsPoint(appProperty, privateAppConfig[appProperty->bundleName][0]);
     }
@@ -629,9 +629,9 @@ int32_t SandboxUtils::DoSandboxFilePrivateFlagsPointHandle(const ClientSocket::A
 int32_t SandboxUtils::DoSandboxFileCommonFlagsPointHandle(const ClientSocket::AppProperty *appProperty,
                                                           nlohmann::json &wholeConfig)
 {
-    nlohmann::json commonConfig = wholeConfig[COMMON_PREFIX][0];
-    if (commonConfig.find(APP_RESOURCES) != commonConfig.end()) {
-        return HandleFlagsPoint(appProperty, commonConfig[APP_RESOURCES][0]);
+    nlohmann::json commonConfig = wholeConfig[g_commonPrefix][0];
+    if (commonConfig.find(g_appResources) != commonConfig.end()) {
+        return HandleFlagsPoint(appProperty, commonConfig[g_appResources][0]);
     }
 
     return 0;
@@ -639,18 +639,18 @@ int32_t SandboxUtils::DoSandboxFileCommonFlagsPointHandle(const ClientSocket::Ap
 
 int32_t SandboxUtils::DoSandboxFileCommonBind(const ClientSocket::AppProperty *appProperty, nlohmann::json &wholeConfig)
 {
-    nlohmann::json commonConfig = wholeConfig[COMMON_PREFIX][0];
+    nlohmann::json commonConfig = wholeConfig[g_commonPrefix][0];
     int ret = 0;
 
-    if (commonConfig.find(APP_BASE) != commonConfig.end()) {
-        ret = DoAllMntPointsMount(appProperty, commonConfig[APP_BASE][0]);
+    if (commonConfig.find(g_appBase) != commonConfig.end()) {
+        ret = DoAllMntPointsMount(appProperty, commonConfig[g_appBase][0]);
         if (ret) {
             return ret;
         }
     }
 
-    if (commonConfig.find(APP_RESOURCES) != commonConfig.end()) {
-        ret = DoAllMntPointsMount(appProperty, commonConfig[APP_RESOURCES][0]);
+    if (commonConfig.find(g_appResources) != commonConfig.end()) {
+        ret = DoAllMntPointsMount(appProperty, commonConfig[g_appResources][0]);
     }
 
     return ret;
@@ -659,18 +659,18 @@ int32_t SandboxUtils::DoSandboxFileCommonBind(const ClientSocket::AppProperty *a
 int32_t SandboxUtils::DoSandboxFileCommonSymlink(const ClientSocket::AppProperty *appProperty,
                                                  nlohmann::json &wholeConfig)
 {
-    nlohmann::json commonConfig = wholeConfig[COMMON_PREFIX][0];
+    nlohmann::json commonConfig = wholeConfig[g_commonPrefix][0];
     int ret = 0;
 
-    if (commonConfig.find(APP_BASE) != commonConfig.end()) {
-        ret = DoAllSymlinkPointslink(appProperty, commonConfig[APP_BASE][0]);
+    if (commonConfig.find(g_appBase) != commonConfig.end()) {
+        ret = DoAllSymlinkPointslink(appProperty, commonConfig[g_appBase][0]);
         if (ret) {
             return ret;
         }
     }
 
-    if (commonConfig.find(APP_RESOURCES) != commonConfig.end()) {
-        ret = DoAllSymlinkPointslink(appProperty, commonConfig[APP_RESOURCES][0]);
+    if (commonConfig.find(g_appResources) != commonConfig.end()) {
+        ret = DoAllSymlinkPointslink(appProperty, commonConfig[g_appResources][0]);
     }
 
     return ret;
@@ -698,13 +698,13 @@ int32_t SandboxUtils::SetRenderSandboxProperty(const ClientSocket::AppProperty *
 {
 #ifdef NWEB_SPAWN
     nlohmann::json config = SandboxUtils::GetJsonConfig();
-    nlohmann::json privateAppConfig = config[PRIVATE_PREFIX][0];
+    nlohmann::json privateAppConfig = config[g_privatePrefix][0];
 
-    if (privateAppConfig.find(OHOS_RENDER) != privateAppConfig.end()) {
-        int ret = DoAllMntPointsMount(appProperty, privateAppConfig[OHOS_RENDER][0]);
+    if (privateAppConfig.find(g_ohosRender) != privateAppConfig.end()) {
+        int ret = DoAllMntPointsMount(appProperty, privateAppConfig[g_ohosRender][0]);
         APPSPAWN_CHECK(ret == 0, return ret, "DoAllMntPointsMount failed, %s",
             appProperty->bundleName);
-        ret = DoAllSymlinkPointslink(appProperty, privateAppConfig[OHOS_RENDER][0]);
+        ret = DoAllSymlinkPointslink(appProperty, privateAppConfig[g_ohosRender][0]);
         APPSPAWN_CHECK(ret == 0, return ret, "DoAllSymlinkPointslink  failed, %s",
             appProperty->bundleName);
     }
@@ -759,11 +759,11 @@ int32_t SandboxUtils::SetCommonAppSandboxProperty(const ClientSocket::AppPropert
     ret = SetCommonAppSandboxProperty_(appProperty, productConfig);
     APPSPAWN_CHECK(ret == 0, return ret, "parse product config for common failed, %s", sandboxPackagePath.c_str());
 
-    if (strcmp(appProperty->apl, APL_SYSTEM_BASIC.data()) == 0 ||
-        strcmp(appProperty->apl, APL_SYSTEM_CORE.data()) == 0) {
+    if (strcmp(appProperty->apl, g_aplSystemBasic.data()) == 0 ||
+        strcmp(appProperty->apl, g_aplSystemCore.data()) == 0) {
         // need permission check for system app here
-        std::string destbundlesPath = sandboxPackagePath + DATA_BUNDLES;
-        DoAppSandboxMountOnce(PHYSICAL_APP_INSTALL_PATH.c_str(), destbundlesPath.c_str(), "", BASIC_MOUNT_FLAGS,
+        std::string destbundlesPath = sandboxPackagePath + g_dataBundles;
+        DoAppSandboxMountOnce(g_physicalAppInstallPath.c_str(), destbundlesPath.c_str(), "", g_basicMountFlags,
                               nullptr);
     }
 
@@ -776,12 +776,12 @@ int32_t SandboxUtils::DoSandboxRootFolderCreateAdapt(std::string &sandboxPackage
     int rc = mount(NULL, "/", NULL, MS_REC | MS_SLAVE, NULL);
     APPSPAWN_CHECK(rc == 0, return rc, "set propagation slave failed");
 #endif
-    MakeDirRecursive(sandboxPackagePath, FILE_MODE);
+    MakeDirRecursive(sandboxPackagePath, g_fileMode);
 
     // bind mount "/" to /mnt/sandbox/<packageName> path
     // rootfs: to do more resources bind mount here to get more strict resources constraints
 #ifndef APPSPAWN_TEST
-    rc = mount("/", sandboxPackagePath.c_str(), NULL, BASIC_MOUNT_FLAGS, NULL);
+    rc = mount("/", sandboxPackagePath.c_str(), NULL, g_basicMountFlags, NULL);
     APPSPAWN_CHECK(rc == 0, return rc, "mount bind / failed, %d", errno);
 #endif
     return 0;
@@ -797,14 +797,14 @@ int32_t SandboxUtils::DoSandboxRootFolderCreate(const ClientSocket::AppProperty 
     }
 #endif
     DoAppSandboxMountOnce(sandboxPackagePath.c_str(), sandboxPackagePath.c_str(), "",
-                          BASIC_MOUNT_FLAGS, nullptr);
+                          g_basicMountFlags, nullptr);
 
     return 0;
 }
 
 bool SandboxUtils::CheckBundleNameForPrivate(const std::string &bundleName)
 {
-    if (bundleName.find(INTERNAL) != std::string::npos) {
+    if (bundleName.find(g_internal) != std::string::npos) {
         return false;
     }
     return true;
@@ -814,10 +814,10 @@ bool SandboxUtils::CheckTotalSandboxSwitchStatus(const ClientSocket::AppProperty
 {
     nlohmann::json wholeConfig = SandboxUtils::GetJsonConfig();
 
-    nlohmann::json commonAppConfig = wholeConfig[COMMON_PREFIX][0];
-    if (commonAppConfig.find(TOP_SANDBOX_SWITCH_PREFIX) != commonAppConfig.end()) {
-        std::string switchStatus = commonAppConfig[TOP_SANDBOX_SWITCH_PREFIX].get<std::string>();
-        if (switchStatus == SBX_SWITCH_CHECK) {
+    nlohmann::json commonAppConfig = wholeConfig[g_commonPrefix][0];
+    if (commonAppConfig.find(g_topSandBoxSwitchPrefix) != commonAppConfig.end()) {
+        std::string switchStatus = commonAppConfig[g_topSandBoxSwitchPrefix].get<std::string>();
+        if (switchStatus == g_sbxSwitchCheck) {
             return true;
         } else {
             return false;
@@ -833,7 +833,7 @@ bool SandboxUtils::CheckAppSandboxSwitchStatus(const ClientSocket::AppProperty *
     nlohmann::json wholeConfig = SandboxUtils::GetJsonConfig();
     bool rc = true;
 
-    nlohmann::json privateAppConfig = wholeConfig[PRIVATE_PREFIX][0];
+    nlohmann::json privateAppConfig = wholeConfig[g_privatePrefix][0];
     if (privateAppConfig.find(appProperty->bundleName) != privateAppConfig.end()) {
         nlohmann::json appConfig = privateAppConfig[appProperty->bundleName][0];
         rc = GetSbxSwitchStatusByConfig(appConfig);
@@ -860,10 +860,10 @@ int32_t SandboxUtils::SetAppSandboxProperty(const ClientSocket::AppProperty *app
     if (appProperty == nullptr || CheckBundleName(appProperty->bundleName) != 0) {
         return -1;
     }
-    std::string sandboxPackagePath = SANDBOX_ROOT_DIR;
+    std::string sandboxPackagePath = g_sandBoxRootDir;
     const std::string bundleName = appProperty->bundleName;
     sandboxPackagePath += bundleName;
-    MakeDirRecursive(sandboxPackagePath.c_str(), FILE_MODE);
+    MakeDirRecursive(sandboxPackagePath.c_str(), g_fileMode);
     int rc = 0;
     // when CLONE_NEWPID is enabled, CLONE_NEWNS must be enabled.
     if (!(appProperty->cloneFlags & CLONE_NEWPID)) {
