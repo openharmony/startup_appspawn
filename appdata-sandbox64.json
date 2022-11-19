@@ -138,6 +138,11 @@
                     "sandbox-path" : "/data/storage/ark-cache",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
+                }, {
+                    "src-path" : "/data/local/ark-profile/<currentUserId>/<PackageName>",
+                    "sandbox-path" : "/data/storage/ark-profile",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
                 }
             ],
             "symbol-links" : [{
