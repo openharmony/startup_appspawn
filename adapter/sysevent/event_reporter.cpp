@@ -34,7 +34,7 @@ void ReportProcessExitInfo(const char* processName, int pid, int uid, int status
         pname = std::string(processName, strlen(processName));
     }
 
-    HiSysEvent::Write(HiSysEvent::Domain::STARTUP, KEY_PROCESS_EXIT, HiSysEvent::EventType::BEHAVIOR,
+    HiSysEventWrite(HiSysEvent::Domain::STARTUP, KEY_PROCESS_EXIT, HiSysEvent::EventType::BEHAVIOR,
         KEY_NAME, pname, KEY_PID, pid, KEY_UID, uid, KEY_STATUS, status);
 }
 }  // namespace system
