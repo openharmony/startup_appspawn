@@ -34,17 +34,17 @@ using namespace OHOS;
 namespace OHOS {
 namespace AppSpawn {
 namespace {
-    constexpr int32_t g_uidBase = 200000;
-    constexpr int32_t g_fuseOptionsMaxLen = 128;
-    constexpr int32_t g_dlpFuseFd = 1000;
-    constexpr int32_t g_databaseDirGid = 3012;
-    constexpr int32_t g_dfsGid = 1009;
-    constexpr static mode_t g_fileMode = 0711;
-    constexpr static mode_t g_baseFolderFileMode = 0700;
-    constexpr static mode_t g_databaseFolderFileMode = S_IRWXU | S_IRWXG;
-    constexpr static mode_t g_basicMountFlags = MS_REC | MS_BIND;
-    constexpr std::string_view g_aplSystemCore("system_core");
-    constexpr std::string_view g_aplSystemBasic("system_basic");
+    constexpr int32_t UID_BASE = 200000;
+    constexpr int32_t FUSE_OPTIONS_MAX_LEN = 128;
+    constexpr int32_t DLP_FUSE_FD = 1000;
+    constexpr int32_t DATABASE_DIR_GID = 3012;
+    constexpr int32_t DFS_GID = 1009;
+    constexpr static mode_t FILE_MODE = 0711;
+    constexpr static mode_t BASE_FOLDER_FILE_MODE = 0700;
+    constexpr static mode_t DATABASE_FOLDER_FILE_MODE = S_IRWXU | S_IRWXG;
+    constexpr static mode_t BASIC_MOUNT_FLAGS = MS_REC | MS_BIND;
+    constexpr std::string_view APL_SYSTEM_CORE("system_core");
+    constexpr std::string_view APL_SYSTEM_BASIC("system_basic");
     const std::string g_packageItems[] = {{"cache"}, {"files"}, {"temp"}, {"preferences"}, {"haps"}};
     const std::string g_physicalAppInstallPath = "/data/app/el1/bundle/public/";
     const std::string g_sandBoxAppInstallPath = "/data/accounts/account_0/applications/";
@@ -188,7 +188,7 @@ int32_t SandboxUtils::DoAppSandboxMountOnce(const char *originPath, const char *
                                             const char *options)
 {
     // To make sure destinationPath exist
-    MakeDirRecursive(destinationPath, g_fileMode);
+    MakeDirRecursive(destinationPath, FILE_MODE);
 #ifndef APPSPAWN_TEST
     int ret = 0;
     // to mount fs and bind mount files or directory
@@ -297,7 +297,7 @@ string SandboxUtils::ConvertToRealPath(const ClientSocket::AppProperty *appPrope
     }
 
     if (path.find(g_userId) != std::string::npos) {
-        path = replace_all(path, g_userId, std::to_string(appProperty->uid / g_uidBase));
+        path = replace_all(path, g_userId, std::to_string(appProperty->uid / UID_BASE));
     }
 
     return path;
@@ -368,12 +368,12 @@ static int32_t DoDlpAppMountStrategy(const ClientSocket::AppProperty *appPropert
     int fd = open("/dev/fuse", O_RDWR);
     APPSPAWN_CHECK(fd != -1, return -EINVAL, "open /dev/fuse failed, errno is %d", errno);
 
-    char options[g_fuseOptionsMaxLen];
+    char options[FUSE_OPTIONS_MAX_LEN];
     (void)sprintf_s(options, sizeof(options), "fd=%d,rootmode=40000,user_id=%d,group_id=%d,allow_other", fd,
                     appProperty->uid, appProperty->gid);
 
     // To make sure destinationPath exist
-    MakeDirRecursive(sandboxPath, g_fileMode);
+    MakeDirRecursive(sandboxPath, FILE_MODE);
 
     int ret = 0;
 #ifndef APPSPAWN_TEST
@@ -384,9 +384,9 @@ static int32_t DoDlpAppMountStrategy(const ClientSocket::AppProperty *appPropert
     ret = mount(NULL, sandboxPath.c_str(), NULL, MS_PRIVATE, NULL);
     APPSPAWN_CHECK(ret == 0, return ret, "private mount to %s failed %d", sandboxPath.c_str(), errno);
 #endif
-    /* close g_dlpFuseFd and dup FD to it */
-    close(g_dlpFuseFd);
-    ret = dup2(fd, g_dlpFuseFd);
+    /* close DLP_FUSE_FD and dup FD to it */
+    close(DLP_FUSE_FD);
+    ret = dup2(fd, DLP_FUSE_FD);
     APPSPAWN_CHECK_ONLY_LOG(ret != -1, "dup fuse fd %d failed, errno is %d", fd, errno);
     return ret;
 }
@@ -431,18 +431,18 @@ void SandboxUtils::CheckAndPrepareSrcPath(const ClientSocket::AppProperty *appPr
 
     if (srcPath.find(g_el2Prefix) != std::string::npos) {
         if (srcPath.find(g_basePrefix) != std::string::npos) {
-            MakeDirRecursive(srcPath.c_str(), g_baseFolderFileMode);
+            MakeDirRecursive(srcPath.c_str(), BASE_FOLDER_FILE_MODE);
             chown(srcPath.c_str(), appProperty->uid, appProperty->gid);
 
             for (const std::string &packageItem : g_packageItems) {
                 const std::string newPath = srcPath + "/" + packageItem;
-                MkdirAndChown(newPath, g_baseFolderFileMode, appProperty->uid, appProperty->gid);
+                MkdirAndChown(newPath, BASE_FOLDER_FILE_MODE, appProperty->uid, appProperty->gid);
             }
         } else if (srcPath.find(g_databasePrefix) != std::string::npos) {
-            MakeDirRecursive(srcPath.c_str(), g_databaseFolderFileMode);
+            MakeDirRecursive(srcPath.c_str(), DATABASE_FOLDER_FILE_MODE);
             /* Add S_ISGID mode and change group owner to DATABASE */
-            chmod(srcPath.c_str(), g_databaseFolderFileMode | S_ISGID);
-            chown(srcPath.c_str(), appProperty->uid, g_databaseDirGid);
+            chmod(srcPath.c_str(), DATABASE_FOLDER_FILE_MODE | S_ISGID);
+            chown(srcPath.c_str(), appProperty->uid, DATABASE_DIR_GID);
         } else {
             APPSPAWN_LOGI("failed to access path: %s", srcPath.c_str());
         }
@@ -450,14 +450,14 @@ void SandboxUtils::CheckAndPrepareSrcPath(const ClientSocket::AppProperty *appPr
 
     if (srcPath.find(g_serviceEl2Prefix) != std::string::npos) {
         if (srcPath.find(g_accountPrefix) != std::string::npos) {
-            MakeDirRecursive(srcPath.c_str(), g_databaseFolderFileMode);
-            chmod(srcPath.c_str(), g_databaseFolderFileMode | S_ISGID);
+            MakeDirRecursive(srcPath.c_str(), DATABASE_FOLDER_FILE_MODE);
+            chmod(srcPath.c_str(), DATABASE_FOLDER_FILE_MODE | S_ISGID);
             chown(srcPath.c_str(), appProperty->uid, appProperty->gid);
         } else if (srcPath.find(g_accountNonPrefix) != std::string::npos) {
-            MakeDirRecursive(srcPath.c_str(), g_databaseFolderFileMode);
+            MakeDirRecursive(srcPath.c_str(), DATABASE_FOLDER_FILE_MODE);
             /* Add S_ISGID mode and change group owner to DFS */
-            chmod(srcPath.c_str(), g_databaseFolderFileMode | S_ISGID);
-            chown(srcPath.c_str(), appProperty->uid, g_dfsGid);
+            chmod(srcPath.c_str(), DATABASE_FOLDER_FILE_MODE | S_ISGID);
+            chown(srcPath.c_str(), appProperty->uid, DFS_GID);
         } else {
             APPSPAWN_LOGI("failed to access path: %s", srcPath.c_str());
         }
@@ -759,11 +759,11 @@ int32_t SandboxUtils::SetCommonAppSandboxProperty(const ClientSocket::AppPropert
     ret = SetCommonAppSandboxProperty_(appProperty, productConfig);
     APPSPAWN_CHECK(ret == 0, return ret, "parse product config for common failed, %s", sandboxPackagePath.c_str());
 
-    if (strcmp(appProperty->apl, g_aplSystemBasic.data()) == 0 ||
-        strcmp(appProperty->apl, g_aplSystemCore.data()) == 0) {
+    if (strcmp(appProperty->apl, APL_SYSTEM_BASIC.data()) == 0 ||
+        strcmp(appProperty->apl, APL_SYSTEM_CORE.data()) == 0) {
         // need permission check for system app here
         std::string destbundlesPath = sandboxPackagePath + g_dataBundles;
-        DoAppSandboxMountOnce(g_physicalAppInstallPath.c_str(), destbundlesPath.c_str(), "", g_basicMountFlags,
+        DoAppSandboxMountOnce(g_physicalAppInstallPath.c_str(), destbundlesPath.c_str(), "", BASIC_MOUNT_FLAGS,
                               nullptr);
     }
 
@@ -776,12 +776,12 @@ int32_t SandboxUtils::DoSandboxRootFolderCreateAdapt(std::string &sandboxPackage
     int rc = mount(NULL, "/", NULL, MS_REC | MS_SLAVE, NULL);
     APPSPAWN_CHECK(rc == 0, return rc, "set propagation slave failed");
 #endif
-    MakeDirRecursive(sandboxPackagePath, g_fileMode);
+    MakeDirRecursive(sandboxPackagePath, FILE_MODE);
 
     // bind mount "/" to /mnt/sandbox/<packageName> path
     // rootfs: to do more resources bind mount here to get more strict resources constraints
 #ifndef APPSPAWN_TEST
-    rc = mount("/", sandboxPackagePath.c_str(), NULL, g_basicMountFlags, NULL);
+    rc = mount("/", sandboxPackagePath.c_str(), NULL, BASIC_MOUNT_FLAGS, NULL);
     APPSPAWN_CHECK(rc == 0, return rc, "mount bind / failed, %d", errno);
 #endif
     return 0;
@@ -797,7 +797,7 @@ int32_t SandboxUtils::DoSandboxRootFolderCreate(const ClientSocket::AppProperty 
     }
 #endif
     DoAppSandboxMountOnce(sandboxPackagePath.c_str(), sandboxPackagePath.c_str(), "",
-                          g_basicMountFlags, nullptr);
+                          BASIC_MOUNT_FLAGS, nullptr);
 
     return 0;
 }
@@ -863,7 +863,7 @@ int32_t SandboxUtils::SetAppSandboxProperty(const ClientSocket::AppProperty *app
     std::string sandboxPackagePath = g_sandBoxRootDir;
     const std::string bundleName = appProperty->bundleName;
     sandboxPackagePath += bundleName;
-    MakeDirRecursive(sandboxPackagePath.c_str(), g_fileMode);
+    MakeDirRecursive(sandboxPackagePath.c_str(), FILE_MODE);
     int rc = 0;
     // when CLONE_NEWPID is enabled, CLONE_NEWNS must be enabled.
     if (!(appProperty->cloneFlags & CLONE_NEWPID)) {
