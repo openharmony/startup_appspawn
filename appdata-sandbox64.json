@@ -280,7 +280,7 @@
             ],
             "symbol-links" : []
         }],
-		"com.ohos.systemui" : [{
+        "com.ohos.systemui" : [{
             "sandbox-switch": "ON",
             "sandbox-root" : "/mnt/sandbox/<PackageName>",
             "mount-paths" : [{
