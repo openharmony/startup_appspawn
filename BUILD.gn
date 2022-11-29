@@ -180,6 +180,10 @@ ohos_executable("nwebspawn") {
   configs = [ ":appspawn_config" ]
   deps = [ "${appspawn_path}:nwebspawn_server" ]
 
+  if (build_selinux) {
+    external_deps = [ "selinux:libhap_restorecon" ]
+  }
+
   install_enable = true
   subsystem_name = "${subsystem_name}"
   part_name = "${part_name}"
