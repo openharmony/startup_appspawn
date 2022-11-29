@@ -27,6 +27,9 @@
 #include "json_utils.h"
 #include "securec.h"
 #include "appspawn_server.h"
+#ifdef WITH_SELINUX
+#include "hap_restorecon.h"
+#endif
 
 using namespace std;
 using namespace OHOS;
@@ -424,6 +427,16 @@ static uint32_t ConvertFlagStr(const std::string &flagStr)
     return 0;
 }
 
+static void SetSelinuxCondition(const std::string &srcPath, const ClientSocket::AppProperty *appProperty)
+{
+#ifndef APPSPAWN_TEST
+#ifdef WITH_SELINUX
+            HapContext hapContext;
+            hapContext.HapFileRestorecon(srcPath, appProperty->apl, appProperty->bundleName, SELINUX_HAP_RESTORECON_RECURSE);
+#endif
+#endif
+}
+
 /* Check and Create physical /data/app/el2 path when BMS failed to create related package folder */
 void SandboxUtils::CheckAndPrepareSrcPath(const ClientSocket::AppProperty *appProperty, const std::string &srcPath)
 {
@@ -440,11 +453,13 @@ void SandboxUtils::CheckAndPrepareSrcPath(const ClientSocket::AppProperty *appPr
                 const std::string newPath = srcPath + "/" + packageItem;
                 MkdirAndChown(newPath, BASE_FOLDER_FILE_MODE, appProperty->uid, appProperty->gid);
             }
+            SetSelinuxCondition(srcPath, appProperty);
         } else if (srcPath.find(g_databasePrefix) != std::string::npos) {
             MakeDirRecursive(srcPath.c_str(), DATABASE_FOLDER_FILE_MODE);
             /* Add S_ISGID mode and change group owner to DATABASE */
             chmod(srcPath.c_str(), DATABASE_FOLDER_FILE_MODE | S_ISGID);
             chown(srcPath.c_str(), appProperty->uid, DATABASE_DIR_GID);
+            SetSelinuxCondition(srcPath, appProperty);
         } else {
             APPSPAWN_LOGI("failed to access path: %s", srcPath.c_str());
         }
