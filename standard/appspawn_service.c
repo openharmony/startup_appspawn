@@ -321,16 +321,88 @@ static void SetInternetPermission(AppSpawnClientExt *appProperty)
     }
 }
 
+static void FreeHspList(AppSpawnClientExt *client)
+{
+    if (client != NULL && client->property.hspList.data != NULL) {
+        free(client->property.hspList.data);
+        client->property.hspList.totalLength = 0;
+        client->property.hspList.savedLength = 0;
+        client->property.hspList.data = NULL;
+    }
+}
+
+APPSPAWN_STATIC bool ReceiveRequestData(const TaskHandle taskHandle, AppSpawnClientExt *client,
+    const uint8_t *buffer, uint32_t buffLen)
+{
+    APPSPAWN_LOGI("ReceiveRequestData: buffLen=%u", buffLen);
+    APPSPAWN_CHECK(buffer != NULL && buffLen > 0, LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
+        return false, "ReceiveRequestData: Invalid buff");
+
+    // 1. receive AppParamter
+    if (client->property.hspList.totalLength == 0) {
+        APPSPAWN_CHECK(buffLen >= sizeof(client->property), LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
+            return false, "ReceiveRequestData: Invalid buffLen %u", buffLen);
+
+        int ret = memcpy_s(&client->property, sizeof(client->property), buffer, sizeof(client->property));
+        APPSPAWN_CHECK(ret == 0, LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
+            return false, "ReceiveRequestData: memcpy failed %d:%u", ret, buffLen);
+
+        // reset hspList
+        client->property.hspList.savedLength = 0;
+        client->property.hspList.data = NULL;
+
+        // update buffer
+        buffer += sizeof(client->property);
+        buffLen -= sizeof(client->property);
+    }
+
+    // 2. check whether hspList exist
+    if (client->property.hspList.totalLength == 0) { // no hspList
+        APPSPAWN_LOGI("ReceiveRequestData: no hspList");
+        return true;
+    } else if (buffLen == 0) {
+        APPSPAWN_LOGI("ReceiveRequestData: waiting for hspList");
+        return false;
+    }
+
+    // 3. save HspList
+    HspList *hspList = &client->property.hspList;
+    if (hspList->savedLength == 0) {
+        hspList->data = (char *)malloc(hspList->totalLength);
+        APPSPAWN_CHECK(hspList->data != NULL, LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
+            FreeHspList(client); return false, "ReceiveRequestData: malloc hspList failed");
+    }
+
+    uint32_t saved = hspList->savedLength;
+    uint32_t total = hspList->totalLength;
+    char *data = hspList->data;
+    APPSPAWN_LOGI("ReceiveRequestData: receiving hspList: (%u saved + %u incoming) / %u total", saved, buffLen, total);
+
+    APPSPAWN_CHECK((total - saved) >= buffLen, LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
+            FreeHspList(client); return false, "ReceiveRequestData: too many data for hspList %u ", buffLen);
+
+    int ret = memcpy_s(data + saved, buffLen, buffer, buffLen);
+    APPSPAWN_CHECK(ret == 0, LE_CloseTask(LE_GetDefaultLoop(), taskHandle); FreeHspList(client);
+            return false, "ReceiveRequestData: memcpy hspList failed");
+
+    hspList->savedLength += buffLen;
+    if (hspList->savedLength < hspList->totalLength) {
+        return false;
+    }
+
+    hspList->data[hspList->totalLength - 1] = 0;
+    return true;
+}
+
 static void OnReceiveRequest(const TaskHandle taskHandle, const uint8_t *buffer, uint32_t buffLen)
 {
-    APPSPAWN_CHECK(buffer != NULL && buffLen >= sizeof(AppParameter), LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
-        return, "Invalid buffLen %u", buffLen);
     AppSpawnClientExt *appProperty = (AppSpawnClientExt *)LE_GetUserData(taskHandle);
     APPSPAWN_CHECK(appProperty != NULL, LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
         return, "alloc client Failed");
 
-    int ret = memcpy_s(&appProperty->property, sizeof(appProperty->property), buffer, buffLen);
-    APPSPAWN_CHECK(ret == 0, LE_CloseTask(LE_GetDefaultLoop(), taskHandle); return, "Invalid buffLen %u", buffLen);
+    if (!ReceiveRequestData(taskHandle, appProperty, buffer, buffLen)) {
+        return;
+    }
 
 #ifdef NWEB_SPAWN
     // get render process termination status, only nwebspawn need this logic.
@@ -341,7 +413,7 @@ static void OnReceiveRequest(const TaskHandle taskHandle, const uint8_t *buffer,
 #endif
 
     APPSPAWN_CHECK(appProperty->property.gidCount <= APP_MAX_GIDS && strlen(appProperty->property.processName) > 0,
-        LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
+        LE_CloseTask(LE_GetDefaultLoop(), taskHandle); FreeHspList(appProperty);
         return, "Invalid property %u", appProperty->property.gidCount);
     // special handle bundle name medialibrary and scanner
     HandleSpecial(appProperty);
@@ -356,6 +428,7 @@ static void OnReceiveRequest(const TaskHandle taskHandle, const uint8_t *buffer,
     if (pipe(appProperty->fd) == -1) {
         APPSPAWN_LOGE("create pipe fail, errno = %d", errno);
         LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
+        FreeHspList(appProperty);
         return;
     }
 
@@ -383,6 +456,7 @@ static void OnReceiveRequest(const TaskHandle taskHandle, const uint8_t *buffer,
     } else {
         SendResponse(appProperty, (char *)&result, sizeof(result));
     }
+    FreeHspList(appProperty);
 }
 
 APPSPAWN_STATIC TaskHandle AcceptClient(const LoopHandle loopHandle, const TaskHandle server, uint32_t flags)
@@ -418,6 +492,9 @@ APPSPAWN_STATIC TaskHandle AcceptClient(const LoopHandle loopHandle, const TaskH
     client->client.flags = 0;
     client->setAllowInternet = 0;
     client->allowInternet = 1;
+    client->property.hspList.totalLength = 0;
+    client->property.hspList.savedLength = 0;
+    client->property.hspList.data = NULL;
     APPSPAWN_LOGI("OnConnection client fd %d Id %d", LE_GetSocketFd(stream), client->client.id);
     return stream;
 }

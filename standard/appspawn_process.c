@@ -228,7 +228,7 @@ static int32_t SetFileDescriptors(struct AppSpawnContent_ *content, AppSpawnClie
     return 0;
 }
 
-static void Free(char **argv)
+static void Free(char **argv, HspList *hspList)
 {
     argv[0] = NULL;
     for (int i = 0; i < NULL_INDEX; i++) {
@@ -238,6 +238,12 @@ static void Free(char **argv)
         }
     }
     free(argv);
+
+    if (hspList != NULL) {
+        hspList->totalLength = 0;
+        hspList->savedLength = 0;
+        hspList->data = NULL;
+    }
 }
 
 #ifdef ASAN_DETECTOR
@@ -310,6 +316,12 @@ static int ColdStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client
             appProperty->accessTokenId, appProperty->apl, appProperty->renderCmd);
         APPSPAWN_CHECK(len > 0 && (len < (originLen - startLen)), break, "Invalid to format processName");
         startLen += len;
+
+        len = sprintf_s(buffer, sizeof(buffer), "%u", appProperty->hspList.totalLength);
+        APPSPAWN_CHECK(len > 0 && len < sizeof(buffer), break, "Invalid hspList.totalLength");
+        argv[HSP_LIST_LEN_INDEX] = strdup(buffer);
+        argv[HSP_LIST_INDEX] = appProperty->hspList.data;
+
         ret = 0;
     } while (0);
 
@@ -324,7 +336,7 @@ static int ColdStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client
             APPSPAWN_LOGE("Failed to execv, errno = %d", errno);
         }
     }
-    Free(argv);
+    Free(argv, &appProperty->hspList);
     return ret;
 }
 
@@ -386,6 +398,22 @@ int GetAppSpawnClientFromArg(int argc, char *const argv[], AppSpawnClientExt *cl
     APPSPAWN_CHECK(start != NULL, return -1, "Failed to get renderCmd");
     ret = strcpy_s(client->property.renderCmd, sizeof(client->property.renderCmd), start);
     APPSPAWN_CHECK(ret == 0, return -1, "Failed to strcpy renderCmd");
+
+    if (argc > HSP_LIST_LEN_INDEX) {
+        APPSPAWN_CHECK(argv[HSP_LIST_LEN_INDEX] != NULL, return -1, "Invalid HspList length");
+        client->property.hspList.totalLength = atoi(argv[HSP_LIST_LEN_INDEX]);
+    } else {
+        client->property.hspList.totalLength = 0;
+    }
+    client->property.hspList.data = NULL;
+
+    if (client->property.hspList.totalLength > 0) {
+        APPSPAWN_CHECK(argc > HSP_LIST_INDEX && argv[HSP_LIST_INDEX] != NULL, return -1, "Invalid argv for HspList");
+        client->property.hspList.data = malloc(client->property.hspList.totalLength);
+        APPSPAWN_CHECK(client->property.hspList.data != NULL, return -1, "Failed to malloc hspList.data");
+        ret = strcpy_s(client->property.hspList.data, client->property.hspList.totalLength, argv[HSP_LIST_INDEX]);
+        APPSPAWN_CHECK(ret == 0, return -1, "Failed to strcpy hspList.data");
+    }
 
     return 0;
 }
