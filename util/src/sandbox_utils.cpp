@@ -50,6 +50,7 @@ namespace {
     constexpr std::string_view APL_SYSTEM_BASIC("system_basic");
     const std::string g_packageItems[] = {{"cache"}, {"files"}, {"temp"}, {"preferences"}, {"haps"}};
     const std::string g_physicalAppInstallPath = "/data/app/el1/bundle/public/";
+    const std::string g_sandboxHspInstallPath = "/data/storage/el1/bundle/";
     const std::string g_sandBoxAppInstallPath = "/data/accounts/account_0/applications/";
     const std::string g_dataBundles = "/data/bundles/";
     const std::string g_userId = "<currentUserId>";
@@ -60,6 +61,9 @@ namespace {
     const std::string g_sbxSwitchCheck = "ON";
     const std::string g_dlpBundleName = "com.ohos.dlpmanager";
     const std::string g_internal = "__internal__";
+    const std::string g_hspList_key_bundles = "bundles";
+    const std::string g_hspList_key_modules = "modules";
+    const std::string g_hspList_key_versions = "versions";
     const char *g_actionStatuc = "check-action-status";
     const char *g_accountPrefix = "/account/data/";
     const char *g_accountNonPrefix = "/non_account/data/";
@@ -779,6 +783,9 @@ int32_t SandboxUtils::SetCommonAppSandboxProperty(const ClientSocket::AppPropert
     ret = SetCommonAppSandboxProperty_(appProperty, productConfig);
     APPSPAWN_CHECK(ret == 0, return ret, "parse product config for common failed, %s", sandboxPackagePath.c_str());
 
+    ret = MountAllHsp(appProperty, sandboxPackagePath);
+    APPSPAWN_CHECK(ret == 0, return ret, "mount hspList failed, %s", sandboxPackagePath.c_str());
+
     if (strcmp(appProperty->apl, APL_SYSTEM_BASIC.data()) == 0 ||
         strcmp(appProperty->apl, APL_SYSTEM_CORE.data()) == 0) {
         // need permission check for system app here
@@ -788,6 +795,48 @@ int32_t SandboxUtils::SetCommonAppSandboxProperty(const ClientSocket::AppPropert
     }
 
     return 0;
+}
+
+static inline bool CheckPath(const std::string& name)
+{
+    return !name.empty() && name != "." && name != ".." && name.find("/") == std::string::npos;
+}
+
+int32_t SandboxUtils::MountAllHsp(const ClientSocket::AppProperty *appProperty, std::string &sandboxPackagePath)
+{
+    int ret = 0;
+    if (appProperty->hspList.totalLength == 0 || appProperty->hspList.data == nullptr) {
+        return ret;
+    }
+
+    nlohmann::json hsps = nlohmann::json::parse(appProperty->hspList.data, nullptr, false);
+    APPSPAWN_CHECK(!hsps.is_discarded() && hsps.contains(g_hspList_key_bundles) && hsps.contains(g_hspList_key_modules)
+        && hsps.contains(g_hspList_key_versions), return -1, "MountAllHsp: json parse failed");
+
+    nlohmann::json& bundles = hsps[g_hspList_key_bundles];
+    nlohmann::json& modules = hsps[g_hspList_key_modules];
+    nlohmann::json& versions = hsps[g_hspList_key_versions];
+    APPSPAWN_CHECK(bundles.is_array() && modules.is_array() && versions.is_array() && bundles.size() == modules.size()
+        && bundles.size() == versions.size(), return -1, "MountAllHsp: value is not arrary or sizes are not same");
+
+    APPSPAWN_LOGI("MountAllHsp: app = %s, cnt = %u", appProperty->bundleName, bundles.size());
+    for (uint32_t i = 0; i < bundles.size(); i++) {
+        // elements in json arrary can be different type
+        APPSPAWN_CHECK(bundles[i].is_string() && modules[i].is_string() && versions[i].is_string(),
+            return -1, "MountAllHsp: element type error");
+
+        std::string libBundleName = bundles[i];
+        std::string libModuleName = modules[i];
+        std::string libVersion = versions[i];
+        APPSPAWN_CHECK(CheckPath(libBundleName) && CheckPath(libModuleName) && CheckPath(libVersion),
+            return -1, "MountAllHsp: path error");
+
+        std::string libPhysicalPath = g_physicalAppInstallPath + libBundleName + "/" + libVersion + "/" + libModuleName;
+        std::string mntPath =  sandboxPackagePath + g_sandboxHspInstallPath + libBundleName + "/" + libModuleName;
+        ret = DoAppSandboxMountOnce(libPhysicalPath.c_str(), mntPath.c_str(), "", BASIC_MOUNT_FLAGS, nullptr);
+        APPSPAWN_CHECK(ret == 0, return ret, "mount library failed %d", ret);
+    }
+    return ret;
 }
 
 int32_t SandboxUtils::DoSandboxRootFolderCreateAdapt(std::string &sandboxPackagePath)
