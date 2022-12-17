@@ -24,7 +24,7 @@
 
 void LoadExtendLib(AppSpawnContent *content)
 {
-#ifdef __aarch64__
+#if defined (__aarch64__) || defined (__x86_64__)
     const char *acelibdir("/system/lib64/libace.z.so");
 #else
     const char *acelibdir("/system/lib/libace.z.so");
