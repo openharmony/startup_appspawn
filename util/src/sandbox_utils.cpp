@@ -722,7 +722,10 @@ int32_t SandboxUtils::SetRenderSandboxProperty(const ClientSocket::AppProperty *
         APPSPAWN_CHECK(ret == 0, return ret, "DoAllMntPointsMount failed, %s",
             appProperty->bundleName);
         ret = DoAllSymlinkPointslink(appProperty, privateAppConfig[g_ohosRender][0]);
-        APPSPAWN_CHECK(ret == 0, return ret, "DoAllSymlinkPointslink  failed, %s",
+        APPSPAWN_CHECK(ret == 0, return ret, "DoAllSymlinkPointslink failed, %s",
+            appProperty->bundleName);
+        ret = HandleFlagsPoint(appProperty, privateAppConfig[g_ohosRender][0]);
+        APPSPAWN_CHECK_ONLY_LOG(ret == 0, "HandleFlagsPoint for render-sandbox failed, %s",
             appProperty->bundleName);
     }
 #endif
