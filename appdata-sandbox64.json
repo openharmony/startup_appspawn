@@ -417,7 +417,7 @@
                     "check-action-status": "false"
                 }
             ],
-            "symbol-links" : [ {
+            "symbol-links" : [{
                     "target-name" : "/system/etc",
                     "link-name" : "/etc",
                     "check-action-status": "false"
@@ -434,7 +434,18 @@
                     "link-name" : "/lib64",
                     "check-action-status": "false"
                 }
-            ]
+            ],
+            "flags-point" : [{
+                "flags": "DLP_MANAGER",
+                "sandbox-root" : "/mnt/sandbox/com.ohos.render/<PackageName>",
+                "mount-paths" : [{
+                    "src-path" : "/data/app/el2/<currentUserId>/base/<PackageName_index>",
+                    "sandbox-path" : "/data/storage/el2/base",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }],
+                "symbol-links" : [{}]
+            }]
         }]
     }]
 }
