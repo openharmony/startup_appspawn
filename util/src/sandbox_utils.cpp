@@ -341,7 +341,7 @@ static bool CheckMountConfig(nlohmann::json &mntPoint, const ClientSocket::AppPr
     APPSPAWN_CHECK(!istrue, return false, "read mount config failed, app name is %s", appProperty->bundleName);
 
     if (mntPoint[g_appAplName] != nullptr) {
-        std::string app_apl_name = mntPoint[g_appAplName];
+        std::string app_apl_name = mntPoint[g_appAplName].get<std::string>();
         const char *p_app_apl = nullptr;
         p_app_apl = app_apl_name.c_str();
         if (!strcmp(p_app_apl, appProperty->apl)) {
