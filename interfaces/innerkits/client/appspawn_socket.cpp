@@ -16,6 +16,8 @@
 #include "appspawn_socket.h"
 
 #include <sys/socket.h>
+#include <linux/tcp.h>
+#include <linux/in.h>
 #include <cerrno>
 
 #include "appspawn_server.h"
@@ -79,7 +81,9 @@ int AppSpawnSocket::CreateSocket()
     int socketFd = socket(AF_UNIX, SOCK_STREAM, 0); // SOCK_SEQPACKET
     APPSPAWN_CHECK(socketFd >= 0, return -errno, "Failed to create socket: %d", errno);
 
-    APPSPAWN_LOGV("Created socket with fd %d", socketFd);
+    int flag = 1;
+    int ret = setsockopt(socketFd, IPPROTO_TCP, TCP_NODELAY, (char *)&flag, sizeof(int));
+    APPSPAWN_LOGV("Created socket with fd %d, setsockopt %d", socketFd, ret);
     return socketFd;
 }
 
@@ -87,6 +91,8 @@ void AppSpawnSocket::CloseSocket(int &socketFd)
 {
     if (socketFd >= 0) {
         APPSPAWN_LOGV("Closed socket with fd %d", socketFd);
+        int flag = 0;
+        setsockopt(socketFd, IPPROTO_TCP, TCP_NODELAY, (char *)&flag, sizeof(int));
         close(socketFd);
         socketFd = -1;
     }

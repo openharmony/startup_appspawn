@@ -43,6 +43,8 @@ using nlohmann::json;
     extern "C" {
 #endif
 TaskHandle AcceptClient(const LoopHandle loopHandle, const TaskHandle server, uint32_t flags);
+bool ReceiveRequestData(const TaskHandle taskHandle, AppSpawnClientExt *appProperty,
+    const uint8_t *buffer, uint32_t buffLen);
 void AddAppInfo(pid_t pid, const char *processName);
 void ProcessTimer(const TimerHandle taskHandle, void *context);
 void SignalHandler(const struct signalfd_siginfo *siginfo);
@@ -75,6 +77,15 @@ int32_t TestSetAppSandboxProperty(struct AppSpawnContent_ *content, AppSpawnClie
 {
     return 0;
 }
+
+static void FreeHspList(HspList &hspList)
+{
+    if (hspList.data != nullptr) {
+        free(hspList.data);
+    }
+    hspList = {};
+}
+
 /**
 * @tc.name: App_Spawn_Standard_002
 * @tc.desc: fork app son process and set content.
@@ -112,6 +123,7 @@ HWTEST(AppSpawnStandardTest, App_Spawn_Standard_002, TestSize.Level0)
     if (strcpy_s(client->property.renderCmd, APP_RENDER_CMD_MAX_LEN, "xxx") != 0) {
         GTEST_LOG_(INFO) << "strcpy_s failed";
     }
+    client->property.hspList = {0, 0, NULL};
 
     AppSpawnContent *content = AppSpawnCreateContent("AppSpawn", longProcName, longProcNameLen, 1);
     content->loadExtendLib = LoadExtendLib;
@@ -183,6 +195,97 @@ HWTEST(AppSpawnStandardTest, App_Spawn_Standard_003, TestSize.Level0)
     EXPECT_EQ(GetAppSpawnClientFromArg(argc, argv, client), -1);
     free(client);
     GTEST_LOG_(INFO) << "App_Spawn_Standard_003 end";
+}
+
+/**
+* @tc.name: App_Spawn_Standard_003_1
+* @tc.desc:  Verify set Arg if GetAppSpawnClient succeed, with HspList
+* @tc.type: FUNC
+* @tc.require:issueI6798L
+* @tc.author:
+*/
+HWTEST(AppSpawnStandardTest, App_Spawn_Standard_003_1, TestSize.Level0)
+{
+    GTEST_LOG_(INFO) << "App_Spawn_Standard_003_1 start";
+    AppSpawnClientExt client = {};
+    char arg1[] = "/system/bin/appspawn";
+    char arg2[] = "cold-start";
+    char arg3[] = "1";
+    {
+        char arg4[] = "1:1:1:1:2:1000:1000:ohos.samples:ohos.samples.ecg:default:671201800:system_core:default";
+        char arg5[] = "10";
+        char arg6[] = "012345678";
+        char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6};
+        int argc = sizeof(argv)/sizeof(argv[0]);
+        EXPECT_EQ(0, GetAppSpawnClientFromArg(argc, argv, &client));
+        FreeHspList(client.property.hspList);
+    }
+    { // hsp length is 0
+        char arg4[] = "1:1:1:1:2:1000:1000:ohos.samples:ohos.samples.ecg:default:671201800:system_core:default";
+        char arg5[] = "0";
+        char* argv[] = {arg1, arg2, arg3, arg4, arg5, nullptr};
+        int argc = sizeof(argv)/sizeof(argv[0]);
+        EXPECT_EQ(0, GetAppSpawnClientFromArg(argc, argv, &client));
+    }
+    { // hsp length is null
+        char arg4[] = "1:1:1:1:2:1000:1000:ohos.samples:ohos.samples.ecg:default:671201800:system_core:default";
+        char arg6[] = "0123456789";
+        char* argv[] = {arg1, arg2, arg3, arg4, nullptr, arg6};
+        int argc = sizeof(argv)/sizeof(argv[0]);
+        EXPECT_EQ(-1, GetAppSpawnClientFromArg(argc, argv, &client));
+    }
+    { // hsp length is non-zero, but argc is 5
+        char arg4[] = "1:1:1:1:2:1000:1000:ohos.samples:ohos.samples.ecg:default:671201800:system_core:default";
+        char arg5[] = "10";
+        char* argv[] = {arg1, arg2, arg3, arg4, arg5};
+        int argc = sizeof(argv)/sizeof(argv[0]);
+        EXPECT_EQ(-1, GetAppSpawnClientFromArg(argc, argv, &client));
+    }
+    { // hsp length is non-zero, but content is null
+        char arg4[] = "1:1:1:1:2:1000:1000:ohos.samples:ohos.samples.ecg:default:671201800:system_core:default";
+        char arg5[] = "10";
+        char* argv[] = {arg1, arg2, arg3, arg4, arg5, nullptr};
+        int argc = sizeof(argv)/sizeof(argv[0]);
+        EXPECT_EQ(-1, GetAppSpawnClientFromArg(argc, argv, &client));
+    }
+
+    GTEST_LOG_(INFO) << "App_Spawn_Standard_003_1 end";
+}
+
+/**
+* @tc.name: App_Spawn_Standard_003_2
+* @tc.desc:  Verify set Arg if GetAppSpawnClient succeed, wrong HspList length
+* @tc.type: FUNC
+* @tc.require:issueI6798L
+* @tc.author:
+*/
+HWTEST(AppSpawnStandardTest, App_Spawn_Standard_003_2, TestSize.Level0)
+{
+    GTEST_LOG_(INFO) << "App_Spawn_Standard_003_2 start";
+    AppSpawnClientExt client = {};
+    char arg1[] = "/system/bin/appspawn";
+    char arg2[] = "cold-start";
+    char arg3[] = "1";
+    { // actual data is shorter than totalLength
+        char arg4[] = "1:1:1:1:2:1000:1000:ohos.samples:ohos.samples.ecg:default:671201800:system_core:default";
+        char arg5[] = "10";
+        char arg6[] = "01234";
+        char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6};
+        int argc = sizeof(argv)/sizeof(argv[0]);
+        EXPECT_EQ(0, GetAppSpawnClientFromArg(argc, argv, &client));
+        FreeHspList(client.property.hspList);
+    }
+    { // actual data is longer than totalLength
+        char arg4[] = "1:1:1:1:2:1000:1000:ohos.samples:ohos.samples.ecg:default:671201800:system_core:default";
+        char arg5[] = "5";
+        char arg6[] = "0123456789";
+        char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6};
+        int argc = sizeof(argv)/sizeof(argv[0]);
+        EXPECT_EQ(-1, GetAppSpawnClientFromArg(argc, argv, &client));
+        FreeHspList(client.property.hspList);
+    }
+
+    GTEST_LOG_(INFO) << "App_Spawn_Standard_003_2 end";
 }
 
 /**
@@ -471,6 +574,170 @@ HWTEST(AppSpawnStandardTest, App_Spawn_Standard_07, TestSize.Level0)
     APPSPAWN_LOGI("App timeused %d %lld ns.", getpid(), diff);
 
     GTEST_LOG_(INFO) << "App_Spawn_Standard_07 end";
+}
+
+/**
+* @tc.name: App_Spawn_Standard_08
+* @tc.desc: verify receive hspList
+* @tc.type: FUNC
+* @tc.require:issueI6798L
+* @tc.author:
+*/
+HWTEST(AppSpawnStandardTest, App_Spawn_Standard_08, TestSize.Level0)
+{
+    GTEST_LOG_(INFO) << "App_Spawn_Standard_08 start";
+    AppSpawnClientExt client = {};
+    AppParameter param = {};
+    { // buff is null
+        bool ret = ReceiveRequestData(nullptr, &client, nullptr, sizeof(param));
+        EXPECT_FALSE(ret);
+    }
+    { // buffLen is 0
+        bool ret = ReceiveRequestData(nullptr, &client, (uint8_t *)&param, 0);
+        EXPECT_FALSE(ret);
+    }
+    { // buffLen < sizeof(AppParameter)
+        bool ret = ReceiveRequestData(nullptr, &client, (uint8_t *)&param, sizeof(param) - 1);
+        EXPECT_FALSE(ret);
+    }
+    { // no HspList
+        bool ret = ReceiveRequestData(nullptr, &client, (uint8_t *)&param, sizeof(param));
+        EXPECT_TRUE(ret);
+    }
+    GTEST_LOG_(INFO) << "App_Spawn_Standard_08 end";
+}
+
+/**
+* @tc.name: App_Spawn_Standard_08_1
+* @tc.desc: receive AppParameter and HspList separately
+* @tc.type: FUNC
+* @tc.require:issueI6798L
+* @tc.author:
+*/
+HWTEST(AppSpawnStandardTest, App_Spawn_Standard_08_1, TestSize.Level0)
+{
+    GTEST_LOG_(INFO) << "App_Spawn_Standard_08_1 start";
+    AppSpawnClientExt client = {};
+    AppParameter param = {};
+
+    // send AppParameter
+    char hspListStr[] = "01234";
+    param.hspList = {sizeof(hspListStr), 0, nullptr};
+    bool ret = ReceiveRequestData(nullptr, &client, (uint8_t *)&param, sizeof(param));
+    EXPECT_FALSE(ret);
+
+    // send HspList
+    ret = ReceiveRequestData(nullptr, &client, (uint8_t *)hspListStr, sizeof(hspListStr));
+    EXPECT_TRUE(ret);
+    EXPECT_EQ(0, strcmp(hspListStr, client.property.hspList.data));
+
+    FreeHspList(client.property.hspList);
+    GTEST_LOG_(INFO) << "App_Spawn_Standard_08_1 end";
+}
+
+/**
+* @tc.name: App_Spawn_Standard_08_2
+* @tc.desc: receive AppParameter and HspList together
+* @tc.type: FUNC
+* @tc.require:issueI6798L
+* @tc.author:
+*/
+HWTEST(AppSpawnStandardTest, App_Spawn_Standard_08_2, TestSize.Level0)
+{
+    GTEST_LOG_(INFO) << "App_Spawn_Standard_08_2 start";
+    AppSpawnClientExt client = {};
+    AppParameter param = {};
+
+    // put AppParameter and HspList together
+    char hspListStr[] = "01234";
+    char buff[sizeof(param) + sizeof(hspListStr)];
+    param.hspList = {sizeof(hspListStr), 0, nullptr};
+    int res = memcpy_s(buff, sizeof(param), (void *)&param, sizeof(param));
+    EXPECT_EQ(0, res);
+    res = memcpy_s(buff + sizeof(param), sizeof(hspListStr), (void *)hspListStr, sizeof(hspListStr));
+    EXPECT_EQ(0, res);
+
+    // send
+    bool ret = ReceiveRequestData(nullptr, &client, (uint8_t *)buff, sizeof(buff));
+    EXPECT_TRUE(ret);
+    EXPECT_EQ(0, strcmp(hspListStr, client.property.hspList.data));
+
+    FreeHspList(client.property.hspList);
+    GTEST_LOG_(INFO) << "App_Spawn_Standard_08_2 end";
+}
+
+/**
+* @tc.name: App_Spawn_Standard_08_3
+* @tc.desc: receive AppParameter and part of HspList
+* @tc.type: FUNC
+* @tc.require:issueI6798L
+* @tc.author:
+*/
+HWTEST(AppSpawnStandardTest, App_Spawn_Standard_08_3, TestSize.Level0)
+{
+    GTEST_LOG_(INFO) << "App_Spawn_Standard_08_3 start";
+    AppSpawnClientExt client = {};
+    AppParameter param = {};
+    const uint32_t splitLen = 3;
+
+    // put AppParameter and part of HspList together
+    char hspListStr[] = "0123456789";
+    char buff[sizeof(param) + splitLen];
+    param.hspList = {sizeof(hspListStr), 0, hspListStr};
+    int res = memcpy_s(buff, sizeof(param), (void *)&param, sizeof(param));
+    EXPECT_EQ(0, res);
+    res = memcpy_s(buff + sizeof(param), splitLen, (void *)hspListStr, splitLen);
+    EXPECT_EQ(0, res);
+
+    // send AppParameter and part of HspList
+    bool ret = ReceiveRequestData(nullptr, &client, (uint8_t *)buff, sizeof(buff));
+    EXPECT_FALSE(ret);
+
+    // send left HspList
+    ret = ReceiveRequestData(nullptr, &client, (uint8_t *)hspListStr + splitLen, sizeof(hspListStr) - splitLen);
+    EXPECT_TRUE(ret);
+    EXPECT_EQ(0, strcmp(hspListStr, client.property.hspList.data));
+
+    FreeHspList(client.property.hspList);
+    GTEST_LOG_(INFO) << "App_Spawn_Standard_08_3 end";
+}
+
+/**
+* @tc.name: App_Spawn_Standard_08_4
+* @tc.desc: receive AppParameter and splited HspList
+* @tc.type: FUNC
+* @tc.require:issueI6798L
+* @tc.author:
+*/
+HWTEST(AppSpawnStandardTest, App_Spawn_Standard_08_4, TestSize.Level0)
+{
+    GTEST_LOG_(INFO) << "App_Spawn_Standard_08_4 start";
+    AppSpawnClientExt client = {};
+    AppParameter param = {};
+    const uint32_t splitLen = 3;
+    uint32_t sentLen = 0;
+
+    // send AppParameter
+    char hspListStr[] = "0123456789";
+    param.hspList = {sizeof(hspListStr), 0, nullptr};
+    bool ret = ReceiveRequestData(nullptr, &client, (uint8_t *)&param, sizeof(param));
+    EXPECT_FALSE(ret);
+
+    // send splited HspList
+    ret = ReceiveRequestData(nullptr, &client, (uint8_t *)hspListStr + sentLen, splitLen);
+    sentLen += splitLen;
+    EXPECT_FALSE(ret);
+
+    ret = ReceiveRequestData(nullptr, &client, (uint8_t *)hspListStr + sentLen, splitLen);
+    sentLen += splitLen;
+    EXPECT_FALSE(ret);
+
+    ret = ReceiveRequestData(nullptr, &client, (uint8_t *)hspListStr + sentLen, sizeof(hspListStr) - sentLen);
+    EXPECT_TRUE(ret);
+    EXPECT_EQ(0, strcmp(hspListStr, client.property.hspList.data));
+
+    FreeHspList(client.property.hspList);
+    GTEST_LOG_(INFO) << "App_Spawn_Standard_08_4 end";
 }
 
 HWTEST(AppSpawnStandardTest, App_Spawn_Standard_ReportEvent, TestSize.Level0)

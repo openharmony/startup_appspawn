@@ -54,6 +54,7 @@ private:
     static int32_t SetPrivateAppSandboxProperty(const ClientSocket::AppProperty *appProperty);
     static int32_t SetCommonAppSandboxProperty(const ClientSocket::AppProperty *appProperty,
                                                       std::string &sandboxPackagePath);
+    static int32_t MountAllHsp(const ClientSocket::AppProperty *appProperty, std::string &sandboxPackagePath);
     static int32_t DoSandboxRootFolderCreateAdapt(std::string &sandboxPackagePath);
     static int32_t DoSandboxRootFolderCreate(const ClientSocket::AppProperty *appProperty,
                                              std::string &sandboxPackagePath);
