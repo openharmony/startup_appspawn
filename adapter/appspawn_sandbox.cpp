@@ -59,6 +59,11 @@ int32_t SetAppSandboxProperty(struct AppSpawnContent_ *content, AppSpawnClient *
     AppSpawnClientExt *appProperty = reinterpret_cast<AppSpawnClientExt *>(client);
     appProperty->property.cloneFlags = client->cloneFlags;
     int ret = SandboxUtils::SetAppSandboxProperty(&appProperty->property);
+    // free HspList
+    if (appProperty->property.hspList.data != nullptr) {
+        free(appProperty->property.hspList.data);
+        appProperty->property.hspList = {};
+    }
     // for module test do not create sandbox
     if (strncmp(appProperty->property.bundleName,
         MODULE_TEST_BUNDLE_NAME.c_str(), MODULE_TEST_BUNDLE_NAME.size()) == 0) {
