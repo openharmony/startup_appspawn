@@ -66,5 +66,5 @@ int main(int argc, char *const argv[])
     SystemSetParameter("bootevent.appspawn.started", "true");
     content->runAppSpawn(content, argc, argv);
 
-    return 0;
+    _Exit(0);
 }
