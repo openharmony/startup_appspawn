@@ -30,11 +30,7 @@ static const bool DEFAULT_PRELOAD_VALUE = true;
 
 void LoadExtendLib(AppSpawnContent *content)
 {
-#if defined (__aarch64__) || defined (__x86_64__)
-    const char *acelibdir("/system/lib64/libace.z.so");
-#else
-    const char *acelibdir("/system/lib/libace.z.so");
-#endif
+    const char *acelibdir("libace.z.so");
     APPSPAWN_LOGI("LoadExtendLib: Start calling dlopen acelibdir.");
     void *aceAbilityLib = NULL;
     aceAbilityLib = dlopen(acelibdir, RTLD_NOW | RTLD_GLOBAL);
