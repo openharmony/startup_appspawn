@@ -36,8 +36,10 @@ namespace {
 
 void LoadExtendLib(AppSpawnContent *content)
 {
-#ifdef webview_arm64
+#if defined(webview_arm64)
     const std::string loadLibDir = "/data/app/el1/bundle/public/com.ohos.nweb/libs/arm64";
+#elif defined(webview_x86_64)
+    const std::string loadLibDir = "/data/app/el1/bundle/public/com.ohos.nweb/libs/x86_64";
 #else
     const std::string loadLibDir = "/data/app/el1/bundle/public/com.ohos.nweb/libs/arm";
 #endif
