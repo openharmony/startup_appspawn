@@ -171,6 +171,9 @@ ohos_executable("nwebspawn") {
   if (target_cpu == "arm64") {
     defines += [ "webview_arm64" ]
   }
+  if (target_cpu == "x86_64") {
+    defines += [ "webview_x86_64" ]
+  }
   sources = [
     "${appspawn_path}/adapter/appspawn_nweb.cpp",
     "${appspawn_path}/standard/main.c",
