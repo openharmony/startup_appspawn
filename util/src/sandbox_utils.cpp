@@ -187,7 +187,7 @@ static void MakeDirRecursive(const std::string &path, mode_t mode)
         std::string dir = path.substr(0, index);
 #ifndef APPSPAWN_TEST
         APPSPAWN_CHECK(!(access(dir.c_str(), F_OK) < 0 && mkdir(dir.c_str(), mode) < 0),
-            return, "mkdir %s failed, error is %d", dir.c_str(), errno);
+            return, "error is %d, mkdir %s failed", errno, dir.c_str());
 #endif
     } while (index < size);
 }
@@ -202,10 +202,10 @@ int32_t SandboxUtils::DoAppSandboxMountOnce(const char *originPath, const char *
     int ret = 0;
     // to mount fs and bind mount files or directory
     ret = mount(originPath, destinationPath, fsType, mountFlags, options);
-    APPSPAWN_CHECK(ret == 0, return ret,  "bind mount %s to %s failed %d, just DEBUG MESSAGE here",
-                   originPath, destinationPath, errno);
+    APPSPAWN_CHECK(ret == 0, return ret,  "errno is: %d, bind mount %s to %s failed, just DEBUG MESSAGE here",
+                   errno, originPath, destinationPath);
     ret = mount(NULL, destinationPath, NULL, MS_PRIVATE, NULL);
-    APPSPAWN_CHECK(ret == 0, return ret, "private mount to %s failed %d", destinationPath, errno);
+    APPSPAWN_CHECK(ret == 0, return ret, "errno is: %d, private mount to %s failed", errno, destinationPath);
 #endif
     return 0;
 }
@@ -391,7 +391,7 @@ static int32_t DoDlpAppMountStrategy(const ClientSocket::AppProperty *appPropert
         "failed %d", srcPath.c_str(), sandboxPath.c_str(), errno);
 
     ret = mount(NULL, sandboxPath.c_str(), NULL, MS_PRIVATE, NULL);
-    APPSPAWN_CHECK(ret == 0, return ret, "private mount to %s failed %d", sandboxPath.c_str(), errno);
+    APPSPAWN_CHECK(ret == 0, return ret, "errno is: %d, private mount to %s failed", errno, sandboxPath.c_str());
 #endif
     /* close DLP_FUSE_FD and dup FD to it */
     close(DLP_FUSE_FD);
@@ -572,7 +572,7 @@ int SandboxUtils::DoAllSymlinkPointslink(const ClientSocket::AppProperty *appPro
 
         int ret = symlink(targetName.c_str(), linkName.c_str());
         if (ret && errno != EEXIST) {
-            APPSPAWN_LOGE("symlink failed, %s, errno is %d", linkName.c_str(), errno);
+            APPSPAWN_LOGE("errno is %d, symlink failed, %s", errno, linkName.c_str());
 
             std::string actionStatus = g_statusCheck;
             (void)JsonUtils::GetStringFromJson(symPoint, g_actionStatuc, actionStatus);
@@ -974,8 +974,8 @@ int32_t SandboxUtils::SetAppSandboxProperty(const ClientSocket::AppProperty *app
         bundleName.c_str(), sandboxPackagePath.c_str());
 
     rc = syscall(SYS_pivot_root, sandboxPackagePath.c_str(), sandboxPackagePath.c_str());
-    APPSPAWN_CHECK(rc == 0, return rc, "pivot root failed, packagename is %s, errno is %d",
-        bundleName.c_str(), errno);
+    APPSPAWN_CHECK(rc == 0, return rc, "errno is %d, pivot root failed, packagename is %s",
+        errno, bundleName.c_str());
 
     rc = umount2(".", MNT_DETACH);
     APPSPAWN_CHECK(rc == 0, return rc, "MNT_DETACH failed, packagename is %s", bundleName.c_str());
