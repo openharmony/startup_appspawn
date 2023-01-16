@@ -176,6 +176,11 @@
                     "sandbox-path" : "/data/storage/el1/bundle/ohos.global.systemres.overlay",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
+                }, {
+                    "src-path" : "/data/misc",
+                    "sandbox-path" : "/data/storage/el1/bundle/misc",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
                 }
             ],
 	    "flags-point" : [{
