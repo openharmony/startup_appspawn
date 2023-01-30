@@ -16,12 +16,15 @@
 #include <dlfcn.h>
 
 #include <algorithm>
-#include <cerrno>
 #include <ctime>
-#include <dlfcn_ext.h>
 #include <map>
 #include <string>
+
+#ifdef __MUSL__
+#include <dlfcn_ext.h>
+#include <cerrno>
 #include <sys/mman.h>
+#endif
 
 #include "appspawn_service.h"
 #include "appspawn_adapter.h"
