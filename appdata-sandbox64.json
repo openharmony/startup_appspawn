@@ -285,6 +285,18 @@
             ],
             "symbol-links" : []
         }],
+        "com.ohos.systemui" : [{
+            "sandbox-switch": "ON",
+            "sandbox-root" : "/mnt/sandbox/<PackageName>",
+            "mount-paths" : [{
+                    "src-path" : "/data/app/el1/bundle/public/",
+                    "sandbox-path" : "/data/app/el1/bundle/public/",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "true"
+                }
+            ],
+            "symbol-links" : []
+        }],
         "com.ohos.permissionmanager" : [{
             "sandbox-switch": "ON",
             "sandbox-root" : "/mnt/sandbox/<PackageName>",
