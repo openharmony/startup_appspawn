@@ -20,12 +20,6 @@
 #include <map>
 #include <string>
 
-#ifdef __MUSL__
-#include <dlfcn_ext.h>
-#include <cerrno>
-#include <sys/mman.h>
-#endif
-
 #include "appspawn_service.h"
 #include "appspawn_adapter.h"
 struct RenderProcessNode {
@@ -39,54 +33,6 @@ namespace {
     std::map<int32_t, RenderProcessNode> g_renderProcessMap;
     void *g_nwebHandle = nullptr;
 }
-
-#ifdef __MUSL__
-void *LoadWithRelroFile(const std::string &lib, const std::string &nsName,
-                        const std::string &nsPath)
-{
-#ifdef webview_arm64
-    const std::string nwebRelroPath =
-        "/data/misc/shared_relro/libwebviewchromium64.relro";
-    size_t nwebReservedSize = 1 * 1024 * 1024 * 1024;
-#else
-    const std::string nwebRelroPath =
-        "/data/misc/shared_relro/libwebviewchromium32.relro";
-    size_t nwebReservedSize = 130 * 1024 * 1024;
-#endif
-    if (unlink(nwebRelroPath.c_str()) != 0 && errno != ENOENT) {
-        APPSPAWN_LOGI("LoadWithRelroFile unlink failed");
-    }
-    int relroFd =
-        open(nwebRelroPath.c_str(), O_RDWR | O_TRUNC | O_CLOEXEC | O_CREAT);
-    if (relroFd < 0) {
-        int tmpNo = errno;
-        APPSPAWN_LOGE("LoadWithRelroFile open failed, error=[%s]", strerror(tmpNo));
-        return nullptr;
-    }
-    void *nwebReservedAddress = mmap(NULL, nwebReservedSize, PROT_NONE,
-                                     MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-    if (nwebReservedAddress == MAP_FAILED) {
-        close(relroFd);
-        int tmpNo = errno;
-        APPSPAWN_LOGE("LoadWithRelroFile mmap failed, error=[%s]", strerror(tmpNo));
-        return nullptr;
-    }
-    Dl_namespace dlns;
-    dlns_init(&dlns, nsName.c_str());
-    dlns_create(&dlns, nsPath.c_str());
-    dl_extinfo extinfo = {
-        .flag = DL_EXT_WRITE_RELRO | DL_EXT_RESERVED_ADDRESS_RECURSIVE |
-                DL_EXT_RESERVED_ADDRESS,
-        .relro_fd = relroFd,
-        .reserved_addr = nwebReservedAddress,
-        .reserved_size = nwebReservedSize,
-    };
-    void *result =
-        dlopen_ns_ext(&dlns, lib.c_str(), RTLD_NOW | RTLD_GLOBAL, &extinfo);
-    close(relroFd);
-    return result;
-}
-#endif
 
 void LoadExtendLib(AppSpawnContent *content)
 {
@@ -102,11 +48,7 @@ void LoadExtendLib(AppSpawnContent *content)
     Dl_namespace dlns;
     dlns_init(&dlns, "nweb_ns");
     dlns_create(&dlns, loadLibDir.c_str());
-    void *handle = LoadWithRelroFile("libweb_engine.so", "nweb_ns", loadLibDir);
-    if (handle == nullptr) {
-        APPSPAWN_LOGE("dlopen_ns_ext failed, fallback to dlopen_ns");
-        handle = dlopen_ns(&dlns, "libweb_engine.so", RTLD_NOW | RTLD_GLOBAL);
-    }
+    void *handle = dlopen_ns(&dlns, "libweb_engine.so", RTLD_NOW | RTLD_GLOBAL);
 #else
     const std::string engineLibDir = loadLibDir + "/libweb_engine.so";
     void *handle = dlopen(engineLibDir.c_str(), RTLD_NOW | RTLD_GLOBAL);
