@@ -88,7 +88,9 @@ int DoStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client, char *l
     }
 
     if (content->setSeccompFilter) {
-        content->setSeccompFilter(content, client);
+        ret = content->setSeccompFilter(content, client);
+        APPSPAWN_CHECK(ret == 0, NotifyResToParent(content, client, ret);
+            return ret, "Failed to set setSeccompFilter");
     }
 
     if (content->setUidGid) {
