@@ -69,7 +69,7 @@ typedef struct AppSpawnContent_ {
     // for cold start
     int (*coldStartApp)(struct AppSpawnContent_ *content, AppSpawnClient *client);
     int (*getWrapBundleNameValue)(struct AppSpawnContent_ *content, AppSpawnClient *client);
-    void (*setSeccompFilter)(struct AppSpawnContent_ *content, AppSpawnClient *client);
+    int (*setSeccompFilter)(struct AppSpawnContent_ *content, AppSpawnClient *client);
     void (*handleInternetPermission)(const AppSpawnClient *client);
 } AppSpawnContent;
 
