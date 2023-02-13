@@ -57,7 +57,8 @@ void *LoadWithRelroFile(const std::string &lib, const std::string &nsName,
         APPSPAWN_LOGI("LoadWithRelroFile unlink failed");
     }
     int relroFd =
-        open(nwebRelroPath.c_str(), O_RDWR | O_TRUNC | O_CLOEXEC | O_CREAT);
+        open(nwebRelroPath.c_str(), O_RDWR | O_TRUNC | O_CLOEXEC | O_CREAT,
+            S_IRUSR | S_IRGRP | S_IROTH);
     if (relroFd < 0) {
         int tmpNo = errno;
         APPSPAWN_LOGE("LoadWithRelroFile open failed, error=[%s]", strerror(tmpNo));
@@ -102,11 +103,15 @@ void LoadExtendLib(AppSpawnContent *content)
     Dl_namespace dlns;
     dlns_init(&dlns, "nweb_ns");
     dlns_create(&dlns, loadLibDir.c_str());
+#if defined(webview_x86_64)
+    void *handle = dlopen_ns(&dlns, "libweb_engine.so", RTLD_NOW | RTLD_GLOBAL);
+#else
     void *handle = LoadWithRelroFile("libweb_engine.so", "nweb_ns", loadLibDir);
     if (handle == nullptr) {
         APPSPAWN_LOGE("dlopen_ns_ext failed, fallback to dlopen_ns");
         handle = dlopen_ns(&dlns, "libweb_engine.so", RTLD_NOW | RTLD_GLOBAL);
     }
+#endif
 #else
     const std::string engineLibDir = loadLibDir + "/libweb_engine.so";
     void *handle = dlopen(engineLibDir.c_str(), RTLD_NOW | RTLD_GLOBAL);
