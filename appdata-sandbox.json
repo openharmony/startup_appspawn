@@ -207,6 +207,15 @@
                         "sandbox-flags" : [ "bind", "rec" ],
                         "check-action-status": "false"
                     }
+                    ]}, {
+                        "flags": "START_FLAGS_BACKUP",
+                        "sandbox-root" : "/mnt/sandbox/<PackageName>",
+                        "mount-paths": [{
+                            "src-path": "/data/service/el2/<currentUserId>/backup/bundles/<PackageName>",
+                            "sandbox-path": "/data/storage/el2/backup",
+                            "sandbox-flags": [ "bind", "rec" ],
+                            "check-action-status": "true"
+                        }
                     ]}
             ],
             "symbol-links" : [
