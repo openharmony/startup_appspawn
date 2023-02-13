@@ -133,6 +133,11 @@
                     "sandbox-path" : "/data/storage/ark-profile",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
+                }, {
+                    "src-path" : "/mnt/share/<currentUserId>/<PackageName>",
+                    "sandbox-path" : "/data/storage/el2/share",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
                 }
             ],
             "symbol-links" : [{
