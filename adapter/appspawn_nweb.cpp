@@ -57,7 +57,8 @@ void *LoadWithRelroFile(const std::string &lib, const std::string &nsName,
         APPSPAWN_LOGI("LoadWithRelroFile unlink failed");
     }
     int relroFd =
-        open(nwebRelroPath.c_str(), O_RDWR | O_TRUNC | O_CLOEXEC | O_CREAT);
+        open(nwebRelroPath.c_str(), O_RDWR | O_TRUNC | O_CLOEXEC | O_CREAT,
+            S_IRUSR | S_IRGRP | S_IROTH);
     if (relroFd < 0) {
         int tmpNo = errno;
         APPSPAWN_LOGE("LoadWithRelroFile open failed, error=[%s]", strerror(tmpNo));
