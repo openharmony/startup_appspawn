@@ -54,7 +54,13 @@ typedef enum AppOperateType_ {
 #define APP_MAX_GIDS 64
 #define APP_APL_MAX_LEN 32
 #define APP_RENDER_CMD_MAX_LEN 1024
+
+/* AppParameter.flags bit definition */
 #define APP_COLD_BOOT 0x01
+#define APP_BACKUP_EXTENSION 0x02
+#define APP_DLP_MANAGER 0x04
+#define APP_DEBUGGABLE 0x08  // debuggable application
+
 #define BITLEN32 32
 #define FDLEN2 2
 #define FD_INIT_VALUE 0
