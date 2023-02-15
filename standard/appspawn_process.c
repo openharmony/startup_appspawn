@@ -165,8 +165,8 @@ static void ClearEnvironment(AppSpawnContent *content, AppSpawnClient *client)
 
 static int SetUidGid(struct AppSpawnContent_ *content, AppSpawnClient *client)
 {
-#ifdef GRAPHIC_PERMISSION_CHECK
     AppSpawnClientExt *appProperty = (AppSpawnClientExt *)client;
+#ifdef GRAPHIC_PERMISSION_CHECK
     // set gids
     bool isRet = setgroups(appProperty->property.gidCount, (const gid_t *)(&appProperty->property.gidTable[0])) == -1;
     APPSPAWN_CHECK(!isRet, return -errno, "setgroups failed: %d, gids.size=%u", errno, appProperty->property.gidCount);
@@ -197,6 +197,12 @@ static int SetUidGid(struct AppSpawnContent_ *content, AppSpawnClient *client)
         APPSPAWN_CHECK(!isRet, return -errno, "setuid(%u) failed: %d", appProperty->property.uid, errno);
     }
 #endif
+    if ((appProperty->property.flags & APP_DEBUGGABLE) != 0) {
+        APPSPAWN_LOGV("Debuggable app");
+        if (prctl(PR_SET_DUMPABLE, 1, 0, 0, 0) == -1) {
+            APPSPAWN_LOGE("Failed to set app dumpable: %s", strerror(errno));
+        }
+    }
     return 0;
 }
 
