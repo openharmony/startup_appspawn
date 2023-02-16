@@ -426,6 +426,11 @@
                     "sandbox-path" : "/data/app/el1/bundle/public/com.ohos.nweb",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
+                }, {
+                    "src-path" : "/system/app/NWeb",
+                    "sandbox-path" : "/system/app/NWeb",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
                 }
             ],
             "symbol-links" : [{
