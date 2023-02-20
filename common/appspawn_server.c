@@ -145,6 +145,9 @@ static int AppSpawnChild(void *arg)
         }
     }
     ret = DoStartApp(content, client, content->longProcName, content->longProcNameLen);
+    if (content->initDebugParams != NULL) {
+        content->initDebugParams(content, client);
+    }
 #ifdef OHOS_DEBUG
     long long diff = DiffTime(&tmStart);
     APPSPAWN_LOGI("App timeused %d %lld ns.", getpid(), diff);
