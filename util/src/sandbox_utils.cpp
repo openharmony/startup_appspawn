@@ -195,7 +195,7 @@ int32_t SandboxUtils::DoAppSandboxMountOnce(const char *originPath, const char *
     ret = mount(originPath, destinationPath, fsType, mountFlags, options);
     APPSPAWN_CHECK(ret == 0, return ret,  "bind mount %s to %s failed %d, just DEBUG MESSAGE here",
                    originPath, destinationPath, errno);
-    ret = mount(NULL, destinationPath, NULL, MS_PRIVATE, NULL);
+    ret = mount(NULL, destinationPath, NULL, MS_SLAVE, NULL);
     APPSPAWN_CHECK(ret == 0, return ret, "private mount to %s failed %d", destinationPath, errno);
 #endif
     return 0;
