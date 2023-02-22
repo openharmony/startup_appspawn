@@ -159,7 +159,6 @@ static void ClearEnvironment(AppSpawnContent *content, AppSpawnClient *client)
     AppSpawnClientExt *appProperty = (AppSpawnClientExt *)client;
     close(appProperty->fd[0]);
 #endif
-    InitDebugParams(content, client);
     return;
 }
 
@@ -408,6 +407,7 @@ void SetContentFunction(AppSpawnContent *content)
 {
     APPSPAWN_LOGI("SetContentFunction");
     content->clearEnvironment = ClearEnvironment;
+    content->initDebugParams = InitDebugParams;
     content->setProcessName = SetProcessName;
     content->setKeepCapabilities = SetKeepCapabilities;
     content->setUidGid = SetUidGid;
