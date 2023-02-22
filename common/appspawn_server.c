@@ -165,7 +165,9 @@ int AppSpawnChild(void *arg)
     } else {
         ret = DoStartApp(content, client, content->longProcName, content->longProcNameLen);
     }
-
+    if (content->initDebugParams != NULL) {
+        content->initDebugParams(content, client);
+    }
 #ifdef OHOS_DEBUG
     struct timespec tmEnd = {0};
     GetCurTime(&tmEnd);
