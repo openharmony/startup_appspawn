@@ -54,6 +54,7 @@ typedef struct AppSpawnContent_ {
 
     // for child
     void (*clearEnvironment)(struct AppSpawnContent_ *content, AppSpawnClient *client);
+    void (*initDebugParams)(struct AppSpawnContent_ *content, AppSpawnClient *client);
     void (*setAppAccessToken)(struct AppSpawnContent_ *content, AppSpawnClient *client);
     int (*setAppSandbox)(struct AppSpawnContent_ *content, AppSpawnClient *client);
     int (*setKeepCapabilities)(struct AppSpawnContent_ *content, AppSpawnClient *client);
