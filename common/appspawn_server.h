@@ -60,12 +60,14 @@ typedef struct AppSpawnContent_ {
     int (*setKeepCapabilities)(struct AppSpawnContent_ *content, AppSpawnClient *client);
     int (*setFileDescriptors)(struct AppSpawnContent_ *content, AppSpawnClient *client);
     int (*setProcessName)(struct AppSpawnContent_ *content, AppSpawnClient *client,
-        char *longProcName, uint32_t longProcNameLen);
+    char *longProcName, uint32_t longProcNameLen);
     int (*setUidGid)(struct AppSpawnContent_ *content, AppSpawnClient *client);
     int (*setCapabilities)(struct AppSpawnContent_ *content, AppSpawnClient *client);
 
     void (*notifyResToParent)(struct AppSpawnContent_ *content, AppSpawnClient *client, int result);
     void (*runChildProcessor)(struct AppSpawnContent_ *content, AppSpawnClient *client);
+
+    int (*setAsanEnabledEnv)(struct AppSpawnContent_ *content, AppSpawnClient *client);
 
     // for cold start
     int (*coldStartApp)(struct AppSpawnContent_ *content, AppSpawnClient *client);
