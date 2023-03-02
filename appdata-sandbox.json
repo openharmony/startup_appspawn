@@ -364,7 +364,6 @@
             "symbol-links" : []
         }],
         "__internal__.com.ohos.render" : [{
-            "sandbox-switch": "ON",
             "sandbox-root" : "/mnt/sandbox/com.ohos.render/<PackageName>",
             "mount-paths" : [{
                     "src-path" : "/dev",
