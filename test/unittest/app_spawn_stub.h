@@ -18,11 +18,17 @@
 
 #include <iostream>
 
+struct HapDomainInfo {
+    std::string apl;
+    std::string packageName;
+    unsigned int hapFlags = 1;
+};
+
 class HapContextStub {
 public:
     HapContextStub();
     ~HapContextStub();
-    int HapDomainSetcontext(const std::string &apl, const std::string &packageName);
+    int HapDomainSetcontext(HapDomainInfo& hapDomainInfo);
 };
 #ifdef __cplusplus
 extern "C" {
