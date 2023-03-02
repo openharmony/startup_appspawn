@@ -40,7 +40,11 @@ void SetSelinuxCon(struct AppSpawnContent_ *content, AppSpawnClient *client)
     UNUSED(content);
     AppSpawnClientExt *appProperty = reinterpret_cast<AppSpawnClientExt *>(client);
     HapContext hapContext;
-    int32_t ret = hapContext.HapDomainSetcontext(appProperty->property.apl, appProperty->property.processName);
+    HapDomainInfo hapDomainInfo;
+    hapDomainInfo.apl = appProperty->property.apl;
+    hapDomainInfo.packageName = appProperty->property.processName;
+    hapDomainInfo.hapFlags = appProperty->property.hapFlags;
+    int32_t ret = hapContext.HapDomainSetcontext(hapDomainInfo);
     if (ret != 0) {
         APPSPAWN_LOGE("AppSpawnServer::Failed to hap domain set context, errno = %d %s",
             errno, appProperty->property.apl);
