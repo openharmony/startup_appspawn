@@ -32,8 +32,40 @@
 
 #include "securec.h"
 #include "parameter.h"
+#include "limits.h"
+#include "string.h"
 
 #define DEVICE_NULL_STR "/dev/null"
+
+// ide-asan
+#ifndef NWEB_SPAWN
+static int SetAsanEnabledEnv(struct AppSpawnContent_ *content, AppSpawnClient *client)
+{
+    AppParameter *appProperty = &((AppSpawnClientExt *)client)->property;
+    char *bundleName = appProperty->bundleName;
+
+    if ((appProperty->flags & APP_ASANENABLED) != 0) {
+        char *devPath = "/dev/asanlog";
+        char logPath[PATH_MAX] = {0};
+        int ret = snprintf_s(logPath, sizeof(logPath), sizeof(logPath) - 1,
+                "/data/app/el1/100/base/%s/log", bundleName);
+        APPSPAWN_CHECK(ret > 0, return -1, "Invalid snprintf_s");
+        char asanOptions[PATH_MAX] = {0};
+        ret = snprintf_s(asanOptions, sizeof(asanOptions), sizeof(asanOptions) - 1,
+                "log_path=%s/asan.log:include=/system/etc/asan.options", devPath);
+        APPSPAWN_CHECK(ret > 0, return -1, "Invalid snprintf_s");
+
+#if defined (__aarch64__) || defined (__x86_64__)
+        setenv("LD_PRELOAD", "/system/lib64/libclang_rt.asan.so", 1);
+#else
+        setenv("LD_PRELOAD", "/system/lib/libclang_rt.asan.so", 1);
+#endif
+        setenv("UBSAN_OPTIONS", asanOptions, 1);
+        client->flags |= APP_COLD_START;
+    }
+    return 0;
+}
+#endif
 
 static int SetProcessName(struct AppSpawnContent_ *content, AppSpawnClient *client,
     char *longProcName, uint32_t longProcNameLen)
@@ -158,6 +190,9 @@ static void ClearEnvironment(AppSpawnContent *content, AppSpawnClient *client)
 #ifndef APPSPAWN_TEST
     AppSpawnClientExt *appProperty = (AppSpawnClientExt *)client;
     close(appProperty->fd[0]);
+#endif
+#ifndef NWEB_SPAWN
+    SetAsanEnabledEnv(content, client);
 #endif
     return;
 }
@@ -420,4 +455,7 @@ void SetContentFunction(AppSpawnContent *content)
     content->getWrapBundleNameValue = GetWrapBundleNameValue;
 #endif
     content->setSeccompFilter = SetSeccompFilter;
+#ifndef NWEB_SPAWN
+    content->setAsanEnabledEnv = SetAsanEnabledEnv;
+#endif
 }

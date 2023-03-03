@@ -70,6 +70,12 @@ ohos_executable("appspawn") {
   part_name = "${part_name}"
 }
 
+ohos_prebuilt_etc("asan.options") {
+  source = "asan.options"
+  subsystem_name = "${subsystem_name}"
+  part_name = "${part_name}"
+}
+
 ohos_static_library("appspawn_server") {
   sources = [
     "${appspawn_path}/adapter/appspawn_adapter.cpp",
@@ -92,6 +98,7 @@ ohos_static_library("appspawn_server") {
   configs = [ ":appspawn_config" ]
   ldflags = [ "-Wl,--dynamic-linker,/system/bin/linker64z" ]
   deps = [
+    ":asan.options",
     "//base/security/access_token/interfaces/innerkits/token_setproc:libtoken_setproc",
     "//base/startup/init/interfaces/innerkits:libbegetutil",
     "//foundation/communication/netmanager_base/services/netmanagernative/netsys_client:netsys_client",

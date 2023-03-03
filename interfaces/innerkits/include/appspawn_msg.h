@@ -60,6 +60,7 @@ typedef enum AppOperateType_ {
 #define APP_BACKUP_EXTENSION 0x02
 #define APP_DLP_MANAGER 0x04
 #define APP_DEBUGGABLE 0x08  // debuggable application
+#define APP_ASANENABLED 0x10
 
 #define BITLEN32 32
 #define FDLEN2 2

@@ -63,6 +63,12 @@ Note: If the text contains special characters, please escape them according to t
             <filefilter name="defaultFilter" desc="Files not to check">
                 <filteritem type="filename" name="*.hap|*.rpk" desc="valid and invalid bundle files for tests"/>
             </filefilter>
+            <filefilter name="copyrightPolicyFilter" desc="Files not to compatibility, license header policies">
+                <filteritem type="filename" name="asan.options" desc="file type not support comment"/>
+	        </filefilter>
+	        <filefilter name="defaultPolicyFilter" desc="Files not to compatibility, license header policies">
+                <filteritem type="filename" name="asan.options" desc="file type not support comment"/>
+            </filefilter>
         </filefilterlist>
     </oatconfig>
 </configuration>
