@@ -76,7 +76,9 @@ typedef struct AppSpawnContent_ {
 
     void (*notifyResToParent)(struct AppSpawnContent_ *content, AppSpawnClient *client, int result);
     void (*runChildProcessor)(struct AppSpawnContent_ *content, AppSpawnClient *client);
-
+#ifndef NWEB_SPAWN
+    int (*setAsanEnabledEnv)(struct AppSpawnContent_ *content, AppSpawnClient *client);
+#endif
     // for cold start
     int (*coldStartApp)(struct AppSpawnContent_ *content, AppSpawnClient *client);
 #ifdef ASAN_DETECTOR
