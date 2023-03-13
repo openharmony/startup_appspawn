@@ -48,9 +48,9 @@ static void NotifyResToParent(struct AppSpawnContent_ *content, AppSpawnClient *
     }
 }
 
-static void ProcessExit(void)
+static void ProcessSafeExit(int code)
 {
-    APPSPAWN_LOGI("App exit %d.", getpid());
+    APPSPAWN_LOGI("App exit: %d", code);
 #ifdef OHOS_LITE
     _exit(0x7f); // 0x7f user exit
 #else
@@ -116,7 +116,7 @@ int DoStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client, char *l
     return 0;
 }
 
-static int AppSpawnChild(void *arg)
+static int AppSpawnChildInternal(void *arg)
 {
     APPSPAWN_CHECK(arg != NULL, return -1, "Invalid arg for appspawn child");
     AppSandboxArg *sandbox = (AppSandboxArg *)arg;
@@ -158,13 +158,19 @@ static int AppSpawnChild(void *arg)
     return 0;
 }
 
+static int AppSpawnChild(void *arg)
+{
+    ProcessSafeExit(AppSpawnChildInternal(arg));
+    return -1;
+}
+
 #ifndef APPSPAWN_TEST
 pid_t AppSpawnFork(int (*childFunc)(void *arg), void *args)
 {
     pid_t pid = fork();
     if (pid == 0) {
-        childFunc((void *)args);
-        ProcessExit();
+        ProcessSafeExit(childFunc(args));
+        return -1;
     }
     return pid;
 }
