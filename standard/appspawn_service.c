@@ -369,8 +369,8 @@ APPSPAWN_STATIC bool ReceiveRequestData(const TaskHandle taskHandle, AppSpawnCli
     HspList *hspList = &client->property.hspList;
     if (hspList->savedLength == 0) {
         hspList->data = (char *)malloc(hspList->totalLength);
-        APPSPAWN_CHECK(hspList->data != NULL, LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
-            FreeHspList(client); return false, "ReceiveRequestData: malloc hspList failed");
+        APPSPAWN_CHECK(hspList->data != NULL, FreeHspList(client); LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
+                       return false, "ReceiveRequestData: malloc hspList failed");
     }
 
     uint32_t saved = hspList->savedLength;
@@ -378,12 +378,12 @@ APPSPAWN_STATIC bool ReceiveRequestData(const TaskHandle taskHandle, AppSpawnCli
     char *data = hspList->data;
     APPSPAWN_LOGI("ReceiveRequestData: receiving hspList: (%u saved + %u incoming) / %u total", saved, buffLen, total);
 
-    APPSPAWN_CHECK((total - saved) >= buffLen, LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
-            FreeHspList(client); return false, "ReceiveRequestData: too many data for hspList %u ", buffLen);
+    APPSPAWN_CHECK((total - saved) >= buffLen, FreeHspList(client); LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
+                   return false, "ReceiveRequestData: too many data for hspList %u ", buffLen);
 
     int ret = memcpy_s(data + saved, buffLen, buffer, buffLen);
-    APPSPAWN_CHECK(ret == 0, LE_CloseTask(LE_GetDefaultLoop(), taskHandle); FreeHspList(client);
-            return false, "ReceiveRequestData: memcpy hspList failed");
+    APPSPAWN_CHECK(ret == 0, FreeHspList(client); LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
+                   return false, "ReceiveRequestData: memcpy hspList failed");
 
     hspList->savedLength += buffLen;
     if (hspList->savedLength < hspList->totalLength) {
