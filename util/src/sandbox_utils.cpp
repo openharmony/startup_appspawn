@@ -787,7 +787,8 @@ int32_t SandboxUtils::SetCommonAppSandboxProperty(const ClientSocket::AppPropert
     APPSPAWN_CHECK(ret == 0, return ret, "mount hspList failed, %s", sandboxPackagePath.c_str());
 
     if (strcmp(appProperty->apl, APL_SYSTEM_BASIC.data()) == 0 ||
-        strcmp(appProperty->apl, APL_SYSTEM_CORE.data()) == 0) {
+        strcmp(appProperty->apl, APL_SYSTEM_CORE.data()) == 0 ||
+        (appProperty->flags & APP_ACCESS_BUNDLE_DIR) != 0) {
         // need permission check for system app here
         std::string destbundlesPath = sandboxPackagePath + g_dataBundles;
         DoAppSandboxMountOnce(g_physicalAppInstallPath.c_str(), destbundlesPath.c_str(), "", BASIC_MOUNT_FLAGS,
