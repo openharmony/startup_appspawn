@@ -224,6 +224,7 @@ static int SetUidGid(struct AppSpawnContent_ *content, AppSpawnClient *client)
 #endif
     if ((appProperty->property.flags & APP_DEBUGGABLE) != 0) {
         APPSPAWN_LOGV("Debuggable app");
+        setenv("HAP_DEBUGGABLE", "true", 1);
         if (prctl(PR_SET_DUMPABLE, 1, 0, 0, 0) == -1) {
             APPSPAWN_LOGE("Failed to set app dumpable: %s", strerror(errno));
         }
