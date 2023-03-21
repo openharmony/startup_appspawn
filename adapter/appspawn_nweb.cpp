@@ -18,6 +18,7 @@
 #include <algorithm>
 #include <ctime>
 #include <map>
+#include <mutex>
 #include <string>
 
 #ifdef __MUSL__
@@ -38,6 +39,7 @@ namespace {
     constexpr int32_t RENDER_PROCESS_MAX_NUM = 16;
     std::map<int32_t, RenderProcessNode> g_renderProcessMap;
     void *g_nwebHandle = nullptr;
+    std::mutex g_mutex;
 }
 
 #ifdef __MUSL__
@@ -161,6 +163,7 @@ static void DumpRenderProcessExitedMap()
 
 void RecordRenderProcessExitedStatus(pid_t pid, int status)
 {
+    std::lock_guard<std::mutex> lock(g_mutex);
     if (g_renderProcessMap.size() < RENDER_PROCESS_MAX_NUM) {
         RenderProcessNode node(time(nullptr), status);
         g_renderProcessMap.insert({pid, node});
@@ -186,6 +189,7 @@ int GetRenderProcessTerminationStatus(int32_t pid, int *status)
         return -1;
     }
 
+    std::lock_guard<std::mutex> lock(g_mutex);
     auto it = g_renderProcessMap.find(pid);
     if (it != g_renderProcessMap.end()) {
         *status = it->second.exitStatus_;
