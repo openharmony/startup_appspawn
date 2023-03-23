@@ -68,8 +68,9 @@ static int AppInfoHashKeyFunction(const void *key)
     return code % APP_HASH_BUTT;
 }
 
-static void AppInfoHashNodeFree(const HashNode *node)
+static void AppInfoHashNodeFree(const HashNode *node, void *context)
 {
+    (void)context;
     AppInfo *testNode = HASHMAP_ENTRY(node, AppInfo, node);
     APPSPAWN_LOGI("AppInfoHashNodeFree %s\n", testNode->name);
     free(testNode);
@@ -584,7 +585,7 @@ static void AppSpawnRun(AppSpawnContent *content, int argc, char *const argv[])
     }
     LE_CloseSignalTask(LE_GetDefaultLoop(), appSpawnContent->sigHandler);
     // release resource
-    OH_HashMapDestory(appSpawnContent->appMap);
+    OH_HashMapDestory(appSpawnContent->appMap, NULL);
     LE_CloseStreamTask(LE_GetDefaultLoop(), appSpawnContent->server);
     LE_CloseLoop(LE_GetDefaultLoop());
     free(content);
