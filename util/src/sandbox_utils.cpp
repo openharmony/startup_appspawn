@@ -436,7 +436,13 @@ static void SetSelinuxCondition(const std::string &srcPath, const ClientSocket::
 #ifndef APPSPAWN_TEST
 #ifdef WITH_SELINUX
             HapContext hapContext;
-            hapContext.HapFileRestorecon(srcPath, appProperty->apl, appProperty->bundleName, SELINUX_HAP_RESTORECON_RECURSE);
+            HapFileInfo hapFileInfo;
+            hapFileInfo.pathNameOrig.emplace_back(srcPath);
+            hapFileInfo.apl = appProperty->apl;
+            hapFileInfo.packageName = appProperty->bundleName;
+            hapFileInfo.flags = SELINUX_HAP_RESTORECON_RECURSE;
+            hapFileInfo.hapFlags = appProperty->hapFlags;
+            hapContext.HapFileRestorecon(hapFileInfo);
 #endif
 #endif
 }
@@ -445,6 +451,7 @@ static void SetSelinuxCondition(const std::string &srcPath, const ClientSocket::
 void SandboxUtils::CheckAndPrepareSrcPath(const ClientSocket::AppProperty *appProperty, const std::string &srcPath)
 {
     if (access(srcPath.c_str(), F_OK) == 0) {
+        SetSelinuxCondition(srcPath, appProperty);
         return;
     }
 
