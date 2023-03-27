@@ -37,7 +37,7 @@
 HapContextStub::HapContextStub() {}
 HapContextStub::~HapContextStub() {}
 static int g_testHapDomainSetcontext = 0;
-int HapContextStub::HapDomainSetcontext(const std::string &apl, const std::string &packageName)
+int HapContextStub::HapDomainSetcontext(HapDomainInfo& hapDomainInfo)
 {
     if (g_testHapDomainSetcontext == 0) {
         return 0;
