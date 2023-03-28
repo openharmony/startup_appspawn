@@ -62,7 +62,9 @@ int main(int argc, char *const argv[])
     content->loadExtendLib = LoadExtendLib;
     content->runChildProcessor = RunChildProcessor;
     content->initAppSpawn(content);
-    SystemSetParameter("bootevent.appspawn.started", "true");
+    if (mode == 0) {
+        SystemSetParameter("bootevent.appspawn.started", "true");
+    }
     content->runAppSpawn(content, argc, argv);
 
     _Exit(0);
