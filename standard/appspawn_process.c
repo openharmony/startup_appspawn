@@ -356,7 +356,10 @@ static int ColdStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client
             startLen += len;
         }
         // processName
-        len = sprintf_s(param + startLen, originLen - startLen, ":%s:%s:%s:%u:%s:%s",
+        if (appProperty->soPath[0] == '\0') {
+            strcpy_s(appProperty->soPath, sizeof(appProperty->soPath), "NULL");
+	}
+	len = sprintf_s(param + startLen, originLen - startLen, ":%s:%s:%s:%u:%s:%s",
             appProperty->processName, appProperty->bundleName, appProperty->soPath,
             appProperty->accessTokenId, appProperty->apl, appProperty->renderCmd);
         APPSPAWN_CHECK(len > 0 && (len < (originLen - startLen)), break, "Invalid to format processName");
@@ -420,8 +423,12 @@ int GetAppSpawnClientFromArg(int argc, char *const argv[], AppSpawnClientExt *cl
     APPSPAWN_CHECK(ret == 0, return -1, "Failed to strcpy bundleName");
     start = strtok_r(NULL, ":", &end);
     APPSPAWN_CHECK(start != NULL, return -1, "Failed to get soPath");
-    ret = strcpy_s(client->property.soPath, sizeof(client->property.soPath), start);
-    APPSPAWN_CHECK(ret == 0, return -1, "Failed to strcpy soPath");
+    if (strcmp(start, "NULL")) {
+        ret = strcpy_s(client->property.soPath, sizeof(client->property.soPath), start);
+        APPSPAWN_CHECK(ret == 0, return -1, "Failed to strcpy soPath");
+    } else {
+        client->property.soPath[0] = '\0';
+    }	
 
     // accesstoken
     start = strtok_r(NULL, ":", &end);
