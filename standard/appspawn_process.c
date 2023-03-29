@@ -37,7 +37,6 @@
 #define DEVICE_NULL_STR "/dev/null"
 
 // ide-asan
-#ifndef NWEB_SPAWN
 static int SetAsanEnabledEnv(struct AppSpawnContent_ *content, AppSpawnClient *client)
 {
     AppParameter *appProperty = &((AppSpawnClientExt *)client)->property;
@@ -64,7 +63,6 @@ static int SetAsanEnabledEnv(struct AppSpawnContent_ *content, AppSpawnClient *c
     }
     return 0;
 }
-#endif
 
 static int SetProcessName(struct AppSpawnContent_ *content, AppSpawnClient *client,
     char *longProcName, uint32_t longProcNameLen)
@@ -182,9 +180,7 @@ static void ClearEnvironment(AppSpawnContent *content, AppSpawnClient *client)
     // close child fd
     AppSpawnClientExt *appProperty = (AppSpawnClientExt *)client;
     close(appProperty->fd[0]);
-#ifndef NWEB_SPAWN
     SetAsanEnabledEnv(content, client);
-#endif
     return;
 }
 
@@ -355,8 +351,8 @@ static int ColdStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client
         // processName
         if (appProperty->soPath[0] == '\0') {
             strcpy_s(appProperty->soPath, sizeof(appProperty->soPath), "NULL");
-	}
-	len = sprintf_s(param + startLen, originLen - startLen, ":%s:%s:%s:%u:%s:%s",
+        }
+        len = sprintf_s(param + startLen, originLen - startLen, ":%s:%s:%s:%u:%s:%s",
             appProperty->processName, appProperty->bundleName, appProperty->soPath,
             appProperty->accessTokenId, appProperty->apl, appProperty->renderCmd);
         APPSPAWN_CHECK(len > 0 && (len < (originLen - startLen)), break, "Invalid to format processName");
@@ -433,7 +429,7 @@ int GetAppSpawnClientFromArg(int argc, char *const argv[], AppSpawnClientExt *cl
         APPSPAWN_CHECK(ret == 0, return -1, "Failed to strcpy soPath");
     } else {
         client->property.soPath[0] = '\0';
-    }	
+    }
 
     // accesstoken
     start = strtok_r(NULL, ":", &end);
@@ -480,9 +476,7 @@ void SetContentFunction(AppSpawnContent *content)
     content->setAppSandbox = SetAppSandboxProperty;
     content->setAppAccessToken = SetAppAccessToken;
     content->coldStartApp = ColdStartApp;
-#ifndef NWEB_SPAWN
     content->setAsanEnabledEnv = SetAsanEnabledEnv;
-#endif
 #ifdef ASAN_DETECTOR
     content->getWrapBundleNameValue = GetWrapBundleNameValue;
 #endif
