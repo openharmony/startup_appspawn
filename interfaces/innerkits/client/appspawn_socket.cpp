@@ -104,6 +104,9 @@ int AppSpawnSocket::ReadSocketMessage(int socketFd, void *buf, int len)
     APPSPAWN_CHECK(memset_s(buf, len, 0, len) == EOK, return -1, "Failed to memset read buf");
 
     ssize_t rLen = TEMP_FAILURE_RETRY(read(socketFd, buf, len));
+    while ((rLen < 0) && (errno == EAGAIN)) {
+        rLen = TEMP_FAILURE_RETRY(read(socketFd, buf, len));
+    }
     APPSPAWN_CHECK(rLen >= 0, return -EFAULT, "Read message from fd %d error %zd: %d",
         socketFd, rLen, errno);
 
