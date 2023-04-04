@@ -69,7 +69,7 @@ static int SetProcessName(struct AppSpawnContent_ *content, AppSpawnClient *clie
 {
     AppSpawnClientExt *appPropertyExt = (AppSpawnClientExt *)client;
     AppParameter *appProperty = &appPropertyExt->property;
-    int len = strlen(appProperty->processName);
+    size_t len = strlen(appProperty->processName);
     bool isRet = longProcName == NULL || len <= 0;
     APPSPAWN_CHECK(!isRet, return -EINVAL, "process name is nullptr or length error");
 
