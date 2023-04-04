@@ -229,7 +229,7 @@ HWTEST_F(AppSpawnLiteTest, msgFuncFreeTest_002, TestSize.Level1)
     msgSt.capsCnt = MALLOC_TEST_LENGTH;
     FreeMessageSt(&msgSt);
     EXPECT_EQ(msgSt.capsCnt, 0);
- 
+
     msgSt.uID = TEST_UID;
     FreeMessageSt(&msgSt);
     EXPECT_EQ(msgSt.uID, -1);
@@ -329,7 +329,7 @@ HWTEST_F(AppSpawnLiteTest, msgFuncSplitTest_001, TestSize.Level1)
 HWTEST_F(AppSpawnLiteTest, msgFuncSplitTest_002, TestSize.Level1)
 {
     MessageSt msgSt = {0};
- 
+
     struct timespec tmStart = {0};
     GetCurrentTime(&tmStart);
 
@@ -349,7 +349,7 @@ HWTEST_F(AppSpawnLiteTest, msgFuncSplitTest_002, TestSize.Level1)
     long timeUsed = (tmEnd.tv_sec - tmStart.tv_sec) * NANOSECONDS_PER_SECOND + (tmEnd.tv_nsec - tmStart.tv_nsec);
     printf("[----------] AppSpawnLiteTest, msgFuncSplitTest_002, total time %ld ns, strCnt %u.\n", \
         timeUsed, g_goodStrings.size());
- 
+
     // parse one good string and check all results
     std::string validStr =
         "{\"bundleName\":\"validName\",\"identityID\":\"135\",\"uID\":999,\"gID\":888,\"capability\":[0, 1, 5]}";
