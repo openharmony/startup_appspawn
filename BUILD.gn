@@ -60,6 +60,7 @@ ohos_executable("appspawn") {
     "ability_runtime:app_manager",
     "ability_runtime:runtime",
     "c_utils:utils",
+    "common_event_service:cesfwk_innerkits",
     "hitrace_native:hitrace_meter",
     "init:libbegetutil",
   ]
