@@ -63,7 +63,7 @@ void *LoadWithRelroFile(const std::string &lib, const std::string &nsName,
             S_IRUSR | S_IRGRP | S_IROTH);
     if (relroFd < 0) {
         int tmpNo = errno;
-        APPSPAWN_LOGE("LoadWithRelroFile open failed, error=[%s]", strerror(tmpNo));
+        APPSPAWN_LOGE("LoadWithRelroFile open failed, error=[%{public}s]", strerror(tmpNo));
         return nullptr;
     }
     void *nwebReservedAddress = mmap(NULL, nwebReservedSize, PROT_NONE,
@@ -71,7 +71,7 @@ void *LoadWithRelroFile(const std::string &lib, const std::string &nsName,
     if (nwebReservedAddress == MAP_FAILED) {
         close(relroFd);
         int tmpNo = errno;
-        APPSPAWN_LOGE("LoadWithRelroFile mmap failed, error=[%s]", strerror(tmpNo));
+        APPSPAWN_LOGE("LoadWithRelroFile mmap failed, error=[%{public}s]", strerror(tmpNo));
         return nullptr;
     }
     Dl_namespace dlns;
@@ -119,7 +119,7 @@ void LoadExtendLib(AppSpawnContent *content)
     void *handle = dlopen(engineLibDir.c_str(), RTLD_NOW | RTLD_GLOBAL);
 #endif
     if (handle == nullptr) {
-        APPSPAWN_LOGE("Fail to dlopen libweb_engine.so, [%s]", dlerror());
+        APPSPAWN_LOGE("Fail to dlopen libweb_engine.so, [%{public}s]", dlerror());
     } else {
         APPSPAWN_LOGI("Success to dlopen libweb_engine.so");
     }
@@ -131,7 +131,7 @@ void LoadExtendLib(AppSpawnContent *content)
     g_nwebHandle = dlopen(renderLibDir.c_str(), RTLD_NOW | RTLD_GLOBAL);
 #endif
     if (g_nwebHandle == nullptr) {
-        APPSPAWN_LOGE("Fail to dlopen libnweb_render.so, [%s]", dlerror());
+        APPSPAWN_LOGE("Fail to dlopen libnweb_render.so, [%{public}s]", dlerror());
     } else {
         APPSPAWN_LOGI("Success to dlopen libnweb_render.so");
     }
@@ -144,7 +144,7 @@ void RunChildProcessor(AppSpawnContent *content, AppSpawnClient *client)
 
     FuncType funcNWebRenderMain = reinterpret_cast<FuncType>(dlsym(g_nwebHandle, "NWebRenderMain"));
     if (funcNWebRenderMain == nullptr) {
-        APPSPAWN_LOGI("webviewspawn dlsym ERROR=%s", dlerror());
+        APPSPAWN_LOGI("webviewspawn dlsym ERROR=%{public}s", dlerror());
         return;
     }
 
@@ -156,8 +156,8 @@ static void DumpRenderProcessExitedMap()
     APPSPAWN_LOGI("dump render process exited array:");
 
     for (auto& it : g_renderProcessMap) {
-        APPSPAWN_LOGV("[pid, time, exitedStatus] = [%d, %ld, %d]",
-            it.first, it.second.recordTime_, it.second.exitStatus_);
+        APPSPAWN_LOGV("[pid, time, exitedStatus] = [%{public}d, %{public}ld, %{public}d]",
+            it.first, static_cast<long>(it.second.recordTime_), it.second.exitStatus_);
     }
 }
 
@@ -197,7 +197,7 @@ int GetRenderProcessTerminationStatus(int32_t pid, int *status)
         return 0;
     }
 
-    APPSPAWN_LOGE("not find pid[%d] in render process exited map", pid);
+    APPSPAWN_LOGE("not find pid[%{public}d] in render process exited map", pid);
     DumpRenderProcessExitedMap();
     return -1;
 }

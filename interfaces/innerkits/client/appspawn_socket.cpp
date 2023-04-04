@@ -57,7 +57,7 @@ int AppSpawnSocket::PackSocketAddr()
     }
     socklen_t pathSize = sizeof(socketAddr_.sun_path);
     if (pathLen >= pathSize) {
-        APPSPAWN_LOGE("Invalid socket name: '%s' too long", socketName_.c_str());
+        APPSPAWN_LOGE("Invalid socket name: '%{public}s' too long", socketName_.c_str());
         return -1;
     }
 
@@ -79,18 +79,18 @@ int AppSpawnSocket::PackSocketAddr()
 int AppSpawnSocket::CreateSocket()
 {
     int socketFd = socket(AF_UNIX, SOCK_STREAM, 0); // SOCK_SEQPACKET
-    APPSPAWN_CHECK(socketFd >= 0, return -errno, "Failed to create socket: %d", errno);
+    APPSPAWN_CHECK(socketFd >= 0, return -errno, "Failed to create socket: %{public}d", errno);
 
     int flag = 1;
     int ret = setsockopt(socketFd, IPPROTO_TCP, TCP_NODELAY, (char *)&flag, sizeof(int));
-    APPSPAWN_LOGV("Created socket with fd %d, setsockopt %d", socketFd, ret);
+    APPSPAWN_LOGV("Created socket with fd %{public}d, setsockopt %{public}d", socketFd, ret);
     return socketFd;
 }
 
 void AppSpawnSocket::CloseSocket(int &socketFd)
 {
     if (socketFd >= 0) {
-        APPSPAWN_LOGV("Closed socket with fd %d", socketFd);
+        APPSPAWN_LOGV("Closed socket with fd %{public}d", socketFd);
         int flag = 0;
         setsockopt(socketFd, IPPROTO_TCP, TCP_NODELAY, (char *)&flag, sizeof(int));
         close(socketFd);
@@ -101,7 +101,7 @@ void AppSpawnSocket::CloseSocket(int &socketFd)
 int AppSpawnSocket::ReadSocketMessage(int socketFd, void *buf, int len)
 {
     if (socketFd < 0 || len <= 0 || buf == nullptr) {
-        APPSPAWN_LOGE("Invalid args: socket %d, len %d, buf might be nullptr", socketFd, len);
+        APPSPAWN_LOGE("Invalid args: socket %{public}d, len %{public}d, buf might be nullptr", socketFd, len);
         return -1;
     }
 
@@ -111,8 +111,8 @@ int AppSpawnSocket::ReadSocketMessage(int socketFd, void *buf, int len)
     while ((rLen < 0) && (errno == EAGAIN)) {
         rLen = TEMP_FAILURE_RETRY(read(socketFd, buf, len));
     }
-    APPSPAWN_CHECK(rLen >= 0, return -EFAULT, "Read message from fd %d error %zd: %d",
-        socketFd, rLen, errno);
+    APPSPAWN_CHECK(rLen >= 0, return -EFAULT,
+        "Read message from fd %{public}d error %{public}zd: %{public}d", socketFd, rLen, errno);
 
     return rLen;
 }
@@ -120,7 +120,7 @@ int AppSpawnSocket::ReadSocketMessage(int socketFd, void *buf, int len)
 int AppSpawnSocket::WriteSocketMessage(int socketFd, const void *buf, int len)
 {
     if (socketFd < 0 || len <= 0 || buf == nullptr) {
-        APPSPAWN_LOGE("Invalid args: socket %d, len %d, buf might be nullptr", socketFd, len);
+        APPSPAWN_LOGE("Invalid args: socket %{public}d, len %{public}d, buf might be nullptr", socketFd, len);
         return -1;
     }
 
@@ -129,10 +129,10 @@ int AppSpawnSocket::WriteSocketMessage(int socketFd, const void *buf, int len)
     const uint8_t *offset = reinterpret_cast<const uint8_t *>(buf);
     for (ssize_t wLen = 0; remain > 0; offset += wLen, remain -= wLen, written += wLen) {
         wLen = write(socketFd, offset, remain);
-        APPSPAWN_LOGV("socket fd %d, wLen %zd", socketFd, wLen);
+        APPSPAWN_LOGV("socket fd %{public}d, wLen %{public}zd", socketFd, wLen);
         bool isRet = (wLen <= 0) && (errno != EINTR);
-        APPSPAWN_CHECK(!isRet, return -errno, "Failed to write message to fd %d, error %zd: %d",
-            socketFd, wLen, errno);
+        APPSPAWN_CHECK(!isRet, return -errno,
+            "Failed to write message to fd %{public}d, error %{public}zd: %{public}d", socketFd, wLen, errno);
     }
 
     return written;

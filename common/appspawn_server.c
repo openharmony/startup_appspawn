@@ -50,7 +50,7 @@ static void NotifyResToParent(struct AppSpawnContent_ *content, AppSpawnClient *
 
 static void ProcessSafeExit(int code)
 {
-    APPSPAWN_LOGI("App exit: %d", code);
+    APPSPAWN_LOGI("App exit: %{public}d", code);
 #ifdef OHOS_LITE
     _exit(0x7f); // 0x7f user exit
 #else
@@ -63,7 +63,7 @@ static void ProcessSafeExit(int code)
 int DoStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client, char *longProcName, uint32_t longProcNameLen)
 {
     int32_t ret = 0;
-    APPSPAWN_LOGI("DoStartApp id %d longProcNameLen %u", client->id, longProcNameLen);
+    APPSPAWN_LOGV("DoStartApp id %{public}d longProcNameLen %{public}u", client->id, longProcNameLen);
     if (content->handleInternetPermission != NULL) {
         content->handleInternetPermission(client);
     }
@@ -150,7 +150,7 @@ static int AppSpawnChildInternal(void *arg)
     }
 #ifdef OHOS_DEBUG
     long long diff = DiffTime(&tmStart);
-    APPSPAWN_LOGI("App timeused %d %lld ns.", getpid(), diff);
+    APPSPAWN_LOGI("App timeused %{public}d %lld ns.", getpid(), diff);
 #endif
     if (ret == 0 && content->runChildProcessor != NULL) {
         content->runChildProcessor(content, client);
@@ -181,7 +181,7 @@ int AppSpawnProcessMsg(AppSandboxArg *sandbox, pid_t *childPid)
     pid_t pid;
     APPSPAWN_CHECK(sandbox != NULL && sandbox->content != NULL, return -1, "Invalid content for appspawn");
     APPSPAWN_CHECK(sandbox->client != NULL && childPid != NULL, return -1, "Invalid client for appspawn");
-    APPSPAWN_LOGI("AppSpawnProcessMsg id %d 0x%x", sandbox->client->id, sandbox->client->flags);
+    APPSPAWN_LOGI("AppSpawnProcessMsg id %{public}d 0x%x", sandbox->client->id, sandbox->client->flags);
 
 #ifndef OHOS_LITE
     AppSpawnClient *client = sandbox->client;
@@ -202,7 +202,7 @@ int AppSpawnProcessMsg(AppSandboxArg *sandbox, pid_t *childPid)
     }
 #endif
     *childPid = AppSpawnFork(AppSpawnChild, (void *)sandbox);
-    APPSPAWN_CHECK(*childPid >= 0, return -errno, "fork child process error: %d", -errno);
+    APPSPAWN_CHECK(*childPid >= 0, return -errno, "fork child process error: %{public}d", -errno);
     return 0;
 }
 

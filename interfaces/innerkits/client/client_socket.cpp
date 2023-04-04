@@ -40,14 +40,14 @@ int ClientSocket::CreateClient()
 
     int opt = 1;
     int ret = setsockopt(socketFd_, SOL_SOCKET, SO_PASSCRED, &opt, sizeof(opt));
-    APPSPAWN_LOGV("Client: CreateClient socket fd %d ret %d", socketFd_, ret);
+    APPSPAWN_LOGV("Client: CreateClient socket fd %{public}d ret %{public}d", socketFd_, ret);
     return ret;
 }
 
 void ClientSocket::CloseClient()
 {
     if (socketFd_ < 0) {
-        APPSPAWN_LOGE("Client: Invalid connectFd %d", socketFd_);
+        APPSPAWN_LOGE("Client: Invalid connectFd %{public}d", socketFd_);
         return;
     }
 
@@ -58,7 +58,7 @@ void ClientSocket::CloseClient()
 int ClientSocket::ConnectSocket(int connectFd)
 {
     if (connectFd < 0) {
-        APPSPAWN_LOGE("Client: Invalid socket fd: %d", connectFd);
+        APPSPAWN_LOGE("Client: Invalid socket fd: %{public}d", connectFd);
         return -1;
     }
 
@@ -69,13 +69,14 @@ int ClientSocket::ConnectSocket(int connectFd)
     if (value != TIMEOUT_DEF && value != 0) {
         timeout.tv_sec = value;
     }
-    APPSPAWN_LOGI("Client: Connected on socket fd %d value %d", connectFd, value);
+    APPSPAWN_LOGI("Client: Connected on socket fd %{public}d value %{public}d", connectFd, value);
     bool isRet = (setsockopt(connectFd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) != 0) ||
         (setsockopt(connectFd, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout)) != 0);
-    APPSPAWN_CHECK(!isRet, return (-1), "Client: Failed to set opt of socket %d, err %d", connectFd, errno);
+    APPSPAWN_CHECK(!isRet, return (-1),
+        "Client: Failed to set opt of socket %{public}d, err %{public}d", connectFd, errno);
 
     if (connect(connectFd, reinterpret_cast<struct sockaddr *>(&socketAddr_), socketAddrLen_) < 0) {
-        APPSPAWN_LOGW("Client: Connect on socket fd %d, failed: %d", connectFd, errno);
+        APPSPAWN_LOGW("Client: Connect on socket fd %{public}d, failed: %{public}d", connectFd, errno);
         return -1;
     }
     return 0;
