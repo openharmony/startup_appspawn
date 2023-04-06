@@ -60,6 +60,17 @@ static void ProcessExit(int code)
 #endif
 }
 
+#ifdef APPSPAWN_HELPER
+__attribute__((visibility("default")))
+void exit(int code)
+{
+    // hook `exit` to `ProcessExit` to ensure app exit in a clean way
+    ProcessExit(code);
+    // should not come here
+    abort();
+}
+#endif
+
 int DoStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client, char *longProcName, uint32_t longProcNameLen)
 {
     int32_t ret = 0;
@@ -157,8 +168,7 @@ pid_t AppSpawnFork(int (*childFunc)(void *arg), void *args)
 {
     pid_t pid = fork();
     if (pid == 0) {
-        childFunc((void *)args);
-        ProcessExit();
+        ProcessExit(childFunc(args));
     }
     return pid;
 }
