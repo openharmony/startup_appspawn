@@ -61,9 +61,9 @@ static void NotifyResToParent(struct AppSpawnContent_ *content, AppSpawnClient *
     }
 }
 
-static void ProcessExit(void)
+static void ProcessExit(int code)
 {
-    APPSPAWN_LOGI("App exit %d.", getpid());
+    APPSPAWN_LOGI("App exit: %{public}d", code);
 #ifndef APPSPAWN_TEST
 #ifdef OHOS_LITE
     _exit(0x7f); // 0x7f user exit
@@ -72,6 +72,17 @@ static void ProcessExit(void)
 #endif
 #endif
 }
+
+#ifdef APPSPAWN_HELPER
+__attribute__((visibility("default")))
+void exit(int code)
+{
+    // hook `exit` to `ProcessExit` to ensure app exit in a clean way
+    ProcessExit(code);
+    // should not come here
+    abort();
+}
+#endif
 
 int DoStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client, char *longProcName, uint32_t longProcNameLen)
 {
@@ -179,7 +190,6 @@ int AppSpawnChild(void *arg)
     if (ret == 0 && content->runChildProcessor != NULL) {
         content->runChildProcessor(content, client);
     }
-    ProcessExit();
     return 0;
 }
 
@@ -197,7 +207,7 @@ int AppSpawnProcessMsg(AppSandboxArg *sandbox, pid_t *childPid)
         char *childStack = (char *)malloc(SANDBOX_STACK_SIZE);
         APPSPAWN_CHECK(childStack != NULL, return -1, "malloc failed");
 
-        pid = clone(AppSpawnChild, childStack + SANDBOX_STACK_SIZE, client->cloneFlags | SIGCHLD, (void *)sandbox);
+        pid = clone(AppSpawnChild, childStack + SANDBOX_STACK_SIZE, client->cloneFlags | SIGCHLD, sandbox);
         if (pid > 0) {
             free(childStack);
             *childPid = pid;
@@ -216,7 +226,7 @@ int AppSpawnProcessMsg(AppSandboxArg *sandbox, pid_t *childPid)
     *childPid = pid;
 #endif
     if (pid == 0) {
-        AppSpawnChild((void *)sandbox);
+        ProcessExit(AppSpawnChild(sandbox));
     }
     return 0;
 }
