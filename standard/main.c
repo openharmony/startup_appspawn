@@ -65,5 +65,5 @@ int main(int argc, char *const argv[])
     }
     content->runAppSpawn(content, argc, argv);
 
-    _Exit(0);
+    return 0;
 }
