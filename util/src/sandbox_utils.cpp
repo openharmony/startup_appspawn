@@ -187,7 +187,7 @@ static void MakeDirRecursive(const std::string &path, mode_t mode)
         std::string dir = path.substr(0, index);
 #ifndef APPSPAWN_TEST
         APPSPAWN_CHECK(!(access(dir.c_str(), F_OK) < 0 && mkdir(dir.c_str(), mode) < 0),
-            return, "error is %d, mkdir %s failed", errno, dir.c_str());
+            return, "error is %{public}d, mkdir %{public}s failed", errno, dir.c_str());
 #endif
     } while (index < size);
 }
@@ -202,10 +202,11 @@ int32_t SandboxUtils::DoAppSandboxMountOnce(const char *originPath, const char *
     int ret = 0;
     // to mount fs and bind mount files or directory
     ret = mount(originPath, destinationPath, fsType, mountFlags, options);
-    APPSPAWN_CHECK(ret == 0, return ret,  "errno is: %d, bind mount %s to %s failed, just DEBUG MESSAGE here",
-                   errno, originPath, destinationPath);
+    APPSPAWN_CHECK(ret == 0, return ret,  "errno is: %{public}d, bind mount %{public}s to %{public}s failed",
+        errno, originPath, destinationPath);
     ret = mount(NULL, destinationPath, NULL, MS_SLAVE, NULL);
-    APPSPAWN_CHECK(ret == 0, return ret, "errno is: %d, private mount to %s failed", errno, destinationPath);
+    APPSPAWN_CHECK(ret == 0, return ret,
+        "errno is: %{public}d, private mount to %{public}s failed", errno, destinationPath);
 #endif
     return 0;
 }
@@ -321,7 +322,7 @@ std::string SandboxUtils::GetSbxPathByConfig(const ClientSocket::AppProperty *ap
     } else {
         sandboxRoot = g_sandBoxDir + appProperty->bundleName;
         APPSPAWN_LOGE("read sandbox-root config failed, set sandbox-root to default root"
-            "app name is %s", appProperty->bundleName);
+            "app name is %{public}s", appProperty->bundleName);
     }
 
     return sandboxRoot;
@@ -347,7 +348,7 @@ static bool CheckMountConfig(nlohmann::json &mntPoint, const ClientSocket::AppPr
 {
     bool istrue = mntPoint.find(g_srcPath) == mntPoint.end() || mntPoint.find(g_sandBoxPath) == mntPoint.end()
             || mntPoint.find(g_sandBoxFlags) == mntPoint.end();
-    APPSPAWN_CHECK(!istrue, return false, "read mount config failed, app name is %s", appProperty->bundleName);
+    APPSPAWN_CHECK(!istrue, return false, "read mount config failed, app name is %{public}s", appProperty->bundleName);
 
     if (mntPoint[g_appAplName] != nullptr) {
         std::string app_apl_name = mntPoint[g_appAplName].get<std::string>();
@@ -375,11 +376,11 @@ static int32_t DoDlpAppMountStrategy(const ClientSocket::AppProperty *appPropert
                                      const std::string &fsType, unsigned long mountFlags)
 {
     int fd = open("/dev/fuse", O_RDWR);
-    APPSPAWN_CHECK(fd != -1, return -EINVAL, "open /dev/fuse failed, errno is %d", errno);
+    APPSPAWN_CHECK(fd != -1, return -EINVAL, "open /dev/fuse failed, errno is %{public}d", errno);
 
     char options[FUSE_OPTIONS_MAX_LEN];
     (void)sprintf_s(options, sizeof(options), "fd=%d,rootmode=40000,user_id=%d,group_id=%d,allow_other", fd,
-                    appProperty->uid, appProperty->gid);
+        appProperty->uid, appProperty->gid);
 
     // To make sure destinationPath exist
     MakeDirRecursive(sandboxPath, FILE_MODE);
@@ -387,16 +388,17 @@ static int32_t DoDlpAppMountStrategy(const ClientSocket::AppProperty *appPropert
     int ret = 0;
 #ifndef APPSPAWN_TEST
     ret = mount(srcPath.c_str(), sandboxPath.c_str(), fsType.c_str(), mountFlags, options);
-    APPSPAWN_CHECK(ret == 0, return ret, "DoDlpAppMountStrategy failed, bind mount %s to %s"
-        "failed %d", srcPath.c_str(), sandboxPath.c_str(), errno);
+    APPSPAWN_CHECK(ret == 0, return ret, "DoDlpAppMountStrategy failed, bind mount %{public}s to %{public}s"
+        "failed %{public}d", srcPath.c_str(), sandboxPath.c_str(), errno);
 
     ret = mount(NULL, sandboxPath.c_str(), NULL, MS_PRIVATE, NULL);
-    APPSPAWN_CHECK(ret == 0, return ret, "errno is: %d, private mount to %s failed", errno, sandboxPath.c_str());
+    APPSPAWN_CHECK(ret == 0, return ret,
+        "errno is: %{public}d, private mount to %{public}s failed", errno, sandboxPath.c_str());
 #endif
     /* close DLP_FUSE_FD and dup FD to it */
     close(DLP_FUSE_FD);
     ret = dup2(fd, DLP_FUSE_FD);
-    APPSPAWN_CHECK_ONLY_LOG(ret != -1, "dup fuse fd %d failed, errno is %d", fd, errno);
+    APPSPAWN_CHECK_ONLY_LOG(ret != -1, "dup fuse fd %{public}d failed, errno is %{public}d", fd, errno);
     return ret;
 }
 
@@ -472,7 +474,7 @@ void SandboxUtils::CheckAndPrepareSrcPath(const ClientSocket::AppProperty *appPr
             chown(srcPath.c_str(), appProperty->uid, DATABASE_DIR_GID);
             SetSelinuxCondition(srcPath, appProperty);
         } else {
-            APPSPAWN_LOGI("failed to access path: %s", srcPath.c_str());
+            APPSPAWN_LOGI("failed to access path: %{public}s", srcPath.c_str());
         }
     }
 
@@ -487,7 +489,7 @@ void SandboxUtils::CheckAndPrepareSrcPath(const ClientSocket::AppProperty *appPr
             chmod(srcPath.c_str(), DATABASE_FOLDER_FILE_MODE | S_ISGID);
             chown(srcPath.c_str(), appProperty->uid, DFS_GID);
         } else {
-            APPSPAWN_LOGI("failed to access path: %s", srcPath.c_str());
+            APPSPAWN_LOGI("failed to access path: %{public}s", srcPath.c_str());
         }
     }
 }
@@ -496,7 +498,7 @@ int SandboxUtils::DoAllMntPointsMount(const ClientSocket::AppProperty *appProper
 {
     std::string bundleName = appProperty->bundleName;
     if (appConfig.find(g_mountPrefix) == appConfig.end()) {
-        APPSPAWN_LOGV("mount config is not found, app name is %s", bundleName.c_str());
+        APPSPAWN_LOGV("mount config is not found, app name is %{public}s", bundleName.c_str());
         return 0;
     }
 
@@ -544,7 +546,7 @@ int SandboxUtils::DoAllMntPointsMount(const ClientSocket::AppProperty *appProper
             std::string actionStatus = g_statusCheck;
             (void)JsonUtils::GetStringFromJson(mntPoint, g_actionStatuc, actionStatus);
             if (actionStatus == g_statusCheck) {
-                APPSPAWN_LOGE("DoAppSandboxMountOnce failed, %s", sandboxPath.c_str());
+                APPSPAWN_LOGE("DoAppSandboxMountOnce failed, %{public}s", sandboxPath.c_str());
                 return ret;
             }
         }
@@ -558,7 +560,7 @@ int SandboxUtils::DoAllMntPointsMount(const ClientSocket::AppProperty *appProper
 int SandboxUtils::DoAllSymlinkPointslink(const ClientSocket::AppProperty *appProperty, nlohmann::json &appConfig)
 {
     APPSPAWN_CHECK(appConfig.find(g_symlinkPrefix) != appConfig.end(), return 0, "symlink config is not found,"
-        "maybe reuslt sandbox launch failed app name is %s", appProperty->bundleName);
+        "maybe result sandbox launch failed app name is %{public}s", appProperty->bundleName);
 
     nlohmann::json symlinkPoints = appConfig[g_symlinkPrefix];
     std::string sandboxRoot = GetSbxPathByConfig(appProperty, appConfig);
@@ -569,17 +571,17 @@ int SandboxUtils::DoAllSymlinkPointslink(const ClientSocket::AppProperty *appPro
 
         // Check the validity of the symlink configuration
         if (symPoint.find(g_targetName) == symPoint.end() || symPoint.find(g_linkName) == symPoint.end()) {
-            APPSPAWN_LOGE("read symlink config failed, app name is %s", appProperty->bundleName);
+            APPSPAWN_LOGE("read symlink config failed, app name is %{public}s", appProperty->bundleName);
             continue;
         }
 
         std::string targetName = ConvertToRealPath(appProperty, symPoint[g_targetName].get<std::string>());
         std::string linkName = sandboxRoot + ConvertToRealPath(appProperty, symPoint[g_linkName].get<std::string>());
-        APPSPAWN_LOGV("symlink, from %s to %s", targetName.c_str(), linkName.c_str());
+        APPSPAWN_LOGV("symlink, from %{public}s to %{public}s", targetName.c_str(), linkName.c_str());
 
         int ret = symlink(targetName.c_str(), linkName.c_str());
         if (ret && errno != EEXIST) {
-            APPSPAWN_LOGE("errno is %d, symlink failed, %s", errno, linkName.c_str());
+            APPSPAWN_LOGE("errno is %{public}d, symlink failed, %{public}s", errno, linkName.c_str());
 
             std::string actionStatus = g_statusCheck;
             (void)JsonUtils::GetStringFromJson(symPoint, g_actionStatuc, actionStatus);
@@ -636,7 +638,7 @@ int32_t SandboxUtils::HandleFlagsPoint(const ClientSocket::AppProperty *appPrope
                 return DoAllMntPointsMount(appProperty, flagPoint);
             }
         } else {
-            APPSPAWN_LOGE("read flags config failed, app name is %s", appProperty->bundleName);
+            APPSPAWN_LOGE("read flags config failed, app name is %{public}s", appProperty->bundleName);
         }
     }
 
@@ -730,13 +732,13 @@ int32_t SandboxUtils::SetRenderSandboxProperty(const ClientSocket::AppProperty *
 
     if (privateAppConfig.find(g_ohosRender) != privateAppConfig.end()) {
         int ret = DoAllMntPointsMount(appProperty, privateAppConfig[g_ohosRender][0]);
-        APPSPAWN_CHECK(ret == 0, return ret, "DoAllMntPointsMount failed, %s",
+        APPSPAWN_CHECK(ret == 0, return ret, "DoAllMntPointsMount failed, %{public}s",
             appProperty->bundleName);
         ret = DoAllSymlinkPointslink(appProperty, privateAppConfig[g_ohosRender][0]);
-        APPSPAWN_CHECK(ret == 0, return ret, "DoAllSymlinkPointslink failed, %s",
+        APPSPAWN_CHECK(ret == 0, return ret, "DoAllSymlinkPointslink failed, %{public}s",
             appProperty->bundleName);
         ret = HandleFlagsPoint(appProperty, privateAppConfig[g_ohosRender][0]);
-        APPSPAWN_CHECK_ONLY_LOG(ret == 0, "HandleFlagsPoint for render-sandbox failed, %s",
+        APPSPAWN_CHECK_ONLY_LOG(ret == 0, "HandleFlagsPoint for render-sandbox failed, %{public}s",
             appProperty->bundleName);
     }
 #endif
@@ -763,12 +765,12 @@ int32_t SandboxUtils::SetCommonAppSandboxProperty_(const ClientSocket::AppProper
     int rc = 0;
 
     rc = DoSandboxFileCommonBind(appProperty, config);
-    APPSPAWN_CHECK(rc == 0, return rc, "DoSandboxFileCommonBind failed, %s", appProperty->bundleName);
+    APPSPAWN_CHECK(rc == 0, return rc, "DoSandboxFileCommonBind failed, %{public}s", appProperty->bundleName);
 
     // if sandbox switch is off, don't do symlink work again
     if (CheckAppSandboxSwitchStatus(appProperty) == true && (CheckTotalSandboxSwitchStatus(appProperty) == true)) {
         rc = DoSandboxFileCommonSymlink(appProperty, config);
-        APPSPAWN_CHECK(rc == 0, return rc, "DoSandboxFileCommonSymlink failed, %s", appProperty->bundleName);
+        APPSPAWN_CHECK(rc == 0, return rc, "DoSandboxFileCommonSymlink failed, %{public}s", appProperty->bundleName);
     }
 
     rc = DoSandboxFileCommonFlagsPointHandle(appProperty, config);
@@ -785,13 +787,15 @@ int32_t SandboxUtils::SetCommonAppSandboxProperty(const ClientSocket::AppPropert
     int ret = 0;
 
     ret = SetCommonAppSandboxProperty_(appProperty, jsonConfig);
-    APPSPAWN_CHECK(ret == 0, return ret, "parse appdata config for common failed, %s", sandboxPackagePath.c_str());
+    APPSPAWN_CHECK(ret == 0, return ret,
+        "parse appdata config for common failed, %{public}s", sandboxPackagePath.c_str());
 
     ret = SetCommonAppSandboxProperty_(appProperty, productConfig);
-    APPSPAWN_CHECK(ret == 0, return ret, "parse product config for common failed, %s", sandboxPackagePath.c_str());
+    APPSPAWN_CHECK(ret == 0, return ret,
+        "parse product config for common failed, %{public}s", sandboxPackagePath.c_str());
 
     ret = MountAllHsp(appProperty, sandboxPackagePath);
-    APPSPAWN_CHECK(ret == 0, return ret, "mount hspList failed, %s", sandboxPackagePath.c_str());
+    APPSPAWN_CHECK(ret == 0, return ret, "mount hspList failed, %{public}s", sandboxPackagePath.c_str());
 
     if (strcmp(appProperty->apl, APL_SYSTEM_BASIC.data()) == 0 ||
         strcmp(appProperty->apl, APL_SYSTEM_CORE.data()) == 0 ||
@@ -827,7 +831,7 @@ int32_t SandboxUtils::MountAllHsp(const ClientSocket::AppProperty *appProperty, 
     APPSPAWN_CHECK(bundles.is_array() && modules.is_array() && versions.is_array() && bundles.size() == modules.size()
         && bundles.size() == versions.size(), return -1, "MountAllHsp: value is not arrary or sizes are not same");
 
-    APPSPAWN_LOGI("MountAllHsp: app = %s, cnt = %u", appProperty->bundleName, bundles.size());
+    APPSPAWN_LOGI("MountAllHsp: app = %{public}s, cnt = %{public}u", appProperty->bundleName, bundles.size());
     for (uint32_t i = 0; i < bundles.size(); i++) {
         // elements in json arrary can be different type
         APPSPAWN_CHECK(bundles[i].is_string() && modules[i].is_string() && versions[i].is_string(),
@@ -842,7 +846,7 @@ int32_t SandboxUtils::MountAllHsp(const ClientSocket::AppProperty *appProperty, 
         std::string libPhysicalPath = g_physicalAppInstallPath + libBundleName + "/" + libVersion + "/" + libModuleName;
         std::string mntPath =  sandboxPackagePath + g_sandboxHspInstallPath + libBundleName + "/" + libModuleName;
         ret = DoAppSandboxMountOnce(libPhysicalPath.c_str(), mntPath.c_str(), "", BASIC_MOUNT_FLAGS, nullptr);
-        APPSPAWN_CHECK(ret == 0, return ret, "mount library failed %d", ret);
+        APPSPAWN_CHECK(ret == 0, return ret, "mount library failed %{public}d", ret);
     }
     return ret;
 }
@@ -859,7 +863,7 @@ int32_t SandboxUtils::DoSandboxRootFolderCreateAdapt(std::string &sandboxPackage
     // rootfs: to do more resources bind mount here to get more strict resources constraints
 #ifndef APPSPAWN_TEST
     rc = mount("/", sandboxPackagePath.c_str(), NULL, BASIC_MOUNT_FLAGS, NULL);
-    APPSPAWN_CHECK(rc == 0, return rc, "mount bind / failed, %d", errno);
+    APPSPAWN_CHECK(rc == 0, return rc, "mount bind / failed, %{public}d", errno);
 #endif
     return 0;
 }
@@ -914,7 +918,7 @@ bool SandboxUtils::CheckAppSandboxSwitchStatus(const ClientSocket::AppProperty *
     if (privateAppConfig.find(appProperty->bundleName) != privateAppConfig.end()) {
         nlohmann::json appConfig = privateAppConfig[appProperty->bundleName][0];
         rc = GetSbxSwitchStatusByConfig(appConfig);
-        APPSPAWN_LOGE("CheckAppSandboxSwitchStatus middle, %d", rc);
+        APPSPAWN_LOGE("CheckAppSandboxSwitchStatus middle, %{public}d", rc);
     }
 
     // default sandbox switch is on
@@ -946,7 +950,7 @@ int32_t SandboxUtils::SetAppSandboxProperty(const ClientSocket::AppProperty *app
     if (!(appProperty->cloneFlags & CLONE_NEWPID)) {
         // add pid to a new mnt namespace
         rc = unshare(CLONE_NEWNS);
-        APPSPAWN_CHECK(rc == 0, return rc, "unshare failed, packagename is %s", bundleName.c_str());
+        APPSPAWN_CHECK(rc == 0, return rc, "unshare failed, packagename is %{public}s", bundleName.c_str());
     }
 
     // check app sandbox switch
@@ -956,14 +960,14 @@ int32_t SandboxUtils::SetAppSandboxProperty(const ClientSocket::AppProperty *app
     } else {
         rc = DoSandboxRootFolderCreate(appProperty, sandboxPackagePath);
     }
-    APPSPAWN_CHECK(rc == 0, return rc, "DoSandboxRootFolderCreate failed, %s", bundleName.c_str());
+    APPSPAWN_CHECK(rc == 0, return rc, "DoSandboxRootFolderCreate failed, %{public}s", bundleName.c_str());
 #ifndef NWEB_SPAWN
     rc = SetCommonAppSandboxProperty(appProperty, sandboxPackagePath);
-    APPSPAWN_CHECK(rc == 0, return rc, "SetCommonAppSandboxProperty failed, packagename is %s",
+    APPSPAWN_CHECK(rc == 0, return rc, "SetCommonAppSandboxProperty failed, packagename is %{public}s",
         bundleName.c_str());
     if (CheckBundleNameForPrivate(bundleName)) {
         rc = SetPrivateAppSandboxProperty(appProperty);
-        APPSPAWN_CHECK(rc == 0, return rc, "SetPrivateAppSandboxProperty failed, packagename is %s",
+        APPSPAWN_CHECK(rc == 0, return rc, "SetPrivateAppSandboxProperty failed, packagename is %{public}s",
             bundleName.c_str());
     }
 #else
@@ -972,21 +976,21 @@ int32_t SandboxUtils::SetAppSandboxProperty(const ClientSocket::AppProperty *app
     // so we can't use the method SetPrivateAppSandboxProperty
     // which mount dirs by using bundle name.
     rc = SetRenderSandboxProperty(appProperty, sandboxPackagePath);
-    APPSPAWN_CHECK(rc == 0, return rc, "SetRenderSandboxProperty failed, packagename is %s",
+    APPSPAWN_CHECK(rc == 0, return rc, "SetRenderSandboxProperty failed, packagename is %{public}s",
         sandboxPackagePath.c_str());
 #endif
 
 #ifndef APPSPAWN_TEST
     rc = chdir(sandboxPackagePath.c_str());
-    APPSPAWN_CHECK(rc == 0, return rc, "chdir failed, packagename is %s, path is %s",
+    APPSPAWN_CHECK(rc == 0, return rc, "chdir failed, packagename is %{public}s, path is %{public}s",
         bundleName.c_str(), sandboxPackagePath.c_str());
 
     rc = syscall(SYS_pivot_root, sandboxPackagePath.c_str(), sandboxPackagePath.c_str());
-    APPSPAWN_CHECK(rc == 0, return rc, "errno is %d, pivot root failed, packagename is %s",
+    APPSPAWN_CHECK(rc == 0, return rc, "errno is %{public}d, pivot root failed, packagename is %{public}s",
         errno, bundleName.c_str());
 
     rc = umount2(".", MNT_DETACH);
-    APPSPAWN_CHECK(rc == 0, return rc, "MNT_DETACH failed, packagename is %s", bundleName.c_str());
+    APPSPAWN_CHECK(rc == 0, return rc, "MNT_DETACH failed, packagename is %{public}s", bundleName.c_str());
 #endif
     return 0;
 }

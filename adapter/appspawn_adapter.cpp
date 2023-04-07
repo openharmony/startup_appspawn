@@ -30,7 +30,7 @@ void SetAppAccessToken(struct AppSpawnContent_ *content, AppSpawnClient *client)
 {
     AppSpawnClientExt *appProperty = reinterpret_cast<AppSpawnClientExt *>(client);
     int32_t ret = SetSelfTokenID(appProperty->property.accessTokenIdEx);
-    APPSPAWN_LOGI("AppSpawnServer::set access token id = %d, ret = %d %d",
+    APPSPAWN_LOGV("AppSpawnServer::set access token id = %{public}llu, ret = %{public}d %{public}d",
         appProperty->property.accessTokenIdEx, ret, getuid());
 }
 
@@ -46,10 +46,10 @@ void SetSelinuxCon(struct AppSpawnContent_ *content, AppSpawnClient *client)
     hapDomainInfo.hapFlags = appProperty->property.hapFlags;
     int32_t ret = hapContext.HapDomainSetcontext(hapDomainInfo);
     if (ret != 0) {
-        APPSPAWN_LOGE("AppSpawnServer::Failed to hap domain set context, errno = %d %s",
+        APPSPAWN_LOGE("AppSpawnServer::Failed to hap domain set context, errno = %{public}d %{public}s",
             errno, appProperty->property.apl);
     } else {
-        APPSPAWN_LOGI("AppSpawnServer::Success to hap domain set context, ret = %d", ret);
+        APPSPAWN_LOGV("AppSpawnServer::Success to hap domain set context, ret = %{public}d", ret);
     }
 #endif
 }
@@ -77,12 +77,12 @@ int SetSeccompFilter(struct AppSpawnContent_ *content, AppSpawnClient *client)
     const char *appName = APP_NAME;
 #endif
     if (!SetSeccompPolicyWithName(appName)) {
-        APPSPAWN_LOGE("Failed to set %s seccomp filter and exit", appName);
+        APPSPAWN_LOGE("Failed to set %{public}s seccomp filter and exit", appName);
 #ifndef APPSPAWN_TEST
         return -EINVAL;
 #endif
     } else {
-        APPSPAWN_LOGI("Success to set %s seccomp filter", appName);
+        APPSPAWN_LOGI("Success to set %{public}s seccomp filter", appName);
     }
 #endif
     return 0;
@@ -91,7 +91,7 @@ int SetSeccompFilter(struct AppSpawnContent_ *content, AppSpawnClient *client)
 void HandleInternetPermission(const AppSpawnClient *client)
 {
     AppSpawnClientExt *appPropertyExt = (AppSpawnClientExt *)client;
-    APPSPAWN_LOGI("HandleInternetPermission id %d setAllowInternet %hhu allowInternet %hhu",
+    APPSPAWN_LOGV("HandleInternetPermission id %{public}d setAllowInternet %hhu allowInternet %hhu",
         client->id, appPropertyExt->setAllowInternet, appPropertyExt->allowInternet);
     if (appPropertyExt->setAllowInternet == 1 && appPropertyExt->allowInternet == 0) {
         DisallowInternet();

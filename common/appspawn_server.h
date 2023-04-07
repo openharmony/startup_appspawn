@@ -15,14 +15,15 @@
 
 #ifndef APPSPAWN_SERVER_H
 #define APPSPAWN_SERVER_H
-#include "beget_ext.h"
-
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
 #include <time.h>
 
+#include "beget_ext.h"
+#include "hilog/log.h"
+#include "securec.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -86,19 +87,40 @@ long long DiffTime(struct timespec *startTime);
 pid_t AppSpawnFork(int (*childFunc)(void *arg), void *args);
 #define UNUSED(x) (void)(x)
 
+#ifndef OHOS_LITE
+#define APPSPAWN_LOG(logLevel, domain, tag, fmt, ...) \
+    HiLogPrint(LOG_CORE, (LogLevel)logLevel, domain, tag, \
+        "[%{public}s:%{public}d]" fmt,  (FILE_NAME), (__LINE__), ##__VA_ARGS__)
+
 #ifndef APPSPAWN_LABEL
 #define APPSPAWN_LABEL "APPSPAWN"
 #endif
 #define APPSPAWN_DOMAIN (BASE_DOMAIN + 0x11)
 
-#define APPSPAWN_LOGI(fmt, ...) STARTUP_LOGI(APPSPAWN_DOMAIN, APPSPAWN_LABEL, fmt, ##__VA_ARGS__)
-#define APPSPAWN_LOGE(fmt, ...) STARTUP_LOGE(APPSPAWN_DOMAIN, APPSPAWN_LABEL, fmt, ##__VA_ARGS__)
-#define APPSPAWN_LOGV(fmt, ...) STARTUP_LOGV(APPSPAWN_DOMAIN, APPSPAWN_LABEL, fmt, ##__VA_ARGS__)
-#define APPSPAWN_LOGW(fmt, ...) STARTUP_LOGW(APPSPAWN_DOMAIN, APPSPAWN_LABEL, fmt, ##__VA_ARGS__)
+#define APPSPAWN_LOGI(fmt, ...) \
+    APPSPAWN_LOG(LOG_INFO, APPSPAWN_DOMAIN, APPSPAWN_LABEL, fmt, ##__VA_ARGS__)
+#define APPSPAWN_LOGE(fmt, ...) \
+    APPSPAWN_LOG(LOG_ERROR, APPSPAWN_DOMAIN, APPSPAWN_LABEL, fmt, ##__VA_ARGS__)
+#define APPSPAWN_LOGV(fmt, ...) \
+    APPSPAWN_LOG(LOG_DEBUG, APPSPAWN_DOMAIN, APPSPAWN_LABEL, fmt, ##__VA_ARGS__)
+#define APPSPAWN_LOGW(fmt, ...) \
+    APPSPAWN_LOG(LOG_WARN, APPSPAWN_DOMAIN, APPSPAWN_LABEL, fmt, ##__VA_ARGS__)
 
-#define APPSPAWN_CHECK(retCode, exper, ...) \
+#else
+
+#define APPSPAWN_LOGI(fmt, ...) \
+    HILOG_INFO(HILOG_MODULE_HIVIEW, "[%s:%d]" fmt,  (FILE_NAME), (__LINE__), ##__VA_ARGS__)
+#define APPSPAWN_LOGE(fmt, ...) \
+    HILOG_ERROR(HILOG_MODULE_HIVIEW, "[%s:%d]" fmt,  (FILE_NAME), (__LINE__), ##__VA_ARGS__)
+#define APPSPAWN_LOGV(fmt, ...) \
+    HILOG_DEBUG(HILOG_MODULE_HIVIEW, "[%s:%d]" fmt,  (FILE_NAME), (__LINE__), ##__VA_ARGS__)
+#define APPSPAWN_LOGW(fmt, ...) \
+    HILOG_FATAL(HILOG_MODULE_HIVIEW, "[%s:%d]" fmt,  (FILE_NAME), (__LINE__), ##__VA_ARGS__)
+#endif
+
+#define APPSPAWN_CHECK(retCode, exper, fmt, ...) \
     if (!(retCode)) {                    \
-        APPSPAWN_LOGE(__VA_ARGS__);         \
+        APPSPAWN_LOGE(fmt, ##__VA_ARGS__);         \
         exper;                           \
     }
 
@@ -107,9 +129,9 @@ pid_t AppSpawnFork(int (*childFunc)(void *arg), void *args);
         exper;                 \
     }                         \
 
-#define APPSPAWN_CHECK_ONLY_LOG(retCode, ...) \
+#define APPSPAWN_CHECK_ONLY_LOG(retCode, fmt, ...) \
     if (!(retCode)) {                    \
-        APPSPAWN_LOGE(__VA_ARGS__);      \
+        APPSPAWN_LOGE(fmt, ##__VA_ARGS__);      \
     }
 
 #ifdef __cplusplus
