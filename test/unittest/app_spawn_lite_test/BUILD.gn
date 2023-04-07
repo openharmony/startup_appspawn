@@ -44,7 +44,10 @@ unittest("AppSpawnLiteTest") {
     "app_spawn_lite_test.cpp",
   ]
 
-  defines = [ "APPSPAWN_TEST" ]
+  defines = [
+    "APPSPAWN_TEST",
+    "OHOS_LITE",
+  ]
 
   deps = [
     "${aafwk_lite_path}/frameworks/ability_lite:aafwk_abilitykit_lite",

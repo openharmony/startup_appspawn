@@ -34,8 +34,8 @@ void LoadExtendLib(AppSpawnContent *content)
     APPSPAWN_LOGI("LoadExtendLib: Start calling dlopen acelibdir.");
     void *aceAbilityLib = NULL;
     aceAbilityLib = dlopen(acelibdir, RTLD_NOW | RTLD_GLOBAL);
-    APPSPAWN_CHECK(aceAbilityLib != NULL, return, "Fail to dlopen %s, [%s]", acelibdir, dlerror());
-    APPSPAWN_LOGI("LoadExtendLib: Success to dlopen %s", acelibdir);
+    APPSPAWN_CHECK(aceAbilityLib != NULL, return, "Fail to dlopen %{public}s, [%{public}s]", acelibdir, dlerror());
+    APPSPAWN_LOGI("LoadExtendLib: Success to dlopen %{public}s", acelibdir);
 
     bool preload = OHOS::system::GetBoolParameter("const.appspawn.preload", DEFAULT_PRELOAD_VALUE);
     if (!preload) {

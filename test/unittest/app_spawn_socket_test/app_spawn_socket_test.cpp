@@ -34,12 +34,6 @@ public:
     void TearDown();
 };
 
-void AppSpawnSocketTest::SetUpTestCase()
-{
-    int32_t loglevel = GetIntParameter("persist.init.debug.loglevel", 0);
-    SetInitLogLevel((InitLogLevel)loglevel);
-}
-
 void AppSpawnSocketTest::TearDownTestCase()
 {}
 

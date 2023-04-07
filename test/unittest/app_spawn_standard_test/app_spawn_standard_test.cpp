@@ -571,7 +571,7 @@ HWTEST(AppSpawnStandardTest, App_Spawn_Standard_07, TestSize.Level0)
     clock_gettime(CLOCK_REALTIME, &tmStart);
     tmStart.tv_nsec += 100000000; // 100000000 for test
     long long diff = DiffTime(&tmStart);
-    APPSPAWN_LOGI("App timeused %d %lld ns.", getpid(), diff);
+    APPSPAWN_LOGI("App timeused %{public}d %{public}lld ns.", getpid(), diff);
 
     GTEST_LOG_(INFO) << "App_Spawn_Standard_07 end";
 }
