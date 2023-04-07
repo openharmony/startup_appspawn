@@ -30,6 +30,14 @@ public:
     ~HapContextStub();
     int HapDomainSetcontext(HapDomainInfo& hapDomainInfo);
 };
+
+enum SeccompFilterType: int {
+    SYSTEM_SA,       // system service process
+    SYSTEM_OTHERS,   // HDF process and daemon process
+    APP,
+    INDIVIDUAL       // process which need enable individual policy
+};
+
 #ifdef __cplusplus
 extern "C" {
 #endif
