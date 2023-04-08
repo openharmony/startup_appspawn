@@ -204,6 +204,11 @@ static int SetUidGid(struct AppSpawnContent_ *content, AppSpawnClient *client)
         APPSPAWN_CHECK(ret == 0, return -errno,
             "setgid(%{public}u) failed: %{public}d", appProperty->property.gid, errno);
 
+        if (content->setSeccompFilter) {
+            ret = content->setSeccompFilter(content, client);
+            APPSPAWN_CHECK(ret == 0, return ret, "Failed to set setSeccompFilter");
+        }
+
         /* If the effective user ID is changed from 0 to nonzero,
          * then all capabilities are cleared from the effective set
          */
@@ -215,6 +220,11 @@ static int SetUidGid(struct AppSpawnContent_ *content, AppSpawnClient *client)
         isRet = setresgid(appProperty->property.gid, appProperty->property.gid, appProperty->property.gid) == -1;
         APPSPAWN_CHECK(!isRet, return -errno,
             "setgid(%{public}u) failed: %{public}d", appProperty->property.gid, errno);
+
+        if (content->setSeccompFilter) {
+            long ret = content->setSeccompFilter(content, client);
+            APPSPAWN_CHECK(ret == 0, return ret, "Failed to set setSeccompFilter");
+        }
 
         /* If the effective user ID is changed from 0 to nonzero,
          * then all capabilities are cleared from the effective set
