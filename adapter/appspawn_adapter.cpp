@@ -31,7 +31,7 @@ void SetAppAccessToken(struct AppSpawnContent_ *content, AppSpawnClient *client)
     AppSpawnClientExt *appProperty = reinterpret_cast<AppSpawnClientExt *>(client);
     int32_t ret = SetSelfTokenID(appProperty->property.accessTokenIdEx);
     APPSPAWN_LOGV("AppSpawnServer::set access token id = %{public}llu, ret = %{public}d %{public}d",
-        appProperty->property.accessTokenIdEx, ret, getuid());
+        static_cast<unsigned long long>(appProperty->property.accessTokenIdEx), ret, getuid());
 }
 
 void SetSelinuxCon(struct AppSpawnContent_ *content, AppSpawnClient *client)
