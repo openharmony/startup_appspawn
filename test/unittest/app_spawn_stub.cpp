@@ -245,7 +245,7 @@ void StartupLog_stub(InitLogLevel logLevel, uint32_t domain, const char *tag, co
     (void)fflush(stdout);
 }
 
-bool SetSeccompPolicyWithName(const char *filterName)
+bool SetSeccompPolicyWithName(SeccompFilterType filter, const char *filterName)
 {
     static int result = 0;
     result++;
