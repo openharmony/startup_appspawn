@@ -831,7 +831,8 @@ int32_t SandboxUtils::MountAllHsp(const ClientSocket::AppProperty *appProperty, 
     APPSPAWN_CHECK(bundles.is_array() && modules.is_array() && versions.is_array() && bundles.size() == modules.size()
         && bundles.size() == versions.size(), return -1, "MountAllHsp: value is not arrary or sizes are not same");
 
-    APPSPAWN_LOGI("MountAllHsp: app = %{public}s, cnt = %{public}u", appProperty->bundleName, bundles.size());
+    APPSPAWN_LOGI("MountAllHsp: app = %{public}s, cnt = %{public}lu",
+        appProperty->bundleName, static_cast<unsigned long>(bundles.size()));
     for (uint32_t i = 0; i < bundles.size(); i++) {
         // elements in json arrary can be different type
         APPSPAWN_CHECK(bundles[i].is_string() && modules[i].is_string() && versions[i].is_string(),
