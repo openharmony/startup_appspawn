@@ -453,7 +453,6 @@ static void SetSelinuxCondition(const std::string &srcPath, const ClientSocket::
 void SandboxUtils::CheckAndPrepareSrcPath(const ClientSocket::AppProperty *appProperty, const std::string &srcPath)
 {
     if (access(srcPath.c_str(), F_OK) == 0) {
-        SetSelinuxCondition(srcPath, appProperty);
         return;
     }
 
