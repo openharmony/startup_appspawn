@@ -69,9 +69,9 @@ executable("appspawn") {
   if (enable_ohos_appexecfwk_feature_ability == true) {
     deps += [
       "//foundation/arkui/ace_engine_lite/frameworks:ace_lite",
-      "//foundation/graphic/surface:lite_surface",
-      "//foundation/graphic/ui:lite_ui",
-      "//foundation/graphic/utils:lite_graphic_utils",
+      "//foundation/graphic/surface:surface_lite",
+      "//foundation/graphic/ui:ui_lite",
+      "//foundation/graphic/utils:graphic_utils_lite",
     ]
   }
 
