@@ -38,9 +38,16 @@ ohos_prebuilt_etc("sandbox-config.json") {
   module_install_dir = "etc/sandbox"
 }
 
+ohos_prebuilt_etc("appspawn_preload.json") {
+  source = "../appspawn_preload.json"
+  part_name = "${part_name}"
+  module_install_dir = "etc/appspawn"
+}
+
 group("etc_files") {
   deps = [
     ":appdata-sandbox.json",
+    ":appspawn_preload.json",
     ":product-sandbox.json",
     ":sandbox-config.json",
   ]
