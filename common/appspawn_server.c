@@ -48,7 +48,7 @@ static void NotifyResToParent(struct AppSpawnContent_ *content, AppSpawnClient *
     }
 }
 
-static void ProcessSafeExit(int code)
+static void ProcessExit(int code)
 {
     APPSPAWN_LOGI("App exit: %{public}d", code);
 #ifdef OHOS_LITE
@@ -59,6 +59,24 @@ static void ProcessSafeExit(int code)
 #endif
 #endif
 }
+
+static bool g_IsAppRunning = false;
+
+#ifdef APPSPAWN_HELPER
+__attribute__((visibility("default")))
+_Noreturn
+void exit(int code)
+{
+    if (g_IsAppRunning) {
+        APPSPAWN_LOGF("Unexpected exit call: %{public}d", code);
+        abort();
+    }
+    // hook `exit` to `ProcessExit` to ensure app exit in a clean way
+    ProcessExit(code);
+    // should not come here
+    abort();
+}
+#endif
 
 int DoStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client, char *longProcName, uint32_t longProcNameLen)
 {
@@ -110,7 +128,7 @@ int DoStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client, char *l
     return 0;
 }
 
-static int AppSpawnChildInternal(void *arg)
+static int AppSpawnChildRun(void *arg)
 {
     APPSPAWN_CHECK(arg != NULL, return -1, "Invalid arg for appspawn child");
     AppSandboxArg *sandbox = (AppSandboxArg *)arg;
@@ -154,8 +172,10 @@ static int AppSpawnChildInternal(void *arg)
 
 static int AppSpawnChild(void *arg)
 {
-    ProcessSafeExit(AppSpawnChildInternal(arg));
-    return -1;
+    g_IsAppRunning = true;
+    int ret = AppSpawnChildRun(arg);
+    g_IsAppRunning = false;
+    return ret;
 }
 
 #ifndef APPSPAWN_TEST
@@ -163,8 +183,7 @@ pid_t AppSpawnFork(int (*childFunc)(void *arg), void *args)
 {
     pid_t pid = fork();
     if (pid == 0) {
-        ProcessSafeExit(childFunc(args));
-        return -1;
+        ProcessExit(childFunc(args));
     }
     return pid;
 }
