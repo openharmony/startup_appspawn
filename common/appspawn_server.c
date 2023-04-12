@@ -24,6 +24,7 @@
 #define _GNU_SOURCE
 #include <sched.h>
 #include <time.h>
+#include <stdbool.h>
 
 #define DEFAULT_UMASK 0002
 #define SANDBOX_STACK_SIZE (1024 * 1024 * 8)
