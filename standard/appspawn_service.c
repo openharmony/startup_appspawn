@@ -626,7 +626,6 @@ static int CreateAppSpawnServer(AppSpawnContentExt *appSpawnContent, const char 
     APPSPAWN_LOGI("get socket form env %{public}s socketId %{public}d", socketName, socketId);
     APPSPAWN_CHECK_ONLY_EXPER(socketId <= 0, appSpawnContent->flags |= FLAGS_ON_DEMAND);
 
-    CheckAndCreateDir(path);
     LE_StreamServerInfo info = {};
     info.baseInfo.flags = TASK_STREAM | TASK_PIPE | TASK_SERVER;
     info.socketId = socketId;
