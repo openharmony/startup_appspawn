@@ -14,7 +14,7 @@ import("//base/startup/appspawn/appspawn.gni")
 import("//build/ohos.gni")
 
 config("appspawn_config") {
-  visibility = [ ":*" ]
+  visibility = [ "./*" ]
   include_dirs = [
     "common",
     "standard",
