@@ -105,6 +105,8 @@ pid_t AppSpawnFork(int (*childFunc)(void *arg), void *args);
     APPSPAWN_LOG(LOG_DEBUG, APPSPAWN_DOMAIN, APPSPAWN_LABEL, fmt, ##__VA_ARGS__)
 #define APPSPAWN_LOGW(fmt, ...) \
     APPSPAWN_LOG(LOG_WARN, APPSPAWN_DOMAIN, APPSPAWN_LABEL, fmt, ##__VA_ARGS__)
+#define APPSPAWN_LOGF(fmt, ...) \
+    APPSPAWN_LOG(LOG_FATAL, APPSPAWN_DOMAIN, APPSPAWN_LABEL, fmt, ##__VA_ARGS__)
 
 #else
 
