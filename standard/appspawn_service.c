@@ -557,9 +557,6 @@ static void AppSpawnRun(AppSpawnContent *content, int argc, char *const argv[])
     LE_CloseLoop(LE_GetDefaultLoop());
     free(content);
     g_appSpawnContent = NULL;
-#ifndef APPSPAWN_TEST
-    quick_exit(0);
-#endif
 }
 
 static int CreateHashForApp(AppSpawnContentExt *appSpawnContent)
