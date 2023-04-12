@@ -103,7 +103,7 @@ bool checkUid(const int32_t &pid, const AppSpawnStartMsg &params)
 {
     if (readFileInfo(buffer, pid, "status")) {
         // Move to Uid position
-        char *uidPtr = strstr(buffer, "Uid") + UID_POSITION_MOVE;
+        char *uidPtr = strstr(buffer, "Uid:");
         if (uidPtr == nullptr) {
             HiLog::Error(LABEL, "get Uid info failed.");
             return CHECK_ERROR;
@@ -124,7 +124,7 @@ bool checkGid(const int32_t &pid, const AppSpawnStartMsg &params)
 {
     if (readFileInfo(buffer, pid, "status")) {
         // Move to Gid position
-        char *gidPtr = strstr(buffer, "Gid");
+        char *gidPtr = strstr(buffer, "Gid:");
         if (gidPtr == nullptr) {
             HiLog::Error(LABEL, "get Gid info failed.");
             return CHECK_ERROR;
