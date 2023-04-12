@@ -76,6 +76,18 @@ ohos_prebuilt_etc("asan.options") {
   part_name = "${part_name}"
 }
 
+ohos_shared_library("appspawn_helper") {
+  sources = [ "${appspawn_path}/common/appspawn_server.c" ]
+  configs = [ ":appspawn_config" ]
+  defines = [ "APPSPAWN_HELPER" ]
+  cflags = [ "-fvisibility=hidden" ]
+  external_deps = [ "init:libbegetutil" ]
+
+  install_enable = true
+  subsystem_name = "${subsystem_name}"
+  part_name = "${part_name}"
+}
+
 ohos_static_library("appspawn_server") {
   sources = [
     "${appspawn_path}/adapter/appspawn_adapter.cpp",

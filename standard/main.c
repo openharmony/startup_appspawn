@@ -21,12 +21,35 @@
 #include "init_param.h"
 #include "syspara/parameter.h"
 
+#define APPSPAWN_PRELOAD "libappspawn_helper.z.so"
+
+static void CheckPreload(char *const argv[])
+{
+    char *preload = getenv("LD_PRELOAD");
+    if (preload && strstr(preload, APPSPAWN_PRELOAD)) {
+        return;
+    }
+    char buf[128] = APPSPAWN_PRELOAD; // 128 is enough in most cases
+    if (preload && preload[0]) {
+        int len = sprintf_s(buf, sizeof(buf), "%s:" APPSPAWN_PRELOAD, preload);
+        APPSPAWN_CHECK(len > 0, return, "preload too long: %{public}s", preload);
+    }
+    int ret = setenv("LD_PRELOAD", buf, true);
+    APPSPAWN_CHECK(ret == 0, return, "setenv fail: %{public}s", buf);
+    ssize_t nread = readlink("/proc/self/exe", buf, sizeof(buf) - 1);
+    APPSPAWN_CHECK(nread != -1, return, "readlink fail: /proc/self/exe: %{public}d", errno);
+    buf[nread] = 0;
+    ret = execv(buf, argv);
+    APPSPAWN_LOGE("execv fail: %{public}s: %{public}d: %{public}d", buf, errno, ret);
+}
+
 int main(int argc, char *const argv[])
 {
     if (argc <= 0) {
         return 0;
     }
 
+    CheckPreload(argv);
     (void)signal(SIGPIPE, SIG_IGN);
     uint32_t argvSize = 0;
     int mode = 0;
@@ -68,5 +91,5 @@ int main(int argc, char *const argv[])
     }
     content->runAppSpawn(content, argc, argv);
 
-    _Exit(0);
+    return 0;
 }

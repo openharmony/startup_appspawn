@@ -26,6 +26,7 @@
 #ifdef OHOS_DEBUG
 #include <time.h>
 #endif // OHOS_DEBUG
+#include <stdbool.h>
 
 #define DEFAULT_UMASK 0002
 
@@ -61,9 +62,9 @@ static void NotifyResToParent(struct AppSpawnContent_ *content, AppSpawnClient *
     }
 }
 
-static void ProcessExit(void)
+static void ProcessExit(int code)
 {
-    APPSPAWN_LOGI("App exit %d.", getpid());
+    APPSPAWN_LOGI("App exit: %{public}d", code);
 #ifndef APPSPAWN_TEST
 #ifdef OHOS_LITE
     _exit(0x7f); // 0x7f user exit
@@ -72,6 +73,24 @@ static void ProcessExit(void)
 #endif
 #endif
 }
+
+static bool g_IsAppRunning = false;
+
+#ifdef APPSPAWN_HELPER
+__attribute__((visibility("default")))
+_Noreturn
+void exit(int code)
+{
+    if (g_IsAppRunning) {
+        APPSPAWN_LOGF("Unexpected exit call: %{public}d", code);
+        abort();
+    }
+    // hook `exit` to `ProcessExit` to ensure app exit in a clean way
+    ProcessExit(code);
+    // should not come here
+    abort();
+}
+#endif
 
 int DoStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client, char *longProcName, uint32_t longProcNameLen)
 {
@@ -126,7 +145,7 @@ int DoStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client, char *l
     return 0;
 }
 
-int AppSpawnChild(void *arg)
+static int AppSpawnChildRun(void *arg)
 {
     APPSPAWN_CHECK(arg != NULL, return -1, "Invalid arg for appspawn child");
     AppSandboxArg *sandbox = (AppSandboxArg *)arg;
@@ -179,8 +198,15 @@ int AppSpawnChild(void *arg)
     if (ret == 0 && content->runChildProcessor != NULL) {
         content->runChildProcessor(content, client);
     }
-    ProcessExit();
     return 0;
+}
+
+int AppSpawnChild(void *arg)
+{
+    g_IsAppRunning = true;
+    int ret = AppSpawnChildRun(arg);
+    g_IsAppRunning = false;
+    return ret;
 }
 
 int AppSpawnProcessMsg(AppSandboxArg *sandbox, pid_t *childPid)
@@ -216,7 +242,7 @@ int AppSpawnProcessMsg(AppSandboxArg *sandbox, pid_t *childPid)
     *childPid = pid;
 #endif
     if (pid == 0) {
-        AppSpawnChild((void *)sandbox);
+        ProcessExit(AppSpawnChild((void *)sandbox));
     }
     return 0;
 }
