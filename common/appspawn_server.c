@@ -26,6 +26,7 @@
 #ifdef OHOS_DEBUG
 #include <time.h>
 #endif // OHOS_DEBUG
+#include <stdbool.h>
 
 #define DEFAULT_UMASK 0002
 
@@ -73,10 +74,17 @@ static void ProcessExit(int code)
 #endif
 }
 
+static bool g_IsAppRunning = false;
+
 #ifdef APPSPAWN_HELPER
 __attribute__((visibility("default")))
+_Noreturn
 void exit(int code)
 {
+    if (g_IsAppRunning) {
+        APPSPAWN_LOGF("Unexpected exit call: %{public}d", code);
+        abort();
+    }
     // hook `exit` to `ProcessExit` to ensure app exit in a clean way
     ProcessExit(code);
     // should not come here
@@ -137,7 +145,7 @@ int DoStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client, char *l
     return 0;
 }
 
-int AppSpawnChild(void *arg)
+static int AppSpawnChildRun(void *arg)
 {
     APPSPAWN_CHECK(arg != NULL, return -1, "Invalid arg for appspawn child");
     AppSandboxArg *sandbox = (AppSandboxArg *)arg;
@@ -193,6 +201,14 @@ int AppSpawnChild(void *arg)
     return 0;
 }
 
+int AppSpawnChild(void *arg)
+{
+    g_IsAppRunning = true;
+    int ret = AppSpawnChildRun(arg);
+    g_IsAppRunning = false;
+    return ret;
+}
+
 int AppSpawnProcessMsg(AppSandboxArg *sandbox, pid_t *childPid)
 {
     pid_t pid;
@@ -207,7 +223,7 @@ int AppSpawnProcessMsg(AppSandboxArg *sandbox, pid_t *childPid)
         char *childStack = (char *)malloc(SANDBOX_STACK_SIZE);
         APPSPAWN_CHECK(childStack != NULL, return -1, "malloc failed");
 
-        pid = clone(AppSpawnChild, childStack + SANDBOX_STACK_SIZE, client->cloneFlags | SIGCHLD, sandbox);
+        pid = clone(AppSpawnChild, childStack + SANDBOX_STACK_SIZE, client->cloneFlags | SIGCHLD, (void *)sandbox);
         if (pid > 0) {
             free(childStack);
             *childPid = pid;
@@ -226,7 +242,7 @@ int AppSpawnProcessMsg(AppSandboxArg *sandbox, pid_t *childPid)
     *childPid = pid;
 #endif
     if (pid == 0) {
-        ProcessExit(AppSpawnChild(sandbox));
+        ProcessExit(AppSpawnChild((void *)sandbox));
     }
     return 0;
 }
