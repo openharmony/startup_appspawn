@@ -43,7 +43,6 @@
             "sub_component": [
                 "//base/startup/appspawn:appspawn",
                 "//base/startup/appspawn:appspawn.rc",
-                "//base/startup/appspawn:appspawn_helper",
                 "//base/startup/appspawn:appspawn_server",
                 "//base/startup/appspawn:nweb",
                 "//base/startup/appspawn/etc:etc_files",
