@@ -124,6 +124,7 @@ void AppspawnLogPrint(AppspawnLogLevel logLevel, const char *file, int line, con
 #define APPSPAWN_LOGE(fmt, ...) STARTUP_LOGE(APPSPAWN_DOMAIN, APPSPAWN_LABEL, fmt, ##__VA_ARGS__)
 #define APPSPAWN_LOGV(fmt, ...) STARTUP_LOGV(APPSPAWN_DOMAIN, APPSPAWN_LABEL, fmt, ##__VA_ARGS__)
 #define APPSPAWN_LOGW(fmt, ...) STARTUP_LOGW(APPSPAWN_DOMAIN, APPSPAWN_LABEL, fmt, ##__VA_ARGS__)
+#define APPSPAWN_LOGF(fmt, ...) STARTUP_LOGF(APPSPAWN_DOMAIN, APPSPAWN_LABEL, fmt, ##__VA_ARGS__)
 
 #define APPSPAWN_CHECK(retCode, exper, ...) \
     if (!(retCode)) {                    \
