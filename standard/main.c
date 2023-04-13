@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #include <signal.h>
+#include <stdbool.h>
 #include "appspawn_adapter.h"
 #include "appspawn_msg.h"
 #include "appspawn_server.h"
