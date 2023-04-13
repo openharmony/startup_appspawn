@@ -287,6 +287,67 @@ static int32_t SetFileDescriptors(struct AppSpawnContent_ *content, AppSpawnClie
     return 0;
 }
 
+static int32_t CheckTraceStatus(void)
+{
+    int fd = open("/proc/self/status", O_RDONLY);
+    if (fd == -1) {
+        APPSPAWN_LOGE("open /proc/self/status error: %{public}d", errno);
+        return (-errno);
+    }
+
+    char data[1024];
+    ssize_t dataNum = read(fd, data, sizeof(data));
+    if (close(fd) < 0) {
+        APPSPAWN_LOGE("close fd error: %{public}d", errno);
+        return (-errno);
+    }
+
+    if (dataNum <= 0) {
+        APPSPAWN_LOGE("fail to read data");
+        return -1;
+    }
+
+    const char* tracerPid = "TracerPid:\t";
+    char *traceStr = strstr(data, tracerPid);
+    if (traceStr == NULL) {
+        APPSPAWN_LOGE("fail to find %{public}s", tracerPid);
+        return -1;
+    }
+    char *separator = strchr(traceStr, '\n');
+    if (separator == NULL) {
+        APPSPAWN_LOGE("fail to find line break");
+        return -1;
+    }
+
+    int len = separator - traceStr - strlen(tracerPid);
+    char pid = *(traceStr + strlen(tracerPid));
+    if (len > 1 || pid != '0') {
+        return 0;
+    }
+    return -1;
+}
+
+static int32_t WaitForDebugger(AppSpawnClient *client)
+{
+    AppSpawnClientExt *appProperty = (AppSpawnClientExt *)client;
+
+    // wait for debugger only debugging is required and process is debuggable
+    if ((appProperty->property.flags & APP_NATIVEDEBUG) != 0 &&
+        (appProperty->property.flags & APP_DEBUGGABLE) != 0) {
+        uint32_t count = 0;
+        while (CheckTraceStatus() != 0) {
+            usleep(1000 * 100); // sleep 1000 * 100 microsecond
+            count++;
+            // remind users to connect to the debugger every 60 * 10 times
+            if (count % (10 * 60) == 0) {
+                count = 0;
+                APPSPAWN_LOGI("wait for debugger, please attach the process");
+            }
+        }
+    }
+    return 0;
+}
+
 static void Free(char **argv, HspList *hspList)
 {
     argv[0] = NULL;
@@ -504,4 +565,5 @@ void SetContentFunction(AppSpawnContent *content)
     content->setSeccompFilter = SetSeccompFilter;
     content->setUidGidFilter = SetUidGidFilter;
     content->handleInternetPermission = HandleInternetPermission;
+    content->waitForDebugger = WaitForDebugger;
 }
