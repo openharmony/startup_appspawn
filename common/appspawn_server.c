@@ -37,6 +37,7 @@ void DisallowInternet(void);
 #endif
 
 #define SANDBOX_STACK_SIZE (1024 * 1024 * 8)
+#define APPSPAWN_CHECK_EXIT "AppSpawnCheckUnexpectedExitCall"
 
 static void SetInternetPermission(const AppSpawnClient *client)
 {
@@ -74,14 +75,13 @@ static void ProcessExit(int code)
 #endif
 }
 
-static bool g_IsAppRunning = false;
-
 #ifdef APPSPAWN_HELPER
 __attribute__((visibility("default")))
 _Noreturn
 void exit(int code)
 {
-    if (g_IsAppRunning) {
+    char *checkExit = getenv(APPSPAWN_CHECK_EXIT);
+    if (checkExit && strcmp(checkExit, "true") == 0) {
         APPSPAWN_LOGF("Unexpected exit call: %{public}d", code);
         abort();
     }
@@ -203,9 +203,9 @@ static int AppSpawnChildRun(void *arg)
 
 int AppSpawnChild(void *arg)
 {
-    g_IsAppRunning = true;
+    setenv(APPSPAWN_CHECK_EXIT, "true", true);
     int ret = AppSpawnChildRun(arg);
-    g_IsAppRunning = false;
+    unsetenv(APPSPAWN_CHECK_EXIT);
     return ret;
 }
 
