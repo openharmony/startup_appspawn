@@ -75,8 +75,13 @@ static int SetProcessName(struct AppSpawnContent_ *content, AppSpawnClient *clie
 
     char shortName[MAX_LEN_SHORT_NAME] = {0};
     // process short name max length 16 bytes.
-    size_t copyLen = (len >= MAX_LEN_SHORT_NAME) ? MAX_LEN_SHORT_NAME - 1 : len;
-    isRet = strncpy_s(shortName, MAX_LEN_SHORT_NAME, appProperty->processName, copyLen) != EOK;
+    size_t copyLen = len;
+    const char *pos = appProperty->processName;
+    if (len >= MAX_LEN_SHORT_NAME) {
+        copyLen = MAX_LEN_SHORT_NAME - 1;
+        pos += (len - copyLen);
+    }
+    isRet = strncpy_s(shortName, MAX_LEN_SHORT_NAME, pos, copyLen) != EOK;
     APPSPAWN_CHECK(!isRet, return -EINVAL, "strncpy_s short name error: %{public}d", errno);
 
     // set short name
