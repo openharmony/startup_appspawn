@@ -19,6 +19,12 @@
 #include <cerrno>
 #include <memory>
 
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <cstring>
+#include <cstdlib>
+
 #include "appspawn_service.h"
 #include "appspawn_adapter.h"
 #include "appspawn_server.h"
@@ -51,6 +57,71 @@ void SignalHandler(const struct signalfd_siginfo *siginfo);
 #ifdef __cplusplus
     }
 #endif
+
+int MakeDir(const char *dir, mode_t mode)
+{
+    int rc = -1;
+    if (dir == NULL || *dir == '\0') {
+        errno = EINVAL;
+        return rc;
+    }
+    rc = mkdir(dir, mode);
+    if (rc < 0 && errno != EEXIST) {
+        return rc;
+    }
+    return 0;
+}
+
+int MakeDirRecursive(const char *dir, mode_t mode)
+{
+    int rc = -1;
+    char buffer[PATH_MAX] = {0};
+    const char *p = NULL;
+    if (dir == NULL || *dir == '\0') {
+        errno = EINVAL;
+        return rc;
+    }
+    p = dir;
+    const char *slash = strchr(dir, '/');
+    while (slash != NULL) {
+        int gap = slash - p;
+        p = slash + 1;
+        if (gap == 0) {
+            slash = strchr(p, '/');
+            continue;
+        }
+        if (gap < 0) { // end with '/'
+            break;
+        }
+        if (memcpy_s(buffer, PATH_MAX, dir, p - dir - 1) != EOK) {
+            return -1;
+        }
+        rc = MakeDir(buffer, mode);
+        if (rc < 0){
+            return rc;
+        }
+        slash = strchr(p, '/');
+    }
+    return MakeDir(dir, mode);
+}
+
+void CheckAndCreateDir(const char *fileName)
+{
+    printf("create path %s\n", fileName);
+    if (fileName == NULL || *fileName == '\0') {
+        return;
+    }
+    char *path = strndup(fileName, strrchr(fileName, '/') - fileName);
+    if (path == NULL) {
+        return;
+    }
+    if (access(path, F_OK) == 0) {
+        free(path);
+        return;
+    }
+    MakeDirRecursive(path, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
+    free(path);
+}
 
 namespace OHOS {
 class AppSpawnStandardTest : public testing::Test {
@@ -95,6 +166,7 @@ static void FreeHspList(HspList &hspList)
 */
 HWTEST(AppSpawnStandardTest, App_Spawn_Standard_002, TestSize.Level0)
 {
+    CheckAndCreateDir("/data/appspawn_ut/dev/unix/socket/");
     GTEST_LOG_(INFO) << "App_Spawn_Standard_002 start";
     char longProcName[124] = "App_Spawn_Standard_002";
     int64_t longProcNameLen = 124; // 124 is str length
