@@ -17,12 +17,14 @@
 
 #include <stdlib.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <signal.h>
 #undef _GNU_SOURCE
 #define _GNU_SOURCE
 #include <sched.h>
+#include <string.h>
 #include <time.h>
 #include <stdbool.h>
 
@@ -122,6 +124,12 @@ int DoStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client, char *l
         ret = content->setCapabilities(content, client);
         APPSPAWN_CHECK(ret == 0, NotifyResToParent(content, client, ret);
             return ret, "Failed to setCapabilities");
+    }
+
+    if (content->waitForDebugger) {
+        ret = content->waitForDebugger(client);
+        APPSPAWN_CHECK(ret == 0, NotifyResToParent(content, client, ret);
+            return ret, "Failed to waitForDebugger");
     }
 
     // notify success to father process and start app process

@@ -66,6 +66,7 @@ typedef enum AppOperateType_ {
 #define APP_DEBUGGABLE 0x08  // debuggable application
 #define APP_ASANENABLED 0x10
 #define APP_ACCESS_BUNDLE_DIR 0x20
+#define APP_NATIVEDEBUG 0X40
 
 #define BITLEN32 32
 #define FDLEN2 2

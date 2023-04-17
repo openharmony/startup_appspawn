@@ -73,6 +73,7 @@ typedef struct AppSpawnContent_ {
     int (*getWrapBundleNameValue)(struct AppSpawnContent_ *content, AppSpawnClient *client);
     int (*setSeccompFilter)(struct AppSpawnContent_ *content, AppSpawnClient *client);
     void (*handleInternetPermission)(const AppSpawnClient *client);
+    int (*waitForDebugger)(AppSpawnClient *client);
 } AppSpawnContent;
 
 typedef struct {
