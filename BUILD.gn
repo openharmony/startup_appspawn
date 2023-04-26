@@ -61,6 +61,7 @@ ohos_executable("appspawn") {
     "ability_runtime:runtime",
     "c_utils:utils",
     "common_event_service:cesfwk_innerkits",
+    "config_policy:configpolicy_util",
     "hilog_native:libhilog",
     "hitrace_native:hitrace_meter",
     "init:libbegetutil",
@@ -162,6 +163,7 @@ ohos_static_library("nwebspawn_server") {
     "INIT_AGENT",
     "NWEB_SPAWN",
     "APPSPAWN_CHECK_GID_UID",
+    "APPSPAWN_LABEL=\"NWEBSPAWN\"",
   ]
   configs = [ ":appspawn_config" ]
   ldflags = [ "-Wl,--dynamic-linker,/system/bin/linker64z" ]
@@ -189,7 +191,10 @@ ohos_static_library("nwebspawn_server") {
 }
 
 ohos_executable("nwebspawn") {
-  defines = [ "NWEB_SPAWN" ]
+  defines = [
+    "NWEB_SPAWN",
+    "APPSPAWN_LABEL=\"NWEBSPAWN\"",
+  ]
   if (target_cpu == "arm64") {
     defines += [ "webview_arm64" ]
   }
