@@ -16,6 +16,7 @@
 #include "json_utils.h"
 #include "appspawn_server.h"
 
+#include <errno.h>
 #include <sstream>
 #include <fstream>
 
@@ -29,7 +30,8 @@ bool JsonUtils::GetJsonObjFromJson(nlohmann::json &jsonObj, const std::string &j
     APPSPAWN_CHECK(jsonPath.length() <= PATH_MAX, return false, "jsonPath is too long");
     std::ifstream jsonFileStream;
     jsonFileStream.open(jsonPath.c_str(), std::ios::in);
-    APPSPAWN_CHECK(jsonFileStream.is_open(), return false, "Open json file failed.");
+    APPSPAWN_CHECK(jsonFileStream.is_open(),
+        return false, "Open json file %{public}s failed error %{public}d.", jsonPath.c_str(), errno);
     std::ostringstream buf;
     char ch;
     while (buf && jsonFileStream.get(ch)) {

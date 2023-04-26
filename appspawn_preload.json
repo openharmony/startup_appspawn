@@ -1,0 +1,8 @@
+{
+    "napi" : [
+        "application.Ability",
+        "application.Context",
+        "application.AbilityContext",
+        "request"
+    ]
+}
