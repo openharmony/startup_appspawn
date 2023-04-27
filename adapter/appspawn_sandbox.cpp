@@ -56,16 +56,23 @@ void LoadAppSandboxConfig(void)
 int32_t SetAppSandboxProperty(struct AppSpawnContent_ *content, AppSpawnClient *client)
 {
     APPSPAWN_CHECK(client != NULL, return -1, "Invalid appspwn client");
-    AppSpawnClientExt *appProperty = reinterpret_cast<AppSpawnClientExt *>(client);
-    appProperty->property.cloneFlags = client->cloneFlags;
-    int ret = SandboxUtils::SetAppSandboxProperty(&appProperty->property);
+    AppSpawnClientExt *clientExt = reinterpret_cast<AppSpawnClientExt *>(client);
+    // no sandbox
+    if (clientExt->property.flags & APP_NO_SANDBOX) {
+        return 0;
+    }
+    // no news
+    if ((client->cloneFlags & CLONE_NEWNS) != CLONE_NEWNS) {
+        return 0;
+    }
+    int ret = SandboxUtils::SetAppSandboxProperty(client);
     // free HspList
-    if (appProperty->property.hspList.data != nullptr) {
-        free(appProperty->property.hspList.data);
-        appProperty->property.hspList = {};
+    if (clientExt->property.hspList.data != nullptr) {
+        free(clientExt->property.hspList.data);
+        clientExt->property.hspList = {};
     }
     // for module test do not create sandbox
-    if (strncmp(appProperty->property.bundleName,
+    if (strncmp(clientExt->property.bundleName,
         MODULE_TEST_BUNDLE_NAME.c_str(), MODULE_TEST_BUNDLE_NAME.size()) == 0) {
         return 0;
     }

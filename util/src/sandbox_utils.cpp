@@ -27,6 +27,7 @@
 #include "json_utils.h"
 #include "securec.h"
 #include "appspawn_server.h"
+#include "appspawn_service.h"
 #ifdef WITH_SELINUX
 #include "hap_restorecon.h"
 #endif
@@ -936,18 +937,22 @@ static int CheckBundleName(const std::string &bundleName)
     return 0;
 }
 
-int32_t SandboxUtils::SetAppSandboxProperty(const ClientSocket::AppProperty *appProperty)
+int32_t SandboxUtils::SetAppSandboxProperty(AppSpawnClient *client)
 {
-    if (appProperty == nullptr || CheckBundleName(appProperty->bundleName) != 0) {
+    APPSPAWN_CHECK(client != NULL, return -1, "Invalid appspwn client");
+    AppSpawnClientExt *clientExt = reinterpret_cast<AppSpawnClientExt *>(client);
+    ClientSocket::AppProperty *appProperty = &clientExt->property;
+    if (CheckBundleName(appProperty->bundleName) != 0) {
         return -1;
     }
+
     std::string sandboxPackagePath = g_sandBoxRootDir;
     const std::string bundleName = appProperty->bundleName;
     sandboxPackagePath += bundleName;
     MakeDirRecursive(sandboxPackagePath.c_str(), FILE_MODE);
     int rc = 0;
     // when CLONE_NEWPID is enabled, CLONE_NEWNS must be enabled.
-    if (!(appProperty->cloneFlags & CLONE_NEWPID)) {
+    if (!(client->cloneFlags & CLONE_NEWPID)) {
         // add pid to a new mnt namespace
         rc = unshare(CLONE_NEWNS);
         APPSPAWN_CHECK(rc == 0, return rc, "unshare failed, packagename is %{public}s", bundleName.c_str());
