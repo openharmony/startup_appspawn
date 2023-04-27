@@ -21,6 +21,7 @@
 #include <sys/types.h>
 #include "nlohmann/json.hpp"
 #include "client_socket.h"
+#include "appspawn_server.h"
 
 namespace OHOS {
 namespace AppSpawn {
@@ -32,7 +33,7 @@ public:
     static nlohmann::json GetJsonConfig();
     static void StoreProductJsonConfig(nlohmann::json &productSandboxConfig);
     static nlohmann::json GetProductJsonConfig();
-    static int32_t SetAppSandboxProperty(const ClientSocket::AppProperty *appProperty);
+    static int32_t SetAppSandboxProperty(AppSpawnClient *client);
     static uint32_t GetNamespaceFlagsFromConfig(const char *bundleName);
 
 private:
