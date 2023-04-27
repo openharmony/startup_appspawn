@@ -28,6 +28,9 @@
 #endif // OHOS_DEBUG
 #include <stdbool.h>
 
+#include "syspara/parameter.h"
+#include "securec.h"
+
 #define DEFAULT_UMASK 0002
 
 #ifndef APPSPAWN_TEST
@@ -81,7 +84,7 @@ _Noreturn
 void exit(int code)
 {
     char *checkExit = getenv(APPSPAWN_CHECK_EXIT);
-    if (checkExit && strcmp(checkExit, "true") == 0) {
+    if (checkExit && atoi(checkExit) == getpid()) {
         APPSPAWN_LOGF("Unexpected exit call: %{public}d", code);
         abort();
     }
@@ -203,7 +206,11 @@ static int AppSpawnChildRun(void *arg)
 
 int AppSpawnChild(void *arg)
 {
-    setenv(APPSPAWN_CHECK_EXIT, "true", true);
+    char checkExit[16] = ""; // 16 is enough to store an int
+    if (GetIntParameter("persist.init.debug.checkexit", false)) {
+        (void)sprintf_s(checkExit, sizeof(checkExit), "%d", getpid());
+    }
+    setenv(APPSPAWN_CHECK_EXIT, checkExit, true);
     int ret = AppSpawnChildRun(arg);
     unsetenv(APPSPAWN_CHECK_EXIT);
     return ret;
