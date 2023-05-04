@@ -27,6 +27,7 @@
 #include "json_utils.h"
 #include "securec.h"
 #include "appspawn_server.h"
+#include "appspawn_service.h"
 #ifdef WITH_SELINUX
 #include "hap_restorecon.h"
 #endif
@@ -102,7 +103,6 @@ namespace {
 
 nlohmann::json SandboxUtils::appNamespaceConfig_;
 nlohmann::json SandboxUtils::appSandboxConfig_;
-nlohmann::json SandboxUtils::productSandboxConfig_;
 
 void SandboxUtils::StoreNamespaceJsonConfig(nlohmann::json &appNamespaceConfig)
 {
@@ -122,16 +122,6 @@ void SandboxUtils::StoreJsonConfig(nlohmann::json &appSandboxConfig)
 nlohmann::json SandboxUtils::GetJsonConfig()
 {
     return SandboxUtils::appSandboxConfig_;
-}
-
-void SandboxUtils::StoreProductJsonConfig(nlohmann::json &productSandboxConfig)
-{
-    SandboxUtils::productSandboxConfig_ = productSandboxConfig;
-}
-
-nlohmann::json SandboxUtils::GetProductJsonConfig()
-{
-    return SandboxUtils::productSandboxConfig_;
 }
 
 static uint32_t NamespaceFlagsFromConfig(const std::vector<std::string> &vec)
@@ -493,11 +483,13 @@ void SandboxUtils::CheckAndPrepareSrcPath(const ClientSocket::AppProperty *appPr
     }
 }
 
-int SandboxUtils::DoAllMntPointsMount(const ClientSocket::AppProperty *appProperty, nlohmann::json &appConfig)
+int SandboxUtils::DoAllMntPointsMount(const ClientSocket::AppProperty *appProperty,
+    nlohmann::json &appConfig, const std::string &section)
 {
     std::string bundleName = appProperty->bundleName;
     if (appConfig.find(g_mountPrefix) == appConfig.end()) {
-        APPSPAWN_LOGV("mount config is not found, app name is %{public}s", bundleName.c_str());
+        APPSPAWN_LOGV("mount config is not found in %{public}s, app name is %{public}s",
+            section.c_str(), bundleName.c_str());
         return 0;
     }
 
@@ -524,16 +516,12 @@ int SandboxUtils::DoAllMntPointsMount(const ClientSocket::AppProperty *appProper
         std::string sandboxPath = sandboxRoot + ConvertToRealPath(appProperty,
                                                                   mntPoint[g_sandBoxPath].get<std::string>());
         unsigned long mountFlags = GetMountFlagsFromConfig(mntPoint[g_sandBoxFlags].get<std::vector<std::string>>());
-        std::string fsType = "";
-        if (mntPoint.find(g_fsType) != mntPoint.end()) {
-            fsType = mntPoint[g_fsType].get<std::string>();
-        }
+        std::string fsType = (mntPoint.find(g_fsType) != mntPoint.end()) ? mntPoint[g_fsType].get<std::string>() : "";
 
-        int ret = 0;
         /* check and prepare /data/app/el2 base and database package path to avoid BMS failed to create this folder */
         CheckAndPrepareSrcPath(appProperty, srcPath);
         /* if app mount failed for special strategy, we need deal with common mount config */
-        ret = HandleSpecialAppMount(appProperty, srcPath, sandboxPath, fsType, mountFlags);
+        int ret = HandleSpecialAppMount(appProperty, srcPath, sandboxPath, fsType, mountFlags);
         if (ret < 0) {
             if (fsType.empty()) {
                 ret = DoAppSandboxMountOnce(srcPath.c_str(), sandboxPath.c_str(), nullptr, mountFlags, nullptr);
@@ -545,7 +533,8 @@ int SandboxUtils::DoAllMntPointsMount(const ClientSocket::AppProperty *appProper
             std::string actionStatus = g_statusCheck;
             (void)JsonUtils::GetStringFromJson(mntPoint, g_actionStatuc, actionStatus);
             if (actionStatus == g_statusCheck) {
-                APPSPAWN_LOGE("DoAppSandboxMountOnce failed, %{public}s", sandboxPath.c_str());
+                APPSPAWN_LOGE("DoAppSandboxMountOnce section %{public}s failed, %{public}s",
+                    section.c_str(), sandboxPath.c_str());
                 return ret;
             }
         }
@@ -600,7 +589,7 @@ int32_t SandboxUtils::DoSandboxFilePrivateBind(const ClientSocket::AppProperty *
 {
     nlohmann::json privateAppConfig = wholeConfig[g_privatePrefix][0];
     if (privateAppConfig.find(appProperty->bundleName) != privateAppConfig.end()) {
-        return DoAllMntPointsMount(appProperty, privateAppConfig[appProperty->bundleName][0]);
+        return DoAllMntPointsMount(appProperty, privateAppConfig[appProperty->bundleName][0], g_privatePrefix);
     }
 
     return 0;
@@ -634,7 +623,7 @@ int32_t SandboxUtils::HandleFlagsPoint(const ClientSocket::AppProperty *appPrope
             std::string flagsStr = flagPoint[g_flags].get<std::string>();
             uint32_t flag = ConvertFlagStr(flagsStr);
             if ((appProperty->flags & flag) != 0) {
-                return DoAllMntPointsMount(appProperty, flagPoint);
+                return DoAllMntPointsMount(appProperty, flagPoint, g_flagePoint);
             }
         } else {
             APPSPAWN_LOGE("read flags config failed, app name is %{public}s", appProperty->bundleName);
@@ -672,14 +661,14 @@ int32_t SandboxUtils::DoSandboxFileCommonBind(const ClientSocket::AppProperty *a
     int ret = 0;
 
     if (commonConfig.find(g_appBase) != commonConfig.end()) {
-        ret = DoAllMntPointsMount(appProperty, commonConfig[g_appBase][0]);
+        ret = DoAllMntPointsMount(appProperty, commonConfig[g_appBase][0], g_appBase);
         if (ret) {
             return ret;
         }
     }
 
     if (commonConfig.find(g_appResources) != commonConfig.end()) {
-        ret = DoAllMntPointsMount(appProperty, commonConfig[g_appResources][0]);
+        ret = DoAllMntPointsMount(appProperty, commonConfig[g_appResources][0], g_appResources);
     }
 
     return ret;
@@ -730,7 +719,7 @@ int32_t SandboxUtils::SetRenderSandboxProperty(const ClientSocket::AppProperty *
     nlohmann::json privateAppConfig = config[g_privatePrefix][0];
 
     if (privateAppConfig.find(g_ohosRender) != privateAppConfig.end()) {
-        int ret = DoAllMntPointsMount(appProperty, privateAppConfig[g_ohosRender][0]);
+        int ret = DoAllMntPointsMount(appProperty, privateAppConfig[g_ohosRender][0], g_ohosRender);
         APPSPAWN_CHECK(ret == 0, return ret, "DoAllMntPointsMount failed, %{public}s",
             appProperty->bundleName);
         ret = DoAllSymlinkPointslink(appProperty, privateAppConfig[g_ohosRender][0]);
@@ -746,15 +735,11 @@ int32_t SandboxUtils::SetRenderSandboxProperty(const ClientSocket::AppProperty *
 
 int32_t SandboxUtils::SetPrivateAppSandboxProperty(const ClientSocket::AppProperty *appProperty)
 {
-    nlohmann::json productConfig = SandboxUtils::GetProductJsonConfig();
     nlohmann::json config = SandboxUtils::GetJsonConfig();
     int ret = 0;
 
     ret = SetPrivateAppSandboxProperty_(appProperty, config);
     APPSPAWN_CHECK(ret == 0, return ret, "parse adddata-sandbox config failed");
-    ret = SetPrivateAppSandboxProperty_(appProperty, productConfig);
-    APPSPAWN_CHECK_ONLY_LOG(ret == 0, "parse product-sandbox config failed");
-
     return ret;
 }
 
@@ -782,16 +767,11 @@ int32_t SandboxUtils::SetCommonAppSandboxProperty(const ClientSocket::AppPropert
                                                   std::string &sandboxPackagePath)
 {
     nlohmann::json jsonConfig = SandboxUtils::GetJsonConfig();
-    nlohmann::json productConfig = SandboxUtils::GetProductJsonConfig();
     int ret = 0;
 
     ret = SetCommonAppSandboxProperty_(appProperty, jsonConfig);
     APPSPAWN_CHECK(ret == 0, return ret,
         "parse appdata config for common failed, %{public}s", sandboxPackagePath.c_str());
-
-    ret = SetCommonAppSandboxProperty_(appProperty, productConfig);
-    APPSPAWN_CHECK(ret == 0, return ret,
-        "parse product config for common failed, %{public}s", sandboxPackagePath.c_str());
 
     ret = MountAllHsp(appProperty, sandboxPackagePath);
     APPSPAWN_CHECK(ret == 0, return ret, "mount hspList failed, %{public}s", sandboxPackagePath.c_str());

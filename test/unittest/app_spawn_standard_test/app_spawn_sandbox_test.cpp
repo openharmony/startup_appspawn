@@ -665,13 +665,6 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_22, TestSize.Level0)
     nlohmann::json j_config1 = nlohmann::json::parse(mJsconfig1.c_str());
     OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config1);
 
-    std::string pJsconfig1 = "{ \
-        \"common\":[], \
-        \"individual\": [] \
-    }";
-    nlohmann::json p_config1 = nlohmann::json::parse(pJsconfig1.c_str());
-    OHOS::AppSpawn::SandboxUtils::StoreProductJsonConfig(p_config1);
-
     ClientSocket::AppProperty *m_appProperty = GetAppProperty();
     int ret = strcpy_s(m_appProperty->apl, APP_APL_MAX_LEN, "system_basic");
     if (ret != 0) {

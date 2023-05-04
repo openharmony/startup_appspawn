@@ -27,12 +27,7 @@ using namespace OHOS::AppSpawn;
 namespace {
     const std::string MODULE_TEST_BUNDLE_NAME("moduleTestProcessName");
     const std::string NAMESPACE_JSON_CONFIG("/system/etc/sandbox/sandbox-config.json");
-#if defined (__aarch64__) || defined (__x86_64__)
-    const std::string APP_JSON_CONFIG("/system/etc/sandbox/appdata-sandbox64.json");
-#else
     const std::string APP_JSON_CONFIG("/system/etc/sandbox/appdata-sandbox.json");
-#endif
-    const std::string PRODUCT_JSON_CONFIG("/system/etc/sandbox/product-sandbox.json");
 }
 
 void LoadAppSandboxConfig(void)
@@ -42,10 +37,6 @@ void LoadAppSandboxConfig(void)
     bool rc = JsonUtils::GetJsonObjFromJson(appSandboxConfig, APP_JSON_CONFIG);
     APPSPAWN_CHECK_ONLY_LOG(rc, "AppSpawnServer::Failed to load app private sandbox config");
     SandboxUtils::StoreJsonConfig(appSandboxConfig);
-
-    rc = JsonUtils::GetJsonObjFromJson(appSandboxConfig, PRODUCT_JSON_CONFIG);
-    APPSPAWN_CHECK_ONLY_LOG(rc, "AppSpawnServer::Failed to load app product sandbox config");
-    SandboxUtils::StoreProductJsonConfig(appSandboxConfig);
 
     nlohmann::json appNamespaceConfig;
     rc = JsonUtils::GetJsonObjFromJson(appNamespaceConfig, NAMESPACE_JSON_CONFIG);
