@@ -36,6 +36,15 @@
 #include "string.h"
 #define DEVICE_NULL_STR "/dev/null"
 
+struct XpmRegionInfo {
+    unsigned long addr;
+    unsigned long length;
+};
+
+#define XPM_DEV_PATH "/dev/xpm"
+#define XPM_REGION_LEN 0x8000000
+#define SET_XPM_REGION _IOW('x', 0x01, struct XpmRegionInfo)
+
 // ide-asan
 static int SetAsanEnabledEnv(struct AppSpawnContent_ *content, AppSpawnClient *client)
 {
@@ -188,6 +197,21 @@ static void ClearEnvironment(AppSpawnContent *content, AppSpawnClient *client)
     close(appProperty->fd[0]);
     SetAsanEnabledEnv(content, client);
     return;
+}
+
+int SetXpmRegion(struct AppSpawnContent_ *content)
+{
+    struct XpmRegionInfo info = { 0, XPM_REGION_LEN };
+
+    // 32-bit system no xpm dev file
+    int fd = open(XPM_DEV_PATH, O_RDWR);
+    APPSPAWN_CHECK(fd != -1, return 0, "open xpm device file failed: %s", strerror(errno));
+
+    int ret = ioctl(fd, SET_XPM_REGION, &info);
+    APPSPAWN_CHECK_ONLY_LOG(ret != -1, "set xpm region failed: %s", strerror(errno));
+
+    close(fd);
+    return ret;
 }
 
 static int SetUidGid(struct AppSpawnContent_ *content, AppSpawnClient *client)
@@ -553,6 +577,7 @@ void SetContentFunction(AppSpawnContent *content)
     content->setProcessName = SetProcessName;
     content->setKeepCapabilities = SetKeepCapabilities;
     content->setUidGid = SetUidGid;
+    content->setXpmRegion = SetXpmRegion;
     content->setCapabilities = SetCapabilities;
     content->setFileDescriptors = SetFileDescriptors;
     content->setAppSandbox = SetAppSandboxProperty;
