@@ -17,6 +17,7 @@
 #include "appspawn_adapter.h"
 
 #include <fcntl.h>
+#include <inttypes.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -409,6 +410,34 @@ static int GetWrapBundleNameValue(struct AppSpawnContent_ *content, AppSpawnClie
 }
 #endif
 
+static int EncodeAppClient(AppSpawnClient *client, char *param, int32_t originLen)
+{
+    AppParameter *appProperty = &((AppSpawnClientExt *)client)->property;
+    int32_t startLen = 0;
+    int32_t len = sprintf_s(param + startLen, originLen - startLen, "%u:%u:%u:%u:%u:%u:%u:%u:%u:%u",
+        client->id, client->flags, client->cloneFlags, appProperty->code,
+        appProperty->flags, appProperty->uid, appProperty->gid,
+        appProperty->setAllowInternet, appProperty->allowInternet, appProperty->gidCount);
+    APPSPAWN_CHECK(len > 0 && (len < (originLen - startLen)), return -1, "Invalid to format");
+    startLen += len;
+    for (uint32_t i = 0; i < appProperty->gidCount; i++) {
+        len = sprintf_s(param + startLen, originLen - startLen, ":%u", appProperty->gidTable[i]);
+        APPSPAWN_CHECK(len > 0 && (len < (originLen - startLen)), return -1, "Invalid to format gid");
+        startLen += len;
+    }
+    // processName
+    if (appProperty->soPath[0] == '\0') {
+        strcpy_s(appProperty->soPath, sizeof(appProperty->soPath), "NULL");
+    }
+    len = sprintf_s(param + startLen, originLen - startLen, ":%s:%s:%s:%u:%s:%s:%u:%" PRId64 "",
+        appProperty->processName, appProperty->bundleName, appProperty->soPath,
+        appProperty->accessTokenId, appProperty->apl, appProperty->renderCmd,
+        appProperty->hapFlags, appProperty->accessTokenIdEx);
+    APPSPAWN_CHECK(len > 0 && (len < (originLen - startLen)), return -1, "Invalid to format processName");
+    startLen += len;
+    return 0;
+}
+
 static int ColdStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client)
 {
     AppParameter *appProperty = &((AppSpawnClientExt *)client)->property;
@@ -418,16 +447,11 @@ static int ColdStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client
     APPSPAWN_CHECK(len > 0, return -1, "Invalid to format fd");
     char **argv = calloc(1, (NULL_INDEX + 1) * sizeof(char *));
     APPSPAWN_CHECK(argv != NULL, return -1, "Failed to get argv");
-
-    int32_t startLen = 0;
-    const int32_t originLen = sizeof(AppParameter) + PARAM_BUFFER_LEN;
-    // param
-    char *param = malloc(originLen + APP_LEN_PROC_NAME);
-    APPSPAWN_CHECK(param != NULL, free(argv);
-        return -1, "Failed to malloc for param");
-
     int ret = -1;
     do {
+        const int32_t originLen = sizeof(AppParameter) + PARAM_BUFFER_LEN;
+        char *param = malloc(originLen + APP_LEN_PROC_NAME);
+        APPSPAWN_CHECK(param != NULL, break, "Failed to malloc for param");
         argv[PARAM_INDEX] = param;
         argv[0] = param + originLen;
         const char *appSpawnPath = "/system/bin/appspawn";
@@ -443,32 +467,13 @@ static int ColdStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client
         APPSPAWN_CHECK(argv[START_INDEX] != NULL, break, "Invalid strdup");
         argv[FD_INDEX] = strdup(buffer);
         APPSPAWN_CHECK(argv[FD_INDEX] != NULL, break, "Invalid strdup");
-
-        len = sprintf_s(param + startLen, originLen - startLen, "%u:%u:%u:%u:%u",
-            ((AppSpawnClientExt *)client)->client.id, ((AppSpawnClientExt *)client)->client.cloneFlags,
-            appProperty->uid, appProperty->gid, appProperty->gidCount);
-        APPSPAWN_CHECK(len > 0 && (len < (originLen - startLen)), break, "Invalid to format");
-        startLen += len;
-        for (uint32_t i = 0; i < appProperty->gidCount; i++) {
-            len = sprintf_s(param + startLen, originLen - startLen, ":%u", appProperty->gidTable[i]);
-            APPSPAWN_CHECK(len > 0 && (len < (originLen - startLen)), break, "Invalid to format gid");
-            startLen += len;
-        }
-        // processName
-        if (appProperty->soPath[0] == '\0') {
-            strcpy_s(appProperty->soPath, sizeof(appProperty->soPath), "NULL");
-        }
-        len = sprintf_s(param + startLen, originLen - startLen, ":%s:%s:%s:%u:%s:%s",
-            appProperty->processName, appProperty->bundleName, appProperty->soPath,
-            appProperty->accessTokenId, appProperty->apl, appProperty->renderCmd);
-        APPSPAWN_CHECK(len > 0 && (len < (originLen - startLen)), break, "Invalid to format processName");
-        startLen += len;
+        ret = EncodeAppClient(client, param, originLen);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to encode client");
 
         len = sprintf_s(buffer, sizeof(buffer), "%u", appProperty->hspList.totalLength);
-        APPSPAWN_CHECK(len > 0 && len < sizeof(buffer), break, "Invalid hspList.totalLength");
+        APPSPAWN_CHECK(len > 0 && len < (int)sizeof(buffer), break, "Invalid hspList.totalLength");
         argv[HSP_LIST_LEN_INDEX] = strdup(buffer);
         argv[HSP_LIST_INDEX] = appProperty->hspList.data;
-
         ret = 0;
     } while (0);
 
@@ -483,90 +488,94 @@ static int ColdStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client
             APPSPAWN_LOGE("Failed to execv, errno = %{public}d", errno);
         }
     }
+    argv[0] = NULL;
     Free(argv, &appProperty->hspList);
     return ret;
+}
+
+static int GetUInt32FromArg(char *begin, char **end, uint32_t *value)
+{
+    char *start = strtok_r(begin, ":", end);
+    APPSPAWN_CHECK(start != NULL, return -1, "Failed to get uint32 value");
+    *value = atoi(start);
+    return 0;
+}
+
+static int GetUInt64FromArg(char *begin, char **end, uint64_t *value)
+{
+    char *start = strtok_r(begin, ":", end);
+    APPSPAWN_CHECK(start != NULL, return -1, "Failed to get uint64 value");
+    APPSPAWN_LOGV("GetUInt64FromArg %{public}s ", start);
+    *value = atoll(start);
+    return 0;
+}
+
+static int GetStringFromArg(char *begin, char **end, char *value, uint32_t valueLen)
+{
+    char *start = strtok_r(NULL, ":", end);
+    APPSPAWN_CHECK(start != NULL, return -1, "Failed to get string");
+    if (strcmp(start, "NULL")) {
+        return strcpy_s(value, valueLen, start);
+    } else {
+        value[0] = '\0';
+    }
+    return 0;
 }
 
 int GetAppSpawnClientFromArg(int argc, char *const argv[], AppSpawnClientExt *client)
 {
     APPSPAWN_CHECK(argv != NULL && argc > PARAM_INDEX, return -1, "Invalid argv argc %{public}d", argc);
-
     client->fd[1] = atoi(argv[FD_INDEX]);
     APPSPAWN_LOGV("GetAppSpawnClientFromArg %{public}s ", argv[PARAM_INDEX]);
-    char *end = NULL;
-    char *start = strtok_r(argv[PARAM_INDEX], ":", &end);
-
     // clientid
-    APPSPAWN_CHECK(start != NULL, return -1, "Failed to get client id");
-    client->client.id = atoi(start);
-    start = strtok_r(NULL, ":", &end);
-    APPSPAWN_CHECK(start != NULL, return -1, "Failed to get client cloneFlags");
-    client->client.cloneFlags = atoi(start);
-    start = strtok_r(NULL, ":", &end);
-    APPSPAWN_CHECK(start != NULL, return -1, "Failed to get uid");
-    client->property.uid = atoi(start);
-    start = strtok_r(NULL, ":", &end);
-    APPSPAWN_CHECK(start != NULL, return -1, "Failed to get gid");
-    client->property.gid = atoi(start);
-
-    // gidCount
-    start = strtok_r(NULL, ":", &end);
-    APPSPAWN_CHECK(start != NULL, return -1, "Failed to get gidCount");
-    client->property.gidCount = atoi(start);
+    char *end = NULL;
+    int ret = GetUInt32FromArg(argv[PARAM_INDEX], &end, &client->client.id);
+    ret += GetUInt32FromArg(NULL, &end, &client->client.flags);
+    ret += GetUInt32FromArg(NULL, &end, &client->client.cloneFlags);
+    ret += GetUInt32FromArg(NULL, &end, &client->property.code);
+    ret += GetUInt32FromArg(NULL, &end, &client->property.flags);
+    ret += GetUInt32FromArg(NULL, &end, &client->property.uid);
+    ret += GetUInt32FromArg(NULL, &end, &client->property.gid);
+    uint32_t value = 0;
+    ret += GetUInt32FromArg(NULL, &end, &value);
+    client->property.setAllowInternet = (uint8_t)value;
+    ret += GetUInt32FromArg(NULL, &end, &value);
+    client->property.allowInternet = (uint8_t)value;
+    ret += GetUInt32FromArg(NULL, &end, &client->property.gidCount);
+    APPSPAWN_CHECK(ret == 0, return -1, "Failed to get client info");
     for (uint32_t i = 0; i < client->property.gidCount; i++) {
-        start = strtok_r(NULL, ":", &end);
-        APPSPAWN_CHECK(start != NULL, return -1, "Failed to get gidTable");
-        client->property.gidTable[i] = atoi(start);
+        ret = GetUInt32FromArg(NULL, &end, &client->property.gidTable[i]);
+        APPSPAWN_CHECK(ret == 0, return -1, "Failed to get gidTable");
     }
 
     // processname
-    start = strtok_r(NULL, ":", &end);
-    APPSPAWN_CHECK(start != NULL, return -1, "Failed to get processName");
-    int ret = strcpy_s(client->property.processName, sizeof(client->property.processName), start);
-    APPSPAWN_CHECK(ret == 0, return -1, "Failed to strcpy processName");
-    start = strtok_r(NULL, ":", &end);
-    APPSPAWN_CHECK(start != NULL, return -1, "Failed to get bundleName");
-    ret = strcpy_s(client->property.bundleName, sizeof(client->property.bundleName), start);
-    APPSPAWN_CHECK(ret == 0, return -1, "Failed to strcpy bundleName");
-    start = strtok_r(NULL, ":", &end);
-    APPSPAWN_CHECK(start != NULL, return -1, "Failed to get soPath");
-    if (strcmp(start, "NULL")) {
-        ret = strcpy_s(client->property.soPath, sizeof(client->property.soPath), start);
-        APPSPAWN_CHECK(ret == 0, return -1, "Failed to strcpy soPath");
-    } else {
-        client->property.soPath[0] = '\0';
-    }
+    ret = GetStringFromArg(NULL, &end, client->property.processName, sizeof(client->property.processName));
+    ret += GetStringFromArg(NULL, &end, client->property.bundleName, sizeof(client->property.bundleName));
+    ret += GetStringFromArg(NULL, &end, client->property.soPath, sizeof(client->property.soPath));
+    APPSPAWN_CHECK(ret == 0, return -1, "Failed to get process name");
 
-    // accesstoken
-    start = strtok_r(NULL, ":", &end);
-    APPSPAWN_CHECK(start != NULL, return -1, "Failed to get accessTokenId");
-    client->property.accessTokenId = atoi(start);
-    start = strtok_r(NULL, ":", &end);
-    APPSPAWN_CHECK(start != NULL, return -1, "Failed to get apl");
-    ret = strcpy_s(client->property.apl, sizeof(client->property.apl), start);
-    APPSPAWN_CHECK(ret == 0, return -1, "Failed to strcpy apl");
-    start = strtok_r(NULL, ":", &end);
-    APPSPAWN_CHECK(start != NULL, return -1, "Failed to get renderCmd");
-    ret = strcpy_s(client->property.renderCmd, sizeof(client->property.renderCmd), start);
-    APPSPAWN_CHECK(ret == 0, return -1, "Failed to strcpy renderCmd");
+    // access token
+    ret = GetUInt32FromArg(NULL, &end, &client->property.accessTokenId);
+    ret += GetStringFromArg(NULL, &end, client->property.apl, sizeof(client->property.apl));
+    ret += GetStringFromArg(NULL, &end, client->property.renderCmd, sizeof(client->property.renderCmd));
+    ret += GetUInt32FromArg(NULL, &end, &value);
+    client->property.hapFlags = (int32_t)value;
+    ret += GetUInt64FromArg(NULL, &end, &client->property.accessTokenIdEx);
+    APPSPAWN_CHECK(ret == 0, return -1, "Failed to access token info");
 
-    if (argc > HSP_LIST_LEN_INDEX) {
-        APPSPAWN_CHECK(argv[HSP_LIST_LEN_INDEX] != NULL, return -1, "Invalid HspList length");
-        client->property.hspList.totalLength = atoi(argv[HSP_LIST_LEN_INDEX]);
-    } else {
-        client->property.hspList.totalLength = 0;
-    }
+    client->property.hspList.totalLength = 0;
     client->property.hspList.data = NULL;
-
-    if (client->property.hspList.totalLength > 0) {
-        APPSPAWN_CHECK(argc > HSP_LIST_INDEX && argv[HSP_LIST_INDEX] != NULL, return -1, "Invalid argv for HspList");
+    ret = -1;
+    if (argc > HSP_LIST_LEN_INDEX && argv[HSP_LIST_LEN_INDEX] != NULL) {
+        client->property.hspList.totalLength = atoi(argv[HSP_LIST_LEN_INDEX]);
+        APPSPAWN_CHECK_ONLY_EXPER(client->property.hspList.totalLength != 0, return 0);
+        APPSPAWN_CHECK(argc > HSP_LIST_INDEX && argv[HSP_LIST_INDEX] != NULL, return -1, "Invalid hspList.data");
         client->property.hspList.data = malloc(client->property.hspList.totalLength);
         APPSPAWN_CHECK(client->property.hspList.data != NULL, return -1, "Failed to malloc hspList.data");
         ret = strcpy_s(client->property.hspList.data, client->property.hspList.totalLength, argv[HSP_LIST_INDEX]);
         APPSPAWN_CHECK(ret == 0, return -1, "Failed to strcpy hspList.data");
     }
-
-    return 0;
+    return ret;
 }
 
 void SetContentFunction(AppSpawnContent *content)

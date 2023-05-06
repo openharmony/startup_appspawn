@@ -94,8 +94,8 @@ void HandleInternetPermission(const AppSpawnClient *client)
 {
     AppSpawnClientExt *appPropertyExt = (AppSpawnClientExt *)client;
     APPSPAWN_LOGV("HandleInternetPermission id %{public}d setAllowInternet %hhu allowInternet %hhu",
-        client->id, appPropertyExt->setAllowInternet, appPropertyExt->allowInternet);
-    if (appPropertyExt->setAllowInternet == 1 && appPropertyExt->allowInternet == 0) {
+        client->id, appPropertyExt->property.setAllowInternet, appPropertyExt->property.allowInternet);
+    if (appPropertyExt->property.setAllowInternet == 1 && appPropertyExt->property.allowInternet == 0) {
         DisallowInternet();
     }
 }
