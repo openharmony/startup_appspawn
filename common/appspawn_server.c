@@ -17,14 +17,12 @@
 
 #include <stdlib.h>
 #include <errno.h>
-#include <fcntl.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <signal.h>
 #undef _GNU_SOURCE
 #define _GNU_SOURCE
 #include <sched.h>
-#include <string.h>
 #include <time.h>
 #include <stdbool.h>
 
@@ -89,7 +87,7 @@ int DoStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client, char *l
         content->handleInternetPermission(client);
     }
 
-    if ((client->cloneFlags & CLONE_NEWNS) && (content->setAppSandbox)) {
+    if (content->setAppSandbox) {
         ret = content->setAppSandbox(content, client);
         APPSPAWN_CHECK(ret == 0, NotifyResToParent(content, client, ret);
             return ret, "Failed to set app sandbox");
@@ -206,10 +204,9 @@ pid_t AppSpawnFork(int (*childFunc)(void *arg), void *args)
 
 int AppSpawnProcessMsg(AppSandboxArg *sandbox, pid_t *childPid)
 {
-    pid_t pid;
     APPSPAWN_CHECK(sandbox != NULL && sandbox->content != NULL, return -1, "Invalid content for appspawn");
     APPSPAWN_CHECK(sandbox->client != NULL && childPid != NULL, return -1, "Invalid client for appspawn");
-    APPSPAWN_LOGI("AppSpawnProcessMsg id %{public}d 0x%x", sandbox->client->id, sandbox->client->flags);
+    APPSPAWN_LOGI("AppSpawnProcessMsg id %{public}d 0x%{public}x", sandbox->client->id, sandbox->client->flags);
 
 #ifndef OHOS_LITE
     AppSpawnClient *client = sandbox->client;
@@ -217,14 +214,13 @@ int AppSpawnProcessMsg(AppSandboxArg *sandbox, pid_t *childPid)
         APPSPAWN_CHECK(client->cloneFlags & CLONE_NEWNS, return -1, "clone flags error");
         char *childStack = (char *)malloc(SANDBOX_STACK_SIZE);
         APPSPAWN_CHECK(childStack != NULL, return -1, "malloc failed");
-
-        pid = clone(AppSpawnChild, childStack + SANDBOX_STACK_SIZE, client->cloneFlags | SIGCHLD, (void *)sandbox);
+        pid_t pid = clone(AppSpawnChild,
+            childStack + SANDBOX_STACK_SIZE, client->cloneFlags | SIGCHLD, (void *)sandbox);
         if (pid > 0) {
             free(childStack);
             *childPid = pid;
             return 0;
         }
-
         client->cloneFlags &= ~CLONE_NEWPID;
         free(childStack);
     }
