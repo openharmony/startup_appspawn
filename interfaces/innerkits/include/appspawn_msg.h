@@ -49,6 +49,7 @@ enum AppType {
 typedef enum AppOperateType_ {
     DEFAULT = 0,
     GET_RENDER_TERMINATION_STATUS,
+    SPAWN_NATIVE_PROCESS
 } AppOperateType;
 
 #define APP_MSG_MAX_SIZE 4096  // appspawn message max size
@@ -67,6 +68,7 @@ typedef enum AppOperateType_ {
 #define APP_ASANENABLED 0x10
 #define APP_ACCESS_BUNDLE_DIR 0x20
 #define APP_NATIVEDEBUG 0X40
+#define APP_NO_SANDBOX 0x80  // Do not enter sandbox
 
 #define BITLEN32 32
 #define FDLEN2 2
@@ -79,21 +81,20 @@ typedef struct HspList_ {
 } HspList;
 
 typedef struct AppParameter_ {
-    uint32_t cloneFlags;
+    AppOperateType code;
+    uint32_t flags;
+    int32_t pid;                     // query render process exited status by render process pid
     uint32_t uid;                     // the UNIX uid that the child process setuid() to after fork()
     uint32_t gid;                     // the UNIX gid that the child process setgid() to after fork()
-    uint32_t gidTable[APP_MAX_GIDS];      // a list of UNIX gids that the child process setgroups() to after fork()
     uint32_t gidCount;                // the size of gidTable
+    uint32_t gidTable[APP_MAX_GIDS];      // a list of UNIX gids that the child process setgroups() to after fork()
     char processName[APP_LEN_PROC_NAME];  // process name
     char bundleName[APP_LEN_BUNDLE_NAME]; // bundle name
     char soPath[APP_LEN_SO_PATH];         // so lib path
-    uint32_t accessTokenId;
     char apl[APP_APL_MAX_LEN];
     char renderCmd[APP_RENDER_CMD_MAX_LEN];
-    uint32_t flags;
-    int32_t pid;                     // query render process exited status by render process pid
+    uint32_t accessTokenId;
     int32_t bundleIndex;
-    AppOperateType code;
     uint64_t accessTokenIdEx;
     int32_t hapFlags;
 #ifndef OHOS_LITE

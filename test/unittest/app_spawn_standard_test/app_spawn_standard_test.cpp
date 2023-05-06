@@ -278,13 +278,14 @@ HWTEST(AppSpawnStandardTest, App_Spawn_Standard_003, TestSize.Level0)
 */
 HWTEST(AppSpawnStandardTest, App_Spawn_Standard_003_1, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Standard_003_1 start";
+    APPSPAWN_LOGI("App_Spawn_Standard_003_1 start");
     AppSpawnClientExt client = {};
     char arg1[] = "/system/bin/appspawn";
     char arg2[] = "cold-start";
     char arg3[] = "1";
     {
-        char arg4[] = "1:1:1:1:2:1000:1000:ohos.samples:ohos.samples.ecg:default:671201800:system_core:default";
+        char arg4[] = "1:1:1:1:1:1:1:1:1:2:1000:1000:ohos.samples:ohos.samples.ecg:"
+            "default:671201800:system_core:default:0:671201800";
         char arg5[] = "10";
         char arg6[] = "012345678";
         char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6};
@@ -293,35 +294,39 @@ HWTEST(AppSpawnStandardTest, App_Spawn_Standard_003_1, TestSize.Level0)
         FreeHspList(client.property.hspList);
     }
     { // hsp length is 0
-        char arg4[] = "1:1:1:1:2:1000:1000:ohos.samples:ohos.samples.ecg:default:671201800:system_core:default";
+        char arg4[] = "1:1:1:1:1:1:1:1:1:2:1000:1000:ohos.samples:ohos.samples.ecg:"
+            "default:671201800:system_core:default:0:671201800";
         char arg5[] = "0";
         char* argv[] = {arg1, arg2, arg3, arg4, arg5, nullptr};
         int argc = sizeof(argv)/sizeof(argv[0]);
         EXPECT_EQ(0, GetAppSpawnClientFromArg(argc, argv, &client));
     }
     { // hsp length is null
-        char arg4[] = "1:1:1:1:2:1000:1000:ohos.samples:ohos.samples.ecg:default:671201800:system_core:default";
+        char arg4[] = "1:1:1:1:1:1:1:1:1:2:1000:1000:ohos.samples:ohos.samples.ecg:"
+            "default:671201800:system_core:default:0:671201800";
         char arg6[] = "0123456789";
         char* argv[] = {arg1, arg2, arg3, arg4, nullptr, arg6};
         int argc = sizeof(argv)/sizeof(argv[0]);
         EXPECT_EQ(-1, GetAppSpawnClientFromArg(argc, argv, &client));
     }
     { // hsp length is non-zero, but argc is 5
-        char arg4[] = "1:1:1:1:2:1000:1000:ohos.samples:ohos.samples.ecg:default:671201800:system_core:default";
+        char arg4[] = "1:1:1:1:1:1:1:1:1:2:1000:1000:ohos.samples:ohos.samples.ecg:"
+            "default:671201800:system_core:default:0:671201800";
         char arg5[] = "10";
         char* argv[] = {arg1, arg2, arg3, arg4, arg5};
         int argc = sizeof(argv)/sizeof(argv[0]);
         EXPECT_EQ(-1, GetAppSpawnClientFromArg(argc, argv, &client));
     }
     { // hsp length is non-zero, but content is null
-        char arg4[] = "1:1:1:1:2:1000:1000:ohos.samples:ohos.samples.ecg:default:671201800:system_core:default";
+        char arg4[] = "1:1:1:1:1:1:1:1:1:2:1000:1000:ohos.samples:ohos.samples.ecg:"
+            "default:671201800:system_core:default:0:671201800";
         char arg5[] = "10";
         char* argv[] = {arg1, arg2, arg3, arg4, arg5, nullptr};
         int argc = sizeof(argv)/sizeof(argv[0]);
         EXPECT_EQ(-1, GetAppSpawnClientFromArg(argc, argv, &client));
     }
 
-    GTEST_LOG_(INFO) << "App_Spawn_Standard_003_1 end";
+    APPSPAWN_LOGI("App_Spawn_Standard_003_1 en");
 }
 
 /**
@@ -333,13 +338,14 @@ HWTEST(AppSpawnStandardTest, App_Spawn_Standard_003_1, TestSize.Level0)
 */
 HWTEST(AppSpawnStandardTest, App_Spawn_Standard_003_2, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Standard_003_2 start";
+    APPSPAWN_LOGI("App_Spawn_Standard_003_2 start");
     AppSpawnClientExt client = {};
     char arg1[] = "/system/bin/appspawn";
     char arg2[] = "cold-start";
     char arg3[] = "1";
     { // actual data is shorter than totalLength
-        char arg4[] = "1:1:1:1:2:1000:1000:ohos.samples:ohos.samples.ecg:default:671201800:system_core:default";
+        char arg4[] = "1:1:1:1:1:1:1:1:1:2:1000:1000:ohos.samples:ohos.samples.ecg:"
+            "default:671201800:system_core:default:0:671201800";
         char arg5[] = "10";
         char arg6[] = "01234";
         char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6};
@@ -348,7 +354,8 @@ HWTEST(AppSpawnStandardTest, App_Spawn_Standard_003_2, TestSize.Level0)
         FreeHspList(client.property.hspList);
     }
     { // actual data is longer than totalLength
-        char arg4[] = "1:1:1:1:2:1000:1000:ohos.samples:ohos.samples.ecg:default:671201800:system_core:default";
+        char arg4[] = "1:1:1:1:1:1:1:1:1:2:1000:1000:ohos.samples:ohos.samples.ecg:"
+            "default:671201800:system_core:default:0:671201800";
         char arg5[] = "5";
         char arg6[] = "0123456789";
         char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6};
@@ -357,7 +364,7 @@ HWTEST(AppSpawnStandardTest, App_Spawn_Standard_003_2, TestSize.Level0)
         FreeHspList(client.property.hspList);
     }
 
-    GTEST_LOG_(INFO) << "App_Spawn_Standard_003_2 end";
+    APPSPAWN_LOGI("App_Spawn_Standard_003_2 end");
 }
 
 /**
@@ -379,12 +386,13 @@ HWTEST(AppSpawnStandardTest, App_Spawn_Standard_004, TestSize.Level0)
     content->runChildProcessor = RunChildProcessor;
 
     content->runChildProcessor(content, nullptr);
+
     char tmp0[] = "/system/bin/appspawn";
     char tmp1[] = "cold-start";
     char tmp2[] = "1";
     {
-        char tmp3[] = "1:1:1:1:2:1000:1000:ohos.samples.ecg.default: \
-            ohos.samples.ecg:default:671201800:system_core:default";
+        char tmp3[] = "1:1:1:1:1:1:1:1:1:2:1000:1000:ohos.samples:ohos.samples.ecg:"
+            "default:671201800:system_core:default:0:671201800";
         char * const argv[] = {tmp0, tmp1, tmp2, tmp3};
         AppSpawnColdRun(content, 4, argv);
     }
@@ -448,7 +456,7 @@ HWTEST(AppSpawnStandardTest, App_Spawn_Standard_005, TestSize.Level0)
     GTEST_LOG_(INFO) << "App_Spawn_Standard_005 end";
 }
 
-static int RunClient(AppSpawnContentExt *content, int cold, AppOperateType code, const std::string &processName)
+static int RunClient(AppSpawnContentExt *content, int flags, AppOperateType code, const std::string &processName)
 {
     // create connection
     TaskHandle stream = AcceptClient(LE_GetDefaultLoop(), content->server, TASK_TEST);
@@ -465,12 +473,16 @@ static int RunClient(AppSpawnContentExt *content, int cold, AppOperateType code,
     property.gid = 100; // 100 is gid
     property.gidCount = 1; // 1 is gidCount
     property.gidTable[0] = 101; // 101 is gidTable
-    (void)strcpy_s(property.processName, sizeof(property.processName), processName.c_str());
+    if (code == SPAWN_NATIVE_PROCESS) {
+        (void)strcpy_s(property.processName, sizeof(property.processName), "ohos.appspawn.test.cmd");
+    } else {
+        (void)strcpy_s(property.processName, sizeof(property.processName), processName.c_str());
+    }
     (void)strcpy_s(property.bundleName, sizeof(property.bundleName), processName.c_str());
     (void)strcpy_s(property.renderCmd, sizeof(property.renderCmd), processName.c_str());
     (void)strcpy_s(property.soPath, sizeof(property.soPath), processName.c_str());
     (void)strcpy_s(property.apl, sizeof(property.apl), "system_core");
-    property.flags = cold ? 0x01 : 0;
+    property.flags = flags;
     property.code = code;
     property.accessTokenId = 0;
     property.setAllowInternet = 1;
@@ -491,7 +503,7 @@ static int RunClient(AppSpawnContentExt *content, int cold, AppOperateType code,
     return 0;
 }
 
-static AppSpawnContentExt *TestClient(int cold,
+static AppSpawnContentExt *TestClient(int flags,
     AppOperateType code, const std::string &processName, const std::string &serverName)
 {
     char buffer[64] = {0}; // 64 buffer size
@@ -506,7 +518,7 @@ static AppSpawnContentExt *TestClient(int cold,
     // set common operation
     content->content.loadExtendLib = LoadExtendLib;
     content->content.runChildProcessor = RunChildProcessor;
-    content->flags |= cold ? FLAGS_ON_DEMAND : 0;
+    content->flags |= (flags & APP_COLD_BOOT) ? FLAGS_ON_DEMAND : 0;
     // test null
     StreamServerTask *task = reinterpret_cast<StreamServerTask *>(content->server);
     task->incommingConnect(nullptr, nullptr);
@@ -519,7 +531,7 @@ static AppSpawnContentExt *TestClient(int cold,
         ret = LE_StartTimer(LE_GetDefaultLoop(), content->timer, 500, 1); // 500 ms is timeout
         EXPECT_EQ(ret, 0);
     }
-    ret = RunClient(content, cold, code, processName);
+    ret = RunClient(content, flags, code, processName);
     EXPECT_EQ(ret, 0);
 
     if (content->timer == nullptr) { // create timer for exit
@@ -562,7 +574,8 @@ HWTEST(AppSpawnStandardTest, App_Spawn_Standard_006_2, TestSize.Level0)
     GTEST_LOG_(INFO) << "App_Spawn_Standard_006_2 start";
     SetHapDomainSetcontextResult(-1);
     SetParameter("startup.appspawn.cold.boot", "1");
-    AppSpawnContentExt *content = TestClient(1, DEFAULT, "com.ohos.medialibrary.medialibrarydata", "test006_2");
+    AppSpawnContentExt *content = TestClient(APP_COLD_BOOT,
+        DEFAULT, "com.ohos.medialibrary.medialibrarydata", "test006_2");
     ASSERT_TRUE(content != nullptr);
     content->content.runAppSpawn(&content->content, 0, nullptr);
     GTEST_LOG_(INFO) << "App_Spawn_Standard_006_2 end";
@@ -572,7 +585,8 @@ HWTEST(AppSpawnStandardTest, App_Spawn_Standard_006_3, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Standard_006_3 start";
     SetHapDomainSetcontextResult(-1);
-    AppSpawnContentExt *content = TestClient(1, DEFAULT, "com.ohos.medialibrary.medialibrarydata", "test006_2");
+    AppSpawnContentExt *content = TestClient(APP_COLD_BOOT,
+        DEFAULT, "com.ohos.medialibrary.medialibrarydata", "test006_2");
     ASSERT_TRUE(content != nullptr);
     content->content.runAppSpawn(&content->content, 0, nullptr);
     GTEST_LOG_(INFO) << "App_Spawn_Standard_006_3 end";
@@ -583,7 +597,8 @@ HWTEST(AppSpawnStandardTest, App_Spawn_Standard_006_4, TestSize.Level0)
     GTEST_LOG_(INFO) << "App_Spawn_Standard_006_4 start";
     SetHapDomainSetcontextResult(-1);
     SetParameter("const.appspawn.preload", "false");
-    AppSpawnContentExt *content = TestClient(1, DEFAULT, "com.ohos.medialibrary.medialibrarydata", "test006_2");
+    AppSpawnContentExt *content = TestClient(APP_COLD_BOOT,
+        DEFAULT, "com.ohos.medialibrary.medialibrarydata", "test006_2");
     ASSERT_TRUE(content != nullptr);
     content->content.coldStartApp = nullptr;
     content->content.runAppSpawn(&content->content, 0, nullptr);
@@ -816,5 +831,49 @@ HWTEST(AppSpawnStandardTest, App_Spawn_Standard_ReportEvent, TestSize.Level0)
 {
     ReportProcessExitInfo(nullptr, 100, 100, 0);
     ReportProcessExitInfo("nullptr", 100, 100, 0);
+}
+
+HWTEST(AppSpawnStandardTest, App_Spawn_Standard_009_01, TestSize.Level0)
+{
+    GTEST_LOG_(INFO) << "App_Spawn_Standard_009_01 start";
+    SetHapDomainSetcontextResult(-1);
+    AppSpawnContentExt *content = TestClient(0,
+        SPAWN_NATIVE_PROCESS, "ls -l > /data/appspawn_ut/test009_1", "test009_1");
+    ASSERT_TRUE(content != nullptr);
+    content->content.runAppSpawn(&content->content, 0, nullptr);
+    GTEST_LOG_(INFO) << "App_Spawn_Standard_009_01 end";
+}
+
+HWTEST(AppSpawnStandardTest, App_Spawn_Standard_009_02, TestSize.Level0)
+{
+    GTEST_LOG_(INFO) << "App_Spawn_Standard_009_02 start";
+    SetHapDomainSetcontextResult(-1);
+    AppSpawnContentExt *content = TestClient(APP_NO_SANDBOX,
+        SPAWN_NATIVE_PROCESS, "ls -l > /data/appspawn_ut/test009_02", "test009_02");
+    ASSERT_TRUE(content != nullptr);
+    content->content.runAppSpawn(&content->content, 0, nullptr);
+    GTEST_LOG_(INFO) << "App_Spawn_Standard_009_02 end";
+}
+
+HWTEST(AppSpawnStandardTest, App_Spawn_Standard_009_03, TestSize.Level0)
+{
+    GTEST_LOG_(INFO) << "App_Spawn_Standard_009_03 start";
+    SetHapDomainSetcontextResult(-1);
+    AppSpawnContentExt *content = TestClient(APP_COLD_BOOT,
+        SPAWN_NATIVE_PROCESS, "ls -l > /data/appspawn_ut/test009_03", "test009_03");
+    ASSERT_TRUE(content != nullptr);
+    content->content.runAppSpawn(&content->content, 0, nullptr);
+    GTEST_LOG_(INFO) << "App_Spawn_Standard_009_03 end";
+}
+
+HWTEST(AppSpawnStandardTest, App_Spawn_Standard_009_04, TestSize.Level0)
+{
+    GTEST_LOG_(INFO) << "App_Spawn_Standard_009_04 start";
+    SetHapDomainSetcontextResult(-1);
+    AppSpawnContentExt *content = TestClient(APP_COLD_BOOT | APP_NO_SANDBOX,
+        SPAWN_NATIVE_PROCESS, "ls -l > /data/appspawn_ut/test009_04", "test009_04");
+    ASSERT_TRUE(content != nullptr);
+    content->content.runAppSpawn(&content->content, 0, nullptr);
+    GTEST_LOG_(INFO) << "App_Spawn_Standard_009_04 end";
 }
 } // namespace OHOS
