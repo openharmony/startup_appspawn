@@ -21,4 +21,5 @@ module_output_path = "${part_name}/appspawn_l2"
 declare_args() {
   appspawn_support_nweb = true
   appspawn_report_event = true
+  appspawn_test_cmd = false
 }

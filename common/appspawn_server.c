@@ -17,14 +17,12 @@
 
 #include <stdlib.h>
 #include <errno.h>
-#include <fcntl.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <signal.h>
 #undef _GNU_SOURCE
 #define _GNU_SOURCE
 #include <sched.h>
-#include <string.h>
 #include <time.h>
 #include <stdbool.h>
 
@@ -89,7 +87,7 @@ int DoStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client, char *l
         content->handleInternetPermission(client);
     }
 
-    if ((client->cloneFlags & CLONE_NEWNS) && (content->setAppSandbox)) {
+    if (content->setAppSandbox) {
         ret = content->setAppSandbox(content, client);
         APPSPAWN_CHECK(ret == 0, NotifyResToParent(content, client, ret);
             return ret, "Failed to set app sandbox");

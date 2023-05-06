@@ -51,10 +51,6 @@ typedef struct {
     int32_t fd[2];  // 2 fd count
     AppParameter property;
     pid_t pid;
-    uint8_t setAllowInternet;
-    uint8_t allowInternet;
-    uint8_t reserved1;
-    uint8_t reserved2;
 } AppSpawnClientExt;
 
 typedef struct {
@@ -75,6 +71,23 @@ typedef struct {
 void SetContentFunction(AppSpawnContent *content);
 void AppSpawnColdRun(AppSpawnContent *content, int argc, char *const argv[]);
 int GetAppSpawnClientFromArg(int argc, char *const argv[], AppSpawnClientExt *client);
+#define SHOW_CLIENT(info, clientExt) \
+do { \
+    APPSPAWN_LOGI("Info %{public}s id %{public}d code %{public}d ",                                 \
+        info, (clientExt)->client.id, (clientExt)->property.code);                                  \
+    APPSPAWN_LOGI("processname %{public}s flags 0x%{public}x",                                      \
+        (clientExt)->property.processName, (clientExt)->property.flags);                            \
+    APPSPAWN_LOGI("flags 0x%{public}x cloneFlags 0x%{public}x hapFlags 0x%{public}x",               \
+        (clientExt)->client.flags, (clientExt)->client.cloneFlags, (clientExt)->property.hapFlags); \
+    APPSPAWN_LOGI("bundleName %{public}s soPath %{public}s",                                        \
+        (clientExt)->property.bundleName, (clientExt)->property.soPath);                            \
+    APPSPAWN_LOGI("Access token apl %{public}s renderCmd %{public}s",                               \
+        (clientExt)->property.apl, (clientExt)->property.renderCmd);                                \
+    APPSPAWN_LOGI("uid %{public}u %{public}u gid count %{public}u",                                 \
+        (clientExt)->property.uid, (clientExt)->property.gid, (clientExt)->property.gidCount);      \
+    APPSPAWN_LOGI("setAllowInternet %{public}d allowInternet %{public}d ",                          \
+        (clientExt)->property.setAllowInternet, (clientExt)->property.allowInternet);               \
+} while (0)
 
 #ifdef __cplusplus
 }

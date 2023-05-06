@@ -14,10 +14,33 @@
 import("//base/startup/appspawn/appspawn.gni")
 import("//build/test.gni")
 
+ohos_executable("AppSpawnTest") {
+  sources = [ "${appspawn_path}/test/moduletest/appspawn_test_cmd.cpp" ]
+
+  include_dirs = [
+    "//commonlibrary/c_utils/base/include",
+    "//third_party/zlib/contrib/minizip",
+    "//third_party/zlib",
+  ]
+
+  configs = [ "${appspawn_path}:appspawn_config" ]
+
+  deps = [ "${appspawn_path}/interfaces/innerkits:appspawn_socket_client" ]
+
+  external_deps = [
+    "c_utils:utils",
+    "hiviewdfx_hilog_native:libhilog",
+    "init:libbegetutil",
+  ]
+}
+
 ohos_moduletest("AppSpawnModuleTest") {
   module_out_path = "${module_output_path}"
 
-  sources = [ "${appspawn_path}/test/moduletest/appspawn_module_test.cpp" ]
+  sources = [
+    "${appspawn_path}/test/moduletest/appspawn_client_test.cpp",
+    "${appspawn_path}/test/moduletest/appspawn_module_test.cpp",
+  ]
 
   include_dirs = [
     "//commonlibrary/c_utils/base/include",
@@ -40,6 +63,7 @@ ohos_moduletest("AppSpawnModuleTest") {
     "bundle_framework:appexecfwk_base",
     "c_utils:utils",
     "hiviewdfx_hilog_native:libhilog",
+    "init:libbegetutil",
   ]
 }
 
@@ -47,4 +71,7 @@ group("moduletest") {
   testonly = true
 
   deps = [ ":AppSpawnModuleTest" ]
+  if (appspawn_test_cmd) {
+    deps += [ ":AppSpawnTest" ]
+  }
 }

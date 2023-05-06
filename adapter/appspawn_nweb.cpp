@@ -13,7 +13,11 @@
  * limitations under the License.
  */
 
+#include <cerrno>
 #include <dlfcn.h>
+#include <fcntl.h>
+#include <sys/signalfd.h>
+#include <sys/wait.h>
 
 #include <algorithm>
 #include <ctime>
@@ -66,7 +70,7 @@ void *LoadWithRelroFile(const std::string &lib, const std::string &nsName,
         APPSPAWN_LOGE("LoadWithRelroFile open failed, error=[%{public}s]", strerror(tmpNo));
         return nullptr;
     }
-    void *nwebReservedAddress = mmap(NULL, nwebReservedSize, PROT_NONE,
+    void *nwebReservedAddress = mmap(nullptr, nwebReservedSize, PROT_NONE,
                                      MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
     if (nwebReservedAddress == MAP_FAILED) {
         close(relroFd);
@@ -200,4 +204,41 @@ int GetRenderProcessTerminationStatus(int32_t pid, int *status)
     APPSPAWN_LOGE("not find pid[%{public}d] in render process exited map", pid);
     DumpRenderProcessExitedMap();
     return -1;
+}
+
+static int GetProcessTerminationStatusInner(int32_t pid, int *status)
+{
+    if (status == nullptr) {
+        return -1;
+    }
+
+    if (GetRenderProcessTerminationStatus(pid, status) == 0) {
+        // this shows that the parent process has received SIGCHLD signal.
+        return 0;
+    }
+
+    if (kill(pid, SIGKILL) != 0) {
+        APPSPAWN_LOGE("unable to kill render process, pid: %d ret %d", pid, errno);
+    }
+
+    pid_t exitPid = waitpid(pid, status, WNOHANG);
+    if (exitPid != pid) {
+        APPSPAWN_LOGE("waitpid failed, return : %d, pid: %d, status: %d", exitPid, pid, *status);
+        return -1;
+    }
+    return 0;
+}
+
+int GetProcessTerminationStatus(AppSpawnClient *client)
+{
+    AppSpawnClientExt *appProperty = reinterpret_cast<AppSpawnClientExt *>(client);
+    int exitStatus = 0;
+    int ret = GetProcessTerminationStatusInner(appProperty->property.pid, &exitStatus);
+    if (ret) {
+        exitStatus = ret;
+    }
+    APPSPAWN_LOGI("AppSpawnServer::get render process termination status, status = %d pid = %d uid %d %s %s",
+        exitStatus, appProperty->property.pid, appProperty->property.uid,
+        appProperty->property.processName, appProperty->property.bundleName);
+    return exitStatus;
 }
