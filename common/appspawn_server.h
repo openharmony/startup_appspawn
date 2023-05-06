@@ -38,8 +38,8 @@ extern "C" {
 
 typedef struct AppSpawnClient_ {
     uint32_t id;
-    uint32_t flags;
-    uint32_t cloneFlags;
+    uint32_t flags; // Save negotiated flags
+    uint32_t cloneFlags; // for clone flags
 } AppSpawnClient;
 
 #define MAX_SOCKEYT_NAME_LEN 128
@@ -64,6 +64,7 @@ typedef struct AppSpawnContent_ {
     char *longProcName, uint32_t longProcNameLen);
     int (*setUidGid)(struct AppSpawnContent_ *content, AppSpawnClient *client);
     int (*setCapabilities)(struct AppSpawnContent_ *content, AppSpawnClient *client);
+    int (*setXpmRegion)(struct AppSpawnContent_ *content);
 
     void (*notifyResToParent)(struct AppSpawnContent_ *content, AppSpawnClient *client, int result);
     void (*runChildProcessor)(struct AppSpawnContent_ *content, AppSpawnClient *client);

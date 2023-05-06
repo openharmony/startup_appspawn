@@ -17,7 +17,10 @@ import("//build/test.gni")
 ohos_moduletest("AppSpawnModuleTest") {
   module_out_path = "${module_output_path}"
 
-  sources = [ "${appspawn_path}/test/moduletest/appspawn_module_test.cpp" ]
+  sources = [
+    "${appspawn_path}/test/moduletest/appspawn_client_test.cpp",
+    "${appspawn_path}/test/moduletest/appspawn_module_test.cpp",
+  ]
 
   include_dirs = [
     "//commonlibrary/c_utils/base/include",
@@ -40,6 +43,7 @@ ohos_moduletest("AppSpawnModuleTest") {
     "bundle_framework:appexecfwk_base",
     "c_utils:utils",
     "hiviewdfx_hilog_native:libhilog",
+    "init:libbegetutil",
   ]
 }
 

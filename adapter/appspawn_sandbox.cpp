@@ -17,6 +17,7 @@
 
 #include <string>
 #include "appspawn_service.h"
+#include "config_policy_utils.h"
 #include "json_utils.h"
 #include "sandbox_utils.h"
 
@@ -28,6 +29,7 @@ namespace {
     const std::string MODULE_TEST_BUNDLE_NAME("moduleTestProcessName");
     const std::string NAMESPACE_JSON_CONFIG("/system/etc/sandbox/sandbox-config.json");
     const std::string APP_JSON_CONFIG("/system/etc/sandbox/appdata-sandbox.json");
+    const std::string PRODUCT_JSON_CONFIG("/product-sandbox.json");
 }
 
 void LoadAppSandboxConfig(void)
@@ -38,6 +40,20 @@ void LoadAppSandboxConfig(void)
     APPSPAWN_CHECK_ONLY_LOG(rc, "AppSpawnServer::Failed to load app private sandbox config");
     SandboxUtils::StoreJsonConfig(appSandboxConfig);
 
+    CfgFiles *files = GetCfgFiles("etc/sandbox");
+    for (int i = 0; (files != nullptr) && (i < MAX_CFG_POLICY_DIRS_CNT); ++i) {
+        if (files->paths[i] == nullptr) {
+            continue;
+        }
+        std::string path = files->paths[i];
+        path += PRODUCT_JSON_CONFIG;
+        APPSPAWN_LOGI("LoadAppSandboxConfig %{public}s", path.c_str());
+        rc = JsonUtils::GetJsonObjFromJson(appSandboxConfig, path);
+        APPSPAWN_CHECK_ONLY_LOG(rc,"Failed to load app product sandbox config %{public}s", path.c_str());
+        SandboxUtils::StoreProductJsonConfig(appSandboxConfig);
+    }
+    FreeCfgFiles(files);
+
     nlohmann::json appNamespaceConfig;
     rc = JsonUtils::GetJsonObjFromJson(appNamespaceConfig, NAMESPACE_JSON_CONFIG);
     APPSPAWN_CHECK_ONLY_LOG(rc, "AppSpawnServer::Failed to load app sandbox namespace config");
@@ -47,16 +63,23 @@ void LoadAppSandboxConfig(void)
 int32_t SetAppSandboxProperty(struct AppSpawnContent_ *content, AppSpawnClient *client)
 {
     APPSPAWN_CHECK(client != NULL, return -1, "Invalid appspwn client");
-    AppSpawnClientExt *appProperty = reinterpret_cast<AppSpawnClientExt *>(client);
-    appProperty->property.cloneFlags = client->cloneFlags;
-    int ret = SandboxUtils::SetAppSandboxProperty(&appProperty->property);
+    AppSpawnClientExt *clientExt = reinterpret_cast<AppSpawnClientExt *>(client);
+    // no sandbox
+    if (clientExt->property.flags & APP_NO_SANDBOX) {
+        return 0;
+    }
+    // no news
+    if ((client->cloneFlags & CLONE_NEWNS) != CLONE_NEWNS) {
+        return 0;
+    }
+    int ret = SandboxUtils::SetAppSandboxProperty(client);
     // free HspList
-    if (appProperty->property.hspList.data != nullptr) {
-        free(appProperty->property.hspList.data);
-        appProperty->property.hspList = {};
+    if (clientExt->property.hspList.data != nullptr) {
+        free(clientExt->property.hspList.data);
+        clientExt->property.hspList = {};
     }
     // for module test do not create sandbox
-    if (strncmp(appProperty->property.bundleName,
+    if (strncmp(clientExt->property.bundleName,
         MODULE_TEST_BUNDLE_NAME.c_str(), MODULE_TEST_BUNDLE_NAME.size()) == 0) {
         return 0;
     }

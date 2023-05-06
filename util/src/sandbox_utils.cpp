@@ -103,6 +103,7 @@ namespace {
 
 nlohmann::json SandboxUtils::appNamespaceConfig_;
 nlohmann::json SandboxUtils::appSandboxConfig_;
+std::vector<nlohmann::json> SandboxUtils::productSandboxConfig_ = {};
 
 void SandboxUtils::StoreNamespaceJsonConfig(nlohmann::json &appNamespaceConfig)
 {
@@ -122,6 +123,16 @@ void SandboxUtils::StoreJsonConfig(nlohmann::json &appSandboxConfig)
 nlohmann::json SandboxUtils::GetJsonConfig()
 {
     return SandboxUtils::appSandboxConfig_;
+}
+
+void SandboxUtils::StoreProductJsonConfig(nlohmann::json &productSandboxConfig)
+{
+    SandboxUtils::productSandboxConfig_.push_back(productSandboxConfig);
+}
+
+std::vector<nlohmann::json> &SandboxUtils::GetProductJsonConfig()
+{
+    return SandboxUtils::productSandboxConfig_;
 }
 
 static uint32_t NamespaceFlagsFromConfig(const std::vector<std::string> &vec)
@@ -589,6 +600,7 @@ int32_t SandboxUtils::DoSandboxFilePrivateBind(const ClientSocket::AppProperty *
 {
     nlohmann::json privateAppConfig = wholeConfig[g_privatePrefix][0];
     if (privateAppConfig.find(appProperty->bundleName) != privateAppConfig.end()) {
+        APPSPAWN_LOGV("DoSandboxFilePrivateBind %{public}s", appProperty->bundleName);
         return DoAllMntPointsMount(appProperty, privateAppConfig[appProperty->bundleName][0], g_privatePrefix);
     }
 
@@ -697,9 +709,7 @@ int32_t SandboxUtils::DoSandboxFileCommonSymlink(const ClientSocket::AppProperty
 int32_t SandboxUtils::SetPrivateAppSandboxProperty_(const ClientSocket::AppProperty *appProperty,
                                                     nlohmann::json &config)
 {
-    int ret = 0;
-
-    ret = DoSandboxFilePrivateBind(appProperty, config);
+    int ret = DoSandboxFilePrivateBind(appProperty, config);
     APPSPAWN_CHECK(ret == 0, return ret, "DoSandboxFilePrivateBind failed");
 
     ret = DoSandboxFilePrivateSymlink(appProperty, config);
@@ -740,6 +750,11 @@ int32_t SandboxUtils::SetPrivateAppSandboxProperty(const ClientSocket::AppProper
 
     ret = SetPrivateAppSandboxProperty_(appProperty, config);
     APPSPAWN_CHECK(ret == 0, return ret, "parse adddata-sandbox config failed");
+
+    for (auto productConfig : SandboxUtils::GetProductJsonConfig()) {
+        ret = SetPrivateAppSandboxProperty_(appProperty, productConfig);
+        APPSPAWN_CHECK_ONLY_LOG(ret == 0, "parse product-sandbox config failed");
+    }
     return ret;
 }
 
@@ -772,6 +787,12 @@ int32_t SandboxUtils::SetCommonAppSandboxProperty(const ClientSocket::AppPropert
     ret = SetCommonAppSandboxProperty_(appProperty, jsonConfig);
     APPSPAWN_CHECK(ret == 0, return ret,
         "parse appdata config for common failed, %{public}s", sandboxPackagePath.c_str());
+
+    for (auto productConfig : SandboxUtils::GetProductJsonConfig()) {
+        ret = SetCommonAppSandboxProperty_(appProperty, productConfig);
+        APPSPAWN_CHECK(ret == 0, return ret,
+            "parse product config for common failed, %{public}s", sandboxPackagePath.c_str());
+    }
 
     ret = MountAllHsp(appProperty, sandboxPackagePath);
     APPSPAWN_CHECK(ret == 0, return ret, "mount hspList failed, %{public}s", sandboxPackagePath.c_str());
@@ -916,18 +937,22 @@ static int CheckBundleName(const std::string &bundleName)
     return 0;
 }
 
-int32_t SandboxUtils::SetAppSandboxProperty(const ClientSocket::AppProperty *appProperty)
+int32_t SandboxUtils::SetAppSandboxProperty(AppSpawnClient *client)
 {
-    if (appProperty == nullptr || CheckBundleName(appProperty->bundleName) != 0) {
+    APPSPAWN_CHECK(client != NULL, return -1, "Invalid appspwn client");
+    AppSpawnClientExt *clientExt = reinterpret_cast<AppSpawnClientExt *>(client);
+    ClientSocket::AppProperty *appProperty = &clientExt->property;
+    if (CheckBundleName(appProperty->bundleName) != 0) {
         return -1;
     }
+
     std::string sandboxPackagePath = g_sandBoxRootDir;
     const std::string bundleName = appProperty->bundleName;
     sandboxPackagePath += bundleName;
     MakeDirRecursive(sandboxPackagePath.c_str(), FILE_MODE);
     int rc = 0;
     // when CLONE_NEWPID is enabled, CLONE_NEWNS must be enabled.
-    if (!(appProperty->cloneFlags & CLONE_NEWPID)) {
+    if (!(client->cloneFlags & CLONE_NEWPID)) {
         // add pid to a new mnt namespace
         rc = unshare(CLONE_NEWNS);
         APPSPAWN_CHECK(rc == 0, return rc, "unshare failed, packagename is %{public}s", bundleName.c_str());

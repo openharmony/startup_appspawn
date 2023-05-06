@@ -119,6 +119,7 @@ ohos_static_library("appspawn_server") {
   ]
   external_deps = [
     "c_utils:utils",
+    "config_policy:configpolicy_util",
     "hilog_native:libhilog",
     "init:libbegetutil",
   ]
@@ -173,6 +174,7 @@ ohos_static_library("nwebspawn_server") {
   ]
   external_deps = [
     "c_utils:utils",
+    "config_policy:configpolicy_util",
     "hilog_native:libhilog",
     "init:libbegetutil",
   ]
@@ -209,7 +211,10 @@ ohos_executable("nwebspawn") {
   ]
   configs = [ ":appspawn_config" ]
   deps = [ "${appspawn_path}:nwebspawn_server" ]
-  external_deps = [ "hilog_native:libhilog" ]
+  external_deps = [
+    "config_policy:configpolicy_util",
+    "hilog_native:libhilog",
+  ]
   if (build_selinux) {
     external_deps += [ "selinux:libhap_restorecon" ]
   }
