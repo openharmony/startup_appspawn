@@ -38,12 +38,12 @@
 #define DEVICE_NULL_STR "/dev/null"
 
 struct XpmRegionInfo {
-    unsigned long addr;
-    unsigned long length;
+    uint64_t addr;
+    uint64_t length;
 };
 
 #define XPM_DEV_PATH "/dev/xpm"
-#define XPM_REGION_LEN 0x8000000
+#define XPM_REGION_LEN 0x10000000
 #define SET_XPM_REGION _IOW('x', 0x01, struct XpmRegionInfo)
 
 // ide-asan
