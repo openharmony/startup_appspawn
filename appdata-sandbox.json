@@ -44,11 +44,6 @@
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
-                    "src-path" : "/system/asan/lib",
-                    "sandbox-path" : "/system/asan/lib",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
                     "src-path" : "/system/data",
                     "sandbox-path" : "/system/data",
                     "sandbox-flags" : [ "bind", "rec" ],
@@ -76,11 +71,6 @@
                 }, {
                     "src-path" : "/vendor/lib",
                     "sandbox-path" : "/vendor/lib",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/vendor/asan/lib",
-                    "sandbox-path" : "/vendor/asan/lib",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
@@ -173,6 +163,11 @@
                     "check-action-status": "false"
                 }, {
                     "src-path" : "/system/app/ohos.global.systemres",
+                    "sandbox-path" : "/data/storage/el1/bundle/systemResources",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/system/app/SystemResources",
                     "sandbox-path" : "/data/storage/el1/bundle/systemResources",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"

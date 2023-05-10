@@ -32,7 +32,7 @@ public:
     static void StoreJsonConfig(nlohmann::json &appSandboxConfig);
     static nlohmann::json GetJsonConfig();
     static void StoreProductJsonConfig(nlohmann::json &productSandboxConfig);
-    static nlohmann::json GetProductJsonConfig();
+    static std::vector<nlohmann::json> &GetProductJsonConfig();
     static int32_t SetAppSandboxProperty(AppSpawnClient *client);
     static uint32_t GetNamespaceFlagsFromConfig(const char *bundleName);
 
@@ -60,7 +60,8 @@ private:
     static int32_t DoSandboxRootFolderCreate(const ClientSocket::AppProperty *appProperty,
                                              std::string &sandboxPackagePath);
     static void DoSandboxChmod(nlohmann::json jsonConfig, std::string &sandboxRoot);
-    static int DoAllMntPointsMount(const ClientSocket::AppProperty *appProperty, nlohmann::json &appConfig);
+    static int DoAllMntPointsMount(const ClientSocket::AppProperty *appProperty,
+        nlohmann::json &appConfig, const std::string &section = "app-base");
     static int DoAllSymlinkPointslink(const ClientSocket::AppProperty *appProperty, nlohmann::json &appConfig);
     static std::string ConvertToRealPath(const ClientSocket::AppProperty *appProperty, std::string sandboxRoot);
     static std::string GetSbxPathByConfig(const ClientSocket::AppProperty *appProperty, nlohmann::json &config);
@@ -80,7 +81,7 @@ private:
 private:
     static nlohmann::json appNamespaceConfig_;
     static nlohmann::json appSandboxConfig_;
-    static nlohmann::json productSandboxConfig_;
+    static std::vector<nlohmann::json> productSandboxConfig_;
 };
 } // namespace AppSpawn
 } // namespace OHOS

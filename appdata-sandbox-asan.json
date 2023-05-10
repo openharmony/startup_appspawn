@@ -1,0 +1,22 @@
+{
+    "common" : [{
+        "top-sandbox-switch": "ON",
+        "app-base" : [{
+            "sandbox-root" : "/mnt/sandbox/<PackageName>",
+            "mount-paths" : [ {
+                    "src-path" : "/system/asan/lib",
+                    "sandbox-path" : "/system/asan/lib",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/vendor/asan/lib",
+                    "sandbox-path" : "/vendor/asan/lib",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }
+            ],
+            "symbol-links" : [
+            ]
+        }]
+    }]
+}

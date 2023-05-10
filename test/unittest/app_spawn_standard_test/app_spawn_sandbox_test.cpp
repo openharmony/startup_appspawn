@@ -1286,4 +1286,70 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_36, TestSize.Level0)
     m_appProperty->hspList = {};
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_36 end";
 }
+
+HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_37, TestSize.Level0)
+{
+    APPSPAWN_LOGI("App_Spawn_Sandbox_37 start");
+    ClientSocket::AppProperty *m_appProperty = GetAppProperty();
+    m_appProperty->uid = 1000;
+    m_appProperty->gid = 1000;
+    (void)strcpy_s(m_appProperty->bundleName, sizeof(m_appProperty->bundleName), "ohos.samples.xxx");
+    LoadAppSandboxConfig();
+    std::string sandboxPackagePath = "/mnt/sandbox/";
+    const std::string bundleName = m_appProperty->bundleName;
+    sandboxPackagePath += bundleName;
+
+    int ret = SandboxUtils::SetPrivateAppSandboxProperty(m_appProperty);
+    EXPECT_EQ(0, ret);
+    ret = SandboxUtils::SetCommonAppSandboxProperty(m_appProperty, sandboxPackagePath);
+    EXPECT_EQ(0, ret);
+    APPSPAWN_LOGI("App_Spawn_Sandbox_37 end");
+}
+
+HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_38, TestSize.Level0)
+{
+    APPSPAWN_LOGI("App_Spawn_Sandbox_38 start");
+    ClientSocket::AppProperty *m_appProperty = GetAppProperty();
+    m_appProperty->uid = 1000;
+    m_appProperty->gid = 1000;
+
+    (void)strcpy_s(m_appProperty->bundleName, sizeof(m_appProperty->bundleName), "com.example.deviceinfo");
+    std::string pJsconfig1 = "{ \
+        \"common\":[],                      \
+        \"individual\": [ {                  \
+          \"com.example.deviceinfo\" : [{   \
+            \"sandbox-switch\": \"ON\",     \
+            \"sandbox-root\" : \"/mnt/sandbox/<PackageName>\",  \
+            \"mount-paths\" : [{    \
+                    \"src-path\" : \"/data/app/el1/bundle/public/\",    \
+                    \"sandbox-path\" : \"/data/accounts/account_0/applications/2222222\",   \
+                    \"sandbox-flags\" : [ \"bind\", \"rec\" ],  \
+                    \"check-action-status\": \"true\"   \
+                }, { \
+                    \"src-path\" : \"/data/app/el1/bundle/public/\",    \
+                    \"sandbox-path\" : \"/data/bundles/aaaaaa\",    \
+                    \"sandbox-flags\" : [ \"bind\", \"rec\" ],  \
+                    \"check-action-status\": \"true\"   \
+                }\
+            ],\
+            \"symbol-links\" : []   \
+        }] \
+        }] \
+    }";
+    try {
+        nlohmann::json p_config1 = nlohmann::json::parse(pJsconfig1.c_str());
+        OHOS::AppSpawn::SandboxUtils::StoreProductJsonConfig(p_config1);
+    } catch (nlohmann::detail::exception& e) {
+        APPSPAWN_LOGE("App_Spawn_Sandbox_38 Invalid json");
+        EXPECT_EQ(0, 1);
+    }
+    std::string sandboxPackagePath = "/mnt/sandbox/";
+    const std::string bundleName = m_appProperty->bundleName;
+    sandboxPackagePath += bundleName;
+    int ret = SandboxUtils::SetPrivateAppSandboxProperty(m_appProperty);
+    EXPECT_EQ(0, ret);
+    ret = SandboxUtils::SetCommonAppSandboxProperty(m_appProperty, sandboxPackagePath);
+    EXPECT_EQ(0, ret);
+    APPSPAWN_LOGI("App_Spawn_Sandbox_38 end");
+}
 } // namespace OHOS

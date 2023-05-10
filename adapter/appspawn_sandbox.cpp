@@ -17,6 +17,7 @@
 
 #include <string>
 #include "appspawn_service.h"
+#include "config_policy_utils.h"
 #include "json_utils.h"
 #include "sandbox_utils.h"
 
@@ -27,12 +28,8 @@ using namespace OHOS::AppSpawn;
 namespace {
     const std::string MODULE_TEST_BUNDLE_NAME("moduleTestProcessName");
     const std::string NAMESPACE_JSON_CONFIG("/system/etc/sandbox/sandbox-config.json");
-#if defined (__aarch64__) || defined (__x86_64__)
-    const std::string APP_JSON_CONFIG("/system/etc/sandbox/appdata-sandbox64.json");
-#else
     const std::string APP_JSON_CONFIG("/system/etc/sandbox/appdata-sandbox.json");
-#endif
-    const std::string PRODUCT_JSON_CONFIG("/system/etc/sandbox/product-sandbox.json");
+    const std::string PRODUCT_JSON_CONFIG("/product-sandbox.json");
 }
 
 void LoadAppSandboxConfig(void)
@@ -43,9 +40,19 @@ void LoadAppSandboxConfig(void)
     APPSPAWN_CHECK_ONLY_LOG(rc, "AppSpawnServer::Failed to load app private sandbox config");
     SandboxUtils::StoreJsonConfig(appSandboxConfig);
 
-    rc = JsonUtils::GetJsonObjFromJson(appSandboxConfig, PRODUCT_JSON_CONFIG);
-    APPSPAWN_CHECK_ONLY_LOG(rc, "AppSpawnServer::Failed to load app product sandbox config");
-    SandboxUtils::StoreProductJsonConfig(appSandboxConfig);
+    CfgFiles *files = GetCfgFiles("etc/sandbox");
+    for (int i = 0; (files != nullptr) && (i < MAX_CFG_POLICY_DIRS_CNT); ++i) {
+        if (files->paths[i] == nullptr) {
+            continue;
+        }
+        std::string path = files->paths[i];
+        path += PRODUCT_JSON_CONFIG;
+        APPSPAWN_LOGI("LoadAppSandboxConfig %{public}s", path.c_str());
+        rc = JsonUtils::GetJsonObjFromJson(appSandboxConfig, path);
+        APPSPAWN_CHECK_ONLY_LOG(rc,"Failed to load app product sandbox config %{public}s", path.c_str());
+        SandboxUtils::StoreProductJsonConfig(appSandboxConfig);
+    }
+    FreeCfgFiles(files);
 
     nlohmann::json appNamespaceConfig;
     rc = JsonUtils::GetJsonObjFromJson(appNamespaceConfig, NAMESPACE_JSON_CONFIG);
