@@ -62,9 +62,9 @@ unittest("AppSpawnLiteTest") {
 
   deps += [
     "//foundation/arkui/ace_engine_lite/frameworks:ace_lite",
-    "//foundation/graphic/surface:surface_lite",
-    "//foundation/graphic/ui:ui_lite",
-    "//foundation/graphic/utils:graphic_utils_lite",
+    "//foundation/arkui/ui_lite:ui_lite",
+    "//foundation/graphic/graphic_utils_lite:utils_lite",
+    "//foundation/graphic/surface_lite:surface_lite",
   ]
 
   if (ohos_kernel_type == "liteos_a") {

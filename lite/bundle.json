@@ -27,8 +27,8 @@
                 "kv_store",
                 "ability_lite",
                 "ace_engine_lite",
-                "surface",
-                "ui"
+                "surface_lite",
+                "ui_lite"
             ],
             "third_party": [
                 "cJSON",
