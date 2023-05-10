@@ -4,51 +4,6 @@
         "app-base" : [{
             "sandbox-root" : "/mnt/sandbox/<PackageName>",
             "mount-paths" : [{
-                    "src-path" : "/config",
-                    "sandbox-path" : "/config",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/dev",
-                    "sandbox-path" : "/dev",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/proc",
-                    "sandbox-path" : "/proc",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/sys",
-                    "sandbox-path" : "/sys",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/sys_prod",
-                    "sandbox-path" : "/sys_prod",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/system/app",
-                    "sandbox-path" : "/system/app",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/system/fonts",
-                    "sandbox-path" : "/system/fonts",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/system/lib",
-                    "sandbox-path" : "/system/lib",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/system/asan/lib",
-                    "sandbox-path" : "/system/asan/lib",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
                     "src-path" : "/system/lib64",
                     "sandbox-path" : "/system/lib64",
                     "sandbox-flags" : [ "bind", "rec" ],
@@ -56,31 +11,6 @@
                 }, {
                     "src-path" : "/system/asan/lib64",
                     "sandbox-path" : "/system/asan/lib64",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/system/data",
-                    "sandbox-path" : "/system/data",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/system/usr",
-                    "sandbox-path" : "/system/usr",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/system/profile",
-                    "sandbox-path" : "/system/profile",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/system/bin",
-                    "sandbox-path" : "/system/bin",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/system/etc",
-                    "sandbox-path" : "/system/etc",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
@@ -93,336 +23,28 @@
                     "sandbox-path" : "/vendor/asan/lib64",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
-                }, {
-                    "src-path" : "/data/app/el1/bundle/public/<PackageName>",
-                    "sandbox-path" : "/data/storage/el1/bundle",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "true"
-                }, {
-                    "src-path" : "/data/app/el2/<currentUserId>/base/<PackageName>",
-                    "sandbox-path" : "/data/storage/el2/base",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                },{
-                    "src-path" : "/data/app/el1/<currentUserId>/database/<PackageName>",
-                    "sandbox-path" : "/data/storage/el1/database",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "true"
-                }, {
-                    "src-path" : "/data/app/el2/<currentUserId>/database/<PackageName>",
-                    "sandbox-path" : "/data/storage/el2/database",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/data/app/el1/<currentUserId>/base/<PackageName>",
-                    "sandbox-path" : "/data/storage/el1/base",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "true"
-                }, {
-                    "src-path" : "/mnt/hmdfs/<currentUserId>",
-                    "sandbox-path" : "/mnt/hmdfs/<currentUserId>",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/mnt/hmdfs/<currentUserId>/account/merge_view/data/<PackageName>",
-                    "sandbox-path" : "/data/storage/el2/distributedfiles",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/mnt/hmdfs/<currentUserId>/non_account/merge_view/data/",
-                    "sandbox-path" : "/data/storage/el2/auth_groups",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/data/local/ark-cache/<PackageName>",
-                    "sandbox-path" : "/data/storage/ark-cache",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/data/local/ark-profile/<currentUserId>/<PackageName>",
-                    "sandbox-path" : "/data/storage/ark-profile",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/mnt/share/<currentUserId>/<PackageName>",
-                    "sandbox-path" : "/data/storage/el2/share",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
                 }
             ],
             "symbol-links" : [{
-                    "target-name" : "/system/bin",
-                    "link-name" : "/bin",
-                    "check-action-status": "false"
-                }, {
                     "target-name" : "/system/lib64",
                     "link-name" : "/lib64",
-                    "check-action-status": "false"
-                }, {
-                    "target-name" : "/system/lib",
-                    "link-name" : "/lib",
-                    "check-action-status": "false"
-                }, {
-                    "target-name" : "/system/etc",
-                    "link-name" : "/etc",
-                    "check-action-status": "false"
-                }, {
-                    "target-name" : "/sys/kernel/debug",
-                    "link-name" : "/d",
                     "check-action-status": "false"
                 }
             ]
         }],
         "app-resources" : [{
             "sandbox-root" : "/mnt/sandbox/<PackageName>",
-            "mount-paths" : [{
-                    "src-path" : "/data/app/el1/bundle/public/com.ohos.nweb",
-                    "sandbox-path" : "/data/storage/el1/bundle/nweb",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/data/app/el1/bundle/public/ohos.global.systemres",
-                    "sandbox-path" : "/data/storage/el1/bundle/ohos.global.systemres",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/system/app/ohos.global.systemres",
-                    "sandbox-path" : "/data/storage/el1/bundle/systemResources",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/system/app/SystemResources",
-                    "sandbox-path" : "/data/storage/el1/bundle/systemResources",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/data/app/el1/bundle/public/ohos.global.systemres.overlay",
-                    "sandbox-path" : "/data/storage/el1/bundle/ohos.global.systemres.overlay",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/data/misc",
-                    "sandbox-path" : "/data/storage/el1/bundle/misc",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }
-            ],
-            "flags-point" : [{
-                    "flags": "DLP_MANAGER",
-                    "sandbox-root" : "/mnt/sandbox/<PackageName>",
-                    "mount-paths" : [{
-                        "src-path" : "/data/app/el2/<currentUserId>/base/<PackageName_index>",
-                        "sandbox-path" : "/data/storage/el2/base",
-                        "sandbox-flags" : [ "bind", "rec" ],
-                        "check-action-status": "false"
-                    },{
-                        "src-path" : "/data/app/el1/<currentUserId>/database/<PackageName_index>",
-                        "sandbox-path" : "/data/storage/el1/database",
-                        "sandbox-flags" : [ "bind", "rec" ],
-                        "check-action-status": "false"
-                    }, {
-                        "src-path" : "/data/app/el2/<currentUserId>/database/<PackageName_index>",
-                        "sandbox-path" : "/data/storage/el2/database",
-                        "sandbox-flags" : [ "bind", "rec" ],
-                        "check-action-status": "false"
-                    }, {
-                        "src-path" : "/data/app/el1/<currentUserId>/base/<PackageName_index>",
-                        "sandbox-path" : "/data/storage/el1/base",
-                        "sandbox-flags" : [ "bind", "rec" ],
-                        "check-action-status": "false"
-                    }
-                    ]}, {
-                        "flags": "START_FLAGS_BACKUP",
-                        "sandbox-root" : "/mnt/sandbox/<PackageName>",
-                        "mount-paths": [{
-                            "src-path": "/data/service/el2/<currentUserId>/backup/bundles/<PackageName>",
-                            "sandbox-path": "/data/storage/el2/backup",
-                            "sandbox-flags": [ "bind", "rec" ],
-                            "check-action-status": "false"
-                        }
-                    ]}
-            ],
-            "symbol-links" : [
-            ]
+            "mount-paths" : [],
+            "flags-point" : [],
+            "symbol-links" : []
         }]
     }],
     "individual" : [{
-        "com.huawei.ohos.hiviewx" : [{
-            "sandbox-switch": "ON",
-            "sandbox-root" : "/mnt/sandbox/<PackageName>",
-            "mount-paths" : [{
-                    "src-path" : "/data/log/",
-                    "sandbox-path" : "/data/log/",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "true"
-                }
-            ],
-            "symbol-links" : []
-        }],
-        "com.huawei.ohos.betaclub" : [{
-            "sandbox-switch": "ON",
-            "sandbox-root" : "/mnt/sandbox/<PackageName>",
-            "mount-paths" : [{
-                    "src-path" : "/data/log/",
-                    "sandbox-path" : "/data/log/",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "true"
-                }
-            ],
-            "symbol-links" : []
-        }],
-        "com.ohos.medialibrary.medialibrarydata" : [{
-            "sandbox-switch": "ON",
-            "sandbox-root" : "/mnt/sandbox/<PackageName>",
-            "mount-paths" : [{
-                    "src-path" : "/storage/media/<currentUserId>",
-                    "sandbox-path" : "/storage/media",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "none",
-                    "sandbox-path" : "/storage/media/local/epfs",
-                    "sandbox-flags" : [ "MS_NODEV" ],
-                    "fs-type": "epfs",
-                    "check-action-status": "false"
-                }
-            ],
-            "symbol-links" : []
-        }],
-        "com.ohos.launcher" : [{
-            "sandbox-switch": "ON",
-            "sandbox-root" : "/mnt/sandbox/<PackageName>",
-            "mount-paths" : [{
-                    "src-path" : "/data/app/el1/bundle/public/",
-                    "sandbox-path" : "/data/bundles/",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "true"
-                }
-            ],
-            "symbol-links" : []
-        }],
-        "com.ohos.systemui" : [{
-            "sandbox-switch": "ON",
-            "sandbox-root" : "/mnt/sandbox/<PackageName>",
-            "mount-paths" : [{
-                    "src-path" : "/data/app/el1/bundle/public/",
-                    "sandbox-path" : "/data/app/el1/bundle/public/",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "true"
-                }
-            ],
-            "symbol-links" : []
-        }],
-        "com.ohos.permissionmanager" : [{
-            "sandbox-switch": "ON",
-            "sandbox-root" : "/mnt/sandbox/<PackageName>",
-            "mount-paths" : [{
-                    "src-path" : "/data/app/el1/bundle/public/",
-                    "sandbox-path" : "/data/bundles/",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "true"
-                }
-            ],
-            "symbol-links" : []
-        }],
-        "ohos.samples.ecg" : [{
-            "sandbox-switch": "OFF",
-            "sandbox-root" : "/mnt/sandbox/<PackageName>",
-            "mount-paths" : [{
-                    "src-path" : "/data/app/el1/bundle/public/",
-                    "sandbox-path" : "/data/bundles/",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "true"
-                }
-            ],
-            "symbol-links" : []
-        }],
-        "com.ohos.dlpmanager" : [{
-            "sandbox-switch": "ON",
-            "sandbox-root" : "/mnt/sandbox/<PackageName>",
-            "mount-paths" : [{
-                    "src-path" : "/dev/fuse",
-                    "sandbox-path" : "/data/fuse",
-                    "sandbox-flags" : [ "MS_NOSUID", "MS_NODEV", "MS_NOEXEC", "MS_NOATIME", "MS_LAZYTIME" ],
-                    "fs-type": "fuse",
-                    "check-action-status": "false"
-                }
-            ],
-            "symbol-links" : []
-        }],
-        "com.ohos.UserFile.ExternalFileManager" : [{
-            "sandbox-switch": "ON",
-            "sandbox-root" : "/mnt/sandbox/<PackageName>",
-            "mount-paths" : [{
-                    "src-path" : "/data/service/el1/public/storage_daemon/share/public",
-                    "sandbox-path" : "/data/storage/el1/bundle/storage_daemon",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "true"
-                },
-                {
-                    "src-path" : "/mnt/external",
-                    "sandbox-path" : "/mnt/external",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "true"
-                }
-            ],
-            "symbol-links" : []
-        }],
         "__internal__.com.ohos.render" : [{
             "sandbox-root" : "/mnt/sandbox/com.ohos.render/<PackageName>",
             "mount-paths" : [{
-                    "src-path" : "/dev",
-                    "sandbox-path" : "/dev",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/proc",
-                    "sandbox-path" : "/proc",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/sys",
-                    "sandbox-path" : "/sys",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/system/fonts",
-                    "sandbox-path" : "/system/fonts",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/system/etc",
-                    "sandbox-path" : "/system/etc",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/data/app/el2/<currentUserId>/base/<PackageName>",
-                    "sandbox-path" : "/data/storage/el2/base",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "true"
-                }, {
-                    "src-path" : "/data/app/el1/bundle/public/com.ohos.nweb",
-                    "sandbox-path" : "/data/storage/el1/bundle/nweb",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/system/bin",
-                    "sandbox-path" : "/system/bin",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/system/lib",
-                    "sandbox-path" : "/system/lib",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
                     "src-path" : "/system/lib64",
                     "sandbox-path" : "/system/lib64",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/system/app/com.ohos.nweb",
-                    "sandbox-path" : "/system/app/com.ohos.nweb",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
@@ -430,31 +52,9 @@
                     "sandbox-path" : "/vendor/lib64",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
-                }, {
-                    "src-path" : "/data/app/el1/bundle/public/com.ohos.nweb",
-                    "sandbox-path" : "/data/app/el1/bundle/public/com.ohos.nweb",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/system/app/NWeb",
-                    "sandbox-path" : "/system/app/NWeb",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
                 }
             ],
             "symbol-links" : [{
-                    "target-name" : "/system/etc",
-                    "link-name" : "/etc",
-                    "check-action-status": "false"
-                }, {
-                    "target-name" : "/system/bin",
-                    "link-name" : "/bin",
-                    "check-action-status": "false"
-                }, {
-                    "target-name" : "/system/lib",
-                    "link-name" : "/lib",
-                    "check-action-status": "false"
-                }, {
                     "target-name" : "/system/lib64",
                     "link-name" : "/lib64",
                     "check-action-status": "false"
@@ -463,12 +63,7 @@
             "flags-point" : [{
                 "flags": "DLP_MANAGER",
                 "sandbox-root" : "/mnt/sandbox/com.ohos.render/<PackageName>",
-                "mount-paths" : [{
-                    "src-path" : "/data/app/el2/<currentUserId>/base/<PackageName_index>",
-                    "sandbox-path" : "/data/storage/el2/base",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }],
+                "mount-paths" : [],
                 "symbol-links" : [{}]
             }]
         }]

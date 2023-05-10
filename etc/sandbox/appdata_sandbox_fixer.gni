@@ -1,0 +1,89 @@
+# Copyright (c) 2023 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/config/python.gni")
+import("//build/templates/common/copy.gni")
+
+template("ohos_prebuilt_appdata_sandbox") {
+  assert(defined(invoker.source), "source must be defined for ${target_name}.")
+
+  _fixed_sandbox_target = "${target_name}_sandbox_fixed"
+  _fixed_sandbox_file = target_gen_dir + "/${target_name}.fixed/" +
+                        get_path_info(invoker.source, "file")
+  _output_para_file = get_path_info(invoker.source, "file")
+
+  action_with_pydeps(_fixed_sandbox_target) {
+    deps = []
+    script = "//base/startup/appspawn/etc/sandbox/appdata_sandbox_fixer.py"
+    depfile = "${target_gen_dir}/${target_name}.d"
+    args = [
+      "--output",
+      rebase_path(_fixed_sandbox_file, root_build_dir),
+      "--source-file",
+      rebase_path(invoker.source, root_build_dir),
+      "--depfile",
+      rebase_path(depfile, root_build_dir),
+    ]
+    if (defined(invoker.extra_sandbox_cfgs)) {
+      foreach(extra, invoker.extra_sandbox_cfgs) {
+        args += [
+          "--extra_sandbox_cfg",
+          rebase_path(extra, root_build_dir),
+        ]
+      }
+    }
+    if (defined(invoker.patterns)) {
+      foreach(pattern, invoker.patterns) {
+        args += [
+          "--patterns",
+          pattern,
+        ]
+      }
+    }
+    inputs = [ invoker.source ]
+    outputs = [ _fixed_sandbox_file ]
+  }
+
+  ohos_copy(target_name) {
+    deps = [ ":$_fixed_sandbox_target" ]
+    forward_variables_from(invoker,
+                           [
+                             "testonly",
+                             "visibility",
+
+                             "deps",
+                             "public_configs",
+                             "subsystem_name",
+                             "part_name",
+
+                             # For generate_module_info
+                             "install_images",
+                             "module_install_dir",
+                             "relative_install_dir",
+                             "symlink_target_name",
+
+                             # Open source license related
+                             "license_file",
+                             "license_as_sources",
+                           ])
+    sources = [ _fixed_sandbox_file ]
+    outputs = [ "${target_out_dir}/${target_name}/${_output_para_file}" ]
+    module_type = "etc"
+    install_enable = true
+    module_source_dir = "${target_out_dir}/${target_name}"
+    module_install_name = _output_para_file
+    if (defined(invoker.install_enable)) {
+      install_enable = invoker.install_enable
+    }
+  }
+}
