@@ -198,6 +198,13 @@ static int AppSpawnChild(void *arg)
     return ret;
 }
 
+static int CloneAppSpawn(void *arg)
+{
+    int ret = AppSpawnChild(arg);
+    ProcessExit(ret);
+    return ret;
+}
+
 #ifndef APPSPAWN_TEST
 pid_t AppSpawnFork(int (*childFunc)(void *arg), void *args)
 {
@@ -221,7 +228,7 @@ int AppSpawnProcessMsg(AppSandboxArg *sandbox, pid_t *childPid)
         APPSPAWN_CHECK(client->cloneFlags & CLONE_NEWNS, return -1, "clone flags error");
         char *childStack = (char *)malloc(SANDBOX_STACK_SIZE);
         APPSPAWN_CHECK(childStack != NULL, return -1, "malloc failed");
-        pid_t pid = clone(AppSpawnChild,
+        pid_t pid = clone(CloneAppSpawn,
             childStack + SANDBOX_STACK_SIZE, client->cloneFlags | SIGCHLD, (void *)sandbox);
         if (pid > 0) {
             free(childStack);
