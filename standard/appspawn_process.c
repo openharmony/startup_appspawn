@@ -212,7 +212,7 @@ int SetXpmRegion(struct AppSpawnContent_ *content)
     APPSPAWN_CHECK_ONLY_LOG(ret != -1, "set xpm region failed: %s", strerror(errno));
 
     close(fd);
-    return ret;
+    return 0;
 }
 
 static int SetUidGid(struct AppSpawnContent_ *content, AppSpawnClient *client)

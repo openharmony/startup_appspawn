@@ -120,7 +120,7 @@ void RunChildProcessor(AppSpawnContent *content, AppSpawnClient *client)
     APPSPAWN_CHECK(client != NULL && content != NULL, return, "Invalid client");
     AppSpawnClientExt *appProperty = reinterpret_cast<AppSpawnClientExt *>(client);
     if (appProperty->property.code == SPAWN_NATIVE_PROCESS) {
-        APPSPAWN_LOGI("renderCmd %s", appProperty->property.renderCmd);
+        APPSPAWN_LOGI("renderCmd %{public}s", appProperty->property.renderCmd);
         (void)system(appProperty->property.renderCmd);
         return;
     }
