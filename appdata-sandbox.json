@@ -256,11 +256,6 @@
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
-                    "src-path" : "/mnt/hmdfs/<currentUserId>/account/cloud_merge_view",
-                    "sandbox-path" : "/storage/media/local",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
                     "src-path" : "none",
                     "sandbox-path" : "/storage/media/local/epfs",
                     "sandbox-flags" : [ "MS_NODEV" ],
