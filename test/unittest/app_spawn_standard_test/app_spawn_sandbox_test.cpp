@@ -1338,7 +1338,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_38, TestSize.Level0)
     }";
     try {
         nlohmann::json p_config1 = nlohmann::json::parse(pJsconfig1.c_str());
-        OHOS::AppSpawn::SandboxUtils::StoreProductJsonConfig(p_config1);
+        OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(p_config1);
     } catch (nlohmann::detail::exception& e) {
         APPSPAWN_LOGE("App_Spawn_Sandbox_38 Invalid json");
         EXPECT_EQ(0, 1);

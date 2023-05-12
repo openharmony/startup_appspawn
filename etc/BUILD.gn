@@ -25,7 +25,6 @@ ohos_prebuilt_appdata_sandbox("appdata-sandbox.json") {
   if (is_asan) {
     extra_sandbox_cfgs += [ "../appdata-sandbox-asan.json" ]
   }
-  extra_sandbox_cfgs += [ "../product-sandbox.json" ]
   subsystem_name = "${subsystem_name}"
   part_name = "${part_name}"
   module_install_dir = "etc/sandbox"

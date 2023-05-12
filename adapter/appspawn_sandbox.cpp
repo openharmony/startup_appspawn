@@ -28,29 +28,25 @@ using namespace OHOS::AppSpawn;
 namespace {
     const std::string MODULE_TEST_BUNDLE_NAME("moduleTestProcessName");
     const std::string NAMESPACE_JSON_CONFIG("/system/etc/sandbox/sandbox-config.json");
-    const std::string APP_JSON_CONFIG("/system/etc/sandbox/appdata-sandbox.json");
-    const std::string PRODUCT_JSON_CONFIG("/product-sandbox.json");
+    const std::string APP_JSON_CONFIG("/appdata-sandbox.json");
 }
 
 void LoadAppSandboxConfig(void)
 {
+    bool rc = true;
     // load sandbox config
     nlohmann::json appSandboxConfig;
-    bool rc = JsonUtils::GetJsonObjFromJson(appSandboxConfig, APP_JSON_CONFIG);
-    APPSPAWN_CHECK_ONLY_LOG(rc, "AppSpawnServer::Failed to load app private sandbox config");
-    SandboxUtils::StoreJsonConfig(appSandboxConfig);
-
     CfgFiles *files = GetCfgFiles("etc/sandbox");
     for (int i = 0; (files != nullptr) && (i < MAX_CFG_POLICY_DIRS_CNT); ++i) {
         if (files->paths[i] == nullptr) {
             continue;
         }
         std::string path = files->paths[i];
-        path += PRODUCT_JSON_CONFIG;
+        path += APP_JSON_CONFIG;
         APPSPAWN_LOGI("LoadAppSandboxConfig %{public}s", path.c_str());
         rc = JsonUtils::GetJsonObjFromJson(appSandboxConfig, path);
-        APPSPAWN_CHECK_ONLY_LOG(rc,"Failed to load app product sandbox config %{public}s", path.c_str());
-        SandboxUtils::StoreProductJsonConfig(appSandboxConfig);
+        APPSPAWN_CHECK_ONLY_LOG(rc,"Failed to load app data sandbox config %{public}s", path.c_str());
+        SandboxUtils::StoreJsonConfig(appSandboxConfig);
     }
     FreeCfgFiles(files);
 
