@@ -30,9 +30,7 @@ public:
     static void StoreNamespaceJsonConfig(nlohmann::json &appNamespaceConfig);
     static nlohmann::json GetNamespaceJsonConfig(void);
     static void StoreJsonConfig(nlohmann::json &appSandboxConfig);
-    static nlohmann::json GetJsonConfig();
-    static void StoreProductJsonConfig(nlohmann::json &productSandboxConfig);
-    static std::vector<nlohmann::json> &GetProductJsonConfig();
+    static std::vector<nlohmann::json> &GetJsonConfig();
     static int32_t SetAppSandboxProperty(AppSpawnClient *client);
     static uint32_t GetNamespaceFlagsFromConfig(const char *bundleName);
 
@@ -80,8 +78,7 @@ private:
 
 private:
     static nlohmann::json appNamespaceConfig_;
-    static nlohmann::json appSandboxConfig_;
-    static std::vector<nlohmann::json> productSandboxConfig_;
+    static std::vector<nlohmann::json> appSandboxConfig_;
 };
 } // namespace AppSpawn
 } // namespace OHOS

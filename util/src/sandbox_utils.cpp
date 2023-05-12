@@ -102,8 +102,7 @@ namespace {
 }
 
 nlohmann::json SandboxUtils::appNamespaceConfig_;
-nlohmann::json SandboxUtils::appSandboxConfig_;
-std::vector<nlohmann::json> SandboxUtils::productSandboxConfig_ = {};
+std::vector<nlohmann::json> SandboxUtils::appSandboxConfig_ = {};
 
 void SandboxUtils::StoreNamespaceJsonConfig(nlohmann::json &appNamespaceConfig)
 {
@@ -117,22 +116,12 @@ nlohmann::json SandboxUtils::GetNamespaceJsonConfig(void)
 
 void SandboxUtils::StoreJsonConfig(nlohmann::json &appSandboxConfig)
 {
-    SandboxUtils::appSandboxConfig_ = appSandboxConfig;
+    SandboxUtils::appSandboxConfig_.push_back(appSandboxConfig);;
 }
 
-nlohmann::json SandboxUtils::GetJsonConfig()
+std::vector<nlohmann::json> &SandboxUtils::GetJsonConfig()
 {
     return SandboxUtils::appSandboxConfig_;
-}
-
-void SandboxUtils::StoreProductJsonConfig(nlohmann::json &productSandboxConfig)
-{
-    SandboxUtils::productSandboxConfig_.push_back(productSandboxConfig);
-}
-
-std::vector<nlohmann::json> &SandboxUtils::GetProductJsonConfig()
-{
-    return SandboxUtils::productSandboxConfig_;
 }
 
 static uint32_t NamespaceFlagsFromConfig(const std::vector<std::string> &vec)
@@ -725,19 +714,20 @@ int32_t SandboxUtils::SetRenderSandboxProperty(const ClientSocket::AppProperty *
                                                std::string &sandboxPackagePath)
 {
 #ifdef NWEB_SPAWN
-    nlohmann::json config = SandboxUtils::GetJsonConfig();
-    nlohmann::json privateAppConfig = config[g_privatePrefix][0];
+    for (auto config : SandboxUtils::GetJsonConfig()) {
+        nlohmann::json privateAppConfig = config[g_privatePrefix][0];
 
-    if (privateAppConfig.find(g_ohosRender) != privateAppConfig.end()) {
-        int ret = DoAllMntPointsMount(appProperty, privateAppConfig[g_ohosRender][0], g_ohosRender);
-        APPSPAWN_CHECK(ret == 0, return ret, "DoAllMntPointsMount failed, %{public}s",
-            appProperty->bundleName);
-        ret = DoAllSymlinkPointslink(appProperty, privateAppConfig[g_ohosRender][0]);
-        APPSPAWN_CHECK(ret == 0, return ret, "DoAllSymlinkPointslink failed, %{public}s",
-            appProperty->bundleName);
-        ret = HandleFlagsPoint(appProperty, privateAppConfig[g_ohosRender][0]);
-        APPSPAWN_CHECK_ONLY_LOG(ret == 0, "HandleFlagsPoint for render-sandbox failed, %{public}s",
-            appProperty->bundleName);
+        if (privateAppConfig.find(g_ohosRender) != privateAppConfig.end()) {
+            int ret = DoAllMntPointsMount(appProperty, privateAppConfig[g_ohosRender][0], g_ohosRender);
+            APPSPAWN_CHECK(ret == 0, return ret, "DoAllMntPointsMount failed, %{public}s",
+                appProperty->bundleName);
+            ret = DoAllSymlinkPointslink(appProperty, privateAppConfig[g_ohosRender][0]);
+            APPSPAWN_CHECK(ret == 0, return ret, "DoAllSymlinkPointslink failed, %{public}s",
+                appProperty->bundleName);
+            ret = HandleFlagsPoint(appProperty, privateAppConfig[g_ohosRender][0]);
+            APPSPAWN_CHECK_ONLY_LOG(ret == 0, "HandleFlagsPoint for render-sandbox failed, %{public}s",
+                appProperty->bundleName);
+        }
     }
 #endif
     return 0;
@@ -745,15 +735,10 @@ int32_t SandboxUtils::SetRenderSandboxProperty(const ClientSocket::AppProperty *
 
 int32_t SandboxUtils::SetPrivateAppSandboxProperty(const ClientSocket::AppProperty *appProperty)
 {
-    nlohmann::json config = SandboxUtils::GetJsonConfig();
     int ret = 0;
-
-    ret = SetPrivateAppSandboxProperty_(appProperty, config);
-    APPSPAWN_CHECK(ret == 0, return ret, "parse adddata-sandbox config failed");
-
-    for (auto productConfig : SandboxUtils::GetProductJsonConfig()) {
-        ret = SetPrivateAppSandboxProperty_(appProperty, productConfig);
-        APPSPAWN_CHECK_ONLY_LOG(ret == 0, "parse product-sandbox config failed");
+    for (auto config : SandboxUtils::GetJsonConfig()) {
+        ret = SetPrivateAppSandboxProperty_(appProperty, config);
+        APPSPAWN_CHECK(ret == 0, return ret, "parse adddata-sandbox config failed");
     }
     return ret;
 }
@@ -781,17 +766,11 @@ int32_t SandboxUtils::SetCommonAppSandboxProperty_(const ClientSocket::AppProper
 int32_t SandboxUtils::SetCommonAppSandboxProperty(const ClientSocket::AppProperty *appProperty,
                                                   std::string &sandboxPackagePath)
 {
-    nlohmann::json jsonConfig = SandboxUtils::GetJsonConfig();
     int ret = 0;
-
-    ret = SetCommonAppSandboxProperty_(appProperty, jsonConfig);
-    APPSPAWN_CHECK(ret == 0, return ret,
-        "parse appdata config for common failed, %{public}s", sandboxPackagePath.c_str());
-
-    for (auto productConfig : SandboxUtils::GetProductJsonConfig()) {
-        ret = SetCommonAppSandboxProperty_(appProperty, productConfig);
+    for (auto jsonConfig : SandboxUtils::GetJsonConfig()) {
+        ret = SetCommonAppSandboxProperty_(appProperty, jsonConfig);
         APPSPAWN_CHECK(ret == 0, return ret,
-            "parse product config for common failed, %{public}s", sandboxPackagePath.c_str());
+            "parse appdata config for common failed, %{public}s", sandboxPackagePath.c_str());
     }
 
     ret = MountAllHsp(appProperty, sandboxPackagePath);
@@ -894,34 +873,36 @@ bool SandboxUtils::CheckBundleNameForPrivate(const std::string &bundleName)
 
 bool SandboxUtils::CheckTotalSandboxSwitchStatus(const ClientSocket::AppProperty *appProperty)
 {
-    nlohmann::json wholeConfig = SandboxUtils::GetJsonConfig();
-
-    nlohmann::json commonAppConfig = wholeConfig[g_commonPrefix][0];
-    if (commonAppConfig.find(g_topSandBoxSwitchPrefix) != commonAppConfig.end()) {
-        std::string switchStatus = commonAppConfig[g_topSandBoxSwitchPrefix].get<std::string>();
-        if (switchStatus == g_sbxSwitchCheck) {
-            return true;
-        } else {
-            return false;
+    for (auto wholeConfig : SandboxUtils::GetJsonConfig()) {
+        nlohmann::json commonAppConfig = wholeConfig[g_commonPrefix][0];
+        if (commonAppConfig.find(g_topSandBoxSwitchPrefix) != commonAppConfig.end()) {
+            std::string switchStatus = commonAppConfig[g_topSandBoxSwitchPrefix].get<std::string>();
+            if (switchStatus == g_sbxSwitchCheck) {
+                return true;
+            } else {
+                return false;
+            }
         }
     }
-
     // default sandbox switch is on
     return true;
 }
 
 bool SandboxUtils::CheckAppSandboxSwitchStatus(const ClientSocket::AppProperty *appProperty)
 {
-    nlohmann::json wholeConfig = SandboxUtils::GetJsonConfig();
     bool rc = true;
-
-    nlohmann::json privateAppConfig = wholeConfig[g_privatePrefix][0];
-    if (privateAppConfig.find(appProperty->bundleName) != privateAppConfig.end()) {
-        nlohmann::json appConfig = privateAppConfig[appProperty->bundleName][0];
-        rc = GetSbxSwitchStatusByConfig(appConfig);
-        APPSPAWN_LOGE("CheckAppSandboxSwitchStatus middle, %{public}d", rc);
+    for (auto wholeConfig : SandboxUtils::GetJsonConfig()) {
+        APPSPAWN_LOGV("CheckAppSandboxSwitchStatus middle ");
+        nlohmann::json privateAppConfig = wholeConfig[g_privatePrefix][0];
+        if (privateAppConfig.find(appProperty->bundleName) != privateAppConfig.end()) {
+            nlohmann::json appConfig = privateAppConfig[appProperty->bundleName][0];
+            rc = GetSbxSwitchStatusByConfig(appConfig);
+            APPSPAWN_LOGE("CheckAppSandboxSwitchStatus middle, %{public}d", rc);
+            if (rc) {
+                break;
+            }
+        }
     }
-
     // default sandbox switch is on
     return rc;
 }
