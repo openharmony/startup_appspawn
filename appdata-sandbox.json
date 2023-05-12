@@ -183,7 +183,7 @@
                     "check-action-status": "false"
                 }
             ],
-	    "flags-point" : [{
+        "flags-point" : [{
                     "flags": "DLP_MANAGER",
                     "sandbox-root" : "/mnt/sandbox/<PackageName>",
                     "mount-paths" : [{
