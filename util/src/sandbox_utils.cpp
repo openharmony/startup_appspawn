@@ -381,7 +381,7 @@ static int32_t DoDlpAppMountStrategy(const ClientSocket::AppProperty *appPropert
     APPSPAWN_CHECK(ret == 0, return ret, "DoDlpAppMountStrategy failed, bind mount %{public}s to %{public}s"
         "failed %{public}d", srcPath.c_str(), sandboxPath.c_str(), errno);
 
-    ret = mount(NULL, sandboxPath.c_str(), NULL, MS_PRIVATE, NULL);
+    ret = mount(NULL, sandboxPath.c_str(), NULL, MS_SHARED, NULL);
     APPSPAWN_CHECK(ret == 0, return ret,
         "errno is: %{public}d, private mount to %{public}s failed", errno, sandboxPath.c_str());
 #endif
