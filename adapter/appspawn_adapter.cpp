@@ -96,6 +96,7 @@ int SetSeccompFilter(struct AppSpawnContent_ *content, AppSpawnClient *client)
 void HandleInternetPermission(const AppSpawnClient *client)
 {
     AppSpawnClientExt *appPropertyExt = (AppSpawnClientExt *)client;
+    APPSPAWN_CHECK(appPropertyExt != nullptr, return, "Invalid client");
     APPSPAWN_LOGV("HandleInternetPermission id %{public}d setAllowInternet %hhu allowInternet %hhu",
         client->id, appPropertyExt->property.setAllowInternet, appPropertyExt->property.allowInternet);
     if (appPropertyExt->property.setAllowInternet == 1 && appPropertyExt->property.allowInternet == 0) {
