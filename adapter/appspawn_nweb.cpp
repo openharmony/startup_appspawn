@@ -232,6 +232,7 @@ static int GetProcessTerminationStatusInner(int32_t pid, int *status)
 int GetProcessTerminationStatus(AppSpawnClient *client)
 {
     AppSpawnClientExt *appProperty = reinterpret_cast<AppSpawnClientExt *>(client);
+    APPSPAWN_CHECK(appProperty != nullptr, return -1, "Invalid client");
     int exitStatus = 0;
     int ret = GetProcessTerminationStatusInner(appProperty->property.pid, &exitStatus);
     if (ret) {

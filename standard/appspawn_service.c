@@ -137,7 +137,7 @@ static void OnClose(const TaskHandle taskHandle)
     AppSpawnClientExt *client = (AppSpawnClientExt *)LE_GetUserData(taskHandle);
     APPSPAWN_CHECK(client != NULL, return, "Invalid client");
     APPSPAWN_LOGI("OnClose %{public}d processName = %{public}s",
-		client->client.id, client->property.processName);
+        client->client.id, client->property.processName);
     if (client->property.hspList.data != NULL) {
         free(client->property.hspList.data);
         client->property.hspList.totalLength = 0;
