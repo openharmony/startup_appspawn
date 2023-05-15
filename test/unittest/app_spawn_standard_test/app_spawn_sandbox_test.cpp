@@ -1317,7 +1317,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_38, TestSize.Level0)
     std::string pJsconfig1 = "{ \
         \"common\":[],                      \
         \"individual\": [ {                  \
-          \"com.example.deviceinfo\" : [{   \
+            \"com.example.deviceinfo\" : [{   \
             \"sandbox-switch\": \"ON\",     \
             \"sandbox-root\" : \"/mnt/sandbox/<PackageName>\",  \
             \"mount-paths\" : [{    \
