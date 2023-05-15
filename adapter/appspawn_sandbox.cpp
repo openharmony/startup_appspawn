@@ -45,7 +45,7 @@ void LoadAppSandboxConfig(void)
         path += APP_JSON_CONFIG;
         APPSPAWN_LOGI("LoadAppSandboxConfig %{public}s", path.c_str());
         rc = JsonUtils::GetJsonObjFromJson(appSandboxConfig, path);
-        APPSPAWN_CHECK_ONLY_LOG(rc,"Failed to load app data sandbox config %{public}s", path.c_str());
+        APPSPAWN_CHECK_ONLY_LOG(rc, "Failed to load app data sandbox config %{public}s", path.c_str());
         SandboxUtils::StoreJsonConfig(appSandboxConfig);
     }
     FreeCfgFiles(files);
