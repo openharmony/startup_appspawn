@@ -256,6 +256,11 @@
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
+                    "src-path" : "/storage/cloud/<currentUserId>",
+                    "sandbox-path" : "/storage/cloud",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
                     "src-path" : "none",
                     "sandbox-path" : "/storage/media/local/epfs",
                     "sandbox-flags" : [ "MS_NODEV" ],
