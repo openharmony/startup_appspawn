@@ -24,6 +24,7 @@
 #include "runtime.h"
 #include "json_utils.h"
 #include "foundation/ability/ability_runtime/interfaces/kits/native/appkit/app/main_thread.h"
+#include "syspara/parameter.h"
 
 using namespace OHOS::AppSpawn;
 
@@ -126,6 +127,12 @@ void RunChildProcessor(AppSpawnContent *content, AppSpawnClient *client)
     }
     APPSPAWN_LOGI("LoadExtendLib: RunChildProcessor");
 #ifndef APPSPAWN_TEST
+    std::string checkExit;
+    if (GetIntParameter("persist.init.debug.checkexit", true)) {
+        checkExit = std::to_string(getpid());
+    }
+    setenv(APPSPAWN_CHECK_EXIT, checkExit.c_str(), true);
     OHOS::AppExecFwk::MainThread::Start();
+    unsetenv(APPSPAWN_CHECK_EXIT);
 #endif
 }
