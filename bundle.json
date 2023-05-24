@@ -1,5 +1,5 @@
 {
-    "name": "@ohos/startup_appspawn",
+    "name": "@ohos/appspawn",
     "description": "app start manager",
     "homePage": "https://gitee.com/openharmony",
     "version": "3.1",
@@ -20,8 +20,8 @@
         "features": [
             "appspawn_support_nweb"
         ],
-        "rom": "",
-        "ram": "",
+        "rom": "296KB",
+        "ram": "13125KB",
         "hisysevent_config": [
             "//base/startup/appspawn/startup_events.yaml"
         ],
