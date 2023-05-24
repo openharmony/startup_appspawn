@@ -36,6 +36,8 @@ extern "C" {
 #define GID_FILE_ACCESS 1006  // only used for ExternalFileManager.hap
 #define GID_USER_DATA_RW 1008
 
+#define APPSPAWN_CHECK_EXIT "AppSpawnCheckUnexpectedExitCall"
+
 typedef struct AppSpawnClient_ {
     uint32_t id;
     uint32_t flags; // Save negotiated flags
