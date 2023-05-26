@@ -320,7 +320,7 @@ static int32_t CheckTraceStatus(void)
         return (-errno);
     }
 
-    char data[1024];
+    char data[1024] = { 0 };
     ssize_t dataNum = read(fd, data, sizeof(data));
     if (close(fd) < 0) {
         APPSPAWN_LOGE("close fd error: %{public}d", errno);
@@ -429,12 +429,11 @@ static int EncodeAppClient(AppSpawnClient *client, char *param, int32_t originLe
     if (appProperty->soPath[0] == '\0') {
         strcpy_s(appProperty->soPath, sizeof(appProperty->soPath), "NULL");
     }
-    len = sprintf_s(param + startLen, originLen - startLen, ":%s:%s:%s:%u:%s:%s:%u:%" PRId64 "",
+    len = sprintf_s(param + startLen, originLen - startLen, ":%s:%s:%s:%u:%s:%s:%u:%" PRIu64 "",
         appProperty->processName, appProperty->bundleName, appProperty->soPath,
         appProperty->accessTokenId, appProperty->apl, appProperty->renderCmd,
         appProperty->hapFlags, appProperty->accessTokenIdEx);
     APPSPAWN_CHECK(len > 0 && (len < (originLen - startLen)), return -1, "Invalid to format processName");
-    startLen += len;
     return 0;
 }
 
