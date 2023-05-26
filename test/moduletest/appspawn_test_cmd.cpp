@@ -78,7 +78,7 @@ int main(int argc, char *const argv[])
             bundleName = argv[i];
         } else if (strcmp(argv[i], "-C") == 0 && ((i + 1) < argc)) {
             i++;
-            cmd= argv[i];
+            cmd = argv[i];
         }
     }
 
