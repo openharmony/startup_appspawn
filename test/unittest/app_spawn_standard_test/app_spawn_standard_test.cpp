@@ -58,10 +58,10 @@ void SignalHandler(const struct signalfd_siginfo *siginfo);
     }
 #endif
 
-int MakeDir(const char *dir, mode_t mode)
+static int MakeDir(const char *dir, mode_t mode)
 {
     int rc = -1;
-    if (dir == NULL || *dir == '\0') {
+    if (dir == nullptr || *dir == '\0') {
         errno = EINVAL;
         return rc;
     }
@@ -72,18 +72,18 @@ int MakeDir(const char *dir, mode_t mode)
     return 0;
 }
 
-int MakeDirRecursive(const char *dir, mode_t mode)
+static int MakeDirRecursive(const char *dir, mode_t mode)
 {
     int rc = -1;
     char buffer[PATH_MAX] = {0};
-    const char *p = NULL;
-    if (dir == NULL || *dir == '\0') {
+    const char *p = nullptr;
+    if (dir == nullptr || *dir == '\0') {
         errno = EINVAL;
         return rc;
     }
     p = dir;
     const char *slash = strchr(dir, '/');
-    while (slash != NULL) {
+    while (slash != nullptr) {
         int gap = slash - p;
         p = slash + 1;
         if (gap == 0) {
@@ -97,7 +97,7 @@ int MakeDirRecursive(const char *dir, mode_t mode)
             return -1;
         }
         rc = MakeDir(buffer, mode);
-        if (rc < 0){
+        if (rc < 0) {
             return rc;
         }
         slash = strchr(p, '/');
@@ -105,14 +105,14 @@ int MakeDirRecursive(const char *dir, mode_t mode)
     return MakeDir(dir, mode);
 }
 
-void CheckAndCreateDir(const char *fileName)
+static void CheckAndCreateDir(const char *fileName)
 {
     printf("create path %s\n", fileName);
-    if (fileName == NULL || *fileName == '\0') {
+    if (fileName == nullptr || *fileName == '\0') {
         return;
     }
     char *path = strndup(fileName, strrchr(fileName, '/') - fileName);
-    if (path == NULL) {
+    if (path == nullptr) {
         return;
     }
     if (access(path, F_OK) == 0) {
@@ -195,7 +195,7 @@ HWTEST(AppSpawnStandardTest, App_Spawn_Standard_002, TestSize.Level0)
     if (strcpy_s(client->property.renderCmd, APP_RENDER_CMD_MAX_LEN, "xxx") != 0) {
         GTEST_LOG_(INFO) << "strcpy_s failed";
     }
-    client->property.hspList = {0, 0, NULL};
+    client->property.hspList = {0, 0, nullptr};
 
     AppSpawnContent *content = AppSpawnCreateContent("AppSpawn", longProcName, longProcNameLen, 1);
     content->loadExtendLib = LoadExtendLib;
@@ -301,7 +301,7 @@ HWTEST(AppSpawnStandardTest, App_Spawn_Standard_003_1, TestSize.Level0)
         int argc = sizeof(argv)/sizeof(argv[0]);
         EXPECT_EQ(0, GetAppSpawnClientFromArg(argc, argv, &client));
     }
-    { // hsp length is null
+    { // hsp length is nullptr
         char arg4[] = "1:1:1:1:1:1:1:1:1:2:1000:1000:ohos.samples:ohos.samples.ecg:"
             "default:671201800:system_core:default:0:671201800";
         char arg6[] = "0123456789";
@@ -317,7 +317,7 @@ HWTEST(AppSpawnStandardTest, App_Spawn_Standard_003_1, TestSize.Level0)
         int argc = sizeof(argv)/sizeof(argv[0]);
         EXPECT_EQ(-1, GetAppSpawnClientFromArg(argc, argv, &client));
     }
-    { // hsp length is non-zero, but content is null
+    { // hsp length is non-zero, but content is nullptr
         char arg4[] = "1:1:1:1:1:1:1:1:1:2:1000:1000:ohos.samples:ohos.samples.ecg:"
             "default:671201800:system_core:default:0:671201800";
         char arg5[] = "10";
@@ -519,7 +519,7 @@ static AppSpawnContentExt *TestClient(int flags,
     content->content.loadExtendLib = LoadExtendLib;
     content->content.runChildProcessor = RunChildProcessor;
     content->flags |= (flags & APP_COLD_BOOT) ? FLAGS_ON_DEMAND : 0;
-    // test null
+    // test nullptr
     StreamServerTask *task = reinterpret_cast<StreamServerTask *>(content->server);
     task->incommingConnect(nullptr, nullptr);
     task->incommingConnect(LE_GetDefaultLoop(), nullptr);
@@ -675,7 +675,7 @@ HWTEST(AppSpawnStandardTest, App_Spawn_Standard_08, TestSize.Level0)
     GTEST_LOG_(INFO) << "App_Spawn_Standard_08 start";
     AppSpawnClientExt client = {};
     AppParameter param = {};
-    { // buff is null
+    { // buff is nullptr
         bool ret = ReceiveRequestData(nullptr, &client, nullptr, sizeof(param));
         EXPECT_FALSE(ret);
     }

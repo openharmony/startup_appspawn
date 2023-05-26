@@ -16,7 +16,7 @@
 #include "json_utils.h"
 #include "appspawn_server.h"
 
-#include <errno.h>
+#include <cerrno>
 #include <sstream>
 #include <fstream>
 

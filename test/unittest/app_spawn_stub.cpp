@@ -72,7 +72,7 @@ void *DlsymStub(void *handle, const char *symbol)
 {
     UNUSED(handle);
     if (strcmp(symbol, "InitEnvironmentParam") == 0) {
-        return (void *)InitEnvironmentParamStub;
+        return reinterpret_cast<void *>(InitEnvironmentParamStub);
     }
     return nullptr;
 }
