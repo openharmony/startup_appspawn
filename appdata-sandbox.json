@@ -391,11 +391,6 @@
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
-                    "src-path" : "/data/app/el2/<currentUserId>/base/<PackageName>",
-                    "sandbox-path" : "/data/storage/el2/base",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "true"
-                }, {
                     "src-path" : "/data/app/el1/bundle/public/com.ohos.nweb",
                     "sandbox-path" : "/data/storage/el1/bundle/nweb",
                     "sandbox-flags" : [ "bind", "rec" ],
@@ -449,12 +444,7 @@
             "flags-point" : [{
                 "flags": "DLP_MANAGER",
                 "sandbox-root" : "/mnt/sandbox/com.ohos.render/<PackageName>",
-                "mount-paths" : [{
-                    "src-path" : "/data/app/el2/<currentUserId>/base/<PackageName_index>",
-                    "sandbox-path" : "/data/storage/el2/base",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }],
+                "mount-paths" : [],
                 "symbol-links" : [{}]
             }]
         }]
