@@ -116,7 +116,7 @@ nlohmann::json SandboxUtils::GetNamespaceJsonConfig(void)
 
 void SandboxUtils::StoreJsonConfig(nlohmann::json &appSandboxConfig)
 {
-    SandboxUtils::appSandboxConfig_.push_back(appSandboxConfig);;
+    SandboxUtils::appSandboxConfig_.push_back(appSandboxConfig);
 }
 
 std::vector<nlohmann::json> &SandboxUtils::GetJsonConfig()

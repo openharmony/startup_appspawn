@@ -187,7 +187,7 @@ void RecordRenderProcessExitedStatus(pid_t pid, int status)
     DumpRenderProcessExitedMap();
 }
 
-int GetRenderProcessTerminationStatus(int32_t pid, int *status)
+static int GetRenderProcessTerminationStatus(int32_t pid, int *status)
 {
     if (status == nullptr) {
         return -1;
