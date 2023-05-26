@@ -90,7 +90,6 @@ bool readFileInfo(char *buffer, const int32_t &pid, const char *fileName)
     if (t <= 0 || buffer == nullptr) {
         HiLog::Info(LABEL, "read proc status file failed.");
         close(fd);
-        fd = -1;
         return CHECK_ERROR;
     }
     HiLog::Info(LABEL, "buffer:\n %{public}s", buffer);

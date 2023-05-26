@@ -96,7 +96,7 @@ typedef struct AppParameter_ {
     uint32_t accessTokenId;
     int32_t bundleIndex;
     uint64_t accessTokenIdEx;
-    int32_t hapFlags;
+    uint32_t hapFlags;
 #ifndef OHOS_LITE
     uint8_t setAllowInternet;
     uint8_t allowInternet; // hap sockect allowed
