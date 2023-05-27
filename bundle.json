@@ -1,5 +1,5 @@
 {
-    "name": "@ohos/startup_appspawn",
+    "name": "@ohos/appspawn",
     "description": "app start manager",
     "homePage": "https://gitee.com/openharmony",
     "version": "3.1",
