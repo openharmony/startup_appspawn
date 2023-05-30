@@ -192,8 +192,11 @@ int32_t SandboxUtils::DoAppSandboxMountOnce(const char *originPath, const char *
     int ret = 0;
     // to mount fs and bind mount files or directory
     ret = mount(originPath, destinationPath, fsType, mountFlags, options);
-    APPSPAWN_CHECK(ret == 0, return ret,  "errno is: %{public}d, bind mount %{public}s to %{public}s failed",
-        errno, originPath, destinationPath);
+    if (ret != 0) {
+        APPSPAWN_LOGI("errno is: %{public}d, bind mount %{public}s to %{public}s", errno, originPath,
+                      destinationPath);
+        return ret;
+    }
     ret = mount(NULL, destinationPath, NULL, MS_SLAVE, NULL);
     APPSPAWN_CHECK(ret == 0, return ret,
         "errno is: %{public}d, private mount to %{public}s failed", errno, destinationPath);
