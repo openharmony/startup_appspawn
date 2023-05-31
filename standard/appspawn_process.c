@@ -320,7 +320,7 @@ static int32_t CheckTraceStatus(void)
         return (-errno);
     }
 
-    char data[1024] = { 0 };
+    char data[1024] = { 0 }; // 1024 is data length
     ssize_t dataNum = read(fd, data, sizeof(data));
     if (close(fd) < 0) {
         APPSPAWN_LOGE("close fd error: %{public}d", errno);
@@ -331,7 +331,7 @@ static int32_t CheckTraceStatus(void)
         APPSPAWN_LOGE("fail to read data");
         return -1;
     }
-
+    data[1023] = '\0'; // 1023 is data last element
     const char* tracerPid = "TracerPid:\t";
     char *traceStr = strstr(data, tracerPid);
     if (traceStr == NULL) {
@@ -558,7 +558,7 @@ int GetAppSpawnClientFromArg(int argc, char *const argv[], AppSpawnClientExt *cl
     ret += GetStringFromArg(NULL, &end, client->property.apl, sizeof(client->property.apl));
     ret += GetStringFromArg(NULL, &end, client->property.renderCmd, sizeof(client->property.renderCmd));
     ret += GetUInt32FromArg(NULL, &end, &value);
-    client->property.hapFlags = (int32_t)value;
+    client->property.hapFlags = value;
     ret += GetUInt64FromArg(NULL, &end, &client->property.accessTokenIdEx);
     APPSPAWN_CHECK(ret == 0, return -1, "Failed to access token info");
 
