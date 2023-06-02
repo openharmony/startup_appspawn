@@ -3,6 +3,13 @@
         "application.Ability",
         "application.Context",
         "application.AbilityContext",
-        "request"
+        "request",
+        "application.WindowStage",
+        "application.ServiceExtensionContext",
+        "application.ServiceExtensionAbility",
+        "application.ExtensionContext",
+        "application.AbilityStageContext",
+        "application.AbilityStage",
+        "app.ability.ExtensionAbility"
     ]
 }
