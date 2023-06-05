@@ -23,10 +23,12 @@
 #include "parameters.h"
 #include "runtime.h"
 #include "json_utils.h"
+#include "resource_manager.h"
 #include "foundation/ability/ability_runtime/interfaces/kits/native/appkit/app/main_thread.h"
 #include "syspara/parameter.h"
 
 using namespace OHOS::AppSpawn;
+using namespace OHOS::Global;
 
 #ifdef ASAN_DETECTOR
 static const bool DEFAULT_PRELOAD_VALUE = false;
@@ -113,6 +115,9 @@ void LoadExtendLib(AppSpawnContent *content)
     PreloadModule();
 #endif
     SetTraceDisabled(false);
+
+    Resource::ResourceManager *systemResMgr = Resource::GetSystemResourceManagerNoSandBox();
+    APPSPAWN_CHECK(systemResMgr != nullptr, return, "Fail to get system resource manager");
     APPSPAWN_LOGI("LoadExtendLib: End preload JS VM");
 }
 

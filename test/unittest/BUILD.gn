@@ -131,6 +131,7 @@ ohos_unittest("AppSpawn_ut") {
     "init:libbegetutil",
     "ipc:ipc_core",
     "napi:ace_napi",
+    "resource_management:global_resmgr",
   ]
 
   if (appspawn_report_event) {
