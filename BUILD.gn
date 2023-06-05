@@ -65,6 +65,7 @@ ohos_executable("appspawn") {
     "hilog_native:libhilog",
     "hitrace_native:hitrace_meter",
     "init:libbegetutil",
+    "resource_management:global_resmgr",
   ]
 
   install_enable = true
