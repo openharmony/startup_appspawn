@@ -262,7 +262,7 @@
                     "check-action-status": "false"
                 }, {
                     "src-path" : "none",
-                    "sandbox-path" : "/storage/media/local/epfs",
+                    "sandbox-path" : "/storage/cloud/epfs",
                     "sandbox-flags" : [ "MS_NODEV" ],
                     "fs-type": "epfs",
                     "check-action-status": "false"
