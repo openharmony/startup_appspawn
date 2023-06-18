@@ -347,9 +347,10 @@
         "com.ohos.dlpmanager" : [{
             "sandbox-switch": "ON",
             "sandbox-root" : "/mnt/sandbox/<PackageName>",
+            "sandbox-shared" : "true",
             "mount-paths" : [{
                     "src-path" : "/dev/fuse",
-                    "sandbox-path" : "/data/fuse",
+                    "sandbox-path" : "/mnt/data/fuse",
                     "sandbox-flags" : [ "MS_NOSUID", "MS_NODEV", "MS_NOEXEC", "MS_NOATIME", "MS_LAZYTIME" ],
                     "fs-type": "fuse",
                     "check-action-status": "false"
