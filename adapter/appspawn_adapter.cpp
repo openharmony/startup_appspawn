@@ -24,6 +24,9 @@
 #include "token_setproc.h"
 #ifdef WITH_SECCOMP
 #include "seccomp_policy.h"
+#include <sys/prctl.h>
+
+const char* RENDERER_NAME = "renderer";
 #endif
 
 void SetAppAccessToken(struct AppSpawnContent_ *content, AppSpawnClient *client)
@@ -60,7 +63,15 @@ void SetSelinuxCon(struct AppSpawnContent_ *content, AppSpawnClient *client)
 void SetUidGidFilter(struct AppSpawnContent_ *content)
 {
 #ifdef WITH_SECCOMP
+#ifdef NWEB_SPAWN
+    if (prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0)) {
+        APPSPAWN_LOGE("Failed to set no new privs");
+    }
+
+    if (!SetSeccompPolicyWithName(INDIVIDUAL, NWEBSPAWN_NAME)) {
+#else
     if (!SetSeccompPolicyWithName(INDIVIDUAL, APPSPAWN_NAME)) {
+#endif
         APPSPAWN_LOGE("Failed to set APPSPAWN seccomp filter and exit");
 #ifndef APPSPAWN_TEST
         _exit(0x7f);
@@ -75,7 +86,7 @@ int SetSeccompFilter(struct AppSpawnContent_ *content, AppSpawnClient *client)
 {
 #ifdef WITH_SECCOMP
 #ifdef NWEB_SPAWN
-    const char *appName = NWEBSPAWN_NAME;
+    const char *appName = RENDERER_NAME;
     SeccompFilterType type = INDIVIDUAL;
 #else
     const char *appName = APP_NAME;
