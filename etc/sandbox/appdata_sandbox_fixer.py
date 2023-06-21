@@ -42,7 +42,8 @@ APP_SANDBOX_DEFAULT = '''
             "symbol-links" : []
         }]
     }],
-    "individual" : [{}]
+    "individual" : [{}],
+    "permission" :[{}]
 }
 '''
 #only string in list
@@ -115,7 +116,7 @@ def _merge_scope_app(origin, new):
         "symbol-links": ["target-name"]
     }
     # normal filed
-    for k in ["sandbox-root", "sandbox-switch"]:
+    for k in ["sandbox-root", "sandbox-switch", "gids"]:
         if new[0].get(k) is not None:
             origin[0][k] = new[0].get(k)
 
@@ -131,6 +132,14 @@ def _merge_scope_app(origin, new):
             _merge_scope_array(origin[0].get(name), item, keys)
 
 def _merge_scope_individual(origin, new):
+    for k, v in new.items():
+        if k not in origin:
+            origin[k] = v
+        else:
+            _merge_scope_app(origin[k], v)
+
+
+def _merge_scope_permission(origin, new):
     for k, v in new.items():
         if k not in origin:
             origin[k] = v
@@ -212,6 +221,11 @@ def fix_sandbox_config_file(options):
         if  individuals is not None and len(individuals) > 0:
             _merge_scope_individual(origin_json.get("individual")[0], individuals[0])
             pass
+        
+        # 处理permission
+        permission = data.get("permission")
+        if permission is not None and len(permission) > 0:
+            _merge_scope_permission(origin_json.get("permission")[0], permission[0])
 
     # dump json to output
     flags = os.O_WRONLY | os.O_CREAT | os.O_TRUNC
