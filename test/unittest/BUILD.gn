@@ -96,6 +96,7 @@ ohos_unittest("AppSpawn_ut") {
     "${appspawn_path}/common/appspawn_server.c",
     "${appspawn_path}/interfaces/innerkits/client/appspawn_socket.cpp",
     "${appspawn_path}/interfaces/innerkits/client/client_socket.cpp",
+    "${appspawn_path}/interfaces/innerkits/src/appspawn_mount_permission.cpp",
     "${appspawn_path}/standard/appspawn_process.c",
     "${appspawn_path}/standard/appspawn_service.c",
     "${appspawn_path}/util/src/json_utils.cpp",
