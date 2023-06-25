@@ -30,7 +30,7 @@
                 "ability_base",
                 "c_utils",
                 "ipc",
-                "selinux",
+                "selinux_adapter",
                 "hiviewdfx_hilog_native",
                 "init",
                 "ability_runtime",

@@ -129,7 +129,7 @@ ohos_static_library("appspawn_server") {
     "init:libbegetutil",
   ]
   if (build_selinux) {
-    external_deps += [ "selinux:libhap_restorecon" ]
+    external_deps += [ "selinux_adapter:libhap_restorecon" ]
   }
 
   cflags = []
@@ -185,7 +185,7 @@ ohos_static_library("nwebspawn_server") {
     "init:libbegetutil",
   ]
   if (build_selinux) {
-    external_deps += [ "selinux:libhap_restorecon" ]
+    external_deps += [ "selinux_adapter:libhap_restorecon" ]
   }
 
   cflags = []
@@ -223,7 +223,7 @@ ohos_executable("nwebspawn") {
     "hilog_native:libhilog",
   ]
   if (build_selinux) {
-    external_deps += [ "selinux:libhap_restorecon" ]
+    external_deps += [ "selinux_adapter:libhap_restorecon" ]
   }
 
   install_enable = true
