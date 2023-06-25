@@ -466,5 +466,28 @@
                 "symbol-links" : [{}]
             }]
         }]
-    }]
+    }],
+    "permission":[
+      {
+        "ohos.permission.FILE_ACCESS_MANAGER":[
+          {
+            "sandbox-switch": "ON",
+            "sandbox-root": "/mnt/sandbox/<PackageName>",
+            "gids": [1006],
+            "mount-paths": [
+              {
+                "src-path": "/data/service/el1/public/storage_daemon/share/public",
+                "sandbox-path": "/storage/Share",
+                "sandbox-flags": [ "bind", "rec" ]
+              },
+              {
+                "src-path": "/mnt/external",
+                "sandbox-path": "/storage/External",
+                "sandbox-flags": [ "bind", "rec" ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
 }

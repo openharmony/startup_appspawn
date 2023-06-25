@@ -18,6 +18,7 @@
 
 #include <string>
 #include <vector>
+#include <set>
 #include <sys/types.h>
 #include "nlohmann/json.hpp"
 #include "client_socket.h"
@@ -33,6 +34,7 @@ public:
     static std::vector<nlohmann::json> &GetJsonConfig();
     static int32_t SetAppSandboxProperty(AppSpawnClient *client);
     static uint32_t GetNamespaceFlagsFromConfig(const char *bundleName);
+    static std::set<std::string> GetMountPermissionNames();
 
 private:
     static int32_t DoAppSandboxMountOnce(const char *originPath, const char *destinationPath,
@@ -75,7 +77,13 @@ private:
                                           nlohmann::json &config);
     static int32_t SetRenderSandboxProperty(const ClientSocket::AppProperty *appProperty,
                                             std::string &sandboxPackagePath);
-
+    static int32_t DoSandboxFilePermissionBind(ClientSocket::AppProperty *appProperty,
+                                               nlohmann::json &wholeConfig);
+    static int32_t SetPermissionAppSandboxProperty_(ClientSocket::AppProperty *appProperty,
+                                                nlohmann::json &config);
+    static int32_t SetPermissionAppSandboxProperty(ClientSocket::AppProperty *appProperty);
+    static int32_t DoAddGid(ClientSocket::AppProperty *appProperty,
+    nlohmann::json &appConfig, const char* permissionName, const std::string &section);
 private:
     static nlohmann::json appNamespaceConfig_;
     static std::vector<nlohmann::json> appSandboxConfig_;
