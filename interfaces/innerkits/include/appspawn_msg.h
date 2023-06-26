@@ -69,7 +69,7 @@ typedef enum AppOperateType_ {
 #define APP_ACCESS_BUNDLE_DIR 0x20
 #define APP_NATIVEDEBUG 0X40
 #define APP_NO_SANDBOX 0x80  // Do not enter sandbox
-#define APP_OVERLAY 0x100
+#define APP_OVERLAY_FLAG 0x100
 
 #define BITLEN32 32
 #define FDLEN2 2
@@ -81,7 +81,7 @@ typedef struct HspList_ {
     char* data;
 } HspList;
 
-typedef struct OverlayInfo_ {
+typedef struct {
     uint32_t totalLength;
     char* data;
 } OverlayInfo;
@@ -103,6 +103,8 @@ typedef struct AppParameter_ {
     int32_t bundleIndex;
     uint64_t accessTokenIdEx;
     uint32_t hapFlags;
+    uint32_t mountPermissionFlags;
+
 #ifndef OHOS_LITE
     uint8_t setAllowInternet;
     uint8_t allowInternet; // hap sockect allowed

@@ -287,6 +287,27 @@ static void CheckColdAppEnabled(AppSpawnClientExt *appProperty)
     }
 }
 
+static bool ReceiveRequestDataToOverlay(const TaskHandle taskHandle, AppSpawnClientExt *client,
+    const uint8_t *buffer, uint32_t buffLen)
+{
+    if (client->property.overlayInfo.totalLength) {
+        OverlayInfo *overlayInfo = &client->property.overlayInfo;
+        overlayInfo->data = (char *)malloc(overlayInfo->totalLength);
+        APPSPAWN_CHECK(overlayInfo->data != NULL, LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
+                return false, "ReceiveRequestData: malloc overlay failed %{public}u", overlayInfo->totalLength);
+        char *data = overlayInfo->data;
+
+        APPSPAWN_CHECK(overlayInfo->totalLength >= buffLen, LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
+                return false, "ReceiveRequestData: too many data for overlay %{public}u ", buffLen);
+
+        int ret = memcpy_s(data, buffLen, buffer, buffLen);
+        APPSPAWN_CHECK(ret == 0, LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
+            return false, "ReceiveRequestData: memcpy overlay failed");
+        overlayInfo->data[overlayInfo->totalLength - 1] = 0;
+    }
+    return true;
+}
+
 APPSPAWN_STATIC bool ReceiveRequestData(const TaskHandle taskHandle, AppSpawnClientExt *client,
     const uint8_t *buffer, uint32_t buffLen)
 {
@@ -354,22 +375,7 @@ APPSPAWN_STATIC bool ReceiveRequestData(const TaskHandle taskHandle, AppSpawnCli
         buffLen -= hspList->totalLength;
     }
 
-    if (client->property.overlayInfo.totalLength) {
-        OverlayInfo *overlayInfo = &client->property.overlayInfo;
-        overlayInfo->data = (char *)malloc(overlayInfo->totalLength);
-        APPSPAWN_CHECK(overlayInfo->data != NULL, LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
-                return false, "ReceiveRequestData: malloc overlay failed %{public}u", overlayInfo->totalLength);
-        char *data = overlayInfo->data;
-
-        APPSPAWN_CHECK(overlayInfo->totalLength >= buffLen, LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
-                return false, "ReceiveRequestData: too many data for overlay %{public}u ", buffLen);
-
-        int ret = memcpy_s(data, buffLen, buffer, buffLen);
-        APPSPAWN_CHECK(ret == 0, LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
-            return false, "ReceiveRequestData: memcpy overlay failed");
-        overlayInfo->data[overlayInfo->totalLength - 1] = 0;
-    }
-    return true;
+    return ReceiveRequestDataToOverlay(taskHandle, client, buffer, buffLen);
 }
 
 static int HandleMessage(AppSpawnClientExt *appProperty)

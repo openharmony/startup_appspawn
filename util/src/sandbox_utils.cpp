@@ -26,11 +26,14 @@
 #include <sys/syscall.h>
 #include <sys/types.h>
 #include <cerrno>
+#include <set>
 
 #include "json_utils.h"
 #include "securec.h"
 #include "appspawn_server.h"
 #include "appspawn_service.h"
+#include "appspawn_mount_permission.h"
+
 #ifdef WITH_SELINUX
 #include "hap_restorecon.h"
 #endif
@@ -68,7 +71,7 @@ namespace {
     const std::string g_hspList_key_bundles = "bundles";
     const std::string g_hspList_key_modules = "modules";
     const std::string g_hspList_key_versions = "versions";
-    const std::string g_overlayPath = "/data/storage/ovl/";
+    const std::string g_overlayPath = "/data/storage/overlay/";
     const char *g_actionStatuc = "check-action-status";
     const char *g_accountPrefix = "/account/data/";
     const char *g_accountNonPrefix = "/non_account/data/";
@@ -83,10 +86,13 @@ namespace {
     const char *g_fsType = "fs-type";
     const char *g_linkName = "link-name";
     const char *g_mountPrefix = "mount-paths";
+    const char *g_gidPrefix = "gids";
     const char *g_privatePrefix = "individual";
+    const char *g_permissionPrefix = "permission";
     const char *g_srcPath = "src-path";
     const char *g_sandBoxPath = "sandbox-path";
     const char *g_sandBoxFlags = "sandbox-flags";
+    const char *g_sandBoxShared = "sandbox-shared";
     const char *g_sandBoxSwitchPrefix = "sandbox-switch";
     const char *g_serviceEl2Prefix = "/data/serivce/el2";
     const char *g_symlinkPrefix = "symbol-links";
@@ -98,6 +104,7 @@ namespace {
     const char *g_sandBoxNameSpace = "sandbox-namespace";
     const char *g_sandBoxCloneFlags = "clone-flags";
     const char* g_fileSeparator = "/";
+    const char* g_overlayDecollator = "|";
 #ifndef NWEB_SPAWN
     const std::string g_sandBoxRootDir = "/mnt/sandbox/";
 #else
@@ -182,7 +189,7 @@ static void MakeDirRecursive(const std::string &path, mode_t mode)
         std::string dir = path.substr(0, index);
 #ifndef APPSPAWN_TEST
         APPSPAWN_CHECK(!(access(dir.c_str(), F_OK) < 0 && mkdir(dir.c_str(), mode) < 0),
-            return, "error is %{public}d, mkdir %{public}s failed", errno, dir.c_str());
+            return, "errno is %{public}d, mkdir %{public}s failed", errno, dir.c_str());
 #endif
     } while (index < size);
 }
@@ -373,6 +380,9 @@ static int32_t DoDlpAppMountStrategy(const ClientSocket::AppProperty *appPropert
                                      const std::string &srcPath, const std::string &sandboxPath,
                                      const std::string &fsType, unsigned long mountFlags)
 {
+    // umount fuse path, make sure that sandbox path is not a mount point
+    umount2(sandboxPath.c_str(), MNT_DETACH);
+
     int fd = open("/dev/fuse", O_RDWR);
     APPSPAWN_CHECK(fd != -1, return -EINVAL, "open /dev/fuse failed, errno is %{public}d", errno);
 
@@ -553,6 +563,27 @@ int SandboxUtils::DoAllMntPointsMount(const ClientSocket::AppProperty *appProper
     return 0;
 }
 
+int32_t SandboxUtils::DoAddGid(ClientSocket::AppProperty *appProperty,
+    nlohmann::json &appConfig, const char* permissionName, const std::string &section)
+{
+    std::string bundleName = appProperty->bundleName;
+    if (appConfig.find(g_gidPrefix) == appConfig.end()) {
+        APPSPAWN_LOGV("gids config is not found in %{public}s, app name is %{public}s permission is %{public}s",
+            section.c_str(), bundleName.c_str(), permissionName);
+        return 0;
+    }
+    nlohmann::json gids = appConfig[g_gidPrefix];
+    unsigned int gidSize = gids.size();
+    for (unsigned int i = 0; i < gidSize; i++) {
+        if (appProperty->gidCount < APP_MAX_GIDS) {
+            APPSPAWN_LOGI("add gid to gitTable in %{public}s, permission is %{public}s, gid:%{public}u",
+                bundleName.c_str(), permissionName, gids[i].get<uint32_t>());
+            appProperty->gidTable[appProperty->gidCount++] = gids[i].get<uint32_t>();
+        }
+    }
+    return 0;
+}
+
 int SandboxUtils::DoAllSymlinkPointslink(const ClientSocket::AppProperty *appProperty, nlohmann::json &appConfig)
 {
     APPSPAWN_CHECK(appConfig.find(g_symlinkPrefix) != appConfig.end(), return 0, "symlink config is not found,"
@@ -602,6 +633,45 @@ int32_t SandboxUtils::DoSandboxFilePrivateBind(const ClientSocket::AppProperty *
     }
 
     return 0;
+}
+
+int32_t SandboxUtils::DoSandboxFilePermissionBind(ClientSocket::AppProperty *appProperty,
+    nlohmann::json &wholeConfig)
+{
+    if (wholeConfig.find(g_permissionPrefix) == wholeConfig.end()) {
+        APPSPAWN_LOGV("DoSandboxFilePermissionBind not found permission information in config file");
+        return 0;
+    }
+    nlohmann::json permissionAppConfig = wholeConfig[g_permissionPrefix][0];
+    for (nlohmann::json::iterator it = permissionAppConfig.begin(); it != permissionAppConfig.end(); ++it) {
+        const std::string permissionstr = it.key();
+        APPSPAWN_LOGV("DoSandboxFilePermissionBind mountPermissionFlags %{public}u",
+                      appProperty -> mountPermissionFlags);
+        if (AppspawnMountPermission::IsMountPermission(appProperty -> mountPermissionFlags, permissionstr)) {
+            DoAddGid(appProperty, permissionAppConfig[permissionstr][0], permissionstr.c_str(), g_permissionPrefix);
+            DoAllMntPointsMount(appProperty, permissionAppConfig[permissionstr][0], g_permissionPrefix);
+        } else {
+            APPSPAWN_LOGV("DoSandboxFilePermissionBind false %{public}s permission %{public}s",
+                appProperty->bundleName, permissionstr.c_str());
+        }
+    }
+    return 0;
+}
+
+std::set<std::string> SandboxUtils::GetMountPermissionNames()
+{
+    std::set<std::string> permissionSet;
+    for (auto config : SandboxUtils::GetJsonConfig()) {
+        if (config.find(g_permissionPrefix) == config.end()) {
+            continue;
+        }
+        nlohmann::json permissionAppConfig = config[g_permissionPrefix][0];
+        for (auto it = permissionAppConfig.begin(); it != permissionAppConfig.end(); it++) {
+            permissionSet.insert(it.key());
+        }
+    }
+    APPSPAWN_LOGI("GetMountPermissionNames size: %{public}lu", static_cast<unsigned long>(permissionSet.size()));
+    return permissionSet;
 }
 
 int32_t SandboxUtils::DoSandboxFilePrivateSymlink(const ClientSocket::AppProperty *appProperty,
@@ -718,6 +788,15 @@ int32_t SandboxUtils::SetPrivateAppSandboxProperty_(const ClientSocket::AppPrope
     return ret;
 }
 
+int32_t SandboxUtils::SetPermissionAppSandboxProperty_(ClientSocket::AppProperty *appProperty,
+    nlohmann::json &config)
+{
+    int ret = DoSandboxFilePermissionBind(appProperty, config);
+    APPSPAWN_CHECK(ret == 0, return ret, "DoSandboxFilePermissionBind failed");
+    return ret;
+}
+
+
 int32_t SandboxUtils::SetRenderSandboxProperty(const ClientSocket::AppProperty *appProperty,
                                                std::string &sandboxPackagePath)
 {
@@ -750,6 +829,35 @@ int32_t SandboxUtils::SetPrivateAppSandboxProperty(const ClientSocket::AppProper
     }
     return ret;
 }
+
+static bool GetSandboxPrivateSharedStatus(const string &bundleName)
+{
+    bool result = false;
+    for (auto config : SandboxUtils::GetJsonConfig()) {
+        nlohmann::json privateAppConfig = config[g_privatePrefix][0];
+        if (privateAppConfig.find(bundleName) != privateAppConfig.end() &&
+            privateAppConfig[bundleName][0].find(g_sandBoxShared) !=
+            privateAppConfig[bundleName][0].end()) {
+            string sandboxSharedStatus =
+                privateAppConfig[bundleName][0][g_sandBoxShared].get<std::string>();
+            if (sandboxSharedStatus == g_statusCheck) {
+                result = true;
+            }
+        }
+    }
+    return result;
+}
+
+int32_t SandboxUtils::SetPermissionAppSandboxProperty(ClientSocket::AppProperty *appProperty)
+{
+    int ret = 0;
+    for (auto config : SandboxUtils::GetJsonConfig()) {
+        ret = SetPermissionAppSandboxProperty_(appProperty, config);
+        APPSPAWN_CHECK(ret == 0, return ret, "parse adddata-sandbox config failed");
+    }
+    return ret;
+}
+
 
 int32_t SandboxUtils::SetCommonAppSandboxProperty_(const ClientSocket::AppProperty *appProperty,
                                                    nlohmann::json &config)
@@ -930,7 +1038,7 @@ int32_t SandboxUtils::SetOverlayAppSandboxProperty(const ClientSocket::AppProper
                                                    string &sandboxPackagePath)
 {
     int ret = 0;
-    if ((appProperty->flags & APP_OVERLAY) != APP_OVERLAY) {
+    if ((appProperty->flags & APP_OVERLAY_FLAG) != APP_OVERLAY_FLAG) {
         return ret;
     }
     if (appProperty->overlayInfo.totalLength == 0 || appProperty->overlayInfo.data == nullptr) {
@@ -939,20 +1047,20 @@ int32_t SandboxUtils::SetOverlayAppSandboxProperty(const ClientSocket::AppProper
 
     string overlayInfo = string(appProperty->overlayInfo.data, appProperty->overlayInfo.totalLength);
     set<string> mountedSrcSet;
-    vector<string> splits = split(overlayInfo, "|");
+    vector<string> splits = split(overlayInfo, g_overlayDecollator);
     string sandboxOverlayPath = sandboxPackagePath + g_overlayPath;
     for (auto hapPath : splits) {
-        int32_t pathIndex = hapPath.find_last_of(g_fileSeparator);
-        if (pathIndex < 0) {
+        size_t pathIndex = hapPath.find_last_of(g_fileSeparator);
+        if (pathIndex == string::npos) {
             continue;
         }
         std::string srcPath = hapPath.substr(0, pathIndex);
-        if (!mountedSrcSet.empty() && mountedSrcSet.find(srcPath) != mountedSrcSet.end()) {
-            APPSPAWN_LOGI("%{public}s have mounted before, no need to mount twice.", srcPath.c_str());
+        if (mountedSrcSet.find(srcPath) != mountedSrcSet.end()) {
+            APPSPAWN_LOGV("%{public}s have mounted before, no need to mount twice.", srcPath.c_str());
             continue;
         }
 
-        int32_t bundleNameIndex = srcPath.find_last_of(g_fileSeparator);
+        auto bundleNameIndex = srcPath.find_last_of(g_fileSeparator);
         string destPath = sandboxOverlayPath + srcPath.substr(bundleNameIndex + 1, srcPath.length());
         int32_t retMount = DoAppSandboxMountOnce(srcPath.c_str(), destPath.c_str(),
                                                  nullptr, BASIC_MOUNT_FLAGS, nullptr);
@@ -966,6 +1074,7 @@ int32_t SandboxUtils::SetOverlayAppSandboxProperty(const ClientSocket::AppProper
     return ret;
 }
 
+
 int32_t SandboxUtils::SetAppSandboxProperty(AppSpawnClient *client)
 {
     APPSPAWN_CHECK(client != NULL, return -1, "Invalid appspwn client");
@@ -974,9 +1083,9 @@ int32_t SandboxUtils::SetAppSandboxProperty(AppSpawnClient *client)
     if (CheckBundleName(appProperty->bundleName) != 0) {
         return -1;
     }
-
     std::string sandboxPackagePath = g_sandBoxRootDir;
     const std::string bundleName = appProperty->bundleName;
+    bool sandboxSharedStatus = GetSandboxPrivateSharedStatus(bundleName);
     sandboxPackagePath += bundleName;
     MakeDirRecursive(sandboxPackagePath.c_str(), FILE_MODE);
     int rc = 0;
@@ -991,7 +1100,7 @@ int32_t SandboxUtils::SetAppSandboxProperty(AppSpawnClient *client)
     if ((CheckTotalSandboxSwitchStatus(appProperty) == false) ||
         (CheckAppSandboxSwitchStatus(appProperty) == false)) {
         rc = DoSandboxRootFolderCreateAdapt(sandboxPackagePath);
-    } else {
+    } else if (!sandboxSharedStatus) {
         rc = DoSandboxRootFolderCreate(appProperty, sandboxPackagePath);
     }
     APPSPAWN_CHECK(rc == 0, return rc, "DoSandboxRootFolderCreate failed, %{public}s", bundleName.c_str());
@@ -1004,6 +1113,9 @@ int32_t SandboxUtils::SetAppSandboxProperty(AppSpawnClient *client)
         APPSPAWN_CHECK(rc == 0, return rc, "SetPrivateAppSandboxProperty failed, packagename is %{public}s",
             bundleName.c_str());
     }
+    rc = SetPermissionAppSandboxProperty(appProperty);
+    APPSPAWN_CHECK(rc == 0, return rc, "SetPermissionAppSandboxProperty failed, packagename is %{public}s",
+        bundleName.c_str());
 #else
     // rendering process can be created by different apps,
     // and the bundle names of these apps are different,
@@ -1022,6 +1134,13 @@ int32_t SandboxUtils::SetAppSandboxProperty(AppSpawnClient *client)
     rc = chdir(sandboxPackagePath.c_str());
     APPSPAWN_CHECK(rc == 0, return rc, "chdir failed, packagename is %{public}s, path is %{public}s",
         bundleName.c_str(), sandboxPackagePath.c_str());
+
+    if (sandboxSharedStatus) {
+        rc = chroot(sandboxPackagePath.c_str());
+        APPSPAWN_CHECK(rc == 0, return rc, "chroot failed, path is %{public}s errno is %{public}d",
+            sandboxPackagePath.c_str(), errno);
+        return 0;
+    }
 
     rc = syscall(SYS_pivot_root, sandboxPackagePath.c_str(), sandboxPackagePath.c_str());
     APPSPAWN_CHECK(rc == 0, return rc, "errno is %{public}d, pivot root failed, packagename is %{public}s",
