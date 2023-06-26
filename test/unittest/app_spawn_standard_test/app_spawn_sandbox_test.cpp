@@ -1376,7 +1376,8 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_39, TestSize.Level0)
     m_appProperty->gidCount = 1;
     m_appProperty->flags |= 0x100;
     m_appProperty->overlayInfo.totalLength = 55;
-    string overlayInfo = "/data/app/el1/bundle/public/com.ohos.demo/feature.hsp|/data/app/el1/bundle/public/com.ohos.demo/feature.hsp|";
+    string overlayInfo = "/data/app/el1/bundle/public/com.ohos.demo/feature.hsp|";
+    overlayInfo+="/data/app/el1/bundle/public/com.ohos.demo/feature.hsp|";
     m_appProperty->overlayInfo.data = new char[overlayInfo.length() + 1];
     if (strcpy_s(m_appProperty->overlayInfo.data, overlayInfo.length() + 1, overlayInfo.c_str()) != 0) {
         GTEST_LOG_(INFO) << "SetAppSandboxProperty start 1" << std::endl;

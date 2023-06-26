@@ -307,7 +307,7 @@ HWTEST(AppSpawnStandardTest, App_Spawn_Standard_003_1, TestSize.Level0)
         char arg6[] = "0123456789";
         char* argv[] = {arg1, arg2, arg3, arg4, nullptr, arg6};
         int argc = sizeof(argv)/sizeof(argv[0]);
-        EXPECT_EQ(0, GetAppSpawnClientFromArg(argc, argv, &client));
+        EXPECT_EQ(-1, GetAppSpawnClientFromArg(argc, argv, &client));
     }
     { // hsp length is non-zero, but argc is 5
         char arg4[] = "1:1:1:1:1:1:1:1:1:2:1000:1000:ohos.samples:ohos.samples.ecg:"

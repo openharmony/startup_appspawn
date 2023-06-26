@@ -206,6 +206,11 @@
                         "sandbox-path" : "/data/storage/el1/base",
                         "sandbox-flags" : [ "bind", "rec" ],
                         "check-action-status": "false"
+                    }, {
+                        "src-path" : "/mnt/share/<currentUserId>/<PackageName_index>",
+                        "sandbox-path" : "/data/storage/el2/share",
+                        "sandbox-flags" : [ "bind", "rec" ],
+                        "check-action-status": "false"
                     }
                     ]}, {
                         "flags": "START_FLAGS_BACKUP",
@@ -347,9 +352,10 @@
         "com.ohos.dlpmanager" : [{
             "sandbox-switch": "ON",
             "sandbox-root" : "/mnt/sandbox/<PackageName>",
+            "sandbox-shared" : "true",
             "mount-paths" : [{
                     "src-path" : "/dev/fuse",
-                    "sandbox-path" : "/data/fuse",
+                    "sandbox-path" : "/mnt/data/fuse",
                     "sandbox-flags" : [ "MS_NOSUID", "MS_NODEV", "MS_NOEXEC", "MS_NOATIME", "MS_LAZYTIME" ],
                     "fs-type": "fuse",
                     "check-action-status": "false"
@@ -460,5 +466,28 @@
                 "symbol-links" : [{}]
             }]
         }]
-    }]
+    }],
+    "permission":[
+      {
+        "ohos.permission.FILE_ACCESS_MANAGER":[
+          {
+            "sandbox-switch": "ON",
+            "sandbox-root": "/mnt/sandbox/<PackageName>",
+            "gids": [1006],
+            "mount-paths": [
+              {
+                "src-path": "/data/service/el1/public/storage_daemon/share/public",
+                "sandbox-path": "/storage/Share",
+                "sandbox-flags": [ "bind", "rec" ]
+              },
+              {
+                "src-path": "/mnt/external",
+                "sandbox-path": "/storage/External",
+                "sandbox-flags": [ "bind", "rec" ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
 }
