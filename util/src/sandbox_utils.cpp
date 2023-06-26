@@ -664,7 +664,7 @@ std::set<std::string> SandboxUtils::GetMountPermissionNames()
             permissionSet.insert(it.key());
         }
     }
-    APPSPAWN_LOGI("GetMountPermissionNames size: %{public}u", permissionSet.size());
+    APPSPAWN_LOGI("GetMountPermissionNames size: %{public}lu", static_cast<unsigned long>(permissionSet.size()));
     return permissionSet;
 }
 
