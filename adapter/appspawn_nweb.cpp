@@ -33,14 +33,13 @@
 
 #include "appspawn_service.h"
 #include "appspawn_adapter.h"
-struct RenderProcessNode
-{
-    RenderProcessNode(time_t now, int exit) : recordTime_(now), exitStatus_(exit) {}
+struct RenderProcessNode {
+    RenderProcessNode(time_t now, int exit):recordTime_(now), exitStatus_(exit) {}
     time_t recordTime_;
     int exitStatus_;
 };
-namespace
-{
+
+namespace {
     constexpr int32_t RENDER_PROCESS_MAX_NUM = 16;
     std::map<int32_t, RenderProcessNode> g_renderProcessMap;
     void *g_nwebHandle = nullptr;
@@ -59,14 +58,12 @@ namespace
 std::string GetNWebHapLibsPath()
 {
     std::string libPath;
-    if (access(NWEB_HAP_PATH.c_str(), F_OK) == 0)
-    {
+    if (access(NWEB_HAP_PATH.c_str(), F_OK) == 0) {
         libPath = NWEB_HAP_PATH + RELATIVE_PATH_FOR_HAP;
         APPSPAWN_LOGI("get fix path, %{public}s", libPath.c_str());
         return libPath;
     }
-    if (access(NWEB_HAP_PATH_1.c_str(), F_OK) == 0)
-    {
+    if (access(NWEB_HAP_PATH_1.c_str(), F_OK) == 0) {
         libPath = NWEB_HAP_PATH_1 + RELATIVE_PATH_FOR_HAP;
         APPSPAWN_LOGI("get fix path, %{public}s", libPath.c_str());
         return libPath;
