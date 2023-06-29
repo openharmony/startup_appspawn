@@ -51,13 +51,11 @@ ohos_executable("appspawn") {
     defines = [ "ASAN_DETECTOR" ]
   }
   configs = [ ":appspawn_config" ]
-  deps = [
-    "${ability_runtime_path}/frameworks/native/appkit:appkit_native",
-    "${appspawn_path}:appspawn_server",
-  ]
+  deps = [ "${appspawn_path}:appspawn_server" ]
   external_deps = [
     "ability_base:want",
     "ability_runtime:app_manager",
+    "ability_runtime:appkit_native",
     "ability_runtime:runtime",
     "c_utils:utils",
     "common_event_service:cesfwk_innerkits",
@@ -118,14 +116,14 @@ ohos_static_library("appspawn_server") {
   ldflags = [ "-Wl,--dynamic-linker,/system/bin/linker64z" ]
   deps = [
     ":asan.options",
-    "//base/security/access_token/interfaces/innerkits/token_setproc:libtoken_setproc",
-    "//base/startup/init/interfaces/innerkits:libbegetutil",
     "//foundation/communication/netmanager_base/services/netmanagernative/netsys_client:netsys_client",
   ]
   external_deps = [
+    "access_token:libtoken_setproc",
     "c_utils:utils",
     "config_policy:configpolicy_util",
     "hilog_native:libhilog",
+    "init:libbegetutil",
     "init:libbegetutil",
   ]
   if (build_selinux) {
@@ -174,11 +172,9 @@ ohos_static_library("nwebspawn_server") {
   ]
   configs = [ ":appspawn_config" ]
   ldflags = [ "-Wl,--dynamic-linker,/system/bin/linker64z" ]
-  deps = [
-    "//base/security/access_token/interfaces/innerkits/token_setproc:libtoken_setproc",
-    "//foundation/communication/netmanager_base/services/netmanagernative/netsys_client:netsys_client",
-  ]
+  deps = [ "//foundation/communication/netmanager_base/services/netmanagernative/netsys_client:netsys_client" ]
   external_deps = [
+    "access_token:libtoken_setproc",
     "c_utils:utils",
     "config_policy:configpolicy_util",
     "hilog_native:libhilog",

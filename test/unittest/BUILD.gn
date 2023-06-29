@@ -113,15 +113,12 @@ ohos_unittest("AppSpawn_ut") {
 
   configs = [ "//base/startup/appspawn/test/unittest:utest_config" ]
 
-  deps = [
-    "${ability_runtime_path}/frameworks/native/appkit:appkit_native",
-    "//base/security/access_token/interfaces/innerkits/token_setproc:libtoken_setproc",
-  ]
-
   external_deps = [
     "ability_base:want",
     "ability_runtime:app_manager",
+    "ability_runtime:appkit_native",
     "ability_runtime:runtime",
+    "access_token:libtoken_setproc",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
