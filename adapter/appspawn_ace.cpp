@@ -103,6 +103,10 @@ void LoadExtendLib(AppSpawnContent *content)
     APPSPAWN_CHECK(aceAbilityLib != nullptr, return, "Fail to dlopen %{public}s, [%{public}s]", acelibdir, dlerror());
     APPSPAWN_LOGI("LoadExtendLib: Success to dlopen %{public}s", acelibdir);
 
+#ifndef APPSPAWN_TEST
+    OHOS::AppExecFwk::MainThread::PreloadExtensionPlugin();
+#endif
+
     bool preload = OHOS::system::GetBoolParameter("const.appspawn.preload", DEFAULT_PRELOAD_VALUE);
     if (!preload) {
         APPSPAWN_LOGI("LoadExtendLib: Do not preload JS VM");
