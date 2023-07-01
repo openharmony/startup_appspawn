@@ -15,6 +15,7 @@
         "name": "appspawn",
         "subsystem": "startup",
         "adapted_system_type": [
+            "small",
             "standard"
         ],
         "features": [
@@ -36,7 +37,13 @@
                 "ability_runtime",
                 "access_token",
                 "common",
-                "eventhandler"
+                "eventhandler",
+                "hilog_native",
+                "config_policy",
+                "resource_management",
+                "hitrace_native",
+                "common_event_service",
+                "hisysevent_native"
             ]
         },
         "build": {
