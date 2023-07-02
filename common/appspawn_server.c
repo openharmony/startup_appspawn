@@ -24,6 +24,9 @@
 #define _GNU_SOURCE
 #include <sched.h>
 #include <time.h>
+#ifdef SECURITY_COMPONENT_ENABLE
+#include "sec_comp_enhance_kit_c.h"
+#endif
 
 #define DEFAULT_UMASK 0002
 #define SANDBOX_STACK_SIZE (1024 * 1024 * 8)
@@ -133,6 +136,10 @@ int DoStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client, char *l
         APPSPAWN_CHECK(ret == 0, NotifyResToParent(content, client, ret);
             return ret, "Failed to waitForDebugger");
     }
+
+#ifdef SECURITY_COMPONENT_ENABLE
+    InitSecCompClientEnhance();
+#endif
 
     // notify success to father process and start app process
     NotifyResToParent(content, client, 0);
