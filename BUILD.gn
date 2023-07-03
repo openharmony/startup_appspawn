@@ -126,6 +126,13 @@ ohos_static_library("appspawn_server") {
     "init:libbegetutil",
     "init:libbegetutil",
   ]
+
+  if (!defined(global_parts_info) ||
+      defined(global_parts_info.security_security_component)) {
+    defines += [ "SECURITY_COMPONENT_ENABLE" ]
+    external_deps += [ "security_component:libsecurity_component_enhance_sdk" ]
+  }
+
   if (build_selinux) {
     external_deps += [ "selinux:libhap_restorecon" ]
   }
