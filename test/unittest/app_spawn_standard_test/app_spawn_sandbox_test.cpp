@@ -1359,4 +1359,56 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_38, TestSize.Level0)
     EXPECT_EQ(0, ret);
     APPSPAWN_LOGI("App_Spawn_Sandbox_38 end");
 }
+
+/**
+* @tc.name: App_Spawn_Sandbox_39
+* @tc.desc: load overlay config SetAppSandboxProperty by App com.ohos.demo.
+* @tc.type: FUNC
+* @tc.require:issueI7D0H9
+* @tc.author:
+*/
+HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_39, TestSize.Level0)
+{
+    APPSPAWN_LOGI("App_Spawn_Sandbox_39 start");
+    ClientSocket::AppProperty *m_appProperty = GetAppProperty();
+    m_appProperty->uid = 1000;
+    m_appProperty->gid = 1000;
+    m_appProperty->gidCount = 1;
+    m_appProperty->flags |= 0x100;
+    m_appProperty->overlayInfo.totalLength = 55;
+    string overlayInfo = "/data/app/el1/bundle/public/com.ohos.demo/feature.hsp|";
+    overlayInfo+="/data/app/el1/bundle/public/com.ohos.demo/feature.hsp|";
+    m_appProperty->overlayInfo.data = new char[overlayInfo.length() + 1];
+    if (strcpy_s(m_appProperty->overlayInfo.data, overlayInfo.length() + 1, overlayInfo.c_str()) != 0) {
+        GTEST_LOG_(INFO) << "SetAppSandboxProperty start 1" << std::endl;
+    }
+    std::string sandBoxRootDir = "/mnt/sandbox/com.ohos.demo";
+
+    if (strcpy_s(m_appProperty->processName, APP_LEN_PROC_NAME, "com.ohos.demo") != 0) {
+        GTEST_LOG_(INFO) << "SetAppSandboxProperty start 2" << std::endl;
+    }
+
+    if (strcpy_s(m_appProperty->bundleName, APP_LEN_BUNDLE_NAME, "com.ohos.demo") != 0) {
+        GTEST_LOG_(INFO) << "SetAppSandboxProperty start 3" << std::endl;
+    }
+
+    if (strcpy_s(m_appProperty->apl, APP_APL_MAX_LEN, "normal") != 0) {
+        GTEST_LOG_(INFO) << "SetAppSandboxProperty start 4" << std::endl;
+    }
+
+    GTEST_LOG_(INFO) << "SetAppSandboxProperty section 2"  << std::endl;
+    m_appProperty->accessTokenId = 671201800; // 671201800 is accessTokenId
+    m_appProperty->pid = 354; // query render process exited status by render process pid
+
+    int32_t ret = OHOS::AppSpawn::SandboxUtils::SetOverlayAppSandboxProperty(m_appProperty, sandBoxRootDir);
+    EXPECT_EQ(0, ret);
+    m_appProperty->flags &= ~0x100;
+    m_appProperty->overlayInfo.totalLength = 0;
+    if (m_appProperty->overlayInfo.data != nullptr) {
+        delete [] m_appProperty->overlayInfo.data;
+    }
+    m_appProperty->overlayInfo = {};
+
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_39 end";
+}
 } // namespace OHOS
