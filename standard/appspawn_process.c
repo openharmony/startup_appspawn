@@ -330,6 +330,7 @@ static int32_t CheckTraceStatus(void)
         return -1;
     }
     data[1023] = '\0'; // 1023 is data last element
+
     const char* tracerPid = "TracerPid:\t";
     char *traceStr = strstr(data, tracerPid);
     if (traceStr == NULL) {
@@ -371,7 +372,7 @@ static int32_t WaitForDebugger(AppSpawnClient *client)
     return 0;
 }
 
-static void Free(char **argv, HspList *hspList, OverlayInfo *overlayInfo)
+static void Free(char **argv, HspList *hspList, OverlayInfo *overlayInfo, DataGroupInfoList *dataGroupInfoList)
 {
     argv[0] = NULL;
     for (int i = 0; i < NULL_INDEX; i++) {
@@ -393,6 +394,12 @@ static void Free(char **argv, HspList *hspList, OverlayInfo *overlayInfo)
         overlayInfo->totalLength = 0;
         free(overlayInfo->data);
         overlayInfo->data = NULL;
+    }
+
+    if (dataGroupInfoList != NULL) {
+        dataGroupInfoList->totalLength = 0;
+        free(dataGroupInfoList->data);
+        dataGroupInfoList->data = NULL;
     }
 }
 
@@ -478,7 +485,9 @@ static int ColdStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client
         APPSPAWN_CHECK(len > 0 && len < (int)sizeof(buffer), break, "Invalid hspList.totalLength");
         argv[HSP_LIST_LEN_INDEX] = strdup(buffer);
         argv[HSP_LIST_INDEX] = appProperty->hspList.data;
-        if (appProperty->hspList.totalLength == 0 && appProperty->overlayInfo.totalLength) {
+
+        if (appProperty->hspList.totalLength == 0 && (appProperty->overlayInfo.totalLength > 0
+            || appProperty->dataGroupInfoList.totalLength > 0)) {
             argv[HSP_LIST_INDEX] = strdup("0");
         } else {
             argv[HSP_LIST_INDEX] = appProperty->hspList.data;
@@ -487,6 +496,16 @@ static int ColdStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client
         APPSPAWN_CHECK(len > 0 && len < (int)sizeof(buffer), break, "Invalid overlayInfo.totalLength");
         argv[OVERLAY_LEN_INDEX] = strdup(buffer);
         argv[OVERLAY_INDEX] = appProperty->overlayInfo.data;
+        
+        if (appProperty->overlayInfo.totalLength == 0 && appProperty->dataGroupInfoList.totalLength) {
+            argv[OVERLAY_INDEX] = strdup("0");
+        } else {
+            argv[OVERLAY_INDEX] = appProperty->overlayInfo.data;
+        }
+        len = sprintf_s(buffer, sizeof(buffer), "%u", appProperty->dataGroupInfoList.totalLength);
+        APPSPAWN_CHECK(len > 0 && len < (int)sizeof(buffer), break, "Invalid dataGroupInfoList.totalLength");
+        argv[DIR_LIST_LEN_INDEX] = strdup(buffer);
+        argv[DIR_LIST_INDEX] = appProperty->dataGroupInfoList.data;
         ret = 0;
     } while (0);
 
@@ -502,7 +521,7 @@ static int ColdStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client
         }
     }
     argv[0] = NULL;
-    Free(argv, &appProperty->hspList, &appProperty->overlayInfo);
+    Free(argv, &appProperty->hspList, &appProperty->overlayInfo, &appProperty->dataGroupInfoList);
     return ret;
 }
 
@@ -554,6 +573,43 @@ static int GetOverlayInfoFromArg(int argc, char *const argv[], AppSpawnClientExt
     return ret;
 }
 
+static int GetDataGroupListInfoFromArg(int argc, char *const argv[], AppSpawnClientExt *client)
+{
+    client->property.dataGroupInfoList.totalLength = 0;
+    client->property.dataGroupInfoList.data = NULL;
+    int ret = 0;
+    if (argc > DIR_LIST_LEN_INDEX && argv[DIR_LIST_LEN_INDEX] != NULL) {
+        client->property.dataGroupInfoList.totalLength = atoi(argv[DIR_LIST_LEN_INDEX]);
+        APPSPAWN_CHECK_ONLY_EXPER(client->property.dataGroupInfoList.totalLength != 0, return 0);
+        APPSPAWN_CHECK(argc > DIR_LIST_INDEX && argv[DIR_LIST_INDEX] != NULL, return -1,
+            "Invalid dataGroupInfoList.data");
+        client->property.dataGroupInfoList.data = malloc(client->property.dataGroupInfoList.totalLength);
+        APPSPAWN_CHECK(client->property.dataGroupInfoList.data != NULL, return -1,
+            "Failed to malloc dataGroupInfoList.data");
+        ret = strcpy_s(client->property.dataGroupInfoList.data,
+            client->property.dataGroupInfoList.totalLength, argv[DIR_LIST_INDEX]);
+        APPSPAWN_CHECK(ret == 0, return -1, "Failed to strcpy dataGroupInfoList.data");
+    }
+    return ret;
+}
+
+static int GetHspListInfoFromArg(int argc, char *const argv[], AppSpawnClientExt *client)
+{
+    client->property.hspList.totalLength = 0;
+    client->property.hspList.data = NULL;
+    int ret = 0;
+    if (argc > HSP_LIST_LEN_INDEX && argv[HSP_LIST_LEN_INDEX] != NULL) {
+        client->property.hspList.totalLength = atoi(argv[HSP_LIST_LEN_INDEX]);
+        APPSPAWN_CHECK_ONLY_EXPER(client->property.hspList.totalLength != 0, return 0);
+        APPSPAWN_CHECK(argc > HSP_LIST_INDEX && argv[HSP_LIST_INDEX] != NULL, return -1, "Invalid hspList.data");
+        client->property.hspList.data = malloc(client->property.hspList.totalLength);
+        APPSPAWN_CHECK(client->property.hspList.data != NULL, return -1, "Failed to malloc hspList.data");
+        ret = strcpy_s(client->property.hspList.data, client->property.hspList.totalLength, argv[HSP_LIST_INDEX]);
+        APPSPAWN_CHECK(ret == 0, return -1, "Failed to strcpy hspList.data");
+    }
+    return ret;
+}
+
 int GetAppSpawnClientFromArg(int argc, char *const argv[], AppSpawnClientExt *client)
 {
     APPSPAWN_CHECK(argv != NULL && argc > PARAM_INDEX, return -1, "Invalid argv argc %{public}d", argc);
@@ -595,22 +651,13 @@ int GetAppSpawnClientFromArg(int argc, char *const argv[], AppSpawnClientExt *cl
     ret += GetUInt64FromArg(NULL, &end, &client->property.accessTokenIdEx);
     APPSPAWN_CHECK(ret == 0, return -1, "Failed to access token info");
 
+    ret = GetDataGroupListInfoFromArg(argc, argv, client);
+    APPSPAWN_CHECK(ret == 0, return -1, "Failed to get data group list info");
+
     ret = GetOverlayInfoFromArg(argc, argv, client);
     APPSPAWN_CHECK(ret == 0, return -1, "Failed to overlay info");
 
-    client->property.hspList.totalLength = 0;
-    client->property.hspList.data = NULL;
-    ret = -1;
-    if (argc > HSP_LIST_LEN_INDEX && argv[HSP_LIST_LEN_INDEX] != NULL) {
-        client->property.hspList.totalLength = atoi(argv[HSP_LIST_LEN_INDEX]);
-        APPSPAWN_CHECK_ONLY_EXPER(client->property.hspList.totalLength != 0, return 0);
-        APPSPAWN_CHECK(argc > HSP_LIST_INDEX && argv[HSP_LIST_INDEX] != NULL, return -1, "Invalid hspList.data");
-        client->property.hspList.data = malloc(client->property.hspList.totalLength);
-        APPSPAWN_CHECK(client->property.hspList.data != NULL, return -1, "Failed to malloc hspList.data");
-        ret = strcpy_s(client->property.hspList.data, client->property.hspList.totalLength, argv[HSP_LIST_INDEX]);
-        APPSPAWN_CHECK(ret == 0, return -1, "Failed to strcpy hspList.data");
-    }
-    return ret;
+    return GetHspListInfoFromArg(argc, argv, client);
 }
 
 void SetContentFunction(AppSpawnContent *content)
