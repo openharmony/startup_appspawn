@@ -149,6 +149,11 @@ static void OnClose(const TaskHandle taskHandle)
         client->property.overlayInfo.totalLength = 0;
         client->property.overlayInfo.data = NULL;
     }
+    if (client->property.dataGroupInfoList.data != NULL) {
+        free(client->property.dataGroupInfoList.data);
+        client->property.dataGroupInfoList.totalLength = 0;
+        client->property.dataGroupInfoList.data = NULL;
+    }
 }
 
 static void SendMessageComplete(const TaskHandle taskHandle, BufferHandle handle)
@@ -287,6 +292,28 @@ static void CheckColdAppEnabled(AppSpawnClientExt *appProperty)
     }
 }
 
+static bool ReceiveRequestDataToDataGroup(const TaskHandle taskHandle, AppSpawnClientExt *client,
+    const uint8_t *buffer, uint32_t buffLen)
+{
+    if (client->property.dataGroupInfoList.totalLength) {
+        DataGroupInfoList *dataGroupInfoList = &client->property.dataGroupInfoList;
+        dataGroupInfoList->data = (char *)malloc(dataGroupInfoList->totalLength);
+        APPSPAWN_CHECK(dataGroupInfoList->data != NULL, LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
+            return false, "ReceiveRequestDataToDataGroup: malloc data group failed %{public}u",
+                dataGroupInfoList->totalLength);
+        char *data = dataGroupInfoList->data;
+
+        APPSPAWN_CHECK(dataGroupInfoList->totalLength >= buffLen, LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
+            return false, "ReceiveRequestDataToDataGroup: too many data for data group %{public}u ", buffLen);
+
+        int ret = memcpy_s(data, buffLen, buffer, buffLen);
+        APPSPAWN_CHECK(ret == 0, LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
+            return false, "ReceiveRequestDataToDataGroup: memcpy data group failed");
+        dataGroupInfoList->data[dataGroupInfoList->totalLength - 1] = 0;
+    }
+    return true;
+}
+
 static bool ReceiveRequestDataToOverlay(const TaskHandle taskHandle, AppSpawnClientExt *client,
     const uint8_t *buffer, uint32_t buffLen)
 {
@@ -294,18 +321,63 @@ static bool ReceiveRequestDataToOverlay(const TaskHandle taskHandle, AppSpawnCli
         OverlayInfo *overlayInfo = &client->property.overlayInfo;
         overlayInfo->data = (char *)malloc(overlayInfo->totalLength);
         APPSPAWN_CHECK(overlayInfo->data != NULL, LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
-                return false, "ReceiveRequestData: malloc overlay failed %{public}u", overlayInfo->totalLength);
+            return false, "ReceiveRequestData: malloc overlay failed %{public}u", overlayInfo->totalLength);
         char *data = overlayInfo->data;
 
-        APPSPAWN_CHECK(overlayInfo->totalLength >= buffLen, LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
-                return false, "ReceiveRequestData: too many data for overlay %{public}u ", buffLen);
+        uint32_t groupTotal = client->property.dataGroupInfoList.totalLength;
+        APPSPAWN_CHECK(overlayInfo->totalLength >= (buffLen - groupTotal),
+            LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
+            return false, "ReceiveRequestData: too many data for overlay %{public}u ", buffLen);
 
-        int ret = memcpy_s(data, buffLen, buffer, buffLen);
+        int ret = memcpy_s(data, (buffLen - groupTotal), buffer, (buffLen - groupTotal));
         APPSPAWN_CHECK(ret == 0, LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
             return false, "ReceiveRequestData: memcpy overlay failed");
         overlayInfo->data[overlayInfo->totalLength - 1] = 0;
+        buffer += overlayInfo->totalLength;
+        buffLen -= overlayInfo->totalLength;
     }
-    return true;
+    return ReceiveRequestDataToDataGroup(taskHandle, client, buffer, buffLen);
+}
+
+static bool ReceiveRequestDataToHspList(const TaskHandle taskHandle, AppSpawnClientExt *client,
+    const uint8_t *buffer, uint32_t buffLen)
+{
+    if (client->property.hspList.totalLength) {
+        HspList *hspList = &client->property.hspList;
+        if (hspList->savedLength == 0) {
+            hspList->data = (char *)malloc(hspList->totalLength);
+            APPSPAWN_CHECK(hspList->data != NULL, LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
+                return false, "ReceiveRequestData: malloc hspList failed %{public}u", hspList->totalLength);
+        }
+
+        uint32_t saved = hspList->savedLength;
+        uint32_t total = hspList->totalLength;
+        char *data = hspList->data;
+
+        uint32_t overlayTotal = client->property.overlayInfo.totalLength;
+        uint32_t groupTotal = client->property.dataGroupInfoList.totalLength;
+        APPSPAWN_LOGV("Receiving hspList: (%{public}u saved + %{public}u incoming) / %{public}u total",
+            saved, buffLen, total);
+
+        APPSPAWN_CHECK((total - saved) >= (buffLen - overlayTotal - groupTotal),
+            LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
+            return false, "ReceiveRequestData: too many data for hspList %{public}u ", buffLen);
+
+        int ret = memcpy_s(data + saved, (buffLen - overlayTotal - groupTotal),
+            buffer, (buffLen - overlayTotal - groupTotal));
+        APPSPAWN_CHECK(ret == 0, LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
+            return false, "ReceiveRequestData: memcpy hspList failed");
+
+        hspList->savedLength += (buffLen - overlayTotal - groupTotal);
+        if (hspList->savedLength < hspList->totalLength) {
+            return false;
+        }
+
+        hspList->data[hspList->totalLength - 1] = 0;
+        buffer += hspList->totalLength;
+        buffLen -= hspList->totalLength;
+    }
+    return ReceiveRequestDataToOverlay(taskHandle, client, buffer, buffLen);
 }
 
 APPSPAWN_STATIC bool ReceiveRequestData(const TaskHandle taskHandle, AppSpawnClientExt *client,
@@ -334,48 +406,15 @@ APPSPAWN_STATIC bool ReceiveRequestData(const TaskHandle taskHandle, AppSpawnCli
     }
 
     // 2. check whether hspList exist
-    if (client->property.hspList.totalLength == 0 && client->property.overlayInfo.totalLength == 0) { // no hspList
+    if (client->property.hspList.totalLength == 0 && client->property.overlayInfo.totalLength == 0
+        && client->property.dataGroupInfoList.totalLength == 0) { // no hspList
         APPSPAWN_LOGV("ReceiveRequestData: no hspList");
         return true;
     } else if (buffLen == 0) {
         APPSPAWN_LOGV("ReceiveRequestData: waiting for hspList");
         return false;
     }
-
-    // 3. save HspList
-    if (client->property.hspList.totalLength) {
-        HspList *hspList = &client->property.hspList;
-        if (hspList->savedLength == 0) {
-            hspList->data = (char *)malloc(hspList->totalLength);
-            APPSPAWN_CHECK(hspList->data != NULL, LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
-                return false, "ReceiveRequestData: malloc hspList failed %{public}u", hspList->totalLength);
-        }
-
-        uint32_t saved = hspList->savedLength;
-        uint32_t total = hspList->totalLength;
-        char *data = hspList->data;
-        uint32_t overlayTotal = client->property.overlayInfo.totalLength;
-        APPSPAWN_LOGV("Receiving hspList: (%{public}u saved + %{public}u incoming) / %{public}u total",
-            saved, buffLen, total);
-
-        APPSPAWN_CHECK((total - saved) >= (buffLen - overlayTotal), LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
-                return false, "ReceiveRequestData: too many data for hspList %{public}u ", buffLen);
-
-        int ret = memcpy_s(data + saved, (buffLen - overlayTotal), buffer, (buffLen - overlayTotal));
-        APPSPAWN_CHECK(ret == 0, LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
-            return false, "ReceiveRequestData: memcpy hspList failed");
-
-        hspList->savedLength += (buffLen - overlayTotal);
-        if (hspList->savedLength < hspList->totalLength) {
-            return false;
-        }
-
-        hspList->data[hspList->totalLength - 1] = 0;
-        buffer += hspList->totalLength;
-        buffLen -= hspList->totalLength;
-    }
-
-    return ReceiveRequestDataToOverlay(taskHandle, client, buffer, buffLen);
+    return ReceiveRequestDataToHspList(taskHandle, client, buffer, buffLen);
 }
 
 static int HandleMessage(AppSpawnClientExt *appProperty)
@@ -484,6 +523,8 @@ APPSPAWN_STATIC TaskHandle AcceptClient(const LoopHandle loopHandle, const TaskH
     client->property.hspList.data = NULL;
     client->property.overlayInfo.totalLength = 0;
     client->property.overlayInfo.data = NULL;
+    client->property.dataGroupInfoList.totalLength = 0;
+    client->property.dataGroupInfoList.data = NULL;
     APPSPAWN_LOGI("OnConnection client fd %{public}d Id %{public}d", LE_GetSocketFd(stream), client->client.id);
     return stream;
 }

@@ -86,6 +86,11 @@ typedef struct {
     char* data;
 } OverlayInfo;
 
+typedef struct {
+    uint32_t totalLength;
+    char* data;
+} DataGroupInfoList;
+
 typedef struct AppParameter_ {
     AppOperateType code;
     uint32_t flags;
@@ -104,7 +109,6 @@ typedef struct AppParameter_ {
     uint64_t accessTokenIdEx;
     uint32_t hapFlags;
     uint32_t mountPermissionFlags;
-
 #ifndef OHOS_LITE
     uint8_t setAllowInternet;
     uint8_t allowInternet; // hap sockect allowed
@@ -113,6 +117,7 @@ typedef struct AppParameter_ {
 #endif
     HspList hspList; // list of cross-app hsp (Harmony Shared Package) to mount onto app sandbox
     OverlayInfo overlayInfo; // overlay info
+    DataGroupInfoList dataGroupInfoList; // list of the share sandbox path info
 } AppParameter;
 
 #ifdef __cplusplus
