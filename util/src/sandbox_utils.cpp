@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Huawei Device Co., Ltd.
+ * Copyright (C) 2022-2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,8 +15,11 @@
 
 #include "sandbox_utils.h"
 
+#include <algorithm>
 #include <fcntl.h>
+#include <set>
 #include <unistd.h>
+#include <vector>
 
 #include <sys/mount.h>
 #include <sys/stat.h>
@@ -68,6 +71,7 @@ namespace {
     const std::string g_hspList_key_bundles = "bundles";
     const std::string g_hspList_key_modules = "modules";
     const std::string g_hspList_key_versions = "versions";
+    const std::string g_overlayPath = "/data/storage/overlay/";
     const char *g_actionStatuc = "check-action-status";
     const char *g_accountPrefix = "/account/data/";
     const char *g_accountNonPrefix = "/non_account/data/";
@@ -99,6 +103,8 @@ namespace {
     const char *g_flags = "flags";
     const char *g_sandBoxNameSpace = "sandbox-namespace";
     const char *g_sandBoxCloneFlags = "clone-flags";
+    const char* g_fileSeparator = "/";
+    const char* g_overlayDecollator = "|";
 #ifndef NWEB_SPAWN
     const std::string g_sandBoxRootDir = "/mnt/sandbox/";
 #else
@@ -1028,6 +1034,47 @@ static int CheckBundleName(const std::string &bundleName)
     return 0;
 }
 
+int32_t SandboxUtils::SetOverlayAppSandboxProperty(const ClientSocket::AppProperty *appProperty,
+                                                   string &sandboxPackagePath)
+{
+    int ret = 0;
+    if ((appProperty->flags & APP_OVERLAY_FLAG) != APP_OVERLAY_FLAG) {
+        return ret;
+    }
+    if (appProperty->overlayInfo.totalLength == 0 || appProperty->overlayInfo.data == nullptr) {
+        return ret;
+    }
+
+    string overlayInfo = string(appProperty->overlayInfo.data, appProperty->overlayInfo.totalLength);
+    set<string> mountedSrcSet;
+    vector<string> splits = split(overlayInfo, g_overlayDecollator);
+    string sandboxOverlayPath = sandboxPackagePath + g_overlayPath;
+    for (auto hapPath : splits) {
+        size_t pathIndex = hapPath.find_last_of(g_fileSeparator);
+        if (pathIndex == string::npos) {
+            continue;
+        }
+        std::string srcPath = hapPath.substr(0, pathIndex);
+        if (mountedSrcSet.find(srcPath) != mountedSrcSet.end()) {
+            APPSPAWN_LOGV("%{public}s have mounted before, no need to mount twice.", srcPath.c_str());
+            continue;
+        }
+
+        auto bundleNameIndex = srcPath.find_last_of(g_fileSeparator);
+        string destPath = sandboxOverlayPath + srcPath.substr(bundleNameIndex + 1, srcPath.length());
+        int32_t retMount = DoAppSandboxMountOnce(srcPath.c_str(), destPath.c_str(),
+                                                 nullptr, BASIC_MOUNT_FLAGS, nullptr);
+        if (retMount != 0) {
+            APPSPAWN_LOGE("fail to mount overlay path, src is %s.", hapPath.c_str());
+            ret = retMount;
+        }
+
+        mountedSrcSet.emplace(srcPath);
+    }
+    return ret;
+}
+
+
 int32_t SandboxUtils::SetAppSandboxProperty(AppSpawnClient *client)
 {
     APPSPAWN_CHECK(client != NULL, return -1, "Invalid appspwn client");
@@ -1078,6 +1125,10 @@ int32_t SandboxUtils::SetAppSandboxProperty(AppSpawnClient *client)
     APPSPAWN_CHECK(rc == 0, return rc, "SetRenderSandboxProperty failed, packagename is %{public}s",
         sandboxPackagePath.c_str());
 #endif
+
+    rc = SetOverlayAppSandboxProperty(appProperty, sandboxPackagePath);
+    APPSPAWN_CHECK(rc == 0, return rc, "SetOverlayAppSandboxProperty failed, packagename is %s",
+        bundleName.c_str());
 
 #ifndef APPSPAWN_TEST
     rc = chdir(sandboxPackagePath.c_str());

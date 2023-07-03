@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -73,6 +73,11 @@ int32_t SetAppSandboxProperty(struct AppSpawnContent_ *content, AppSpawnClient *
     if (clientExt->property.hspList.data != nullptr) {
         free(clientExt->property.hspList.data);
         clientExt->property.hspList = {};
+    }
+    // free OverlayInfo
+    if (clientExt->property.overlayInfo.data != nullptr) {
+        free(clientExt->property.overlayInfo.data);
+        clientExt->property.overlayInfo = {};
     }
     // for module test do not create sandbox
     if (strncmp(clientExt->property.bundleName,

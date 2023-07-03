@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -371,7 +371,7 @@ static int32_t WaitForDebugger(AppSpawnClient *client)
     return 0;
 }
 
-static void Free(char **argv, HspList *hspList)
+static void Free(char **argv, HspList *hspList, OverlayInfo *overlayInfo)
 {
     argv[0] = NULL;
     for (int i = 0; i < NULL_INDEX; i++) {
@@ -385,7 +385,14 @@ static void Free(char **argv, HspList *hspList)
     if (hspList != NULL) {
         hspList->totalLength = 0;
         hspList->savedLength = 0;
+        free(hspList->data);
         hspList->data = NULL;
+    }
+
+    if (overlayInfo != NULL) {
+        overlayInfo->totalLength = 0;
+        free(overlayInfo->data);
+        overlayInfo->data = NULL;
     }
 }
 
@@ -471,6 +478,15 @@ static int ColdStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client
         APPSPAWN_CHECK(len > 0 && len < (int)sizeof(buffer), break, "Invalid hspList.totalLength");
         argv[HSP_LIST_LEN_INDEX] = strdup(buffer);
         argv[HSP_LIST_INDEX] = appProperty->hspList.data;
+        if (appProperty->hspList.totalLength == 0 && appProperty->overlayInfo.totalLength) {
+            argv[HSP_LIST_INDEX] = strdup("0");
+        } else {
+            argv[HSP_LIST_INDEX] = appProperty->hspList.data;
+        }
+        len = sprintf_s(buffer, sizeof(buffer), "%u", appProperty->overlayInfo.totalLength);
+        APPSPAWN_CHECK(len > 0 && len < (int)sizeof(buffer), break, "Invalid overlayInfo.totalLength");
+        argv[OVERLAY_LEN_INDEX] = strdup(buffer);
+        argv[OVERLAY_INDEX] = appProperty->overlayInfo.data;
         ret = 0;
     } while (0);
 
@@ -486,7 +502,7 @@ static int ColdStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client
         }
     }
     argv[0] = NULL;
-    Free(argv, &appProperty->hspList);
+    Free(argv, &appProperty->hspList, &appProperty->overlayInfo);
     return ret;
 }
 
@@ -517,6 +533,25 @@ static int GetStringFromArg(char *begin, char **end, char *value, uint32_t value
         value[0] = '\0';
     }
     return 0;
+}
+
+static int GetOverlayInfoFromArg(int argc, char *const argv[], AppSpawnClientExt *client)
+{
+    client->property.overlayInfo.totalLength = 0;
+    client->property.overlayInfo.data = NULL;
+    int ret = 0;
+    if (argc > OVERLAY_LEN_INDEX && argv[OVERLAY_LEN_INDEX] != NULL) {
+        client->property.overlayInfo.totalLength = atoi(argv[OVERLAY_LEN_INDEX]);
+        APPSPAWN_CHECK_ONLY_EXPER(client->property.overlayInfo.totalLength != 0, return 0);
+        APPSPAWN_CHECK(argc > OVERLAY_INDEX && argv[OVERLAY_INDEX] != NULL, return -1, "Invalid overlayInfo.data");
+        client->property.overlayInfo.data = malloc(client->property.overlayInfo.totalLength);
+        APPSPAWN_CHECK(client->property.overlayInfo.data != NULL, return -1, "Failed to malloc overlayInfo.data");
+        ret = strcpy_s(client->property.overlayInfo.data,
+                       client->property.overlayInfo.totalLength,
+                       argv[OVERLAY_INDEX]);
+        APPSPAWN_CHECK(ret == 0, return -1, "Failed to strcpy overlayInfo.data");
+    }
+    return ret;
 }
 
 int GetAppSpawnClientFromArg(int argc, char *const argv[], AppSpawnClientExt *client)
@@ -559,6 +594,9 @@ int GetAppSpawnClientFromArg(int argc, char *const argv[], AppSpawnClientExt *cl
     client->property.hapFlags = value;
     ret += GetUInt64FromArg(NULL, &end, &client->property.accessTokenIdEx);
     APPSPAWN_CHECK(ret == 0, return -1, "Failed to access token info");
+
+    ret = GetOverlayInfoFromArg(argc, argv, client);
+    APPSPAWN_CHECK(ret == 0, return -1, "Failed to overlay info");
 
     client->property.hspList.totalLength = 0;
     client->property.hspList.data = NULL;
