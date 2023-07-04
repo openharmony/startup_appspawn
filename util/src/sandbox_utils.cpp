@@ -988,7 +988,8 @@ int32_t SandboxUtils::MountAllGroup(const ClientSocket::AppProperty *appProperty
     nlohmann::json& dirs = groups[g_groupList_key_dir];
     APPSPAWN_CHECK(dataGroupIds.is_array() && gids.is_array() && dirs.is_array() && dataGroupIds.size() == gids.size()
         && dataGroupIds.size() == dirs.size(), return -1, "MountAllGroup: value is not arrary or sizes are not same");
-    APPSPAWN_LOGI("MountAllGroup: app = %s, cnt = %u", appProperty->bundleName, dataGroupIds.size());
+    APPSPAWN_LOGI("MountAllGroup: app = %{public}s, cnt = %{public}lu",
+        appProperty->bundleName, static_cast<unsigned long>(dataGroupIds.size()));
     for (uint32_t i = 0; i < dataGroupIds.size(); i++) {
         // elements in json arrary can be different type
         APPSPAWN_CHECK(dataGroupIds[i].is_string() && gids[i].is_string() && dirs[i].is_string(),
