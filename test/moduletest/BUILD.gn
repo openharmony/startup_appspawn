@@ -29,7 +29,7 @@ ohos_executable("AppSpawnTest") {
 
   external_deps = [
     "c_utils:utils",
-    "hiviewdfx_hilog_native:libhilog",
+    "hilog:libhilog",
     "init:libbegetutil",
   ]
 }
@@ -62,7 +62,7 @@ ohos_moduletest("AppSpawnModuleTest") {
   external_deps = [
     "bundle_framework:appexecfwk_base",
     "c_utils:utils",
-    "hiviewdfx_hilog_native:libhilog",
+    "hilog:libhilog",
     "init:libbegetutil",
   ]
 }

@@ -32,18 +32,17 @@
                 "c_utils",
                 "ipc",
                 "selinux_adapter",
-                "hiviewdfx_hilog_native",
+                "hilog",
                 "init",
                 "ability_runtime",
                 "access_token",
                 "common",
                 "eventhandler",
-                "hilog_native",
                 "config_policy",
                 "resource_management",
-                "hitrace_native",
+                "hitrace",
                 "common_event_service",
-                "hisysevent_native"
+                "hisysevent"
             ]
         },
         "build": {
