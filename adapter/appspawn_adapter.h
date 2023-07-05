@@ -25,7 +25,7 @@ extern "C" {
 #endif
 
 int32_t SetAppSandboxProperty(struct AppSpawnContent_ *content, AppSpawnClient *client);
-void SetAppAccessToken(struct AppSpawnContent_ *content, AppSpawnClient *client);
+int SetAppAccessToken(struct AppSpawnContent_ *content, AppSpawnClient *client);
 void SetSelinuxCon(struct AppSpawnContent_ *content, AppSpawnClient *client);
 void LoadExtendLib(AppSpawnContent *content);
 void RunChildProcessor(AppSpawnContent *content, AppSpawnClient *client);
