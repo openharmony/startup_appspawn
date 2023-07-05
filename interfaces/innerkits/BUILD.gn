@@ -36,7 +36,7 @@ ohos_static_library("appspawn_socket_client") {
   deps = [ "${appspawn_path}:appspawn_server" ]
   external_deps = [
     "c_utils:utils",
-    "hiviewdfx_hilog_native:libhilog",
+    "hilog:libhilog",
     "init:libbegetutil",
   ]
 
