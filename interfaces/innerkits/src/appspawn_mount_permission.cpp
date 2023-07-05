@@ -50,7 +50,7 @@ uint32_t AppspawnMountPermission::GenPermissionCode(const std::set<std::string> 
 
 bool AppspawnMountPermission::IsMountPermission(uint32_t code, const std::string permission)
 {
-    for (std::string mountPermission : GetMountPermissionList()) {
+    for (std::string mountPermission : SandboxUtils::GetMountPermissionNames()) {
         if (mountPermission.compare(permission) == 0) {
             return code & 1;
         }
