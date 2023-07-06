@@ -124,8 +124,8 @@ ohos_unittest("AppSpawn_ut") {
     "c_utils:utils",
     "config_policy:configpolicy_util",
     "eventhandler:libeventhandler",
-    "hitrace_native:hitrace_meter",
-    "hiviewdfx_hilog_native:libhilog",
+    "hilog:libhilog",
+    "hitrace:hitrace_meter",
     "init:libbegetutil",
     "ipc:ipc_core",
     "napi:ace_napi",
@@ -134,7 +134,7 @@ ohos_unittest("AppSpawn_ut") {
 
   if (appspawn_report_event) {
     defines += [ "REPORT_EVENT" ]
-    external_deps += [ "hisysevent_native:libhisysevent" ]
+    external_deps += [ "hisysevent:libhisysevent" ]
     sources += [ "${appspawn_path}/adapter/sysevent/event_reporter.cpp" ]
   }
 }

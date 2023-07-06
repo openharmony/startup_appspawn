@@ -60,8 +60,8 @@ ohos_executable("appspawn") {
     "c_utils:utils",
     "common_event_service:cesfwk_innerkits",
     "config_policy:configpolicy_util",
-    "hilog_native:libhilog",
-    "hitrace_native:hitrace_meter",
+    "hilog:libhilog",
+    "hitrace:hitrace_meter",
     "init:libbegetutil",
     "resource_management:global_resmgr",
   ]
@@ -85,7 +85,7 @@ ohos_shared_library("appspawn_helper") {
     "-fvisibility=hidden",
     "-fstack-protector-all",
   ]
-  external_deps = [ "hilog_native:libhilog" ]
+  external_deps = [ "hilog:libhilog" ]
 
   install_enable = true
   subsystem_name = "${subsystem_name}"
@@ -122,7 +122,7 @@ ohos_static_library("appspawn_server") {
     "access_token:libtoken_setproc",
     "c_utils:utils",
     "config_policy:configpolicy_util",
-    "hilog_native:libhilog",
+    "hilog:libhilog",
     "init:libbegetutil",
     "init:libbegetutil",
   ]
@@ -184,7 +184,7 @@ ohos_static_library("nwebspawn_server") {
     "access_token:libtoken_setproc",
     "c_utils:utils",
     "config_policy:configpolicy_util",
-    "hilog_native:libhilog",
+    "hilog:libhilog",
     "init:libbegetutil",
   ]
   if (build_selinux) {
@@ -223,7 +223,7 @@ ohos_executable("nwebspawn") {
   deps = [ "${appspawn_path}:nwebspawn_server" ]
   external_deps = [
     "config_policy:configpolicy_util",
-    "hilog_native:libhilog",
+    "hilog:libhilog",
   ]
   if (build_selinux) {
     external_deps += [ "selinux_adapter:libhap_restorecon" ]
