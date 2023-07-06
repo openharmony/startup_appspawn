@@ -19,5 +19,5 @@ config("event_reporter_config") {
 ohos_source_set("event_reporter") {
   sources = [ "event_reporter.cpp" ]
   public_configs = [ ":event_reporter_config" ]
-  external_deps = [ "hisysevent_native:libhisysevent" ]
+  external_deps = [ "hisysevent:libhisysevent" ]
 }
