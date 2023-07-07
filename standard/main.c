@@ -21,7 +21,8 @@
 #include "securec.h"
 #include "init_param.h"
 #include "syspara/parameter.h"
-
+#include <policycoreutils.h>
+#include "nwebspawn_lancher.h"
 #define APPSPAWN_PRELOAD "libappspawn_helper.z.so"
 
 static void CheckPreload(char *const argv[])
@@ -54,6 +55,7 @@ int main(int argc, char *const argv[])
     (void)signal(SIGPIPE, SIG_IGN);
     uint32_t argvSize = 0;
     int mode = 0;
+    pid_t pid = 1;
     if ((argc > PARAM_INDEX) && (strcmp(argv[START_INDEX], "cold-start") == 0)) {
         argvSize = APP_LEN_PROC_NAME;
         mode = 1;
@@ -68,26 +70,45 @@ int main(int argc, char *const argv[])
         if (argvSize > APP_MSG_MAX_SIZE) {
             return -1;
         }
+        pid = NwebSpawnLanch();
         int isRet = memset_s(argv[0], argvSize, 0, (size_t)argvSize) != EOK;
         APPSPAWN_CHECK(!isRet, return -EINVAL, "Failed to memset argv[0]");
-        isRet = strncpy_s(argv[0], argvSize, APPSPAWN_SERVER_NAME, strlen(APPSPAWN_SERVER_NAME)) != EOK;
+        if (pid == 0) {
+            isRet = strncpy_s(argv[0], argvSize, NWEBSPAWN_SERVER_NAME, strlen(NWEBSPAWN_SERVER_NAME)) != EOK;
+        } else {
+            isRet = strncpy_s(argv[0], argvSize, APPSPAWN_SERVER_NAME, strlen(APPSPAWN_SERVER_NAME)) != EOK;
+        }
         APPSPAWN_CHECK(!isRet, return -EINVAL, "strncpy_s appspawn server name error: %{public}d", errno);
     }
 
-    APPSPAWN_LOGI("AppSpawnCreateContent argc %{public}d mode %{public}d %{public}u", argc, mode, argvSize);
-    AppSpawnContent *content = AppSpawnCreateContent(APPSPAWN_SOCKET_NAME, argv[0], argvSize, mode);
-    APPSPAWN_CHECK(content != NULL, return -1, "Invalid content for appspawn");
-    APPSPAWN_CHECK(content->initAppSpawn != NULL, return -1, "Invalid content for appspawn");
-    APPSPAWN_CHECK(content->runAppSpawn != NULL, return -1, "Invalid content for appspawn");
+    if (pid == 0) {
+        APPSPAWN_LOGI("NwebSpawnCreateContent argc %{public}d mode %{public}d %{public}u", argc, mode, argvSize);
+        AppSpawnContent *content = AppSpawnCreateContent(NWEBSPAWN_SOCKET_NAME, argv[0], argvSize, mode);
+        APPSPAWN_CHECK(content != NULL, return -1, "Invalid content for nwebspawn");
+        APPSPAWN_CHECK(content->initAppSpawn != NULL, return -1, "Invalid content for nwebspawn");
+        APPSPAWN_CHECK(content->runAppSpawn != NULL, return -1, "Invalid content for nwebspawn");
 
-    // set common operation
-    content->loadExtendLib = LoadExtendLib;
-    content->runChildProcessor = RunChildProcessor;
-    content->initAppSpawn(content);
-    if (mode == 0) {
-        SystemSetParameter("bootevent.appspawn.started", "true");
+        // set common operation
+        content->loadExtendLib = LoadExtendLibNweb;
+        content->runChildProcessor = RunChildProcessorNweb;
+        content->initAppSpawn(content);
+        content->runAppSpawn(content, argc, argv);
+    } else {
+        APPSPAWN_LOGI("AppSpawnCreateContent argc %{public}d mode %{public}d %{public}u", argc, mode, argvSize);
+        AppSpawnContent *content = AppSpawnCreateContent(APPSPAWN_SOCKET_NAME, argv[0], argvSize, mode);
+        APPSPAWN_CHECK(content != NULL, return -1, "Invalid content for appspawn");
+        APPSPAWN_CHECK(content->initAppSpawn != NULL, return -1, "Invalid content for appspawn");
+        APPSPAWN_CHECK(content->runAppSpawn != NULL, return -1, "Invalid content for appspawn");
+
+        // set common operation
+        content->loadExtendLib = LoadExtendLib;
+        content->runChildProcessor = RunChildProcessor;
+        content->initAppSpawn(content);
+        if (mode == 0) {
+            SystemSetParameter("bootevent.appspawn.started", "true");
+        }
+        content->runAppSpawn(content, argc, argv);
     }
-    content->runAppSpawn(content, argc, argv);
 
     return 0;
 }
