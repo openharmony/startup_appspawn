@@ -43,7 +43,20 @@
                 "hitrace",
                 "common_event_service",
                 "hisysevent"
-            ]
+            ],
+	    "third_party": [
+                "bounds_checking_function",
+                "bzip2",
+                "libdrm",
+                "lz4",
+                "openssl",
+                "libusb",
+                "zlib",
+                "libuv",
+                "cjson",
+                "libpng",
+                "selinux"
+	    ]
         },
         "build": {
             "sub_component": [

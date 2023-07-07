@@ -17,6 +17,10 @@
 
 #include <cerrno>
 
+#ifdef NWEB_SPAWN
+#include "selinux/selinux.h"
+#endif
+
 #include "appspawn_service.h"
 #ifdef WITH_SELINUX
 #include "hap_restorecon.h"
@@ -64,6 +68,9 @@ int SetAppAccessToken(struct AppSpawnContent_ *content, AppSpawnClient *client)
 void SetSelinuxCon(struct AppSpawnContent_ *content, AppSpawnClient *client)
 {
 #ifdef WITH_SELINUX
+#ifdef NWEB_SPAWN
+    setcon("u:r:isolated_render:s0");
+#else
     UNUSED(content);
     AppSpawnClientExt *appProperty = reinterpret_cast<AppSpawnClientExt *>(client);
     HapContext hapContext;
@@ -81,6 +88,7 @@ void SetSelinuxCon(struct AppSpawnContent_ *content, AppSpawnClient *client)
     } else {
         APPSPAWN_LOGV("AppSpawnServer::Success to hap domain set context, ret = %{public}d", ret);
     }
+#endif
 #endif
 }
 

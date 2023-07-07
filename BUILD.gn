@@ -177,9 +177,13 @@ ohos_static_library("nwebspawn_server") {
     "APPSPAWN_CHECK_GID_UID",
     "APPSPAWN_LABEL=\"NWEBSPAWN\"",
   ]
+  include_dirs = [ "//third_party/selinux/libselinux/include/" ]
   configs = [ ":appspawn_config" ]
   ldflags = [ "-Wl,--dynamic-linker,/system/bin/linker64z" ]
-  deps = [ "//foundation/communication/netmanager_base/services/netmanagernative/netsys_client:netsys_client" ]
+  deps = [
+    "//foundation/communication/netmanager_base/services/netmanagernative/netsys_client:netsys_client",
+    "//third_party/selinux:libselinux",
+  ]
   external_deps = [
     "access_token:libtoken_setproc",
     "access_token:libtokenid_sdk",
