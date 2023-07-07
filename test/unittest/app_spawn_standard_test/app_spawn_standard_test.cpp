@@ -52,7 +52,6 @@ TaskHandle AcceptClient(const LoopHandle loopHandle, const TaskHandle server, ui
 bool ReceiveRequestData(const TaskHandle taskHandle, AppSpawnClientExt *appProperty,
     const uint8_t *buffer, uint32_t buffLen);
 void AddAppInfo(pid_t pid, const char *processName);
-void ProcessTimer(const TimerHandle taskHandle, void *context);
 void SignalHandler(const struct signalfd_siginfo *siginfo);
 #ifdef __cplusplus
     }
@@ -578,21 +577,8 @@ static AppSpawnContentExt *TestClient(int flags,
     task->incommingConnect(LE_GetDefaultLoop(), nullptr);
     int ret;
     content->content.initAppSpawn(&content->content);
-    if (content->timer == nullptr) { // create timer for exit
-        ret = LE_CreateTimer(LE_GetDefaultLoop(), &content->timer, ProcessTimer, nullptr);
-        EXPECT_EQ(ret, 0);
-        ret = LE_StartTimer(LE_GetDefaultLoop(), content->timer, 500, 1); // 500 ms is timeout
-        EXPECT_EQ(ret, 0);
-    }
     ret = RunClient(content, flags, code, processName);
     EXPECT_EQ(ret, 0);
-
-    if (content->timer == nullptr) { // create timer for exit
-        ret = LE_CreateTimer(LE_GetDefaultLoop(), &content->timer, ProcessTimer, nullptr);
-        EXPECT_EQ(ret, 0);
-        ret = LE_StartTimer(LE_GetDefaultLoop(), content->timer, 500, 1); // 500 ms is timeout
-        EXPECT_EQ(ret, 0);
-    }
     return content;
 }
 
