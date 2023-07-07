@@ -182,6 +182,7 @@ ohos_static_library("nwebspawn_server") {
   deps = [ "//foundation/communication/netmanager_base/services/netmanagernative/netsys_client:netsys_client" ]
   external_deps = [
     "access_token:libtoken_setproc",
+    "access_token:libtokenid_sdk",
     "c_utils:utils",
     "config_policy:configpolicy_util",
     "hilog:libhilog",

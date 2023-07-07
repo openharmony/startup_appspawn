@@ -152,6 +152,7 @@ static int AppSpawnChild(void *arg)
     AppSandboxArg *sandbox = (AppSandboxArg *)arg;
     struct AppSpawnContent_ *content = sandbox->content;
     AppSpawnClient *client = sandbox->client;
+    int ret = -1;
 
 #ifdef OHOS_DEBUG
     struct timespec tmStart = {0};
@@ -163,10 +164,13 @@ static int AppSpawnChild(void *arg)
     }
 
     if (content->setAppAccessToken != NULL) {
-        content->setAppAccessToken(content, client);
+        ret = content->setAppAccessToken(content, client);
+        if (ret != 0) {
+            APPSPAWN_LOGE("AppSpawnChild, set app token id failed");
+            return -1;
+        }
     }
 
-    int ret = -1;
     if ((content->getWrapBundleNameValue != NULL && content->getWrapBundleNameValue(content, client) == 0) ||
         ((client->flags & APP_COLD_START) != 0)) {
         // cold start fail, to start normal
