@@ -29,12 +29,36 @@
 const char* RENDERER_NAME = "renderer";
 #endif
 
-void SetAppAccessToken(struct AppSpawnContent_ *content, AppSpawnClient *client)
+#ifdef NWEB_SPAWN
+#include "tokenid_kit.h"
+#include "access_token.h"
+
+using namespace OHOS::Security::AccessToken;
+#endif
+
+int SetAppAccessToken(struct AppSpawnContent_ *content, AppSpawnClient *client)
 {
     AppSpawnClientExt *appProperty = reinterpret_cast<AppSpawnClientExt *>(client);
-    int32_t ret = SetSelfTokenID(appProperty->property.accessTokenIdEx);
+#if NWEB_SPAWN
+    TokenIdKit tokenIdKit;
+    uint64_t tokenId = tokenIdKit.GetRenderTokenID(appProperty->property.accessTokenIdEx);
+    if (tokenId == static_cast<uint64_t>(INVALID_TOKENID)) {
+        APPSPAWN_LOGE("AppSpawnServer::Failed to get render token id, renderTokenId =%{public}llu",
+            static_cast<unsigned long long>(tokenId));
+        return -1;
+    }
+#else
+    uint64_t tokenId = appProperty->property.accessTokenIdEx;
+#endif
+    int32_t ret = SetSelfTokenID(tokenId);
+    if (ret != 0) {
+        APPSPAWN_LOGE("AppSpawnServer::set access token id failed, ret = %{public}d", ret);
+        return -1;
+    }
+
     APPSPAWN_LOGV("AppSpawnServer::set access token id = %{public}llu, ret = %{public}d %{public}d",
         static_cast<unsigned long long>(appProperty->property.accessTokenIdEx), ret, getuid());
+    return 0;
 }
 
 void SetSelinuxCon(struct AppSpawnContent_ *content, AppSpawnClient *client)

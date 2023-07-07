@@ -213,7 +213,8 @@ HWTEST(AppSpawnStandardTest, App_Spawn_Standard_002, TestSize.Level0)
     EXPECT_NE(content->setProcessName(content, &client->client, nullptr, 0), 0);
 
     content->setAppSandbox(content, &client->client);
-    content->setAppAccessToken(content, &client->client);
+    int ret = content->setAppAccessToken(content, &client->client);
+    EXPECT_EQ(ret, 0);
     EXPECT_NE(content->coldStartApp(content, &client->client), 0);
 
     GTEST_LOG_(INFO) << "App_Spawn_Standard_002 end";
