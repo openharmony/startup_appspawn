@@ -421,6 +421,60 @@ HWTEST(AppSpawnStandardTest, App_Spawn_Standard_003_3, TestSize.Level0)
     APPSPAWN_LOGI("App_Spawn_Standard_003_3 en");
 }
 /**
+* @tc.name: App_Spawn_Standard_003_4
+* @tc.desc:  Verify set Arg if GetAppSpawnClient succeed, with dataGroupList
+* @tc.type: FUNC
+* @tc.require:issueI7FUPV
+* @tc.author:
+*/
+HWTEST(AppSpawnStandardTest, App_Spawn_Standard_003_4, TestSize.Level0)
+{
+    APPSPAWN_LOGI("App_Spawn_Standard_003_4 start");
+    AppSpawnClientExt client = {};
+    char arg1[] = "/system/bin/appspawn";
+    char arg2[] = "cold-start";
+    char arg3[] = "1";
+    char arg4[] = "1:1:1:1:1:1:1:1:1:2:1000:1000:ohos.samples:ohos.samples.ecg:"
+            "default:671201800:system_core:default:0:671201800";
+    char arg5[] = "0";
+    char arg6[] = "0";
+    char arg7[] = "0";
+    char arg8[] = "0";
+    {
+        char arg9[] = "10";
+        char arg10[] = "012345678";
+        char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10};
+        int argc = sizeof(argv)/sizeof(argv[0]);
+        EXPECT_EQ(0, GetAppSpawnClientFromArg(argc, argv, &client));
+        FreeHspList(client.property.hspList);
+    }
+    { // dataGroupList length is 0
+        char arg9[] = "0";
+        char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, nullptr};
+        int argc = sizeof(argv)/sizeof(argv[0]);
+        EXPECT_EQ(-1, GetAppSpawnClientFromArg(argc, argv, &client));
+    }
+    { // dataGroupList length is nullptr
+        char arg10[] = "0123456789";
+        char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, nullptr, arg10};
+        int argc = sizeof(argv)/sizeof(argv[0]);
+        EXPECT_EQ(-1, GetAppSpawnClientFromArg(argc, argv, &client));
+    }
+    { // dataGroupList length is non-zero, but argc is 7
+        char arg9[] = "10";
+        char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9};
+        int argc = sizeof(argv)/sizeof(argv[0]);
+        EXPECT_EQ(-1, GetAppSpawnClientFromArg(argc, argv, &client));
+    }
+    { // dataGroupList length is non-zero, but content is nullptr
+        char arg9[] = "10";
+        char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, nullptr};
+        int argc = sizeof(argv)/sizeof(argv[0]);
+        EXPECT_EQ(-1, GetAppSpawnClientFromArg(argc, argv, &client));
+    }
+    APPSPAWN_LOGI("App_Spawn_Standard_003_4 en");
+}
+/**
 * @tc.name: App_Spawn_Standard_004
 * @tc.desc: App cold start.
 * @tc.type: FUNC
