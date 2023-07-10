@@ -504,7 +504,7 @@
             {
               "sandbox-switch": "ON",
               "sandbox-root": "/mnt/sandbox/<PackageName>",
-              "gids": [],
+              "gids": [1008],
               "mount-paths": [
                 {
                   "src-path": "/storage/media/<currentUserId>/local/files/.thumbs/Photo",
