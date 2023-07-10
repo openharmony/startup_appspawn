@@ -243,6 +243,7 @@ static void HandleSpecial(AppSpawnClientExt *appProperty)
                 appProperty->property.gidCount++;
             }
             break;
+
         }
     }
 }
