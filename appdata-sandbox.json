@@ -485,7 +485,7 @@
           {
             "sandbox-switch": "ON",
             "sandbox-root": "/mnt/sandbox/<PackageName>",
-            "gids": [1006],
+            "gids": [1006, 1008],
             "mount-paths": [
               {
                 "src-path": "/data/service/el1/public/storage_daemon/share/public",
@@ -495,6 +495,16 @@
               {
                 "src-path": "/mnt/external",
                 "sandbox-path": "/storage/External",
+                "sandbox-flags": [ "bind", "rec" ]
+              },
+              {
+                "src-path": "/storage/media/<currentUserId>/local/files/Documents",
+                "sandbox-path": "/storage/local/Documents",
+                "sandbox-flags": [ "bind", "rec" ]
+              },
+              {
+                "src-path": "/storage/media/<currentUserId>/local/files/Download",
+                "sandbox-path": "/storage/local/Download",
                 "sandbox-flags": [ "bind", "rec" ]
               }
             ]
