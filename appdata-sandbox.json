@@ -509,6 +509,20 @@
               }
             ]
           }
+        ],
+        "ohos.permission.READ_IMAGEVIDEO":[
+            {
+              "sandbox-switch": "ON",
+              "sandbox-root": "/mnt/sandbox/<PackageName>",
+              "gids": [],
+              "mount-paths": [
+                {
+                  "src-path": "/storage/media/<currentUserId>/local/files/.thumbs/Photo",
+                  "sandbox-path": "/storage/Share/.thumbs/Photo",
+                  "sandbox-flags": [ "bind", "rec" ]
+                }
+              ]
+            }
         ]
       }
     ]
