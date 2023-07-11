@@ -33,6 +33,7 @@ public:
     static void StoreJsonConfig(nlohmann::json &appSandboxConfig);
     static std::vector<nlohmann::json> &GetJsonConfig();
     static int32_t SetAppSandboxProperty(AppSpawnClient *client);
+    static int32_t SetAppSandboxPropertyNweb(AppSpawnClient *client);
     static uint32_t GetNamespaceFlagsFromConfig(const char *bundleName);
     static std::set<std::string> GetMountPermissionNames();
 
@@ -77,6 +78,8 @@ private:
     static int32_t SetPrivateAppSandboxProperty_(const ClientSocket::AppProperty *appProperty,
                                           nlohmann::json &config);
     static int32_t SetRenderSandboxProperty(const ClientSocket::AppProperty *appProperty,
+                                            std::string &sandboxPackagePath);
+    static int32_t SetRenderSandboxPropertyNweb(const ClientSocket::AppProperty *appProperty,
                                             std::string &sandboxPackagePath);
     static int32_t SetOverlayAppSandboxProperty(const ClientSocket::AppProperty *appProperty,
                                             std::string &sandboxPackagePath);

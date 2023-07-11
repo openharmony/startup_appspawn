@@ -67,7 +67,7 @@ config("utest_config") {
 
 ohos_unittest("AppSpawn_ut") {
   module_out_path = "${module_output_path}"
-
+  deps = []
   defines = [
     "clone=CloneStub",
     "bind=BindStub",
@@ -92,6 +92,7 @@ ohos_unittest("AppSpawn_ut") {
   sources = [
     "${appspawn_path}/adapter/appspawn_ace.cpp",
     "${appspawn_path}/adapter/appspawn_adapter.cpp",
+    "${appspawn_path}/adapter/appspawn_nweb.cpp",
     "${appspawn_path}/adapter/appspawn_sandbox.cpp",
     "${appspawn_path}/common/appspawn_server.c",
     "${appspawn_path}/interfaces/innerkits/client/appspawn_socket.cpp",
@@ -112,13 +113,14 @@ ohos_unittest("AppSpawn_ut") {
   ]
 
   configs = [ "//base/startup/appspawn/test/unittest:utest_config" ]
-
+  deps += [ "//third_party/selinux:libselinux" ]
   external_deps = [
     "ability_base:want",
     "ability_runtime:app_manager",
     "ability_runtime:appkit_native",
     "ability_runtime:runtime",
     "access_token:libtoken_setproc",
+    "access_token:libtokenid_sdk",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
