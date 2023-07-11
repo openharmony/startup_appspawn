@@ -21,7 +21,6 @@
 #include "securec.h"
 #include "init_param.h"
 #include "syspara/parameter.h"
-#include <policycoreutils.h>
 #include "nwebspawn_lancher.h"
 #define APPSPAWN_PRELOAD "libappspawn_helper.z.so"
 
