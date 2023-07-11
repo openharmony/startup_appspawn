@@ -161,6 +161,47 @@ static int SetCapabilities(struct AppSpawnContent_ *content, AppSpawnClient *cli
     return 0;
 }
 
+static int SetCapabilitiesNweb(struct AppSpawnContent_ *content, AppSpawnClient *client)
+{
+    // init cap
+    struct __user_cap_header_struct cap_header;
+
+    bool isRet = memset_s(&cap_header, sizeof(cap_header), 0, sizeof(cap_header)) != EOK;
+    APPSPAWN_CHECK(!isRet, return -EINVAL, "Failed to memset cap header");
+
+    cap_header.version = _LINUX_CAPABILITY_VERSION_3;
+    cap_header.pid = 0;
+
+    struct __user_cap_data_struct cap_data[2];
+    isRet = memset_s(&cap_data, sizeof(cap_data), 0, sizeof(cap_data)) != EOK;
+    APPSPAWN_CHECK(!isRet, return -EINVAL, "Failed to memset cap data");
+
+    // init inheritable permitted effective zero
+#ifdef GRAPHIC_PERMISSION_CHECK
+    const uint64_t inheriTable = 0;
+    const uint64_t permitted = 0;
+    const uint64_t effective = 0;
+#else
+    const uint64_t inheriTable = 0x3fffffffff;
+    const uint64_t permitted = 0x3fffffffff;
+    const uint64_t effective = 0x3fffffffff;
+#endif
+
+    cap_data[0].inheritable = (__u32)(inheriTable);
+    cap_data[1].inheritable = (__u32)(inheriTable >> BITLEN32);
+    cap_data[0].permitted = (__u32)(permitted);
+    cap_data[1].permitted = (__u32)(permitted >> BITLEN32);
+    cap_data[0].effective = (__u32)(effective);
+    cap_data[1].effective = (__u32)(effective >> BITLEN32);
+
+    // set capabilities
+    isRet = capset(&cap_header, &cap_data[0]) == -1;
+    APPSPAWN_CHECK(!isRet, return -errno, "capset failed: %{public}d", errno);
+    SetSelinuxConNweb(content, client);
+    return 0;
+}
+
+
 static void InitDebugParams(struct AppSpawnContent_ *content, AppSpawnClient *client)
 {
 #ifndef APPSPAWN_TEST
@@ -669,17 +710,25 @@ void SetContentFunction(AppSpawnContent *content)
     content->setKeepCapabilities = SetKeepCapabilities;
     content->setUidGid = SetUidGid;
     content->setXpmRegion = SetXpmRegion;
-    content->setCapabilities = SetCapabilities;
     content->setFileDescriptors = SetFileDescriptors;
-    content->setAppSandbox = SetAppSandboxProperty;
-    content->setAppAccessToken = SetAppAccessToken;
     content->coldStartApp = ColdStartApp;
     content->setAsanEnabledEnv = SetAsanEnabledEnv;
 #ifdef ASAN_DETECTOR
     content->getWrapBundleNameValue = GetWrapBundleNameValue;
 #endif
-    content->setSeccompFilter = SetSeccompFilter;
-    content->setUidGidFilter = SetUidGidFilter;
+    if (strcmp(content->longProcName, NWEBSPAWN_SERVER_NAME) == 0) {
+        content->setAppSandbox = SetAppSandboxPropertyNweb;
+        content->setSeccompFilter = SetSeccompFilterNweb;
+        content->setUidGidFilter = SetUidGidFilterNweb;
+        content->setAppAccessToken = SetAppAccessTokenNweb;
+        content->setCapabilities = SetCapabilitiesNweb;
+    } else {
+        content->setAppAccessToken = SetAppAccessToken;
+        content->setAppSandbox = SetAppSandboxProperty;
+        content->setSeccompFilter = SetSeccompFilter;
+        content->setUidGidFilter = SetUidGidFilter;
+        content->setCapabilities = SetCapabilities;
+    }
     content->handleInternetPermission = HandleInternetPermission;
     content->waitForDebugger = WaitForDebugger;
 }
