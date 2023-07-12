@@ -558,6 +558,22 @@ HWTEST(AppSpawnStandardTest, App_Spawn_Standard_005, TestSize.Level0)
     ret = SetAppSandboxProperty((AppSpawnContent_*)content, &clientExt->client);
     EXPECT_EQ(ret, 0);
 
+    // APP_NO_SANDBOX
+    clientExt->property.flags |= APP_NO_SANDBOX;
+    ret = SetAppSandboxProperty((AppSpawnContent_*)content, &clientExt->client);
+    EXPECT_EQ(ret, 0);
+
+    clientExt->property.flags &= ~APP_NO_SANDBOX;
+    // bundle name
+    clientExt->property.hspList.data = strdup("{ \
+            \"bundles\":[\"test.bundle1\", \"test.bundle2\"], \
+            \"modules\":[\"module1\", \"module2\"], \
+            \"versions\":[\"v10001\", \"v10002\"] \
+        }");
+    clientExt->property.hspList.totalLength = strlen(clientExt->property.hspList.data);
+    ret = SetAppSandboxProperty((AppSpawnContent_*)content, &clientExt->client);
+    EXPECT_EQ(ret, 0);
+
     free(content);
     GTEST_LOG_(INFO) << "App_Spawn_Standard_005 end";
 }
@@ -689,7 +705,7 @@ HWTEST(AppSpawnStandardTest, App_Spawn_Standard_006_4, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Standard_006_4 start";
     SetHapDomainSetcontextResult(-1);
-    SetParameter("const.appspawn.preload", "false");
+
     AppSpawnContentExt *content = TestClient(APP_COLD_BOOT,
         DEFAULT, "com.ohos.medialibrary.medialibrarydata", "test006_2");
     ASSERT_TRUE(content != nullptr);
