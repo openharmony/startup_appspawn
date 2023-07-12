@@ -20,7 +20,8 @@
 #define CAP_NUM 2
 #define BITLEN32 32
 
-pid_t NwebSpawnLanch(){
+pid_t NwebSpawnLanch()
+{
     pid_t ret = fork();
     if (ret == 0) {
         setcon("u:r:nwebspawn:s0");
@@ -30,8 +31,8 @@ pid_t NwebSpawnLanch(){
         const uint64_t inheriTable = 0x2000c0;
         const uint64_t permitted = 0x2000c0;
         const uint64_t effective = 0x2000c0;
-        struct __user_cap_data_struct capData[2] = {};
-        for (int j = 0; j < 2; ++j) {
+        struct __user_cap_data_struct capData[CAP_NUM] = {};
+        for (int j = 0; j < CAP_NUM; ++j) {
             capData[0].inheritable = (__u32)(inheriTable);
             capData[1].inheritable = (__u32)(inheriTable >> BITLEN32);
             capData[0].permitted = (__u32)(permitted);

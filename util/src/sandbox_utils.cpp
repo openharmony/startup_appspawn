@@ -805,7 +805,7 @@ int32_t SandboxUtils::SetRenderSandboxProperty(const ClientSocket::AppProperty *
 }
 
 int32_t SandboxUtils::SetRenderSandboxPropertyNweb(const ClientSocket::AppProperty *appProperty,
-                                               std::string &sandboxPackagePath)
+                                                   std::string &sandboxPackagePath)
 {
     for (auto config : SandboxUtils::GetJsonConfig()) {
         nlohmann::json privateAppConfig = config[g_privatePrefix][0];
