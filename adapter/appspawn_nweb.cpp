@@ -44,33 +44,37 @@ struct RenderProcessNode {
 
 namespace {
     constexpr int32_t RENDER_PROCESS_MAX_NUM = 16;
+    constexpr int32_t RETRY_MAX_TIMES = 60;
+    constexpr int32_t WAIT_NWEB_LIB_MARGIN = 5;
     std::map<int32_t, RenderProcessNode> g_renderProcessMap;
     void *g_nwebHandle = nullptr;
     std::mutex g_mutex;
 #if defined(webview_arm64)
-    const std::string RELATIVE_PATH_FOR_HAP = "NWeb.hap!/libs/arm64-v8a";
+    const std::string NWEB_HAP_LIB_PATH = "/data/app/el1/bundle/public/com.ohos.nweb/libs/arm64";
 #elif defined(webview_x86_64)
-    const std::string RELATIVE_PATH_FOR_HAP = "NWeb.hap!/libs/x86_64";
+    const std::string NWEB_HAP_LIB_PATH = "/data/app/el1/bundle/public/com.ohos.nweb/libs/x86_64";
 #else
-    const std::string RELATIVE_PATH_FOR_HAP = "NWeb.hap!/libs/armeabi-v7a";
+    const std::string NWEB_HAP_LIB_PATH = "/data/app/el1/bundle/public/com.ohos.nweb/libs/arm";
 #endif
-    const std::string NWEB_HAP_PATH = "/system/app/com.ohos.nweb/";
-    const std::string NWEB_HAP_PATH_1 = "/system/app/NWeb/";
 }
 
 std::string GetNWebHapLibsPath()
 {
-    std::string libPath;
-    if (access(NWEB_HAP_PATH.c_str(), F_OK) == 0) {
-        libPath = NWEB_HAP_PATH + RELATIVE_PATH_FOR_HAP;
-        APPSPAWN_LOGI("get fix path, %{public}s", libPath.c_str());
-        return libPath;
-    }
-    if (access(NWEB_HAP_PATH_1.c_str(), F_OK) == 0) {
-        libPath = NWEB_HAP_PATH_1 + RELATIVE_PATH_FOR_HAP;
-        APPSPAWN_LOGI("get fix path, %{public}s", libPath.c_str());
-        return libPath;
-    }
+    std::string nwebLibenginePath = NWEB_HAP_LIB_PATH + "/libweb_engine.so";
+    std::string nwebLibrenderPath = NWEB_HAP_LIB_PATH + "/libnweb_render.so";
+    int retryCnt = 0;
+    do {
+        if ((access(nwebLibenginePath.c_str(), F_OK) == 0) && (access(nwebLibrenderPath.c_str(), F_OK) == 0)) {
+            APPSPAWN_LOGI("get nweb hap lib path success");
+	    sleep(WAIT_NWEB_LIB_MARGIN);
+            return NWEB_HAP_LIB_PATH;
+        }
+        APPSPAWN_LOGW("get nweb hap lib path failed, errno = %{public}d, retry times = %{public}d", errno, retryCnt);
+        sleep(1);
+        retryCnt++;
+    } while (retryCnt < RETRY_MAX_TIMES);
+
+    APPSPAWN_LOGE("get nweb hap lib path failed, errno = %{public}d, retry times = %{public}d", errno, retryCnt);
     return "";
 }
 
@@ -126,6 +130,7 @@ void *LoadWithRelroFile(const std::string &lib, const std::string &nsName,
 void LoadExtendLibNweb(AppSpawnContent *content)
 {
     const std::string loadLibDir = GetNWebHapLibsPath();
+    APPSPAWN_LOGI("get nweb hap lib path success, path = %{public}s", loadLibDir.c_str());
     int repeatCount = 0;
 #ifdef __MUSL__
     Dl_namespace dlns;
