@@ -479,42 +479,15 @@ static void OnReceiveRequest(const TaskHandle taskHandle, const uint8_t *buffer,
         return;
     }
 
-    APPSPAWN_CHECK(appProperty->property.gidCount <= APP_MAX_GIDS && strlen(appProperty->property.processName) > 0,
-        LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
-        return, "Invalid property %{public}u", appProperty->property.gidCount);
-
-    // special handle bundle name medialibrary and scanner
-    HandleSpecial(appProperty);
-    if (g_appSpawnContent->timer != NULL) {
-        LE_StopTimer(LE_GetDefaultLoop(), g_appSpawnContent->timer);
-        g_appSpawnContent->timer = NULL;
+    if (g_appSpawnContent->content.isNweb) {
+        // get render process termination status, only nwebspawn need this logic.
+        if (appProperty->property.code == GET_RENDER_TERMINATION_STATUS) {
+            int ret = GetProcessTerminationStatus(&appProperty->client);
+            RemoveAppInfo(appProperty->property.pid);
+            SendResponse(appProperty, (char *)&ret, sizeof(ret));
+            return;
+        }
     }
-    appProperty->pid = 0;
-    CheckColdAppEnabled(appProperty);
-    int ret = HandleMessage(appProperty);
-    if (ret != 0) {
-        LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
-    }
-}
-
-static void OnReceiveRequestNweb(const TaskHandle taskHandle, const uint8_t *buffer, uint32_t buffLen)
-{
-    AppSpawnClientExt *appProperty = (AppSpawnClientExt *)LE_GetUserData(taskHandle);
-    APPSPAWN_CHECK(appProperty != NULL, LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
-        return, "alloc client Failed");
-
-    if (!ReceiveRequestData(taskHandle, appProperty, buffer, buffLen)) {
-        return;
-    }
-
-    // get render process termination status, only nwebspawn need this logic.
-    if (appProperty->property.code == GET_RENDER_TERMINATION_STATUS) {
-        int ret = GetProcessTerminationStatus(&appProperty->client);
-        RemoveAppInfo(appProperty->property.pid);
-        SendResponse(appProperty, (char *)&ret, sizeof(ret));
-        return;
-    }
-
     APPSPAWN_CHECK(appProperty->property.gidCount <= APP_MAX_GIDS && strlen(appProperty->property.processName) > 0,
         LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
         return, "Invalid property %{public}u", appProperty->property.gidCount);
@@ -575,59 +548,10 @@ APPSPAWN_STATIC TaskHandle AcceptClient(const LoopHandle loopHandle, const TaskH
     return stream;
 }
 
-APPSPAWN_STATIC TaskHandle AcceptClientNweb(const LoopHandle loopHandle, const TaskHandle server, uint32_t flags)
-{
-    static uint32_t clientId = 0;
-    TaskHandle stream;
-    LE_StreamInfo info = {};
-    info.baseInfo.flags = TASK_STREAM | TASK_PIPE | TASK_CONNECT;
-    info.baseInfo.flags |= flags;
-    info.baseInfo.close = OnClose;
-    info.baseInfo.userDataSize = sizeof(AppSpawnClientExt);
-    info.disConnectComplete = NULL;
-    info.sendMessageComplete = SendMessageComplete;
-    info.recvMessage = OnReceiveRequestNweb;
-
-    LE_STATUS ret = LE_AcceptStreamClient(loopHandle, server, &stream, &info);
-    APPSPAWN_CHECK(ret == 0, return NULL, "Failed to alloc stream");
-    AppSpawnClientExt *client = (AppSpawnClientExt *)LE_GetUserData(stream);
-    APPSPAWN_CHECK(client != NULL, return NULL, "Failed to alloc stream");
-#ifndef APPSPAWN_CHECK_GID_UID
-    struct ucred cred = {-1, -1, -1};
-    socklen_t credSize  = sizeof(struct ucred);
-    if ((getsockopt(LE_GetSocketFd(stream), SOL_SOCKET, SO_PEERCRED, &cred, &credSize) < 0) ||
-        (cred.uid != DecodeUid("foundation")  && cred.uid != DecodeUid("root"))) {
-        APPSPAWN_LOGE("Failed to check uid %{public}d", cred.uid);
-        LE_CloseStreamTask(LE_GetDefaultLoop(), stream);
-        return NULL;
-    }
-#endif
-
-    client->stream = stream;
-    client->client.id = ++clientId;
-    client->client.flags = 0;
-    client->property.hspList.totalLength = 0;
-    client->property.hspList.savedLength = 0;
-    client->property.hspList.data = NULL;
-    client->property.overlayInfo.totalLength = 0;
-    client->property.overlayInfo.data = NULL;
-    client->property.dataGroupInfoList.totalLength = 0;
-    client->property.dataGroupInfoList.data = NULL;
-    APPSPAWN_LOGI("OnConnection client fd %{public}d Id %{public}d", LE_GetSocketFd(stream), client->client.id);
-    return stream;
-}
-
 static int OnConnection(const LoopHandle loopHandle, const TaskHandle server)
 {
     APPSPAWN_CHECK(server != NULL && loopHandle != NULL, return -1, "Error server");
     (void)AcceptClient(loopHandle, server, 0);
-    return 0;
-}
-
-static int OnConnectionNweb(const LoopHandle loopHandle, const TaskHandle server)
-{
-    APPSPAWN_CHECK(server != NULL && loopHandle != NULL, return -1, "Error server");
-    (void)AcceptClientNweb(loopHandle, server, 0);
     return 0;
 }
 
@@ -697,7 +621,7 @@ static void AppSpawnRun(AppSpawnContent *content, int argc, char *const argv[])
 
     LE_STATUS status;
 
-    if (strcmp(content->longProcName, NWEBSPAWN_SERVER_NAME) == 0) {
+    if (content->isNweb) {
         status = LE_CreateSignalTask(LE_GetDefaultLoop(), &appSpawnContent->sigHandler, SignalHandlerNweb);
     } else {
         status = LE_CreateSignalTask(LE_GetDefaultLoop(), &appSpawnContent->sigHandler, SignalHandler);
@@ -752,11 +676,7 @@ static int CreateAppSpawnServer(AppSpawnContentExt *appSpawnContent, const char 
     info.socketId = socketId;
     info.server = path;
     info.baseInfo.close = NULL;
-    if (strcmp(socketName, NWEBSPAWN_SOCKET_NAME) == 0) {
-        info.incommingConnect = OnConnectionNweb;
-    } else {
-        info.incommingConnect = OnConnection;
-    }
+    info.incommingConnect = OnConnection;
 
     ret = LE_CreateStreamServer(LE_GetDefaultLoop(), &appSpawnContent->server, &info);
     APPSPAWN_CHECK(ret == 0, return -1, "Failed to create socket for %{public}s", path);
@@ -764,7 +684,7 @@ static int CreateAppSpawnServer(AppSpawnContentExt *appSpawnContent, const char 
     ret = chmod(path, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
     APPSPAWN_CHECK(ret == 0, return -1, "Failed to chmod %{public}s, err %{public}d. ", path, errno);
 #ifndef APPSPAWN_CHECK_GID_UID
-    if (strcmp(socketName, NWEBSPAWN_SOCKET_NAME) == 0) {
+    if (appSpawnContent->content.isNweb) {
         ret = lchown(path, 3081, 3081); // 3081 is appspawn gid
     } else {
         ret = lchown(path, 0, 4000); // 4000 is appspawn gid
@@ -787,6 +707,11 @@ AppSpawnContent *AppSpawnCreateContent(const char *socketName, char *longProcNam
     (void)memset_s(&appSpawnContent->content, sizeof(appSpawnContent->content), 0, sizeof(appSpawnContent->content));
     appSpawnContent->content.longProcName = longProcName;
     appSpawnContent->content.longProcNameLen = longProcNameLen;
+    if (strcmp(longProcName, NWEBSPAWN_SERVER_NAME) == 0) {
+        appSpawnContent->content.isNweb = true;
+    } else {
+        appSpawnContent->content.isNweb = false;
+    }
     appSpawnContent->timer = NULL;
     appSpawnContent->flags = 0;
     appSpawnContent->server = NULL;

@@ -25,20 +25,15 @@ extern "C" {
 #endif
 
 int32_t SetAppSandboxProperty(struct AppSpawnContent_ *content, AppSpawnClient *client);
-int32_t SetAppSandboxPropertyNweb(struct AppSpawnContent_ *content, AppSpawnClient *client);
 int SetAppAccessToken(struct AppSpawnContent_ *content, AppSpawnClient *client);
-int SetAppAccessTokenNweb(struct AppSpawnContent_ *content, AppSpawnClient *client);
 int SetSelinuxCon(struct AppSpawnContent_ *content, AppSpawnClient *client);
-void SetSelinuxConNweb(struct AppSpawnContent_ *content, AppSpawnClient *client);
 void LoadExtendLib(AppSpawnContent *content);
 void LoadExtendLibNweb(AppSpawnContent *content);
 void RunChildProcessor(AppSpawnContent *content, AppSpawnClient *client);
 void RunChildProcessorNweb(AppSpawnContent *content, AppSpawnClient *client);
 void LoadAppSandboxConfig(void);
 void SetUidGidFilter(struct AppSpawnContent_ *content);
-void SetUidGidFilterNweb(struct AppSpawnContent_ *content);
 int SetSeccompFilter(struct AppSpawnContent_ *content, AppSpawnClient *client);
-int SetSeccompFilterNweb(struct AppSpawnContent_ *content, AppSpawnClient *client);
 uint32_t GetAppNamespaceFlags(const char *bundleName);
 void HandleInternetPermission(const AppSpawnClient *client);
 
