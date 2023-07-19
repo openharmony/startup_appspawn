@@ -996,7 +996,6 @@ int32_t SandboxUtils::MountAllGroup(const ClientSocket::AppProperty *appProperty
         APPSPAWN_CHECK(dataGroupIds[i].is_string() && gids[i].is_string() && dirs[i].is_string(),
             return -1, "MountAllGroup: element type error");
 
-        std::string gid = gids[i];
         std::string libPhysicalPath = dirs[i];
         APPSPAWN_CHECK(!CheckPath(libPhysicalPath), return -1, "MountAllGroup: path error");
 
