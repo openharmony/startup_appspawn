@@ -131,25 +131,14 @@ void LoadExtendLibNweb(AppSpawnContent *content)
 {
     const std::string loadLibDir = GetNWebHapLibsPath();
     APPSPAWN_LOGI("get nweb hap lib path success, path = %{public}s", loadLibDir.c_str());
-    int repeatCount = 0;
 #ifdef __MUSL__
     Dl_namespace dlns;
     dlns_init(&dlns, "nweb_ns");
     dlns_create(&dlns, loadLibDir.c_str());
 #if defined(webview_x86_64)
     void *handle = dlopen_ns(&dlns, "libweb_engine.so", RTLD_NOW | RTLD_GLOBAL);
-    while (handle == nullptr && repeatCount < DLOPEN_REPEAT_TIMES) {
-        sleep(1);
-        handle = dlopen_ns(&dlns, "libweb_engine.so", RTLD_NOW | RTLD_GLOBAL);
-        ++repeatCount;
-    }
 #else
     void *handle = LoadWithRelroFile("libweb_engine.so", "nweb_ns", loadLibDir);
-    while (handle == nullptr && repeatCount < DLOPEN_REPEAT_TIMES) {
-        sleep(1);
-        handle = LoadWithRelroFile("libweb_engine.so", "nweb_ns", loadLibDir);
-        ++repeatCount;
-    }
     if (handle == nullptr) {
         APPSPAWN_LOGE("dlopen_ns_ext failed, fallback to dlopen_ns");
         handle = dlopen_ns(&dlns, "libweb_engine.so", RTLD_NOW | RTLD_GLOBAL);
@@ -158,33 +147,17 @@ void LoadExtendLibNweb(AppSpawnContent *content)
 #else
     const std::string engineLibDir = loadLibDir + "/libweb_engine.so";
     void *handle = dlopen(engineLibDir.c_str(), RTLD_NOW | RTLD_GLOBAL);
-    while (handle == nullptr && repeatCount < DLOPEN_REPEAT_TIMES) {
-        sleep(1);
-        handle = dlopen(engineLibDir.c_str(), RTLD_NOW | RTLD_GLOBAL);
-        ++repeatCount;
-    }
 #endif
     if (handle == nullptr) {
         APPSPAWN_LOGE("Fail to dlopen libweb_engine.so, [%{public}s]", dlerror());
     } else {
         APPSPAWN_LOGI("Success to dlopen libweb_engine.so");
     }
-    repeatCount = 0;
 #ifdef __MUSL__
     g_nwebHandle = dlopen_ns(&dlns, "libnweb_render.so", RTLD_NOW | RTLD_GLOBAL);
-    while (g_nwebHandle == nullptr && repeatCount < DLOPEN_REPEAT_TIMES) {
-        sleep(1);
-        handle = dlopen_ns(&dlns, "libnweb_render.so", RTLD_NOW | RTLD_GLOBAL);
-        ++repeatCount;
-    }
 #else
     const std::string renderLibDir = loadLibDir + "/libnweb_render.so";
     g_nwebHandle = dlopen(renderLibDir.c_str(), RTLD_NOW | RTLD_GLOBAL);
-    while (g_nwebHandle == nullptr && repeatCount < DLOPEN_REPEAT_TIMES) {
-        sleep(1);
-        handle = dlopen(renderLibDir.c_str(), RTLD_NOW | RTLD_GLOBAL);
-        ++repeatCount;
-    }
 #endif
     if (g_nwebHandle == nullptr) {
         APPSPAWN_LOGE("Fail to dlopen libnweb_render.so, [%{public}s]", dlerror());
