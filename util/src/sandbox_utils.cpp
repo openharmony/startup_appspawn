@@ -104,6 +104,7 @@ namespace {
     const char *g_topSandBoxSwitchPrefix = "top-sandbox-switch";
     const char *g_targetName = "target-name";
     const char *g_flagePoint = "flags-point";
+    const char *g_mountSharedFlag = "mount-shared-flag";
     const char *g_flags = "flags";
     const char *g_sandBoxNameSpace = "sandbox-namespace";
     const char *g_sandBoxCloneFlags = "clone-flags";
@@ -197,7 +198,7 @@ static void MakeDirRecursive(const std::string &path, mode_t mode)
 
 int32_t SandboxUtils::DoAppSandboxMountOnce(const char *originPath, const char *destinationPath,
                                             const char *fsType, unsigned long mountFlags,
-                                            const char *options)
+                                            const char *options, mode_t mountSharedFlag)
 {
     // To make sure destinationPath exist
     MakeDirRecursive(destinationPath, FILE_MODE);
@@ -210,7 +211,7 @@ int32_t SandboxUtils::DoAppSandboxMountOnce(const char *originPath, const char *
                       destinationPath);
         return ret;
     }
-    ret = mount(NULL, destinationPath, NULL, MS_SLAVE, NULL);
+    ret = mount(NULL, destinationPath, NULL, mountSharedFlag, NULL);
     APPSPAWN_CHECK(ret == 0, return ret,
         "errno is: %{public}d, private mount to %{public}s failed", errno, destinationPath);
 #endif
@@ -536,17 +537,16 @@ int SandboxUtils::DoAllMntPointsMount(const ClientSocket::AppProperty *appProper
                                                                   mntPoint[g_sandBoxPath].get<std::string>());
         unsigned long mountFlags = GetMountFlagsFromConfig(mntPoint[g_sandBoxFlags].get<std::vector<std::string>>());
         std::string fsType = (mntPoint.find(g_fsType) != mntPoint.end()) ? mntPoint[g_fsType].get<std::string>() : "";
+        const char* fsTypePoint = fsType.empty() ? nullptr : fsType.c_str();
+        mode_t mountSharedFlag = (mntPoint.find(g_mountSharedFlag) != mntPoint.end()) ? MS_SHARED : MS_SLAVE;
 
         /* check and prepare /data/app/el2 base and database package path to avoid BMS failed to create this folder */
         CheckAndPrepareSrcPath(appProperty, srcPath);
         /* if app mount failed for special strategy, we need deal with common mount config */
         int ret = HandleSpecialAppMount(appProperty, srcPath, sandboxPath, fsType, mountFlags);
         if (ret < 0) {
-            if (fsType.empty()) {
-                ret = DoAppSandboxMountOnce(srcPath.c_str(), sandboxPath.c_str(), nullptr, mountFlags, nullptr);
-            } else {
-                ret = DoAppSandboxMountOnce(srcPath.c_str(), sandboxPath.c_str(), fsType.c_str(), mountFlags, nullptr);
-            }
+            ret = DoAppSandboxMountOnce(srcPath.c_str(), sandboxPath.c_str(), fsTypePoint,
+                                        mountFlags, nullptr, mountSharedFlag);
         }
         if (ret) {
             std::string actionStatus = g_statusCheck;

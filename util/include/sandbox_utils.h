@@ -16,10 +16,12 @@
 #ifndef SANDBOX_UTILS_H
 #define SANDBOX_UTILS_H
 
-#include <string>
-#include <vector>
 #include <set>
+#include <string>
+#include <sys/mount.h>
 #include <sys/types.h>
+#include <vector>
+
 #include "nlohmann/json.hpp"
 #include "client_socket.h"
 #include "appspawn_server.h"
@@ -40,7 +42,7 @@ public:
 private:
     static int32_t DoAppSandboxMountOnce(const char *originPath, const char *destinationPath,
                                          const char *fsType, unsigned long mountFlags,
-                                         const char *options);
+                                         const char *options, mode_t mountSharedFlag = MS_SLAVE);
     static int32_t DoSandboxFileCommonBind(const ClientSocket::AppProperty *appProperty, nlohmann::json &wholeConfig);
     static int32_t DoSandboxFileCommonSymlink(const ClientSocket::AppProperty *appProperty,
                                               nlohmann::json &wholeConfig);

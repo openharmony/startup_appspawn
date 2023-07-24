@@ -371,6 +371,12 @@
             "sandbox-root" : "/mnt/sandbox/<PackageName>",
             "sandbox-shared" : "true",
             "mount-paths" : [{
+                    "src-path" : "/mnt/data/<currentUserId>",
+                    "sandbox-path" : "/mnt/data",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "mount-shared-flag" : "true",
+                    "check-action-status": "true"
+                }, {
                     "src-path" : "/dev/fuse",
                     "sandbox-path" : "/mnt/data/fuse",
                     "sandbox-flags" : [ "MS_NOSUID", "MS_NODEV", "MS_NOEXEC", "MS_NOATIME", "MS_LAZYTIME" ],
@@ -390,7 +396,7 @@
                     "check-action-status": "true"
                 },
                 {
-                    "src-path" : "/mnt/external",
+                    "src-path" : "/mnt/data/external",
                     "sandbox-path" : "/mnt/external",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "true"
@@ -498,7 +504,7 @@
                 "sandbox-flags": [ "bind", "rec" ]
               },
               {
-                "src-path": "/mnt/external",
+                "src-path": "/mnt/data/external",
                 "sandbox-path": "/storage/External",
                 "sandbox-flags": [ "bind", "rec" ]
               },
