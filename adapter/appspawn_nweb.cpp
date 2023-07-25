@@ -34,7 +34,6 @@
 #include "appspawn_service.h"
 #include "appspawn_adapter.h"
 
-#define DLOPEN_REPEAT_TIMES 10
 
 struct RenderProcessNode {
     RenderProcessNode(time_t now, int exit):recordTime_(now), exitStatus_(exit) {}
@@ -44,134 +43,64 @@ struct RenderProcessNode {
 
 namespace {
     constexpr int32_t RENDER_PROCESS_MAX_NUM = 16;
-    constexpr int32_t RETRY_MAX_TIMES = 60;
-    constexpr int32_t WAIT_NWEB_LIB_MARGIN = 5;
     std::map<int32_t, RenderProcessNode> g_renderProcessMap;
-    void *g_nwebHandle = nullptr;
     std::mutex g_mutex;
+
 #if defined(webview_arm64)
-    const std::string NWEB_HAP_LIB_PATH = "/data/app/el1/bundle/public/com.ohos.nweb/libs/arm64";
+    const std::string NWEB_HAP_LIB_PATH = "/data/storage/el1/bundle/nweb/libs/arm64";
 #elif defined(webview_x86_64)
-    const std::string NWEB_HAP_LIB_PATH = "/data/app/el1/bundle/public/com.ohos.nweb/libs/x86_64";
+    const std::string NWEB_HAP_LIB_PATH = "/data/storage/el1/bundle/nweb/libs/x86_64";
 #else
-    const std::string NWEB_HAP_LIB_PATH = "/data/app/el1/bundle/public/com.ohos.nweb/libs/arm";
+    const std::string NWEB_HAP_LIB_PATH = "/data/storage/el1/bundle/nweb/libs/arm";
 #endif
 }
-
-std::string GetNWebHapLibsPath()
-{
-    std::string nwebLibenginePath = NWEB_HAP_LIB_PATH + "/libweb_engine.so";
-    std::string nwebLibrenderPath = NWEB_HAP_LIB_PATH + "/libnweb_render.so";
-    int retryCnt = 0;
-    do {
-        if ((access(nwebLibenginePath.c_str(), F_OK) == 0) && (access(nwebLibrenderPath.c_str(), F_OK) == 0)) {
-            APPSPAWN_LOGI("get nweb hap lib path success");
-	    sleep(WAIT_NWEB_LIB_MARGIN);
-            return NWEB_HAP_LIB_PATH;
-        }
-        APPSPAWN_LOGW("get nweb hap lib path failed, errno = %{public}d, retry times = %{public}d", errno, retryCnt);
-        sleep(1);
-        retryCnt++;
-    } while (retryCnt < RETRY_MAX_TIMES);
-
-    APPSPAWN_LOGE("get nweb hap lib path failed, errno = %{public}d, retry times = %{public}d", errno, retryCnt);
-    return "";
-}
-
-#ifdef __MUSL__
-void *LoadWithRelroFile(const std::string &lib, const std::string &nsName,
-                        const std::string &nsPath)
-{
-#ifdef webview_arm64
-    const std::string nwebRelroPath =
-        "/data/misc/shared_relro/libwebviewchromium64.relro";
-    size_t nwebReservedSize = 1 * 1024 * 1024 * 1024;
-#else
-    const std::string nwebRelroPath =
-        "/data/misc/shared_relro/libwebviewchromium32.relro";
-    size_t nwebReservedSize = 130 * 1024 * 1024;
-#endif
-    if (unlink(nwebRelroPath.c_str()) != 0 && errno != ENOENT) {
-        APPSPAWN_LOGI("LoadWithRelroFile unlink failed");
-    }
-    int relroFd =
-        open(nwebRelroPath.c_str(), O_RDWR | O_TRUNC | O_CLOEXEC | O_CREAT,
-            S_IRUSR | S_IRGRP | S_IROTH);
-    if (relroFd < 0) {
-        int tmpNo = errno;
-        APPSPAWN_LOGE("LoadWithRelroFile open failed, error=[%{public}s]", strerror(tmpNo));
-        return nullptr;
-    }
-    void *nwebReservedAddress = mmap(nullptr, nwebReservedSize, PROT_NONE,
-                                     MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-    if (nwebReservedAddress == MAP_FAILED) {
-        close(relroFd);
-        int tmpNo = errno;
-        APPSPAWN_LOGE("LoadWithRelroFile mmap failed, error=[%{public}s]", strerror(tmpNo));
-        return nullptr;
-    }
-    Dl_namespace dlns;
-    dlns_init(&dlns, nsName.c_str());
-    dlns_create(&dlns, nsPath.c_str());
-    dl_extinfo extinfo = {
-        .flag = DL_EXT_WRITE_RELRO | DL_EXT_RESERVED_ADDRESS_RECURSIVE |
-                DL_EXT_RESERVED_ADDRESS,
-        .relro_fd = relroFd,
-        .reserved_addr = nwebReservedAddress,
-        .reserved_size = nwebReservedSize,
-    };
-    void *result =
-        dlopen_ns_ext(&dlns, lib.c_str(), RTLD_NOW | RTLD_GLOBAL, &extinfo);
-    close(relroFd);
-    return result;
-}
-#endif
 
 void LoadExtendLibNweb(AppSpawnContent *content)
 {
-    const std::string loadLibDir = GetNWebHapLibsPath();
-    APPSPAWN_LOGI("get nweb hap lib path success, path = %{public}s", loadLibDir.c_str());
-#ifdef __MUSL__
-    Dl_namespace dlns;
-    dlns_init(&dlns, "nweb_ns");
-    dlns_create(&dlns, loadLibDir.c_str());
-#if defined(webview_x86_64)
-    void *handle = dlopen_ns(&dlns, "libweb_engine.so", RTLD_NOW | RTLD_GLOBAL);
-#else
-    void *handle = LoadWithRelroFile("libweb_engine.so", "nweb_ns", loadLibDir);
-    if (handle == nullptr) {
-        APPSPAWN_LOGE("dlopen_ns_ext failed, fallback to dlopen_ns");
-        handle = dlopen_ns(&dlns, "libweb_engine.so", RTLD_NOW | RTLD_GLOBAL);
-    }
-#endif
-#else
-    const std::string engineLibDir = loadLibDir + "/libweb_engine.so";
-    void *handle = dlopen(engineLibDir.c_str(), RTLD_NOW | RTLD_GLOBAL);
-#endif
-    if (handle == nullptr) {
-        APPSPAWN_LOGE("Fail to dlopen libweb_engine.so, [%{public}s]", dlerror());
-    } else {
-        APPSPAWN_LOGI("Success to dlopen libweb_engine.so");
-    }
-#ifdef __MUSL__
-    g_nwebHandle = dlopen_ns(&dlns, "libnweb_render.so", RTLD_NOW | RTLD_GLOBAL);
-#else
-    const std::string renderLibDir = loadLibDir + "/libnweb_render.so";
-    g_nwebHandle = dlopen(renderLibDir.c_str(), RTLD_NOW | RTLD_GLOBAL);
-#endif
-    if (g_nwebHandle == nullptr) {
-        APPSPAWN_LOGE("Fail to dlopen libnweb_render.so, [%{public}s]", dlerror());
-    } else {
-        APPSPAWN_LOGI("Success to dlopen libnweb_render.so");
-    }
 }
 
 void RunChildProcessorNweb(AppSpawnContent *content, AppSpawnClient *client)
 {
+    APPSPAWN_LOGI("RunChildProcessorNweb");
+    void *webEngineHandle = nullptr;
+    void *nwebRenderHandle = nullptr;
+
+#ifdef __MUSL__
+    Dl_namespace dlns;
+    dlns_init(&dlns, "nweb_ns");
+    dlns_create(&dlns, NWEB_HAP_LIB_PATH.c_str());
+
+    // preload libweb_engine
+    webEngineHandle = dlopen_ns(&dlns, "libweb_engine.so", RTLD_NOW | RTLD_GLOBAL);
+
+    // load libnweb_render
+    nwebRenderHandle = dlopen_ns(&dlns, "libnweb_render.so", RTLD_NOW | RTLD_GLOBAL);
+#else
+    // preload libweb_engine
+    const std::string engineLibDir = NWEB_HAP_LIB_PATH + "/libweb_engine.so";
+    webEngineHandle = dlopen(engineLibDir.c_str(), RTLD_NOW | RTLD_GLOBAL);
+
+    // load libnweb_render
+    const std::string renderLibDir = NWEB_HAP_LIB_PATH + "/libnweb_render.so";
+    nwebRenderHandle = dlopen(renderLibDir.c_str(), RTLD_NOW | RTLD_GLOBAL);
+#endif
+    if (webEngineHandle == nullptr) {
+        APPSPAWN_LOGE("Fail to dlopen libweb_engine.so, [%{public}s]", dlerror());
+    } else {
+        APPSPAWN_LOGI("Success to dlopen libweb_engine.so");
+    }
+
+    if (nwebRenderHandle == nullptr) {
+        APPSPAWN_LOGE("Fail to dlopen libnweb_render.so, [%{public}s]", dlerror());
+        return;
+    } else {
+        APPSPAWN_LOGI("Success to dlopen libnweb_render.so");
+    }
+
     AppSpawnClientExt *appProperty = reinterpret_cast<AppSpawnClientExt *>(client);
     using FuncType = void (*)(const char *cmd);
 
-    FuncType funcNWebRenderMain = reinterpret_cast<FuncType>(dlsym(g_nwebHandle, "NWebRenderMain"));
+    FuncType funcNWebRenderMain = reinterpret_cast<FuncType>(dlsym(nwebRenderHandle, "NWebRenderMain"));
     if (funcNWebRenderMain == nullptr) {
         APPSPAWN_LOGI("webviewspawn dlsym ERROR=%{public}s", dlerror());
         return;
