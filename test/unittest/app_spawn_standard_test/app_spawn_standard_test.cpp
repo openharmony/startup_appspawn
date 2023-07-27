@@ -122,6 +122,13 @@ static void CheckAndCreateDir(const char *fileName)
     free(path);
 }
 
+static void ProcessTimer(const TimerHandle taskHandle, void *context)
+{
+    UNUSED(context);
+    APPSPAWN_LOGI("timeout stop appspawn");
+    LE_StopLoop(LE_GetDefaultLoop());
+}
+
 namespace OHOS {
 class AppSpawnStandardTest : public testing::Test {
 public:
@@ -647,8 +654,21 @@ static AppSpawnContentExt *TestClient(int flags,
     task->incommingConnect(LE_GetDefaultLoop(), nullptr);
     int ret;
     content->content.initAppSpawn(&content->content);
+    if (content->timer == nullptr) { // create timer for exit
+        ret = LE_CreateTimer(LE_GetDefaultLoop(), &content->timer, ProcessTimer, nullptr);
+        EXPECT_EQ(ret, 0);
+        ret = LE_StartTimer(LE_GetDefaultLoop(), content->timer, 500, 1); // 500 ms is timeout
+        EXPECT_EQ(ret, 0);
+    }
     ret = RunClient(content, flags, code, processName);
     EXPECT_EQ(ret, 0);
+
+    if (content->timer == nullptr) { // create timer for exit
+        ret = LE_CreateTimer(LE_GetDefaultLoop(), &content->timer, ProcessTimer, nullptr);
+        EXPECT_EQ(ret, 0);
+        ret = LE_StartTimer(LE_GetDefaultLoop(), content->timer, 500, 1); // 500 ms is timeout
+        EXPECT_EQ(ret, 0);
+    }
     return content;
 }
 
