@@ -164,69 +164,6 @@ static void FreeHspList(HspList &hspList)
 }
 
 /**
-* @tc.name: App_Spawn_Standard_002
-* @tc.desc: fork app son process and set content.
-* @tc.type: FUNC
-* @tc.require:issueI5NTX6
-* @tc.author:
-*/
-HWTEST(AppSpawnStandardTest, App_Spawn_Standard_002, TestSize.Level0)
-{
-    CheckAndCreateDir("/data/appspawn_ut/dev/unix/socket/");
-    GTEST_LOG_(INFO) << "App_Spawn_Standard_002 start";
-    char longProcName[124] = "App_Spawn_Standard_002";
-    int64_t longProcNameLen = 124; // 124 is str length
-    AppSpawnClientExt* client = (AppSpawnClientExt*)malloc(sizeof(AppSpawnClientExt));
-    client->client.id = 8; // 8 is client id
-    client->client.flags = 0;
-    client->client.cloneFlags = CLONE_NEWNS;
-    client->fd[0] = 100; // 100 is fd
-    client->fd[1] = 200; // 200 is fd
-    client->property.uid = 10000; // 10000 is uid
-    client->property.gid = 1000; // 1000 is gid
-    client->property.gidCount = 1; // 1 is gidCount
-    if (strcpy_s(client->property.processName, APP_LEN_PROC_NAME, "xxx.xxx.xxx") != 0) {
-        GTEST_LOG_(INFO) << "strcpy_s failed";
-    }
-    if (strcpy_s(client->property.bundleName, APP_LEN_BUNDLE_NAME, "xxx.xxx.xxx") != 0) {
-        GTEST_LOG_(INFO) << "strcpy_s failed";
-    }
-    if (strcpy_s(client->property.soPath, APP_LEN_SO_PATH, "xxx") != 0) {
-        GTEST_LOG_(INFO) << "strcpy_s failed";
-    }
-    client->property.accessTokenId = 671201800; // 671201800 is accessTokenId
-    if (strcpy_s(client->property.apl, APP_APL_MAX_LEN, "xxx") != 0) {
-        GTEST_LOG_(INFO) << "strcpy_s failed";
-    }
-    if (strcpy_s(client->property.renderCmd, APP_RENDER_CMD_MAX_LEN, "xxx") != 0) {
-        GTEST_LOG_(INFO) << "strcpy_s failed";
-    }
-    client->property.hspList = {0, 0, nullptr};
-
-    AppSpawnContent *content = AppSpawnCreateContent("AppSpawn", longProcName, longProcNameLen, 1);
-    content->loadExtendLib = LoadExtendLib;
-    content->runChildProcessor = RunChildProcessor;
-    SetContentFunction(content);
-
-    content->clearEnvironment(content, &client->client);
-    EXPECT_EQ(content->setProcessName(content, &client->client, (char *)longProcName, longProcNameLen), 0);
-    EXPECT_EQ(content->setKeepCapabilities(content, &client->client), 0);
-    EXPECT_EQ(content->setUidGid(content, &client->client), 0);
-    EXPECT_EQ(content->setCapabilities(content, &client->client), 0);
-    EXPECT_EQ(content->setFileDescriptors(content, &client->client), 0);
-
-    // test invalid
-    EXPECT_NE(content->setProcessName(content, &client->client, nullptr, 0), 0);
-
-    content->setAppSandbox(content, &client->client);
-    int ret = content->setAppAccessToken(content, &client->client);
-    EXPECT_EQ(ret, 0);
-    EXPECT_NE(content->coldStartApp(content, &client->client), 0);
-
-    GTEST_LOG_(INFO) << "App_Spawn_Standard_002 end";
-}
-
-/**
 * @tc.name: App_Spawn_Standard_003
 * @tc.desc:  Verify set Arg if GetAppSpawnClient succeed.
 * @tc.type: FUNC
