@@ -42,7 +42,8 @@
                 "resource_management",
                 "hitrace",
                 "common_event_service",
-                "hisysevent"
+                "hisysevent",
+                "security_component"
             ],
 	    "third_party": [
                 "bounds_checking_function",
