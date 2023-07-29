@@ -267,8 +267,8 @@ static void HandleSpecial(AppSpawnClientExt *appProperty)
     for (size_t i = 0; i < sizeof(specialBundleNames) / sizeof(specialBundleNames[0]); i++) {
         if (strcmp(appProperty->property.bundleName, specialBundleNames[i]) == 0) {
             if (appProperty->property.gidCount < APP_MAX_GIDS) {
-                appProperty->property.gidTable[appProperty->property.gidCount] = GID_USER_DATA_RW;
-                appProperty->property.gidCount++;
+                appProperty->property.gidTable[appProperty->property.gidCount++] = GID_USER_DATA_RW;
+                appProperty->property.gidTable[appProperty->property.gidCount++] = GID_FILE_ACCESS;
             }
             break;
         }
