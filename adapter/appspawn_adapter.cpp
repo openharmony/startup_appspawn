@@ -33,35 +33,26 @@ const char* RENDERER_NAME = "renderer";
 
 #include "tokenid_kit.h"
 #include "access_token.h"
-
+#define NWEBSPAWN_SERVER_NAME "nwebspawn"
 using namespace OHOS::Security::AccessToken;
 
 int SetAppAccessToken(struct AppSpawnContent_ *content, AppSpawnClient *client)
 {
     AppSpawnClientExt *appProperty = reinterpret_cast<AppSpawnClientExt *>(client);
-    uint64_t tokenId = appProperty->property.accessTokenIdEx;
-    int32_t ret = SetSelfTokenID(tokenId);
-    if (ret != 0) {
-        APPSPAWN_LOGE("AppSpawnServer::set access token id failed, ret = %{public}d", ret);
-        return -1;
+    int32_t ret = 0;
+    uint64_t tokenId = 0;
+    if (content->isNweb) {
+        TokenIdKit tokenIdKit;
+        tokenId = tokenIdKit.GetRenderTokenID(appProperty->property.accessTokenIdEx);
+        if (tokenId == static_cast<uint64_t>(INVALID_TOKENID)) {
+            APPSPAWN_LOGE("AppSpawnServer::Failed to get render token id, renderTokenId =%{public}llu",
+                static_cast<unsigned long long>(tokenId));
+            return -1;
+        }
+    } else {
+        tokenId = appProperty->property.accessTokenIdEx;
     }
-
-    APPSPAWN_LOGV("AppSpawnServer::set access token id = %{public}llu, ret = %{public}d %{public}d",
-        static_cast<unsigned long long>(appProperty->property.accessTokenIdEx), ret, getuid());
-    return 0;
-}
-
-int SetAppAccessTokenNweb(struct AppSpawnContent_ *content, AppSpawnClient *client)
-{
-    AppSpawnClientExt *appProperty = reinterpret_cast<AppSpawnClientExt *>(client);
-    TokenIdKit tokenIdKit;
-    uint64_t tokenId = tokenIdKit.GetRenderTokenID(appProperty->property.accessTokenIdEx);
-    if (tokenId == static_cast<uint64_t>(INVALID_TOKENID)) {
-        APPSPAWN_LOGE("AppSpawnServer::Failed to get render token id, renderTokenId =%{public}llu",
-            static_cast<unsigned long long>(tokenId));
-        return -1;
-    }
-    int32_t ret = SetSelfTokenID(tokenId);
+    ret = SetSelfTokenID(tokenId);
     if (ret != 0) {
         APPSPAWN_LOGE("AppSpawnServer::set access token id failed, ret = %{public}d", ret);
         return -1;
@@ -75,57 +66,45 @@ int SetAppAccessTokenNweb(struct AppSpawnContent_ *content, AppSpawnClient *clie
 int SetSelinuxCon(struct AppSpawnContent_ *content, AppSpawnClient *client)
 {
 #ifdef WITH_SELINUX
-    UNUSED(content);
-    AppSpawnClientExt *appProperty = reinterpret_cast<AppSpawnClientExt *>(client);
-    HapContext hapContext;
-    HapDomainInfo hapDomainInfo;
-    hapDomainInfo.apl = appProperty->property.apl;
-    hapDomainInfo.packageName = appProperty->property.processName;
-    hapDomainInfo.hapFlags = appProperty->property.hapFlags;
-    if ((appProperty->property.flags & APP_DEBUGGABLE) != 0) {
-        hapDomainInfo.hapFlags |= SELINUX_HAP_DEBUGGABLE;
-    }
-    int32_t ret = hapContext.HapDomainSetcontext(hapDomainInfo);
-    if (ret != 0) {
-        APPSPAWN_LOGE("AppSpawnServer::Failed to hap domain set context, errno = %{public}d %{public}s",
-            errno, appProperty->property.apl);
-        return -1;
+    if (content->isNweb) {
+        setcon("u:r:isolated_render:s0");
     } else {
-        APPSPAWN_LOGV("AppSpawnServer::Success to hap domain set context, ret = %{public}d", ret);
+        UNUSED(content);
+        AppSpawnClientExt *appProperty = reinterpret_cast<AppSpawnClientExt *>(client);
+        HapContext hapContext;
+        HapDomainInfo hapDomainInfo;
+        hapDomainInfo.apl = appProperty->property.apl;
+        hapDomainInfo.packageName = appProperty->property.processName;
+        hapDomainInfo.hapFlags = appProperty->property.hapFlags;
+        if ((appProperty->property.flags & APP_DEBUGGABLE) != 0) {
+            hapDomainInfo.hapFlags |= SELINUX_HAP_DEBUGGABLE;
+        }
+        int32_t ret = hapContext.HapDomainSetcontext(hapDomainInfo);
+        if (ret != 0) {
+            APPSPAWN_LOGE("AppSpawnServer::Failed to hap domain set context, errno = %{public}d %{public}s",
+                errno, appProperty->property.apl);
+            return -1;
+        } else {
+            APPSPAWN_LOGV("AppSpawnServer::Success to hap domain set context, ret = %{public}d", ret);
+        }
     }
 #endif
     return 0;
 }
 
-void SetSelinuxConNweb(struct AppSpawnContent_ *content, AppSpawnClient *client)
-{
-#ifdef WITH_SELINUX
-    setcon("u:r:isolated_render:s0");
-#endif
-}
-
 void SetUidGidFilter(struct AppSpawnContent_ *content)
 {
 #ifdef WITH_SECCOMP
-    if (!SetSeccompPolicyWithName(INDIVIDUAL, APPSPAWN_NAME)) {
-        APPSPAWN_LOGE("Failed to set APPSPAWN seccomp filter and exit");
-#ifndef APPSPAWN_TEST
-        _exit(0x7f);
-#endif
+    bool ret = false;
+    if (content->isNweb) {
+        if (prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0)) {
+            APPSPAWN_LOGE("Failed to set no new privs");
+        }
+        ret = SetSeccompPolicyWithName(INDIVIDUAL, NWEBSPAWN_NAME);
     } else {
-        APPSPAWN_LOGI("Success to set APPSPAWN seccomp filter");
+        ret = SetSeccompPolicyWithName(INDIVIDUAL, APPSPAWN_NAME);
     }
-#endif
-}
-
-void SetUidGidFilterNweb(struct AppSpawnContent_ *content)
-{
-#ifdef WITH_SECCOMP
-    if (prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0)) {
-        APPSPAWN_LOGE("Failed to set no new privs");
-    }
-
-    if (!SetSeccompPolicyWithName(INDIVIDUAL, NWEBSPAWN_NAME)) {
+    if (!ret) {
         APPSPAWN_LOGE("Failed to set APPSPAWN seccomp filter and exit");
 #ifndef APPSPAWN_TEST
         _exit(0x7f);
@@ -141,23 +120,10 @@ int SetSeccompFilter(struct AppSpawnContent_ *content, AppSpawnClient *client)
 #ifdef WITH_SECCOMP
     const char *appName = APP_NAME;
     SeccompFilterType type = APP;
-    if (!SetSeccompPolicyWithName(type, appName)) {
-        APPSPAWN_LOGE("Failed to set %{public}s seccomp filter and exit", appName);
-#ifndef APPSPAWN_TEST
-        return -EINVAL;
-#endif
-    } else {
-        APPSPAWN_LOGI("Success to set %{public}s seccomp filter", appName);
+    if (content->isNweb) {
+        appName = RENDERER_NAME;
+        type = INDIVIDUAL;
     }
-#endif
-    return 0;
-}
-
-int SetSeccompFilterNweb(struct AppSpawnContent_ *content, AppSpawnClient *client)
-{
-#ifdef WITH_SECCOMP
-    const char *appName = RENDERER_NAME;
-    SeccompFilterType type = INDIVIDUAL;
     if (!SetSeccompPolicyWithName(type, appName)) {
         APPSPAWN_LOGE("Failed to set %{public}s seccomp filter and exit", appName);
 #ifndef APPSPAWN_TEST

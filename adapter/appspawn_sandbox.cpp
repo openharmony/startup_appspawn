@@ -68,43 +68,13 @@ int32_t SetAppSandboxProperty(struct AppSpawnContent_ *content, AppSpawnClient *
     if ((client->cloneFlags & CLONE_NEWNS) != CLONE_NEWNS) {
         return 0;
     }
-    int ret = SandboxUtils::SetAppSandboxProperty(client);
-    // free HspList
-    if (clientExt->property.hspList.data != nullptr) {
-        free(clientExt->property.hspList.data);
-        clientExt->property.hspList = {};
+    int ret = 0;
+    if (content->isNweb) {
+        ret = SandboxUtils::SetAppSandboxPropertyNweb(client);
+    } else {
+        ret = SandboxUtils::SetAppSandboxProperty(client);
     }
-    // free OverlayInfo
-    if (clientExt->property.overlayInfo.data != nullptr) {
-        free(clientExt->property.overlayInfo.data);
-        clientExt->property.overlayInfo = {};
-    }
-    // free dataGroupInfoList
-    if (clientExt->property.dataGroupInfoList.data != nullptr) {
-        free(clientExt->property.dataGroupInfoList.data);
-        clientExt->property.dataGroupInfoList = {};
-    }
-    // for module test do not create sandbox
-    if (strncmp(clientExt->property.bundleName,
-        MODULE_TEST_BUNDLE_NAME.c_str(), MODULE_TEST_BUNDLE_NAME.size()) == 0) {
-        return 0;
-    }
-    return ret;
-}
-
-int32_t SetAppSandboxPropertyNweb(struct AppSpawnContent_ *content, AppSpawnClient *client)
-{
-    APPSPAWN_CHECK(client != NULL, return -1, "Invalid nwebspwn client");
-    AppSpawnClientExt *clientExt = reinterpret_cast<AppSpawnClientExt *>(client);
-    // no sandbox
-    if (clientExt->property.flags & APP_NO_SANDBOX) {
-        return 0;
-    }
-    // no news
-    if ((client->cloneFlags & CLONE_NEWNS) != CLONE_NEWNS) {
-        return 0;
-    }
-    int ret = SandboxUtils::SetAppSandboxPropertyNweb(client);
+    
     // free HspList
     if (clientExt->property.hspList.data != nullptr) {
         free(clientExt->property.hspList.data);
