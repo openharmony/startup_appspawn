@@ -573,6 +573,7 @@ static AppSpawnContentExt *TestClient(int flags,
     AppOperateType code, const std::string &processName, const std::string &serverName)
 {
     char buffer[64] = {0}; // 64 buffer size
+    CheckAndCreateDir(SOCKET_DIR);
     AppSpawnContentExt *content =
         (AppSpawnContentExt *)AppSpawnCreateContent(serverName.c_str(), buffer, sizeof(buffer), 0);
     if (content == nullptr) {
