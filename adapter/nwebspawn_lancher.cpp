@@ -25,6 +25,8 @@ pid_t NwebSpawnLanch()
     pid_t ret = fork();
     if (ret == 0) {
         setcon("u:r:nwebspawn:s0");
+        pid_t pid = getpid();
+        setpriority(PRIO_PROCESS, pid, 0);
         struct  __user_cap_header_struct capHeader;
         capHeader.version = _LINUX_CAPABILITY_VERSION_3;
         capHeader.pid = 0;

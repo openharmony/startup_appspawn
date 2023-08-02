@@ -17,6 +17,7 @@
 #define NWEBSPAWNLANCHER_CPP
 #include "selinux/selinux.h"
 #include <sys/capability.h>
+#include <sys/resource.h>
 #include <sys/prctl.h>
 #include <unistd.h>
 #include <sched.h>
