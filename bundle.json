@@ -43,7 +43,8 @@
                 "hitrace",
                 "common_event_service",
                 "hisysevent",
-                "security_component"
+                "security_component",
+                "netmanager"
             ],
 	    "third_party": [
                 "bounds_checking_function",
