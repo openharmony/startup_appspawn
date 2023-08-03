@@ -104,17 +104,15 @@ namespace {
     const char *g_topSandBoxSwitchPrefix = "top-sandbox-switch";
     const char *g_targetName = "target-name";
     const char *g_flagePoint = "flags-point";
+    const char *g_mountSharedFlag = "mount-shared-flag";
     const char *g_flags = "flags";
     const char *g_sandBoxNameSpace = "sandbox-namespace";
     const char *g_sandBoxCloneFlags = "clone-flags";
     const char* g_fileSeparator = "/";
     const char* g_overlayDecollator = "|";
-#ifndef NWEB_SPAWN
     const std::string g_sandBoxRootDir = "/mnt/sandbox/";
-#else
     const std::string g_ohosRender = "__internal__.com.ohos.render";
-    const std::string g_sandBoxRootDir = "/mnt/sandbox/com.ohos.render/";
-#endif
+    const std::string g_sandBoxRootDirNweb = "/mnt/sandbox/com.ohos.render/";
 }
 
 nlohmann::json SandboxUtils::appNamespaceConfig_;
@@ -200,7 +198,7 @@ static void MakeDirRecursive(const std::string &path, mode_t mode)
 
 int32_t SandboxUtils::DoAppSandboxMountOnce(const char *originPath, const char *destinationPath,
                                             const char *fsType, unsigned long mountFlags,
-                                            const char *options)
+                                            const char *options, mode_t mountSharedFlag)
 {
     // To make sure destinationPath exist
     MakeDirRecursive(destinationPath, FILE_MODE);
@@ -213,7 +211,7 @@ int32_t SandboxUtils::DoAppSandboxMountOnce(const char *originPath, const char *
                       destinationPath);
         return ret;
     }
-    ret = mount(NULL, destinationPath, NULL, MS_SLAVE, NULL);
+    ret = mount(NULL, destinationPath, NULL, mountSharedFlag, NULL);
     APPSPAWN_CHECK(ret == 0, return ret,
         "errno is: %{public}d, private mount to %{public}s failed", errno, destinationPath);
 #endif
@@ -539,17 +537,16 @@ int SandboxUtils::DoAllMntPointsMount(const ClientSocket::AppProperty *appProper
                                                                   mntPoint[g_sandBoxPath].get<std::string>());
         unsigned long mountFlags = GetMountFlagsFromConfig(mntPoint[g_sandBoxFlags].get<std::vector<std::string>>());
         std::string fsType = (mntPoint.find(g_fsType) != mntPoint.end()) ? mntPoint[g_fsType].get<std::string>() : "";
+        const char* fsTypePoint = fsType.empty() ? nullptr : fsType.c_str();
+        mode_t mountSharedFlag = (mntPoint.find(g_mountSharedFlag) != mntPoint.end()) ? MS_SHARED : MS_SLAVE;
 
         /* check and prepare /data/app/el2 base and database package path to avoid BMS failed to create this folder */
         CheckAndPrepareSrcPath(appProperty, srcPath);
         /* if app mount failed for special strategy, we need deal with common mount config */
         int ret = HandleSpecialAppMount(appProperty, srcPath, sandboxPath, fsType, mountFlags);
         if (ret < 0) {
-            if (fsType.empty()) {
-                ret = DoAppSandboxMountOnce(srcPath.c_str(), sandboxPath.c_str(), nullptr, mountFlags, nullptr);
-            } else {
-                ret = DoAppSandboxMountOnce(srcPath.c_str(), sandboxPath.c_str(), fsType.c_str(), mountFlags, nullptr);
-            }
+            ret = DoAppSandboxMountOnce(srcPath.c_str(), sandboxPath.c_str(), fsTypePoint,
+                                        mountFlags, nullptr, mountSharedFlag);
         }
         if (ret) {
             std::string actionStatus = g_statusCheck;
@@ -804,7 +801,12 @@ int32_t SandboxUtils::SetPermissionAppSandboxProperty_(ClientSocket::AppProperty
 int32_t SandboxUtils::SetRenderSandboxProperty(const ClientSocket::AppProperty *appProperty,
                                                std::string &sandboxPackagePath)
 {
-#ifdef NWEB_SPAWN
+    return 0;
+}
+
+int32_t SandboxUtils::SetRenderSandboxPropertyNweb(const ClientSocket::AppProperty *appProperty,
+                                                   std::string &sandboxPackagePath)
+{
     for (auto config : SandboxUtils::GetJsonConfig()) {
         nlohmann::json privateAppConfig = config[g_privatePrefix][0];
 
@@ -820,7 +822,6 @@ int32_t SandboxUtils::SetRenderSandboxProperty(const ClientSocket::AppProperty *
                 appProperty->bundleName);
         }
     }
-#endif
     return 0;
 }
 
@@ -995,7 +996,6 @@ int32_t SandboxUtils::MountAllGroup(const ClientSocket::AppProperty *appProperty
         APPSPAWN_CHECK(dataGroupIds[i].is_string() && gids[i].is_string() && dirs[i].is_string(),
             return -1, "MountAllGroup: element type error");
 
-        std::string gid = gids[i];
         std::string libPhysicalPath = dirs[i];
         APPSPAWN_CHECK(!CheckPath(libPhysicalPath), return -1, "MountAllGroup: path error");
 
@@ -1150,7 +1150,6 @@ int32_t SandboxUtils::SetAppSandboxProperty(AppSpawnClient *client)
         rc = DoSandboxRootFolderCreate(appProperty, sandboxPackagePath);
     }
     APPSPAWN_CHECK(rc == 0, return rc, "DoSandboxRootFolderCreate failed, %{public}s", bundleName.c_str());
-#ifndef NWEB_SPAWN
     rc = SetCommonAppSandboxProperty(appProperty, sandboxPackagePath);
     APPSPAWN_CHECK(rc == 0, return rc, "SetCommonAppSandboxProperty failed, packagename is %{public}s",
         bundleName.c_str());
@@ -1162,15 +1161,69 @@ int32_t SandboxUtils::SetAppSandboxProperty(AppSpawnClient *client)
     rc = SetPermissionAppSandboxProperty(appProperty);
     APPSPAWN_CHECK(rc == 0, return rc, "SetPermissionAppSandboxProperty failed, packagename is %{public}s",
         bundleName.c_str());
-#else
+
+    rc = SetOverlayAppSandboxProperty(appProperty, sandboxPackagePath);
+    APPSPAWN_CHECK(rc == 0, return rc, "SetOverlayAppSandboxProperty failed, packagename is %s",
+        bundleName.c_str());
+
+#ifndef APPSPAWN_TEST
+    rc = chdir(sandboxPackagePath.c_str());
+    APPSPAWN_CHECK(rc == 0, return rc, "chdir failed, packagename is %{public}s, path is %{public}s",
+        bundleName.c_str(), sandboxPackagePath.c_str());
+
+    if (sandboxSharedStatus) {
+        rc = chroot(sandboxPackagePath.c_str());
+        APPSPAWN_CHECK(rc == 0, return rc, "chroot failed, path is %{public}s errno is %{public}d",
+            sandboxPackagePath.c_str(), errno);
+        return 0;
+    }
+
+    rc = syscall(SYS_pivot_root, sandboxPackagePath.c_str(), sandboxPackagePath.c_str());
+    APPSPAWN_CHECK(rc == 0, return rc, "errno is %{public}d, pivot root failed, packagename is %{public}s",
+        errno, bundleName.c_str());
+
+    rc = umount2(".", MNT_DETACH);
+    APPSPAWN_CHECK(rc == 0, return rc, "MNT_DETACH failed, packagename is %{public}s", bundleName.c_str());
+#endif
+    return 0;
+}
+
+int32_t SandboxUtils::SetAppSandboxPropertyNweb(AppSpawnClient *client)
+{
+    APPSPAWN_CHECK(client != NULL, return -1, "Invalid appspwn client");
+    AppSpawnClientExt *clientExt = reinterpret_cast<AppSpawnClientExt *>(client);
+    ClientSocket::AppProperty *appProperty = &clientExt->property;
+    if (CheckBundleName(appProperty->bundleName) != 0) {
+        return -1;
+    }
+    std::string sandboxPackagePath = g_sandBoxRootDirNweb;
+    const std::string bundleName = appProperty->bundleName;
+    bool sandboxSharedStatus = GetSandboxPrivateSharedStatus(bundleName);
+    sandboxPackagePath += bundleName;
+    MakeDirRecursive(sandboxPackagePath.c_str(), FILE_MODE);
+    int rc = 0;
+    // when CLONE_NEWPID is enabled, CLONE_NEWNS must be enabled.
+    if (!(client->cloneFlags & CLONE_NEWPID)) {
+        // add pid to a new mnt namespace
+        rc = unshare(CLONE_NEWNS);
+        APPSPAWN_CHECK(rc == 0, return rc, "unshare failed, packagename is %{public}s", bundleName.c_str());
+    }
+
+    // check app sandbox switch
+    if ((CheckTotalSandboxSwitchStatus(appProperty) == false) ||
+        (CheckAppSandboxSwitchStatus(appProperty) == false)) {
+        rc = DoSandboxRootFolderCreateAdapt(sandboxPackagePath);
+    } else if (!sandboxSharedStatus) {
+        rc = DoSandboxRootFolderCreate(appProperty, sandboxPackagePath);
+    }
+    APPSPAWN_CHECK(rc == 0, return rc, "DoSandboxRootFolderCreate failed, %{public}s", bundleName.c_str());
     // rendering process can be created by different apps,
     // and the bundle names of these apps are different,
     // so we can't use the method SetPrivateAppSandboxProperty
     // which mount dirs by using bundle name.
-    rc = SetRenderSandboxProperty(appProperty, sandboxPackagePath);
-    APPSPAWN_CHECK(rc == 0, return rc, "SetRenderSandboxProperty failed, packagename is %{public}s",
+    rc = SetRenderSandboxPropertyNweb(appProperty, sandboxPackagePath);
+    APPSPAWN_CHECK(rc == 0, return rc, "SetRenderSandboxPropertyNweb failed, packagename is %{public}s",
         sandboxPackagePath.c_str());
-#endif
 
     rc = SetOverlayAppSandboxProperty(appProperty, sandboxPackagePath);
     APPSPAWN_CHECK(rc == 0, return rc, "SetOverlayAppSandboxProperty failed, packagename is %s",

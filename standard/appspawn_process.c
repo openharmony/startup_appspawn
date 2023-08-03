@@ -157,7 +157,8 @@ static int SetCapabilities(struct AppSpawnContent_ *content, AppSpawnClient *cli
     // set capabilities
     isRet = capset(&cap_header, &cap_data[0]) == -1;
     APPSPAWN_CHECK(!isRet, return -errno, "capset failed: %{public}d", errno);
-    SetSelinuxCon(content, client);
+    isRet = SetSelinuxCon(content, client) == -1;
+    APPSPAWN_CHECK(!isRet, return -EPERM, "Failed to set selinux context");
     return 0;
 }
 
@@ -669,17 +670,17 @@ void SetContentFunction(AppSpawnContent *content)
     content->setKeepCapabilities = SetKeepCapabilities;
     content->setUidGid = SetUidGid;
     content->setXpmRegion = SetXpmRegion;
-    content->setCapabilities = SetCapabilities;
     content->setFileDescriptors = SetFileDescriptors;
-    content->setAppSandbox = SetAppSandboxProperty;
-    content->setAppAccessToken = SetAppAccessToken;
     content->coldStartApp = ColdStartApp;
     content->setAsanEnabledEnv = SetAsanEnabledEnv;
 #ifdef ASAN_DETECTOR
     content->getWrapBundleNameValue = GetWrapBundleNameValue;
 #endif
-    content->setSeccompFilter = SetSeccompFilter;
+    content->setAppSandbox = SetAppSandboxProperty;
+    content->setCapabilities = SetCapabilities;
     content->setUidGidFilter = SetUidGidFilter;
+    content->setSeccompFilter = SetSeccompFilter;
+    content->setAppAccessToken = SetAppAccessToken;
     content->handleInternetPermission = HandleInternetPermission;
     content->waitForDebugger = WaitForDebugger;
 }

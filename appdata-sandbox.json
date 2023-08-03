@@ -74,6 +74,11 @@
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
+                    "src-path" : "/vendor/etc/vulkan",
+                    "sandbox-path" : "/vendor/etc/vulkan",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
                     "src-path" : "/data/app/el1/bundle/public/<PackageName>",
                     "sandbox-path" : "/data/storage/el1/bundle",
                     "sandbox-flags" : [ "bind", "rec" ],
@@ -335,6 +340,18 @@
             ],
             "symbol-links" : []
         }],
+        "com.ohos.amsdialog" : [{
+            "sandbox-switch": "ON",
+            "sandbox-root" : "/mnt/sandbox/<PackageName>",
+            "mount-paths" : [{
+                    "src-path" : "/data/app/el1/bundle/public/",
+                    "sandbox-path" : "/data/bundles/",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "true"
+                }
+            ],
+            "symbol-links" : []
+        }],
         "ohos.samples.ecg" : [{
             "sandbox-switch": "ON",
             "sandbox-root" : "/mnt/sandbox/<PackageName>",
@@ -366,6 +383,12 @@
             "sandbox-root" : "/mnt/sandbox/<PackageName>",
             "sandbox-shared" : "true",
             "mount-paths" : [{
+                    "src-path" : "/mnt/data/<currentUserId>",
+                    "sandbox-path" : "/mnt/data",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "mount-shared-flag" : "true",
+                    "check-action-status": "true"
+                }, {
                     "src-path" : "/dev/fuse",
                     "sandbox-path" : "/mnt/data/fuse",
                     "sandbox-flags" : [ "MS_NOSUID", "MS_NODEV", "MS_NOEXEC", "MS_NOATIME", "MS_LAZYTIME" ],
@@ -385,7 +408,7 @@
                     "check-action-status": "true"
                 },
                 {
-                    "src-path" : "/mnt/external",
+                    "src-path" : "/mnt/data/external",
                     "sandbox-path" : "/mnt/external",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "true"
@@ -493,7 +516,7 @@
                 "sandbox-flags": [ "bind", "rec" ]
               },
               {
-                "src-path": "/mnt/external",
+                "src-path": "/mnt/data/external",
                 "sandbox-path": "/storage/External",
                 "sandbox-flags": [ "bind", "rec" ]
               },
@@ -514,7 +537,7 @@
             {
               "sandbox-switch": "ON",
               "sandbox-root": "/mnt/sandbox/<PackageName>",
-              "gids": [],
+              "gids": [1008],
               "mount-paths": [
                 {
                   "src-path": "/storage/media/<currentUserId>/local/files/.thumbs/Photo",

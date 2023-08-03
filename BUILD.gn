@@ -35,6 +35,7 @@ config("appspawn_config") {
     "//foundation/communication/ipc/interfaces/innerkits/ipc_core/include",
     "//foundation/arkui/napi",
     "//third_party/libuv/include",
+    "//third_party/selinux/libselinux/include/",
   ]
 
   if (build_selinux) {
@@ -43,15 +44,30 @@ config("appspawn_config") {
 }
 
 ohos_executable("appspawn") {
+  defines = []
+  if (target_cpu == "arm64") {
+    defines += [ "webview_arm64" ]
+  }
+  if (target_cpu == "x86_64") {
+    defines += [ "webview_x86_64" ]
+  }
   sources = [
     "${appspawn_path}/adapter/appspawn_ace.cpp",
+    "${appspawn_path}/adapter/appspawn_nweb.cpp",
+    "${appspawn_path}/adapter/nwebspawn_lancher.cpp",
+    "${appspawn_path}/interfaces/innerkits/src/appspawn_mount_permission.cpp",
     "${appspawn_path}/standard/main.c",
+    "${appspawn_path}/util/src/json_utils.cpp",
+    "${appspawn_path}/util/src/sandbox_utils.cpp",
   ]
   if (asan_detector || is_asan) {
-    defines = [ "ASAN_DETECTOR" ]
+    defines += [ "ASAN_DETECTOR" ]
   }
   configs = [ ":appspawn_config" ]
-  deps = [ "${appspawn_path}:appspawn_server" ]
+  deps = [
+    "${appspawn_path}:appspawn_server",
+    "//third_party/selinux:libselinux",
+  ]
   external_deps = [
     "ability_base:want",
     "ability_runtime:app_manager",
@@ -65,7 +81,9 @@ ohos_executable("appspawn") {
     "init:libbegetutil",
     "resource_management:global_resmgr",
   ]
-
+  if (build_selinux) {
+    external_deps += [ "selinux_adapter:libhap_restorecon" ]
+  }
   install_enable = true
   subsystem_name = "${subsystem_name}"
   part_name = "${part_name}"
@@ -95,6 +113,7 @@ ohos_shared_library("appspawn_helper") {
 ohos_static_library("appspawn_server") {
   sources = [
     "${appspawn_path}/adapter/appspawn_adapter.cpp",
+    "${appspawn_path}/adapter/appspawn_nweb.cpp",
     "${appspawn_path}/adapter/appspawn_sandbox.cpp",
     "${appspawn_path}/common/appspawn_server.c",
     "${appspawn_path}/interfaces/innerkits/src/appspawn_mount_permission.cpp",
@@ -116,15 +135,16 @@ ohos_static_library("appspawn_server") {
   ldflags = [ "-Wl,--dynamic-linker,/system/bin/linker64z" ]
   deps = [
     ":asan.options",
-    "//foundation/communication/netmanager_base/services/netmanagernative/netsys_client:netsys_client",
+    "//third_party/selinux:libselinux",
   ]
   external_deps = [
     "access_token:libtoken_setproc",
+    "access_token:libtokenid_sdk",
     "c_utils:utils",
     "config_policy:configpolicy_util",
     "hilog:libhilog",
     "init:libbegetutil",
-    "init:libbegetutil",
+    "netmanager_base:netsys_client",
   ]
 
   if (!defined(global_parts_info) ||
@@ -159,86 +179,6 @@ ohos_prebuilt_etc("appspawn.rc") {
   part_name = "${part_name}"
 }
 
-ohos_static_library("nwebspawn_server") {
-  sources = [
-    "${appspawn_path}/adapter/appspawn_adapter.cpp",
-    "${appspawn_path}/adapter/appspawn_sandbox.cpp",
-    "${appspawn_path}/common/appspawn_server.c",
-    "${appspawn_path}/interfaces/innerkits/src/appspawn_mount_permission.cpp",
-    "${appspawn_path}/standard/appspawn_process.c",
-    "${appspawn_path}/standard/appspawn_service.c",
-    "${appspawn_path}/util/src/json_utils.cpp",
-    "${appspawn_path}/util/src/sandbox_utils.cpp",
-  ]
-  defines = [
-    "GRAPHIC_PERMISSION_CHECK",
-    "INIT_AGENT",
-    "NWEB_SPAWN",
-    "APPSPAWN_CHECK_GID_UID",
-    "APPSPAWN_LABEL=\"NWEBSPAWN\"",
-  ]
-  include_dirs = [ "//third_party/selinux/libselinux/include/" ]
-  configs = [ ":appspawn_config" ]
-  ldflags = [ "-Wl,--dynamic-linker,/system/bin/linker64z" ]
-  deps = [
-    "//foundation/communication/netmanager_base/services/netmanagernative/netsys_client:netsys_client",
-    "//third_party/selinux:libselinux",
-  ]
-  external_deps = [
-    "access_token:libtoken_setproc",
-    "access_token:libtokenid_sdk",
-    "c_utils:utils",
-    "config_policy:configpolicy_util",
-    "hilog:libhilog",
-    "init:libbegetutil",
-  ]
-  if (build_selinux) {
-    external_deps += [ "selinux_adapter:libhap_restorecon" ]
-  }
-
-  cflags = []
-  if (build_seccomp) {
-    cflags += [ "-DWITH_SECCOMP" ]
-    external_deps += [ "init:seccomp" ]
-  }
-
-  subsystem_name = "${subsystem_name}"
-  part_name = "${part_name}"
-}
-
-ohos_executable("nwebspawn") {
-  defines = [
-    "NWEB_SPAWN",
-    "APPSPAWN_LABEL=\"NWEBSPAWN\"",
-  ]
-  if (target_cpu == "arm64") {
-    defines += [ "webview_arm64" ]
-  }
-  if (target_cpu == "x86_64") {
-    defines += [ "webview_x86_64" ]
-  }
-  sources = [
-    "${appspawn_path}/adapter/appspawn_nweb.cpp",
-    "${appspawn_path}/interfaces/innerkits/src/appspawn_mount_permission.cpp",
-    "${appspawn_path}/standard/main.c",
-    "${appspawn_path}/util/src/json_utils.cpp",
-    "${appspawn_path}/util/src/sandbox_utils.cpp",
-  ]
-  configs = [ ":appspawn_config" ]
-  deps = [ "${appspawn_path}:nwebspawn_server" ]
-  external_deps = [
-    "config_policy:configpolicy_util",
-    "hilog:libhilog",
-  ]
-  if (build_selinux) {
-    external_deps += [ "selinux_adapter:libhap_restorecon" ]
-  }
-
-  install_enable = true
-  subsystem_name = "${subsystem_name}"
-  part_name = "${part_name}"
-}
-
 ohos_prebuilt_etc("nwebspawn.rc") {
   source = "nwebspawn.cfg"
   relative_install_dir = "init"
@@ -249,9 +189,6 @@ ohos_prebuilt_etc("nwebspawn.rc") {
 group("nweb") {
   deps = []
   if (appspawn_support_nweb) {
-    deps += [
-      ":nwebspawn",
-      ":nwebspawn.rc",
-    ]
+    deps += [ ":nwebspawn.rc" ]
   }
 }
