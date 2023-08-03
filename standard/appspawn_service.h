@@ -17,6 +17,7 @@
 #define APPSPAWN_SERVICE_H
 
 #include <unistd.h>
+#include <stdbool.h>
 #include "appspawn_msg.h"
 #include "appspawn_server.h"
 #include "init_hashmap.h"

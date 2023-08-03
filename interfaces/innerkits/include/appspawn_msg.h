@@ -23,7 +23,7 @@
 extern "C" {
 #endif
 
-#if defined(__MUSL__) || defined(NWEB_SPAWN)
+#if defined(__MUSL__)
 #ifndef APPSPAWN_TEST
 #define  SOCKET_DIR "/dev/unix/socket/"
 #else
@@ -33,13 +33,12 @@ extern "C" {
 #define  SOCKET_DIR "/dev/socket/"
 #endif
 
-#ifdef NWEB_SPAWN
-#define APPSPAWN_SOCKET_NAME "NWebSpawn"
-#define APPSPAWN_SERVER_NAME "nwebspawn"
-#else
+
+#define NWEBSPAWN_SOCKET_NAME "NWebSpawn"
+#define NWEBSPAWN_SERVER_NAME "nwebspawn"
 #define APPSPAWN_SOCKET_NAME "AppSpawn"
 #define APPSPAWN_SERVER_NAME "appspawn"
-#endif
+
 
 enum AppType {
     APP_TYPE_DEFAULT = 0,  // JavaScript app

@@ -20,7 +20,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <time.h>
-
+#include <stdbool.h>
 #include "beget_ext.h"
 #include "hilog/log.h"
 #include "securec.h"
@@ -48,6 +48,7 @@ typedef struct AppSpawnClient_ {
 typedef struct AppSpawnContent_ {
     char *longProcName;
     uint32_t longProcNameLen;
+    bool isNweb;
 
     // system
     void (*loadExtendLib)(struct AppSpawnContent_ *content);

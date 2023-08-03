@@ -68,7 +68,13 @@ int32_t SetAppSandboxProperty(struct AppSpawnContent_ *content, AppSpawnClient *
     if ((client->cloneFlags & CLONE_NEWNS) != CLONE_NEWNS) {
         return 0;
     }
-    int ret = SandboxUtils::SetAppSandboxProperty(client);
+    int ret = 0;
+    if (content->isNweb) {
+        ret = SandboxUtils::SetAppSandboxPropertyNweb(client);
+    } else {
+        ret = SandboxUtils::SetAppSandboxProperty(client);
+    }
+    
     // free HspList
     if (clientExt->property.hspList.data != nullptr) {
         free(clientExt->property.hspList.data);

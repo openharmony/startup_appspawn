@@ -52,7 +52,6 @@ TaskHandle AcceptClient(const LoopHandle loopHandle, const TaskHandle server, ui
 bool ReceiveRequestData(const TaskHandle taskHandle, AppSpawnClientExt *appProperty,
     const uint8_t *buffer, uint32_t buffLen);
 void AddAppInfo(pid_t pid, const char *processName);
-void ProcessTimer(const TimerHandle taskHandle, void *context);
 void SignalHandler(const struct signalfd_siginfo *siginfo);
 #ifdef __cplusplus
     }
@@ -123,6 +122,13 @@ static void CheckAndCreateDir(const char *fileName)
     free(path);
 }
 
+static void ProcessTimer(const TimerHandle taskHandle, void *context)
+{
+    UNUSED(context);
+    APPSPAWN_LOGI("timeout stop appspawn");
+    LE_StopLoop(LE_GetDefaultLoop());
+}
+
 namespace OHOS {
 class AppSpawnStandardTest : public testing::Test {
 public:
@@ -155,69 +161,6 @@ static void FreeHspList(HspList &hspList)
         free(hspList.data);
     }
     hspList = {};
-}
-
-/**
-* @tc.name: App_Spawn_Standard_002
-* @tc.desc: fork app son process and set content.
-* @tc.type: FUNC
-* @tc.require:issueI5NTX6
-* @tc.author:
-*/
-HWTEST(AppSpawnStandardTest, App_Spawn_Standard_002, TestSize.Level0)
-{
-    CheckAndCreateDir("/data/appspawn_ut/dev/unix/socket/");
-    GTEST_LOG_(INFO) << "App_Spawn_Standard_002 start";
-    char longProcName[124] = "App_Spawn_Standard_002";
-    int64_t longProcNameLen = 124; // 124 is str length
-    AppSpawnClientExt* client = (AppSpawnClientExt*)malloc(sizeof(AppSpawnClientExt));
-    client->client.id = 8; // 8 is client id
-    client->client.flags = 0;
-    client->client.cloneFlags = CLONE_NEWNS;
-    client->fd[0] = 100; // 100 is fd
-    client->fd[1] = 200; // 200 is fd
-    client->property.uid = 10000; // 10000 is uid
-    client->property.gid = 1000; // 1000 is gid
-    client->property.gidCount = 1; // 1 is gidCount
-    if (strcpy_s(client->property.processName, APP_LEN_PROC_NAME, "xxx.xxx.xxx") != 0) {
-        GTEST_LOG_(INFO) << "strcpy_s failed";
-    }
-    if (strcpy_s(client->property.bundleName, APP_LEN_BUNDLE_NAME, "xxx.xxx.xxx") != 0) {
-        GTEST_LOG_(INFO) << "strcpy_s failed";
-    }
-    if (strcpy_s(client->property.soPath, APP_LEN_SO_PATH, "xxx") != 0) {
-        GTEST_LOG_(INFO) << "strcpy_s failed";
-    }
-    client->property.accessTokenId = 671201800; // 671201800 is accessTokenId
-    if (strcpy_s(client->property.apl, APP_APL_MAX_LEN, "xxx") != 0) {
-        GTEST_LOG_(INFO) << "strcpy_s failed";
-    }
-    if (strcpy_s(client->property.renderCmd, APP_RENDER_CMD_MAX_LEN, "xxx") != 0) {
-        GTEST_LOG_(INFO) << "strcpy_s failed";
-    }
-    client->property.hspList = {0, 0, nullptr};
-
-    AppSpawnContent *content = AppSpawnCreateContent("AppSpawn", longProcName, longProcNameLen, 1);
-    content->loadExtendLib = LoadExtendLib;
-    content->runChildProcessor = RunChildProcessor;
-    SetContentFunction(content);
-
-    content->clearEnvironment(content, &client->client);
-    EXPECT_EQ(content->setProcessName(content, &client->client, (char *)longProcName, longProcNameLen), 0);
-    EXPECT_EQ(content->setKeepCapabilities(content, &client->client), 0);
-    EXPECT_EQ(content->setUidGid(content, &client->client), 0);
-    EXPECT_EQ(content->setCapabilities(content, &client->client), 0);
-    EXPECT_EQ(content->setFileDescriptors(content, &client->client), 0);
-
-    // test invalid
-    EXPECT_NE(content->setProcessName(content, &client->client, nullptr, 0), 0);
-
-    content->setAppSandbox(content, &client->client);
-    int ret = content->setAppAccessToken(content, &client->client);
-    EXPECT_EQ(ret, 0);
-    EXPECT_NE(content->coldStartApp(content, &client->client), 0);
-
-    GTEST_LOG_(INFO) << "App_Spawn_Standard_002 end";
 }
 
 /**
@@ -421,6 +364,60 @@ HWTEST(AppSpawnStandardTest, App_Spawn_Standard_003_3, TestSize.Level0)
     APPSPAWN_LOGI("App_Spawn_Standard_003_3 en");
 }
 /**
+* @tc.name: App_Spawn_Standard_003_4
+* @tc.desc:  Verify set Arg if GetAppSpawnClient succeed, with dataGroupList
+* @tc.type: FUNC
+* @tc.require:issueI7FUPV
+* @tc.author:
+*/
+HWTEST(AppSpawnStandardTest, App_Spawn_Standard_003_4, TestSize.Level0)
+{
+    APPSPAWN_LOGI("App_Spawn_Standard_003_4 start");
+    AppSpawnClientExt client = {};
+    char arg1[] = "/system/bin/appspawn";
+    char arg2[] = "cold-start";
+    char arg3[] = "1";
+    char arg4[] = "1:1:1:1:1:1:1:1:1:2:1000:1000:ohos.samples:ohos.samples.ecg:"
+            "default:671201800:system_core:default:0:671201800";
+    char arg5[] = "0";
+    char arg6[] = "0";
+    char arg7[] = "0";
+    char arg8[] = "0";
+    {
+        char arg9[] = "10";
+        char arg10[] = "012345678";
+        char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10};
+        int argc = sizeof(argv)/sizeof(argv[0]);
+        EXPECT_EQ(0, GetAppSpawnClientFromArg(argc, argv, &client));
+        FreeHspList(client.property.hspList);
+    }
+    { // dataGroupList length is 0
+        char arg9[] = "0";
+        char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, nullptr};
+        int argc = sizeof(argv)/sizeof(argv[0]);
+        EXPECT_EQ(-1, GetAppSpawnClientFromArg(argc, argv, &client));
+    }
+    { // dataGroupList length is nullptr
+        char arg10[] = "0123456789";
+        char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, nullptr, arg10};
+        int argc = sizeof(argv)/sizeof(argv[0]);
+        EXPECT_EQ(-1, GetAppSpawnClientFromArg(argc, argv, &client));
+    }
+    { // dataGroupList length is non-zero, but argc is 7
+        char arg9[] = "10";
+        char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9};
+        int argc = sizeof(argv)/sizeof(argv[0]);
+        EXPECT_EQ(-1, GetAppSpawnClientFromArg(argc, argv, &client));
+    }
+    { // dataGroupList length is non-zero, but content is nullptr
+        char arg9[] = "10";
+        char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, nullptr};
+        int argc = sizeof(argv)/sizeof(argv[0]);
+        EXPECT_EQ(-1, GetAppSpawnClientFromArg(argc, argv, &client));
+    }
+    APPSPAWN_LOGI("App_Spawn_Standard_003_4 en");
+}
+/**
 * @tc.name: App_Spawn_Standard_004
 * @tc.desc: App cold start.
 * @tc.type: FUNC
@@ -505,6 +502,22 @@ HWTEST(AppSpawnStandardTest, App_Spawn_Standard_005, TestSize.Level0)
     ret = SetAppSandboxProperty((AppSpawnContent_*)content, &clientExt->client);
     EXPECT_EQ(ret, 0);
 
+    // APP_NO_SANDBOX
+    clientExt->property.flags |= APP_NO_SANDBOX;
+    ret = SetAppSandboxProperty((AppSpawnContent_*)content, &clientExt->client);
+    EXPECT_EQ(ret, 0);
+
+    clientExt->property.flags &= ~APP_NO_SANDBOX;
+    // bundle name
+    clientExt->property.hspList.data = strdup("{ \
+            \"bundles\":[\"test.bundle1\", \"test.bundle2\"], \
+            \"modules\":[\"module1\", \"module2\"], \
+            \"versions\":[\"v10001\", \"v10002\"] \
+        }");
+    clientExt->property.hspList.totalLength = strlen(clientExt->property.hspList.data);
+    ret = SetAppSandboxProperty((AppSpawnContent_*)content, &clientExt->client);
+    EXPECT_EQ(ret, 0);
+
     free(content);
     GTEST_LOG_(INFO) << "App_Spawn_Standard_005 end";
 }
@@ -560,6 +573,7 @@ static AppSpawnContentExt *TestClient(int flags,
     AppOperateType code, const std::string &processName, const std::string &serverName)
 {
     char buffer[64] = {0}; // 64 buffer size
+    CheckAndCreateDir(SOCKET_DIR);
     AppSpawnContentExt *content =
         (AppSpawnContentExt *)AppSpawnCreateContent(serverName.c_str(), buffer, sizeof(buffer), 0);
     if (content == nullptr) {
@@ -649,7 +663,7 @@ HWTEST(AppSpawnStandardTest, App_Spawn_Standard_006_4, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Standard_006_4 start";
     SetHapDomainSetcontextResult(-1);
-    SetParameter("const.appspawn.preload", "false");
+
     AppSpawnContentExt *content = TestClient(APP_COLD_BOOT,
         DEFAULT, "com.ohos.medialibrary.medialibrarydata", "test006_2");
     ASSERT_TRUE(content != nullptr);
