@@ -271,7 +271,6 @@ static void HandleSpecial(AppSpawnClientExt *appProperty)
                 appProperty->property.gidTable[appProperty->property.gidCount++] = GID_FILE_ACCESS;
             }
             break;
-
         }
     }
 }

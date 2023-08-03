@@ -529,6 +529,16 @@
                 "src-path": "/storage/media/<currentUserId>/local/files/Download",
                 "sandbox-path": "/storage/local/Download",
                 "sandbox-flags": [ "bind", "rec" ]
+              },
+              {
+                "src-path": "/storage/media/<currentUserId>/local/files/Desktop",
+                "sandbox-path": "/storage/local/Desktop",
+                "sandbox-flags": [ "bind", "rec" ]
+              },
+              {
+                "src-path": "/storage/media/<currentUserId>/local/files/Docs",
+                "sandbox-path": "/storage/local/Docs",
+                "sandbox-flags": [ "bind", "rec" ]
               }
             ]
           }
