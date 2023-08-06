@@ -502,61 +502,53 @@
             }]
         }]
     }],
-    "permission":[
-      {
-        "ohos.permission.FILE_ACCESS_MANAGER":[
-          {
+    "permission":[{
+        "ohos.permission.FILE_ACCESS_MANAGER":[{
             "sandbox-switch": "ON",
             "sandbox-root": "/mnt/sandbox/<PackageName>",
             "gids": [1006, 1008],
-            "mount-paths": [
-              {
-                "src-path": "/data/service/el1/public/storage_daemon/share/public",
-                "sandbox-path": "/storage/Share",
-                "sandbox-flags": [ "bind", "rec" ]
-              },
-              {
-                "src-path": "/mnt/data/external",
-                "sandbox-path": "/storage/External",
-                "sandbox-flags": [ "bind", "rec" ]
-              },
-              {
-                "src-path": "/storage/media/<currentUserId>/local/files/Documents",
-                "sandbox-path": "/storage/local/Documents",
-                "sandbox-flags": [ "bind", "rec" ]
-              },
-              {
-                "src-path": "/storage/media/<currentUserId>/local/files/Download",
-                "sandbox-path": "/storage/local/Download",
-                "sandbox-flags": [ "bind", "rec" ]
-              },
-              {
-                "src-path": "/storage/media/<currentUserId>/local/files/Desktop",
-                "sandbox-path": "/storage/local/Desktop",
-                "sandbox-flags": [ "bind", "rec" ]
-              },
-              {
-                "src-path": "/storage/media/<currentUserId>/local/files/Docs",
-                "sandbox-path": "/storage/local/Docs",
-                "sandbox-flags": [ "bind", "rec" ]
-              }
-            ]
-          }
-        ],
-        "ohos.permission.READ_IMAGEVIDEO":[
-            {
-              "sandbox-switch": "ON",
-              "sandbox-root": "/mnt/sandbox/<PackageName>",
-              "gids": [1008],
-              "mount-paths": [
+            "mount-paths": [{
+                    "src-path": "/data/service/el1/public/storage_daemon/share/public",
+                    "sandbox-path": "/storage/Share",
+                    "sandbox-flags": [ "bind", "rec" ]
+                },
                 {
-                  "src-path": "/storage/media/<currentUserId>/local/files/.thumbs/Photo",
-                  "sandbox-path": "/storage/Share/.thumbs/Photo",
-                  "sandbox-flags": [ "bind", "rec" ]
+                    "src-path": "/mnt/data/external",
+                    "sandbox-path": "/storage/External",
+                    "sandbox-flags": [ "bind", "rec" ]
+                },
+                {
+                    "src-path": "/storage/media/<currentUserId>/local/files/Docs",
+                    "sandbox-path": "/storage/Users/<currentUserId>",
+                    "sandbox-flags": [ "bind", "rec" ]
+                },
+                {
+                    "src-path": "/storage/media/<currentUserId>/local/files/Download",
+                    "sandbox-path": "/storage/Users/<currentUserId>/Download",
+                    "sandbox-flags": ["bind", "rec" ]
+                },
+                {
+                    "src-path": "/storage/media/<currentUserId>/local/files/Desktop",
+                    "sandbox-path": "/storage/Users/<currentUserId>/Desktop",
+                    "sandbox-flags": ["bind", "rec" ]
+                },
+                {
+                    "src-path": "/storage/media/<currentUserId>/local/files/Documents",
+                    "sandbox-path": "/storage/Users/<currentUserId>/Documents",
+                    "sandbox-flags": ["bind", "rec" ]
                 }
-              ]
-            }
-        ]
-      }
-    ]
+            ]
+        }],
+        "ohos.permission.READ_IMAGEVIDEO":[{
+            "sandbox-switch": "ON",
+            "sandbox-root": "/mnt/sandbox/<PackageName>",
+            "gids": [1008],
+            "mount-paths": [{
+                    "src-path": "/storage/media/<currentUserId>/local/files/.thumbs/Photo",
+                    "sandbox-path": "/storage/Share/.thumbs/Photo",
+                    "sandbox-flags": [ "bind", "rec" ]
+                }
+            ]
+        }]
+    }]
 }
