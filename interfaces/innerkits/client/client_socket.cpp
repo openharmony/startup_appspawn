@@ -40,6 +40,8 @@ int ClientSocket::CreateClient()
 
     int opt = 1;
     int ret = setsockopt(socketFd_, SOL_SOCKET, SO_PASSCRED, &opt, sizeof(opt));
+    APPSPAWN_CHECK(ret == 0, CloseClient(); return ret,
+        "Client: set socket opt socket fd: %{public}d error: %{public}d", socketFd_, errno);
     APPSPAWN_LOGV("Client: CreateClient socket fd %{public}d ret %{public}d", socketFd_, ret);
     return ret;
 }
