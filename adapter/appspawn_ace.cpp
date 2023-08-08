@@ -26,6 +26,7 @@
 #include "resource_manager.h"
 #include "foundation/ability/ability_runtime/interfaces/kits/native/appkit/app/main_thread.h"
 #include "syspara/parameter.h"
+#include "ace_forward_compatibility.h"
 
 using namespace OHOS::AppSpawn;
 using namespace OHOS::Global;
@@ -103,9 +104,9 @@ static void PreloadModule(void)
 
 void LoadExtendLib(AppSpawnContent *content)
 {
-    const char *acelibdir("libace.z.so");
+    const char* acelibdir = OHOS::Ace::AceForwardCompatibility::GetAceLibName();
     APPSPAWN_LOGI("LoadExtendLib: Start calling dlopen acelibdir.");
-    void *aceAbilityLib = dlopen(acelibdir, RTLD_NOW | RTLD_GLOBAL);
+    void *aceAbilityLib = dlopen(acelibdir, RTLD_NOW | RTLD_LOCAL);
     APPSPAWN_CHECK(aceAbilityLib != nullptr, return, "Fail to dlopen %{public}s, [%{public}s]", acelibdir, dlerror());
     APPSPAWN_LOGI("LoadExtendLib: Success to dlopen %{public}s", acelibdir);
 
@@ -113,7 +114,7 @@ void LoadExtendLib(AppSpawnContent *content)
     OHOS::AppExecFwk::MainThread::PreloadExtensionPlugin();
 #endif
 
-    bool preload = OHOS::system::GetBoolParameter("const.appspawn.preload", DEFAULT_PRELOAD_VALUE);
+    bool preload = OHOS::system::GetBoolParameter("persist.appspawn.preload", DEFAULT_PRELOAD_VALUE);
     if (!preload) {
         APPSPAWN_LOGI("LoadExtendLib: Do not preload JS VM");
         return;
