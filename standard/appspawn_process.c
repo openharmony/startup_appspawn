@@ -35,6 +35,7 @@
 #include "parameter.h"
 #include "limits.h"
 #include "string.h"
+#include "init_param.h"
 #define DEVICE_NULL_STR "/dev/null"
 
 struct XpmRegionInfo {
@@ -198,6 +199,8 @@ static void ClearEnvironment(AppSpawnContent *content, AppSpawnClient *client)
     AppSpawnClientExt *appProperty = (AppSpawnClientExt *)client;
     close(appProperty->fd[0]);
     SetAsanEnabledEnv(content, client);
+
+    ResetParamSecurityLabel();
     return;
 }
 
