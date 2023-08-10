@@ -93,6 +93,11 @@ APPSPAWN_STATIC void AddAppInfo(pid_t pid, const char *processName)
     APPSPAWN_LOGI("Add %{public}s, pid=%{public}d success", processName, pid);
 }
 
+void AddNwebInfo(pid_t pid, const char *processName)
+{
+    AddAppInfo(pid, processName);
+}
+
 static AppInfo *GetAppInfo(pid_t pid)
 {
     HashNode *node = OH_HashMapGet(g_appSpawnContent->appMap, (const void *)&pid);

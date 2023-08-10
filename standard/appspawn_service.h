@@ -75,6 +75,7 @@ typedef struct {
 
 void SetContentFunction(AppSpawnContent *content);
 void AppSpawnColdRun(AppSpawnContent *content, int argc, char *const argv[]);
+void AddNwebInfo(pid_t pid, const char *processName);
 int GetAppSpawnClientFromArg(int argc, char *const argv[], AppSpawnClientExt *client);
 #define SHOW_CLIENT(info, clientExt) \
 do { \
