@@ -100,6 +100,7 @@ int main(int argc, char *const argv[])
         APPSPAWN_CHECK(content->runAppSpawn != NULL, return -1, "Invalid content for appspawn");
 
         // set common operation
+        AddNwebInfo(pid, NWEBSPAWN_SERVER_NAME);
         content->loadExtendLib = LoadExtendLib;
         content->runChildProcessor = RunChildProcessor;
         content->initAppSpawn(content);
