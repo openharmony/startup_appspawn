@@ -20,6 +20,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <signal.h>
+#include <malloc.h>
 #undef _GNU_SOURCE
 #define _GNU_SOURCE
 #include <sched.h>
@@ -178,6 +179,13 @@ static int AppSpawnChild(void *arg)
             return 0;
         }
     }
+#ifndef OHOS_LITE
+    // enable cache for app process
+    mallopt(M_OHOS_CONFIG, M_TCACHE_PERFORMANCE_MODE);
+    mallopt(M_OHOS_CONFIG, M_ENABLE_OPT_TCACHE);
+    mallopt(M_SET_THREAD_CACHE, M_THREAD_CACHE_ENABLE);
+    mallopt(M_DELAYED_FREE, M_DELAYED_FREE_ENABLE);
+#endif
     ret = DoStartApp(content, client, content->longProcName, content->longProcNameLen);
     if (content->initDebugParams != NULL) {
         content->initDebugParams(content, client);
