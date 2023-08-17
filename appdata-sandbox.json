@@ -271,6 +271,11 @@
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
+                    "src-path" : "/data/service/el2/<currentUserId>/hmdfs/cache/account_cache",
+                    "sandbox-path" : "/data/service/el2/<currentUserId>/hmdfs/cache/account_cache",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
                     "src-path" : "/storage/cloud/<currentUserId>",
                     "sandbox-path" : "/storage/cloud",
                     "sandbox-flags" : [ "bind", "rec" ],
