@@ -45,7 +45,7 @@ HWTEST_F(AppSpawnClientTest, AppSpawn_Client_AppSpawn_1, TestSize.Level0)
     EXPECT_EQ(ret, 0);
     pid_t pid = 0;
     ret = ClientRecvMsg(pid);
-    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(ret, -ECANCELED);
     if (pid > 0) {
         kill(pid, SIGKILL);
     }
@@ -232,7 +232,7 @@ HWTEST_F(AppSpawnClientTest, AppSpawn_Client_AppSpawn_6, TestSize.Level0)
     EXPECT_EQ(ret, 0);
     pid_t pid = 0;
     ret = ClientRecvMsg(pid);
-    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(ret, -ECANCELED);
     if (pid > 0) {
         kill(pid, SIGKILL);
     }
@@ -258,7 +258,7 @@ HWTEST_F(AppSpawnClientTest, AppSpawn_Client_AppSpawn_7, TestSize.Level0)
     EXPECT_EQ(ret, 0);
     pid_t pid = 0;
     ret = ClientRecvMsg(pid);
-    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(ret, -ECANCELED);
     if (pid > 0) {
         kill(pid, SIGKILL);
     }
@@ -285,7 +285,7 @@ HWTEST_F(AppSpawnClientTest, AppSpawn_Client_AppSpawn_8, TestSize.Level0)
     EXPECT_EQ(ret, 0);
     pid_t pid = 0;
     ret = ClientRecvMsg(pid);
-    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(ret, -ECANCELED);
     if (pid > 0) {
         kill(pid, SIGKILL);
     }

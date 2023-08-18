@@ -159,7 +159,7 @@ static int SetCapabilities(struct AppSpawnContent_ *content, AppSpawnClient *cli
     isRet = capset(&cap_header, &cap_data[0]) == -1;
     APPSPAWN_CHECK(!isRet, return -errno, "capset failed: %{public}d", errno);
     isRet = SetSelinuxCon(content, client) == -1;
-    APPSPAWN_CHECK(!isRet, return -EPERM, "Failed to set selinux context");
+    APPSPAWN_CHECK(!isRet, return -ECANCELED, "Failed to set selinux context");
     return 0;
 }
 
