@@ -121,6 +121,7 @@ ohos_unittest("AppSpawn_ut") {
     "ability_runtime:runtime",
     "access_token:libtoken_setproc",
     "access_token:libtokenid_sdk",
+    "ace_engine:ace_forward_compatibility",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",

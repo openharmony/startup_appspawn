@@ -73,6 +73,7 @@ ohos_executable("appspawn") {
     "ability_runtime:app_manager",
     "ability_runtime:appkit_native",
     "ability_runtime:runtime",
+    "ace_engine:ace_forward_compatibility",
     "c_utils:utils",
     "common_event_service:cesfwk_innerkits",
     "config_policy:configpolicy_util",
