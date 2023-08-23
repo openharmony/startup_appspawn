@@ -24,6 +24,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include <sched.h>
+#include <linux/limits.h>
 
 #include "init_hashmap.h"
 #include "init_socket.h"
@@ -170,9 +171,33 @@ static int SendResponse(AppSpawnClientExt *client, const char *buff, size_t buff
     return LE_Send(LE_GetDefaultLoop(), client->stream, handle, buffSize);
 }
 
+static void KillProcessesByCGroup(uid_t uid, const AppInfo *appInfo)
+{
+    if (appInfo == NULL) {
+        return;
+    }
+
+    int userId = uid / 200000;
+    char buf[PATH_MAX];
+
+    snprintf_s(buf, sizeof(buf), sizeof(buf) - 1, "/dev/memcg/%d/%s/cgroup.procs", userId, appInfo->name);
+    FILE *file = fopen(buf, "r");
+    APPSPAWN_CHECK(file != NULL, return, "%{public}s not exists.", buf);
+    pid_t pid;
+    while (fscanf_s(file, "%d\n", &pid) == 1 && pid > 0) {
+        if (pid == getpid()) {
+            continue;
+        }
+        APPSPAWN_LOGI("Kill app pid %{public}d now ...", pid);
+        kill(pid, SIGKILL);
+    }
+    fclose(file);
+}
+
 static void HandleDiedPid(pid_t pid, uid_t uid, int status)
 {
     AppInfo *appInfo = GetAppInfo(pid);
+    KillProcessesByCGroup(uid, appInfo);
     APPSPAWN_CHECK(appInfo != NULL, return, "Can not find app info for %{public}d", pid);
     if (WIFSIGNALED(status)) {
         APPSPAWN_LOGW("%{public}s with pid %{public}d exit with signal:%{public}d",
