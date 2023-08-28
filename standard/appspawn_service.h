@@ -42,13 +42,9 @@ extern "C" {
 #define START_INDEX 1
 #define FD_INDEX 2
 #define PARAM_INDEX 3
-#define HSP_LIST_LEN_INDEX 4
-#define HSP_LIST_INDEX 5
-#define OVERLAY_LEN_INDEX 6
-#define OVERLAY_INDEX 7
-#define DIR_LIST_LEN_INDEX 8
-#define DIR_LIST_INDEX 9
-#define NULL_INDEX 10
+#define EXTRA_INFO_LEN_INDEX 4
+#define EXTRA_INFO_INDEX 5
+#define NULL_INDEX 6
 #define PARAM_BUFFER_LEN 128
 typedef struct {
     AppSpawnClient client;

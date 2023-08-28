@@ -124,7 +124,7 @@ HWTEST_F(AppSpawnClientTest, AppSpawn_Client_AppSpawn_3, TestSize.Level0)
     ClientFillMsg(&request, "ohos.samples.clock", "ls -l > aaa.txt");
 
     printf("AppSpawn_Client_AppSpawn_3 hsp %zu %s \n", g_jsonStr.size(), g_jsonStr.c_str());
-    request.hspList.totalLength = g_jsonStr.size();
+    request.extraInfo.totalLength = g_jsonStr.size();
     std::vector<char *> data(sizeof(request) + g_jsonStr.size());
     memcpy_s(data.data(), sizeof(request), &request, sizeof(request));
     memcpy_s(data.data() + sizeof(request), g_jsonStr.size(), g_jsonStr.data(), g_jsonStr.size());
@@ -162,7 +162,7 @@ HWTEST_F(AppSpawnClientTest, AppSpawn_Client_AppSpawn_4, TestSize.Level0)
     jsonFileStream.close();
 
     printf("AppSpawn_Client_AppSpawn_4 hsp %zu \n", buf.size());
-    request.hspList.totalLength = buf.size();
+    request.extraInfo.totalLength = buf.size();
     std::vector<char *> data(sizeof(request) + buf.size());
     memcpy_s(data.data(), sizeof(request), &request, sizeof(request));
     memcpy_s(data.data() + sizeof(request), buf.size(), buf.data(), buf.size());
@@ -199,7 +199,7 @@ HWTEST_F(AppSpawnClientTest, AppSpawn_Client_AppSpawn_5, TestSize.Level0)
     }
     jsonFileStream.close();
 
-    request.hspList.totalLength = buf.size();
+    request.extraInfo.totalLength = buf.size();
     std::vector<char *> data(sizeof(request) + buf.size());
     memcpy_s(data.data(), sizeof(request), &request, sizeof(request));
     memcpy_s(data.data() + sizeof(request), buf.size(), buf.data(), buf.size());

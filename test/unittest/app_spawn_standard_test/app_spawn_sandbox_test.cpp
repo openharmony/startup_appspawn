@@ -1095,103 +1095,103 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_34, TestSize.Level0)
     std::string testBundle = strl1;
 
     { // totalLength is 0
-        m_appProperty->hspList = {};
+        m_appProperty->extraInfo = {};
         int ret = OHOS::AppSpawn::SandboxUtils::MountAllHsp(m_appProperty, testBundle);
         EXPECT_EQ(0, ret);
     }
     { // data is nullptr
-        m_appProperty->hspList = {1, 0, nullptr};
+        m_appProperty->extraInfo = {1, 0, nullptr};
         int ret = OHOS::AppSpawn::SandboxUtils::MountAllHsp(m_appProperty, testBundle);
         EXPECT_EQ(0, ret);
     }
     { // success
-        char hspListStr[] = "{ \
+        char hspListStr[] = "|HspList|{ \
             \"bundles\":[\"test.bundle1\", \"test.bundle2\"], \
             \"modules\":[\"module1\", \"module2\"], \
             \"versions\":[\"v10001\", \"v10002\"] \
-        }";
-        m_appProperty->hspList = {strlen(hspListStr), 0, hspListStr};
+        }|HspList|";
+        m_appProperty->extraInfo = {strlen(hspListStr), 0, hspListStr};
         int ret = OHOS::AppSpawn::SandboxUtils::MountAllHsp(m_appProperty, testBundle);
         EXPECT_EQ(0, ret);
     }
 
-    m_appProperty->hspList = {};
+    m_appProperty->extraInfo = {};
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_34 end";
 }
 
 static void InvalidJsonTest(ClientSocket::AppProperty* appProperty, std::string &testBundle)
 {
-    char hspListStr[] = "{";
-    appProperty->hspList = {strlen(hspListStr), 0, hspListStr};
+    char hspListStr[] = "|HspList|{|HspList|";
+    appProperty->extraInfo = {strlen(hspListStr), 0, hspListStr};
     int ret = OHOS::AppSpawn::SandboxUtils::MountAllHsp(appProperty, testBundle);
     EXPECT_NE(0, ret);
 }
 
 static void NoBundleTest(ClientSocket::AppProperty* appProperty, std::string &testBundle)
 {
-    char hspListStr[] = "{ \
+    char hspListStr[] = "|HspList|{ \
         \"modules\":[\"module1\", \"module2\"], \
         \"versions\":[\"v10001\", \"v10002\"] \
-    }";
-    appProperty->hspList = {strlen(hspListStr), 0, hspListStr};
+    }|HspList|";
+    appProperty->extraInfo = {strlen(hspListStr), 0, hspListStr};
     int ret = OHOS::AppSpawn::SandboxUtils::MountAllHsp(appProperty, testBundle);
     EXPECT_NE(0, ret);
 }
 
 static void NoModulesTest(ClientSocket::AppProperty* appProperty, std::string &testBundle)
 {
-    char hspListStr[] = "{ \
+    char hspListStr[] = "|HspList|{ \
         \"bundles\":[\"test.bundle1\", \"test.bundle2\"], \
         \"versions\":[\"v10001\", \"v10002\"] \
-    }";
-    appProperty->hspList = {strlen(hspListStr), 0, hspListStr};
+    }|HspList|";
+    appProperty->extraInfo = {strlen(hspListStr), 0, hspListStr};
     int ret = OHOS::AppSpawn::SandboxUtils::MountAllHsp(appProperty, testBundle);
     EXPECT_NE(0, ret);
 }
 
 static void NoVersionsTest(ClientSocket::AppProperty* appProperty, std::string &testBundle)
 {
-    char hspListStr[] = "{ \
+    char hspListStr[] = "|HspList|{ \
         \"bundles\":[\"test.bundle1\", \"test.bundle2\"], \
         \"modules\":[\"module1\", \"module2\"] \
-    }";
-    appProperty->hspList = {strlen(hspListStr), 0, hspListStr};
+    }|HspList|";
+    appProperty->extraInfo = {strlen(hspListStr), 0, hspListStr};
     int ret = OHOS::AppSpawn::SandboxUtils::MountAllHsp(appProperty, testBundle);
     EXPECT_NE(0, ret);
 }
 
 static void ListSizeNotSameTest(ClientSocket::AppProperty* appProperty, std::string &testBundle)
 {
-    char hspListStr[] = "{ \
+    char hspListStr[] = "|HspList|{ \
         \"bundles\":[\"test.bundle1\", \"test.bundle2\"], \
         \"modules\":[\"module1\"], \
         \"versions\":[\"v10001\", \"v10002\"] \
-    }";
-    appProperty->hspList = {strlen(hspListStr), 0, hspListStr};
+    }|HspList|";
+    appProperty->extraInfo = {strlen(hspListStr), 0, hspListStr};
     int ret = OHOS::AppSpawn::SandboxUtils::MountAllHsp(appProperty, testBundle);
     EXPECT_NE(0, ret);
 }
 
 static void ValueTypeIsNotArraryTest(ClientSocket::AppProperty* appProperty, std::string &testBundle)
 {
-    char hspListStr[] = "{ \
+    char hspListStr[] = "|HspList|{ \
         \"bundles\":[\"test.bundle1\", \"test.bundle2\"], \
         \"modules\":[\"module1\", \"module2\"], \
         \"versions\": 1001 \
-    }";
-    appProperty->hspList = {strlen(hspListStr), 0, hspListStr};
+    }|HspList|";
+    appProperty->extraInfo = {strlen(hspListStr), 0, hspListStr};
     int ret = OHOS::AppSpawn::SandboxUtils::MountAllHsp(appProperty, testBundle);
     EXPECT_NE(0, ret);
 }
 
 static void ElementTypeIsNotStringTest(ClientSocket::AppProperty* appProperty, std::string &testBundle)
 {
-    char hspListStr[] = "{ \
+    char hspListStr[] = "|HspList|{ \
         \"bundles\":[\"test.bundle1\", \"test.bundle2\"], \
         \"modules\":[\"module1\", \"module2\"], \
         \"versions\": [1001, 1002] \
-    }";
-    appProperty->hspList = {strlen(hspListStr), 0, hspListStr};
+    }|HspList|";
+    appProperty->extraInfo = {strlen(hspListStr), 0, hspListStr};
     int ret = OHOS::AppSpawn::SandboxUtils::MountAllHsp(appProperty, testBundle);
     EXPECT_NE(0, ret);
 }
@@ -1199,12 +1199,12 @@ static void ElementTypeIsNotStringTest(ClientSocket::AppProperty* appProperty, s
 static void ElementTypeIsNotSameTestSN(ClientSocket::AppProperty* appProperty, std::string &testBundle)
 {
     // element type is not same, string + number
-    char hspListStr[] = "{ \
+    char hspListStr[] = "|HspList|{ \
         \"bundles\":[\"test.bundle1\", \"test.bundle2\"], \
         \"modules\":[\"module1\", \"module2\"], \
         \"versions\": [\"v10001\", 1002] \
-    }";
-    appProperty->hspList = {strlen(hspListStr), 0, hspListStr};
+    }|HspList|";
+    appProperty->extraInfo = {strlen(hspListStr), 0, hspListStr};
     int ret = OHOS::AppSpawn::SandboxUtils::MountAllHsp(appProperty, testBundle);
     EXPECT_NE(0, ret);
 }
@@ -1212,12 +1212,12 @@ static void ElementTypeIsNotSameTestSN(ClientSocket::AppProperty* appProperty, s
 static void ElementTypeIsNotSameTestNS(ClientSocket::AppProperty* appProperty, std::string &testBundle)
 {
     // element type is not same, number + string
-    char hspListStr[] = "{ \
+    char hspListStr[] = "|HspList|{ \
         \"bundles\":[\"test.bundle1\", \"test.bundle2\"], \
         \"modules\":[\"module1\", \"module2\"], \
         \"versions\": [1001, \"v10002\"] \
-    }";
-    appProperty->hspList = {strlen(hspListStr), 0, hspListStr};
+    }|HspList|";
+    appProperty->extraInfo = {strlen(hspListStr), 0, hspListStr};
     int ret = OHOS::AppSpawn::SandboxUtils::MountAllHsp(appProperty, testBundle);
     EXPECT_NE(0, ret);
 }
@@ -1237,7 +1237,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_35, TestSize.Level0)
     ElementTypeIsNotStringTest(appProperty, testBundle);
     ElementTypeIsNotSameTestSN(appProperty, testBundle);
     ElementTypeIsNotSameTestNS(appProperty, testBundle);
-    appProperty->hspList = {};
+    appProperty->extraInfo = {};
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_35 end";
 }
 
@@ -1249,47 +1249,47 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_36, TestSize.Level0)
     std::string testBundle = strl1;
 
     { // empty name
-        char hspListStr[] = "{ \
+        char hspListStr[] = "|HspList|{ \
             \"bundles\":[\"\", \"test.bundle2\"], \
             \"modules\":[\"module1\", \"module2\"], \
             \"versions\":[\"v10001\", \"v10002\"] \
-        }";
-        m_appProperty->hspList = {strlen(hspListStr), 0, hspListStr};
+        }|HspList|";
+        m_appProperty->extraInfo = {strlen(hspListStr), 0, hspListStr};
         int ret = OHOS::AppSpawn::SandboxUtils::MountAllHsp(m_appProperty, testBundle);
         EXPECT_NE(0, ret);
     }
     { // name is .
-        char hspListStr[] = "{ \
+        char hspListStr[] = "|HspList|{ \
             \"bundles\":[\".\", \"test.bundle2\"], \
             \"modules\":[\"module1\", \"module2\"], \
             \"versions\":[\"v10001\", \"v10002\"] \
-        }";
-        m_appProperty->hspList = {strlen(hspListStr), 0, hspListStr};
+        }|HspList|";
+        m_appProperty->extraInfo = {strlen(hspListStr), 0, hspListStr};
         int ret = OHOS::AppSpawn::SandboxUtils::MountAllHsp(m_appProperty, testBundle);
         EXPECT_NE(0, ret);
     }
     { // name is ..
-        char hspListStr[] = "{ \
+        char hspListStr[] = "|HspList|{ \
             \"bundles\":[\"..\", \"test.bundle2\"], \
             \"modules\":[\"module1\", \"module2\"], \
             \"versions\":[\"v10001\", \"v10002\"] \
-        }";
-        m_appProperty->hspList = {strlen(hspListStr), 0, hspListStr};
+        }|HspList|";
+        m_appProperty->extraInfo = {strlen(hspListStr), 0, hspListStr};
         int ret = OHOS::AppSpawn::SandboxUtils::MountAllHsp(m_appProperty, testBundle);
         EXPECT_NE(0, ret);
     }
     { // name contains /
-        char hspListStr[] = "{ \
+        char hspListStr[] = "|HspList|{ \
             \"bundles\":[\"test/bundle1\", \"test.bundle2\"], \
             \"modules\":[\"module1\", \"module2\"], \
             \"versions\":[\"v10001\", \"v10002\"] \
-        }";
-        m_appProperty->hspList = {strlen(hspListStr), 0, hspListStr};
+        }|HspList|";
+        m_appProperty->extraInfo = {strlen(hspListStr), 0, hspListStr};
         int ret = OHOS::AppSpawn::SandboxUtils::MountAllHsp(m_appProperty, testBundle);
         EXPECT_NE(0, ret);
     }
 
-    m_appProperty->hspList = {};
+    m_appProperty->extraInfo = {};
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_36 end";
 }
 
@@ -1374,11 +1374,11 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_39, TestSize.Level0)
     m_appProperty->gid = 1000;
     m_appProperty->gidCount = 1;
     m_appProperty->flags |= 0x100;
-    m_appProperty->overlayInfo.totalLength = 55;
-    string overlayInfo = "/data/app/el1/bundle/public/com.ohos.demo/feature.hsp|";
-    overlayInfo+="/data/app/el1/bundle/public/com.ohos.demo/feature.hsp|";
-    m_appProperty->overlayInfo.data = new char[overlayInfo.length() + 1];
-    if (strcpy_s(m_appProperty->overlayInfo.data, overlayInfo.length() + 1, overlayInfo.c_str()) != 0) {
+    m_appProperty->extraInfo.totalLength = 55;
+    string overlayInfo = "|Overlay|/data/app/el1/bundle/public/com.ohos.demo/feature.hsp|";
+    overlayInfo+="/data/app/el1/bundle/public/com.ohos.demo/feature.hsp||Overlay|";
+    m_appProperty->extraInfo.data = new char[overlayInfo.length() + 1];
+    if (strcpy_s(m_appProperty->extraInfo.data, overlayInfo.length() + 1, overlayInfo.c_str()) != 0) {
         GTEST_LOG_(INFO) << "SetAppSandboxProperty start 1" << std::endl;
     }
     std::string sandBoxRootDir = "/mnt/sandbox/com.ohos.demo";
@@ -1402,11 +1402,11 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_39, TestSize.Level0)
     int32_t ret = OHOS::AppSpawn::SandboxUtils::SetOverlayAppSandboxProperty(m_appProperty, sandBoxRootDir);
     EXPECT_EQ(0, ret);
     m_appProperty->flags &= ~0x100;
-    m_appProperty->overlayInfo.totalLength = 0;
-    if (m_appProperty->overlayInfo.data != nullptr) {
-        delete [] m_appProperty->overlayInfo.data;
+    m_appProperty->extraInfo.totalLength = 0;
+    if (m_appProperty->extraInfo.data != nullptr) {
+        delete [] m_appProperty->extraInfo.data;
     }
-    m_appProperty->overlayInfo = {};
+    m_appProperty->extraInfo = {};
 
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_39 end";
 }
@@ -1431,27 +1431,27 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_40, TestSize.Level0)
         GTEST_LOG_(INFO) << "SetAppSandboxProperty set bundleName" << std::endl;
     }
     { // totalLength is 0
-        m_appProperty->dataGroupInfoList = {};
+        m_appProperty->extraInfo = {};
         int ret = OHOS::AppSpawn::SandboxUtils::MountAllGroup(m_appProperty, sandboxPrefix);
         EXPECT_EQ(0, ret);
     }
     { // data is nullptr
-        m_appProperty->dataGroupInfoList = {1, nullptr};
+        m_appProperty->extraInfo = {1, 0, nullptr};
         int ret = OHOS::AppSpawn::SandboxUtils::MountAllGroup(m_appProperty, sandboxPrefix);
         EXPECT_EQ(0, ret);
     }
     { // success
-        char dataGroupInfoListStr[] = "{ \
+        char dataGroupInfoListStr[] = "|DataGroup|{ \
             \"dataGroupId\":[\"1234abcd5678efgh\", \"abcduiop1234\"], \
             \"dir\":[\"/data/app/el2/100/group/091a68a9-2cc9-4279-8849-28631b598975\", \
                      \"/data/app/el2/100/group/ce876162-fe69-45d3-aa8e-411a047af564\"], \
             \"gid\":[\"20100001\", \"20100002\"] \
-        }";
-        m_appProperty->dataGroupInfoList = {strlen(dataGroupInfoListStr), dataGroupInfoListStr};
+        }|DataGroup|";
+        m_appProperty->extraInfo = {strlen(dataGroupInfoListStr), 0, dataGroupInfoListStr};
         int ret = OHOS::AppSpawn::SandboxUtils::MountAllGroup(m_appProperty, sandboxPrefix);
         EXPECT_EQ(0, ret);
     }
-    m_appProperty->dataGroupInfoList = {};
+    m_appProperty->extraInfo = {};
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_40 end";
 }
 } // namespace OHOS
