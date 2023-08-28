@@ -74,21 +74,11 @@ typedef enum AppOperateType_ {
 #define FDLEN2 2
 #define FD_INIT_VALUE 0
 
-typedef struct HspList_ {
+typedef struct ExtraInfo_ {
     uint32_t totalLength;
     uint32_t savedLength;
     char* data;
-} HspList;
-
-typedef struct {
-    uint32_t totalLength;
-    char* data;
-} OverlayInfo;
-
-typedef struct {
-    uint32_t totalLength;
-    char* data;
-} DataGroupInfoList;
+} ExtraInfo;
 
 typedef struct AppParameter_ {
     AppOperateType code;
@@ -114,9 +104,7 @@ typedef struct AppParameter_ {
     uint8_t reserved1;
     uint8_t reserved2;
 #endif
-    HspList hspList; // list of cross-app hsp (Harmony Shared Package) to mount onto app sandbox
-    OverlayInfo overlayInfo; // overlay info
-    DataGroupInfoList dataGroupInfoList; // list of the share sandbox path info
+    ExtraInfo extraInfo; // Extera info using by format |type1|...|type1|type2|...|type2|
 } AppParameter;
 
 #ifdef __cplusplus
