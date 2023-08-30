@@ -76,6 +76,9 @@ namespace {
     const std::string g_groupList_key_dataGroupId = "dataGroupId";
     const std::string g_groupList_key_gid = "gid";
     const std::string g_groupList_key_dir = "dir";
+    const std::string HSPLIST_SOCKET_TYPE = "|HspList|";
+    const std::string OVERLAY_SOCKET_TYPE = "|Overlay|";
+    const std::string DATA_GROUP_SOCKET_TYPE = "|DataGroup|";
     const char *g_actionStatuc = "check-action-status";
     const char *g_accountPrefix = "/account/data/";
     const char *g_accountNonPrefix = "/non_account/data/";
@@ -895,7 +898,7 @@ int32_t SandboxUtils::SetCommonAppSandboxProperty(const ClientSocket::AppPropert
     }
 
     ret = MountAllHsp(appProperty, sandboxPackagePath);
-    APPSPAWN_CHECK(ret == 0, return ret, "mount hspList failed, %{public}s", sandboxPackagePath.c_str());
+    APPSPAWN_CHECK(ret == 0, return ret, "mount extraInfo failed, %{public}s", sandboxPackagePath.c_str());
 
     ret = MountAllGroup(appProperty, sandboxPackagePath);
     APPSPAWN_CHECK(ret == 0, return ret, "mount groupList failed, %{public}s", sandboxPackagePath.c_str());
@@ -917,14 +920,35 @@ static inline bool CheckPath(const std::string& name)
     return !name.empty() && name != "." && name != ".." && name.find("/") == std::string::npos;
 }
 
+static std::string GetExtraInfoByType(const ClientSocket::AppProperty *appProperty, const std::string &type)
+{
+    if (appProperty->extraInfo.totalLength == 0 || appProperty->extraInfo.data == NULL) {
+        return "";
+    }
+
+    std::string extraInfoStr = std::string(appProperty->extraInfo.data);
+    std::size_t firstPos = extraInfoStr.find(type);
+    if (firstPos == std::string::npos && firstPos != (extraInfoStr.size() - 1)) {
+        return "";
+    }
+
+    extraInfoStr = extraInfoStr.substr(firstPos + type.size());
+    std::size_t secondPos = extraInfoStr.find(type);
+    if (secondPos == std::string::npos) {
+        return "";
+    }
+    return extraInfoStr.substr(0, secondPos);
+}
+
 int32_t SandboxUtils::MountAllHsp(const ClientSocket::AppProperty *appProperty, std::string &sandboxPackagePath)
 {
     int ret = 0;
-    if (appProperty->hspList.totalLength == 0 || appProperty->hspList.data == nullptr) {
+    string hspListInfo = GetExtraInfoByType(appProperty, HSPLIST_SOCKET_TYPE);
+    if (hspListInfo.length() == 0) {
         return ret;
     }
 
-    nlohmann::json hsps = nlohmann::json::parse(appProperty->hspList.data, nullptr, false);
+    nlohmann::json hsps = nlohmann::json::parse(hspListInfo.c_str(), nullptr, false);
     APPSPAWN_CHECK(!hsps.is_discarded() && hsps.contains(g_hspList_key_bundles) && hsps.contains(g_hspList_key_modules)
         && hsps.contains(g_hspList_key_versions), return -1, "MountAllHsp: json parse failed");
 
@@ -975,11 +999,12 @@ int32_t SandboxUtils::DoSandboxRootFolderCreateAdapt(std::string &sandboxPackage
 int32_t SandboxUtils::MountAllGroup(const ClientSocket::AppProperty *appProperty, std::string &sandboxPackagePath)
 {
     int ret = 0;
-    if (appProperty->dataGroupInfoList.totalLength == 0 || appProperty->dataGroupInfoList.data == nullptr) {
+    string dataGroupInfo = GetExtraInfoByType(appProperty, DATA_GROUP_SOCKET_TYPE);
+    if (dataGroupInfo.length() == 0) {
         return ret;
     }
 
-    nlohmann::json groups = nlohmann::json::parse(appProperty->dataGroupInfoList.data, nullptr, false);
+    nlohmann::json groups = nlohmann::json::parse(dataGroupInfo.c_str(), nullptr, false);
     APPSPAWN_CHECK(!groups.is_discarded() && groups.contains(g_groupList_key_dataGroupId)
         && groups.contains(g_groupList_key_gid) && groups.contains(g_groupList_key_dir), return -1,
             "MountAllGroup: json parse failed");
@@ -1087,11 +1112,8 @@ int32_t SandboxUtils::SetOverlayAppSandboxProperty(const ClientSocket::AppProper
     if ((appProperty->flags & APP_OVERLAY_FLAG) != APP_OVERLAY_FLAG) {
         return ret;
     }
-    if (appProperty->overlayInfo.totalLength == 0 || appProperty->overlayInfo.data == nullptr) {
-        return ret;
-    }
 
-    string overlayInfo = string(appProperty->overlayInfo.data, appProperty->overlayInfo.totalLength);
+    string overlayInfo = GetExtraInfoByType(appProperty, OVERLAY_SOCKET_TYPE);
     set<string> mountedSrcSet;
     vector<string> splits = split(overlayInfo, g_overlayDecollator);
     string sandboxOverlayPath = sandboxPackagePath + g_overlayPath;

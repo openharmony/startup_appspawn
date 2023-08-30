@@ -75,21 +75,12 @@ int32_t SetAppSandboxProperty(struct AppSpawnContent_ *content, AppSpawnClient *
         ret = SandboxUtils::SetAppSandboxProperty(client);
     }
     
-    // free HspList
-    if (clientExt->property.hspList.data != nullptr) {
-        free(clientExt->property.hspList.data);
-        clientExt->property.hspList = {};
+    // free ExtraInfo
+    if (clientExt->property.extraInfo.data != nullptr) {
+        free(clientExt->property.extraInfo.data);
+        clientExt->property.extraInfo = {};
     }
-    // free OverlayInfo
-    if (clientExt->property.overlayInfo.data != nullptr) {
-        free(clientExt->property.overlayInfo.data);
-        clientExt->property.overlayInfo = {};
-    }
-    // free dataGroupInfoList
-    if (clientExt->property.dataGroupInfoList.data != nullptr) {
-        free(clientExt->property.dataGroupInfoList.data);
-        clientExt->property.dataGroupInfoList = {};
-    }
+
     // for module test do not create sandbox
     if (strncmp(clientExt->property.bundleName,
         MODULE_TEST_BUNDLE_NAME.c_str(), MODULE_TEST_BUNDLE_NAME.size()) == 0) {

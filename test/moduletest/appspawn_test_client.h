@@ -103,9 +103,9 @@ public:
         request->accessTokenId = 0x200a509d; // 0x200a509d test token id
         request->accessTokenIdEx = 0x4832514205; // 0x4832514205 test token id
         request->allowInternet = 1;
-        request->hspList.totalLength = 0;
-        request->hspList.savedLength = 0;
-        request->hspList.data = nullptr;
+        request->extraInfo.totalLength = 0;
+        request->extraInfo.savedLength = 0;
+        request->extraInfo.data = nullptr;
         int ret = strcpy_s(request->apl, sizeof(request->processName), processName.c_str());
         ret += strcpy_s(request->processName, sizeof(request->processName), processName.c_str());
         ret += strcpy_s(request->bundleName, sizeof(request->bundleName), processName.c_str());
