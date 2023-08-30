@@ -376,7 +376,7 @@ static int32_t WaitForDebugger(AppSpawnClient *client)
     return 0;
 }
 
-static void Free(char **argv, HspList *hspList, OverlayInfo *overlayInfo, DataGroupInfoList *dataGroupInfoList)
+static void Free(char **argv, ExtraInfo *extraInfo)
 {
     argv[0] = NULL;
     for (int i = 0; i < NULL_INDEX; i++) {
@@ -387,23 +387,11 @@ static void Free(char **argv, HspList *hspList, OverlayInfo *overlayInfo, DataGr
     }
     free(argv);
 
-    if (hspList != NULL) {
-        hspList->totalLength = 0;
-        hspList->savedLength = 0;
-        free(hspList->data);
-        hspList->data = NULL;
-    }
-
-    if (overlayInfo != NULL) {
-        overlayInfo->totalLength = 0;
-        free(overlayInfo->data);
-        overlayInfo->data = NULL;
-    }
-
-    if (dataGroupInfoList != NULL) {
-        dataGroupInfoList->totalLength = 0;
-        free(dataGroupInfoList->data);
-        dataGroupInfoList->data = NULL;
+    if (extraInfo != NULL) {
+        extraInfo->totalLength = 0;
+        extraInfo->savedLength = 0;
+        free(extraInfo->data);
+        extraInfo->data = NULL;
     }
 }
 
@@ -485,31 +473,10 @@ static int ColdStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client
         ret = EncodeAppClient(client, param, originLen);
         APPSPAWN_CHECK(ret == 0, break, "Failed to encode client");
 
-        len = sprintf_s(buffer, sizeof(buffer), "%u", appProperty->hspList.totalLength);
-        APPSPAWN_CHECK(len > 0 && len < (int)sizeof(buffer), break, "Invalid hspList.totalLength");
-        argv[HSP_LIST_LEN_INDEX] = strdup(buffer);
-        argv[HSP_LIST_INDEX] = appProperty->hspList.data;
-
-        if (appProperty->hspList.totalLength == 0 && (appProperty->overlayInfo.totalLength > 0
-            || appProperty->dataGroupInfoList.totalLength > 0)) {
-            argv[HSP_LIST_INDEX] = strdup("0");
-        } else {
-            argv[HSP_LIST_INDEX] = appProperty->hspList.data;
-        }
-        len = sprintf_s(buffer, sizeof(buffer), "%u", appProperty->overlayInfo.totalLength);
-        APPSPAWN_CHECK(len > 0 && len < (int)sizeof(buffer), break, "Invalid overlayInfo.totalLength");
-        argv[OVERLAY_LEN_INDEX] = strdup(buffer);
-        argv[OVERLAY_INDEX] = appProperty->overlayInfo.data;
-        
-        if (appProperty->overlayInfo.totalLength == 0 && appProperty->dataGroupInfoList.totalLength) {
-            argv[OVERLAY_INDEX] = strdup("0");
-        } else {
-            argv[OVERLAY_INDEX] = appProperty->overlayInfo.data;
-        }
-        len = sprintf_s(buffer, sizeof(buffer), "%u", appProperty->dataGroupInfoList.totalLength);
-        APPSPAWN_CHECK(len > 0 && len < (int)sizeof(buffer), break, "Invalid dataGroupInfoList.totalLength");
-        argv[DIR_LIST_LEN_INDEX] = strdup(buffer);
-        argv[DIR_LIST_INDEX] = appProperty->dataGroupInfoList.data;
+        len = sprintf_s(buffer, sizeof(buffer), "%u", appProperty->extraInfo.totalLength);
+        APPSPAWN_CHECK(len > 0 && len < (int)sizeof(buffer), break, "Invalid extraInfo.totalLength");
+        argv[EXTRA_INFO_LEN_INDEX] = strdup(buffer);
+        argv[EXTRA_INFO_INDEX] = appProperty->extraInfo.data;
         ret = 0;
     } while (0);
 
@@ -525,7 +492,7 @@ static int ColdStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client
         }
     }
     argv[0] = NULL;
-    Free(argv, &appProperty->hspList, &appProperty->overlayInfo, &appProperty->dataGroupInfoList);
+    Free(argv, &appProperty->extraInfo);
     return ret;
 }
 
@@ -556,62 +523,6 @@ static int GetStringFromArg(char *begin, char **end, char *value, uint32_t value
         value[0] = '\0';
     }
     return 0;
-}
-
-static int GetOverlayInfoFromArg(int argc, char *const argv[], AppSpawnClientExt *client)
-{
-    client->property.overlayInfo.totalLength = 0;
-    client->property.overlayInfo.data = NULL;
-    int ret = 0;
-    if (argc > OVERLAY_LEN_INDEX && argv[OVERLAY_LEN_INDEX] != NULL) {
-        client->property.overlayInfo.totalLength = atoi(argv[OVERLAY_LEN_INDEX]);
-        APPSPAWN_CHECK_ONLY_EXPER(client->property.overlayInfo.totalLength != 0, return 0);
-        APPSPAWN_CHECK(argc > OVERLAY_INDEX && argv[OVERLAY_INDEX] != NULL, return -1, "Invalid overlayInfo.data");
-        client->property.overlayInfo.data = malloc(client->property.overlayInfo.totalLength);
-        APPSPAWN_CHECK(client->property.overlayInfo.data != NULL, return -1, "Failed to malloc overlayInfo.data");
-        ret = strcpy_s(client->property.overlayInfo.data,
-                       client->property.overlayInfo.totalLength,
-                       argv[OVERLAY_INDEX]);
-        APPSPAWN_CHECK(ret == 0, return -1, "Failed to strcpy overlayInfo.data");
-    }
-    return ret;
-}
-
-static int GetDataGroupListInfoFromArg(int argc, char *const argv[], AppSpawnClientExt *client)
-{
-    client->property.dataGroupInfoList.totalLength = 0;
-    client->property.dataGroupInfoList.data = NULL;
-    int ret = 0;
-    if (argc > DIR_LIST_LEN_INDEX && argv[DIR_LIST_LEN_INDEX] != NULL) {
-        client->property.dataGroupInfoList.totalLength = atoi(argv[DIR_LIST_LEN_INDEX]);
-        APPSPAWN_CHECK_ONLY_EXPER(client->property.dataGroupInfoList.totalLength != 0, return 0);
-        APPSPAWN_CHECK(argc > DIR_LIST_INDEX && argv[DIR_LIST_INDEX] != NULL, return -1,
-            "Invalid dataGroupInfoList.data");
-        client->property.dataGroupInfoList.data = malloc(client->property.dataGroupInfoList.totalLength);
-        APPSPAWN_CHECK(client->property.dataGroupInfoList.data != NULL, return -1,
-            "Failed to malloc dataGroupInfoList.data");
-        ret = strcpy_s(client->property.dataGroupInfoList.data,
-            client->property.dataGroupInfoList.totalLength, argv[DIR_LIST_INDEX]);
-        APPSPAWN_CHECK(ret == 0, return -1, "Failed to strcpy dataGroupInfoList.data");
-    }
-    return ret;
-}
-
-static int GetHspListInfoFromArg(int argc, char *const argv[], AppSpawnClientExt *client)
-{
-    client->property.hspList.totalLength = 0;
-    client->property.hspList.data = NULL;
-    int ret = 0;
-    if (argc > HSP_LIST_LEN_INDEX && argv[HSP_LIST_LEN_INDEX] != NULL) {
-        client->property.hspList.totalLength = atoi(argv[HSP_LIST_LEN_INDEX]);
-        APPSPAWN_CHECK_ONLY_EXPER(client->property.hspList.totalLength != 0, return 0);
-        APPSPAWN_CHECK(argc > HSP_LIST_INDEX && argv[HSP_LIST_INDEX] != NULL, return -1, "Invalid hspList.data");
-        client->property.hspList.data = malloc(client->property.hspList.totalLength);
-        APPSPAWN_CHECK(client->property.hspList.data != NULL, return -1, "Failed to malloc hspList.data");
-        ret = strcpy_s(client->property.hspList.data, client->property.hspList.totalLength, argv[HSP_LIST_INDEX]);
-        APPSPAWN_CHECK(ret == 0, return -1, "Failed to strcpy hspList.data");
-    }
-    return ret;
 }
 
 int GetAppSpawnClientFromArg(int argc, char *const argv[], AppSpawnClientExt *client)
@@ -655,13 +566,19 @@ int GetAppSpawnClientFromArg(int argc, char *const argv[], AppSpawnClientExt *cl
     ret += GetUInt64FromArg(NULL, &end, &client->property.accessTokenIdEx);
     APPSPAWN_CHECK(ret == 0, return -1, "Failed to access token info");
 
-    ret = GetDataGroupListInfoFromArg(argc, argv, client);
-    APPSPAWN_CHECK(ret == 0, return -1, "Failed to get data group list info");
-
-    ret = GetOverlayInfoFromArg(argc, argv, client);
-    APPSPAWN_CHECK(ret == 0, return -1, "Failed to overlay info");
-
-    return GetHspListInfoFromArg(argc, argv, client);
+    client->property.extraInfo.totalLength = 0;
+    client->property.extraInfo.data = NULL;
+    ret = 0;
+    if (argc > EXTRA_INFO_LEN_INDEX && argv[EXTRA_INFO_LEN_INDEX] != NULL) {
+        client->property.extraInfo.totalLength = atoi(argv[EXTRA_INFO_LEN_INDEX]);
+        APPSPAWN_CHECK_ONLY_EXPER(client->property.extraInfo.totalLength != 0, return 0);
+        APPSPAWN_CHECK(argc > EXTRA_INFO_INDEX && argv[EXTRA_INFO_INDEX] != NULL, return -1, "Invalid extraInfo.data");
+        client->property.extraInfo.data = malloc(client->property.extraInfo.totalLength);
+        APPSPAWN_CHECK(client->property.extraInfo.data != NULL, return -1, "Failed to malloc extraInfo.data");
+        ret = strcpy_s(client->property.extraInfo.data, client->property.extraInfo.totalLength, argv[EXTRA_INFO_INDEX]);
+        APPSPAWN_CHECK(ret == 0, return -1, "Failed to strcpy extraInfo.data");
+    }
+    return ret;
 }
 
 void SetContentFunction(AppSpawnContent *content)
