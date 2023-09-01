@@ -43,7 +43,7 @@
                 "hitrace",
                 "common_event_service",
                 "hisysevent",
-                "security_component",
+                "security_component_manager",
                 "netmanager",
                 "ace_engine"
             ],
