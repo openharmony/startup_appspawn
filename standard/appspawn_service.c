@@ -676,13 +676,7 @@ static int CreateAppSpawnServer(AppSpawnContentExt *appSpawnContent, const char 
     ret = LE_CreateStreamServer(LE_GetDefaultLoop(), &appSpawnContent->server, &info);
     APPSPAWN_CHECK(ret == 0, return -1, "Failed to create socket for %{public}s", path);
     // create socket
-    ret = chmod(path, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
-    APPSPAWN_CHECK(ret == 0, return -1, "Failed to chmod %{public}s, err %{public}d. ", path, errno);
-    if (appSpawnContent->content.isNweb) {
-        ret = lchown(path, 3081, 3081); // 3081 is appspawn gid
-    } else {
-        ret = lchown(path, 0, 4000); // 4000 is appspawn gid
-    }
+
     APPSPAWN_CHECK(ret == 0, return -1, "Failed to lchown %{public}s, err %{public}d. ", path, errno);
     APPSPAWN_LOGI("CreateAppSpawnServer path %{public}s fd %{public}d",
         path, LE_GetSocketFd(appSpawnContent->server));
