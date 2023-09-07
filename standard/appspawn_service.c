@@ -161,34 +161,6 @@ static int SendResponse(AppSpawnClientExt *client, const char *buff, size_t buff
     return LE_Send(LE_GetDefaultLoop(), client->stream, handle, buffSize);
 }
 
-static pid_t GetParentPidOfProcess(pid_t pid)
-{
-#define TMP_READ_BUF_LEN (128)
-    char buf[TMP_READ_BUF_LEN];
-
-    snprintf_s(buf, sizeof(buf), sizeof(buf) - 1, "/proc/%d/status", pid);
-    FILE *file = fopen(buf, "r");
-    if (file == NULL) {
-        return 0;
-    }
-
-    while (1) {
-        size_t len = fread((void *)buf, sizeof(buf) - 1, 1, file);
-        if (len <= 0) {
-            break;
-        }
-        buf[len] = '\0';
-        if (strstr(buf, "PPid: ") == NULL) {
-            continue;
-        }
-        fclose(file);
-        return (pid_t)atoi(buf + sizeof("PPid:"));
-    }
-
-    fclose(file);
-    return 0;
-}
-
 static void KillProcessesByCGroup(uid_t uid, const AppInfo *appInfo)
 {
     if (appInfo == NULL) {
@@ -209,8 +181,9 @@ static void KillProcessesByCGroup(uid_t uid, const AppInfo *appInfo)
         }
 
         // If it is another process spawned by appspawn with the same package name, just ignore
-        pid_t ppid = GetParentPidOfProcess(pid);
-        if (ppid == getpid()) {
+        AppInfo *newApp = GetAppInfo(pid);
+        APPSPAWN_LOGI("Got app %{public}s in same group for pid %{public}d.", newApp->name, pid);
+        if (newApp != NULL) {
             continue;
         }
         APPSPAWN_LOGI("Kill app pid %{public}d now ...", pid);
