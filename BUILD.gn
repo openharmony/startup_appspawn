@@ -179,17 +179,3 @@ ohos_prebuilt_etc("appspawn.rc") {
   subsystem_name = "${subsystem_name}"
   part_name = "${part_name}"
 }
-
-ohos_prebuilt_etc("nwebspawn.rc") {
-  source = "nwebspawn.cfg"
-  relative_install_dir = "init"
-  subsystem_name = "${subsystem_name}"
-  part_name = "${part_name}"
-}
-
-group("nweb") {
-  deps = []
-  if (appspawn_support_nweb) {
-    deps += [ ":nwebspawn.rc" ]
-  }
-}
