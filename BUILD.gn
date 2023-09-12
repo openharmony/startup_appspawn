@@ -90,12 +90,6 @@ ohos_executable("appspawn") {
   part_name = "${part_name}"
 }
 
-ohos_prebuilt_etc("asan.options") {
-  source = "asan.options"
-  subsystem_name = "${subsystem_name}"
-  part_name = "${part_name}"
-}
-
 ohos_shared_library("appspawn_helper") {
   sources = [ "${appspawn_path}/common/appspawn_server.c" ]
   configs = [ ":appspawn_config" ]
@@ -133,10 +127,7 @@ ohos_static_library("appspawn_server") {
   }
   configs = [ ":appspawn_config" ]
   ldflags = [ "-Wl,--dynamic-linker,/system/bin/linker64z" ]
-  deps = [
-    ":asan.options",
-    "//third_party/selinux:libselinux",
-  ]
+  deps = [ "//third_party/selinux:libselinux" ]
   external_deps = [
     "access_token:libtoken_setproc",
     "access_token:libtokenid_sdk",
