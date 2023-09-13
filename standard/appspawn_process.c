@@ -593,9 +593,13 @@ void SetContentFunction(AppSpawnContent *content)
     content->setFileDescriptors = SetFileDescriptors;
     content->coldStartApp = ColdStartApp;
     content->setAsanEnabledEnv = SetAsanEnabledEnv;
+    if (content->isNweb) {
+        content->getWrapBundleNameValue = NULL;
+    } else {
 #ifdef ASAN_DETECTOR
-    content->getWrapBundleNameValue = GetWrapBundleNameValue;
+        content->getWrapBundleNameValue = GetWrapBundleNameValue;
 #endif
+    }
     content->setAppSandbox = SetAppSandboxProperty;
     content->setCapabilities = SetCapabilities;
     content->setUidGidFilter = SetUidGidFilter;
