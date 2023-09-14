@@ -69,6 +69,11 @@
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
+                    "src-path" : "/system/resources",
+                    "sandbox-path" : "/system/resources",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
                     "src-path" : "/vendor/lib",
                     "sandbox-path" : "/vendor/lib",
                     "sandbox-flags" : [ "bind", "rec" ],
