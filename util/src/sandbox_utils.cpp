@@ -47,15 +47,10 @@ namespace {
     constexpr int32_t UID_BASE = 200000;
     constexpr int32_t FUSE_OPTIONS_MAX_LEN = 128;
     constexpr int32_t DLP_FUSE_FD = 1000;
-    constexpr int32_t DATABASE_DIR_GID = 3012;
-    constexpr int32_t DFS_GID = 1009;
     constexpr static mode_t FILE_MODE = 0711;
-    constexpr static mode_t BASE_FOLDER_FILE_MODE = 0700;
-    constexpr static mode_t DATABASE_FOLDER_FILE_MODE = S_IRWXU | S_IRWXG;
     constexpr static mode_t BASIC_MOUNT_FLAGS = MS_REC | MS_BIND;
     constexpr std::string_view APL_SYSTEM_CORE("system_core");
     constexpr std::string_view APL_SYSTEM_BASIC("system_basic");
-    const std::string g_packageItems[] = {{"cache"}, {"files"}, {"temp"}, {"preferences"}, {"haps"}};
     const std::string g_physicalAppInstallPath = "/data/app/el1/bundle/public/";
     const std::string g_sandboxGroupPath = "/data/storage/el2/group/";
     const std::string g_sandboxHspInstallPath = "/data/storage/el1/bundle/";
@@ -80,16 +75,11 @@ namespace {
     const std::string OVERLAY_SOCKET_TYPE = "|Overlay|";
     const std::string DATA_GROUP_SOCKET_TYPE = "|DataGroup|";
     const char *g_actionStatuc = "check-action-status";
-    const char *g_accountPrefix = "/account/data/";
-    const char *g_accountNonPrefix = "/non_account/data/";
     const char *g_appBase = "app-base";
     const char *g_appResources = "app-resources";
     const char *g_appAplName = "app-apl-name";
-    const char *g_basePrefix = "/base";
     const char *g_commonPrefix = "common";
-    const char *g_databasePrefix = "/database";
     const char *g_destMode = "dest-mode";
-    const char *g_el2Prefix = "/data/app/el2";
     const char *g_fsType = "fs-type";
     const char *g_linkName = "link-name";
     const char *g_mountPrefix = "mount-paths";
@@ -101,7 +91,6 @@ namespace {
     const char *g_sandBoxFlags = "sandbox-flags";
     const char *g_sandBoxShared = "sandbox-shared";
     const char *g_sandBoxSwitchPrefix = "sandbox-switch";
-    const char *g_serviceEl2Prefix = "/data/serivce/el2";
     const char *g_symlinkPrefix = "symbol-links";
     const char *g_sandboxRootPrefix = "sandbox-root";
     const char *g_topSandBoxSwitchPrefix = "top-sandbox-switch";
@@ -172,12 +161,6 @@ uint32_t SandboxUtils::GetNamespaceFlagsFromConfig(const char *bundleName)
     nlohmann::json app = namespaceApp[bundleName][0];
     cloneFlags |= NamespaceFlagsFromConfig(app[g_sandBoxCloneFlags].get<std::vector<std::string>>());
     return cloneFlags;
-}
-
-static void MkdirAndChown(const std::string &srcPath, mode_t filemode, uint32_t uid, uint32_t gid)
-{
-    mkdir(srcPath.c_str(), filemode);
-    chown(srcPath.c_str(), uid, gid);
 }
 
 static void MakeDirRecursive(const std::string &path, mode_t mode)
@@ -446,66 +429,6 @@ static uint32_t ConvertFlagStr(const std::string &flagStr)
     return 0;
 }
 
-static void SetSelinuxCondition(const std::string &srcPath, const ClientSocket::AppProperty *appProperty)
-{
-#ifndef APPSPAWN_TEST
-#ifdef WITH_SELINUX
-            HapContext hapContext;
-            HapFileInfo hapFileInfo;
-            hapFileInfo.pathNameOrig.emplace_back(srcPath);
-            hapFileInfo.apl = appProperty->apl;
-            hapFileInfo.packageName = appProperty->bundleName;
-            hapFileInfo.flags = SELINUX_HAP_RESTORECON_RECURSE;
-            hapFileInfo.hapFlags = appProperty->hapFlags;
-            hapContext.HapFileRestorecon(hapFileInfo);
-#endif
-#endif
-}
-
-/* Check and Create physical /data/app/el2 path when BMS failed to create related package folder */
-void SandboxUtils::CheckAndPrepareSrcPath(const ClientSocket::AppProperty *appProperty, const std::string &srcPath)
-{
-    if (access(srcPath.c_str(), F_OK) == 0) {
-        return;
-    }
-
-    if (srcPath.find(g_el2Prefix) != std::string::npos) {
-        if (srcPath.find(g_basePrefix) != std::string::npos) {
-            MakeDirRecursive(srcPath.c_str(), BASE_FOLDER_FILE_MODE);
-            chown(srcPath.c_str(), appProperty->uid, appProperty->gid);
-
-            for (const std::string &packageItem : g_packageItems) {
-                const std::string newPath = srcPath + "/" + packageItem;
-                MkdirAndChown(newPath, BASE_FOLDER_FILE_MODE, appProperty->uid, appProperty->gid);
-            }
-            SetSelinuxCondition(srcPath, appProperty);
-        } else if (srcPath.find(g_databasePrefix) != std::string::npos) {
-            MakeDirRecursive(srcPath.c_str(), DATABASE_FOLDER_FILE_MODE);
-            /* Add S_ISGID mode and change group owner to DATABASE */
-            chmod(srcPath.c_str(), DATABASE_FOLDER_FILE_MODE | S_ISGID);
-            chown(srcPath.c_str(), appProperty->uid, DATABASE_DIR_GID);
-            SetSelinuxCondition(srcPath, appProperty);
-        } else {
-            APPSPAWN_LOGI("failed to access path: %{public}s", srcPath.c_str());
-        }
-    }
-
-    if (srcPath.find(g_serviceEl2Prefix) != std::string::npos) {
-        if (srcPath.find(g_accountPrefix) != std::string::npos) {
-            MakeDirRecursive(srcPath.c_str(), DATABASE_FOLDER_FILE_MODE);
-            chmod(srcPath.c_str(), DATABASE_FOLDER_FILE_MODE | S_ISGID);
-            chown(srcPath.c_str(), appProperty->uid, appProperty->gid);
-        } else if (srcPath.find(g_accountNonPrefix) != std::string::npos) {
-            MakeDirRecursive(srcPath.c_str(), DATABASE_FOLDER_FILE_MODE);
-            /* Add S_ISGID mode and change group owner to DFS */
-            chmod(srcPath.c_str(), DATABASE_FOLDER_FILE_MODE | S_ISGID);
-            chown(srcPath.c_str(), appProperty->uid, DFS_GID);
-        } else {
-            APPSPAWN_LOGI("failed to access path: %{public}s", srcPath.c_str());
-        }
-    }
-}
-
 int SandboxUtils::DoAllMntPointsMount(const ClientSocket::AppProperty *appProperty,
     nlohmann::json &appConfig, const std::string &section)
 {
@@ -543,8 +466,6 @@ int SandboxUtils::DoAllMntPointsMount(const ClientSocket::AppProperty *appProper
         const char* fsTypePoint = fsType.empty() ? nullptr : fsType.c_str();
         mode_t mountSharedFlag = (mntPoint.find(g_mountSharedFlag) != mntPoint.end()) ? MS_SHARED : MS_SLAVE;
 
-        /* check and prepare /data/app/el2 base and database package path to avoid BMS failed to create this folder */
-        CheckAndPrepareSrcPath(appProperty, srcPath);
         /* if app mount failed for special strategy, we need deal with common mount config */
         int ret = HandleSpecialAppMount(appProperty, srcPath, sandboxPath, fsType, mountFlags);
         if (ret < 0) {
