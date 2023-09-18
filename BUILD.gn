@@ -148,9 +148,10 @@ ohos_static_library("appspawn_server") {
   ]
 
   if (!defined(global_parts_info) ||
-      defined(global_parts_info.security_security_component)) {
+      defined(global_parts_info.security_security_component_manager)) {
     defines += [ "SECURITY_COMPONENT_ENABLE" ]
-    external_deps += [ "security_component:libsecurity_component_enhance_sdk" ]
+    external_deps +=
+        [ "security_component_manager:libsecurity_component_enhance_sdk" ]
   }
 
   if (build_selinux) {
