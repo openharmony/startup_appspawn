@@ -25,6 +25,7 @@ std::set<std::string> AppspawnMountPermission::GetMountPermissionList()
 {
     if (!AppspawnMountPermission::g_IsLoad) {
         LoadAppSandboxConfig();
+        APPSPAWN_LOGI("GetMountPermissionList LoadAppSandboxConfig");
         AppspawnMountPermission::g_IsLoad = true;
     }
     return SandboxUtils::GetMountPermissionNames();
