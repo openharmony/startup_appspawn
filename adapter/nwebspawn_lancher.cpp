@@ -17,6 +17,7 @@
 
 #define NWEB_UID 3081
 #define NWEB_GID 3081
+#define NWEB_NAME "nwebspawn"
 #define CAP_NUM 2
 #define BITLEN32 32
 
@@ -47,6 +48,7 @@ pid_t NwebSpawnLanch()
         for (int i = 0; i <= CAP_LAST_CAP; ++i) {
             prctl(PR_CAP_AMBIENT, PR_CAP_AMBIENT_RAISE, i, 0, 0);
         }
+        (void)prctl(PR_SET_NAME, NWEB_NAME);
         setuid(NWEB_UID);
         setgid(NWEB_GID);
         APPSPAWN_LOGI("nwebspawn fork success");
