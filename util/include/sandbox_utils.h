@@ -84,6 +84,8 @@ private:
                                             std::string &sandboxPackagePath);
     static int32_t SetOverlayAppSandboxProperty(const ClientSocket::AppProperty *appProperty,
                                             std::string &sandboxPackagePath);
+    static int32_t SetBundleResourceAppSandboxProperty(const ClientSocket::AppProperty *appProperty,
+                                            std::string &sandboxPackagePath);
     static int32_t DoSandboxFilePermissionBind(ClientSocket::AppProperty *appProperty,
                                                nlohmann::json &wholeConfig);
     static int32_t SetPermissionAppSandboxProperty_(ClientSocket::AppProperty *appProperty,
