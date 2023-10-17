@@ -69,6 +69,7 @@ typedef enum AppOperateType_ {
 #define APP_NATIVEDEBUG 0X40
 #define APP_NO_SANDBOX 0x80  // Do not enter sandbox
 #define APP_OVERLAY_FLAG 0x100
+#define GET_BUNDLE_RESOURCES_FLAG 0x200
 
 #define BITLEN32 32
 #define FDLEN2 2

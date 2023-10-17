@@ -55,6 +55,8 @@ namespace {
     const std::string g_sandboxGroupPath = "/data/storage/el2/group/";
     const std::string g_sandboxHspInstallPath = "/data/storage/el1/bundle/";
     const std::string g_sandBoxAppInstallPath = "/data/accounts/account_0/applications/";
+    const std::string g_bundleResourceSrcPath = "/data/service/el1/public/bms/bundle_resources/";
+    const std::string g_bundleResourceDestPath = "/data/storage/bundle_resources/";
     const std::string g_dataBundles = "/data/bundles/";
     const std::string g_userId = "<currentUserId>";
     const std::string g_packageName = "<PackageName>";
@@ -1063,6 +1065,20 @@ int32_t SandboxUtils::SetOverlayAppSandboxProperty(const ClientSocket::AppProper
     return ret;
 }
 
+int32_t SandboxUtils::SetBundleResourceAppSandboxProperty(const ClientSocket::AppProperty *appProperty,
+                                                   string &sandboxPackagePath)
+{
+    int ret = 0;
+    if ((appProperty->flags & GET_BUNDLE_RESOURCES_FLAG) != GET_BUNDLE_RESOURCES_FLAG) {
+        return ret;
+    }
+
+    string srcPath = g_bundleResourceSrcPath;
+    string destPath = sandboxPackagePath + g_bundleResourceDestPath;
+    ret = DoAppSandboxMountOnce(
+        srcPath.c_str(), destPath.c_str(), nullptr, BASIC_MOUNT_FLAGS, nullptr);
+    return ret;
+}
 
 int32_t SandboxUtils::SetAppSandboxProperty(AppSpawnClient *client)
 {
@@ -1107,6 +1123,10 @@ int32_t SandboxUtils::SetAppSandboxProperty(AppSpawnClient *client)
 
     rc = SetOverlayAppSandboxProperty(appProperty, sandboxPackagePath);
     APPSPAWN_CHECK(rc == 0, return rc, "SetOverlayAppSandboxProperty failed, packagename is %s",
+        bundleName.c_str());
+
+    rc = SetBundleResourceAppSandboxProperty(appProperty, sandboxPackagePath);
+    APPSPAWN_CHECK(rc == 0, return rc, "SetBundleResourceAppSandboxProperty failed, packagename is %s",
         bundleName.c_str());
 
 #ifndef APPSPAWN_TEST
@@ -1170,6 +1190,10 @@ int32_t SandboxUtils::SetAppSandboxPropertyNweb(AppSpawnClient *client)
 
     rc = SetOverlayAppSandboxProperty(appProperty, sandboxPackagePath);
     APPSPAWN_CHECK(rc == 0, return rc, "SetOverlayAppSandboxProperty failed, packagename is %s",
+        bundleName.c_str());
+
+    rc = SetBundleResourceAppSandboxProperty(appProperty, sandboxPackagePath);
+    APPSPAWN_CHECK(rc == 0, return rc, "SetBundleResourceAppSandboxProperty failed, packagename is %s",
         bundleName.c_str());
 
 #ifndef APPSPAWN_TEST
