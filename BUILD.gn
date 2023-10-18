@@ -26,10 +26,7 @@ config("appspawn_config") {
     "//base/global/resource_management/interfaces/inner_api/include",
     "//base/security/access_token/interfaces/innerkits/token_setproc/include",
     "//base/startup/init/services/log",
-    "//base/startup/init/services/include",
-    "//base/startup/init/services/include/param",
     "//base/startup/init/services/loopevent/include",
-    "//base/startup/init/interfaces/innerkits/include",
     "//third_party/json/include",
     "//base/notification/eventhandler/interfaces/inner_api",
     "//foundation/communication/ipc/interfaces/innerkits/ipc_core/include",
@@ -98,7 +95,10 @@ ohos_shared_library("appspawn_helper") {
     "-fvisibility=hidden",
     "-fstack-protector-all",
   ]
-  external_deps = [ "hilog:libhilog" ]
+  external_deps = [
+    "hilog:libhilog",
+    "init:libbegetutil",
+  ]
 
   install_enable = true
   subsystem_name = "${subsystem_name}"
