@@ -182,8 +182,8 @@ static void KillProcessesByCGroup(uid_t uid, const AppInfo *appInfo)
 
         // If it is another process spawned by appspawn with the same package name, just ignore
         AppInfo *newApp = GetAppInfo(pid);
-        APPSPAWN_LOGI("Got app %{public}s in same group for pid %{public}d.", newApp->name, pid);
         if (newApp != NULL) {
+            APPSPAWN_LOGI("Got app %{public}s in same group for pid %{public}d.", newApp->name, pid);
             continue;
         }
         APPSPAWN_LOGI("Kill app pid %{public}d now ...", pid);
