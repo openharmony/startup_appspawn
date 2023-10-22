@@ -549,21 +549,6 @@
                     "sandbox-flags": [ "bind", "rec" ]
                 },
                 {
-                    "src-path": "/storage/media/<currentUserId>/local/files/Download",
-                    "sandbox-path": "/storage/Users/currentUser/Download",
-                    "sandbox-flags": ["bind", "rec" ]
-                },
-                {
-                    "src-path": "/storage/media/<currentUserId>/local/files/Desktop",
-                    "sandbox-path": "/storage/Users/currentUser/Desktop",
-                    "sandbox-flags": ["bind", "rec" ]
-                },
-                {
-                    "src-path": "/storage/media/<currentUserId>/local/files/Documents",
-                    "sandbox-path": "/storage/Users/currentUser/Documents",
-                    "sandbox-flags": ["bind", "rec" ]
-                },
-                {
                     "src-path": "/storage/media/<currentUserId>/local/files/.Recent",
                     "sandbox-path": "/storage/.Recent/Users/<currentUserId>",
                     "sandbox-flags": [ "bind", "rec" ]
