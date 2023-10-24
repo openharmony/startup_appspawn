@@ -23,19 +23,22 @@ ohos_static_library("appspawn_socket_client") {
   sources = [
     "client/appspawn_socket.cpp",
     "client/client_socket.cpp",
+    "src/appspawn_mount_permission.cpp",
   ]
   include_dirs = [
     "include",
     "//base/startup/appspawn/common",
+    "//third_party/json/include",
   ]
   defines = []
   if (is_asan) {
     defines += [ "APPSPAWN_ASAN" ]
   }
   public_configs = [ ":exported_header_files" ]
-  deps = [ "${appspawn_path}:appspawn_server" ]
+  deps = []
   external_deps = [
     "c_utils:utils",
+    "config_policy:configpolicy_util",
     "hilog:libhilog",
     "init:libbegetutil",
   ]

@@ -18,17 +18,26 @@
 
 #include <string>
 #include <set>
+#include <mutex>
+#include "nlohmann/json.hpp"
+
 namespace OHOS {
 namespace AppSpawn {
 class AppspawnMountPermission {
 public:
+    static void GetPermissionFromJson(
+        std::set<std::string> &appSandboxPremissionSet, nlohmann::json &appSandboxPremission);
+    static void LoadPermissionNames(void);
     static std::set<std::string> GetMountPermissionList();
     static uint32_t GenPermissionCode(const std::set<std::string> &permissions);
     static bool IsMountPermission(uint32_t code, const std::string permission);
 private:
-    static bool g_IsLoad;
+    static bool isLoad_;
+    static std::set<std::string> appSandboxPremission_;
+    static std::mutex mutex_;
 };
 } // AppSpawn
 } // OHOS
+
 #endif
 
