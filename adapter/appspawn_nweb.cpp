@@ -34,6 +34,9 @@
 #include "appspawn_service.h"
 #include "appspawn_adapter.h"
 
+#ifdef WITH_SECCOMP
+#include "seccomp_policy.h"
+#endif
 
 struct RenderProcessNode {
     RenderProcessNode(time_t now, int exit):recordTime_(now), exitStatus_(exit) {}
@@ -58,6 +61,26 @@ namespace {
 void LoadExtendLibNweb(AppSpawnContent *content)
 {
 }
+
+#ifdef WITH_SECCOMP
+static bool SetSeccompPolicyForRenderer(void *nwebRenderHandle)
+{
+    if (IsEnableSeccomp()) {
+        using SeccompFuncType = bool (*)(void);
+        SeccompFuncType funcSetRendererSeccompPolicy =
+                reinterpret_cast<SeccompFuncType>(dlsym(nwebRenderHandle, "SetRendererSeccompPolicy"));
+        if (funcSetRendererSeccompPolicy == nullptr) {
+            APPSPAWN_LOGE("SetRendererSeccompPolicy dlsym ERROR=%{public}s", dlerror());
+            return false;
+        }
+        if (!funcSetRendererSeccompPolicy()) {
+            APPSPAWN_LOGE("Failed to set seccomp policy.");
+            return false;
+        }
+    }
+    return true;
+}
+#endif
 
 void RunChildProcessorNweb(AppSpawnContent *content, AppSpawnClient *client)
 {
@@ -96,6 +119,12 @@ void RunChildProcessorNweb(AppSpawnContent *content, AppSpawnClient *client)
     } else {
         APPSPAWN_LOGI("Success to dlopen libnweb_render.so");
     }
+
+#ifdef WITH_SECCOMP
+    if (!SetSeccompPolicyForRenderer(nwebRenderHandle)) {
+        return;
+    }
+#endif
 
     AppSpawnClientExt *appProperty = reinterpret_cast<AppSpawnClientExt *>(client);
     using FuncType = void (*)(const char *cmd);
