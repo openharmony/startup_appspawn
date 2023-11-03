@@ -124,8 +124,7 @@ int SetSeccompFilter(struct AppSpawnContent_ *content, AppSpawnClient *client)
     const char *appName = APP_NAME;
     SeccompFilterType type = APP;
     if (content->isNweb) {
-        appName = RENDERER_NAME;
-        type = INDIVIDUAL;
+        return 0;
     }
     if (!SetSeccompPolicyWithName(type, appName)) {
         APPSPAWN_LOGE("Failed to set %{public}s seccomp filter and exit", appName);
