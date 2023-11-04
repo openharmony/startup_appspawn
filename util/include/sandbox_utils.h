@@ -93,6 +93,12 @@ private:
     static int32_t SetPermissionAppSandboxProperty(ClientSocket::AppProperty *appProperty);
     static int32_t DoAddGid(ClientSocket::AppProperty *appProperty,
     nlohmann::json &appConfig, const char* permissionName, const std::string &section);
+    static void ConvertSandboxName(const ClientSocket::AppProperty *appProperty, const std::string &section,
+                                   std::string &sandboxPath);
+    static bool GetProductDeviceType();
+    static int32_t SetSandboxProperty(ClientSocket::AppProperty *appProperty, std::string &sandboxPackagePath);
+    static int32_t ChangeCurrentDir(std::string &sandboxPackagePath, const std::string &bundleName,
+                                    bool sandboxSharedStatus);
 private:
     static nlohmann::json appNamespaceConfig_;
     static std::vector<nlohmann::json> appSandboxConfig_;
