@@ -45,7 +45,8 @@
                 "hisysevent",
                 "security_component_manager",
                 "netmanager",
-                "ace_engine"
+                "ace_engine",
+                "os_account"
             ],
 	    "third_party": [
                 "bounds_checking_function",
