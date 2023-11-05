@@ -130,6 +130,7 @@ ohos_unittest("AppSpawn_ut") {
     "init:seccomp",
     "ipc:ipc_core",
     "napi:ace_napi",
+    "os_account:os_account_innerkits",
     "resource_management:global_resmgr",
   ]
 

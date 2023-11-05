@@ -33,6 +33,8 @@
 #include "appspawn_server.h"
 #include "appspawn_service.h"
 #include "appspawn_mount_permission.h"
+#include "parameter.h"
+#include "os_account_manager.h"
 
 #ifdef WITH_SELINUX
 #include "hap_restorecon.h"
@@ -40,6 +42,9 @@
 
 using namespace std;
 using namespace OHOS;
+
+static constexpr int MAX_VALUE_LENGTH = PARAM_CONST_VALUE_LEN_MAX;
+static constexpr int FILE_CROSS_APP_MODE = 0x02;
 
 namespace OHOS {
 namespace AppSpawn {
@@ -431,6 +436,20 @@ static uint32_t ConvertFlagStr(const std::string &flagStr)
     return 0;
 }
 
+void SandboxUtils::ConvertSandboxName(const ClientSocket::AppProperty *appProperty, const std::string &section,
+                                     std::string &sandboxPath)
+{
+    if (sandboxPath.find(std::to_string(appProperty->uid / UID_BASE)) != std::string::npos) {
+        if (section.compare("permission") == 0 && appProperty->mountPermissionFlags == FILE_CROSS_APP_MODE) {
+            std::string shortName;
+            OHOS::AccountSA::OsAccountManager::GetOsAccountShortName(shortName);
+            sandboxPath = replace_all(sandboxPath, std::to_string(appProperty->uid / UID_BASE), shortName.c_str());
+        } else {
+            sandboxPath = replace_all(sandboxPath, g_userId, std::to_string(appProperty->uid / UID_BASE));
+        }
+    }
+}
+
 int SandboxUtils::DoAllMntPointsMount(const ClientSocket::AppProperty *appProperty,
     nlohmann::json &appConfig, const std::string &section)
 {
@@ -463,6 +482,7 @@ int SandboxUtils::DoAllMntPointsMount(const ClientSocket::AppProperty *appProper
         std::string srcPath = ConvertToRealPath(appProperty, mntPoint[g_srcPath].get<std::string>());
         std::string sandboxPath = sandboxRoot + ConvertToRealPath(appProperty,
                                                                   mntPoint[g_sandBoxPath].get<std::string>());
+        ConvertSandboxName(appProperty, section, sandboxPath);
         unsigned long mountFlags = GetMountFlagsFromConfig(mntPoint[g_sandBoxFlags].get<std::vector<std::string>>());
         std::string fsType = (mntPoint.find(g_fsType) != mntPoint.end()) ? mntPoint[g_fsType].get<std::string>() : "";
         const char* fsTypePoint = fsType.empty() ? nullptr : fsType.c_str();
@@ -1080,6 +1100,65 @@ int32_t SandboxUtils::SetBundleResourceAppSandboxProperty(const ClientSocket::Ap
     return ret;
 }
 
+bool SandboxUtils::GetProductDeviceType()
+{
+    char value[MAX_VALUE_LENGTH];
+    int32_t ret = GetParameter("const.product.deviceType", "0", value, MAX_VALUE_LENGTH);
+    APPSPAWN_CHECK(ret > 0 && (!strcmp(value, "2in1")), return false, "Not device type %{public}s", value);
+    return true;
+}
+
+int32_t SandboxUtils::SetSandboxProperty(ClientSocket::AppProperty *appProperty,
+                                                std::string &sandboxPackagePath)
+{
+    int32_t ret = 0;
+    const std::string bundleName = appProperty->bundleName;
+    ret = SetCommonAppSandboxProperty(appProperty, sandboxPackagePath);
+    APPSPAWN_CHECK(ret == 0, return ret, "SetCommonAppSandboxProperty failed, packagename is %{public}s",
+                   bundleName.c_str());
+    if (CheckBundleNameForPrivate(bundleName)) {
+        ret = SetPrivateAppSandboxProperty(appProperty);
+        APPSPAWN_CHECK(ret == 0, return ret, "SetPrivateAppSandboxProperty failed, packagename is %{public}s",
+                       bundleName.c_str());
+    }
+    ret = SetPermissionAppSandboxProperty(appProperty);
+    APPSPAWN_CHECK(ret == 0, return ret, "SetPermissionAppSandboxProperty failed, packagename is %{public}s",
+                   bundleName.c_str());
+
+    ret = SetOverlayAppSandboxProperty(appProperty, sandboxPackagePath);
+    APPSPAWN_CHECK(ret == 0, return ret, "SetOverlayAppSandboxProperty failed, packagename is %s",
+                   bundleName.c_str());
+
+    ret = SetBundleResourceAppSandboxProperty(appProperty, sandboxPackagePath);
+    APPSPAWN_CHECK(ret == 0, return ret, "SetBundleResourceAppSandboxProperty failed, packagename is %s",
+                   bundleName.c_str());
+    return ret;
+}
+
+int32_t SandboxUtils::ChangeCurrentDir(std::string &sandboxPackagePath, const std::string &bundleName,
+                                              bool sandboxSharedStatus)
+{
+    int32_t ret = 0;
+    ret = chdir(sandboxPackagePath.c_str());
+    APPSPAWN_CHECK(ret == 0, return ret, "chdir failed, packagename is %{public}s, path is %{public}s",
+        bundleName.c_str(), sandboxPackagePath.c_str());
+
+    if (sandboxSharedStatus) {
+        ret = chroot(sandboxPackagePath.c_str());
+        APPSPAWN_CHECK(ret == 0, return ret, "chroot failed, path is %{public}s errno is %{public}d",
+            sandboxPackagePath.c_str(), errno);
+        return ret;
+    }
+
+    ret = syscall(SYS_pivot_root, sandboxPackagePath.c_str(), sandboxPackagePath.c_str());
+    APPSPAWN_CHECK(ret == 0, return ret, "errno is %{public}d, pivot root failed, packagename is %{public}s",
+        errno, bundleName.c_str());
+
+    ret = umount2(".", MNT_DETACH);
+    APPSPAWN_CHECK(ret == 0, return ret, "MNT_DETACH failed, packagename is %{public}s", bundleName.c_str());
+    return ret;
+}
+
 int32_t SandboxUtils::SetAppSandboxProperty(AppSpawnClient *client)
 {
     APPSPAWN_CHECK(client != NULL, return -1, "Invalid appspwn client");
@@ -1093,12 +1172,17 @@ int32_t SandboxUtils::SetAppSandboxProperty(AppSpawnClient *client)
     bool sandboxSharedStatus = GetSandboxPrivateSharedStatus(bundleName);
     sandboxPackagePath += bundleName;
     MakeDirRecursive(sandboxPackagePath.c_str(), FILE_MODE);
+
     int rc = 0;
     // when CLONE_NEWPID is enabled, CLONE_NEWNS must be enabled.
     if (!(client->cloneFlags & CLONE_NEWPID)) {
         // add pid to a new mnt namespace
         rc = unshare(CLONE_NEWNS);
         APPSPAWN_CHECK(rc == 0, return rc, "unshare failed, packagename is %{public}s", bundleName.c_str());
+    }
+
+    if (GetProductDeviceType()) {
+        appProperty->mountPermissionFlags |= FILE_CROSS_APP_MODE;
     }
 
     // check app sandbox switch
@@ -1109,44 +1193,12 @@ int32_t SandboxUtils::SetAppSandboxProperty(AppSpawnClient *client)
         rc = DoSandboxRootFolderCreate(appProperty, sandboxPackagePath);
     }
     APPSPAWN_CHECK(rc == 0, return rc, "DoSandboxRootFolderCreate failed, %{public}s", bundleName.c_str());
-    rc = SetCommonAppSandboxProperty(appProperty, sandboxPackagePath);
-    APPSPAWN_CHECK(rc == 0, return rc, "SetCommonAppSandboxProperty failed, packagename is %{public}s",
-        bundleName.c_str());
-    if (CheckBundleNameForPrivate(bundleName)) {
-        rc = SetPrivateAppSandboxProperty(appProperty);
-        APPSPAWN_CHECK(rc == 0, return rc, "SetPrivateAppSandboxProperty failed, packagename is %{public}s",
-            bundleName.c_str());
-    }
-    rc = SetPermissionAppSandboxProperty(appProperty);
-    APPSPAWN_CHECK(rc == 0, return rc, "SetPermissionAppSandboxProperty failed, packagename is %{public}s",
-        bundleName.c_str());
-
-    rc = SetOverlayAppSandboxProperty(appProperty, sandboxPackagePath);
-    APPSPAWN_CHECK(rc == 0, return rc, "SetOverlayAppSandboxProperty failed, packagename is %s",
-        bundleName.c_str());
-
-    rc = SetBundleResourceAppSandboxProperty(appProperty, sandboxPackagePath);
-    APPSPAWN_CHECK(rc == 0, return rc, "SetBundleResourceAppSandboxProperty failed, packagename is %s",
-        bundleName.c_str());
+    rc = SetSandboxProperty(appProperty, sandboxPackagePath);
+    APPSPAWN_CHECK(rc == 0, return rc, "SetSandboxProperty failed, %{public}s", bundleName.c_str());
 
 #ifndef APPSPAWN_TEST
-    rc = chdir(sandboxPackagePath.c_str());
-    APPSPAWN_CHECK(rc == 0, return rc, "chdir failed, packagename is %{public}s, path is %{public}s",
-        bundleName.c_str(), sandboxPackagePath.c_str());
-
-    if (sandboxSharedStatus) {
-        rc = chroot(sandboxPackagePath.c_str());
-        APPSPAWN_CHECK(rc == 0, return rc, "chroot failed, path is %{public}s errno is %{public}d",
-            sandboxPackagePath.c_str(), errno);
-        return 0;
-    }
-
-    rc = syscall(SYS_pivot_root, sandboxPackagePath.c_str(), sandboxPackagePath.c_str());
-    APPSPAWN_CHECK(rc == 0, return rc, "errno is %{public}d, pivot root failed, packagename is %{public}s",
-        errno, bundleName.c_str());
-
-    rc = umount2(".", MNT_DETACH);
-    APPSPAWN_CHECK(rc == 0, return rc, "MNT_DETACH failed, packagename is %{public}s", bundleName.c_str());
+    rc = ChangeCurrentDir(sandboxPackagePath, bundleName, sandboxSharedStatus);
+    APPSPAWN_CHECK(rc == 0, return rc, "change current dir failed");
 #endif
     return 0;
 }
