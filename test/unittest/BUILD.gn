@@ -62,87 +62,83 @@ config("utest_config") {
   ]
 }
 
-ohos_unittest("AppSpawn_ut") {
-  module_out_path = "${module_output_path}"
-  deps = []
-  defines = [
-    "clone=CloneStub",
-    "bind=BindStub",
-    "listen=ListenStub",
-    "lchown=LchownStub",
-    "lchmod=LchmodStub",
-    "getsockopt=GetsockoptStub",
-    "setgroups=SetgroupsStub",
-    "setresuid=SetresuidStub",
-    "setresgid=SetresgidStub",
-    "capset=CapsetStub",
-    "dlopen=DlopenStub",
-    "dlsym=DlsymStub",
-    "dlclose=DlcloseStub",
-    "waitpid=WaitpidStub",
-    "HapContext=HapContextStub",
-    "APPSPAWN_TEST",
-    "OHOS_DEBUG",
-    "GRAPHIC_PERMISSION_CHECK",
-  ]
+if (!defined(ohos_lite)) {
+  ohos_unittest("AppSpawn_ut") {
+    module_out_path = "${module_output_path}"
+    deps = []
+    defines = [
+      "clone=CloneStub",
+      "bind=BindStub",
+      "listen=ListenStub",
+      "lchown=LchownStub",
+      "lchmod=LchmodStub",
+      "getsockopt=GetsockoptStub",
+      "setgroups=SetgroupsStub",
+      "setresuid=SetresuidStub",
+      "setresgid=SetresgidStub",
+      "capset=CapsetStub",
+      "dlopen=DlopenStub",
+      "dlsym=DlsymStub",
+      "dlclose=DlcloseStub",
+      "waitpid=WaitpidStub",
+      "HapContext=HapContextStub",
+      "APPSPAWN_TEST",
+      "OHOS_DEBUG",
+      "GRAPHIC_PERMISSION_CHECK",
+    ]
 
-  sources = [
-    "${appspawn_path}/adapter/appspawn_ace.cpp",
-    "${appspawn_path}/adapter/appspawn_adapter.cpp",
-    "${appspawn_path}/adapter/appspawn_nweb.cpp",
-    "${appspawn_path}/adapter/appspawn_sandbox.cpp",
-    "${appspawn_path}/common/appspawn_server.c",
-    "${appspawn_path}/interfaces/innerkits/client/appspawn_socket.cpp",
-    "${appspawn_path}/interfaces/innerkits/client/client_socket.cpp",
-    "${appspawn_path}/interfaces/innerkits/src/appspawn_mount_permission.cpp",
-    "${appspawn_path}/standard/appspawn_process.c",
-    "${appspawn_path}/standard/appspawn_service.c",
-    "${appspawn_path}/util/src/json_utils.cpp",
-    "${appspawn_path}/util/src/sandbox_utils.cpp",
-  ]
+    sources = [
+      "${appspawn_path}/adapter/appspawn_ace.cpp",
+      "${appspawn_path}/adapter/appspawn_adapter.cpp",
+      "${appspawn_path}/adapter/appspawn_nweb.cpp",
+      "${appspawn_path}/adapter/appspawn_sandbox.cpp",
+      "${appspawn_path}/common/appspawn_server.c",
+      "${appspawn_path}/interfaces/innerkits/client/appspawn_socket.cpp",
+      "${appspawn_path}/interfaces/innerkits/client/client_socket.cpp",
+      "${appspawn_path}/interfaces/innerkits/src/appspawn_mount_permission.cpp",
+      "${appspawn_path}/standard/appspawn_process.c",
+      "${appspawn_path}/standard/appspawn_service.c",
+      "${appspawn_path}/util/src/json_utils.cpp",
+      "${appspawn_path}/util/src/sandbox_utils.cpp",
+    ]
 
-  sources += [
-    "${appspawn_path}/test/unittest/app_spawn_socket_test/app_spawn_socket_test.cpp",
-    "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_sandbox_test.cpp",
-    "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_standard_test.cpp",
-    "${appspawn_path}/test/unittest/app_spawn_stub.cpp",
-    "${appspawn_path}/test/unittest/client_socket_test/client_socket_test.cpp",
-  ]
+    sources += [
+      "${appspawn_path}/test/unittest/app_spawn_socket_test/app_spawn_socket_test.cpp",
+      "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_sandbox_test.cpp",
+      "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_standard_test.cpp",
+      "${appspawn_path}/test/unittest/app_spawn_stub.cpp",
+      "${appspawn_path}/test/unittest/client_socket_test/client_socket_test.cpp",
+    ]
 
-  configs = [ "//base/startup/appspawn/test/unittest:utest_config" ]
-  deps += [ "//third_party/selinux:libselinux" ]
-  external_deps = [
-    "ability_base:want",
-    "ability_runtime:app_manager",
-    "ability_runtime:appkit_native",
-    "ability_runtime:runtime",
-    "access_token:libtoken_setproc",
-    "access_token:libtokenid_sdk",
-    "ace_engine:ace_forward_compatibility",
-    "bundle_framework:appexecfwk_base",
-    "bundle_framework:appexecfwk_core",
-    "c_utils:utils",
-    "config_policy:configpolicy_util",
-    "eventhandler:libeventhandler",
-    "hilog:libhilog",
-    "hitrace:hitrace_meter",
-    "init:libbegetutil",
-    "init:seccomp",
-    "ipc:ipc_core",
-    "napi:ace_napi",
-    "os_account:os_account_innerkits",
-    "resource_management:global_resmgr",
-  ]
+    configs = [ "//base/startup/appspawn/test/unittest:utest_config" ]
+    deps += [ "//third_party/selinux:libselinux" ]
+    external_deps = [
+      "ability_base:want",
+      "ability_runtime:app_manager",
+      "ability_runtime:appkit_native",
+      "ability_runtime:runtime",
+      "access_token:libtoken_setproc",
+      "access_token:libtokenid_sdk",
+      "ace_engine:ace_forward_compatibility",
+      "bundle_framework:appexecfwk_base",
+      "bundle_framework:appexecfwk_core",
+      "c_utils:utils",
+      "config_policy:configpolicy_util",
+      "eventhandler:libeventhandler",
+      "hilog:libhilog",
+      "hitrace:hitrace_meter",
+      "init:libbegetutil",
+      "init:seccomp",
+      "ipc:ipc_core",
+      "napi:ace_napi",
+      "os_account:os_account_innerkits",
+      "resource_management:global_resmgr",
+    ]
 
-  if (appspawn_report_event) {
-    defines += [ "REPORT_EVENT" ]
-    external_deps += [ "hisysevent:libhisysevent" ]
-    sources += [ "${appspawn_path}/adapter/sysevent/event_reporter.cpp" ]
+    if (appspawn_report_event) {
+      defines += [ "REPORT_EVENT" ]
+      external_deps += [ "hisysevent:libhisysevent" ]
+      sources += [ "${appspawn_path}/adapter/sysevent/event_reporter.cpp" ]
+    }
   }
-}
-
-group("unittest") {
-  testonly = true
-
-  deps = [ ":AppSpawn_ut" ]
 }

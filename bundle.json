@@ -46,7 +46,15 @@
                 "security_component_manager",
                 "netmanager",
                 "ace_engine",
-                "os_account"
+                "os_account",
+                "hilog_lite",
+                "samgr_lite",
+                "ipc_single",
+                "kv_store",
+                "ability_lite",
+                "ace_engine_lite",
+                "surface_lite",
+                "ui_lite"
             ],
 	    "third_party": [
                 "bounds_checking_function",
@@ -57,19 +65,14 @@
                 "libusb",
                 "zlib",
                 "libuv",
-                "cjson",
                 "libpng",
-                "selinux"
+                "selinux",
+                "cJSON"
 	    ]
         },
         "build": {
             "sub_component": [
-                "//base/startup/appspawn:appspawn",
-                "//base/startup/appspawn:appspawn.rc",
-                "//base/startup/appspawn:appspawn_helper",
-                "//base/startup/appspawn:appspawn_server",
-                "//base/startup/appspawn/etc:etc_files",
-                "//base/startup/appspawn/interfaces/innerkits:appspawn_socket_client"
+                "//base/startup/appspawn:appspawn_all"
             ],
             "inner_kits": [
                 {
@@ -85,7 +88,7 @@
             ],
             "test": [
                 "//base/startup/appspawn/test:moduletest",
-                "//base/startup/appspawn/test/unittest:unittest"
+                "//base/startup/appspawn/test:unittest"
             ]
         }
     }

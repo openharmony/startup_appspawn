@@ -13,65 +13,69 @@
 import("//build/lite/config/component/lite_component.gni")
 import("//build/lite/config/test.gni")
 
-unittest("AppSpawnLiteTest") {
-  output_extension = "bin"
-  output_dir = "$root_out_dir/test/unittest/startup"
-  ldflags = [
-    "-lstdc++",
-    "-lpthread",
-    "-lm",
-  ]
+if (defined(ohos_lite)) {
+  unittest("AppSpawnLiteTest") {
+    output_extension = "bin"
+    output_dir = "$root_out_dir/test/unittest/startup"
+    ldflags = [
+      "-lstdc++",
+      "-lpthread",
+      "-lm",
+    ]
 
-  include_dirs = [
-    "//base/startup/appspawn/interfaces/innerkits/include",
-    "//base/startup/appspawn/common/",
-    "//base/startup/appspawn/lite/",
-    "//base/startup/init/interfaces/innerkits/include",
-    "//base/hiviewdfx/hilog_lite/interfaces/native/innerkits/hilog",
-    "//foundation/systemabilitymgr/samgr_lite/interfaces/kits/samgr",
-    "//foundation/systemabilitymgr/samgr_lite/interfaces/kits/registry",
-    "//third_party/bounds_checking_function/include/",
-    "//third_party/cJSON",
-    "${aafwk_lite_path}/interfaces/inner_api/abilitymgr_lite",
-    "//commonlibrary/utils_lite/include",
-  ]
+    include_dirs = [
+      "//base/startup/appspawn/interfaces/innerkits/include",
+      "//base/startup/appspawn/common/",
+      "//base/startup/appspawn/lite/",
+      "//base/startup/init/interfaces/innerkits/include",
+      "//base/hiviewdfx/hilog_lite/interfaces/native/innerkits/hilog",
+      "//foundation/systemabilitymgr/samgr_lite/interfaces/kits/samgr",
+      "//foundation/systemabilitymgr/samgr_lite/interfaces/kits/registry",
+      "//third_party/bounds_checking_function/include/",
+      "//third_party/cJSON",
+      "${aafwk_lite_path}/interfaces/inner_api/abilitymgr_lite",
+      "//commonlibrary/utils_lite/include",
+    ]
 
-  sources = [
-    "//base/startup/appspawn/common/appspawn_server.c",
-    "//base/startup/appspawn/lite/appspawn_message.c",
-    "//base/startup/appspawn/lite/appspawn_process.c",
-    "//base/startup/appspawn/lite/appspawn_service.c",
-    "app_spawn_lite_test.cpp",
-  ]
+    sources = [
+      "//base/startup/appspawn/common/appspawn_server.c",
+      "//base/startup/appspawn/lite/appspawn_message.c",
+      "//base/startup/appspawn/lite/appspawn_process.c",
+      "//base/startup/appspawn/lite/appspawn_service.c",
+      "app_spawn_lite_test.cpp",
+    ]
 
-  defines = [
-    "APPSPAWN_TEST",
-    "OHOS_LITE",
-  ]
+    defines = [
+      "APPSPAWN_TEST",
+      "OHOS_LITE",
+    ]
 
-  deps = [
-    "${aafwk_lite_path}/frameworks/ability_lite:aafwk_abilitykit_lite",
-    "//base/hiviewdfx/hilog_lite/frameworks/featured:hilog_shared",
-    "//base/startup/init/interfaces/innerkits:libbegetutil",
-    "//build/lite/config/component/cJSON:cjson_shared",
-    "//foundation/communication/ipc/interfaces/innerkits/c/ipc:ipc_single",
-    "//foundation/distributeddatamgr/kv_store/interfaces/inner_api/kv_store:kv_store",
-    "//foundation/systemabilitymgr/samgr_lite/samgr:samgr",
-    "//third_party/bounds_checking_function:libsec_shared",
-  ]
+    deps = [
+      "${aafwk_lite_path}/frameworks/ability_lite:aafwk_abilitykit_lite",
+      "//base/hiviewdfx/hilog_lite/frameworks/featured:hilog_shared",
+      "//base/startup/init/interfaces/innerkits:libbegetutil",
+      "//build/lite/config/component/cJSON:cjson_shared",
+      "//foundation/communication/ipc/interfaces/innerkits/c/ipc:ipc_single",
+      "//foundation/distributeddatamgr/kv_store/interfaces/inner_api/kv_store:kv_store",
+      "//foundation/systemabilitymgr/samgr_lite/samgr:samgr",
+      "//third_party/bounds_checking_function:libsec_shared",
+    ]
 
-  deps += [
-    "//foundation/arkui/ace_engine_lite/frameworks:ace_lite",
-    "//foundation/arkui/ui_lite:ui_lite",
-    "//foundation/graphic/graphic_utils_lite:utils_lite",
-    "//foundation/graphic/surface_lite:surface_lite",
-  ]
+    deps += [
+      "//foundation/arkui/ace_engine_lite/frameworks:ace_lite",
+      "//foundation/arkui/ui_lite:ui_lite",
+      "//foundation/graphic/graphic_utils_lite:utils_lite",
+      "//foundation/graphic/surface_lite:surface_lite",
+    ]
 
-  if (ohos_kernel_type == "liteos_a") {
-    deps += [ "//base/hiviewdfx/hilog_lite/frameworks/featured:hilog_shared" ]
+    if (ohos_kernel_type == "liteos_a") {
+      deps += [ "//base/hiviewdfx/hilog_lite/frameworks/featured:hilog_shared" ]
+    }
   }
 }
 
 group("unittest") {
-  deps = [ ":AppSpawnLiteTest" ]
+  if (defined(ohos_lite)) {
+    deps = [ ":AppSpawnLiteTest" ]
+  }
 }
