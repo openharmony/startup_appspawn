@@ -40,140 +40,159 @@ config("appspawn_config") {
   }
 }
 
-ohos_executable("appspawn") {
-  defines = []
-  if (target_cpu == "arm64" || target_cpu == "x86_64") {
-    defines += [ "webview_arm64" ]
+if (!defined(ohos_lite)) {
+  ohos_executable("appspawn") {
+    defines = []
+    if (target_cpu == "arm64" || target_cpu == "x86_64") {
+      defines += [ "webview_arm64" ]
+    }
+    if (target_cpu == "x86_64") {
+      defines += [ "webview_x86_64" ]
+    }
+    sources = [
+      "${appspawn_path}/adapter/appspawn_ace.cpp",
+      "${appspawn_path}/adapter/appspawn_nweb.cpp",
+      "${appspawn_path}/adapter/nwebspawn_lancher.cpp",
+      "${appspawn_path}/interfaces/innerkits/src/appspawn_mount_permission.cpp",
+      "${appspawn_path}/standard/main.c",
+      "${appspawn_path}/util/src/json_utils.cpp",
+      "${appspawn_path}/util/src/sandbox_utils.cpp",
+    ]
+    if (asan_detector || is_asan) {
+      defines += [ "ASAN_DETECTOR" ]
+    }
+    configs = [ ":appspawn_config" ]
+    deps = [
+      "${appspawn_path}:appspawn_server",
+      "//third_party/selinux:libselinux",
+    ]
+    external_deps = [
+      "ability_base:want",
+      "ability_runtime:app_manager",
+      "ability_runtime:appkit_native",
+      "ability_runtime:runtime",
+      "ace_engine:ace_forward_compatibility",
+      "c_utils:utils",
+      "common_event_service:cesfwk_innerkits",
+      "config_policy:configpolicy_util",
+      "hilog:libhilog",
+      "hitrace:hitrace_meter",
+      "init:libbegetutil",
+      "os_account:os_account_innerkits",
+      "resource_management:global_resmgr",
+    ]
+
+    if (build_selinux) {
+      external_deps += [ "selinux_adapter:libhap_restorecon" ]
+    }
+    cflags = []
+
+    if (build_seccomp) {
+      cflags += [ "-DWITH_SECCOMP" ]
+      external_deps += [ "init:seccomp" ]
+    }
+
+    install_enable = true
+    subsystem_name = "${subsystem_name}"
+    part_name = "${part_name}"
   }
-  if (target_cpu == "x86_64") {
-    defines += [ "webview_x86_64" ]
+
+  ohos_shared_library("appspawn_helper") {
+    sources = [ "${appspawn_path}/common/appspawn_server.c" ]
+    configs = [ ":appspawn_config" ]
+    defines = [ "APPSPAWN_HELPER" ]
+    cflags = [
+      "-fvisibility=hidden",
+      "-fstack-protector-all",
+    ]
+    external_deps = [
+      "hilog:libhilog",
+      "init:libbegetutil",
+    ]
+
+    install_enable = true
+    subsystem_name = "${subsystem_name}"
+    part_name = "${part_name}"
   }
-  sources = [
-    "${appspawn_path}/adapter/appspawn_ace.cpp",
-    "${appspawn_path}/adapter/appspawn_nweb.cpp",
-    "${appspawn_path}/adapter/nwebspawn_lancher.cpp",
-    "${appspawn_path}/interfaces/innerkits/src/appspawn_mount_permission.cpp",
-    "${appspawn_path}/standard/main.c",
-    "${appspawn_path}/util/src/json_utils.cpp",
-    "${appspawn_path}/util/src/sandbox_utils.cpp",
-  ]
-  if (asan_detector || is_asan) {
-    defines += [ "ASAN_DETECTOR" ]
+
+  ohos_static_library("appspawn_server") {
+    sources = [
+      "${appspawn_path}/adapter/appspawn_adapter.cpp",
+      "${appspawn_path}/adapter/appspawn_nweb.cpp",
+      "${appspawn_path}/adapter/appspawn_sandbox.cpp",
+      "${appspawn_path}/common/appspawn_server.c",
+      "${appspawn_path}/interfaces/innerkits/src/appspawn_mount_permission.cpp",
+      "${appspawn_path}/standard/appspawn_process.c",
+      "${appspawn_path}/standard/appspawn_service.c",
+      "${appspawn_path}/util/src/json_utils.cpp",
+      "${appspawn_path}/util/src/sandbox_utils.cpp",
+    ]
+    defines = [
+      "GRAPHIC_PERMISSION_CHECK",
+      "INIT_AGENT",
+    ]
+
+    if (asan_detector || is_asan) {
+      defines += [ "ASAN_DETECTOR" ]
+    }
+    configs = [ ":appspawn_config" ]
+    ldflags = [ "-Wl,--dynamic-linker,/system/bin/linker64z" ]
+    deps = [ "//third_party/selinux:libselinux" ]
+    external_deps = [
+      "access_token:libtoken_setproc",
+      "access_token:libtokenid_sdk",
+      "c_utils:utils",
+      "config_policy:configpolicy_util",
+      "hilog:libhilog",
+      "init:libbegetutil",
+      "netmanager_base:netsys_client",
+      "os_account:os_account_innerkits",
+    ]
+
+    if (!defined(global_parts_info) ||
+        defined(global_parts_info.security_security_component_manager)) {
+      defines += [ "SECURITY_COMPONENT_ENABLE" ]
+      external_deps +=
+          [ "security_component_manager:libsecurity_component_enhance_sdk" ]
+    }
+
+    if (build_selinux) {
+      external_deps += [ "selinux_adapter:libhap_restorecon" ]
+    }
+
+    cflags = []
+    if (build_seccomp) {
+      cflags += [ "-DWITH_SECCOMP" ]
+      external_deps += [ "init:seccomp" ]
+    }
+
+    if (appspawn_report_event) {
+      cflags += [ "-DREPORT_EVENT" ]
+      deps += [ "adapter/sysevent:event_reporter" ]
+    }
+
+    subsystem_name = "${subsystem_name}"
+    part_name = "${part_name}"
   }
-  configs = [ ":appspawn_config" ]
-  deps = [
-    "${appspawn_path}:appspawn_server",
-    "//third_party/selinux:libselinux",
-  ]
-  external_deps = [
-    "ability_base:want",
-    "ability_runtime:app_manager",
-    "ability_runtime:appkit_native",
-    "ability_runtime:runtime",
-    "ace_engine:ace_forward_compatibility",
-    "c_utils:utils",
-    "common_event_service:cesfwk_innerkits",
-    "config_policy:configpolicy_util",
-    "hilog:libhilog",
-    "hitrace:hitrace_meter",
-    "init:libbegetutil",
-    "os_account:os_account_innerkits",
-    "resource_management:global_resmgr",
-  ]
-  if (build_selinux) {
-    external_deps += [ "selinux_adapter:libhap_restorecon" ]
+
+  ohos_prebuilt_etc("appspawn.rc") {
+    source = "appspawn.cfg"
+    relative_install_dir = "init"
+    subsystem_name = "${subsystem_name}"
+    part_name = "${part_name}"
   }
-  cflags = []
-  if (build_seccomp) {
-    cflags += [ "-DWITH_SECCOMP" ]
-    external_deps += [ "init:seccomp" ]
-  }
-  install_enable = true
-  subsystem_name = "${subsystem_name}"
-  part_name = "${part_name}"
 }
 
-ohos_shared_library("appspawn_helper") {
-  sources = [ "${appspawn_path}/common/appspawn_server.c" ]
-  configs = [ ":appspawn_config" ]
-  defines = [ "APPSPAWN_HELPER" ]
-  cflags = [
-    "-fvisibility=hidden",
-    "-fstack-protector-all",
-  ]
-  external_deps = [
-    "hilog:libhilog",
-    "init:libbegetutil",
-  ]
-
-  install_enable = true
-  subsystem_name = "${subsystem_name}"
-  part_name = "${part_name}"
-}
-
-ohos_static_library("appspawn_server") {
-  sources = [
-    "${appspawn_path}/adapter/appspawn_adapter.cpp",
-    "${appspawn_path}/adapter/appspawn_nweb.cpp",
-    "${appspawn_path}/adapter/appspawn_sandbox.cpp",
-    "${appspawn_path}/common/appspawn_server.c",
-    "${appspawn_path}/interfaces/innerkits/src/appspawn_mount_permission.cpp",
-    "${appspawn_path}/standard/appspawn_process.c",
-    "${appspawn_path}/standard/appspawn_service.c",
-    "${appspawn_path}/util/src/json_utils.cpp",
-    "${appspawn_path}/util/src/sandbox_utils.cpp",
-  ]
-  defines = [
-    "GRAPHIC_PERMISSION_CHECK",
-    "INIT_AGENT",
-  ]
-
-  if (asan_detector || is_asan) {
-    defines += [ "ASAN_DETECTOR" ]
+group("appspawn_all") {
+  deps = []
+  if (!defined(ohos_lite)) {
+    deps += [ ":appspawn" ]
+    deps += [ ":appspawn.rc" ]
+    deps += [ ":appspawn_helper" ]
+    deps += [ ":appspawn_server" ]
+    deps += [ "etc:etc_files" ]
+    deps += [ "interfaces/innerkits:appspawn_socket_client" ]
+  } else {
+    deps += [ "lite:appspawn_lite" ]
   }
-  configs = [ ":appspawn_config" ]
-  ldflags = [ "-Wl,--dynamic-linker,/system/bin/linker64z" ]
-  deps = [ "//third_party/selinux:libselinux" ]
-  external_deps = [
-    "access_token:libtoken_setproc",
-    "access_token:libtokenid_sdk",
-    "c_utils:utils",
-    "config_policy:configpolicy_util",
-    "hilog:libhilog",
-    "init:libbegetutil",
-    "netmanager_base:netsys_client",
-    "os_account:os_account_innerkits",
-  ]
-
-  if (!defined(global_parts_info) ||
-      defined(global_parts_info.security_security_component_manager)) {
-    defines += [ "SECURITY_COMPONENT_ENABLE" ]
-    external_deps +=
-        [ "security_component_manager:libsecurity_component_enhance_sdk" ]
-  }
-
-  if (build_selinux) {
-    external_deps += [ "selinux_adapter:libhap_restorecon" ]
-  }
-
-  cflags = []
-  if (build_seccomp) {
-    cflags += [ "-DWITH_SECCOMP" ]
-    external_deps += [ "init:seccomp" ]
-  }
-
-  if (appspawn_report_event) {
-    cflags += [ "-DREPORT_EVENT" ]
-    deps += [ "adapter/sysevent:event_reporter" ]
-  }
-
-  subsystem_name = "${subsystem_name}"
-  part_name = "${part_name}"
-}
-
-ohos_prebuilt_etc("appspawn.rc") {
-  source = "appspawn.cfg"
-  relative_install_dir = "init"
-  subsystem_name = "${subsystem_name}"
-  part_name = "${part_name}"
 }
