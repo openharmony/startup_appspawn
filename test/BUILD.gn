@@ -15,6 +15,18 @@ import("//base/startup/appspawn/appspawn.gni")
 import("//build/test.gni")
 
 group("moduletest") {
-  testonly = true
-  deps = [ "moduletest:moduletest" ]
+  if (!defined(ohos_lite)) {
+    testonly = true
+    deps = [ "moduletest:moduletest" ]
+  }
+}
+
+group("unittest") {
+  if (!defined(ohos_lite)) {
+    testonly = true
+    deps = [ "unittest:AppSpawn_ut" ]
+  } else {
+    testonly = true
+    deps = [ "unittest/app_spawn_lite_test:unittest" ]
+  }
 }

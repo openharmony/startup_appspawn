@@ -20,28 +20,30 @@ config("exported_header_files") {
 }
 
 ohos_static_library("appspawn_socket_client") {
-  sources = [
-    "client/appspawn_socket.cpp",
-    "client/client_socket.cpp",
-    "src/appspawn_mount_permission.cpp",
-  ]
-  include_dirs = [
-    "include",
-    "//base/startup/appspawn/common",
-    "//third_party/json/include",
-  ]
-  defines = []
-  if (is_asan) {
-    defines += [ "APPSPAWN_ASAN" ]
+  if (!defined(ohos_lite)) {
+    sources = [
+      "client/appspawn_socket.cpp",
+      "client/client_socket.cpp",
+      "src/appspawn_mount_permission.cpp",
+    ]
+    include_dirs = [
+      "include",
+      "//base/startup/appspawn/common",
+      "//third_party/json/include",
+    ]
+    defines = []
+    if (is_asan) {
+      defines += [ "APPSPAWN_ASAN" ]
+    }
+    public_configs = [ ":exported_header_files" ]
+    deps = []
+    external_deps = [
+      "c_utils:utils",
+      "config_policy:configpolicy_util",
+      "hilog:libhilog",
+      "init:libbegetutil",
+    ]
   }
-  public_configs = [ ":exported_header_files" ]
-  deps = []
-  external_deps = [
-    "c_utils:utils",
-    "config_policy:configpolicy_util",
-    "hilog:libhilog",
-    "init:libbegetutil",
-  ]
 
   subsystem_name = "${subsystem_name}"
   part_name = "${part_name}"
