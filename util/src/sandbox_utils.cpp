@@ -437,10 +437,10 @@ static uint32_t ConvertFlagStr(const std::string &flagStr)
 }
 
 void SandboxUtils::ConvertSandboxName(const ClientSocket::AppProperty *appProperty, const std::string &section,
-                                     std::string &sandboxPath)
+                                      std::string &sandboxPath)
 {
     if (sandboxPath.find(std::to_string(appProperty->uid / UID_BASE)) != std::string::npos) {
-        if (section.compare("permission") == 0 && appProperty->mountPermissionFlags == FILE_CROSS_APP_MODE) {
+        if (section.compare("permission") == 0 && GetProductDeviceType()) {
             std::string shortName;
             OHOS::AccountSA::OsAccountManager::GetOsAccountShortName(shortName);
             sandboxPath = replace_all(sandboxPath, std::to_string(appProperty->uid / UID_BASE), shortName.c_str());
@@ -451,7 +451,7 @@ void SandboxUtils::ConvertSandboxName(const ClientSocket::AppProperty *appProper
 }
 
 int SandboxUtils::DoAllMntPointsMount(const ClientSocket::AppProperty *appProperty,
-    nlohmann::json &appConfig, const std::string &section)
+                                      nlohmann::json &appConfig, const std::string &section)
 {
     std::string bundleName = appProperty->bundleName;
     if (appConfig.find(g_mountPrefix) == appConfig.end()) {
@@ -510,8 +510,8 @@ int SandboxUtils::DoAllMntPointsMount(const ClientSocket::AppProperty *appProper
     return 0;
 }
 
-int32_t SandboxUtils::DoAddGid(ClientSocket::AppProperty *appProperty,
-    nlohmann::json &appConfig, const char* permissionName, const std::string &section)
+int32_t SandboxUtils::DoAddGid(ClientSocket::AppProperty *appProperty, nlohmann::json &appConfig,
+                               const char* permissionName, const std::string &section)
 {
     std::string bundleName = appProperty->bundleName;
     if (appConfig.find(g_gidPrefix) == appConfig.end()) {
@@ -583,7 +583,7 @@ int32_t SandboxUtils::DoSandboxFilePrivateBind(const ClientSocket::AppProperty *
 }
 
 int32_t SandboxUtils::DoSandboxFilePermissionBind(ClientSocket::AppProperty *appProperty,
-    nlohmann::json &wholeConfig)
+                                                  nlohmann::json &wholeConfig)
 {
     if (wholeConfig.find(g_permissionPrefix) == wholeConfig.end()) {
         APPSPAWN_LOGV("DoSandboxFilePermissionBind not found permission information in config file");
@@ -736,7 +736,7 @@ int32_t SandboxUtils::SetPrivateAppSandboxProperty_(const ClientSocket::AppPrope
 }
 
 int32_t SandboxUtils::SetPermissionAppSandboxProperty_(ClientSocket::AppProperty *appProperty,
-    nlohmann::json &config)
+                                                       nlohmann::json &config)
 {
     int ret = DoSandboxFilePermissionBind(appProperty, config);
     APPSPAWN_CHECK(ret == 0, return ret, "DoSandboxFilePermissionBind failed");
@@ -1086,7 +1086,7 @@ int32_t SandboxUtils::SetOverlayAppSandboxProperty(const ClientSocket::AppProper
 }
 
 int32_t SandboxUtils::SetBundleResourceAppSandboxProperty(const ClientSocket::AppProperty *appProperty,
-                                                   string &sandboxPackagePath)
+                                                          string &sandboxPackagePath)
 {
     int ret = 0;
     if ((appProperty->flags & GET_BUNDLE_RESOURCES_FLAG) != GET_BUNDLE_RESOURCES_FLAG) {
@@ -1136,7 +1136,7 @@ int32_t SandboxUtils::SetSandboxProperty(ClientSocket::AppProperty *appProperty,
 }
 
 int32_t SandboxUtils::ChangeCurrentDir(std::string &sandboxPackagePath, const std::string &bundleName,
-                                              bool sandboxSharedStatus)
+                                       bool sandboxSharedStatus)
 {
     int32_t ret = 0;
     ret = chdir(sandboxPackagePath.c_str());
