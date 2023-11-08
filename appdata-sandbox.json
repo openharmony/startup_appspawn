@@ -683,7 +683,7 @@
             "sandbox-root": "/mnt/sandbox/<PackageName>",
             "gids": [3817],
             "mount-paths": [{
-                    "src-path": "/data/service/el1/public/themes/<currentUserId>",
+                    "src-path": "/data/service/el1/public/wallpaper/<currentUserId>",
                     "sandbox-path": "/date/wallpaper",
                     "sandbox-flags": [ "bind", "rec" ]
                 }
