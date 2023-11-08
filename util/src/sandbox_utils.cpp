@@ -1103,7 +1103,7 @@ int32_t SandboxUtils::SetBundleResourceAppSandboxProperty(const ClientSocket::Ap
 bool SandboxUtils::GetProductDeviceType()
 {
     char value[MAX_VALUE_LENGTH];
-    int32_t ret = GetParameter("const.product.deviceType", "0", value, MAX_VALUE_LENGTH);
+    int32_t ret = GetParameter("const.product.devicetype", "0", value, MAX_VALUE_LENGTH);
     APPSPAWN_CHECK(ret > 0 && (!strcmp(value, "2in1")), return false, "Not device type %{public}s", value);
     return true;
 }
