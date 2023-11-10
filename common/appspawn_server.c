@@ -102,12 +102,6 @@ int DoStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client, char *l
             return ret, "Failed to set KeepCapabilities");
     }
 
-    if (content->setProcessName) {
-        ret = content->setProcessName(content, client, longProcName, longProcNameLen);
-        APPSPAWN_CHECK(ret == 0, NotifyResToParent(content, client, ret);
-            return ret, "Failed to set setProcessName");
-    }
-
     if (content->setXpmRegion) {
         ret = content->setXpmRegion(content);
         APPSPAWN_CHECK(ret == 0, NotifyResToParent(content, client, ret);
@@ -154,6 +148,12 @@ static int AppSpawnChild(void *arg)
     struct AppSpawnContent_ *content = sandbox->content;
     AppSpawnClient *client = sandbox->client;
     int ret = -1;
+
+    if (content->setProcessName) {
+        ret = content->setProcessName(content, client, content->longProcName, content->longProcNameLen);
+        APPSPAWN_CHECK(ret == 0, NotifyResToParent(content, client, ret);
+            return ret, "Failed to set setProcessName");
+    }
 
 #ifdef OHOS_DEBUG
     struct timespec tmStart = {0};
