@@ -629,26 +629,6 @@
                     "src-path": "/mnt/data/external",
                     "sandbox-path": "/storage/External",
                     "sandbox-flags": [ "bind", "rec" ]
-                },
-                {
-                    "src-path": "/data/app/el1/<currentUserId>/base",
-                    "sandbox-path": "/data/storage/el1/base",
-                    "sandbox-flags": [ "bind", "rec" ]
-                },
-                {
-                    "src-path": "/data/app/el1/<currentUserId>/database",
-                    "sandbox-path": "/data/storage/el1/database",
-                    "sandbox-flags": [ "bind", "rec" ]
-                },
-                {
-                    "src-path": "/data/app/el2/<currentUserId>/base",
-                    "sandbox-path": "/data/storage/el2/base",
-                    "sandbox-flags": [ "bind", "rec" ]
-                },
-                {
-                    "src-path": "/data/app/el2/<currentUserId>/database",
-                    "sandbox-path": "/data/storage/el2/database",
-                    "sandbox-flags": [ "bind", "rec" ]
                 }
             ]
         }]
