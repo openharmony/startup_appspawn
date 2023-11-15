@@ -99,6 +99,7 @@ private:
     static int32_t SetSandboxProperty(ClientSocket::AppProperty *appProperty, std::string &sandboxPackagePath);
     static int32_t ChangeCurrentDir(std::string &sandboxPackagePath, const std::string &bundleName,
                                     bool sandboxSharedStatus);
+    static int32_t GetMountPermissionFlags(const std::string permissionName);
 private:
     static nlohmann::json appNamespaceConfig_;
     static std::vector<nlohmann::json> appSandboxConfig_;
