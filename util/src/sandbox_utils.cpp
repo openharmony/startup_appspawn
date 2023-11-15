@@ -43,9 +43,6 @@
 using namespace std;
 using namespace OHOS;
 
-static constexpr int MAX_VALUE_LENGTH = PARAM_CONST_VALUE_LEN_MAX;
-static constexpr int FILE_CROSS_APP_MODE = 0x02;
-
 namespace OHOS {
 namespace AppSpawn {
 namespace {
@@ -112,6 +109,8 @@ namespace {
     const std::string g_sandBoxRootDir = "/mnt/sandbox/";
     const std::string g_ohosRender = "__internal__.com.ohos.render";
     const std::string g_sandBoxRootDirNweb = "/mnt/sandbox/com.ohos.render/";
+    constexpr int MAX_VALUE_LENGTH = PARAM_CONST_VALUE_LEN_MAX;
+    const std::string FILE_CROSS_APP_MODE = "ohos.permission.FILE_CROSS_APP";
 }
 
 nlohmann::json SandboxUtils::appNamespaceConfig_;
@@ -1108,6 +1107,19 @@ bool SandboxUtils::GetProductDeviceType()
     return true;
 }
 
+int32_t SandboxUtils::GetMountPermissionFlags(const std::string permissionName)
+{
+    std::set<std::string> mountPermissionList = AppspawnMountPermission::GetMountPermissionList();
+    std::set<std::string> permissions;
+    for (std::string permission : mountPermissionList) {
+        if (permission.compare(permissionName) == 0) {
+            permissions.insert(permission);
+        }
+    }
+    int32_t mountPermissionFlags = AppspawnMountPermission::GenPermissionCode(permissions);
+    return mountPermissionFlags;
+}
+
 int32_t SandboxUtils::SetSandboxProperty(ClientSocket::AppProperty *appProperty,
                                                 std::string &sandboxPackagePath)
 {
@@ -1182,7 +1194,7 @@ int32_t SandboxUtils::SetAppSandboxProperty(AppSpawnClient *client)
     }
 
     if (GetProductDeviceType()) {
-        appProperty->mountPermissionFlags |= FILE_CROSS_APP_MODE;
+        appProperty->mountPermissionFlags |= GetMountPermissionFlags(FILE_CROSS_APP_MODE);
     }
 
     // check app sandbox switch
