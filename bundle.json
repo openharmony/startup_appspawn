@@ -44,7 +44,8 @@
                 "common_event_service",
                 "hisysevent",
                 "security_component_manager",
-                "netmanager"
+                "netmanager",
+                "netmanager_base"
             ],
 	    "third_party": [
                 "bounds_checking_function",
