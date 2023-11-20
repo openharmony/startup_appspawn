@@ -27,6 +27,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+extern int g_nwebspawnpid;
 pid_t NwebSpawnLanch();
 #ifdef __cplusplus
 }
