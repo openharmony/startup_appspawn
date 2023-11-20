@@ -92,6 +92,7 @@ if (!defined(ohos_lite)) {
       "${appspawn_path}/adapter/appspawn_adapter.cpp",
       "${appspawn_path}/adapter/appspawn_nweb.cpp",
       "${appspawn_path}/adapter/appspawn_sandbox.cpp",
+      "${appspawn_path}/adapter/nwebspawn_lancher.cpp",
       "${appspawn_path}/common/appspawn_server.c",
       "${appspawn_path}/interfaces/innerkits/client/appspawn_socket.cpp",
       "${appspawn_path}/interfaces/innerkits/client/client_socket.cpp",

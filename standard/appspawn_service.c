@@ -31,6 +31,7 @@
 #include "init_utils.h"
 #include "parameter.h"
 #include "securec.h"
+#include "nwebspawn_lancher.h"
 
 #ifdef REPORT_EVENT
 #include "event_reporter.h"
@@ -212,6 +213,13 @@ static void HandleDiedPid(pid_t pid, uid_t uid, int status)
 
     // delete app info
     RemoveAppInfo(pid);
+
+    // if current process of death is nwebspawn, restart appspawn
+    if (pid == g_nwebspawnpid) {
+        APPSPAWN_LOGW("Current process of death is nwebspawn, pid = %{public}d, restart appspawn", pid);
+        OH_HashMapTraverse(g_appSpawnContent->appMap, KillProcess, NULL);
+        LE_StopLoop(LE_GetDefaultLoop());
+    }
 }
 
 static void HandleDiedPidNweb(pid_t pid, uid_t uid, int status)
