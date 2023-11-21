@@ -21,6 +21,7 @@
 #define CAP_NUM 2
 #define BITLEN32 32
 
+int g_nwebspawnpid = 0;
 pid_t NwebSpawnLanch()
 {
     pid_t ret = fork();
@@ -52,6 +53,8 @@ pid_t NwebSpawnLanch()
         setuid(NWEB_UID);
         setgid(NWEB_GID);
         APPSPAWN_LOGI("nwebspawn fork success");
+    } else {
+        g_nwebspawnpid = ret;
     }
     return ret;
 }
