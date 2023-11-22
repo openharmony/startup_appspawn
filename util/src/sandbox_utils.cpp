@@ -102,8 +102,7 @@ namespace {
     const char *g_flagePoint = "flags-point";
     const char *g_mountSharedFlag = "mount-shared-flag";
     const char *g_flags = "flags";
-    const char *g_sandBoxNameSpace = "sandbox-namespace";
-    const char *g_sandBoxCloneFlags = "clone-flags";
+    const char *g_sandBoxNsFlags = "sandbox-ns-flags";
     const char* g_fileSeparator = "/";
     const char* g_overlayDecollator = "|";
     const std::string g_sandBoxRootDir = "/mnt/sandbox/";
@@ -113,18 +112,7 @@ namespace {
     const std::string FILE_CROSS_APP_MODE = "ohos.permission.FILE_CROSS_APP";
 }
 
-nlohmann::json SandboxUtils::appNamespaceConfig_;
 std::vector<nlohmann::json> SandboxUtils::appSandboxConfig_ = {};
-
-void SandboxUtils::StoreNamespaceJsonConfig(nlohmann::json &appNamespaceConfig)
-{
-    SandboxUtils::appNamespaceConfig_ = appNamespaceConfig;
-}
-
-nlohmann::json SandboxUtils::GetNamespaceJsonConfig(void)
-{
-    return SandboxUtils::appNamespaceConfig_;
-}
 
 void SandboxUtils::StoreJsonConfig(nlohmann::json &appSandboxConfig)
 {
@@ -134,39 +122,6 @@ void SandboxUtils::StoreJsonConfig(nlohmann::json &appSandboxConfig)
 std::vector<nlohmann::json> &SandboxUtils::GetJsonConfig()
 {
     return SandboxUtils::appSandboxConfig_;
-}
-
-static uint32_t NamespaceFlagsFromConfig(const std::vector<std::string> &vec)
-{
-    const std::map<std::string, uint32_t> NamespaceFlagsMap = { {"mnt", CLONE_NEWNS}, {"pid", CLONE_NEWPID} };
-    uint32_t cloneFlags = 0;
-
-    for (unsigned int j = 0; j < vec.size(); j++) {
-        if (NamespaceFlagsMap.count(vec[j])) {
-            cloneFlags |= NamespaceFlagsMap.at(vec[j]);
-        }
-    }
-    return cloneFlags;
-}
-
-uint32_t SandboxUtils::GetNamespaceFlagsFromConfig(const char *bundleName)
-{
-    nlohmann::json config = SandboxUtils::GetNamespaceJsonConfig();
-    uint32_t cloneFlags = CLONE_NEWNS;
-
-    if (config.find(g_sandBoxNameSpace) == config.end()) {
-        APPSPAWN_LOGE("namespace config is not found");
-        return 0;
-    }
-
-    nlohmann::json namespaceApp = config[g_sandBoxNameSpace][0];
-    if (namespaceApp.find(bundleName) == namespaceApp.end()) {
-        return cloneFlags;
-    }
-
-    nlohmann::json app = namespaceApp[bundleName][0];
-    cloneFlags |= NamespaceFlagsFromConfig(app[g_sandBoxCloneFlags].get<std::vector<std::string>>());
-    return cloneFlags;
 }
 
 static void MakeDirRecursive(const std::string &path, mode_t mode)
@@ -992,6 +947,48 @@ int32_t SandboxUtils::DoSandboxRootFolderCreate(const ClientSocket::AppProperty 
     return 0;
 }
 
+uint32_t SandboxUtils::GetSandboxNsFlags(bool isNweb)
+{
+    uint32_t nsFlags = 0;
+    nlohmann::json appConfig;
+    const std::map<std::string, uint32_t> NamespaceFlagsMap = { {"pid", CLONE_NEWPID},
+                                                                {"net", CLONE_NEWNET} };
+
+    if (!CheckTotalSandboxSwitchStatus(NULL)) {
+        return nsFlags;
+    }
+
+    for (auto config : SandboxUtils::GetJsonConfig()) {
+        if (isNweb) {
+            nlohmann::json privateAppConfig = config[g_privatePrefix][0];
+            if (privateAppConfig.find(g_ohosRender) == privateAppConfig.end()) {
+                continue;
+            }
+            appConfig = privateAppConfig[g_ohosRender][0];
+        } else {
+            nlohmann::json baseConfig = config[g_commonPrefix][0];
+            if (baseConfig.find(g_appBase) == baseConfig.end()) {
+                continue;
+            }
+            appConfig = baseConfig[g_appBase][0];
+        }
+        if (appConfig.find(g_sandBoxNsFlags) == appConfig.end()) {
+            continue;
+        }
+        const auto vec = appConfig[g_sandBoxNsFlags].get<std::vector<std::string>>();
+        for (unsigned int j = 0; j < vec.size(); j++) {
+            if (NamespaceFlagsMap.count(vec[j])) {
+                nsFlags |= NamespaceFlagsMap.at(vec[j]);
+            }
+        }
+    }
+
+    if (!nsFlags) {
+        APPSPAWN_LOGE("config is not found %{public}s ns config", isNweb ? "Nweb" : "App");
+    }
+    return nsFlags;
+}
+
 bool SandboxUtils::CheckBundleNameForPrivate(const std::string &bundleName)
 {
     if (bundleName.find(g_internal) != std::string::npos) {
@@ -1185,13 +1182,9 @@ int32_t SandboxUtils::SetAppSandboxProperty(AppSpawnClient *client)
     sandboxPackagePath += bundleName;
     MakeDirRecursive(sandboxPackagePath.c_str(), FILE_MODE);
 
-    int rc = 0;
-    // when CLONE_NEWPID is enabled, CLONE_NEWNS must be enabled.
-    if (!(client->cloneFlags & CLONE_NEWPID)) {
-        // add pid to a new mnt namespace
-        rc = unshare(CLONE_NEWNS);
-        APPSPAWN_CHECK(rc == 0, return rc, "unshare failed, packagename is %{public}s", bundleName.c_str());
-    }
+    // add pid to a new mnt namespace
+    int rc = unshare(CLONE_NEWNS);
+    APPSPAWN_CHECK(rc == 0, return rc, "unshare failed, packagename is %{public}s", bundleName.c_str());
 
     if (GetProductDeviceType()) {
         appProperty->mountPermissionFlags |= GetMountPermissionFlags(FILE_CROSS_APP_MODE);
@@ -1228,13 +1221,10 @@ int32_t SandboxUtils::SetAppSandboxPropertyNweb(AppSpawnClient *client)
     bool sandboxSharedStatus = GetSandboxPrivateSharedStatus(bundleName);
     sandboxPackagePath += bundleName;
     MakeDirRecursive(sandboxPackagePath.c_str(), FILE_MODE);
-    int rc = 0;
-    // when CLONE_NEWPID is enabled, CLONE_NEWNS must be enabled.
-    if (!(client->cloneFlags & CLONE_NEWPID)) {
-        // add pid to a new mnt namespace
-        rc = unshare(CLONE_NEWNS);
-        APPSPAWN_CHECK(rc == 0, return rc, "unshare failed, packagename is %{public}s", bundleName.c_str());
-    }
+
+    // add pid to a new mnt namespace
+    int rc = unshare(CLONE_NEWNS);
+    APPSPAWN_CHECK(rc == 0, return rc, "unshare failed, packagename is %{public}s", bundleName.c_str());
 
     // check app sandbox switch
     if ((CheckTotalSandboxSwitchStatus(appProperty) == false) ||
