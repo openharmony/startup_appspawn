@@ -53,6 +53,7 @@ int main(int argc, char *const argv[])
     CheckPreload(argv);
     (void)signal(SIGPIPE, SIG_IGN);
     uint32_t argvSize = 0;
+    int isRet;
     int mode = 0;
     pid_t pid = 1;
     if ((argc > PARAM_INDEX) && (strcmp(argv[START_INDEX], "cold-start") == 0)) {
@@ -70,7 +71,7 @@ int main(int argc, char *const argv[])
             return -1;
         }
         pid = NwebSpawnLanch();
-        int isRet = memset_s(argv[0], argvSize, 0, (size_t)argvSize) != EOK;
+        isRet = memset_s(argv[0], argvSize, 0, (size_t)argvSize) != EOK;
         APPSPAWN_CHECK(!isRet, return -EINVAL, "Failed to memset argv[0]");
         if (pid == 0) {
             isRet = strncpy_s(argv[0], argvSize, NWEBSPAWN_SERVER_NAME, strlen(NWEBSPAWN_SERVER_NAME)) != EOK;
@@ -90,7 +91,8 @@ int main(int argc, char *const argv[])
         // set common operation
         content->loadExtendLib = LoadExtendLibNweb;
         content->runChildProcessor = RunChildProcessorNweb;
-        content->initAppSpawn(content);
+        isRet = content->initAppSpawn(content);
+        APPSPAWN_CHECK(!isRet, return -1, "Init nwebspawn failed");
         content->runAppSpawn(content, argc, argv);
     } else {
         APPSPAWN_LOGI("AppSpawnCreateContent argc %{public}d mode %{public}d %{public}u", argc, mode, argvSize);
@@ -102,7 +104,8 @@ int main(int argc, char *const argv[])
         // set common operation
         content->loadExtendLib = LoadExtendLib;
         content->runChildProcessor = RunChildProcessor;
-        content->initAppSpawn(content);
+        isRet = content->initAppSpawn(content);
+        APPSPAWN_CHECK(!isRet, return -1, "Init appspawn failed");
         if (mode == 0) {
             AddNwebInfo(pid, NWEBSPAWN_SERVER_NAME);
             SystemSetParameter("bootevent.appspawn.started", "true");

@@ -3,6 +3,7 @@
         "top-sandbox-switch": "ON",
         "app-base" : [{
             "sandbox-root" : "/mnt/sandbox/<PackageName>",
+            "sandbox-ns-flags": [ "pid" ],
             "mount-paths" : [{
                     "src-path" : "/config",
                     "sandbox-path" : "/config",
@@ -448,6 +449,7 @@
         }],
         "__internal__.com.ohos.render" : [{
             "sandbox-root" : "/mnt/sandbox/com.ohos.render/<PackageName>",
+            "sandbox-ns-flags": [ "pid", "net" ],
             "mount-paths" : [{
                     "src-path" : "/dev",
                     "sandbox-path" : "/dev",

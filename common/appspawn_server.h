@@ -48,11 +48,12 @@ typedef struct AppSpawnClient_ {
 typedef struct AppSpawnContent_ {
     char *longProcName;
     uint32_t longProcNameLen;
+    uint32_t sandboxNsFlags;
     bool isNweb;
 
     // system
     void (*loadExtendLib)(struct AppSpawnContent_ *content);
-    void (*initAppSpawn)(struct AppSpawnContent_ *content);
+    int (*initAppSpawn)(struct AppSpawnContent_ *content);
     void (*runAppSpawn)(struct AppSpawnContent_ *content, int argc, char *const argv[]);
     void (*setUidGidFilter)(struct AppSpawnContent_ *content);
 
@@ -72,6 +73,10 @@ typedef struct AppSpawnContent_ {
     void (*notifyResToParent)(struct AppSpawnContent_ *content, AppSpawnClient *client, int result);
     void (*runChildProcessor)(struct AppSpawnContent_ *content, AppSpawnClient *client);
     int (*setAsanEnabledEnv)(struct AppSpawnContent_ *content, AppSpawnClient *client);
+
+    // for pid namespace
+    int (*enablePidNs)(struct AppSpawnContent_ *content);
+
     // for cold start
     int (*coldStartApp)(struct AppSpawnContent_ *content, AppSpawnClient *client);
     int (*getWrapBundleNameValue)(struct AppSpawnContent_ *content, AppSpawnClient *client);

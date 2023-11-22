@@ -431,7 +431,7 @@ static int HandleMessage(AppSpawnClientExt *appProperty)
     AppSandboxArg sandboxArg = { 0 };
     sandboxArg.content = &g_appSpawnContent->content;
     sandboxArg.client = &appProperty->client;
-    sandboxArg.client->cloneFlags = GetAppNamespaceFlags(appProperty->property.bundleName);
+    sandboxArg.client->cloneFlags = sandboxArg.content->sandboxNsFlags;
 
     SHOW_CLIENT("Receive client message ", appProperty);
     int result = AppSpawnProcessMsg(&sandboxArg, &appProperty->pid);
@@ -542,10 +542,10 @@ static void NotifyResToParent(struct AppSpawnContent_ *content, AppSpawnClient *
     close(fd);
 }
 
-static void AppSpawnInit(AppSpawnContent *content)
+static int AppSpawnInit(AppSpawnContent *content)
 {
     AppSpawnContentExt *appSpawnContent = (AppSpawnContentExt *)content;
-    APPSPAWN_CHECK(appSpawnContent != NULL, return, "Invalid appspawn content");
+    APPSPAWN_CHECK(appSpawnContent != NULL, return -1, "Invalid appspawn content");
 
     APPSPAWN_LOGI("AppSpawnInit");
     if (content->loadExtendLib) {
@@ -562,7 +562,13 @@ static void AppSpawnInit(AppSpawnContent *content)
     }
 
     // load app sandbox config
-    LoadAppSandboxConfig();
+    LoadAppSandboxConfig(content);
+
+    // enable pid namespace
+    if (content->enablePidNs) {
+        return content->enablePidNs(content);
+    }
+    return 0;
 }
 
 void AppSpawnColdRun(AppSpawnContent *content, int argc, char *const argv[])

@@ -20,6 +20,7 @@
 #include "config_policy_utils.h"
 #include "json_utils.h"
 #include "sandbox_utils.h"
+#include "init_param.h"
 
 using namespace std;
 using namespace OHOS;
@@ -27,11 +28,24 @@ using namespace OHOS::AppSpawn;
 
 namespace {
     const std::string MODULE_TEST_BUNDLE_NAME("moduleTestProcessName");
-    const std::string NAMESPACE_JSON_CONFIG("/system/etc/sandbox/sandbox-config.json");
     const std::string APP_JSON_CONFIG("/appdata-sandbox.json");
 }
 
-void LoadAppSandboxConfig(void)
+static bool AppSandboxPidNsIsSupport(void)
+{
+    char buffer[10] = {0};
+    uint32_t buffSize = sizeof(buffer);
+
+    if (SystemGetParameter("const.sandbox.pidns.support", buffer, &buffSize) != 0) {
+        return true;
+    }
+    if (!strcmp(buffer, "false")) {
+        return false;
+    }
+    return true;
+}
+
+void LoadAppSandboxConfig(AppSpawnContent *content)
 {
     bool rc = true;
     // load sandbox config
@@ -50,10 +64,10 @@ void LoadAppSandboxConfig(void)
     }
     FreeCfgFiles(files);
 
-    nlohmann::json appNamespaceConfig;
-    rc = JsonUtils::GetJsonObjFromJson(appNamespaceConfig, NAMESPACE_JSON_CONFIG);
-    APPSPAWN_CHECK_ONLY_LOG(rc, "AppSpawnServer::Failed to load app sandbox namespace config");
-    SandboxUtils::StoreNamespaceJsonConfig(appNamespaceConfig);
+    if (!content->isNweb && !AppSandboxPidNsIsSupport()) {
+        return;
+    }
+    content->sandboxNsFlags = SandboxUtils::GetSandboxNsFlags(content->isNweb);
 }
 
 int32_t SetAppSandboxProperty(struct AppSpawnContent_ *content, AppSpawnClient *client)
@@ -64,17 +78,20 @@ int32_t SetAppSandboxProperty(struct AppSpawnContent_ *content, AppSpawnClient *
     if (clientExt->property.flags & APP_NO_SANDBOX) {
         return 0;
     }
-    // no news
-    if ((client->cloneFlags & CLONE_NEWNS) != CLONE_NEWNS) {
-        return 0;
-    }
+
     int ret = 0;
+    if (client->cloneFlags & CLONE_NEWPID) {
+        ret = getprocpid();
+        if (ret < 0) {
+            return ret;
+        }
+    }
     if (content->isNweb) {
         ret = SandboxUtils::SetAppSandboxPropertyNweb(client);
     } else {
         ret = SandboxUtils::SetAppSandboxProperty(client);
     }
-    
+
     // free ExtraInfo
     if (clientExt->property.extraInfo.data != nullptr) {
         free(clientExt->property.extraInfo.data);
@@ -87,9 +104,4 @@ int32_t SetAppSandboxProperty(struct AppSpawnContent_ *content, AppSpawnClient *
         return 0;
     }
     return ret;
-}
-
-uint32_t GetAppNamespaceFlags(const char *bundleName)
-{
-    return SandboxUtils::GetNamespaceFlagsFromConfig(bundleName);
 }
