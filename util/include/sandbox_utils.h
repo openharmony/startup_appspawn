@@ -30,13 +30,11 @@ namespace OHOS {
 namespace AppSpawn {
 class SandboxUtils {
 public:
-    static void StoreNamespaceJsonConfig(nlohmann::json &appNamespaceConfig);
-    static nlohmann::json GetNamespaceJsonConfig(void);
     static void StoreJsonConfig(nlohmann::json &appSandboxConfig);
     static std::vector<nlohmann::json> &GetJsonConfig();
     static int32_t SetAppSandboxProperty(AppSpawnClient *client);
     static int32_t SetAppSandboxPropertyNweb(AppSpawnClient *client);
-    static uint32_t GetNamespaceFlagsFromConfig(const char *bundleName);
+    static uint32_t GetSandboxNsFlags(bool isNweb);
     static std::set<std::string> GetMountPermissionNames();
 
 private:
@@ -101,7 +99,6 @@ private:
                                     bool sandboxSharedStatus);
     static int32_t GetMountPermissionFlags(const std::string permissionName);
 private:
-    static nlohmann::json appNamespaceConfig_;
     static std::vector<nlohmann::json> appSandboxConfig_;
 };
 } // namespace AppSpawn

@@ -240,50 +240,6 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_10, TestSize.Level0)
 }
 
 /**
-* @tc.name: App_Spawn_Sandbox_11
-* @tc.desc: parse namespace config define by self set app sandbox property.
-* @tc.type: FUNC
-* @tc.require: issueI5OE8Q
-* @tc.author:
-*/
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_011, TestSize.Level0)
-{
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_011 start";
-    std::string namespaceJsconfig = "{ \
-        \"sandbox-namespace\":[{ \
-            \"com.ohos.app1\":[{ \
-                \"clone-flags\": [ \"mnt\" ] \
-            }], \
-            \"com.ohos.app2\":[{ \
-                \"clone-flags\": [ \"pid\" ] \
-            }],\
-            \"com.ohos.app3\":[{ \
-                \"clone-flags\": [ \"mnt\", \"pid\" ] \
-            }] \
-        }] \
-    }";
-    nlohmann::json namespace_config = nlohmann::json::parse(namespaceJsconfig.c_str());
-
-    OHOS::AppSpawn::SandboxUtils::StoreNamespaceJsonConfig(namespace_config);
-    uint32_t cloneFlags = GetAppNamespaceFlags("com.ohos.app1");
-    EXPECT_TRUE(cloneFlags & CLONE_NEWNS);
-
-    cloneFlags = GetAppNamespaceFlags("com.ohos.app2");
-    EXPECT_TRUE(cloneFlags & CLONE_NEWNS);
-    EXPECT_TRUE(cloneFlags & CLONE_NEWPID);
-
-    cloneFlags = GetAppNamespaceFlags("com.ohos.app3");
-    EXPECT_TRUE(cloneFlags & CLONE_NEWNS);
-    EXPECT_TRUE(cloneFlags & CLONE_NEWPID);
-
-    cloneFlags = GetAppNamespaceFlags("com.ohos.app4");
-    EXPECT_TRUE(cloneFlags & CLONE_NEWNS);
-
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_011 end";
-}
-
-
-/**
 * @tc.name: App_Spawn_Sandbox_012
 * @tc.desc: Create an application process parameter check.
 * @tc.type: FUNC
@@ -625,7 +581,6 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_20, TestSize.Level0)
 
     m_appProperty->uid = 1000; // the UNIX uid that the child process setuid() to after fork()
     m_appProperty->gid = 1000; // the UNIX gid that the child process setgid() to after fork()
-    GetAppSpawnClient()->cloneFlags = CLONE_NEWPID;
 
     if (strcpy_s(m_appProperty->processName, APP_LEN_PROC_NAME, "test.appspawn") != 0) {
         GTEST_LOG_(INFO) << "Failed to strcpy_s err=" << errno << std::endl;
@@ -1026,19 +981,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_31, TestSize.Level0)
 HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_32, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_32 start";
-    std::string mJsconfig = "{ \
-        \"test-namespace\" : [{ \
-            \"com.ohos.note\" : [{ \
-                \"clone-flags\": [ \"mnt\", \"pid\" ] \
-            }] \
-        }] \
-    }";
-    nlohmann::json j_config = nlohmann::json::parse(mJsconfig.c_str());
-    OHOS::AppSpawn::SandboxUtils::StoreNamespaceJsonConfig(j_config);
-    int ret = OHOS::AppSpawn::SandboxUtils::GetNamespaceFlagsFromConfig("ohos.test.bundle");
-    EXPECT_EQ(ret, 0);
-
-    ret = OHOS::AppSpawn::SandboxUtils::DoAppSandboxMountOnce(nullptr, "", nullptr, 0, nullptr);
+    int ret = OHOS::AppSpawn::SandboxUtils::DoAppSandboxMountOnce(nullptr, "", nullptr, 0, nullptr);
     EXPECT_EQ(ret, 0);
 
     std::string mJsconfig1 = "{ \
@@ -1264,7 +1207,8 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_37, TestSize.Level0)
     m_appProperty->uid = 1000;
     m_appProperty->gid = 1000;
     (void)strcpy_s(m_appProperty->bundleName, sizeof(m_appProperty->bundleName), "ohos.samples.xxx");
-    LoadAppSandboxConfig();
+    AppSpawnContent content;
+    LoadAppSandboxConfig(&content);
     std::string sandboxPackagePath = "/mnt/sandbox/";
     const std::string bundleName = m_appProperty->bundleName;
     sandboxPackagePath += bundleName;
@@ -1417,5 +1361,47 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_40, TestSize.Level0)
     }
     m_appProperty->extraInfo = {};
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_40 end";
+}
+
+/**
+* @tc.name: App_Spawn_Sandbox_41
+* @tc.desc: parse namespace config.
+* @tc.type: FUNC
+* @tc.require:issueI8B63M
+* @tc.author:
+*/
+HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_41, TestSize.Level0)
+{
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_41 start";
+    std::string mJsconfig = "{ \
+        \"common\":[{ \
+            \"top-sandbox-switch\": \"ON\", \
+            \"app-base\":[{ \
+                \"sandbox-root\" : \"/mnt/sandbox/<PackageName>\", \
+                \"sandbox-ns-flags\": [ \"pid\" ], \
+                \"mount-paths\" : [], \
+                \"symbol-links\" : [] \
+            }] \
+        }], \
+        \"individual\":[{ \
+            \"__internal__.com.ohos.render\":[{ \
+                \"sandbox-root\" : \"/mnt/sandbox/com.ohos.render/<PackageName>\", \
+                \"sandbox-ns-flags\": [ \"pid\", \"net\" ], \
+                \"mount-paths\" : [], \
+                \"symbol-links\" : [] \
+            }] \
+        }] \
+    }";
+    nlohmann::json j_config = nlohmann::json::parse(mJsconfig.c_str());
+
+    OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config);
+
+    uint32_t cloneFlags = OHOS::AppSpawn::SandboxUtils::GetSandboxNsFlags(false);
+    EXPECT_EQ(!!(cloneFlags & CLONE_NEWPID), true);
+
+    cloneFlags = OHOS::AppSpawn::SandboxUtils::GetSandboxNsFlags(true);
+    EXPECT_EQ(!!(cloneFlags & (CLONE_NEWPID | CLONE_NEWNET)), true);
+
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_41 end";
 }
 } // namespace OHOS

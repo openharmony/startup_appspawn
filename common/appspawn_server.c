@@ -30,7 +30,6 @@
 #endif
 
 #define DEFAULT_UMASK 0002
-#define SANDBOX_STACK_SIZE (1024 * 1024 * 8)
 
 long long DiffTime(struct timespec *startTime)
 {
@@ -200,21 +199,11 @@ static int AppSpawnChild(void *arg)
     return 0;
 }
 
+#ifndef APPSPAWN_TEST
 static int CloneAppSpawn(void *arg)
 {
-    int ret = AppSpawnChild(arg);
-    ProcessExit(ret);
-    return ret;
-}
-
-#ifndef APPSPAWN_TEST
-pid_t AppSpawnFork(int (*childFunc)(void *arg), void *args)
-{
-    pid_t pid = fork();
-    if (pid == 0) {
-        ProcessExit(childFunc(args));
-    }
-    return pid;
+    ProcessExit(AppSpawnChild(arg));
+    return 0;
 }
 #endif
 
@@ -224,25 +213,19 @@ int AppSpawnProcessMsg(AppSandboxArg *sandbox, pid_t *childPid)
     APPSPAWN_CHECK(sandbox->client != NULL && childPid != NULL, return -1, "Invalid client for appspawn");
     APPSPAWN_LOGI("AppSpawnProcessMsg id %{public}d 0x%{public}x", sandbox->client->id, sandbox->client->flags);
 
-#ifndef OHOS_LITE
-    AppSpawnClient *client = sandbox->client;
-    if (client->cloneFlags & CLONE_NEWPID) {
-        APPSPAWN_CHECK(client->cloneFlags & CLONE_NEWNS, return -1, "clone flags error");
-        char *childStack = (char *)malloc(SANDBOX_STACK_SIZE);
-        APPSPAWN_CHECK(childStack != NULL, return -1, "malloc failed");
-        pid_t pid = clone(CloneAppSpawn,
-            childStack + SANDBOX_STACK_SIZE, client->cloneFlags | SIGCHLD, (void *)sandbox);
-        if (pid > 0) {
-            free(childStack);
-            *childPid = pid;
-            return 0;
+#ifndef APPSPAWN_TEST
+    pid_t pid = 0;
+    if (sandbox->content->isNweb) {
+        pid = clone(CloneAppSpawn, NULL, sandbox->client->cloneFlags | SIGCHLD, (void *)sandbox);
+    } else {
+        pid = fork();
+        if (pid == 0) {
+            ProcessExit(AppSpawnChild((void *)sandbox));
         }
-        client->cloneFlags &= ~CLONE_NEWPID;
-        free(childStack);
     }
+    APPSPAWN_CHECK(pid >= 0, return -errno, "fork child process error: %{public}d", -errno);
+    *childPid = pid;
 #endif
-    *childPid = AppSpawnFork(AppSpawnChild, (void *)sandbox);
-    APPSPAWN_CHECK(*childPid >= 0, return -errno, "fork child process error: %{public}d", -errno);
     return 0;
 }
 
