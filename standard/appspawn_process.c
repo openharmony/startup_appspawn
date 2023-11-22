@@ -228,45 +228,22 @@ static int SetUidGid(struct AppSpawnContent_ *content, AppSpawnClient *client)
     APPSPAWN_CHECK(!isRet, return -errno,
         "setgroups failed: %{public}d, gids.size=%{public}u", errno, appProperty->property.gidCount);
 
-    if (client->cloneFlags & CLONE_NEWPID) {
-        /* setresuid and setresgid have multi-thread synchronous operations.
-         * after clone, the C library has not cleaned up the multi-thread information, so need to call syscall.
-         */
-        // set gid
-        long ret = syscall(SYS_setresgid, appProperty->property.gid,
-            appProperty->property.gid, appProperty->property.gid);
-        APPSPAWN_CHECK(ret == 0, return -errno,
-            "setgid(%{public}u) failed: %{public}d", appProperty->property.gid, errno);
+    // set gid
+    isRet = setresgid(appProperty->property.gid, appProperty->property.gid, appProperty->property.gid) == -1;
+    APPSPAWN_CHECK(!isRet, return -errno,
+        "setgid(%{public}u) failed: %{public}d", appProperty->property.gid, errno);
 
-        if (content->setSeccompFilter) {
-            ret = content->setSeccompFilter(content, client);
-            APPSPAWN_CHECK(ret == 0, return ret, "Failed to set setSeccompFilter");
-        }
-
-        /* If the effective user ID is changed from 0 to nonzero,
-         * then all capabilities are cleared from the effective set
-         */
-        ret = syscall(SYS_setresuid, appProperty->property.uid, appProperty->property.uid, appProperty->property.uid);
-        APPSPAWN_CHECK(ret == 0, return -errno,
-            "setuid(%{public}u) failed: %{public}d", appProperty->property.uid, errno);
-    } else {
-        // set gid
-        isRet = setresgid(appProperty->property.gid, appProperty->property.gid, appProperty->property.gid) == -1;
-        APPSPAWN_CHECK(!isRet, return -errno,
-            "setgid(%{public}u) failed: %{public}d", appProperty->property.gid, errno);
-
-        if (content->setSeccompFilter) {
-            long ret = content->setSeccompFilter(content, client);
-            APPSPAWN_CHECK(ret == 0, return ret, "Failed to set setSeccompFilter");
-        }
-
-        /* If the effective user ID is changed from 0 to nonzero,
-         * then all capabilities are cleared from the effective set
-         */
-        isRet = setresuid(appProperty->property.uid, appProperty->property.uid, appProperty->property.uid) == -1;
-        APPSPAWN_CHECK(!isRet, return -errno,
-            "setuid(%{public}u) failed: %{public}d", appProperty->property.uid, errno);
+    if (content->setSeccompFilter) {
+        long ret = content->setSeccompFilter(content, client);
+        APPSPAWN_CHECK(ret == 0, return ret, "Failed to set setSeccompFilter");
     }
+
+    /* If the effective user ID is changed from 0 to nonzero,
+     * then all capabilities are cleared from the effective set
+     */
+    isRet = setresuid(appProperty->property.uid, appProperty->property.uid, appProperty->property.uid) == -1;
+    APPSPAWN_CHECK(!isRet, return -errno,
+            "setuid(%{public}u) failed: %{public}d", appProperty->property.uid, errno);
 #endif
     if ((appProperty->property.flags & APP_DEBUGGABLE) != 0) {
         APPSPAWN_LOGV("Debuggable app");
@@ -581,6 +558,24 @@ int GetAppSpawnClientFromArg(int argc, char *const argv[], AppSpawnClientExt *cl
     return ret;
 }
 
+static int EnablePidNs(AppSpawnContent *content)
+{
+    AppSpawnContentExt *appSpawnContent = (AppSpawnContentExt *)content;
+    if (appSpawnContent->flags & FLAGS_MODE_COLD) {
+        return 0;
+    }
+
+    if (!(content->sandboxNsFlags & CLONE_NEWPID)) {
+        return 0;
+    }
+
+    int ret = unshare(CLONE_NEWPID);
+    APPSPAWN_CHECK(ret == 0, return -1, "unshare CLONE_NWEPID failed, errno=%{public}d", errno);
+
+    APPSPAWN_LOGI("Enable pid namespace success.");
+    return 0;
+}
+
 void SetContentFunction(AppSpawnContent *content)
 {
     APPSPAWN_LOGI("SetContentFunction");
@@ -599,6 +594,7 @@ void SetContentFunction(AppSpawnContent *content)
 #ifdef ASAN_DETECTOR
         content->getWrapBundleNameValue = GetWrapBundleNameValue;
 #endif
+        content->enablePidNs = EnablePidNs;
     }
     content->setAppSandbox = SetAppSandboxProperty;
     content->setCapabilities = SetCapabilities;

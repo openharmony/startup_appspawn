@@ -31,10 +31,9 @@ void LoadExtendLib(AppSpawnContent *content);
 void LoadExtendLibNweb(AppSpawnContent *content);
 void RunChildProcessor(AppSpawnContent *content, AppSpawnClient *client);
 void RunChildProcessorNweb(AppSpawnContent *content, AppSpawnClient *client);
-void LoadAppSandboxConfig(void);
+void LoadAppSandboxConfig(AppSpawnContent *content);
 void SetUidGidFilter(struct AppSpawnContent_ *content);
 int SetSeccompFilter(struct AppSpawnContent_ *content, AppSpawnClient *client);
-uint32_t GetAppNamespaceFlags(const char *bundleName);
 void HandleInternetPermission(const AppSpawnClient *client);
 
 void DisallowInternet(void);

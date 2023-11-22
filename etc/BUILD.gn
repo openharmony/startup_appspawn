@@ -30,12 +30,6 @@ ohos_prebuilt_appdata_sandbox("appdata-sandbox.json") {
   module_install_dir = "etc/sandbox"
 }
 
-ohos_prebuilt_etc("sandbox-config.json") {
-  source = "//base/startup/appspawn/sandbox-config.json"
-  part_name = "${part_name}"
-  module_install_dir = "etc/sandbox"
-}
-
 ohos_prebuilt_etc("appspawn_preload.json") {
   source = "../appspawn_preload.json"
   part_name = "${part_name}"
@@ -46,6 +40,5 @@ group("etc_files") {
   deps = [
     ":appdata-sandbox.json",
     ":appspawn_preload.json",
-    ":sandbox-config.json",
   ]
 }
