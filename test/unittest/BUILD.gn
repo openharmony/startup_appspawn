@@ -99,12 +99,15 @@ if (!defined(ohos_lite)) {
       "${appspawn_path}/interfaces/innerkits/src/appspawn_mount_permission.cpp",
       "${appspawn_path}/standard/appspawn_process.c",
       "${appspawn_path}/standard/appspawn_service.c",
+      "${appspawn_path}/util/src/command_lexer.cpp",
       "${appspawn_path}/util/src/json_utils.cpp",
+      "${appspawn_path}/util/src/param_helper.c",
       "${appspawn_path}/util/src/sandbox_utils.cpp",
     ]
 
     sources += [
       "${appspawn_path}/test/unittest/app_spawn_socket_test/app_spawn_socket_test.cpp",
+      "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_command_lexer_test.cpp",
       "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_sandbox_test.cpp",
       "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_standard_test.cpp",
       "${appspawn_path}/test/unittest/app_spawn_stub.cpp",

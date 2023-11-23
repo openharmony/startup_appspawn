@@ -15,6 +15,7 @@
 
 #include "appspawn_service.h"
 #include "appspawn_adapter.h"
+#include "param_helper.h"
 
 #include <fcntl.h>
 #include <inttypes.h>
