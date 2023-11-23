@@ -14,8 +14,16 @@
  */
 
 #include "appspawn_adapter.h"
+#include "command_lexer.h"
+#include "param_helper.h"
 
+#include <cerrno>
+#include <cstring>
 #include <set>
+#include <string>
+#include <utility>
+#include <vector>
+#include <unistd.h>
 #include "appspawn_service.h"
 #include "config_policy_utils.h"
 #include "hitrace_meter.h"
@@ -137,8 +145,31 @@ void RunChildProcessor(AppSpawnContent *content, AppSpawnClient *client)
     APPSPAWN_CHECK(client != NULL && content != NULL, return, "Invalid client");
     AppSpawnClientExt *appProperty = reinterpret_cast<AppSpawnClientExt *>(client);
     if (appProperty->property.code == SPAWN_NATIVE_PROCESS) {
+        if (!IsDeveloperModeOn()) {
+            APPSPAWN_LOGE("Denied launching a native process: not in developer mode");
+            return;
+        }
         APPSPAWN_LOGI("renderCmd %{public}s", appProperty->property.renderCmd);
-        (void)system(appProperty->property.renderCmd);
+        std::vector<std::string> args;
+        std::string command(appProperty->property.renderCmd);
+        CommandLexer lexer(command);
+        if (!lexer.GetAllArguments(args)) {
+            return;
+        }
+        if (args.empty()) {
+            APPSPAWN_LOGE("Failed to run a native process: empty command");
+            return;
+        }
+        std::vector<char *> options;
+        for (const auto &arg : args) {
+            options.push_back(const_cast<char *>(arg.c_str()));
+        }
+        options.push_back(nullptr);
+        execvp(args[0].c_str(), options.data());
+        // If it succeeds calling execvp, it never returns.
+        int err = errno;
+        APPSPAWN_LOGE("Failed to launch a native process with execvp: %{public}s",
+            strerror(err));
         return;
     }
     APPSPAWN_LOGI("LoadExtendLib: RunChildProcessor");

@@ -55,7 +55,9 @@ if (!defined(ohos_lite)) {
       "${appspawn_path}/adapter/nwebspawn_lancher.cpp",
       "${appspawn_path}/interfaces/innerkits/src/appspawn_mount_permission.cpp",
       "${appspawn_path}/standard/main.c",
+      "${appspawn_path}/util/src/command_lexer.cpp",
       "${appspawn_path}/util/src/json_utils.cpp",
+      "${appspawn_path}/util/src/param_helper.c",
       "${appspawn_path}/util/src/sandbox_utils.cpp",
     ]
     if (asan_detector || is_asan) {
