@@ -99,7 +99,12 @@
                     "sandbox-path" : "/data/storage/el2/base",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
-                },{
+                }, {
+                    "src-path" : "/data/app/el2/<currentUserId>/log/<PackageName>",
+                    "sandbox-path" : "/data/storage/el2/log",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
                     "src-path" : "/data/app/el1/<currentUserId>/database/<PackageName>",
                     "sandbox-path" : "/data/storage/el1/database",
                     "sandbox-flags" : [ "bind", "rec" ],
@@ -230,6 +235,11 @@
                     }, {
                         "src-path" : "/data/app/el1/<currentUserId>/base/<PackageName_index>",
                         "sandbox-path" : "/data/storage/el1/base",
+                        "sandbox-flags" : [ "bind", "rec" ],
+                        "check-action-status": "false"
+                    }, {
+                        "src-path" : "/data/app/el2/<currentUserId>/log/<PackageName_index>",
+                        "sandbox-path" : "/data/storage/el2/log",
                         "sandbox-flags" : [ "bind", "rec" ],
                         "check-action-status": "false"
                     }, {
