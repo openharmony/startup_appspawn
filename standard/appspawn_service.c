@@ -45,6 +45,8 @@
 #endif
 
 static AppSpawnContentExt *g_appSpawnContent = NULL;
+static const uint32_t EXTRAINFO_TOTAL_LENGTH_MAX = 32 * 1024;
+
 static int AppInfoHashNodeCompare(const HashNode *node1, const HashNode *node2)
 {
     AppInfo *testNode1 = HASHMAP_ENTRY(node1, AppInfo, node);
@@ -363,7 +365,7 @@ static bool ReceiveRequestDataToExtraInfo(const TaskHandle taskHandle, AppSpawnC
         uint32_t total = extraInfo->totalLength;
         char *data = extraInfo->data;
 
-        APPSPAWN_LOGV("Receiving extraInfo: (%{public}u saved + %{public}u incoming) / %{public}u total",
+        APPSPAWN_LOGI("Receiving extraInfo: (%{public}u saved + %{public}u incoming) / %{public}u total",
             saved, buffLen, total);
 
         APPSPAWN_CHECK((total - saved) >= buffLen, LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
@@ -383,12 +385,27 @@ static bool ReceiveRequestDataToExtraInfo(const TaskHandle taskHandle, AppSpawnC
     return true;
 }
 
+static int CheckRequestMsgValid(AppSpawnClientExt *client)
+{
+    if (client->property.extraInfo.totalLength >= EXTRAINFO_TOTAL_LENGTH_MAX) {
+         APPSPAWN_LOGE("extrainfo total length invalid,len: %{public}d", client->property.extraInfo.totalLength);
+         return -1;
+    }    
+    for (int i = 0; i < APP_LEN_PROC_NAME; i++) {
+        if (client->property.processName[i] == '\0') {
+            return 0;
+        }
+    }
+
+    APPSPAWN_LOGE("processname invalid");
+    return -1;
+}
+
 APPSPAWN_STATIC bool ReceiveRequestData(const TaskHandle taskHandle, AppSpawnClientExt *client,
     const uint8_t *buffer, uint32_t buffLen)
 {
-    APPSPAWN_LOGI("ReceiveRequestData: buffLen=%{public}u", buffLen);
     APPSPAWN_CHECK(buffer != NULL && buffLen > 0, LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
-        return false, "ReceiveRequestData: Invalid buff");
+        return false, "ReceiveRequestData: Invalid buff, bufferLen:%{public}d", buffLen);
 
     // 1. receive AppParamter
     if (client->property.extraInfo.totalLength == 0) {
@@ -406,6 +423,9 @@ APPSPAWN_STATIC bool ReceiveRequestData(const TaskHandle taskHandle, AppSpawnCli
         // update buffer
         buffer += sizeof(client->property);
         buffLen -= sizeof(client->property);
+        ret = CheckRequestMsgValid(client);
+        APPSPAWN_CHECK(ret == 0, LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
+            return false, "Invalid request msg");
     }
 
     // 2. check whether extraInfo exist
