@@ -36,16 +36,9 @@
 #include "limits.h"
 #include "string.h"
 #include "init_param.h"
+#include "code_sign_attr_utils.h"
+
 #define DEVICE_NULL_STR "/dev/null"
-
-struct XpmRegionInfo {
-    uint64_t addr;
-    uint64_t length;
-};
-
-#define XPM_DEV_PATH "/dev/xpm"
-#define XPM_REGION_LEN 0x10000000
-#define SET_XPM_REGION _IOW('x', 0x01, struct XpmRegionInfo)
 
 // ide-asan
 static int SetAsanEnabledEnv(struct AppSpawnContent_ *content, AppSpawnClient *client)
@@ -204,18 +197,21 @@ static void ClearEnvironment(AppSpawnContent *content, AppSpawnClient *client)
     return;
 }
 
-int SetXpmRegion(struct AppSpawnContent_ *content)
+int SetXpmConfig(struct AppSpawnContent_ *content, AppSpawnClient *client)
 {
-    struct XpmRegionInfo info = { 0, XPM_REGION_LEN };
+    int ret = InitXpmRegion();
+    APPSPAWN_CHECK(ret == 0, return ret, "init xpm region failed: %{public}d", ret);
 
-    // 32-bit system no xpm dev file
-    int fd = open(XPM_DEV_PATH, O_RDWR);
-    APPSPAWN_CHECK(fd != -1, return 0, "open xpm device file failed: %s", strerror(errno));
+    AppSpawnClientExt *appProperty = (AppSpawnClientExt *)client;
+    if (appProperty->property.flags & APP_DEBUGGABLE) {
+        ret = SetXpmOwnerId(PROCESS_OWNERID_DEBUG, NULL);
+    } else if (appProperty->property.ownerId[0] == '\0') {
+        ret = SetXpmOwnerId(PROCESS_OWNERID_COMPAT, NULL);
+    } else {
+        ret = SetXpmOwnerId(PROCESS_OWNERID_APP, appProperty->property.ownerId);
+    }
+    APPSPAWN_CHECK(ret == 0, return ret, "set xpm region failed: %{public}d", ret);
 
-    int ret = ioctl(fd, SET_XPM_REGION, &info);
-    APPSPAWN_CHECK_ONLY_LOG(ret != -1, "set xpm region failed: %s", strerror(errno));
-
-    close(fd);
     return 0;
 }
 
@@ -410,9 +406,9 @@ static int EncodeAppClient(AppSpawnClient *client, char *param, int32_t originLe
     if (appProperty->soPath[0] == '\0') {
         strcpy_s(appProperty->soPath, sizeof(appProperty->soPath), "NULL");
     }
-    len = sprintf_s(param + startLen, originLen - startLen, ":%s:%s:%s:%u:%s:%s:%u:%" PRIu64 "",
+    len = sprintf_s(param + startLen, originLen - startLen, ":%s:%s:%s:%u:%s:%s:%s:%u:%" PRIu64 "",
         appProperty->processName, appProperty->bundleName, appProperty->soPath,
-        appProperty->accessTokenId, appProperty->apl, appProperty->renderCmd,
+        appProperty->accessTokenId, appProperty->apl, appProperty->renderCmd, appProperty->ownerId,
         appProperty->hapFlags, appProperty->accessTokenIdEx);
     APPSPAWN_CHECK(len > 0 && (len < (originLen - startLen)), return -1, "Invalid to format processName");
     return 0;
@@ -538,6 +534,7 @@ int GetAppSpawnClientFromArg(int argc, char *const argv[], AppSpawnClientExt *cl
     ret = GetUInt32FromArg(NULL, &end, &client->property.accessTokenId);
     ret += GetStringFromArg(NULL, &end, client->property.apl, sizeof(client->property.apl));
     ret += GetStringFromArg(NULL, &end, client->property.renderCmd, sizeof(client->property.renderCmd));
+    ret += GetStringFromArg(NULL, &end, client->property.ownerId, sizeof(client->property.ownerId));
     ret += GetUInt32FromArg(NULL, &end, &value);
     client->property.hapFlags = value;
     ret += GetUInt64FromArg(NULL, &end, &client->property.accessTokenIdEx);
@@ -584,7 +581,7 @@ void SetContentFunction(AppSpawnContent *content)
     content->setProcessName = SetProcessName;
     content->setKeepCapabilities = SetKeepCapabilities;
     content->setUidGid = SetUidGid;
-    content->setXpmRegion = SetXpmRegion;
+    content->setXpmConfig = SetXpmConfig;
     content->setFileDescriptors = SetFileDescriptors;
     content->coldStartApp = ColdStartApp;
     content->setAsanEnabledEnv = SetAsanEnabledEnv;

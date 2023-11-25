@@ -68,7 +68,7 @@ typedef struct AppSpawnContent_ {
     char *longProcName, uint32_t longProcNameLen);
     int (*setUidGid)(struct AppSpawnContent_ *content, AppSpawnClient *client);
     int (*setCapabilities)(struct AppSpawnContent_ *content, AppSpawnClient *client);
-    int (*setXpmRegion)(struct AppSpawnContent_ *content);
+    int (*setXpmConfig)(struct AppSpawnContent_ *content, AppSpawnClient *client);
 
     void (*notifyResToParent)(struct AppSpawnContent_ *content, AppSpawnClient *client, int result);
     void (*runChildProcessor)(struct AppSpawnContent_ *content, AppSpawnClient *client);
