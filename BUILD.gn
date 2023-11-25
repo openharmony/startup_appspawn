@@ -142,6 +142,7 @@ if (!defined(ohos_lite)) {
       "access_token:libtoken_setproc",
       "access_token:libtokenid_sdk",
       "c_utils:utils",
+      "code_signature:libcode_sign_attr_utils",
       "config_policy:configpolicy_util",
       "hilog:libhilog",
       "init:libbegetutil",
