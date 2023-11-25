@@ -159,6 +159,11 @@
                     "sandbox-path" : "/data/themes/b/app",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
+                }, {
+                    "src-path" : "/data/service/el1/<currentUserId>/distributeddata/utd",
+                    "sandbox-path" : "/data/utd",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
                 }
             ],
             "symbol-links" : [{
