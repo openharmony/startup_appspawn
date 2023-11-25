@@ -102,10 +102,10 @@ int DoStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client, char *l
             return ret, "Failed to set KeepCapabilities");
     }
 
-    if (content->setXpmRegion) {
-        ret = content->setXpmRegion(content);
+    if (content->setXpmConfig) {
+        ret = content->setXpmConfig(content, client);
         APPSPAWN_CHECK(ret == 0, NotifyResToParent(content, client, ret);
-            return ret, "Failed to set setXpmRegion");
+            return ret, "Failed to set setXpmConfig");
     }
 
     if (content->setUidGid) {

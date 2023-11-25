@@ -54,7 +54,8 @@
                 "ability_lite",
                 "ace_engine_lite",
                 "surface_lite",
-                "ui_lite"
+                "ui_lite",
+                "code_signature"
             ],
 	    "third_party": [
                 "bounds_checking_function",
