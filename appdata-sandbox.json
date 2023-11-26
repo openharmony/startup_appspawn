@@ -569,10 +569,11 @@
                     "sandbox-path" : "/data/storage/el2/cloud",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
+
                 },
                 {
                     "src-path": "/storage/media/<currentUserId>/local/files/Docs",
-                    "sandbox-path": "/storage/Users/currentUser",
+                    "sandbox-path": "/storage/Users/<currentUserId>",
                     "sandbox-flags": [ "bind", "rec" ]
                 },
                 {
@@ -601,36 +602,27 @@
         "ohos.permission.FILE_CROSS_APP":[{
             "sandbox-switch": "ON",
             "sandbox-root": "/mnt/sandbox/<PackageName>",
-            "gids": [1009],
+            "gids": [1006],
             "mount-paths": [{
                     "src-path": "/storage/media/<currentUserId>/local/files/Docs",
                     "sandbox-path": "/storage/Users/<currentUserId>",
                     "sandbox-flags": [ "bind", "rec" ]
                 },
                 {
-                    "src-path": "/storage/media/<currentUserId>/local/files/Download",
-                    "sandbox-path": "/storage/Users/<currentUserId>/Download",
-                    "sandbox-flags": [ "bind", "rec" ]
-                },
-                {
-                    "src-path": "/storage/media/<currentUserId>/local/files/Documents",
-                    "sandbox-path": "/storage/Users/<currentUserId>/Documents",
-                    "sandbox-flags": [ "bind", "rec" ]
-                },
-                {
-                    "src-path": "/storage/media/<currentUserId>/local/files/Desktop",
-                    "sandbox-path": "/storage/Users/<currentUserId>/Desktop",
-                    "sandbox-flags": [ "bind", "rec" ]
-                },
-                {
                     "src-path": "/data/app/el1/<currentUserId>/base",
                     "sandbox-path": "/storage/Users/<currentUserId>/appdata/el1",
-                    "sandbox-flags": [ "bind", "rec" ]
+                    "sandbox-flags-customized": [ "bind", "rec" ],
+                    "dac-override-sensitive": "true",
+                    "fs-type": "",
+                    "options": ""
                 },
                 {
                     "src-path": "/data/app/el2/<currentUserId>/base",
                     "sandbox-path": "/storage/Users/<currentUserId>/appdata/el2",
-                    "sandbox-flags": [ "bind", "rec" ]
+                    "sandbox-flags-customized": [ "bind", "rec" ],
+                    "dac-override-sensitive": "true",
+                    "fs-type": "",
+                    "options": ""
                 },
                 {
                     "src-path": "/data/service/el1/public/storage_daemon/share/public",
