@@ -142,7 +142,6 @@ if (!defined(ohos_lite)) {
       "access_token:libtoken_setproc",
       "access_token:libtokenid_sdk",
       "c_utils:utils",
-      "code_signature:libcode_sign_attr_utils",
       "config_policy:configpolicy_util",
       "hilog:libhilog",
       "init:libbegetutil",
@@ -155,6 +154,12 @@ if (!defined(ohos_lite)) {
       defines += [ "SECURITY_COMPONENT_ENABLE" ]
       external_deps +=
           [ "security_component_manager:libsecurity_component_enhance_sdk" ]
+    }
+
+    if (!defined(global_parts_info) ||
+        defined(global_parts_info.security_code_signature)) {
+      defines += [ "CODE_SIGNATURE_ENABLE" ]
+      external_deps += [ "code_signature:libcode_sign_attr_utils" ]
     }
 
     if (build_selinux) {
