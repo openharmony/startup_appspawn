@@ -73,7 +73,6 @@ typedef struct AppSpawnContent_ {
     void (*notifyResToParent)(struct AppSpawnContent_ *content, AppSpawnClient *client, int result);
     void (*runChildProcessor)(struct AppSpawnContent_ *content, AppSpawnClient *client);
     int (*setAsanEnabledEnv)(struct AppSpawnContent_ *content, AppSpawnClient *client);
-    int (*setGwpAsanEnabled)(struct AppSpawnContent_ *content, AppSpawnClient *client);
 
     // for pid namespace
     int (*enablePidNs)(struct AppSpawnContent_ *content);
