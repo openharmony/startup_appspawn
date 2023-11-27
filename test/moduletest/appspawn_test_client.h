@@ -110,7 +110,6 @@ public:
         ret += strcpy_s(request->processName, sizeof(request->processName), processName.c_str());
         ret += strcpy_s(request->bundleName, sizeof(request->bundleName), processName.c_str());
         ret += strcpy_s(request->renderCmd, sizeof(request->renderCmd), cmd.c_str());
-        ret += strcpy_s(request->ownerId, sizeof(request->ownerId), cmd.c_str());
         if (ret != 0) {
             printf("Failed to copy bundle name \n");
         }
