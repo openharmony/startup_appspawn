@@ -647,15 +647,14 @@
         "ohos.permission.ACTIVATE_THEME_PACKAGE":[{
             "sandbox-switch": "ON",
             "sandbox-root": "/mnt/sandbox/<PackageName>",
-            "gids": [3817],
             "mount-paths": [{
                     "src-path": "/data/service/el1/public/themes/<currentUserId>/a/system",
-                    "sandbox-path": "/date/themes/a/system",
+                    "sandbox-path": "/data/themes/a/system",
                     "sandbox-flags": [ "bind", "rec" ]
                 }, 
                 {
                     "src-path": "/data/service/el1/public/themes/<currentUserId>/b/system",
-                    "sandbox-path": "/date/themes/b/system",
+                    "sandbox-path": "/data/themes/b/system",
                     "sandbox-flags": [ "bind", "rec" ]
                 }
             ]
@@ -663,10 +662,9 @@
         "ohos.permission.GET_WALLPAPER":[{
             "sandbox-switch": "ON",
             "sandbox-root": "/mnt/sandbox/<PackageName>",
-            "gids": [3817],
             "mount-paths": [{
                     "src-path": "/data/service/el1/public/wallpaper/<currentUserId>",
-                    "sandbox-path": "/date/wallpaper",
+                    "sandbox-path": "/data/wallpaper",
                     "sandbox-flags": [ "bind", "rec" ]
                 }
             ]
