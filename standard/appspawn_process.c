@@ -36,7 +36,9 @@
 #include "limits.h"
 #include "string.h"
 #include "init_param.h"
+#ifdef CODE_SIGNATURE_ENABLE
 #include "code_sign_attr_utils.h"
+#endif
 
 #define DEVICE_NULL_STR "/dev/null"
 
@@ -199,6 +201,7 @@ static void ClearEnvironment(AppSpawnContent *content, AppSpawnClient *client)
 
 int SetXpmConfig(struct AppSpawnContent_ *content, AppSpawnClient *client)
 {
+#ifdef CODE_SIGNATURE_ENABLE
     int ret = InitXpmRegion();
     APPSPAWN_CHECK(ret == 0, return ret, "init xpm region failed: %{public}d", ret);
 
@@ -211,6 +214,7 @@ int SetXpmConfig(struct AppSpawnContent_ *content, AppSpawnClient *client)
         ret = SetXpmOwnerId(PROCESS_OWNERID_APP, appProperty->property.ownerId);
     }
     APPSPAWN_CHECK(ret == 0, return ret, "set xpm region failed: %{public}d", ret);
+#endif
 
     return 0;
 }
