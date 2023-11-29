@@ -580,11 +580,6 @@
                     "src-path": "/storage/media/<currentUserId>/local/files/.Recent",
                     "sandbox-path": "/storage/Users/.Recent",
                     "sandbox-flags": [ "bind", "rec" ]
-                },
-                {
-                    "src-path": "/storage/media/<currentUserId>/local/files/.Trash",
-                    "sandbox-path": "/storage/Users/.Trash",
-                    "sandbox-flags": [ "bind", "rec" ]
                 }
             ]
         }],
