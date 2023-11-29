@@ -66,6 +66,8 @@ private:
         nlohmann::json &appConfig, const std::string &section = "app-base");
     static int DoAllSymlinkPointslink(const ClientSocket::AppProperty *appProperty, nlohmann::json &appConfig);
     static std::string ConvertToRealPath(const ClientSocket::AppProperty *appProperty, std::string sandboxRoot);
+    static std::string ConvertToRealPathWithPermission(const ClientSocket::AppProperty *appProperty,
+                                                       std::string sandboxRoot);
     static std::string GetSbxPathByConfig(const ClientSocket::AppProperty *appProperty, nlohmann::json &config);
     static bool CheckTotalSandboxSwitchStatus(const ClientSocket::AppProperty *appProperty);
     static bool CheckAppSandboxSwitchStatus(const ClientSocket::AppProperty *appProperty);
@@ -73,33 +75,36 @@ private:
     static bool GetSbxSwitchStatusByConfig(nlohmann::json &config);
     static unsigned long GetMountFlagsFromConfig(const std::vector<std::string> &vec);
     static int32_t SetCommonAppSandboxProperty_(const ClientSocket::AppProperty *appProperty,
-                                         nlohmann::json &config);
+                                                nlohmann::json &config);
     static int32_t SetPrivateAppSandboxProperty_(const ClientSocket::AppProperty *appProperty,
-                                          nlohmann::json &config);
+                                                 nlohmann::json &config);
     static int32_t SetRenderSandboxProperty(const ClientSocket::AppProperty *appProperty,
                                             std::string &sandboxPackagePath);
     static int32_t SetRenderSandboxPropertyNweb(const ClientSocket::AppProperty *appProperty,
-                                            std::string &sandboxPackagePath);
+                                                std::string &sandboxPackagePath);
     static int32_t SetOverlayAppSandboxProperty(const ClientSocket::AppProperty *appProperty,
-                                            std::string &sandboxPackagePath);
+                                                std::string &sandboxPackagePath);
     static int32_t SetBundleResourceAppSandboxProperty(const ClientSocket::AppProperty *appProperty,
-                                            std::string &sandboxPackagePath);
+                                                       std::string &sandboxPackagePath);
     static int32_t DoSandboxFilePermissionBind(ClientSocket::AppProperty *appProperty,
                                                nlohmann::json &wholeConfig);
     static int32_t SetPermissionAppSandboxProperty_(ClientSocket::AppProperty *appProperty,
-                                                nlohmann::json &config);
+                                                    nlohmann::json &config);
     static int32_t SetPermissionAppSandboxProperty(ClientSocket::AppProperty *appProperty);
-    static int32_t DoAddGid(ClientSocket::AppProperty *appProperty,
-    nlohmann::json &appConfig, const char* permissionName, const std::string &section);
-    static void ConvertSandboxName(const ClientSocket::AppProperty *appProperty, const std::string &section,
-                                   std::string &sandboxPath);
+    static int32_t DoAddGid(ClientSocket::AppProperty *appProperty, nlohmann::json &appConfig,
+                            const char* permissionName, const std::string &section);
     static bool GetProductDeviceType();
     static int32_t SetSandboxProperty(ClientSocket::AppProperty *appProperty, std::string &sandboxPackagePath);
     static int32_t ChangeCurrentDir(std::string &sandboxPackagePath, const std::string &bundleName,
                                     bool sandboxSharedStatus);
     static int32_t GetMountPermissionFlags(const std::string permissionName);
+    static bool GetSandboxDacOverrideEnable(nlohmann::json &config);
+    static unsigned long GetSandboxMountFlags(nlohmann::json &config);
+    static const char *GetSandboxFsType(nlohmann::json &config);
+    static const char *GetSandboxOptions(nlohmann::json &config);
 private:
     static std::vector<nlohmann::json> appSandboxConfig_;
+    static bool deviceTypeEnable_;
 };
 } // namespace AppSpawn
 } // namespace OHOS
