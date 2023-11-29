@@ -16,12 +16,15 @@
 #include "appspawn_service.h"
 #include "appspawn_adapter.h"
 #include "appspawn_server.h"
+#include "appspawn_msg.h"
 
 #include <fcntl.h>
+#include <stdlib.h>
 #include <sys/signalfd.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
+#include <sys/mount.h>
 #include <unistd.h>
 #include <sched.h>
 #include <linux/limits.h>
@@ -43,6 +46,8 @@
 #define TV_SEC 2
 #define APPSPAWN_EXIT_TIME 500
 #endif
+#define DIR_MODE 0711
+#define USER_ID_SIZE 4
 
 static AppSpawnContentExt *g_appSpawnContent = NULL;
 static const uint32_t EXTRAINFO_TOTAL_LENGTH_MAX = 32 * 1024;
@@ -194,6 +199,108 @@ static void KillProcessesByCGroup(uid_t uid, const AppInfo *appInfo)
     }
     fclose(file);
 }
+
+
+#ifndef APPSPAWN_TEST
+static bool IsUnlockStatus(uint32_t uid)
+{
+    const int userIdBase = 200000;
+    uid = uid / userIdBase;
+    if (uid == 0) {
+        return true;
+    }
+
+    char userId[USER_ID_SIZE] = {0};
+    size_t len = sprintf_s(userId, USER_ID_SIZE, "%u", uid);
+    APPSPAWN_CHECK(len > 0 && (len < USER_ID_SIZE), return true, "Failed to get userId");
+
+    const char rootPath[] = "/data/app/el2/";
+    const char basePath[] = "/base";
+    size_t allPathSize = strlen(rootPath) + strlen(basePath) + strlen(userId) + 1;
+    char *path = malloc(sizeof(char) * allPathSize);
+    APPSPAWN_CHECK(path != NULL, return true, "Failed to malloc path");
+    len = sprintf_s(path, allPathSize, "%s%s%s", rootPath, userId, basePath);
+    APPSPAWN_CHECK(len > 0 && (len < allPathSize), return true, "Failed to get base path");
+
+    if (access(path, F_OK) == 0) {
+        APPSPAWN_LOGI("this is unlock status");
+        free(path);
+        return true;
+    }
+    free(path);
+    APPSPAWN_LOGI("this is lock status");
+    return false;
+}
+
+void MakeDirRec(const char *path)
+{
+    if (path == NULL || *path == '\0') {
+        return;
+    }
+
+    char buffer[PATH_MAX] = {0};
+    const char slash = '/';
+    const char *p = path;
+    char *curPos = strchr(path, slash);
+    while (curPos != NULL) {
+        int len = curPos - p;
+        p = curPos + 1;
+        if (len == 0) {
+            curPos = strchr(p, slash);
+            continue;
+        }
+        if (len < 0) {
+            break;
+        }
+        APPSPAWN_CHECK(memcpy_s(buffer, PATH_MAX, path, p - path - 1) == 0,
+            return, "memcpy failed");
+        if (mkdir(buffer, DIR_MODE) == -1 && errno != EEXIST) {
+            return;
+        }
+        curPos = strchr(p, slash);
+    }
+    if (mkdir(path, DIR_MODE) == -1 && errno != EEXIST) {
+        return;
+    }
+    return;
+}
+
+static void MountAppEl2Dir(const AppSpawnClient* client)
+{
+    const char rootPath[] = "/mnt/sandbox/";
+    const char el2Path[] = "/data/storage/el2";
+    AppParameter *appProperty = &((AppSpawnClientExt *)client)->property;
+    if (IsUnlockStatus(appProperty->uid)) {
+        return;
+    }
+    size_t allPathSize = strlen(rootPath) + strlen(el2Path) + strlen(appProperty->bundleName) + 1;
+    char *path = malloc(sizeof(char) * (allPathSize));
+    APPSPAWN_CHECK(path != NULL, return, "Failed to malloc path");
+    size_t len = sprintf_s(path, allPathSize, "%s%s%s", rootPath,
+        appProperty->bundleName, el2Path);
+    APPSPAWN_CHECK(len > 0 && (len < allPathSize), return, "Failed to get el2 path");
+
+    if (access(path, F_OK) == 0) {
+        free(path);
+        return;
+    }
+
+    MakeDirRec(path);
+    if (mount(path, path, NULL, MS_BIND | MS_REC, NULL) != 0) {
+        free(path);
+        APPSPAWN_LOGI("mount el2 path failed!");
+        return;
+    }
+    if (mount(NULL, path, NULL, MS_SHARED, NULL) != 0) {
+        free(path);
+        APPSPAWN_LOGI("mount el2 path to shared failed!");
+        return;
+    }
+    APPSPAWN_LOGI("mount el2 path to shared success!");
+    free(path);
+    return;
+}
+#endif
 
 static void HandleDiedPid(pid_t pid, uid_t uid, int status)
 {
@@ -454,6 +561,10 @@ static int HandleMessage(AppSpawnClientExt *appProperty)
     sandboxArg.client->cloneFlags = sandboxArg.content->sandboxNsFlags;
 
     SHOW_CLIENT("Receive client message ", appProperty);
+#ifndef APPSPAWN_TEST
+    // mount el2 dir
+    MountAppEl2Dir(sandboxArg.client);
+#endif
     int result = AppSpawnProcessMsg(&sandboxArg, &appProperty->pid);
     if (result == 0) {  // wait child process result
         result = WaitChild(appProperty->fd[0], appProperty->pid, appProperty);
