@@ -606,18 +606,19 @@
                 {
                     "src-path": "/data/app/el1/<currentUserId>/base",
                     "sandbox-path": "/storage/Users/<currentUserId>/appdata/el1",
-                    "sandbox-flags-customized": [ "bind", "rec" ],
+                    "sandbox-flags-customized": [ "MS_NODEV", "MS_RDONLY" ],
                     "dac-override-sensitive": "true",
-                    "fs-type": "",
-                    "options": ""
+                    "fs-type": "sharefs",
+                    "options": "support_overwrite=1"
                 },
+
                 {
                     "src-path": "/data/app/el2/<currentUserId>/base",
                     "sandbox-path": "/storage/Users/<currentUserId>/appdata/el2",
-                    "sandbox-flags-customized": [ "bind", "rec" ],
+                    "sandbox-flags-customized": [ "MS_NODEV", "MS_RDONLY" ],
                     "dac-override-sensitive": "true",
-                    "fs-type": "",
-                    "options": ""
+                    "fs-type": "sharefs",
+                    "options": "support_overwrite=1"
                 },
                 {
                     "src-path": "/data/service/el1/public/storage_daemon/share/public",
