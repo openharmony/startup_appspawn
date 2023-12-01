@@ -71,8 +71,7 @@ typedef enum AppOperateType_ {
 #define APP_NO_SANDBOX 0x80  // Do not enter sandbox
 #define APP_OVERLAY_FLAG 0x100
 #define GET_BUNDLE_RESOURCES_FLAG 0x200
-#define APP_GWP_ENABLED_FORCE 0x400
-#define APP_GWP_ENABLED_NORMAL 0x800
+
 #define BITLEN32 32
 #define FDLEN2 2
 #define FD_INIT_VALUE 0
