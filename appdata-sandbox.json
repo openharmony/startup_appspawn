@@ -578,7 +578,7 @@
                 },
                 {
                     "src-path": "/storage/media/<currentUserId>/local/files/.Recent",
-                    "sandbox-path": "/storage/Users/.Recent",
+                    "sandbox-path": "/storage/Users/<currentUserId>/.Recent",
                     "sandbox-flags": [ "bind", "rec" ]
                 }
             ]
