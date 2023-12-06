@@ -95,6 +95,11 @@
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "true"
                 }, {
+                    "src-path" : "/mnt/sandbox/<PackageName>/data/storage/el2",
+                    "sandbox-path" : "/data/storage/el2",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
                     "src-path" : "/data/app/el2/<currentUserId>/base/<PackageName>",
                     "sandbox-path" : "/data/storage/el2/base",
                     "sandbox-flags" : [ "bind", "rec" ],
