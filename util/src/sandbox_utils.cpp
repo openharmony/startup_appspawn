@@ -286,13 +286,7 @@ std::string SandboxUtils::ConvertToRealPathWithPermission(const ClientSocket::Ap
 
     if (sandboxRoot.find(g_userId) != std::string::npos) {
         if (deviceTypeEnable_) {
-            std::string userName = "";
-            ErrCode errCode = OHOS::AccountSA::OsAccountManager::GetOsAccountShortName(userName);
-            if (errCode != ERR_OK) {
-                APPSPAWN_LOGE("get short name failed, errCode: %{public}d", errCode);
-                return userName;
-            }
-            sandboxRoot = replace_all(sandboxRoot, g_userId, userName.c_str());
+            sandboxRoot = replace_all(sandboxRoot, g_userId, "currentUser");
         } else {
             sandboxRoot = replace_all(sandboxRoot, g_userId, "currentUser");
         }
@@ -307,7 +301,7 @@ bool SandboxUtils::GetSandboxDacOverrideEnable(nlohmann::json &config)
         return false;
     }
     dacOverrideSensitive = config[g_dacOverrideSensitive].get<std::string>();
-    if (dacOverrideSensitive.compare(g_statusCheck) == 0) {
+    if (dacOverrideSensitive.compare("true") == 0) {
         return true;
     }
     return false;
@@ -346,8 +340,9 @@ bool SandboxUtils::GetSbxSwitchStatusByConfig(nlohmann::json &config)
 static bool CheckMountConfig(nlohmann::json &mntPoint, const ClientSocket::AppProperty *appProperty,
                              bool checkFlag)
 {
-    bool istrue = mntPoint.find(g_srcPath) == mntPoint.end() || mntPoint.find(g_sandBoxPath) == mntPoint.end()
-            || mntPoint.find(g_sandBoxFlags) == mntPoint.end();
+    bool istrue = mntPoint.find(g_srcPath) == mntPoint.end() || mntPoint.find(g_sandBoxPath) == mntPoint.end() ||
+                  ((mntPoint.find(g_sandBoxFlags) == mntPoint.end()) &&
+                    (mntPoint.find(g_sandBoxFlagsCustomized) == mntPoint.end()));
     APPSPAWN_CHECK(!istrue, return false, "read mount config failed, app name is %{public}s", appProperty->bundleName);
 
     if (mntPoint[g_appAplName] != nullptr) {
@@ -465,13 +460,41 @@ const char *SandboxUtils::GetSandboxOptions(nlohmann::json &config)
 {
     std::string options;
     if (GetSandboxDacOverrideEnable(config) && (deviceTypeEnable_ == true) &&
-        (config.find("true") != config.end())) {
+        (config.find(g_sandBoxOptions) != config.end())) {
         options = config[g_sandBoxOptions].get<std::string>();
     } else {
         options = "";
     }
     const char *optionsPoint = options.empty() ? nullptr : options.c_str();
     return optionsPoint;
+}
+
+void SandboxUtils::GetSandboxMountConfig(const std::string &section, nlohmann::json &mntPoint,
+                                         SandboxMountConfig &mountConfig)
+{
+    if (section.compare(g_permissionPrefix) == 0) {
+        mountConfig.optionsPoint = GetSandboxOptions(mntPoint);
+        mountConfig.fsTypePoint = GetSandboxFsType(mntPoint);
+        mountConfig.fsType = (mountConfig.fsTypePoint != nullptr) ? mountConfig.fsTypePoint : "";
+    } else {
+        mountConfig.fsType = (mntPoint.find(g_fsType) != mntPoint.end()) ? mntPoint[g_fsType].get<std::string>() : "";
+        mountConfig.fsTypePoint = mountConfig.fsType.empty() ? nullptr : mountConfig.fsType.c_str();
+        mountConfig.optionsPoint = nullptr;
+    }
+    return;
+}
+
+std::string SandboxUtils::GetSandboxPath(const ClientSocket::AppProperty *appProperty, nlohmann::json &mntPoint,
+                                     const std::string &section, std::string sandboxRoot)
+{
+    std::string sandboxPath = "";
+    if (section.compare(g_permissionPrefix) == 0) {
+        sandboxPath = sandboxRoot + ConvertToRealPathWithPermission(appProperty,
+                                                                    mntPoint[g_sandBoxPath].get<std::string>());
+    } else {
+        sandboxPath = sandboxRoot + ConvertToRealPath(appProperty, mntPoint[g_sandBoxPath].get<std::string>());
+    }
+    return sandboxPath;
 }
 
 int SandboxUtils::DoAllMntPointsMount(const ClientSocket::AppProperty *appProperty,
@@ -504,24 +527,17 @@ int SandboxUtils::DoAllMntPointsMount(const ClientSocket::AppProperty *appProper
         }
 
         std::string srcPath = ConvertToRealPath(appProperty, mntPoint[g_srcPath].get<std::string>());
-        std::string sandboxPath = "";
-        if (section.compare(g_permissionPrefix) == 0) {
-            sandboxPath = sandboxRoot + ConvertToRealPathWithPermission(appProperty,
-                                                                        mntPoint[g_sandBoxPath].get<std::string>());
-        } else {
-            sandboxPath = sandboxRoot + ConvertToRealPath(appProperty, mntPoint[g_sandBoxPath].get<std::string>());
-        }
+        std::string sandboxPath = GetSandboxPath(appProperty, mntPoint, section, sandboxRoot);
+        SandboxMountConfig mountConfig = {0};
+        GetSandboxMountConfig(section, mntPoint, mountConfig);
         unsigned long mountFlags = GetSandboxMountFlags(mntPoint);
-        const char *optionsPoint = GetSandboxOptions(mntPoint);
-        const char *fsTypePoint = GetSandboxFsType(mntPoint);
-        std::string fsType = (fsTypePoint != nullptr) ? fsTypePoint : "";
         mode_t mountSharedFlag = (mntPoint.find(g_mountSharedFlag) != mntPoint.end()) ? MS_SHARED : MS_SLAVE;
 
         /* if app mount failed for special strategy, we need deal with common mount config */
-        int ret = HandleSpecialAppMount(appProperty, srcPath, sandboxPath, fsType, mountFlags);
+        int ret = HandleSpecialAppMount(appProperty, srcPath, sandboxPath, mountConfig.fsType, mountFlags);
         if (ret < 0) {
-            ret = DoAppSandboxMountOnce(srcPath.c_str(), sandboxPath.c_str(), fsTypePoint,
-                                        mountFlags, optionsPoint, mountSharedFlag);
+            ret = DoAppSandboxMountOnce(srcPath.c_str(), sandboxPath.c_str(), mountConfig.fsTypePoint,
+                                        mountFlags, mountConfig.optionsPoint, mountSharedFlag);
         }
         if (ret) {
             std::string actionStatus = g_statusCheck;
