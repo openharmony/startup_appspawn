@@ -266,6 +266,11 @@
                             "sandbox-path": "/data/storage/el2/backup",
                             "sandbox-flags": [ "bind", "rec" ],
                             "check-action-status": "true"
+                        }, {
+                            "src-path" : "/data/service/el1/<currentUserId>/backup/bundles/<PackageName>",
+                            "sandbox-path" : "/data/storage/el1/backup",
+                            "sandbox-flags" : [ "bind", "rec" ],
+                            "check-action-status": "false"
                         }
                     ]}
             ],
