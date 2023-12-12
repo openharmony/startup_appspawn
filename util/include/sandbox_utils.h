@@ -36,6 +36,13 @@ public:
     static int32_t SetAppSandboxPropertyNweb(AppSpawnClient *client);
     static uint32_t GetSandboxNsFlags(bool isNweb);
     static std::set<std::string> GetMountPermissionNames();
+    typedef struct {
+        unsigned long mountFlags;
+        const char *optionsPoint;
+        const char *fsTypePoint;
+        std::string fsType;
+        std::string sandboxPath;
+    } SandboxMountConfig;
 
 private:
     static int32_t DoAppSandboxMountOnce(const char *originPath, const char *destinationPath,
@@ -102,6 +109,10 @@ private:
     static unsigned long GetSandboxMountFlags(nlohmann::json &config);
     static const char *GetSandboxFsType(nlohmann::json &config);
     static const char *GetSandboxOptions(nlohmann::json &config);
+    static std::string GetSandboxPath(const ClientSocket::AppProperty *appProperty, nlohmann::json &mntPoint,
+                                      const std::string &section, std::string sandboxRoot);
+    static void GetSandboxMountConfig(const std::string &section, nlohmann::json &mntPoint,
+                                         SandboxMountConfig &mountConfig);
 private:
     static std::vector<nlohmann::json> appSandboxConfig_;
     static bool deviceTypeEnable_;
