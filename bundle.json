@@ -45,6 +45,7 @@
                 "hisysevent",
                 "security_component_manager",
                 "netmanager",
+                "netmanager_base",
                 "ace_engine",
                 "os_account",
                 "hilog_lite",
