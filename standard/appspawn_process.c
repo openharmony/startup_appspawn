@@ -226,7 +226,8 @@ int SetXpmConfig(struct AppSpawnContent_ *content, AppSpawnClient *client)
     AppSpawnClientExt *appProperty = (AppSpawnClientExt *)client;
     if (appProperty->property.flags & APP_DEBUGGABLE) {
         ret = SetXpmOwnerId(PROCESS_OWNERID_DEBUG, NULL);
-    } else if (appProperty->property.ownerId[0] == '\0') {
+    } else if ((appProperty->property.ownerId[0] == '\0') ||
+        (strcmp(appProperty->property.ownerId, "NULL"))) {
         ret = SetXpmOwnerId(PROCESS_OWNERID_COMPAT, NULL);
     } else {
         ret = SetXpmOwnerId(PROCESS_OWNERID_APP, appProperty->property.ownerId);
@@ -431,6 +432,10 @@ static int EncodeAppClient(AppSpawnClient *client, char *param, int32_t originLe
     // processName
     if (appProperty->soPath[0] == '\0') {
         strcpy_s(appProperty->soPath, sizeof(appProperty->soPath), "NULL");
+    }
+    // ownerId
+    if (appProperty->ownerId[0] == '\0') {
+        strcpy_s(appProperty->ownerId, sizeof(appProperty->ownerId), "NULL");
     }
     len = sprintf_s(param + startLen, originLen - startLen, ":%s:%s:%s:%u:%s:%s:%s:%u:%" PRIu64 "",
         appProperty->processName, appProperty->bundleName, appProperty->soPath,
