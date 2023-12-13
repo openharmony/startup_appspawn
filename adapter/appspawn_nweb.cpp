@@ -50,6 +50,10 @@ void *LoadWithRelroFile(const std::string &lib, const std::string &nsName,
     const std::string nwebRelroPath =
         "/data/misc/shared_relro/libwebviewchromium64.relro";
     size_t nwebReservedSize = 1 * 1024 * 1024 * 1024;
+#elif defined(webview_riscv64)
+    const std::string nwebRelroPath =
+        "/data/misc/shared_relro/libwebviewchromium64.relro";
+    size_t nwebReservedSize = 1 * 1024 * 1024 * 1024;
 #else
     const std::string nwebRelroPath =
         "/data/misc/shared_relro/libwebviewchromium32.relro";
@@ -97,6 +101,8 @@ void LoadExtendLib(AppSpawnContent *content)
     const std::string loadLibDir = "/data/app/el1/bundle/public/com.ohos.nweb/libs/arm64";
 #elif defined(webview_x86_64)
     const std::string loadLibDir = "/data/app/el1/bundle/public/com.ohos.nweb/libs/x86_64";
+#elif defined(webview_riscv64)
+    const std::string loadLibDir = "/data/app/el1/bundle/public/com.ohos.nweb/libs/riscv64";
 #else
     const std::string loadLibDir = "/data/app/el1/bundle/public/com.ohos.nweb/libs/arm";
 #endif
