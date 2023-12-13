@@ -15,7 +15,7 @@ import("//base/startup/appspawn/appspawn.gni")
 import("//build/ohos.gni")
 
 ohos_prebuilt_etc("appdata-sandbox.json") {
-  if (target_cpu == "arm64") {
+  if (target_cpu == "arm64" || target_cpu == "riscv64") {
     source = "//base/startup/appspawn/appdata-sandbox64.json"
   } else {
     source = "//base/startup/appspawn/appdata-sandbox.json"
