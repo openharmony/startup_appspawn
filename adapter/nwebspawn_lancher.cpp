@@ -14,6 +14,9 @@
  */
 #include "nwebspawn_lancher.h"
 #include "appspawn_server.h"
+#ifdef CODE_SIGNATURE_ENABLE
+#include "code_sign_attr_utils.h"
+#endif
 
 #define NWEB_UID 3081
 #define NWEB_GID 3081
@@ -26,6 +29,10 @@ pid_t NwebSpawnLanch()
 {
     pid_t ret = fork();
     if (ret == 0) {
+#ifdef CODE_SIGNATURE_ENABLE
+        // ownerId must been set before setcon & setuid
+        (void)SetXpmOwnerId(PROCESS_OWNERID_EXTEND, NULL);
+#endif
         setcon("u:r:nwebspawn:s0");
         pid_t pid = getpid();
         setpriority(PRIO_PROCESS, pid, 0);
