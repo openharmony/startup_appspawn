@@ -169,6 +169,11 @@
                     "sandbox-path" : "/data/utd",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
+                }, {
+                    "src-path" : "/data/service/el1/public/cert_manager_service/certificates/user_open",
+                    "sandbox-path" : "/data/certificates/user_cacerts",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
                 }
             ],
             "symbol-links" : [{
