@@ -205,13 +205,11 @@ static int AppSpawnChild(void *arg)
     return 0;
 }
 
-#ifndef APPSPAWN_TEST
 static int CloneAppSpawn(void *arg)
 {
     ProcessExit(AppSpawnChild(arg));
     return 0;
 }
-#endif
 
 int AppSpawnProcessMsg(AppSandboxArg *sandbox, pid_t *childPid)
 {
@@ -219,7 +217,6 @@ int AppSpawnProcessMsg(AppSandboxArg *sandbox, pid_t *childPid)
     APPSPAWN_CHECK(sandbox->client != NULL && childPid != NULL, return -1, "Invalid client for appspawn");
     APPSPAWN_LOGI("AppSpawnProcessMsg id %{public}d 0x%{public}x", sandbox->client->id, sandbox->client->flags);
 
-#ifndef APPSPAWN_TEST
     pid_t pid = 0;
     if (sandbox->content->isNweb) {
         pid = clone(CloneAppSpawn, NULL, sandbox->client->cloneFlags | SIGCHLD, (void *)sandbox);
@@ -231,7 +228,6 @@ int AppSpawnProcessMsg(AppSandboxArg *sandbox, pid_t *childPid)
     }
     APPSPAWN_CHECK(pid >= 0, return -errno, "fork child process error: %{public}d", -errno);
     *childPid = pid;
-#endif
     return 0;
 }
 
