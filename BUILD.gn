@@ -92,6 +92,12 @@ if (!defined(ohos_lite)) {
       external_deps += [ "init:seccomp" ]
     }
 
+    if (!defined(global_parts_info) ||
+        defined(global_parts_info.security_code_signature)) {
+      defines += [ "CODE_SIGNATURE_ENABLE" ]
+      external_deps += [ "code_signature:libcode_sign_attr_utils" ]
+    }
+
     install_enable = true
     subsystem_name = "${subsystem_name}"
     part_name = "${part_name}"
