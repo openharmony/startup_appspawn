@@ -443,7 +443,7 @@ unsigned long SandboxUtils::GetSandboxMountFlags(nlohmann::json &config)
     return mountFlags;
 }
 
-const char *SandboxUtils::GetSandboxFsType(nlohmann::json &config)
+std::string SandboxUtils::GetSandboxFsType(nlohmann::json &config)
 {
     std::string fsType;
     if (GetSandboxDacOverrideEnable(config) && (deviceTypeEnable_ == true)
@@ -452,11 +452,10 @@ const char *SandboxUtils::GetSandboxFsType(nlohmann::json &config)
     } else {
         fsType = "";
     }
-    const char *fsTypePoint = fsType.empty() ? nullptr : fsType.c_str();
-    return fsTypePoint;
+    return fsType;
 }
 
-const char *SandboxUtils::GetSandboxOptions(nlohmann::json &config)
+std::string SandboxUtils::GetSandboxOptions(nlohmann::json &config)
 {
     std::string options;
     if (GetSandboxDacOverrideEnable(config) && (deviceTypeEnable_ == true) &&
@@ -465,8 +464,7 @@ const char *SandboxUtils::GetSandboxOptions(nlohmann::json &config)
     } else {
         options = "";
     }
-    const char *optionsPoint = options.empty() ? nullptr : options.c_str();
-    return optionsPoint;
+    return options;
 }
 
 void SandboxUtils::GetSandboxMountConfig(const std::string &section, nlohmann::json &mntPoint,
@@ -474,12 +472,10 @@ void SandboxUtils::GetSandboxMountConfig(const std::string &section, nlohmann::j
 {
     if (section.compare(g_permissionPrefix) == 0) {
         mountConfig.optionsPoint = GetSandboxOptions(mntPoint);
-        mountConfig.fsTypePoint = GetSandboxFsType(mntPoint);
-        mountConfig.fsType = (mountConfig.fsTypePoint != nullptr) ? mountConfig.fsTypePoint : "";
+        mountConfig.fsType = GetSandboxFsType(mntPoint);
     } else {
         mountConfig.fsType = (mntPoint.find(g_fsType) != mntPoint.end()) ? mntPoint[g_fsType].get<std::string>() : "";
-        mountConfig.fsTypePoint = mountConfig.fsType.empty() ? nullptr : mountConfig.fsType.c_str();
-        mountConfig.optionsPoint = nullptr;
+        mountConfig.optionsPoint = "";
     }
     return;
 }
@@ -536,8 +532,8 @@ int SandboxUtils::DoAllMntPointsMount(const ClientSocket::AppProperty *appProper
         /* if app mount failed for special strategy, we need deal with common mount config */
         int ret = HandleSpecialAppMount(appProperty, srcPath, sandboxPath, mountConfig.fsType, mountFlags);
         if (ret < 0) {
-            ret = DoAppSandboxMountOnce(srcPath.c_str(), sandboxPath.c_str(), mountConfig.fsTypePoint,
-                                        mountFlags, mountConfig.optionsPoint, mountSharedFlag);
+            ret = DoAppSandboxMountOnce(srcPath.c_str(), sandboxPath.c_str(), mountConfig.fsType.c_str(),
+                                        mountFlags, mountConfig.optionsPoint.c_str(), mountSharedFlag);
         }
         if (ret) {
             std::string actionStatus = g_statusCheck;
