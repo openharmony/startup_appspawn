@@ -43,7 +43,7 @@ config("appspawn_config") {
 if (!defined(ohos_lite)) {
   ohos_executable("appspawn") {
     defines = []
-    if (target_cpu == "arm64" || target_cpu == "x86_64") {
+    if (target_cpu == "arm64") {
       defines += [ "webview_arm64" ]
     }
     if (target_cpu == "x86_64") {
