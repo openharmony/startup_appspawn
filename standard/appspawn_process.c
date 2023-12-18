@@ -202,6 +202,11 @@ static void ClearEnvironment(AppSpawnContent *content, AppSpawnClient *client)
 int SetXpmConfig(struct AppSpawnContent_ *content, AppSpawnClient *client)
 {
 #ifdef CODE_SIGNATURE_ENABLE
+    // nwebspawn no permission set xpm config
+    if (content->isNweb) {
+        return 0;
+    }
+
     int ret = InitXpmRegion();
     APPSPAWN_CHECK(ret == 0, return ret, "init xpm region failed: %{public}d", ret);
 
@@ -209,7 +214,7 @@ int SetXpmConfig(struct AppSpawnContent_ *content, AppSpawnClient *client)
     if (appProperty->property.flags & APP_DEBUGGABLE) {
         ret = SetXpmOwnerId(PROCESS_OWNERID_DEBUG, NULL);
     } else if ((appProperty->property.ownerId[0] == '\0') ||
-        (strcmp(appProperty->property.ownerId, "NULL"))) {
+        (strcmp(appProperty->property.ownerId, "NULL") == 0)) {
         ret = SetXpmOwnerId(PROCESS_OWNERID_COMPAT, NULL);
     } else {
         ret = SetXpmOwnerId(PROCESS_OWNERID_APP, appProperty->property.ownerId);
