@@ -14,6 +14,7 @@
  */
 
 #include "appspawn_adapter.h"
+#include "param_helper.h"
 
 #include <cerrno>
 
@@ -71,6 +72,13 @@ int SetSelinuxCon(struct AppSpawnContent_ *content, AppSpawnClient *client)
     } else {
         UNUSED(content);
         AppSpawnClientExt *appProperty = reinterpret_cast<AppSpawnClientExt *>(client);
+        if (appProperty->property.code == SPAWN_NATIVE_PROCESS) {
+            if (!IsDeveloperModeOn()) {
+                APPSPAWN_LOGE("Denied Launching a native process: not in developer mode");
+                return -1;
+            }
+            return 0;
+        }
         HapContext hapContext;
         HapDomainInfo hapDomainInfo;
         hapDomainInfo.apl = appProperty->property.apl;
