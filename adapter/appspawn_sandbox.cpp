@@ -27,7 +27,7 @@ using namespace OHOS::AppSpawn;
 namespace {
     const std::string MODULE_TEST_BUNDLE_NAME("moduleTestProcessName");
     const std::string NAMESPACE_JSON_CONFIG("/system/etc/sandbox/sandbox-config.json");
-#if defined (__aarch64__) || defined (__x86_64__)
+#if defined (__aarch64__) || defined (__x86_64__) || (defined(__riscv) && __riscv_xlen == 64)
     const std::string APP_JSON_CONFIG("/system/etc/sandbox/appdata-sandbox64.json");
 #else
     const std::string APP_JSON_CONFIG("/system/etc/sandbox/appdata-sandbox.json");

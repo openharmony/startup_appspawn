@@ -54,7 +54,7 @@ static int SetAsanEnabledEnv(struct AppSpawnContent_ *content, AppSpawnClient *c
                 "log_path=%s/asan.log:include=/system/etc/asan.options", devPath);
         APPSPAWN_CHECK(ret > 0, return -1, "Invalid snprintf_s");
 
-#if defined (__aarch64__) || defined (__x86_64__)
+#if defined (__aarch64__) || defined (__x86_64__) || (defined(__riscv) && __riscv_xlen == 64)
         setenv("LD_PRELOAD", "/system/lib64/libclang_rt.asan.so", 1);
 #else
         setenv("LD_PRELOAD", "/system/lib/libclang_rt.asan.so", 1);
@@ -156,7 +156,7 @@ static void InitDebugParams(struct AppSpawnContent_ *content, AppSpawnClient *cl
 {
 #ifndef APPSPAWN_TEST
     AppSpawnClientExt *appProperty = (AppSpawnClientExt *)client;
-#if defined (__aarch64__) || defined (__x86_64__)
+#if defined (__aarch64__) || defined (__x86_64__) || (defined(__riscv) && __riscv_xlen == 64)
     const char *debugSoPath = "/system/lib64/libhidebug.so";
 #else
     const char *debugSoPath = "/system/lib/libhidebug.so";
