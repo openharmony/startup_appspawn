@@ -47,7 +47,7 @@ namespace OHOS {
 namespace AppSpawn {
 namespace {
     constexpr int32_t UID_BASE = 200000;
-    constexpr int32_t FUSE_OPTIONS_MAX_LEN = 128;
+    constexpr int32_t FUSE_OPTIONS_MAX_LEN = 256;
     constexpr int32_t DLP_FUSE_FD = 1000;
     constexpr static mode_t FILE_MODE = 0711;
     constexpr static mode_t BASIC_MOUNT_FLAGS = MS_REC | MS_BIND;
@@ -377,8 +377,11 @@ static int32_t DoDlpAppMountStrategy(const ClientSocket::AppProperty *appPropert
     APPSPAWN_CHECK(fd != -1, return -EINVAL, "open /dev/fuse failed, errno is %{public}d", errno);
 
     char options[FUSE_OPTIONS_MAX_LEN];
-    (void)sprintf_s(options, sizeof(options), "fd=%d,rootmode=40000,user_id=%d,group_id=%d,allow_other", fd,
-        appProperty->uid, appProperty->gid);
+    (void)sprintf_s(options, sizeof(options), "fd=%d,"
+        "rootmode=40000,user_id=%d,group_id=%d,allow_other,"
+        "context=\"u:object_r:dlp_fuse_file:s0\","
+        "fscontext=u:object_r:dlp_fuse_file:s0",
+        fd, appProperty->uid, appProperty->gid);
 
     // To make sure destinationPath exist
     MakeDirRecursive(sandboxPath, FILE_MODE);
