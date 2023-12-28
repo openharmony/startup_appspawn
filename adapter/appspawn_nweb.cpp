@@ -201,12 +201,13 @@ static int GetProcessTerminationStatusInner(int32_t pid, int *status)
     }
 
     if (kill(pid, SIGKILL) != 0) {
-        APPSPAWN_LOGE("unable to kill render process, pid: %d ret %d", pid, errno);
+        APPSPAWN_LOGE("unable to kill render process, pid: %{public}d ret %{public}d", pid, errno);
     }
 
     pid_t exitPid = waitpid(pid, status, WNOHANG);
     if (exitPid != pid) {
-        APPSPAWN_LOGE("waitpid failed, return : %d, pid: %d, status: %d", exitPid, pid, *status);
+        APPSPAWN_LOGE("waitpid failed, return : %{public}d, pid: %{public}d, status: %{public}d",
+            exitPid, pid, *status);
         return -1;
     }
     return 0;
@@ -221,7 +222,8 @@ int GetProcessTerminationStatus(AppSpawnClient *client)
     if (ret) {
         exitStatus = ret;
     }
-    APPSPAWN_LOGI("AppSpawnServer::get render process termination status, status = %d pid = %d uid %d %s %s",
+    APPSPAWN_LOGI("AppSpawnServer::get render process termination status, status ="
+        "%{public}d pid = %{public}d uid %{public}d %{public}s %{public}s",
         exitStatus, appProperty->property.pid, appProperty->property.uid,
         appProperty->property.processName, appProperty->property.bundleName);
     return exitStatus;
