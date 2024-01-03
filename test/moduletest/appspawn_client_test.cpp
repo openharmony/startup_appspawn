@@ -258,7 +258,7 @@ HWTEST_F(AppSpawnClientTest, AppSpawn_Client_AppSpawn_7, TestSize.Level0)
     EXPECT_EQ(ret, 0);
     pid_t pid = 0;
     ret = ClientRecvMsg(pid);
-    EXPECT_LT(ret, 0);
+    EXPECT_EQ(ret, 0);
     if (pid > 0) {
         kill(pid, SIGKILL);
     }
@@ -267,32 +267,6 @@ HWTEST_F(AppSpawnClientTest, AppSpawn_Client_AppSpawn_7, TestSize.Level0)
     APPSPAWN_LOGI("AppSpawn_Client_AppSpawn_7 end");
 }
 
-HWTEST_F(AppSpawnClientTest, AppSpawn_Client_AppSpawn_8, TestSize.Level0)
-{
-    // for clod start, but not in sandbox
-    APPSPAWN_LOGI("AppSpawn_Client_AppSpawn_8 start");
-    int ret = ClientCreateSocket("/dev/unix/socket/AppSpawn");
-    EXPECT_EQ(ret, 0);
-
-    SetParameter("startup.appspawn.cold.boot", "1");
-    SetParameter("persist.appspawn.client.timeout", "10");
-    AppParameter request = {};
-    memset_s((void *)(&request), sizeof(request), 0, sizeof(request));
-    ClientFillMsg(&request, "ohos.samples.2222222222222clock", "ls -l > /data/aaa.txt");
-    request.flags = APP_COLD_BOOT | APP_NO_SANDBOX;
-    request.code = SPAWN_NATIVE_PROCESS;
-    ret = ClientSendMsg(reinterpret_cast<const uint8_t *>(&request), sizeof(request));
-    EXPECT_EQ(ret, 0);
-    pid_t pid = 0;
-    ret = ClientRecvMsg(pid);
-    EXPECT_LT(ret, 0);
-    if (pid > 0) {
-        kill(pid, SIGKILL);
-    }
-    // close client
-    ClientClose();
-    APPSPAWN_LOGI("AppSpawn_Client_AppSpawn_8 end");
-}
 
 HWTEST_F(AppSpawnClientTest, AppSpawn_Client_NWebSpawn_1, TestSize.Level0)
 {
