@@ -30,13 +30,13 @@ APP_SANDBOX_DEFAULT = '''
     "common" : [{
         "top-sandbox-switch": "ON",
         "app-base" : [{
-            "sandbox-root" : "/mnt/sandbox/<PackageName>",
+            "sandbox-root" : "/mnt/sandbox/<currentUserId>/<PackageName>",
             "mount-paths" : [],
             "symbol-links": [],
             "flags-point" : []
         }],
         "app-resources" : [{
-            "sandbox-root" : "/mnt/sandbox/<PackageName>",
+            "sandbox-root" : "/mnt/sandbox/<currentUserId>/<PackageName>",
             "mount-paths" : [],
             "flags-point" : [],
             "symbol-links" : []

@@ -314,7 +314,7 @@ std::string SandboxUtils::GetSbxPathByConfig(const ClientSocket::AppProperty *ap
         sandboxRoot = config[g_sandboxRootPrefix].get<std::string>();
         sandboxRoot = ConvertToRealPath(appProperty, sandboxRoot);
     } else {
-        sandboxRoot = g_sandBoxDir + appProperty->bundleName;
+        sandboxRoot = g_sandBoxDir + appProperty->bundleName + "/" + to_string(appProperty->uid / UID_BASE);
         APPSPAWN_LOGE("read sandbox-root config failed, set sandbox-root to default root"
             "app name is %{public}s", appProperty->bundleName);
     }
@@ -978,7 +978,7 @@ int32_t SandboxUtils::DoSandboxRootFolderCreateAdapt(std::string &sandboxPackage
 #endif
     MakeDirRecursive(sandboxPackagePath, FILE_MODE);
 
-    // bind mount "/" to /mnt/sandbox/<packageName> path
+    // bind mount "/" to /mnt/sandbox/<currentUserId>/<packageName> path
     // rootfs: to do more resources bind mount here to get more strict resources constraints
 #ifndef APPSPAWN_TEST
     rc = mount("/", sandboxPackagePath.c_str(), NULL, BASIC_MOUNT_FLAGS, NULL);
@@ -1271,7 +1271,7 @@ int32_t SandboxUtils::SetAppSandboxProperty(AppSpawnClient *client)
     if (CheckBundleName(appProperty->bundleName) != 0) {
         return -1;
     }
-    std::string sandboxPackagePath = g_sandBoxRootDir;
+    std::string sandboxPackagePath = g_sandBoxRootDir + to_string(appProperty->uid / UID_BASE) + "/";
     const std::string bundleName = appProperty->bundleName;
     bool sandboxSharedStatus = GetSandboxPrivateSharedStatus(bundleName);
     sandboxPackagePath += bundleName;
