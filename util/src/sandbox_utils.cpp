@@ -256,7 +256,7 @@ string SandboxUtils::ConvertToRealPath(const ClientSocket::AppProperty *appPrope
 {
     if (path.find(g_packageNameIndex) != std::string::npos) {
         std::string bundleNameIndex = appProperty->bundleName;
-        bundleNameIndex = bundleNameIndex + "_" + std::to_string(appProperty->bundleIndex);
+        bundleNameIndex = std::to_string(appProperty->bundleIndex) + "_" + bundleNameIndex;
         path = replace_all(path, g_packageNameIndex, bundleNameIndex);
     }
 
@@ -276,7 +276,7 @@ std::string SandboxUtils::ConvertToRealPathWithPermission(const ClientSocket::Ap
 {
     if (sandboxRoot.find(g_packageNameIndex) != std::string::npos) {
         std::string bundleNameIndex = appProperty->bundleName;
-        bundleNameIndex = bundleNameIndex + "_" + std::to_string(appProperty->bundleIndex);
+        bundleNameIndex = std::to_string(appProperty->bundleIndex) + "_" + bundleNameIndex;
         sandboxRoot = replace_all(sandboxRoot, g_packageNameIndex, bundleNameIndex);
     }
 
