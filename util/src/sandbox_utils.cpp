@@ -314,7 +314,7 @@ std::string SandboxUtils::GetSbxPathByConfig(const ClientSocket::AppProperty *ap
         sandboxRoot = config[g_sandboxRootPrefix].get<std::string>();
         sandboxRoot = ConvertToRealPath(appProperty, sandboxRoot);
     } else {
-        sandboxRoot = g_sandBoxDir + appProperty->bundleName + "/" + to_string(appProperty->uid / UID_BASE);
+        sandboxRoot = g_sandBoxDir + to_string(appProperty->uid / UID_BASE) + "/" + appProperty->bundleName;
         APPSPAWN_LOGE("read sandbox-root config failed, set sandbox-root to default root"
             "app name is %{public}s", appProperty->bundleName);
     }

@@ -276,12 +276,12 @@ static void MountAppEl2Dir(const AppSpawnClient* client)
     }
 
     char userId[USER_ID_SIZE] = {0};
-    size_t len = sprintf_s(userId, USER_ID_SIZE, "%u", appProperty->uid);
-    APPSPAWN_CHECK(len > 0 && (len < USER_ID_SIZE), return true, "Failed to get userId");
-    size_t allPathSize = strlen(rootPath) + strlen(el2Path) + strlen(appProperty->bundleName) + strlen(userId) + 1;
+    size_t len = sprintf_s(userId, USER_ID_SIZE, "%u", appProperty->uid / userIdBase);
+    APPSPAWN_CHECK(len > 0 && (len < USER_ID_SIZE), return, "Failed to get userId");
+    size_t allPathSize = strlen(rootPath) + strlen(el2Path) + strlen(appProperty->bundleName) + strlen(userId) + 2;
     char *path = malloc(sizeof(char) * (allPathSize));
     APPSPAWN_CHECK(path != NULL, return, "Failed to malloc path");
-    size_t len = sprintf_s(path, allPathSize, "%s%s/%s%s", rootPath, userId,
+    len = sprintf_s(path, allPathSize, "%s%s/%s%s", rootPath, userId,
         appProperty->bundleName, el2Path);
     APPSPAWN_CHECK(len > 0 && (len < allPathSize), return, "Failed to get el2 path");
 
