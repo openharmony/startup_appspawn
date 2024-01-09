@@ -310,12 +310,19 @@ bool SandboxUtils::GetSandboxDacOverrideEnable(nlohmann::json &config)
 std::string SandboxUtils::GetSbxPathByConfig(const ClientSocket::AppProperty *appProperty, nlohmann::json &config)
 {
     std::string sandboxRoot = "";
+    const std::string originSandboxPath = "/mnt/sandbox/<PackageName>";
+    const std::string defaultSandboxRoot = g_sandBoxDir + to_string(appProperty->uid / UID_BASE) +
+        "/" + appProperty->bundleName;
     if (config.find(g_sandboxRootPrefix) != config.end()) {
         sandboxRoot = config[g_sandboxRootPrefix].get<std::string>();
-        sandboxRoot = ConvertToRealPath(appProperty, sandboxRoot);
+        if (sandboxRoot == originSandboxPath) {
+            sandboxRoot = defaultSandboxRoot;
+        } else {
+            sandboxRoot = ConvertToRealPath(appProperty, sandboxRoot);
+        }
     } else {
-        sandboxRoot = g_sandBoxDir + to_string(appProperty->uid / UID_BASE) + "/" + appProperty->bundleName;
-        APPSPAWN_LOGE("read sandbox-root config failed, set sandbox-root to default root"
+        sandboxRoot = defaultSandboxRoot;
+        APPSPAWN_LOGI("read sandbox-root config failed, set sandbox-root to default root"
             "app name is %{public}s", appProperty->bundleName);
     }
 
