@@ -48,7 +48,7 @@ bool JsonUtils::GetStringFromJson(const nlohmann::json &json, const std::string 
     bool isRet = json.find(key) != json.end() && json.at(key).is_string();
     if (isRet) {
         value = json.at(key).get<std::string>();
-        APPSPAWN_LOGI("Find key[%{public}s] : %{public}s successful.", key.c_str(), value.c_str());
+        APPSPAWN_LOGV("Find key[%{public}s] : %{public}s successful.", key.c_str(), value.c_str());
         return true;
     } else {
         return false;
