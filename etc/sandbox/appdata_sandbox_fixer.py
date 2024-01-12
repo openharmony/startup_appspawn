@@ -117,7 +117,7 @@ def _merge_scope_app(origin, new):
         "symbol-links": ["target-name"]
     }
     # normal filed
-    for k in ["sandbox-root", "sandbox-switch", "gids"]:
+    for k in ["sandbox-root", "sandbox-switch", "gids", "sandbox-ns-flags"]:
         if new[0].get(k) is not None:
             origin[0][k] = new[0].get(k)
 
