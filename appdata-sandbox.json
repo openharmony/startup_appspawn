@@ -603,7 +603,7 @@
             "sandbox-switch": "ON",
             "gids": [1008],
             "mount-paths": [{
-                    "src-path": "/data/service/el2/<currentUserId>/hmdfs/account/files/.thumbs/Photo",
+                    "src-path": "/storage/cloud/<currentUserId>/files/.thumbs/Photo",
                     "sandbox-path": "/storage/Share/.thumbs/Photo",
                     "sandbox-flags": [ "bind", "rec" ]
                 }
