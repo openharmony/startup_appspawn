@@ -31,7 +31,6 @@ APP_SANDBOX_DEFAULT = '''
         "top-sandbox-switch": "ON",
         "app-base" : [{
             "sandbox-root" : "/mnt/sandbox/<currentUserId>/<PackageName>",
-            "sandbox-ns-flags" : [],
             "mount-paths" : [],
             "symbol-links": [],
             "flags-point" : []
@@ -117,15 +116,9 @@ def _merge_scope_app(origin, new):
         "symbol-links": ["target-name"]
     }
     # normal filed
-    for k in ["sandbox-root", "sandbox-switch", "gids", "sandbox-ns-flags"]:
+    for k in ["sandbox-root", "sandbox-switch", "gids"]:
         if new[0].get(k) is not None:
             origin[0][k] = new[0].get(k)
-
-    # by list merger
-    for field in ["sandbox-ns-flags"]:
-        item = origin[0].get(field)
-        if item is not None and len(item) > 0:
-            _merge_list(new[0][field], item)
 
     # for flags-point
     flags_points = new[0].get("flags-point")
