@@ -255,9 +255,11 @@ unsigned long SandboxUtils::GetMountFlagsFromConfig(const std::vector<std::strin
 string SandboxUtils::ConvertToRealPath(const ClientSocket::AppProperty *appProperty, std::string path)
 {
     if (path.find(g_packageNameIndex) != std::string::npos) {
-        std::string bundleNameIndex = appProperty->bundleName;
-        bundleNameIndex = std::to_string(appProperty->bundleIndex) + "_" + bundleNameIndex;
-        path = replace_all(path, g_packageNameIndex, bundleNameIndex);
+        std::string bundleNameWithIndex = appProperty->bundleName;
+        if (appProperty->bundleIndex != 0) {
+            bundleNameWithIndex = std::to_string(appProperty->bundleIndex) + "_" + bundleNameWithIndex;
+        }
+        path = replace_all(path, g_packageNameIndex, bundleNameWithIndex);
     }
 
     if (path.find(g_packageName) != std::string::npos) {
@@ -272,26 +274,28 @@ string SandboxUtils::ConvertToRealPath(const ClientSocket::AppProperty *appPrope
 }
 
 std::string SandboxUtils::ConvertToRealPathWithPermission(const ClientSocket::AppProperty *appProperty,
-                                                          std::string sandboxRoot)
+                                                          std::string path)
 {
-    if (sandboxRoot.find(g_packageNameIndex) != std::string::npos) {
-        std::string bundleNameIndex = appProperty->bundleName;
-        bundleNameIndex = std::to_string(appProperty->bundleIndex) + "_" + bundleNameIndex;
-        sandboxRoot = replace_all(sandboxRoot, g_packageNameIndex, bundleNameIndex);
+    if (path.find(g_packageNameIndex) != std::string::npos) {
+        std::string bundleNameWithIndex = appProperty->bundleName;
+        if (appProperty->bundleIndex != 0) {
+            bundleNameWithIndex = std::to_string(appProperty->bundleIndex) + "_" + bundleNameWithIndex;
+        }
+        path = replace_all(path, g_packageNameIndex, bundleNameWithIndex);
     }
 
-    if (sandboxRoot.find(g_packageName) != std::string::npos) {
-        sandboxRoot = replace_all(sandboxRoot, g_packageName, appProperty->bundleName);
+    if (path.find(g_packageName) != std::string::npos) {
+        path = replace_all(path, g_packageName, appProperty->bundleName);
     }
 
-    if (sandboxRoot.find(g_userId) != std::string::npos) {
+    if (path.find(g_userId) != std::string::npos) {
         if (deviceTypeEnable_) {
-            sandboxRoot = replace_all(sandboxRoot, g_userId, "currentUser");
+            path = replace_all(path, g_userId, "currentUser");
         } else {
-            sandboxRoot = replace_all(sandboxRoot, g_userId, "currentUser");
+            path = replace_all(path, g_userId, "currentUser");
         }
     }
-    return sandboxRoot;
+    return path;
 }
 
 bool SandboxUtils::GetSandboxDacOverrideEnable(nlohmann::json &config)
