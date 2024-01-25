@@ -51,7 +51,7 @@ using nlohmann::json;
 TaskHandle AcceptClient(const LoopHandle loopHandle, const TaskHandle server, uint32_t flags);
 bool ReceiveRequestData(const TaskHandle taskHandle, AppSpawnClientExt *appProperty,
     const uint8_t *buffer, uint32_t buffLen);
-void AddAppInfo(pid_t pid, const char *processName);
+void AddAppInfo(pid_t pid, const char *processName, AppOperateType code);
 void SignalHandler(const struct signalfd_siginfo *siginfo);
 #ifdef __cplusplus
     }
@@ -707,9 +707,9 @@ HWTEST(AppSpawnStandardTest, App_Spawn_Standard_07, TestSize.Level0)
     GTEST_LOG_(INFO) << "App_Spawn_Standard_07 start";
     AppSpawnContentExt *content = TestClient(0, DEFAULT, "ohos.test.testapp", "test007");
     EXPECT_TRUE(content != nullptr);
-    AddAppInfo(111, "111");
-    AddAppInfo(65, "112");
-    AddAppInfo(97, "113");
+    AddAppInfo(111, "111", DEFAULT);
+    AddAppInfo(65, "112", DEFAULT);
+    AddAppInfo(97, "113", DEFAULT);
 
     struct signalfd_siginfo siginfo = {};
     siginfo.ssi_signo = SIGCHLD;

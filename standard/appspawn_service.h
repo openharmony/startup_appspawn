@@ -57,6 +57,7 @@ typedef struct {
 typedef struct {
     HashNode node;
     pid_t pid;
+    AppOperateType code;
     char name[0];
 } AppInfo;
 
