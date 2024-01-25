@@ -1404,4 +1404,145 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_41, TestSize.Level0)
 
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_41 end";
 }
+
+/**
+* @tc.name: App_Spawn_Sandbox_42
+* @tc.desc: parse config file for fstype .
+* @tc.type: FUNC
+* @tc.require: https://gitee.com/openharmony/startup_appspawn/issues/I8OF9K
+* @tc.author:
+*/
+HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_42, TestSize.Level0)
+{
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_42 start";
+    std::string mJsconfig = "{ \
+        \"mount-paths\": [{ \
+            \"src-path\": \"/data/app/el1/<currentUserId>/base\", \
+            \"sandbox-path\": \"/storage/Users/<currentUserId>/appdata/el1\", \
+            \"sandbox-flags-customized\": [ \"MS_NODEV\", \"MS_RDONLY\" ], \
+            \"dac-override-sensitive\": \"true\", \
+            \"fs-type\": \"sharefs\", \
+            \"options\": \"support_overwrite=1\" \
+        }] \
+    }";
+    nlohmann::json j_config = nlohmann::json::parse(mJsconfig.c_str());
+    const char *mountPath = "mount-paths";
+    nlohmann::json j_secondConfig = j_config[mountPath][0];
+    OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config);
+
+    std::string fsType = OHOS::AppSpawn::SandboxUtils::GetSandboxFsType(j_secondConfig);
+    int ret = strcmp(fsType.c_str(), "sharefs");
+    if (SandboxUtils::deviceTypeEnable_ == true) {
+        EXPECT_EQ(ret, 0);
+    } else {
+        EXPECT_NE(ret, 0);
+    }
+
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_42 end";
+}
+
+/**
+* @tc.name: App_Spawn_Sandbox_43
+* @tc.desc: get sandbox mount config when section is common.
+* @tc.type: FUNC
+* @tc.require: https://gitee.com/openharmony/startup_appspawn/issues/I8OF9K
+* @tc.author:
+*/
+HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_43, TestSize.Level0)
+{
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_43 start";
+    std::string mJsconfig = "{ \
+        \"mount-paths\": [{ \
+            \"src-path\": \"/data/app/el1/<currentUserId>/base\", \
+            \"sandbox-path\": \"/storage/Users/<currentUserId>/appdata/el1\", \
+            \"sandbox-flags-customized\": [ \"MS_NODEV\", \"MS_RDONLY\" ], \
+            \"dac-override-sensitive\": \"true\", \
+            \"fs-type\": \"sharefs\", \
+            \"options\": \"support_overwrite=1\" \
+        }] \
+    }";
+    nlohmann::json j_config = nlohmann::json::parse(mJsconfig.c_str());
+    const char *mountPath = "mount-paths";
+    nlohmann::json j_secondConfig = j_config[mountPath][0];
+
+    OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config);
+    OHOS::AppSpawn::SandboxUtils::SandboxMountConfig mountConfig;
+    std::string section = "common";
+    OHOS::AppSpawn::SandboxUtils::GetSandboxMountConfig(section, j_secondConfig, mountConfig);
+    int ret = strcmp(mountConfig.fsType.c_str(), "sharefs");
+    EXPECT_EQ(ret, 0);
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_43 end";
+}
+
+/**
+* @tc.name: App_Spawn_Sandbox_44
+* @tc.desc: get sandbox mount config when section is permission.
+* @tc.type: FUNC
+* @tc.require: https://gitee.com/openharmony/startup_appspawn/issues/I8OF9K
+* @tc.author:
+*/
+HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_44, TestSize.Level0)
+{
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_44 start";
+    std::string mJsconfig = "{ \
+        \"mount-paths\": [{ \
+            \"src-path\": \"/data/app/el1/<currentUserId>/base\", \
+            \"sandbox-path\": \"/storage/Users/<currentUserId>/appdata/el1\", \
+            \"sandbox-flags-customized\": [ \"MS_NODEV\", \"MS_RDONLY\" ], \
+            \"dac-override-sensitive\": \"true\", \
+            \"fs-type\": \"sharefs\", \
+            \"options\": \"support_overwrite=1\" \
+        }] \
+    }";
+    nlohmann::json j_config = nlohmann::json::parse(mJsconfig.c_str());
+    const char *mountPath = "mount-paths";
+    nlohmann::json j_secondConfig = j_config[mountPath][0];
+
+    OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config);
+    OHOS::AppSpawn::SandboxUtils::SandboxMountConfig mountConfig;
+    std::string section = "permission";
+    OHOS::AppSpawn::SandboxUtils::GetSandboxMountConfig(section, j_secondConfig, mountConfig);
+    int ret = strcmp(mountConfig.fsType.c_str(), "sharefs");
+    if (SandboxUtils::deviceTypeEnable_ == true) {
+        EXPECT_EQ(ret, 0);
+    } else {
+        EXPECT_NE(ret, 0);
+    }
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_44 end";
+}
+
+/**
+* @tc.name: App_Spawn_Sandbox_45
+* @tc.desc: parse config file for options.
+* @tc.type: FUNC
+* @tc.require: https://gitee.com/openharmony/startup_appspawn/issues/I8OF9K
+* @tc.author:
+*/
+HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_45, TestSize.Level0)
+{
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_45 start";
+    std::string mJsconfig = "{ \
+        \"mount-paths\": [{ \
+            \"src-path\": \"/data/app/el1/<currentUserId>/base\", \
+            \"sandbox-path\": \"/storage/Users/<currentUserId>/appdata/el1\", \
+            \"sandbox-flags-customized\": [ \"MS_NODEV\", \"MS_RDONLY\" ], \
+            \"dac-override-sensitive\": \"true\", \
+            \"fs-type\": \"sharefs\", \
+            \"options\": \"support_overwrite=1\" \
+        }] \
+    }";
+    nlohmann::json j_config = nlohmann::json::parse(mJsconfig.c_str());
+    const char *mountPath = "mount-paths";
+    nlohmann::json j_secondConfig = j_config[mountPath][0];
+
+    OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config);
+    std::string options = OHOS::AppSpawn::SandboxUtils::GetSandboxOptions(j_secondConfig);
+    int ret = strcmp(options.c_str(), "support_overwrite=1");
+    if (SandboxUtils::deviceTypeEnable_ == true) {
+        EXPECT_EQ(ret, 0);
+    } else {
+        EXPECT_NE(ret, 0);
+    }
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_45 end";
+}
 } // namespace OHOS
