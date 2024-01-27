@@ -67,6 +67,7 @@ namespace {
     const std::string g_statusCheck = "true";
     const std::string g_sbxSwitchCheck = "ON";
     const std::string g_dlpBundleName = "com.ohos.dlpmanager";
+    const std::string g_dlpUiExtType = "sys/commonUI";
     const std::string g_internal = "__internal__";
     const std::string g_hspList_key_bundles = "bundles";
     const std::string g_hspList_key_modules = "modules";
@@ -418,10 +419,12 @@ static int32_t HandleSpecialAppMount(const ClientSocket::AppProperty *appPropert
                                      const std::string &fsType, unsigned long mountFlags)
 {
     std::string bundleName = appProperty->bundleName;
+    std::string processName = appProperty->processName;
 
     /* dlp application mount strategy */
     /* dlp is an example, we should change to real bundle name later */
-    if (bundleName.find(g_dlpBundleName) != std::string::npos) {
+    if (bundleName.find(g_dlpBundleName) != std::string::npos &&
+        processName.find(g_dlpUiExtType) == std::string::npos) {
         if (fsType.empty()) {
             return -1;
         } else {
