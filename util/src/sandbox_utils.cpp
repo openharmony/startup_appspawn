@@ -148,6 +148,25 @@ static void MakeDirRecursive(const std::string &path, mode_t mode)
     } while (index < size);
 }
 
+static void CheckDirRecursive(const std::string &path)
+{
+    size_t size = path.size();
+    if (size == 0) {
+        return;
+    }
+    size_t index = 0;
+    do {
+        size_t pathIndex = path.find_first_of('/', index);
+        index = pathIndex == std::string::npos ? size : pathIndex + 1;
+        std::string dir = path.substr(0, index);
+#ifndef APPSPAWN_TEST
+        APPSPAWN_CHECK(access(dir.c_str(), F_OK) == 0,
+            return, "check dir %{public}s failed, strerror: %{public}s", dir.c_str(), strerror(errno));
+#endif
+    } while (index < size);
+    return;
+}
+
 int32_t SandboxUtils::DoAppSandboxMountOnce(const char *originPath, const char *destinationPath,
                                             const char *fsType, unsigned long mountFlags,
                                             const char *options, mode_t mountSharedFlag)
@@ -159,6 +178,11 @@ int32_t SandboxUtils::DoAppSandboxMountOnce(const char *originPath, const char *
     // to mount fs and bind mount files or directory
     ret = mount(originPath, destinationPath, fsType, mountFlags, options);
     if (ret != 0) {
+        std::string originPathStr = originPath == nullptr ? "" : originPath;
+        size_t index = originPathStr.find("data/app/el2/");
+        if (index != std::string::npos) {
+            CheckDirRecursive(originPathStr);
+        }
         APPSPAWN_LOGI("errno is: %{public}d, bind mount %{public}s to %{public}s", errno, originPath,
                       destinationPath);
         return ret;
@@ -1245,6 +1269,7 @@ int32_t SandboxUtils::SetSandboxProperty(ClientSocket::AppProperty *appProperty,
     ret = SetBundleResourceAppSandboxProperty(appProperty, sandboxPackagePath);
     APPSPAWN_CHECK(ret == 0, return ret, "SetBundleResourceAppSandboxProperty failed, packagename is %s",
                    bundleName.c_str());
+    APPSPAWN_LOGI("Set appsandbox property success");
     return ret;
 }
 
@@ -1308,6 +1333,7 @@ int32_t SandboxUtils::SetAppSandboxProperty(AppSpawnClient *client)
 #ifndef APPSPAWN_TEST
     rc = ChangeCurrentDir(sandboxPackagePath, bundleName, sandboxSharedStatus);
     APPSPAWN_CHECK(rc == 0, return rc, "change current dir failed");
+    APPSPAWN_LOGI("Change root dir success");
 #endif
     return 0;
 }

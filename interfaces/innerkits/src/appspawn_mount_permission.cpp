@@ -78,7 +78,7 @@ std::set<std::string> AppspawnMountPermission::GetMountPermissionList()
 {
     if (!isLoad_) {
         LoadPermissionNames();
-        APPSPAWN_LOGI("GetMountPermissionList LoadPermissionNames");
+        APPSPAWN_LOGV("GetMountPermissionList LoadPermissionNames");
     }
     return appSandboxPremission_;
 }
