@@ -46,10 +46,10 @@
 // ide-asan
 static int SetAsanEnabledEnv(struct AppSpawnContent_ *content, AppSpawnClient *client)
 {
-    if (content->isNweb) {
+    AppParameter *appProperty = &((AppSpawnClientExt *)client)->property;
+    if (content->isNweb || appProperty->code == SPAWN_NATIVE_PROCESS) {
         return 0;
     }
-    AppParameter *appProperty = &((AppSpawnClientExt *)client)->property;
     char *bundleName = appProperty->bundleName;
 
     if ((appProperty->flags & APP_ASANENABLED) != 0) {
