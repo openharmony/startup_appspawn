@@ -99,7 +99,7 @@ private:
     static int32_t SetPermissionAppSandboxProperty(ClientSocket::AppProperty *appProperty);
     static int32_t DoAddGid(ClientSocket::AppProperty *appProperty, nlohmann::json &appConfig,
                             const char* permissionName, const std::string &section);
-    static bool GetProductDeviceType();
+    static bool CheckAppFullMountEnable();
     static int32_t SetSandboxProperty(ClientSocket::AppProperty *appProperty, std::string &sandboxPackagePath);
     static int32_t ChangeCurrentDir(std::string &sandboxPackagePath, const std::string &bundleName,
                                     bool sandboxSharedStatus);

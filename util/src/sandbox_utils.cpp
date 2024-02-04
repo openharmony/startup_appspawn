@@ -112,7 +112,6 @@ namespace {
     const std::string g_sandBoxRootDir = "/mnt/sandbox/";
     const std::string g_ohosRender = "__internal__.com.ohos.render";
     const std::string g_sandBoxRootDirNweb = "/mnt/sandbox/com.ohos.render/";
-    constexpr int MAX_VALUE_LENGTH = PARAM_CONST_VALUE_LEN_MAX;
     const std::string FILE_CROSS_APP_MODE = "ohos.permission.FILE_CROSS_APP";
 }
 
@@ -1199,11 +1198,11 @@ int32_t SandboxUtils::SetBundleResourceAppSandboxProperty(const ClientSocket::Ap
     return ret;
 }
 
-bool SandboxUtils::GetProductDeviceType()
+bool SandboxUtils::CheckAppFullMountEnable()
 {
-    char value[MAX_VALUE_LENGTH];
-    int32_t ret = GetParameter("const.product.devicetype", "0", value, MAX_VALUE_LENGTH);
-    APPSPAWN_CHECK(ret > 0 && (strcmp(value, "2in1") == 0), return false, "Not device type %{public}s", value);
+    char value[] = "false";
+    int32_t ret = GetParameter("const.filemanager.full_mount.enable", "false", value, sizeof(value));
+    APPSPAWN_CHECK_ONLY_EXPER(ret > 0 && (strcmp(value, "true") == 0), return false);
     deviceTypeEnable_ = true;
     return true;
 }
@@ -1290,7 +1289,7 @@ int32_t SandboxUtils::SetAppSandboxProperty(AppSpawnClient *client)
     int rc = unshare(CLONE_NEWNS);
     APPSPAWN_CHECK(rc == 0, return rc, "unshare failed, packagename is %{public}s", bundleName.c_str());
 
-    if (GetProductDeviceType()) {
+    if (CheckAppFullMountEnable()) {
         appProperty->mountPermissionFlags |= GetMountPermissionFlags(FILE_CROSS_APP_MODE);
     }
 
