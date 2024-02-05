@@ -24,6 +24,9 @@
 extern "C" {
 #endif
 
+typedef struct AppSpawnContentExt_  AppSpawnContentExt;
+typedef struct AppInfo_ AppSpawnAppInfo;
+
 int32_t SetAppSandboxProperty(struct AppSpawnContent_ *content, AppSpawnClient *client);
 int SetAppAccessToken(struct AppSpawnContent_ *content, AppSpawnClient *client);
 int SetSelinuxCon(struct AppSpawnContent_ *content, AppSpawnClient *client);
@@ -40,6 +43,10 @@ void DisallowInternet(void);
 
 void RecordRenderProcessExitedStatus(pid_t pid, int status);
 int GetProcessTerminationStatus(AppSpawnClient *client);
+
+int ProcessAppDied(const AppSpawnContentExt *content, const AppSpawnAppInfo *appInfo);
+int ProcessAppAdd(const AppSpawnContentExt *content, const AppSpawnAppInfo *appInfo);
+
 #ifdef __cplusplus
 }
 #endif

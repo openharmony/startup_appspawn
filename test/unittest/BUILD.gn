@@ -90,6 +90,7 @@ if (!defined(ohos_lite)) {
     sources = [
       "${appspawn_path}/adapter/appspawn_ace.cpp",
       "${appspawn_path}/adapter/appspawn_adapter.cpp",
+      "${appspawn_path}/adapter/appspawn_cgroup.c",
       "${appspawn_path}/adapter/appspawn_nweb.cpp",
       "${appspawn_path}/adapter/appspawn_sandbox.cpp",
       "${appspawn_path}/adapter/nwebspawn_lancher.cpp",
