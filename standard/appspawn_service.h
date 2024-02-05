@@ -54,14 +54,15 @@ typedef struct {
     pid_t pid;
 } AppSpawnClientExt;
 
-typedef struct {
+typedef struct AppInfo_ {
     HashNode node;
     pid_t pid;
     AppOperateType code;
+    uid_t uid;
     char name[0];
-} AppInfo;
+} AppInfo, AppSpawnAppInfo;
 
-typedef struct {
+typedef struct AppSpawnContentExt_ {
     AppSpawnContent content;
     uint32_t flags;
     TaskHandle server;
@@ -70,6 +71,7 @@ typedef struct {
     HashMapHandle appMap;  // save app pid and name
 } AppSpawnContentExt;
 
+AppInfo *GetAppInfo(pid_t pid);
 void SetContentFunction(AppSpawnContent *content);
 void AppSpawnColdRun(AppSpawnContent *content, int argc, char *const argv[]);
 void AddNwebInfo(pid_t pid, const char *processName);
