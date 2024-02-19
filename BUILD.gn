@@ -195,11 +195,19 @@ if (!defined(ohos_lite)) {
     subsystem_name = "${subsystem_name}"
     part_name = "${part_name}"
   }
+
+  ohos_executable("pid_ns_init") {
+    sources = [ "${appspawn_path}/standard/pid_ns_init.c" ]
+    install_enable = true
+    subsystem_name = "${subsystem_name}"
+    part_name = "${part_name}"
+  }
 }
 
 group("appspawn_all") {
   deps = []
   if (!defined(ohos_lite)) {
+    deps += [ ":pid_ns_init" ]
     deps += [ ":appspawn" ]
     deps += [ ":appspawn.rc" ]
     deps += [ ":appspawn_helper" ]
