@@ -15,27 +15,27 @@
 
 #include <gtest/gtest.h>
 
-#include <string>
 #include <cerrno>
+#include <climits>
+#include <cstdlib>
+#include <cstring>
 #include <memory>
-
+#include <string>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <cstring>
-#include <cstdlib>
 
-#include "appspawn_service.h"
+#include "app_spawn_stub.h"
 #include "appspawn_adapter.h"
 #include "appspawn_server.h"
-#include "app_spawn_stub.h"
-#include "securec.h"
-#include "json_utils.h"
+#include "appspawn_service.h"
 #include "init_hashmap.h"
+#include "json_utils.h"
 #include "le_task.h"
 #include "loop_event.h"
-#include "sandbox_utils.h"
 #include "parameter.h"
+#include "sandbox_utils.h"
+#include "securec.h"
 #ifdef REPORT_EVENT
 #include "event_reporter.h"
 #endif
@@ -53,6 +53,7 @@ bool ReceiveRequestData(const TaskHandle taskHandle, AppSpawnClientExt *appPrope
     const uint8_t *buffer, uint32_t buffLen);
 void AddAppInfo(pid_t pid, const char *processName, AppOperateType code);
 void SignalHandler(const struct signalfd_siginfo *siginfo);
+int GetCgroupPath(const AppSpawnAppInfo *appInfo, char *buffer, uint32_t buffLen);
 #ifdef __cplusplus
     }
 #endif
@@ -89,7 +90,7 @@ static int MakeDirRecursive(const char *dir, mode_t mode)
             slash = strchr(p, '/');
             continue;
         }
-        if (gap < 0) { // end with '/'
+        if (gap < 0) {  // end with '/'
             break;
         }
         if (memcpy_s(buffer, PATH_MAX, dir, p - dir - 1) != EOK) {
@@ -946,5 +947,111 @@ HWTEST(AppSpawnStandardTest, App_Spawn_Standard_009_04, TestSize.Level0)
     ASSERT_TRUE(content != nullptr);
     content->content.runAppSpawn(&content->content, 0, nullptr);
     GTEST_LOG_(INFO) << "App_Spawn_Standard_009_04 end";
+}
+
+HWTEST(AppSpawnStandardTest, App_Spawn_CGroup_001, TestSize.Level0)
+{
+    int ret = -1;
+    AppSpawnAppInfo *appInfo = nullptr;
+    const char name[] = "app-test-001";
+    do {
+        appInfo = reinterpret_cast<AppSpawnAppInfo *>(malloc(sizeof(AppSpawnAppInfo) + strlen(name) + 1));
+        APPSPAWN_CHECK(appInfo != nullptr, break, "Failed to create appInfo");
+        appInfo->pid = 33; // 33
+        appInfo->code = DEFAULT;
+        appInfo->uid = 200000 * 200 + 21; // 200000 200 21
+        ret = strcpy_s(appInfo->name, strlen(name) + 1, name);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to strcpy process name");
+        HASHMAPInitNode(&appInfo->node);
+        char path[PATH_MAX] = {};
+        ret = GetCgroupPath(appInfo, path, sizeof(path));
+        APPSPAWN_CHECK(ret == 0, break, "Failed to get real path errno: %d", errno);
+        APPSPAWN_CHECK(strstr(path, "200") != nullptr && strstr(path, "33") != nullptr && strstr(path, name) != nullptr,
+            break, "Invalid path: %s", path);
+        ret = 0;
+    } while (0);
+    if (appInfo) {
+        free(appInfo);
+    }
+    ASSERT_EQ(ret, 0);
+}
+
+HWTEST(AppSpawnStandardTest, App_Spawn_CGroup_002, TestSize.Level0)
+{
+    int ret = -1;
+    AppSpawnAppInfo *appInfo = nullptr;
+    AppSpawnContent *content = nullptr;
+    FILE *file = nullptr;
+    const char name[] = "app-test-001";
+    do {
+        char path[PATH_MAX] = {};
+        appInfo = reinterpret_cast<AppSpawnAppInfo *>(malloc(sizeof(AppSpawnAppInfo) + strlen(name) + 1));
+        APPSPAWN_CHECK(appInfo != nullptr, break, "Failed to create appInfo");
+        appInfo->pid = 33; // 33
+        appInfo->code = DEFAULT;
+        appInfo->uid = 200000 * 200 + 21; // 200000 200 21
+        ret = strcpy_s(appInfo->name, strlen(name) + 1, name);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to strcpy process name");
+        HASHMAPInitNode(&appInfo->node);
+
+        content = AppSpawnCreateContent(APPSPAWN_SOCKET_NAME, path, sizeof(path), 1);
+        APPSPAWN_CHECK_ONLY_EXPER(content != nullptr, break);
+        // spawn prepare process
+        ProcessAppAdd(reinterpret_cast<AppSpawnContentExt *>(content), appInfo);
+        // add success
+        ret = GetCgroupPath(appInfo, path, sizeof(path));
+        APPSPAWN_CHECK(ret == 0, break, "Failed to get real path errno: %{public}d", errno);
+        ret = strcat_s(path, sizeof(path), "cgroup.procs");
+        APPSPAWN_CHECK(ret == 0, break, "Failed to strcat_s errno: %{public}d", errno);
+        file = fopen(path, "r");
+        APPSPAWN_CHECK(file != NULL, break, "Open file fail %{public}s errno: %{public}d", path, errno);
+        pid_t pid = 0;
+        ret = -1;
+        while (fscanf_s(file, "%d\n", &pid) == 1 && pid > 0) {
+            APPSPAWN_LOGV("pid %d %d", pid, appInfo->pid);
+            if (pid == appInfo->pid) {
+                ret = 0;
+                break;
+            }
+        }
+        fclose(file);
+        APPSPAWN_CHECK(ret == 0, break, "Error no pid write to path: %{public}s", path);
+        ret = 0;
+    } while (0);
+    if (appInfo) {
+        free(appInfo);
+    }
+    free(content);
+    ASSERT_EQ(ret, 0);
+}
+
+HWTEST(AppSpawnStandardTest, App_Spawn_CGroup_003, TestSize.Level0)
+{
+    int ret = -1;
+    AppSpawnAppInfo *appInfo = nullptr;
+    AppSpawnContent *content = nullptr;
+    const char name[] = "app-test-001";
+    do {
+        char path[PATH_MAX] = {};
+        appInfo = reinterpret_cast<AppSpawnAppInfo *>(malloc(sizeof(AppSpawnAppInfo) + strlen(name) + 1));
+        APPSPAWN_CHECK(appInfo != nullptr, break, "Failed to create appInfo");
+        appInfo->pid = 33; // 33
+        appInfo->code = DEFAULT;
+        appInfo->uid = 200000 * 200 + 21; // 200000 200 21
+        ret = strcpy_s(appInfo->name, strlen(name) + 1, name);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to strcpy process name");
+        HASHMAPInitNode(&appInfo->node);
+
+        content = AppSpawnCreateContent(APPSPAWN_SOCKET_NAME, path, sizeof(path), 1);
+        APPSPAWN_CHECK_ONLY_EXPER(content != nullptr, break);
+        // spawn prepare process
+        ProcessAppDied(reinterpret_cast<AppSpawnContentExt *>(content), appInfo);
+        ret = 0;
+    } while (0);
+    if (appInfo) {
+        free(appInfo);
+    }
+    free(content);
+    ASSERT_EQ(ret, 0);
 }
 } // namespace OHOS
