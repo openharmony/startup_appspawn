@@ -283,7 +283,8 @@ static void MountAppEl2Dir(const AppSpawnClient* client)
     APPSPAWN_CHECK(path != NULL, return, "Failed to malloc path");
     len = sprintf_s(path, allPathSize, "%s%s/%s%s", rootPath, userId,
         appProperty->bundleName, el2Path);
-    APPSPAWN_CHECK(len > 0 && (len < allPathSize), return, "Failed to get el2 path");
+    APPSPAWN_CHECK(len > 0 && (len < allPathSize), free(path);
+        return, "Failed to get el2 path");
 
     if (access(path, F_OK) == 0) {
         free(path);
