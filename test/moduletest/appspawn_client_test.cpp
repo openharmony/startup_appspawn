@@ -139,6 +139,39 @@ HWTEST_F(AppSpawnClientTest, AppSpawn_Client_AppSpawn_3, TestSize.Level0)
     ClientClose();
 }
 
+// has env data,read json from etc
+static const std::string g_envJsonStr = "|AppEnv|{"
+    "\"test.name1\": \"test.value1\","
+    "\"test.name2\": \"test.value2\""
+"}|AppEnv|";
+
+HWTEST_F(AppSpawnClientTest, AppSpawn_Client_AppSpawn_3_1, TestSize.Level0)
+{
+    APPSPAWN_LOGI("AppSpawn_Client_AppSpawn_3_1 start");
+    int ret = ClientCreateSocket("/dev/unix/socket/AppSpawn");
+    EXPECT_EQ(ret, 0);
+
+    AppParameter request = {};
+    memset_s((void *)(&request), sizeof(request), 0, sizeof(request));
+    ClientFillMsg(&request, "ohos.samples.clock", "ls -l > aaa.txt");
+
+    printf("AppSpawn_Client_AppSpawn_3_1 env %zu %s \n", g_envJsonStr.size(), g_envJsonStr.c_str());
+    request.extraInfo.totalLength = g_envJsonStr.size();
+    std::vector<char *> data(sizeof(request) + g_envJsonStr.size());
+    memcpy_s(data.data(), sizeof(request), &request, sizeof(request));
+    memcpy_s(data.data() + sizeof(request), g_envJsonStr.size(), g_envJsonStr.data(), g_envJsonStr.size());
+    ret = ClientSendMsg(reinterpret_cast<const uint8_t *>(data.data()), data.size());
+    EXPECT_EQ(ret, 0);
+    pid_t pid = 0;
+    ret = ClientRecvMsg(pid);
+    if (pid > 0) {
+        kill(pid, SIGKILL);
+    }
+    // close client
+    ClientClose();
+    APPSPAWN_LOGI("AppSpawn_Client_AppSpawn_3_1 end");
+}
+
 HWTEST_F(AppSpawnClientTest, AppSpawn_Client_AppSpawn_4, TestSize.Level0)
 {
     APPSPAWN_LOGI("AppSpawn_Client_AppSpawn_4");

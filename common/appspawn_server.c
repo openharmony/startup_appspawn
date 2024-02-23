@@ -131,6 +131,12 @@ int DoStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client, char *l
             return ret, "Failed to setCapabilities");
     }
 
+    if (content->setEnvInfo) {
+        ret = content->setEnvInfo(content, client);
+        APPSPAWN_CHECK(ret == 0, NotifyResToParent(content, client, ret);
+            return ret, "Failed to setEnvInfo");
+    }
+
     if (content->waitForDebugger) {
         ret = content->waitForDebugger(client);
         APPSPAWN_CHECK(ret == 0, NotifyResToParent(content, client, ret);

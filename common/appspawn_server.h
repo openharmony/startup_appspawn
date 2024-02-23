@@ -64,6 +64,7 @@ typedef struct AppSpawnContent_ {
     int (*setAppSandbox)(struct AppSpawnContent_ *content, AppSpawnClient *client);
     int (*setKeepCapabilities)(struct AppSpawnContent_ *content, AppSpawnClient *client);
     int (*setFileDescriptors)(struct AppSpawnContent_ *content, AppSpawnClient *client);
+    int (*setEnvInfo)(struct AppSpawnContent_ *content, AppSpawnClient *client);
     int (*setProcessName)(struct AppSpawnContent_ *content, AppSpawnClient *client,
     char *longProcName, uint32_t longProcNameLen);
     int (*setUidGid)(struct AppSpawnContent_ *content, AppSpawnClient *client);
