@@ -162,7 +162,7 @@ if (!defined(ohos_lite)) {
         defined(global_parts_info.security_security_component_manager)) {
       defines += [ "SECURITY_COMPONENT_ENABLE" ]
       external_deps +=
-          [ "security_component_manager:libsecurity_component_enhance_sdk" ]
+          [ "security_component_manager:libsecurity_component_sdk" ]
     }
 
     if (!defined(global_parts_info) ||
