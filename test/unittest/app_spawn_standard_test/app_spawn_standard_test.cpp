@@ -29,6 +29,7 @@
 #include "appspawn_adapter.h"
 #include "appspawn_server.h"
 #include "appspawn_service.h"
+#include "env_utils.h"
 #include "init_hashmap.h"
 #include "json_utils.h"
 #include "le_task.h"
@@ -421,6 +422,66 @@ HWTEST(AppSpawnStandardTest, App_Spawn_Standard_003_4, TestSize.Level0)
     }
     APPSPAWN_LOGI("App_Spawn_Standard_003_4 en");
 }
+
+/**
+* @tc.name: App_Spawn_Standard_003_5
+* @tc.desc: Verify set Arg if GetAppSpawnClient succeed, with AppEnvInfo
+* @tc.type: FUNC
+* @tc.require:issueI936IH
+* @tc.author:
+*/
+HWTEST(AppSpawnStandardTest, App_Spawn_Standard_003_5, TestSize.Level0)
+{
+    APPSPAWN_LOGI("App_Spawn_Standard_003_5 start");
+    AppSpawnClientExt client = {};
+    char arg1[] = "/system/bin/appspawn";
+    char arg2[] = "cold-start";
+    char arg3[] = "1";
+    {
+        char arg4[] = "1:1:1:1:1:1:1:1:1:2:1000:1000:ohos.samples:ohos.samples.ecg:"
+            "default:671201800:system_core:default:owerid:0:671201800";
+        char arg5[] = "200";
+        char arg6[] = "|AppEnv|{\"test.name1\": \"test.value1\", \"test.name2\": \"test.value2\"}|AppEnv|";
+        char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6};
+        int argc = sizeof(argv)/sizeof(argv[0]);
+        EXPECT_EQ(0, GetAppSpawnClientFromArg(argc, argv, &client));
+    }
+    { // AppEnvInfo content is valid, but length is 0
+        char arg4[] = "1:1:1:1:1:1:1:1:1:2:1000:1000:ohos.samples:ohos.samples.ecg:"
+            "default:671201800:system_core:default:owerid:0:671201800";
+        char arg5[] = "0";
+        char arg6[] = "|AppEnv|{\"test.name1\": \"test.value1\", \"test.name2\": \"test.value2\"}|AppEnv|";
+        char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6};
+        int argc = sizeof(argv)/sizeof(argv[0]);
+        EXPECT_EQ(0, GetAppSpawnClientFromArg(argc, argv, &client));
+    }
+    { // AppEnvInfo content is valid, but length is nullptr
+        char arg4[] = "1:1:1:1:1:1:1:1:1:2:1000:1000:ohos.samples:ohos.samples.ecg:"
+            "default:671201800:system_core:default:owerid:0:671201800";
+        char arg6[] = "|AppEnv|{\"test.name1\": \"test.value1\", \"test.name2\": \"test.value2\"}|AppEnv|";
+        char* argv[] = {arg1, arg2, arg3, arg4, nullptr, arg6};
+        int argc = sizeof(argv)/sizeof(argv[0]);
+        EXPECT_EQ(0, GetAppSpawnClientFromArg(argc, argv, &client));
+    }
+    { // AppEnvInfo length is valid, but content is nullptr
+        char arg4[] = "1:1:1:1:1:1:1:1:1:2:1000:1000:ohos.samples:ohos.samples.ecg:"
+            "default:671201800:system_core:default:owerid:0:671201800";
+        char arg5[] = "200";
+        char* argv[] = {arg1, arg2, arg3, arg4, arg5, nullptr};
+        int argc = sizeof(argv)/sizeof(argv[0]);
+        EXPECT_EQ(-1, GetAppSpawnClientFromArg(argc, argv, &client));
+    }
+    { // AppEnvInfo length is valid, but argc is 5
+        char arg4[] = "1:1:1:1:1:1:1:1:1:2:1000:1000:ohos.samples:ohos.samples.ecg:"
+            "default:671201800:system_core:default:owerid:0:671201800";
+        char arg5[] = "200";
+        char* argv[] = {arg1, arg2, arg3, arg4, arg5};
+        int argc = sizeof(argv)/sizeof(argv[0]);
+        EXPECT_EQ(-1, GetAppSpawnClientFromArg(argc, argv, &client));
+    }
+    APPSPAWN_LOGI("App_Spawn_Standard_003_5 end");
+}
+
 /**
 * @tc.name: App_Spawn_Standard_004
 * @tc.desc: App cold start.
@@ -477,6 +538,40 @@ HWTEST(AppSpawnStandardTest, App_Spawn_Standard_004, TestSize.Level0)
         AppSpawnColdRun(content, 4, argv);
     }
     GTEST_LOG_(INFO) << "App_Spawn_Standard_004 end";
+}
+
+/**
+* @tc.name: App_Spawn_Standard_004_1
+* @tc.desc: App cold start.
+* @tc.type: FUNC
+* @tc.require:issueI936IH
+* @tc.author:
+*/
+HWTEST(AppSpawnStandardTest, App_Spawn_Standard_004_1, TestSize.Level0)
+{
+    APPSPAWN_LOGI("App_Spawn_Standard_004_1 start");
+    string longProcName = "App_Spawn_Standard_004_1";
+    int64_t longProcNameLen = longProcName.length();
+    int cold = 1;
+    AppSpawnContent *content = AppSpawnCreateContent("AppSpawn", (char*)longProcName.c_str(), longProcNameLen, cold);
+    EXPECT_TRUE(content);
+    content->loadExtendLib = LoadExtendLib;
+    content->runChildProcessor = RunChildProcessor;
+    content->setEnvInfo = SetEnvInfo;
+    content->runChildProcessor(content, nullptr);
+
+    char tmp0[] = "/system/bin/appspawn";
+    char tmp1[] = "cold-start";
+    char tmp2[] = "1";
+    {
+        char tmp3[] = "1:1:1:1:1:1:1:1:1:2:1000:1000:ohos.samples:ohos.samples.ecg:"
+            "default:671201800:system_core:default:owerid:0:671201800";
+        char tmp4[] = "200";
+        char tmp5[] = "|AppEnv|{\"test.name1\": \"test.value1\", \"test.name2\": \"test.value2\"}|AppEnv|";
+        char * const argv[] = {tmp0, tmp1, tmp2, tmp3, tmp4, tmp5};
+        AppSpawnColdRun(content, 6, argv);
+    }
+    APPSPAWN_LOGI("App_Spawn_Standard_004_1 end");
 }
 
 /**

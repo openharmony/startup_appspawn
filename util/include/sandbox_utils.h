@@ -36,6 +36,7 @@ public:
     static int32_t SetAppSandboxPropertyNweb(AppSpawnClient *client);
     static uint32_t GetSandboxNsFlags(bool isNweb);
     static std::set<std::string> GetMountPermissionNames();
+    static std::string GetExtraInfoByType(const ClientSocket::AppProperty *appProperty, const std::string &type);
     typedef struct {
         unsigned long mountFlags;
         std::string optionsPoint;
