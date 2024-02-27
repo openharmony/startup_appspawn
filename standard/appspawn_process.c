@@ -33,6 +33,7 @@
 #include <sched.h>
 
 #include "securec.h"
+#include "selinux/selinux.h"
 #include "parameter.h"
 #include "limits.h"
 #include "string.h"
@@ -42,6 +43,9 @@
 #endif
 
 #define DEVICE_NULL_STR "/dev/null"
+
+#define PID_NS_INIT_UID 100000  // reserved for pid_ns_init process, avoid app, render proc, etc.
+#define PID_NS_INIT_GID 100000
 
 // ide-asan
 static int SetAsanEnabledEnv(struct AppSpawnContent_ *content, AppSpawnClient *client)
@@ -611,6 +615,15 @@ static int EnablePidNs(AppSpawnContent *content)
 
     int ret = unshare(CLONE_NEWPID);
     APPSPAWN_CHECK(ret == 0, return -1, "unshare CLONE_NWEPID failed, errno=%{public}d", errno);
+
+    pid_t pid = fork();
+    if (pid == 0) {
+        setuid(PID_NS_INIT_UID);
+        setgid(PID_NS_INIT_GID);
+        setcon("u:r:pid_ns_init:s0");
+        char* argv[] = {"/system/bin/pid_ns_init", NULL};
+        execve("/system/bin/pid_ns_init", argv, NULL);
+    }
 
     APPSPAWN_LOGI("Enable pid namespace success.");
     return 0;
