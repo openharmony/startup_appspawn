@@ -943,7 +943,7 @@ static inline bool CheckPath(const std::string& name)
     return !name.empty() && name != "." && name != ".." && name.find("/") == std::string::npos;
 }
 
-static std::string GetExtraInfoByType(const ClientSocket::AppProperty *appProperty, const std::string &type)
+std::string SandboxUtils::GetExtraInfoByType(const ClientSocket::AppProperty *appProperty, const std::string &type)
 {
     if (appProperty->extraInfo.totalLength == 0 || appProperty->extraInfo.data == NULL) {
         return "";
