@@ -30,7 +30,10 @@ using namespace OHOS::HiviewDFX;
 
 namespace OHOS {
 namespace AppSpawn {
-static constexpr HiLogLabel LABEL = {LOG_CORE, 0, "AppSpawnMST"};
+#undef LOG_DOMAIN
+#define LOG_DOMAIN 0xD002C11
+#undef LOG_TAG
+#define LOG_TAG "AppSpawnMST"
 
 namespace {
 const bool CHECK_OK = true;
@@ -72,27 +75,27 @@ bool readFileInfo(char *buffer, const int32_t &pid, const char *fileName)
     // Set file path
     char filePath[FILE_PATH_SIZE];
     if (sprintf_s(filePath, sizeof(filePath), "/proc/%d/%s", pid, fileName) <= 0) {
-        HiLog::Error(LABEL, "filePath sprintf_s fail .");
+        HILOG_ERROR(LOG_CORE, "filePath sprintf_s fail .");
         return CHECK_ERROR;
     }
     if (!checkFileIsExists(filePath)) {
-        HiLog::Error(LABEL, "file %{public}s is not exists .", fileName);
+        HILOG_ERROR(LOG_CORE, "file %{public}s is not exists .", fileName);
         return CHECK_ERROR;
     }
     // Open file
     int fd = open(filePath, O_RDONLY);
     if (fd == -1) {
-        HiLog::Error(LABEL, "file %{public}s open failed . error:%{publid}s", fileName, strerror(errno));
+        HILOG_ERROR(LOG_CORE, "file %{public}s open failed . error:%{publid}s", fileName, strerror(errno));
         return CHECK_ERROR;
     }
     // Read file
     int t = read(fd, buffer, BUFFER_SIZE);
     if (t <= 0 || buffer == nullptr) {
-        HiLog::Info(LABEL, "read proc status file failed.");
+        HILOG_INFO(LOG_CORE, "read proc status file failed.");
         close(fd);
         return CHECK_ERROR;
     }
-    HiLog::Info(LABEL, "buffer:\n %{public}s", buffer);
+    HILOG_INFO(LOG_CORE, "buffer:\n %{public}s", buffer);
     close(fd);
 
     return CHECK_OK;
@@ -104,14 +107,14 @@ bool checkUid(const int32_t &pid, const AppSpawnStartMsg &params)
         // Move to Uid position
         char *uidPtr = strstr(buffer, "Uid:");
         if (uidPtr == nullptr) {
-            HiLog::Error(LABEL, "get Uid info failed.");
+            HILOG_ERROR(LOG_CORE, "get Uid info failed.");
             return CHECK_ERROR;
         }
         if (strlen(uidPtr) > UID_POSITION_MOVE) {
             uidPtr = uidPtr + UID_POSITION_MOVE;
         }
         int32_t uid = (int32_t)strtol(uidPtr, NULL, BASE_TYPE);
-        HiLog::Info(LABEL, "new proc(%{public}d) uid = %{public}d, setUid=%{public}d.", pid, uid, params.uid);
+        HILOG_INFO(LOG_CORE, "new proc(%{public}d) uid = %{public}d, setUid=%{public}d.", pid, uid, params.uid);
         if (uid == params.uid) {
             return CHECK_OK;
         }
@@ -125,18 +128,18 @@ bool checkGid(const int32_t &pid, const AppSpawnStartMsg &params)
         // Move to Gid position
         char *gidPtr = strstr(buffer, "Gid:");
         if (gidPtr == nullptr) {
-            HiLog::Error(LABEL, "get Gid info failed.");
+            HILOG_ERROR(LOG_CORE, "get Gid info failed.");
             return CHECK_ERROR;
         }
         if (strlen(gidPtr) > GID_POSITION_MOVE) {
             gidPtr = gidPtr + GID_POSITION_MOVE;
         }
         if (gidPtr == nullptr) {
-            HiLog::Error(LABEL, "get Gid info failed.");
+            HILOG_ERROR(LOG_CORE, "get Gid info failed.");
             return CHECK_ERROR;
         }
         int32_t gid = (int32_t)strtol(gidPtr, NULL, BASE_TYPE);
-        HiLog::Info(LABEL, "new proc(%{public}d) gid = %{public}d, setGid=%{public}d.", pid, gid, params.gid);
+        HILOG_INFO(LOG_CORE, "new proc(%{public}d) gid = %{public}d, setGid=%{public}d.", pid, gid, params.gid);
         if (gid == params.gid) {
             return CHECK_OK;
         }
@@ -149,7 +152,7 @@ std::size_t getGids(const int32_t &pid, std::vector<int32_t> &gids)
         // Move to Groups position
         char *groupsPtr = strstr(buffer, "Groups");
         if (groupsPtr == nullptr || strlen(groupsPtr) > BUFFER_SIZE) {
-            HiLog::Error(LABEL, "get Groups info failed.");
+            HILOG_ERROR(LOG_CORE, "get Groups info failed.");
             return CHECK_ERROR;
         }
         if (strlen(groupsPtr) > GROUPS_POSITION_MOVE) {
@@ -158,12 +161,12 @@ std::size_t getGids(const int32_t &pid, std::vector<int32_t> &gids)
         // Get the row content of Groups
         char *saveptr = nullptr;
         if (groupsPtr == nullptr || strlen(groupsPtr) > BUFFER_SIZE) {
-            HiLog::Error(LABEL, "get Groups info failed.");
+            HILOG_ERROR(LOG_CORE, "get Groups info failed.");
             return CHECK_ERROR;
         }
         char *line = strtok_r(groupsPtr, DELIMITER_NEWLINE, &saveptr);
         if (line == nullptr || strlen(line) > BUFFER_SIZE) {
-            HiLog::Error(LABEL, "get Groups line info failed.");
+            HILOG_ERROR(LOG_CORE, "get Groups line info failed.");
             return CHECK_ERROR;
         }
         // Get each gid and insert into vector
@@ -206,16 +209,16 @@ bool checkProcName(const int32_t &pid, const AppSpawnStartMsg &params)
     FILE *fp = nullptr;
     char cmd[CMD_SIZE];
     if (sprintf_s(cmd, sizeof(cmd), "ps -o ARGS=CMD -p %d |grep -v CMD", pid) <= 0) {
-        HiLog::Error(LABEL, "cmd sprintf_s fail .");
+        HILOG_ERROR(LOG_CORE, "cmd sprintf_s fail .");
         return CHECK_ERROR;
     }
     if(strlen(cmd) > CMD_SIZE) {
-        HiLog::Error(LABEL, " cmd length is too long  .");
+        HILOG_ERROR(LOG_CORE, " cmd length is too long  .");
         return CHECK_ERROR;
     }
     fp = popen(cmd, "r");
     if (fp == nullptr) {
-        HiLog::Error(LABEL, " popen function call failed .");
+        HILOG_ERROR(LOG_CORE, " popen function call failed .");
         return CHECK_ERROR;
     }
     char procName[BUFFER_SIZE];
@@ -233,9 +236,9 @@ bool checkProcName(const int32_t &pid, const AppSpawnStartMsg &params)
             pclose(fp);
             return CHECK_OK;
         }
-        HiLog::Error(LABEL, " procName=%{public}s, params.procName=%{public}s.", procName, params.procName.c_str());
+        HILOG_ERROR(LOG_CORE, " procName=%{public}s, params.procName=%{public}s.", procName, params.procName.c_str());
     } else {
-        HiLog::Error(LABEL, "Getting procName failed.");
+        HILOG_ERROR(LOG_CORE, "Getting procName failed.");
     }
     pclose(fp);
 
@@ -245,12 +248,12 @@ bool checkProcessIsDestroyed(const int32_t &pid)
 {
     char filePath[FILE_PATH_SIZE];
     if (sprintf_s(filePath, sizeof(filePath), "/proc/%d", pid) <= 0) {
-        HiLog::Error(LABEL, "filePath sprintf_s fail .");
+        HILOG_ERROR(LOG_CORE, "filePath sprintf_s fail .");
         return CHECK_ERROR;
     }
 
     if (checkFileIsExists(filePath)) {
-        HiLog::Error(LABEL, "File %{public}d is not exists .", pid);
+        HILOG_ERROR(LOG_CORE, "File %{public}d is not exists .", pid);
         return CHECK_ERROR;
     }
 
@@ -262,7 +265,7 @@ bool checkAppspawnPID()
     FILE *fp = nullptr;
     fp = popen("pidof appspawn", "r");
     if (fp == nullptr) {
-        HiLog::Error(LABEL, " popen function call failed.");
+        HILOG_ERROR(LOG_CORE, " popen function call failed.");
         return CHECK_ERROR;
     }
     char pid[BUFFER_SIZE];
@@ -271,7 +274,7 @@ bool checkAppspawnPID()
         return CHECK_OK;
     }
 
-    HiLog::Error(LABEL, "Getting Pid failed.");
+    HILOG_ERROR(LOG_CORE, "Getting Pid failed.");
 
     pclose(fp);
 
@@ -283,7 +286,7 @@ bool startAppspawn()
     FILE *fp = nullptr;
     fp = popen("/system/bin/appspawn&", "r");
     if (fp == nullptr) {
-        HiLog::Error(LABEL, " popen function call failed.");
+        HILOG_ERROR(LOG_CORE, " popen function call failed.");
         return CHECK_ERROR;
     }
 
@@ -297,7 +300,7 @@ bool stopAppspawn()
     FILE *fp = nullptr;
     fp = popen("kill -9 $(pidof appspawn)", "r");
     if (fp == nullptr) {
-        HiLog::Error(LABEL, " popen function call failed.");
+        HILOG_ERROR(LOG_CORE, " popen function call failed.");
         return CHECK_ERROR;
     }
 
@@ -333,7 +336,7 @@ void AppSpawnModuleTest::SetUp()
     newPid = 0;
     auto ret = memset_s(buffer, sizeof(buffer), 0x00, BUFFER_SIZE);
     if (ret != EOK) {
-        HiLog::Error(LABEL, "memset_s is failed.");
+        HILOG_ERROR(LOG_CORE, "memset_s is failed.");
     }
 }
 
@@ -351,11 +354,11 @@ void AppSpawnModuleTest::TearDown()
  */
 HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_listen_001, TestSize.Level0)
 {
-    HiLog::Info(LABEL, "AppSpawn_HF_listen_001 start");
+    HILOG_INFO(LOG_CORE, "AppSpawn_HF_listen_001 start");
 
     EXPECT_EQ(CHECK_OK, checkAppspawnPID());
 
-    HiLog::Info(LABEL, "AppSpawn_HF_listen_001 end");
+    HILOG_INFO(LOG_CORE, "AppSpawn_HF_listen_001 end");
 }
 
 /*
@@ -369,7 +372,7 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_listen_001, TestSize.Level0)
  */
 HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_listen_002, TestSize.Level0)
 {
-    HiLog::Info(LABEL, "AppSpawn_HF_listen_002 start");
+    HILOG_INFO(LOG_CORE, "AppSpawn_HF_listen_002 start");
     std::unique_ptr<AppSpawnClient> appSpawnClient = std::make_unique<AppSpawnClient>();
     std::shared_ptr<AppExecFwk::AppSpawnSocket> appSpawnSocket = std::make_shared<AppExecFwk::AppSpawnSocket>();
 
@@ -379,7 +382,7 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_listen_002, TestSize.Level0)
 
     appSpawnClient->CloseConnection();
     EXPECT_EQ(SpawnConnectionState::STATE_NOT_CONNECT, appSpawnClient->QueryConnectionState());
-    HiLog::Info(LABEL, "AppSpawn_HF_listen_002 end");
+    HILOG_INFO(LOG_CORE, "AppSpawn_HF_listen_002 end");
 }
 
 /*
@@ -394,7 +397,7 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_listen_002, TestSize.Level0)
  */
 HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_fork_001, TestSize.Level0)
 {
-    HiLog::Info(LABEL, "AppSpawn_HF_fork_001 start");
+    HILOG_INFO(LOG_CORE, "AppSpawn_HF_fork_001 start");
     std::unique_ptr<AppSpawnClient> appSpawnClient = std::make_unique<AppSpawnClient>();
     std::shared_ptr<AppExecFwk::AppSpawnSocket> appSpawnSocket = std::make_shared<AppExecFwk::AppSpawnSocket>();
     appSpawnClient->SetSocket(appSpawnSocket);
@@ -410,7 +413,7 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_fork_001, TestSize.Level0)
     EXPECT_EQ(ERR_OK, appSpawnSocket->OpenAppSpawnConnection());
     appSpawnClient->CloseConnection();
     EXPECT_EQ(SpawnConnectionState::STATE_NOT_CONNECT, appSpawnClient->QueryConnectionState());
-    HiLog::Info(LABEL, "AppSpawn_HF_fork_001 end");
+    HILOG_INFO(LOG_CORE, "AppSpawn_HF_fork_001 end");
 }
 
 /*
@@ -425,7 +428,7 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_fork_001, TestSize.Level0)
  */
 HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_fork_002, TestSize.Level0)
 {
-    HiLog::Info(LABEL, "AppSpawn_HF_fork_002 start");
+    HILOG_INFO(LOG_CORE, "AppSpawn_HF_fork_002 start");
     std::unique_ptr<AppSpawnClient> appSpawnClient = std::make_unique<AppSpawnClient>();
     std::shared_ptr<AppExecFwk::AppSpawnSocket> appSpawnSocket = std::make_shared<AppExecFwk::AppSpawnSocket>();
     appSpawnClient->SetSocket(appSpawnSocket);
@@ -442,7 +445,7 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_fork_002, TestSize.Level0)
     EXPECT_EQ(ERR_OK, appSpawnSocket->OpenAppSpawnConnection());
     appSpawnClient->CloseConnection();
     EXPECT_EQ(SpawnConnectionState::STATE_NOT_CONNECT, appSpawnClient->QueryConnectionState());
-    HiLog::Info(LABEL, "AppSpawn_HF_fork_002 end");
+    HILOG_INFO(LOG_CORE, "AppSpawn_HF_fork_002 end");
 }
 
 /*
@@ -457,7 +460,7 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_fork_002, TestSize.Level0)
  */
 HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_setUid_001, TestSize.Level0)
 {
-    HiLog::Info(LABEL, "AppSpawn_HF_setUid_001 start");
+    HILOG_INFO(LOG_CORE, "AppSpawn_HF_setUid_001 start");
     std::unique_ptr<AppSpawnClient> appSpawnClient = std::make_unique<AppSpawnClient>();
     std::shared_ptr<AppExecFwk::AppSpawnSocket> appSpawnSocket = std::make_shared<AppExecFwk::AppSpawnSocket>();
     appSpawnClient->SetSocket(appSpawnSocket);
@@ -475,7 +478,7 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_setUid_001, TestSize.Level0)
     EXPECT_EQ(ERR_OK, appSpawnSocket->OpenAppSpawnConnection());
     appSpawnClient->CloseConnection();
     EXPECT_EQ(SpawnConnectionState::STATE_NOT_CONNECT, appSpawnClient->QueryConnectionState());
-    HiLog::Info(LABEL, "AppSpawn_HF_setUid_001 end");
+    HILOG_INFO(LOG_CORE, "AppSpawn_HF_setUid_001 end");
 }
 
 /*
@@ -490,7 +493,7 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_setUid_001, TestSize.Level0)
  */
 HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_setUid_002, TestSize.Level0)
 {
-    HiLog::Info(LABEL, "AppSpawn_HF_setUid_002 start");
+    HILOG_INFO(LOG_CORE, "AppSpawn_HF_setUid_002 start");
     std::unique_ptr<AppSpawnClient> appSpawnClient = std::make_unique<AppSpawnClient>();
     std::shared_ptr<AppExecFwk::AppSpawnSocket> appSpawnSocket = std::make_shared<AppExecFwk::AppSpawnSocket>();
     appSpawnClient->SetSocket(appSpawnSocket);
@@ -508,7 +511,7 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_setUid_002, TestSize.Level0)
     EXPECT_EQ(ERR_OK, appSpawnSocket->OpenAppSpawnConnection());
     appSpawnClient->CloseConnection();
     EXPECT_EQ(SpawnConnectionState::STATE_NOT_CONNECT, appSpawnClient->QueryConnectionState());
-    HiLog::Info(LABEL, "AppSpawn_HF_setUid_002 end");
+    HILOG_INFO(LOG_CORE, "AppSpawn_HF_setUid_002 end");
 }
 
 /*
@@ -523,7 +526,7 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_setUid_002, TestSize.Level0)
  */
 HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_setUid_003, TestSize.Level0)
 {
-    HiLog::Info(LABEL, "AppSpawn_HF_setUid_003 start");
+    HILOG_INFO(LOG_CORE, "AppSpawn_HF_setUid_003 start");
     std::unique_ptr<AppSpawnClient> appSpawnClient = std::make_unique<AppSpawnClient>();
     std::shared_ptr<AppExecFwk::AppSpawnSocket> appSpawnSocket = std::make_shared<AppExecFwk::AppSpawnSocket>();
     appSpawnClient->SetSocket(appSpawnSocket);
@@ -541,7 +544,7 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_setUid_003, TestSize.Level0)
     EXPECT_EQ(ERR_OK, appSpawnSocket->OpenAppSpawnConnection());
     appSpawnClient->CloseConnection();
     EXPECT_EQ(SpawnConnectionState::STATE_NOT_CONNECT, appSpawnClient->QueryConnectionState());
-    HiLog::Info(LABEL, "AppSpawn_HF_setUid_003 end");
+    HILOG_INFO(LOG_CORE, "AppSpawn_HF_setUid_003 end");
 }
 
 /*
@@ -556,7 +559,7 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_setUid_003, TestSize.Level0)
  */
 HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_setUid_004, TestSize.Level0)
 {
-    HiLog::Info(LABEL, "AppSpawn_HF_setUid_004 start");
+    HILOG_INFO(LOG_CORE, "AppSpawn_HF_setUid_004 start");
     std::unique_ptr<AppSpawnClient> appSpawnClient = std::make_unique<AppSpawnClient>();
     std::shared_ptr<AppExecFwk::AppSpawnSocket> appSpawnSocket = std::make_shared<AppExecFwk::AppSpawnSocket>();
     appSpawnClient->SetSocket(appSpawnSocket);
@@ -574,7 +577,7 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_setUid_004, TestSize.Level0)
     EXPECT_EQ(ERR_OK, appSpawnSocket->OpenAppSpawnConnection());
     appSpawnClient->CloseConnection();
     EXPECT_EQ(SpawnConnectionState::STATE_NOT_CONNECT, appSpawnClient->QueryConnectionState());
-    HiLog::Info(LABEL, "AppSpawn_HF_setUid_004 end");
+    HILOG_INFO(LOG_CORE, "AppSpawn_HF_setUid_004 end");
 }
 
 /*
@@ -589,7 +592,7 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_setUid_004, TestSize.Level0)
  */
 HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_setUid_005, TestSize.Level0)
 {
-    HiLog::Info(LABEL, "AppSpawn_HF_setUid_005 start");
+    HILOG_INFO(LOG_CORE, "AppSpawn_HF_setUid_005 start");
     std::unique_ptr<AppSpawnClient> appSpawnClient = std::make_unique<AppSpawnClient>();
     std::shared_ptr<AppExecFwk::AppSpawnSocket> appSpawnSocket = std::make_shared<AppExecFwk::AppSpawnSocket>();
     appSpawnClient->SetSocket(appSpawnSocket);
@@ -607,7 +610,7 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_setUid_005, TestSize.Level0)
     EXPECT_EQ(ERR_OK, appSpawnSocket->OpenAppSpawnConnection());
     appSpawnClient->CloseConnection();
     EXPECT_EQ(SpawnConnectionState::STATE_NOT_CONNECT, appSpawnClient->QueryConnectionState());
-    HiLog::Info(LABEL, "AppSpawn_HF_setUid_005 end");
+    HILOG_INFO(LOG_CORE, "AppSpawn_HF_setUid_005 end");
 }
 
 /*
@@ -622,7 +625,7 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_setUid_005, TestSize.Level0)
  */
 HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_setUid_006, TestSize.Level0)
 {
-    HiLog::Info(LABEL, "AppSpawn_HF_setUid_006 start");
+    HILOG_INFO(LOG_CORE, "AppSpawn_HF_setUid_006 start");
     std::unique_ptr<AppSpawnClient> appSpawnClient = std::make_unique<AppSpawnClient>();
     std::shared_ptr<AppExecFwk::AppSpawnSocket> appSpawnSocket = std::make_shared<AppExecFwk::AppSpawnSocket>();
     appSpawnClient->SetSocket(appSpawnSocket);
@@ -640,7 +643,7 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_setUid_006, TestSize.Level0)
     EXPECT_EQ(ERR_OK, appSpawnSocket->OpenAppSpawnConnection());
     appSpawnClient->CloseConnection();
     EXPECT_EQ(SpawnConnectionState::STATE_NOT_CONNECT, appSpawnClient->QueryConnectionState());
-    HiLog::Info(LABEL, "AppSpawn_HF_setUid_006 end");
+    HILOG_INFO(LOG_CORE, "AppSpawn_HF_setUid_006 end");
 }
 
 /*
@@ -655,7 +658,7 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_setUid_006, TestSize.Level0)
  */
 HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_setUid_007, TestSize.Level0)
 {
-    HiLog::Info(LABEL, "AppSpawn_HF_setUid_007 start");
+    HILOG_INFO(LOG_CORE, "AppSpawn_HF_setUid_007 start");
     std::unique_ptr<AppSpawnClient> appSpawnClient = std::make_unique<AppSpawnClient>();
     std::shared_ptr<AppExecFwk::AppSpawnSocket> appSpawnSocket = std::make_shared<AppExecFwk::AppSpawnSocket>();
     appSpawnClient->SetSocket(appSpawnSocket);
@@ -673,7 +676,7 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_setUid_007, TestSize.Level0)
     EXPECT_EQ(ERR_OK, appSpawnSocket->OpenAppSpawnConnection());
     appSpawnClient->CloseConnection();
     EXPECT_EQ(SpawnConnectionState::STATE_NOT_CONNECT, appSpawnClient->QueryConnectionState());
-    HiLog::Info(LABEL, "AppSpawn_HF_setUid_007 end");
+    HILOG_INFO(LOG_CORE, "AppSpawn_HF_setUid_007 end");
 }
 
 /*
@@ -688,7 +691,7 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_setUid_007, TestSize.Level0)
  */
 HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_setUid_008, TestSize.Level0)
 {
-    HiLog::Info(LABEL, "AppSpawn_HF_setUid_008 start");
+    HILOG_INFO(LOG_CORE, "AppSpawn_HF_setUid_008 start");
     std::unique_ptr<AppSpawnClient> appSpawnClient = std::make_unique<AppSpawnClient>();
     std::shared_ptr<AppExecFwk::AppSpawnSocket> appSpawnSocket = std::make_shared<AppExecFwk::AppSpawnSocket>();
     appSpawnClient->SetSocket(appSpawnSocket);
@@ -706,7 +709,7 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_setUid_008, TestSize.Level0)
     EXPECT_EQ(ERR_OK, appSpawnSocket->OpenAppSpawnConnection());
     appSpawnClient->CloseConnection();
     EXPECT_EQ(SpawnConnectionState::STATE_NOT_CONNECT, appSpawnClient->QueryConnectionState());
-    HiLog::Info(LABEL, "AppSpawn_HF_setUid_008 end");
+    HILOG_INFO(LOG_CORE, "AppSpawn_HF_setUid_008 end");
 }
 
 /*
@@ -721,7 +724,7 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_setUid_008, TestSize.Level0)
  */
 HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_setProcName_001, TestSize.Level0)
 {
-    HiLog::Info(LABEL, "AppSpawn_HF_setProcName_001 start");
+    HILOG_INFO(LOG_CORE, "AppSpawn_HF_setProcName_001 start");
     std::unique_ptr<AppSpawnClient> appSpawnClient = std::make_unique<AppSpawnClient>();
     std::shared_ptr<AppExecFwk::AppSpawnSocket> appSpawnSocket = std::make_shared<AppExecFwk::AppSpawnSocket>();
     appSpawnClient->SetSocket(appSpawnSocket);
@@ -740,7 +743,7 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_setProcName_001, TestSize.Level0)
     EXPECT_EQ(ERR_OK, appSpawnSocket->OpenAppSpawnConnection());
     appSpawnClient->CloseConnection();
     EXPECT_EQ(SpawnConnectionState::STATE_NOT_CONNECT, appSpawnClient->QueryConnectionState());
-    HiLog::Info(LABEL, "AppSpawn_HF_setProcName_001 end");
+    HILOG_INFO(LOG_CORE, "AppSpawn_HF_setProcName_001 end");
 }
 
 /*
@@ -755,7 +758,7 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_setProcName_001, TestSize.Level0)
  */
 HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_setProcName_002, TestSize.Level0)
 {
-    HiLog::Info(LABEL, "AppSpawn_HF_setProcName_002 start");
+    HILOG_INFO(LOG_CORE, "AppSpawn_HF_setProcName_002 start");
     std::unique_ptr<AppSpawnClient> appSpawnClient = std::make_unique<AppSpawnClient>();
     std::shared_ptr<AppExecFwk::AppSpawnSocket> appSpawnSocket = std::make_shared<AppExecFwk::AppSpawnSocket>();
     appSpawnClient->SetSocket(appSpawnSocket);
@@ -774,7 +777,7 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_setProcName_002, TestSize.Level0)
     EXPECT_EQ(ERR_OK, appSpawnSocket->OpenAppSpawnConnection());
     appSpawnClient->CloseConnection();
     EXPECT_EQ(SpawnConnectionState::STATE_NOT_CONNECT, appSpawnClient->QueryConnectionState());
-    HiLog::Info(LABEL, "AppSpawn_HF_setProcName_002 end");
+    HILOG_INFO(LOG_CORE, "AppSpawn_HF_setProcName_002 end");
 }
 
 /*
@@ -787,7 +790,7 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_setProcName_002, TestSize.Level0)
  */
 HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_recycleProc_001, TestSize.Level0)
 {
-    HiLog::Info(LABEL, "AppSpawn_HF_recycleProc_001 start");
+    HILOG_INFO(LOG_CORE, "AppSpawn_HF_recycleProc_001 start");
     std::unique_ptr<AppSpawnClient> appSpawnClient = std::make_unique<AppSpawnClient>();
     std::shared_ptr<AppExecFwk::AppSpawnSocket> appSpawnSocket = std::make_shared<AppExecFwk::AppSpawnSocket>();
     appSpawnClient->SetSocket(appSpawnSocket);
@@ -809,7 +812,7 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_recycleProc_001, TestSize.Level0)
     EXPECT_EQ(ERR_OK, appSpawnSocket->OpenAppSpawnConnection());
     appSpawnClient->CloseConnection();
     EXPECT_EQ(SpawnConnectionState::STATE_NOT_CONNECT, appSpawnClient->QueryConnectionState());
-    HiLog::Info(LABEL, "AppSpawn_HF_recycleProc_001 end");
+    HILOG_INFO(LOG_CORE, "AppSpawn_HF_recycleProc_001 end");
 }
 
 /*
@@ -822,7 +825,7 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_recycleProc_001, TestSize.Level0)
  */
 HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_recycleProc_002, TestSize.Level0)
 {
-    HiLog::Info(LABEL, "AppSpawn_HF_recycleProc_002 start");
+    HILOG_INFO(LOG_CORE, "AppSpawn_HF_recycleProc_002 start");
     std::unique_ptr<AppSpawnClient> appSpawnClient = std::make_unique<AppSpawnClient>();
     std::shared_ptr<AppExecFwk::AppSpawnSocket> appSpawnSocket = std::make_shared<AppExecFwk::AppSpawnSocket>();
     appSpawnClient->SetSocket(appSpawnSocket);
@@ -844,7 +847,7 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_recycleProc_002, TestSize.Level0)
     EXPECT_EQ(ERR_OK, appSpawnSocket->OpenAppSpawnConnection());
     appSpawnClient->CloseConnection();
     EXPECT_EQ(SpawnConnectionState::STATE_NOT_CONNECT, appSpawnClient->QueryConnectionState());
-    HiLog::Info(LABEL, "AppSpawn_HF_recycleProc_002 end");
+    HILOG_INFO(LOG_CORE, "AppSpawn_HF_recycleProc_002 end");
 }
 }  // namespace AppSpawn
 }  // namespace OHOS
