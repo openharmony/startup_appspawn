@@ -15,6 +15,7 @@
 
 #include "appspawn_service.h"
 #include "appspawn_adapter.h"
+#include "env_utils.h"
 #include "param_helper.h"
 
 #include <fcntl.h>
@@ -639,6 +640,7 @@ void SetContentFunction(AppSpawnContent *content)
     content->setUidGid = SetUidGid;
     content->setXpmConfig = SetXpmConfig;
     content->setFileDescriptors = SetFileDescriptors;
+    content->setEnvInfo = SetEnvInfo;
     content->coldStartApp = ColdStartApp;
     content->setAsanEnabledEnv = SetAsanEnabledEnv;
     if (content->isNweb) {
