@@ -398,17 +398,6 @@
             ],
             "symbol-links" : []
         }],
-        "com.ohos.certmanager" : [{
-            "sandbox-switch": "ON",
-            "mount-paths" : [{
-                    "src-path" : "/data/app/el1/bundle/public/",
-                    "sandbox-path" : "/data/bundles/",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "true"
-                }
-            ],
-            "symbol-links" : []
-        }],
         "com.ohos.amsdialog" : [{
             "sandbox-switch": "ON",
             "mount-paths" : [{
