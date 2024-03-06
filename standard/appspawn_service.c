@@ -40,7 +40,7 @@
 #include "event_reporter.h"
 #endif
 #ifndef APPSPAWN_TEST
-#define TV_SEC 60
+#define TV_SEC 3
 #define APPSPAWN_EXIT_TIME 60000
 #else
 #define TV_SEC 2
@@ -412,6 +412,7 @@ static int WaitChild(int fd, int pid, const AppSpawnClientExt *appProperty)
     if (ret == 0) {  // timeout
         APPSPAWN_LOGI("Time out for child %{public}s %{public}d fd %{public}d",
             appProperty->property.processName, pid, fd);
+        kill(pid, SIGABRT);
         result = 0;
     } else if (ret == -1) {
         APPSPAWN_LOGI("Error for child %{public}s %{public}d", appProperty->property.processName, pid);
