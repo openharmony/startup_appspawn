@@ -106,15 +106,15 @@ pid_t AppSpawnFork(int (*childFunc)(void *arg), void *args);
 #define LOG_DOMAIN (BASE_DOMAIN + 0x11)
 
 #define APPSPAWN_LOGI(fmt, ...) \
-    HILOG_INFO(LOG_CORE, fmt, ##__VA_ARGS__)
+    HILOG_INFO(LOG_CORE, "[%{public}s:%{public}d]" fmt, (FILE_NAME), (__LINE__), ##__VA_ARGS__)
 #define APPSPAWN_LOGE(fmt, ...) \
-    HILOG_ERROR(LOG_CORE, fmt, ##__VA_ARGS__)
+    HILOG_ERROR(LOG_CORE, "[%{public}s:%{public}d]" fmt, (FILE_NAME), (__LINE__), ##__VA_ARGS__)
 #define APPSPAWN_LOGV(fmt, ...) \
-    HILOG_DEBUG(LOG_CORE, fmt, ##__VA_ARGS__)
+    HILOG_DEBUG(LOG_CORE, "[%{public}s:%{public}d]" fmt, (FILE_NAME), (__LINE__), ##__VA_ARGS__)
 #define APPSPAWN_LOGW(fmt, ...) \
-    HILOG_WARN(LOG_CORE, fmt, ##__VA_ARGS__)
+    HILOG_WARN(LOG_CORE, "[%{public}s:%{public}d]" fmt, (FILE_NAME), (__LINE__), ##__VA_ARGS__)
 #define APPSPAWN_LOGF(fmt, ...) \
-    HILOG_FATAL(LOG_CORE, fmt, ##__VA_ARGS__)
+    HILOG_FATAL(LOG_CORE, "[%{public}s:%{public}d]" fmt, (FILE_NAME), (__LINE__), ##__VA_ARGS__)
 
 #else
 
