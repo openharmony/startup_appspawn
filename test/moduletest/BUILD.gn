@@ -17,11 +17,7 @@ import("//build/test.gni")
 ohos_executable("AppSpawnTest") {
   sources = [ "${appspawn_path}/test/moduletest/appspawn_test_cmd.cpp" ]
 
-  include_dirs = [
-    "//commonlibrary/c_utils/base/include",
-    "//third_party/zlib/contrib/minizip",
-    "//third_party/zlib",
-  ]
+  include_dirs = [ "//commonlibrary/c_utils/base/include" ]
 
   configs = [ "${appspawn_path}:appspawn_config" ]
 
@@ -31,6 +27,7 @@ ohos_executable("AppSpawnTest") {
     "c_utils:utils",
     "hilog:libhilog",
     "init:libbegetutil",
+    "zlib:libz",
   ]
 }
 
