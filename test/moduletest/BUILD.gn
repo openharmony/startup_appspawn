@@ -17,8 +17,6 @@ import("//build/test.gni")
 ohos_executable("AppSpawnTest") {
   sources = [ "${appspawn_path}/test/moduletest/appspawn_test_cmd.cpp" ]
 
-  include_dirs = [ "//commonlibrary/c_utils/base/include" ]
-
   configs = [ "${appspawn_path}:appspawn_config" ]
 
   deps = [ "${appspawn_path}/interfaces/innerkits:appspawn_socket_client" ]
