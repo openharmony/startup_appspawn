@@ -33,6 +33,7 @@ extern "C" {
 #define APPSPAWN_STATIC static
 #endif
 
+extern bool may_init_gwp_asan(bool forceInit);
 #define APP_HASH_BUTT 32
 #define FLAGS_ON_DEMAND 0x1
 #define FLAGS_MODE_COLD 0x2
@@ -54,13 +55,15 @@ typedef struct {
     pid_t pid;
 } AppSpawnClientExt;
 
-typedef struct {
+typedef struct AppInfo_ {
     HashNode node;
     pid_t pid;
+    AppOperateType code;
+    uid_t uid;
     char name[0];
-} AppInfo;
+} AppInfo, AppSpawnAppInfo;
 
-typedef struct {
+typedef struct AppSpawnContentExt_ {
     AppSpawnContent content;
     uint32_t flags;
     TaskHandle server;
@@ -69,6 +72,7 @@ typedef struct {
     HashMapHandle appMap;  // save app pid and name
 } AppSpawnContentExt;
 
+AppInfo *GetAppInfo(pid_t pid);
 void SetContentFunction(AppSpawnContent *content);
 void AppSpawnColdRun(AppSpawnContent *content, int argc, char *const argv[]);
 void AddNwebInfo(pid_t pid, const char *processName);

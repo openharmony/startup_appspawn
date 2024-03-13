@@ -398,17 +398,6 @@
             ],
             "symbol-links" : []
         }],
-        "com.ohos.certmanager" : [{
-            "sandbox-switch": "ON",
-            "mount-paths" : [{
-                    "src-path" : "/data/app/el1/bundle/public/",
-                    "sandbox-path" : "/data/bundles/",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "true"
-                }
-            ],
-            "symbol-links" : []
-        }],
         "com.ohos.amsdialog" : [{
             "sandbox-switch": "ON",
             "mount-paths" : [{
@@ -669,7 +658,7 @@
                 }
             ]
         }],
-	"ohos.permission.ACCESS_BUNDLE_DIR":[{
+        "ohos.permission.ACCESS_BUNDLE_DIR":[{
             "sandbox-switch": "ON",
             "gids": [1010],
             "mount-paths": [{
@@ -679,7 +668,43 @@
                 }
             ]
         }],
-    "ohos.permission.ACCESS_MEDIALIB_THUMB_DB":[{
+        "ohos.permission.ACCESS_PROTOCOL_DFX_DATA":[{
+            "sandbox-switch": "ON",
+            "mount-paths": [{
+                    "src-path": "/data/log/protocol",
+                    "sandbox-path": "/data/log/protocol",
+                    "sandbox-flags": [ "bind", "rec" ]
+                },
+                {
+                    "src-path": "/log/chr",
+                    "sandbox-path": "/log/chr",
+                    "sandbox-flags": [ "bind", "rec" ]
+                }
+            ]
+        }],
+        "ohos.permission.ACCESS_DATA":[{
+            "sandbox-switch": "ON",
+            "mount-paths": [{
+                    "src-path" : "/mnt/data/<currentUserId>",
+                    "sandbox-path" : "/mnt/data",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "mount-shared-flag" : "true",
+                    "check-action-status": "true"
+                }
+            ]
+        }],
+        "ohos.permission.ACCESS_DEV_FUSE":[{
+            "sandbox-switch": "ON",
+            "mount-paths": [{
+                    "src-path" : "/dev/fuse",
+                    "sandbox-path" : "/mnt/data/fuse",
+                    "sandbox-flags" : [ "MS_NOSUID", "MS_NODEV", "MS_NOEXEC", "MS_NOATIME", "MS_LAZYTIME" ],
+                    "fs-type": "fuse",
+                    "check-action-status": "false"
+                }
+            ]
+        }],
+        "ohos.permission.ACCESS_MEDIALIB_THUMB_DB":[{
             "sandbox-switch": "ON",
             "gids": [3008],
             "mount-paths": [{

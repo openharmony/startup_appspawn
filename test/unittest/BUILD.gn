@@ -90,6 +90,7 @@ if (!defined(ohos_lite)) {
     sources = [
       "${appspawn_path}/adapter/appspawn_ace.cpp",
       "${appspawn_path}/adapter/appspawn_adapter.cpp",
+      "${appspawn_path}/adapter/appspawn_cgroup.c",
       "${appspawn_path}/adapter/appspawn_nweb.cpp",
       "${appspawn_path}/adapter/appspawn_sandbox.cpp",
       "${appspawn_path}/adapter/nwebspawn_lancher.cpp",
@@ -100,6 +101,7 @@ if (!defined(ohos_lite)) {
       "${appspawn_path}/standard/appspawn_process.c",
       "${appspawn_path}/standard/appspawn_service.c",
       "${appspawn_path}/util/src/command_lexer.cpp",
+      "${appspawn_path}/util/src/env_utils.cpp",
       "${appspawn_path}/util/src/json_utils.cpp",
       "${appspawn_path}/util/src/param_helper.c",
       "${appspawn_path}/util/src/sandbox_utils.cpp",
