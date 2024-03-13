@@ -126,12 +126,14 @@ if (!defined(ohos_lite)) {
   ohos_static_library("appspawn_server") {
     sources = [
       "${appspawn_path}/adapter/appspawn_adapter.cpp",
+      "${appspawn_path}/adapter/appspawn_cgroup.c",
       "${appspawn_path}/adapter/appspawn_nweb.cpp",
       "${appspawn_path}/adapter/appspawn_sandbox.cpp",
       "${appspawn_path}/common/appspawn_server.c",
       "${appspawn_path}/interfaces/innerkits/src/appspawn_mount_permission.cpp",
       "${appspawn_path}/standard/appspawn_process.c",
       "${appspawn_path}/standard/appspawn_service.c",
+      "${appspawn_path}/util/src/env_utils.cpp",
       "${appspawn_path}/util/src/json_utils.cpp",
       "${appspawn_path}/util/src/sandbox_utils.cpp",
     ]
@@ -161,7 +163,7 @@ if (!defined(ohos_lite)) {
         defined(global_parts_info.security_security_component_manager)) {
       defines += [ "SECURITY_COMPONENT_ENABLE" ]
       external_deps +=
-          [ "security_component_manager:libsecurity_component_enhance_sdk" ]
+          [ "security_component_manager:libsecurity_component_sdk" ]
     }
 
     if (!defined(global_parts_info) ||
@@ -195,11 +197,19 @@ if (!defined(ohos_lite)) {
     subsystem_name = "${subsystem_name}"
     part_name = "${part_name}"
   }
+
+  ohos_executable("pid_ns_init") {
+    sources = [ "${appspawn_path}/standard/pid_ns_init.c" ]
+    install_enable = true
+    subsystem_name = "${subsystem_name}"
+    part_name = "${part_name}"
+  }
 }
 
 group("appspawn_all") {
   deps = []
   if (!defined(ohos_lite)) {
+    deps += [ ":pid_ns_init" ]
     deps += [ ":appspawn" ]
     deps += [ ":appspawn.rc" ]
     deps += [ ":appspawn_helper" ]

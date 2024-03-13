@@ -15,27 +15,28 @@
 
 #include <gtest/gtest.h>
 
-#include <string>
 #include <cerrno>
+#include <climits>
+#include <cstdlib>
+#include <cstring>
 #include <memory>
-
+#include <string>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <cstring>
-#include <cstdlib>
 
-#include "appspawn_service.h"
+#include "app_spawn_stub.h"
 #include "appspawn_adapter.h"
 #include "appspawn_server.h"
-#include "app_spawn_stub.h"
-#include "securec.h"
-#include "json_utils.h"
+#include "appspawn_service.h"
+#include "env_utils.h"
 #include "init_hashmap.h"
+#include "json_utils.h"
 #include "le_task.h"
 #include "loop_event.h"
-#include "sandbox_utils.h"
 #include "parameter.h"
+#include "sandbox_utils.h"
+#include "securec.h"
 #ifdef REPORT_EVENT
 #include "event_reporter.h"
 #endif
@@ -51,8 +52,9 @@ using nlohmann::json;
 TaskHandle AcceptClient(const LoopHandle loopHandle, const TaskHandle server, uint32_t flags);
 bool ReceiveRequestData(const TaskHandle taskHandle, AppSpawnClientExt *appProperty,
     const uint8_t *buffer, uint32_t buffLen);
-void AddAppInfo(pid_t pid, const char *processName);
+void AddAppInfo(pid_t pid, const char *processName, AppOperateType code);
 void SignalHandler(const struct signalfd_siginfo *siginfo);
+int GetCgroupPath(const AppSpawnAppInfo *appInfo, char *buffer, uint32_t buffLen);
 #ifdef __cplusplus
     }
 #endif
@@ -89,7 +91,7 @@ static int MakeDirRecursive(const char *dir, mode_t mode)
             slash = strchr(p, '/');
             continue;
         }
-        if (gap < 0) { // end with '/'
+        if (gap < 0) {  // end with '/'
             break;
         }
         if (memcpy_s(buffer, PATH_MAX, dir, p - dir - 1) != EOK) {
@@ -420,6 +422,66 @@ HWTEST(AppSpawnStandardTest, App_Spawn_Standard_003_4, TestSize.Level0)
     }
     APPSPAWN_LOGI("App_Spawn_Standard_003_4 en");
 }
+
+/**
+* @tc.name: App_Spawn_Standard_003_5
+* @tc.desc: Verify set Arg if GetAppSpawnClient succeed, with AppEnvInfo
+* @tc.type: FUNC
+* @tc.require:issueI936IH
+* @tc.author:
+*/
+HWTEST(AppSpawnStandardTest, App_Spawn_Standard_003_5, TestSize.Level0)
+{
+    APPSPAWN_LOGI("App_Spawn_Standard_003_5 start");
+    AppSpawnClientExt client = {};
+    char arg1[] = "/system/bin/appspawn";
+    char arg2[] = "cold-start";
+    char arg3[] = "1";
+    {
+        char arg4[] = "1:1:1:1:1:1:1:1:1:2:1000:1000:ohos.samples:ohos.samples.ecg:"
+            "default:671201800:system_core:default:owerid:0:671201800";
+        char arg5[] = "200";
+        char arg6[] = "|AppEnv|{\"test.name1\": \"test.value1\", \"test.name2\": \"test.value2\"}|AppEnv|";
+        char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6};
+        int argc = sizeof(argv)/sizeof(argv[0]);
+        EXPECT_EQ(0, GetAppSpawnClientFromArg(argc, argv, &client));
+    }
+    { // AppEnvInfo content is valid, but length is 0
+        char arg4[] = "1:1:1:1:1:1:1:1:1:2:1000:1000:ohos.samples:ohos.samples.ecg:"
+            "default:671201800:system_core:default:owerid:0:671201800";
+        char arg5[] = "0";
+        char arg6[] = "|AppEnv|{\"test.name1\": \"test.value1\", \"test.name2\": \"test.value2\"}|AppEnv|";
+        char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6};
+        int argc = sizeof(argv)/sizeof(argv[0]);
+        EXPECT_EQ(0, GetAppSpawnClientFromArg(argc, argv, &client));
+    }
+    { // AppEnvInfo content is valid, but length is nullptr
+        char arg4[] = "1:1:1:1:1:1:1:1:1:2:1000:1000:ohos.samples:ohos.samples.ecg:"
+            "default:671201800:system_core:default:owerid:0:671201800";
+        char arg6[] = "|AppEnv|{\"test.name1\": \"test.value1\", \"test.name2\": \"test.value2\"}|AppEnv|";
+        char* argv[] = {arg1, arg2, arg3, arg4, nullptr, arg6};
+        int argc = sizeof(argv)/sizeof(argv[0]);
+        EXPECT_EQ(0, GetAppSpawnClientFromArg(argc, argv, &client));
+    }
+    { // AppEnvInfo length is valid, but content is nullptr
+        char arg4[] = "1:1:1:1:1:1:1:1:1:2:1000:1000:ohos.samples:ohos.samples.ecg:"
+            "default:671201800:system_core:default:owerid:0:671201800";
+        char arg5[] = "200";
+        char* argv[] = {arg1, arg2, arg3, arg4, arg5, nullptr};
+        int argc = sizeof(argv)/sizeof(argv[0]);
+        EXPECT_EQ(-1, GetAppSpawnClientFromArg(argc, argv, &client));
+    }
+    { // AppEnvInfo length is valid, but argc is 5
+        char arg4[] = "1:1:1:1:1:1:1:1:1:2:1000:1000:ohos.samples:ohos.samples.ecg:"
+            "default:671201800:system_core:default:owerid:0:671201800";
+        char arg5[] = "200";
+        char* argv[] = {arg1, arg2, arg3, arg4, arg5};
+        int argc = sizeof(argv)/sizeof(argv[0]);
+        EXPECT_EQ(-1, GetAppSpawnClientFromArg(argc, argv, &client));
+    }
+    APPSPAWN_LOGI("App_Spawn_Standard_003_5 end");
+}
+
 /**
 * @tc.name: App_Spawn_Standard_004
 * @tc.desc: App cold start.
@@ -476,6 +538,40 @@ HWTEST(AppSpawnStandardTest, App_Spawn_Standard_004, TestSize.Level0)
         AppSpawnColdRun(content, 4, argv);
     }
     GTEST_LOG_(INFO) << "App_Spawn_Standard_004 end";
+}
+
+/**
+* @tc.name: App_Spawn_Standard_004_1
+* @tc.desc: App cold start.
+* @tc.type: FUNC
+* @tc.require:issueI936IH
+* @tc.author:
+*/
+HWTEST(AppSpawnStandardTest, App_Spawn_Standard_004_1, TestSize.Level0)
+{
+    APPSPAWN_LOGI("App_Spawn_Standard_004_1 start");
+    string longProcName = "App_Spawn_Standard_004_1";
+    int64_t longProcNameLen = longProcName.length();
+    int cold = 1;
+    AppSpawnContent *content = AppSpawnCreateContent("AppSpawn", (char*)longProcName.c_str(), longProcNameLen, cold);
+    EXPECT_TRUE(content);
+    content->loadExtendLib = LoadExtendLib;
+    content->runChildProcessor = RunChildProcessor;
+    content->setEnvInfo = SetEnvInfo;
+    content->runChildProcessor(content, nullptr);
+
+    char tmp0[] = "/system/bin/appspawn";
+    char tmp1[] = "cold-start";
+    char tmp2[] = "1";
+    {
+        char tmp3[] = "1:1:1:1:1:1:1:1:1:2:1000:1000:ohos.samples:ohos.samples.ecg:"
+            "default:671201800:system_core:default:owerid:0:671201800";
+        char tmp4[] = "200";
+        char tmp5[] = "|AppEnv|{\"test.name1\": \"test.value1\", \"test.name2\": \"test.value2\"}|AppEnv|";
+        char * const argv[] = {tmp0, tmp1, tmp2, tmp3, tmp4, tmp5};
+        AppSpawnColdRun(content, 6, argv);
+    }
+    APPSPAWN_LOGI("App_Spawn_Standard_004_1 end");
 }
 
 /**
@@ -707,9 +803,9 @@ HWTEST(AppSpawnStandardTest, App_Spawn_Standard_07, TestSize.Level0)
     GTEST_LOG_(INFO) << "App_Spawn_Standard_07 start";
     AppSpawnContentExt *content = TestClient(0, DEFAULT, "ohos.test.testapp", "test007");
     EXPECT_TRUE(content != nullptr);
-    AddAppInfo(111, "111");
-    AddAppInfo(65, "112");
-    AddAppInfo(97, "113");
+    AddAppInfo(111, "111", DEFAULT);
+    AddAppInfo(65, "112", DEFAULT);
+    AddAppInfo(97, "113", DEFAULT);
 
     struct signalfd_siginfo siginfo = {};
     siginfo.ssi_signo = SIGCHLD;
@@ -946,5 +1042,111 @@ HWTEST(AppSpawnStandardTest, App_Spawn_Standard_009_04, TestSize.Level0)
     ASSERT_TRUE(content != nullptr);
     content->content.runAppSpawn(&content->content, 0, nullptr);
     GTEST_LOG_(INFO) << "App_Spawn_Standard_009_04 end";
+}
+
+HWTEST(AppSpawnStandardTest, App_Spawn_CGroup_001, TestSize.Level0)
+{
+    int ret = -1;
+    AppSpawnAppInfo *appInfo = nullptr;
+    const char name[] = "app-test-001";
+    do {
+        appInfo = reinterpret_cast<AppSpawnAppInfo *>(malloc(sizeof(AppSpawnAppInfo) + strlen(name) + 1));
+        APPSPAWN_CHECK(appInfo != nullptr, break, "Failed to create appInfo");
+        appInfo->pid = 33; // 33
+        appInfo->code = DEFAULT;
+        appInfo->uid = 200000 * 200 + 21; // 200000 200 21
+        ret = strcpy_s(appInfo->name, strlen(name) + 1, name);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to strcpy process name");
+        HASHMAPInitNode(&appInfo->node);
+        char path[PATH_MAX] = {};
+        ret = GetCgroupPath(appInfo, path, sizeof(path));
+        APPSPAWN_CHECK(ret == 0, break, "Failed to get real path errno: %d", errno);
+        APPSPAWN_CHECK(strstr(path, "200") != nullptr && strstr(path, "33") != nullptr && strstr(path, name) != nullptr,
+            break, "Invalid path: %s", path);
+        ret = 0;
+    } while (0);
+    if (appInfo) {
+        free(appInfo);
+    }
+    ASSERT_EQ(ret, 0);
+}
+
+HWTEST(AppSpawnStandardTest, App_Spawn_CGroup_002, TestSize.Level0)
+{
+    int ret = -1;
+    AppSpawnAppInfo *appInfo = nullptr;
+    AppSpawnContent *content = nullptr;
+    FILE *file = nullptr;
+    const char name[] = "app-test-001";
+    do {
+        char path[PATH_MAX] = {};
+        appInfo = reinterpret_cast<AppSpawnAppInfo *>(malloc(sizeof(AppSpawnAppInfo) + strlen(name) + 1));
+        APPSPAWN_CHECK(appInfo != nullptr, break, "Failed to create appInfo");
+        appInfo->pid = 33; // 33
+        appInfo->code = DEFAULT;
+        appInfo->uid = 200000 * 200 + 21; // 200000 200 21
+        ret = strcpy_s(appInfo->name, strlen(name) + 1, name);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to strcpy process name");
+        HASHMAPInitNode(&appInfo->node);
+
+        content = AppSpawnCreateContent(APPSPAWN_SOCKET_NAME, path, sizeof(path), 1);
+        APPSPAWN_CHECK_ONLY_EXPER(content != nullptr, break);
+        // spawn prepare process
+        ProcessAppAdd(reinterpret_cast<AppSpawnContentExt *>(content), appInfo);
+        // add success
+        ret = GetCgroupPath(appInfo, path, sizeof(path));
+        APPSPAWN_CHECK(ret == 0, break, "Failed to get real path errno: %{public}d", errno);
+        ret = strcat_s(path, sizeof(path), "cgroup.procs");
+        APPSPAWN_CHECK(ret == 0, break, "Failed to strcat_s errno: %{public}d", errno);
+        file = fopen(path, "r");
+        APPSPAWN_CHECK(file != NULL, break, "Open file fail %{public}s errno: %{public}d", path, errno);
+        pid_t pid = 0;
+        ret = -1;
+        while (fscanf_s(file, "%d\n", &pid) == 1 && pid > 0) {
+            APPSPAWN_LOGV("pid %d %d", pid, appInfo->pid);
+            if (pid == appInfo->pid) {
+                ret = 0;
+                break;
+            }
+        }
+        fclose(file);
+        APPSPAWN_CHECK(ret == 0, break, "Error no pid write to path: %{public}s", path);
+        ret = 0;
+    } while (0);
+    if (appInfo) {
+        free(appInfo);
+    }
+    free(content);
+    ASSERT_EQ(ret, 0);
+}
+
+HWTEST(AppSpawnStandardTest, App_Spawn_CGroup_003, TestSize.Level0)
+{
+    int ret = -1;
+    AppSpawnAppInfo *appInfo = nullptr;
+    AppSpawnContent *content = nullptr;
+    const char name[] = "app-test-001";
+    do {
+        char path[PATH_MAX] = {};
+        appInfo = reinterpret_cast<AppSpawnAppInfo *>(malloc(sizeof(AppSpawnAppInfo) + strlen(name) + 1));
+        APPSPAWN_CHECK(appInfo != nullptr, break, "Failed to create appInfo");
+        appInfo->pid = 33; // 33
+        appInfo->code = DEFAULT;
+        appInfo->uid = 200000 * 200 + 21; // 200000 200 21
+        ret = strcpy_s(appInfo->name, strlen(name) + 1, name);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to strcpy process name");
+        HASHMAPInitNode(&appInfo->node);
+
+        content = AppSpawnCreateContent(APPSPAWN_SOCKET_NAME, path, sizeof(path), 1);
+        APPSPAWN_CHECK_ONLY_EXPER(content != nullptr, break);
+        // spawn prepare process
+        ProcessAppDied(reinterpret_cast<AppSpawnContentExt *>(content), appInfo);
+        ret = 0;
+    } while (0);
+    if (appInfo) {
+        free(appInfo);
+    }
+    free(content);
+    ASSERT_EQ(ret, 0);
 }
 } // namespace OHOS

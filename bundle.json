@@ -36,7 +36,6 @@
                 "init",
                 "ability_runtime",
                 "access_token",
-                "common",
                 "eventhandler",
                 "config_policy",
                 "resource_management",
@@ -44,7 +43,6 @@
                 "common_event_service",
                 "hisysevent",
                 "security_component_manager",
-                "netmanager",
                 "netmanager_base",
                 "ace_engine",
                 "os_account",
@@ -60,14 +58,7 @@
             ],
 	    "third_party": [
                 "bounds_checking_function",
-                "bzip2",
-                "libdrm",
-                "lz4",
-                "openssl",
-                "libusb",
                 "zlib",
-                "libuv",
-                "libpng",
                 "selinux",
                 "cJSON"
 	    ]
