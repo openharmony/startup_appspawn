@@ -678,6 +678,16 @@
                     "sandbox-flags": [ "bind", "rec" ]
                 }
             ]
+        }],
+    "ohos.permission.ACCESS_MEDIALIB_THUMB_DB":[{
+            "sandbox-switch": "ON",
+            "gids": [3008],
+            "mount-paths": [{
+                    "src-path": "/data/app/el2/<currentUserId>/database/com.ohos.medialibrary.medialibrarydata",
+                    "sandbox-path": "/data/medialibrary/database",
+                    "sandbox-flags": [ "bind", "rec" ]
+                }
+            ]
         }]
     }]
 }
