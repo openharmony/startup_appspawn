@@ -681,7 +681,7 @@
         }],
         "ohos.permission.ACCESS_PROTOCOL_DFX_DATA":[{
             "sandbox-switch": "ON",
-            "gids": [1000],
+            "gids": [1007],
             "mount-paths": [{
                     "src-path": "/data/log/protocol",
                     "sandbox-path": "/data/log/protocol",
