@@ -216,6 +216,7 @@ group("appspawn_all") {
     deps += [ ":appspawn_server" ]
     deps += [ "etc:etc_files" ]
     deps += [ "interfaces/innerkits:appspawn_socket_client" ]
+    deps += [ "service/hnp:hnp" ]
   } else {
     deps += [ "lite:appspawn_lite" ]
   }
