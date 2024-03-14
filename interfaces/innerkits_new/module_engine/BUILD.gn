@@ -1,0 +1,61 @@
+# Copyright (c) 2024 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//base/startup/appspawn/appspawn.gni")
+import("//build/ohos.gni")
+import("//build/ohos/native_stub/native_stub.gni")
+
+#
+# exported include directories
+#
+config("appspawn_module_engine_exported_config") {
+  visibility = [ ":*" ]
+  visibility += [ "include" ]
+  include_dirs = [
+    "${appspawn_innerkits_path}/include",
+    "${appspawn_innerkits_path}/module_engine/include",
+    "${appspawn_path}/util/include",
+  ]
+}
+
+#
+# innerkits for module development
+#
+ohos_native_stub_library("libappspawn_module_engine") {
+  cflags = [ "-fstack-protector-all" ]
+  output_extension = "so"
+  public_configs = [ ":appspawn_module_engine_exported_config" ]
+  stub_description_file = "./stub/libappspawn.stub.json"
+}
+
+#
+# For appspawn linking,
+# export symbols defined in this json files only
+#
+ohos_native_stub_versionscript("libappspawn_stub_versionscript") {
+  stub_description_file = "./stub/libappspawn.stub.json"
+}
+
+#
+# Generate empty library with symlink name to satisfy appspawn loading required libraries
+#
+ohos_native_stub_library("libappspawn_stub_empty") {
+  cflags = [ "-fstack-protector-all" ]
+  output_extension = "so"
+  stub_description_file = "./stub/libappspawn.stub.empty.json"
+  subsystem_name = "${subsystem_name}"
+  part_name = "${part_name}"
+  install_enable = true
+  install_images = [ "system" ]
+  symlink_target_name = [ "libappspawn_module_engine.so" ]
+}
