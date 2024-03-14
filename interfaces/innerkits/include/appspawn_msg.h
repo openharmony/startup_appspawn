@@ -77,6 +77,9 @@ typedef enum AppOperateType_ {
 #define FDLEN2 2
 #define FD_INIT_VALUE 0
 
+#define APPSPAWN_COLDSTART_KEY "cold-start"
+#define NWEBSPAWN_COLDSTART_KEY "nweb-cold-start"
+
 typedef struct ExtraInfo_ {
     uint32_t totalLength;
     uint32_t savedLength;
