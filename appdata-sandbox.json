@@ -658,7 +658,7 @@
                 }
             ]
         }],
-	"ohos.permission.ACCESS_BUNDLE_DIR":[{
+        "ohos.permission.ACCESS_BUNDLE_DIR":[{
             "sandbox-switch": "ON",
             "gids": [1010],
             "mount-paths": [{
@@ -702,6 +702,16 @@
                     "sandbox-flags" : [ "MS_NOSUID", "MS_NODEV", "MS_NOEXEC", "MS_NOATIME", "MS_LAZYTIME" ],
                     "fs-type": "fuse",
                     "check-action-status": "false"
+                }
+            ]
+        }],
+        "ohos.permission.ACCESS_MEDIALIB_THUMB_DB":[{
+            "sandbox-switch": "ON",
+            "gids": [3008],
+            "mount-paths": [{
+                    "src-path": "/data/app/el2/<currentUserId>/database/com.ohos.medialibrary.medialibrarydata",
+                    "sandbox-path": "/data/medialibrary/database",
+                    "sandbox-flags": [ "bind", "rec" ]
                 }
             ]
         }]
