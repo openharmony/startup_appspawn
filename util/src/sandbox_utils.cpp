@@ -166,12 +166,37 @@ static void CheckDirRecursive(const std::string &path)
     return;
 }
 
+static void CheckAndCreatFile(const char *file)
+{
+    if (access(file, F_OK) == 0) {
+        APPSPAWN_LOGI("file %{public}s already exist", file);
+        return;
+    }
+    std::string path = file;
+    auto pos = path.find_last_of('/');
+    APPSPAWN_CHECK(pos != std::string::npos, return, "file %{public}s error", file);
+    std::string dir = path.substr(0, pos);
+    MakeDirRecursive(dir, FILE_MODE);
+    int fd = open(file, O_CREAT, FILE_MODE);
+    if (fd < 0) {
+        APPSPAWN_LOGW("failed create %{public}s, err=%{public}d", file, errno);
+    } else {
+        close(fd);
+    }
+    return;
+}
+
 int32_t SandboxUtils::DoAppSandboxMountOnce(const char *originPath, const char *destinationPath,
                                             const char *fsType, unsigned long mountFlags,
                                             const char *options, mode_t mountSharedFlag)
 {
-    // To make sure destinationPath exist
-    MakeDirRecursive(destinationPath, FILE_MODE);
+    struct stat st = {};
+    if (stat(originPath, &st) == 0 && S_ISREG(st.st_mode)) {
+        CheckAndCreatFile(destinationPath);
+    } else {
+        MakeDirRecursive(destinationPath, FILE_MODE);
+    }
+
 #ifndef APPSPAWN_TEST
     int ret = 0;
     // to mount fs and bind mount files or directory
