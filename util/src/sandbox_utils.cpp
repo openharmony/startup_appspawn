@@ -288,7 +288,7 @@ string SandboxUtils::ConvertToRealPath(const ClientSocket::AppProperty *appPrope
 {
     if (path.find(g_packageNameIndex) != std::string::npos) {
         std::string bundleNameIndex = appProperty->bundleName;
-        bundleNameIndex = bundleNameIndex + "_" + std::to_string(appProperty->bundleIndex);
+        bundleNameIndex = std::to_string(appProperty->bundleIndex) + "_" + bundleNameIndex;
         path = replace_all(path, g_packageNameIndex, bundleNameIndex);
     }
 
