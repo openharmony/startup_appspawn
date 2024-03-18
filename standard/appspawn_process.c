@@ -49,10 +49,11 @@
 #define PID_NS_INIT_GID 100000
 
 // ide-asan
+#ifndef ASAN_DETECTOR
 static int SetAsanEnabledEnv(struct AppSpawnContent_ *content, AppSpawnClient *client)
 {
     AppParameter *appProperty = &((AppSpawnClientExt *)client)->property;
-    if (content->isNweb || appProperty->code == SPAWN_NATIVE_PROCESS) {
+    if (appProperty->code == SPAWN_NATIVE_PROCESS) {
         return 0;
     }
     char *bundleName = appProperty->bundleName;
@@ -79,7 +80,7 @@ static int SetAsanEnabledEnv(struct AppSpawnContent_ *content, AppSpawnClient *c
     }
     return 0;
 }
-
+#endif
 
 static void SetGwpAsanEnabled(struct AppSpawnContent_ *content, AppSpawnClient *client)
 {
@@ -220,7 +221,9 @@ static void ClearEnvironment(AppSpawnContent *content, AppSpawnClient *client)
     // close child fd
     AppSpawnClientExt *appProperty = (AppSpawnClientExt *)client;
     close(appProperty->fd[0]);
+#ifndef ASAN_DETECTOR
     SetAsanEnabledEnv(content, client);
+#endif
     SetGwpAsanEnabled(content, client);
 
     ResetParamSecurityLabel();
@@ -487,7 +490,11 @@ static int ColdStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client
         ret = strcpy_s(argv[0], APP_LEN_PROC_NAME, appSpawnPath);
         APPSPAWN_CHECK(ret >= 0, break, "Invalid strcpy");
         ret = -1;
-        argv[START_INDEX] = strdup("cold-start");
+        if (content->isNweb) {
+            argv[START_INDEX] = strdup(NWEBSPAWN_COLDSTART_KEY);
+        } else {
+            argv[START_INDEX] = strdup(APPSPAWN_COLDSTART_KEY);
+        }
         APPSPAWN_CHECK(argv[START_INDEX] != NULL, break, "Invalid strdup");
         argv[FD_INDEX] = strdup(buffer);
         APPSPAWN_CHECK(argv[FD_INDEX] != NULL, break, "Invalid strdup");
@@ -642,15 +649,15 @@ void SetContentFunction(AppSpawnContent *content)
     content->setFileDescriptors = SetFileDescriptors;
     content->setEnvInfo = SetEnvInfo;
     content->coldStartApp = ColdStartApp;
-    content->setAsanEnabledEnv = SetAsanEnabledEnv;
-    if (content->isNweb) {
-        content->getWrapBundleNameValue = NULL;
-    } else {
-#ifdef ASAN_DETECTOR
-        content->getWrapBundleNameValue = GetWrapBundleNameValue;
-#endif
+    if (!content->isNweb) {
         content->enablePidNs = EnablePidNs;
     }
+#ifdef ASAN_DETECTOR
+        content->getWrapBundleNameValue = GetWrapBundleNameValue;
+#else
+        content->getWrapBundleNameValue = NULL;
+        content->setAsanEnabledEnv = SetAsanEnabledEnv;
+#endif
     content->setAppSandbox = SetAppSandboxProperty;
     content->setCapabilities = SetCapabilities;
     content->setUidGidFilter = SetUidGidFilter;
