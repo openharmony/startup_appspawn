@@ -81,7 +81,7 @@ static int ParseLinksJsonToHnpHead(cJSON *linksItem, NativeHnpHead *hnpHead, Nat
                 return HNP_ERRNO_PACK_GET_ARRAY_ITRM_FAILED;
             }
             cJSON *sourceItem = cJSON_GetObjectItem(link, "source");
-            if (sourceItem == NULL) {
+            if ((sourceItem == NULL) || (sourceItem->valuestring == NULL)) {
                 HNP_LOGE("get source info in cfg unsuccess.");
                 free(linkArray);
                 return HNP_ERRNO_PACK_PARSE_ITEM_NO_FOUND;
@@ -91,13 +91,10 @@ static int ParseLinksJsonToHnpHead(cJSON *linksItem, NativeHnpHead *hnpHead, Nat
                 free(linkArray);
                 return HNP_ERRNO_BASE_COPY_FAILED;
             }
+            linkArray[i].target[0] = '\0';  //允许target不填，软链接默认使用原二进制名称
             cJSON *targetItem = cJSON_GetObjectItem(link, "target");
-            if (targetItem == NULL) {
-                HNP_LOGE("get target info in cfg unsuccess.");
-                free(linkArray);
-                return HNP_ERRNO_PACK_PARSE_ITEM_NO_FOUND;
-            }
-            if (strcpy_s(linkArray[i].target, MAX_FILE_PATH_LEN, targetItem->valuestring) != EOK) {
+            if ((targetItem != NULL) && (targetItem->valuestring != NULL) &&
+                (strcpy_s(linkArray[i].target, MAX_FILE_PATH_LEN, targetItem->valuestring) != EOK)) {
                 HNP_LOGE("strcpy unsuccess.");
                 free(linkArray);
                 return HNP_ERRNO_BASE_COPY_FAILED;
@@ -115,7 +112,7 @@ static int ParseJsonStreamToHnpHead(cJSON *json, char *name, NativeHnpHead *hnpH
     int ret;
 
     cJSON *typeItem = cJSON_GetObjectItem(json, "type");
-    if (typeItem == NULL) {
+    if ((typeItem == NULL) || (typeItem->valuestring == NULL)) {
         HNP_LOGE("get type info in cfg unsuccess.");
         return HNP_ERRNO_PACK_PARSE_ITEM_NO_FOUND;
     }
@@ -124,7 +121,7 @@ static int ParseJsonStreamToHnpHead(cJSON *json, char *name, NativeHnpHead *hnpH
         return HNP_ERRNO_PACK_PARSE_ITEM_NO_FOUND;
     }
     cJSON *nameItem = cJSON_GetObjectItem(json, "name");
-    if (nameItem == NULL) {
+    if ((nameItem == NULL) || (nameItem->valuestring == NULL)) {
         HNP_LOGE("get name info in cfg unsuccess.");
         return HNP_ERRNO_PACK_PARSE_ITEM_NO_FOUND;
     }
@@ -134,7 +131,7 @@ static int ParseJsonStreamToHnpHead(cJSON *json, char *name, NativeHnpHead *hnpH
         return HNP_ERRNO_BASE_COPY_FAILED;
     }
     cJSON *versionItem = cJSON_GetObjectItem(json, "version");
-    if (versionItem == NULL) {
+    if ((versionItem == NULL) || (versionItem->valuestring == NULL)) {
         HNP_LOGE("get version info in cfg unsuccess.");
         return HNP_ERRNO_PACK_PARSE_ITEM_NO_FOUND;
     }
@@ -262,7 +259,7 @@ int HnpCmdPack(int argc, char *argv[])
         index++;
     }
 
-    if ((name != NULL) && (version != NULL)) {
+    if ((name != NULL) && (strlen(name) != 0) && (version != NULL) && (strlen(version) != 0)) {
         NativeHnpHead hnpHead;
         hnpHead.linkNum = 0;
         if (strcpy_s(hnpHead.hnpVersion, HNP_VERSION_LEN, version) != EOK) {
@@ -276,7 +273,7 @@ int HnpCmdPack(int argc, char *argv[])
         return PackHnpWithCfg(srcPath, dstPath, cfgPath);
     }
 
-    HNP_LOGE("pack args parse miss! \r\n");
+    HNP_LOGE("pack args parse miss!");
 
     return HNP_ERRNO_PACK_MISS_OPERATOR_PARAM;
 }
