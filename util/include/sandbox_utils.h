@@ -67,7 +67,7 @@ private:
     static int32_t MountAllGroup(const ClientSocket::AppProperty *appProperty, std::string &sandboxPackagePath);
     static int32_t DoSandboxRootFolderCreateAdapt(std::string &sandboxPackagePath);
     static int32_t DoSandboxRootFolderCreate(const ClientSocket::AppProperty *appProperty,
-                                             std::string &sandboxPackagePath, bool remount_proc);
+                                             std::string &sandboxPackagePath);
     static void DoSandboxChmod(nlohmann::json jsonConfig, std::string &sandboxRoot);
     static int DoAllMntPointsMount(const ClientSocket::AppProperty *appProperty,
         nlohmann::json &appConfig, const std::string &section = "app-base");
