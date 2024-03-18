@@ -1084,18 +1084,12 @@ int32_t SandboxUtils::MountAllGroup(const ClientSocket::AppProperty *appProperty
 }
 
 int32_t SandboxUtils::DoSandboxRootFolderCreate(const ClientSocket::AppProperty *appProperty,
-                                                std::string &sandboxPackagePath, bool remount_proc)
+                                                std::string &sandboxPackagePath)
 {
 #ifndef APPSPAWN_TEST
     int rc = mount(NULL, "/", NULL, MS_REC | MS_SLAVE, NULL);
-    APPSPAWN_CHECK(rc == 0, return rc, "mount root failed, errno is %{public}d", errno);
-    if (remount_proc) {
-        // In pid namespace, mount a new procfs so that tools such as ps work correctly in ns
-        // Futher reference to pid_namespaces(7) manual page
-        rc = umount("/proc");
-        APPSPAWN_CHECK(rc == 0, return rc, "umount proc failed, errno is %{public}d", errno);
-        rc = mount("", "/proc", "proc", MS_NODEV | MS_NOEXEC | MS_NOSUID, "");
-        APPSPAWN_CHECK(rc == 0, return rc, "mount proc failed, errno is %{public}d", errno);
+    if (rc) {
+        return rc;
     }
 #endif
     DoAppSandboxMountOnce(sandboxPackagePath.c_str(), sandboxPackagePath.c_str(), "",
@@ -1349,13 +1343,12 @@ int32_t SandboxUtils::SetAppSandboxProperty(AppSpawnClient *client)
         appProperty->mountPermissionFlags |= GetMountPermissionFlags(FILE_CROSS_APP_MODE);
     }
 
-    bool remount_proc = (client->cloneFlags & CLONE_NEWPID) ? true : false;
     // check app sandbox switch
     if ((CheckTotalSandboxSwitchStatus(appProperty) == false) ||
         (CheckAppSandboxSwitchStatus(appProperty) == false)) {
         rc = DoSandboxRootFolderCreateAdapt(sandboxPackagePath);
     } else if (!sandboxSharedStatus) {
-        rc = DoSandboxRootFolderCreate(appProperty, sandboxPackagePath, remount_proc);
+        rc = DoSandboxRootFolderCreate(appProperty, sandboxPackagePath);
     }
     APPSPAWN_CHECK(rc == 0, return rc, "DoSandboxRootFolderCreate failed, %{public}s", bundleName.c_str());
     rc = SetSandboxProperty(appProperty, sandboxPackagePath);
@@ -1392,7 +1385,7 @@ int32_t SandboxUtils::SetAppSandboxPropertyNweb(AppSpawnClient *client)
         (CheckAppSandboxSwitchStatus(appProperty) == false)) {
         rc = DoSandboxRootFolderCreateAdapt(sandboxPackagePath);
     } else if (!sandboxSharedStatus) {
-        rc = DoSandboxRootFolderCreate(appProperty, sandboxPackagePath, false);
+        rc = DoSandboxRootFolderCreate(appProperty, sandboxPackagePath);
     }
     APPSPAWN_CHECK(rc == 0, return rc, "DoSandboxRootFolderCreate failed, %{public}s", bundleName.c_str());
     // rendering process can be created by different apps,
