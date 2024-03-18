@@ -795,10 +795,14 @@ AppSpawnContent *AppSpawnCreateContent(const char *socketName, char *longProcNam
     (void)memset_s(&appSpawnContent->content, sizeof(appSpawnContent->content), 0, sizeof(appSpawnContent->content));
     appSpawnContent->content.longProcName = longProcName;
     appSpawnContent->content.longProcNameLen = longProcNameLen;
-    if (strcmp(longProcName, NWEBSPAWN_SERVER_NAME) == 0) {
+    if (strcmp(socketName, NWEBSPAWN_SOCKET_NAME) == 0) {
         appSpawnContent->content.isNweb = true;
+        appSpawnContent->content.loadExtendLib = LoadExtendLibNweb;
+        appSpawnContent->content.runChildProcessor = RunChildProcessorNweb;
     } else {
         appSpawnContent->content.isNweb = false;
+        appSpawnContent->content.loadExtendLib = LoadExtendLib;
+        appSpawnContent->content.runChildProcessor = RunChildProcessor;
     }
     appSpawnContent->timer = NULL;
     appSpawnContent->flags = 0;
