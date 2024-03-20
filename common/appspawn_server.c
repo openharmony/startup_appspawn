@@ -57,9 +57,7 @@ static void ProcessExit(int code)
 #ifdef OHOS_LITE
     _exit(0x7f); // 0x7f user exit
 #else
-#ifndef APPSPAWN_TEST
     quick_exit(0);
-#endif
 #endif
 }
 
