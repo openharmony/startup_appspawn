@@ -49,6 +49,9 @@ if (!defined(ohos_lite)) {
     if (target_cpu == "x86_64") {
       defines += [ "webview_x86_64" ]
     }
+    if (target_cpu == "arm") {
+      defines += [ "webview_arm" ]
+    }
     sources = [
       "${appspawn_path}/adapter/appspawn_ace.cpp",
       "${appspawn_path}/adapter/appspawn_nweb.cpp",
@@ -126,7 +129,6 @@ if (!defined(ohos_lite)) {
   ohos_static_library("appspawn_server") {
     sources = [
       "${appspawn_path}/adapter/appspawn_adapter.cpp",
-      "${appspawn_path}/adapter/appspawn_nweb.cpp",
       "${appspawn_path}/adapter/appspawn_sandbox.cpp",
       "${appspawn_path}/common/appspawn_server.c",
       "${appspawn_path}/interfaces/innerkits/src/appspawn_mount_permission.cpp",
