@@ -105,6 +105,10 @@ static void PreloadModule(void)
 #endif
     }
 #ifndef APPSPAWN_TEST
+    // pre load webview napi
+#if defined(webview_arm)
+    runtime->PreloadSystemModule("web.webview_napi");
+#endif
     // Save preloaded runtime
     OHOS::AbilityRuntime::Runtime::SavePreloaded(std::move(runtime));
 #endif
