@@ -726,6 +726,16 @@
                     "src-path": "/data/service/el1/public/themes/<currentUserId>/b/system",
                     "sandbox-path": "/data/themes/b/system",
                     "sandbox-flags": [ "bind", "rec" ]
+                },
+                {
+                    "src-path": "/data/service/el1/public/themes/<currentUserId>/fa",
+                    "sandbox-path": "/data/themes/f",
+                    "sandbox-flags": [ "bind", "rec" ]
+                },
+                {
+                    "src-path": "/data/service/el1/public/themes/<currentUserId>/share",
+                    "sandbox-path": "/data/themes/s",
+                    "sandbox-flags": [ "bind", "rec" ]
                 }
             ]
         }],
