@@ -39,6 +39,11 @@
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
+                    "src-path" : "/system/lib",
+                    "sandbox-path" : "/system/lib",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
                     "src-path" : "/system/lib/platformsdk",
                     "sandbox-path" : "/system/lib/platformsdk",
                     "sandbox-flags" : [ "bind", "rec" ],
@@ -544,6 +549,11 @@
                 }, {
                     "src-path" : "/system/bin",
                     "sandbox-path" : "/system/bin",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/system/lib",
+                    "sandbox-path" : "/system/lib",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
