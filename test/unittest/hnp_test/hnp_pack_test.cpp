@@ -110,7 +110,7 @@ HWTEST(HnpPackTest, Hnp_Pack_001, TestSize.Level0)
     }
     { // no name and version
         char arg3[] = "./hnp_sample";
-        char arg4[] = "/hnp_out";
+        char arg4[] = "./hnp_out";
         char* argv[] = {arg1, arg2, arg3, arg4};
         int argc = sizeof(argv) / sizeof(argv[0]);
 
@@ -118,7 +118,7 @@ HWTEST(HnpPackTest, Hnp_Pack_001, TestSize.Level0)
     }
     { // ok
         char arg3[] = "./hnp_sample";
-        char arg4[] = "/hnp_out";
+        char arg4[] = "./hnp_out";
         char arg5[] = "-name";
         char arg6[] = "sample";
         char arg7[] = "-v";
@@ -156,7 +156,7 @@ HWTEST(HnpPackTest, Hnp_Pack_002, TestSize.Level0)
     char arg1[] = "hnp";
     char arg2[] = "pack";
     char arg3[] = "./hnp_sample";
-    char arg4[] = "/hnp_out";
+    char arg4[] = "./hnp_out";
     char arg5[] = "-cfg";
 
     { // cfg file path is invalid
@@ -175,7 +175,7 @@ HWTEST(HnpPackTest, Hnp_Pack_002, TestSize.Level0)
     }
     { // cfg file not json formaat
         char cfg[] = "this is for test!";
-        FILE *fp = fopen("./hnp.cfg", "w");
+        fp = fopen("./hnp.cfg", "w");
         EXPECT_EQ(fwrite(cfg, sizeof(char), strlen(cfg) + 1, fp), strlen(cfg) + 1);
         fclose(fp);
 
@@ -213,7 +213,7 @@ HWTEST(HnpPackTest, Hnp_Pack_003, TestSize.Level0)
     char arg1[] = "hnp";
     char arg2[] = "pack";
     char arg3[] = "./hnp_sample";
-    char arg4[] = "/hnp_out";
+    char arg4[] = "./hnp_out";
     char arg5[] = "-cfg";
     char arg6[] = "./hnp.cfg";
     char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6};
@@ -223,7 +223,7 @@ HWTEST(HnpPackTest, Hnp_Pack_003, TestSize.Level0)
         char cfg[] = "{\"typ\":\"hnp-config\",\"name\":\"sample\",\"version\":\"1.1\",\"install\":"
             "{\"links\":[{\"source\":\"bin/out\",\"target\":\"out\"},{\"source\":\"bin/out2\","
             "\"target\":\"out2\"}]}}";
-        FILE *fp = fopen("./hnp.cfg", "w");
+        fp = fopen("./hnp.cfg", "w");
         EXPECT_EQ(fwrite(cfg, sizeof(char), strlen(cfg) + 1, fp), strlen(cfg) + 1);
         fclose(fp);
 
@@ -233,7 +233,7 @@ HWTEST(HnpPackTest, Hnp_Pack_003, TestSize.Level0)
         char cfg[] = "{\"type\":\"hnpconfig\",\"name\":\"sample\",\"version\":\"1.1\",\"install\":"
             "{\"links\":[{\"source\":\"bin/out\",\"target\":\"out\"},{\"source\":\"bin/out2\","
             "\"target\":\"out2\"}]}}";
-        FILE *fp = fopen("./hnp.cfg", "w");
+        fp = fopen("./hnp.cfg", "w");
         EXPECT_EQ(fwrite(cfg, sizeof(char), strlen(cfg) + 1, fp), strlen(cfg) + 1);
         fclose(fp);
 
@@ -267,7 +267,7 @@ HWTEST(HnpPackTest, Hnp_Pack_004, TestSize.Level0)
     char arg1[] = "hnp";
     char arg2[] = "pack";
     char arg3[] = "./hnp_sample";
-    char arg4[] = "/hnp_out";
+    char arg4[] = "./hnp_out";
     char arg5[] = "-cfg";
     char arg6[] = "./hnp.cfg";
     char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6};
@@ -277,7 +277,7 @@ HWTEST(HnpPackTest, Hnp_Pack_004, TestSize.Level0)
         char cfg[] = "{\"type\":\"hnp-config\",\"version\":\"1.1\",\"install\":"
             "{\"links\":[{\"source\":\"bin/out\",\"target\":\"out\"},{\"source\":\"bin/out2\","
             "\"target\":\"out2\"}]}}";
-        FILE *fp = fopen("./hnp.cfg", "w");
+        fp = fopen("./hnp.cfg", "w");
         EXPECT_EQ(fwrite(cfg, sizeof(char), strlen(cfg) + 1, fp), strlen(cfg) + 1);
         fclose(fp);
 
@@ -287,7 +287,7 @@ HWTEST(HnpPackTest, Hnp_Pack_004, TestSize.Level0)
         char cfg[] = "{\"type\":\"hnp-config\",\"name\":\"sample\",\"install\":"
             "{\"links\":[{\"source\":\"bin/out\",\"target\":\"out\"},{\"source\":\"bin/out2\","
             "\"target\":\"out2\"}]}}";
-        FILE *fp = fopen("./hnp.cfg", "w");
+        fp = fopen("./hnp.cfg", "w");
         EXPECT_EQ(fwrite(cfg, sizeof(char), strlen(cfg) + 1, fp), strlen(cfg) + 1);
         fclose(fp);
 
@@ -297,7 +297,7 @@ HWTEST(HnpPackTest, Hnp_Pack_004, TestSize.Level0)
         char cfg[] = "{\"type\":\"hnp-config\",\"name\":\"sample\",\"version\":\"1.1\",\"uninstall\":"
             "{\"links\":[{\"source\":\"bin/out\",\"target\":\"out\"},{\"source\":\"bin/out2\","
             "\"target\":\"out2\"}]}}";
-        FILE *fp = fopen("./hnp.cfg", "w");
+        fp = fopen("./hnp.cfg", "w");
         EXPECT_EQ(fwrite(cfg, sizeof(char), strlen(cfg) + 1, fp), strlen(cfg) + 1);
         fclose(fp);
 
@@ -331,7 +331,7 @@ HWTEST(HnpPackTest, Hnp_Pack_005, TestSize.Level0)
     char arg1[] = "hnp";
     char arg2[] = "pack";
     char arg3[] = "./hnp_sample";
-    char arg4[] = "/hnp_out";
+    char arg4[] = "./hnp_out";
     char arg5[] = "-cfg";
     char arg6[] = "./hnp.cfg";
     char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6};
@@ -341,7 +341,7 @@ HWTEST(HnpPackTest, Hnp_Pack_005, TestSize.Level0)
         char cfg[] = "{\"type\":\"hnp-config\",\"name\":\"sample\",\"version\":\"1.1\",\"install\":"
             "{\"links\":[{\"src\":\"bin/out\",\"target\":\"out\"},{\"source\":\"bin/out2\","
             "\"target\":\"out2\"}]}}";
-        FILE *fp = fopen("./hnp.cfg", "w");
+        fp = fopen("./hnp.cfg", "w");
         EXPECT_EQ(fwrite(cfg, sizeof(char), strlen(cfg) + 1, fp), strlen(cfg) + 1);
         fclose(fp);
 
@@ -351,7 +351,7 @@ HWTEST(HnpPackTest, Hnp_Pack_005, TestSize.Level0)
         char cfg[] = "{\"type\":\"hnp-config\",\"name\":\"sample\",\"version\":\"1.1\",\"install\":"
             "{\"links\":[{\"source\":\"bin/out\",\"tar\":\"out\"},{\"source\":\"bin/out2\","
             "\"target\":\"out2\"}]}}";
-        FILE *fp = fopen("./hnp.cfg", "w");
+        fp = fopen("./hnp.cfg", "w");
         EXPECT_EQ(fwrite(cfg, sizeof(char), strlen(cfg) + 1, fp), strlen(cfg) + 1);
         fclose(fp);
 
@@ -386,7 +386,7 @@ HWTEST(HnpPackTest, Hnp_Pack_006, TestSize.Level0)
     char arg1[] = "hnp";
     char arg2[] = "pack";
     char arg3[] = "./hnp_sample";
-    char arg4[] = "/hnp_out";
+    char arg4[] = "./hnp_out";
     char arg5[] = "-cfg";
     char arg6[] = "./hnp.cfg";
     char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6};
@@ -394,7 +394,7 @@ HWTEST(HnpPackTest, Hnp_Pack_006, TestSize.Level0)
 
     { // ok. no links item in install item
         char cfg[] = "{\"type\":\"hnp-config\",\"name\":\"sample\",\"version\":\"1.1\",\"install\":{}}";
-        FILE *fp = fopen("./hnp.cfg", "w");
+        fp = fopen("./hnp.cfg", "w");
         EXPECT_EQ(fwrite(cfg, sizeof(char), strlen(cfg) + 1, fp), strlen(cfg) + 1);
         fclose(fp);
 
@@ -404,7 +404,7 @@ HWTEST(HnpPackTest, Hnp_Pack_006, TestSize.Level0)
     { // ok. no array in links item
         char cfg[] = "{\"type\":\"hnp-config\",\"name\":\"sample\",\"version\":\"1.1\",\"install\":"
             "{\"links\":[]}}";
-        FILE *fp = fopen("./hnp.cfg", "w");
+        fp = fopen("./hnp.cfg", "w");
         EXPECT_EQ(fwrite(cfg, sizeof(char), strlen(cfg) + 1, fp), strlen(cfg) + 1);
         fclose(fp);
 
@@ -415,7 +415,7 @@ HWTEST(HnpPackTest, Hnp_Pack_006, TestSize.Level0)
         char cfg[] = "{\"type\":\"hnp-config\",\"name\":\"sample\",\"version\":\"1.1\",\"install\":"
             "{\"links\":[{\"source\":\"bin/out\",\"target\":\"out\"},{\"source\":\"bin/out2\","
             "\"target\":\"out2\"}]}}";
-        FILE *fp = fopen("./hnp.cfg", "w");
+        fp = fopen("./hnp.cfg", "w");
         EXPECT_EQ(fwrite(cfg, sizeof(char), strlen(cfg) + 1, fp), strlen(cfg) + 1);
         fclose(fp);
 
