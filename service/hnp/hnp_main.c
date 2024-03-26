@@ -49,9 +49,9 @@ int HnpShowHelp(int argc, char *argv[])
         "\r\nuninstall:    uninstall native software"
         "\r\n              hnp uninstall [user id] [software name] [software version]\r\n"
         "\r\nfor example:\r\n"
-        "\r\n    hnp install /usr1/hnp 1000 -f\r\n"
+        "\r\n    hnp install 1000 /usr1/hnp -f\r\n"
         "    hnp uninstall 1000 native_sample 1.1\r\n");
-        
+
     return 0;
 }
 
