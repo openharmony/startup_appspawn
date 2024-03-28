@@ -16,9 +16,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <sys/stat.h>
-#include <errno.h>
-#include <unistd.h>
 
 #include <dirent.h>
 #ifdef _WIN32
@@ -28,7 +25,6 @@
 
 #include "zlib.h"
 #include "contrib/minizip/zip.h"
-#include "contrib/minizip/unzip.h"
 
 #include "securec.h"
 
@@ -195,94 +191,11 @@ int HnpZip(const char *inputDir, const char *outputFile)
     return ret;
 }
 
-static int HnpUnZipForFile(const char *fileName, const char *outputDir, unzFile zipFile)
-{
-#ifdef _WIN32
-    return 0;
-#else
-    int ret;
-    FILE *outFile;
-    char filePath[MAX_FILE_PATH_LEN];
-    char buffer[BUFFER_SIZE];
-    int readSize = 0;
-
-    ret = sprintf_s(filePath, MAX_FILE_PATH_LEN, "%s%s", outputDir, fileName);
-    if (ret < 0) {
-        HNP_LOGE("sprintf unsuccess.");
-        return HNP_ERRNO_BASE_SPRINTF_FAILED;
-    }
-
-    /* 如果解压缩的是目录 */
-    if (filePath[strlen(filePath) - 1] == '/') {
-        mkdir(filePath, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-    } else {
-        outFile = fopen(filePath, "wb");
-        if (outFile == NULL) {
-            HNP_LOGE("unzip open file:%s unsuccess!", filePath);
-            return HNP_ERRNO_BASE_FILE_OPEN_FAILED;
-        }
-        unzOpenCurrentFile(zipFile);
-        do {
-            readSize = unzReadCurrentFile(zipFile, buffer, sizeof(buffer));
-            if (readSize < 0) {
-                HNP_LOGE("unzip read zip:%s file unsuccess", zipFile);
-                fclose(outFile);
-                unzCloseCurrentFile(zipFile);
-                return HNP_ERRNO_BASE_UNZIP_READ_FAILED;
-            }
-
-            fwrite(buffer, readSize, sizeof(char), outFile);
-        } while (readSize > 0);
-
-        fclose(outFile);
-        unzCloseCurrentFile(zipFile);
-    }
-    return 0;
-#endif
-}
-
 int HnpUnZip(const char *inputFile, const char *outputDir)
 {
-    unzFile zipFile;
-    int result;
-    char fileName[MAX_FILE_PATH_LEN];
-    unz_file_info fileInfo;
-    char *slash;
-
     HNP_LOGI("HnpUnZip zip=%s, output=%s", inputFile, outputDir);
 
-    zipFile = unzOpen(inputFile);
-    if (zipFile == NULL) {
-        HNP_LOGE("unzip open zip:%s unsuccess!", inputFile);
-        return HNP_ERRNO_BASE_UNZIP_OPEN_FAILED;
-    }
-
-    result = unzGoToFirstFile(zipFile);
-    while (result == UNZ_OK) {
-        result = unzGetCurrentFileInfo(zipFile, &fileInfo, fileName, sizeof(fileName), NULL, 0, NULL, 0);
-        if (result != UNZ_OK) {
-            HNP_LOGE("unzip get zip:%s info unsuccess!", inputFile);
-            unzClose(zipFile);
-            return HNP_ERRNO_BASE_UNZIP_GET_INFO_FAILED;
-        }
-        slash = strchr(fileName, '/');
-        if (slash != NULL) {
-            slash++;
-        } else {
-            slash = fileName;
-        }
-
-        result = HnpUnZipForFile(slash, outputDir, zipFile);
-        if (result != 0) {
-            HNP_LOGE("unzip for file:%s unsuccess", slash);
-            unzClose(zipFile);
-            return HNP_ERRNO_BASE_SPRINTF_FAILED;
-        }
-        result = unzGoToNextFile(zipFile);
-    }
-
-    unzClose(zipFile);
-    return 0;
+    return -1;
 }
 
 int HnpWriteToZipHead(const char *zipFile, char *buff, int len)
@@ -316,55 +229,6 @@ int HnpWriteToZipHead(const char *zipFile, char *buff, int len)
         HNP_LOGE("write file:%s unsuccess! size=%d, write=%d", zipFile, size, writeLen);
         return HNP_ERRNO_BASE_FILE_WRITE_FAILED;
     }
-    return 0;
-}
-
-int HnpReadFromZipHead(const char *zipFile, NativeHnpHead **hnpHead)
-{
-    char *buffTmp;
-    int headLen;
-    NativeHnpHead *hnpHeadTmp;
-
-    int ret = ReadFileToStreamBySize(zipFile, &buffTmp, sizeof(NativeHnpHead));
-    if (ret != 0) {
-        HNP_LOGE("read file:%s to stream unsuccess!", zipFile);
-        return ret;
-    }
-
-    /* 读取native头的大小 */
-    hnpHeadTmp = (NativeHnpHead *)buffTmp;
-    if (hnpHeadTmp->magic != HNP_HEAD_MAGIC) {
-        free(buffTmp);
-        HNP_LOGE("read file unsuccess,%s is invalid hnp file", zipFile);
-        return HNP_ERRNO_BASE_MAGIC_CHECK_FAILED;
-    }
-    headLen = hnpHeadTmp->headLen;
-    free(buffTmp);
-    buffTmp = NULL;
-
-    FILE *fp = fopen(zipFile, "rb");
-    if (fp == NULL) {
-        HNP_LOGE("open file[%s] unsuccess. errno=%d", zipFile, errno);
-        return HNP_ERRNO_BASE_FILE_OPEN_FAILED;
-    }
-
-    buffTmp = (char*)malloc(headLen);
-    if (buffTmp == NULL) {
-        HNP_LOGE("malloc unsuccess. size=%d, errno=%d", headLen, errno);
-        (void)fclose(fp);
-        return HNP_ERRNO_NOMEM;
-    }
-
-    ret = fread(buffTmp, sizeof(char), headLen, fp);
-    if (ret != headLen) {
-        HNP_LOGE("fread unsuccess. ret=%d, size=%d, errno=%d", ret, headLen, errno);
-        (void)fclose(fp);
-        free(buffTmp);
-        return HNP_ERRNO_BASE_FILE_READ_FAILED;
-    }
-
-    *hnpHead = (NativeHnpHead *)buffTmp;
-    (void)fclose(fp);
     return 0;
 }
 
