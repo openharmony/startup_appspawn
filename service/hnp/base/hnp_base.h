@@ -31,6 +31,8 @@ extern "C" {
 #define HNP_HEAD_MAGIC 0x12345678
 #define HNP_HEAD_VERSION 1
 #define HNP_VERSION_LEN 32
+#define BUFFER_SIZE 1024
+#define HNP_COMMAND_LEN 128
 
 #ifdef _WIN32
 #define DIR_SPLIT_SYMBOL '\\'
@@ -76,6 +78,10 @@ enum {
     HNP_INDEX_7
 };
 
+typedef enum {
+    FALSE,
+    TRUE
+} Bool;
 
 // 错误码生成
 #define HNP_ERRNO_HNP_MID               0x80
@@ -137,9 +143,44 @@ enum {
 // 0x80110d 获取文件属性失败
 #define HNP_ERRNO_GET_FILE_ATTR_FAILED          HNP_ERRNO_COMMON(HNP_MID_BASE, 0xd)
 
+// 0x80110e 魔术字校验失败
+#define HNP_ERRNO_BASE_MAGIC_CHECK_FAILED       HNP_ERRNO_COMMON(HNP_MID_BASE, 0xe)
+
+// 0x80110f 解压缩打开文件失败
+#define HNP_ERRNO_BASE_UNZIP_OPEN_FAILED        HNP_ERRNO_COMMON(HNP_MID_BASE, 0xf)
+
+// 0x801110 解压缩获取文件信息失败
+#define HNP_ERRNO_BASE_UNZIP_GET_INFO_FAILED    HNP_ERRNO_COMMON(HNP_MID_BASE, 0x10)
+
+// 0x801111 解压缩获取文件信息失败
+#define HNP_ERRNO_BASE_UNZIP_READ_FAILED        HNP_ERRNO_COMMON(HNP_MID_BASE, 0x11)
+
+// 0x801112 生成软链接失败
+#define HNP_ERRNO_GENERATE_SOFT_LINK_FAILED     HNP_ERRNO_COMMON(HNP_MID_BASE, 0x12)
+
+// 0x801113 进程正在运行
+#define HNP_ERRNO_PROGRAM_RUNNING               HNP_ERRNO_COMMON(HNP_MID_BASE, 0x13)
+
+// 0x801114 打开管道失败
+#define HNP_ERRNO_BASE_POPEN_FAILED             HNP_ERRNO_COMMON(HNP_MID_BASE, 0x14)
+
+// 0x801115 入参失败
+#define HNP_ERRNO_BASE_PARAMS_INVALID           HNP_ERRNO_COMMON(HNP_MID_BASE, 0x15)
+
+// 0x801116 strdup失败
+#define HNP_ERRNO_BASE_STRDUP_FAILED            HNP_ERRNO_COMMON(HNP_MID_BASE, 0x16)
+
+// 0x801117 设置权限失败
+#define HNP_ERRNO_BASE_CHMOD_FAILED             HNP_ERRNO_COMMON(HNP_MID_BASE, 0x17)
+
+// 0x801118 删除目录失败
+#define HNP_ERRNO_BASE_UNLINK_FAILED            HNP_ERRNO_COMMON(HNP_MID_BASE, 0x18)
+
 int GetFileSizeByHandle(FILE *file, int *size);
 
 int ReadFileToStream(const char *filePath, char **stream, int *streamLen);
+
+int ReadFileToStreamBySize(const char *filePath, char **stream, int readSize);
 
 int GetRealPath(char *srcPath, char *realPath);
 
@@ -150,6 +191,16 @@ int HnpUnZip(const char *inputFile, const char *outputDir);
 int HnpWriteToZipHead(const char *zipFile, char *buff, int len);
 
 void HnpLogPrintf(int logLevel, char *module, const char *format, ...);
+
+int HnpReadFromZipHead(const char *zipFile, NativeHnpHead **hnpHead);
+
+int HnpSymlink(const char *srcFile, const char *dstFile);
+
+int HnpProgramRunCheck(const char *programName);
+
+int HnpDeleteFolder(const char *path);
+
+int HnpCreateFolder(const char* path);
 
 #define HNP_LOGI(args...) \
     HnpLogPrintf(HNP_LOG_INFO, "HNP", ##args)

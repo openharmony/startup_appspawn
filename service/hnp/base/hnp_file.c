@@ -16,7 +16,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
+#include <errno.h>
 
+#include <dirent.h>
+#include <sys/stat.h>
+#include <unistd.h>
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -92,6 +96,40 @@ int ReadFileToStream(const char *filePath, char **stream, int *streamLen)
     return 0;
 }
 
+int ReadFileToStreamBySize(const char *filePath, char **stream, int readSize)
+{
+    int ret;
+    FILE *file;
+    char *streamTmp;
+
+    file = fopen(filePath, "rb");
+    if (file == NULL) {
+        HNP_LOGE("open file[%s] unsuccess. ", filePath);
+        return HNP_ERRNO_BASE_FILE_OPEN_FAILED;
+    }
+
+    if (readSize <= 0) {
+        HNP_LOGE("read size(%d) is invalid.", readSize);
+        return HNP_ERRNO_BASE_PARAMS_INVALID;
+    }
+    streamTmp = (char*)malloc(readSize);
+    if (streamTmp == NULL) {
+        HNP_LOGE("malloc unsuccess. size=%d", readSize);
+        (void)fclose(file);
+        return HNP_ERRNO_NOMEM;
+    }
+    ret = fread(streamTmp, sizeof(char), readSize, file);
+    if (ret != readSize) {
+        HNP_LOGE("fread unsuccess. ret=%d, size=%d", ret, readSize);
+        (void)fclose(file);
+        free(streamTmp);
+        return HNP_ERRNO_BASE_FILE_READ_FAILED;
+    }
+    *stream = streamTmp;
+    (void)fclose(file);
+    return 0;
+}
+
 int GetRealPath(char *srcPath, char *realPath)
 {
     char dstTmpPath[PATH_MAX];
@@ -117,6 +155,113 @@ int GetRealPath(char *srcPath, char *realPath)
         return HNP_ERRNO_BASE_COPY_FAILED;
     }
     return 0;
+}
+
+int HnpDeleteFolder(const char *path)
+{
+    DIR *dir = opendir(path);
+    struct dirent *entry;
+    struct stat statbuf;
+    char filePath[MAX_FILE_PATH_LEN];
+    int ret;
+
+    if (dir == NULL) {
+        HNP_LOGE("delete folder open dir=%s unsuccess ", path);
+        return HNP_ERRNO_BASE_DIR_OPEN_FAILED;
+    }
+
+    while ((entry = readdir(dir)) != NULL) {
+        if ((strcmp(entry->d_name, ".") == 0) || (strcmp(entry->d_name, "..") == 0)) {
+            continue;
+        }
+
+        ret = sprintf_s(filePath, MAX_FILE_PATH_LEN, "%s/%s", path, entry->d_name);
+        if (ret < 0) {
+            HNP_LOGE("delete folder sprintf path[%s], file[%s] unsuccess.", path, entry->d_name);
+            closedir(dir);
+            return HNP_ERRNO_BASE_SPRINTF_FAILED;
+        }
+
+        if (lstat(filePath, &statbuf) < 0) {
+            continue;
+        }
+
+        if (S_ISDIR(statbuf.st_mode)) {
+            /* 如果是文件夹，递归删除 */
+            ret = HnpDeleteFolder(filePath);
+            if (ret != 0) {
+                return ret;
+            }
+        } else {
+            ret = unlink(filePath);
+            if (ret != 0) {
+                closedir(dir);
+                HNP_LOGE("delete file unsuccess.ret=%d, path=%s, errno=%d", ret, filePath, errno);
+                return HNP_ERRNO_BASE_UNLINK_FAILED;
+            }
+        }
+    }
+
+    closedir(dir);
+    ret = rmdir(path);
+    if (ret != 0) {
+        HNP_LOGE("rmdir path unsuccess.ret=%d, path=%s, errno=%d", ret, path, errno);
+    }
+    return ret;
+}
+
+int HnpCreateFolder(const char* path)
+{
+    int ret = 0;
+#ifdef _WIN32
+    return ret;
+#else
+    char *p = NULL;
+    struct stat buffer;
+
+    if (path == NULL) {
+        HNP_LOGE("delete folder param path is null");
+        return HNP_ERRNO_BASE_PARAMS_INVALID;
+    }
+
+    /* 如果目录存在，则返回 */
+    if (stat(path, &buffer) == 0) {
+        return 0;
+    }
+
+    p = strdup(path);
+    if (p == NULL) {
+        HNP_LOGE("delete folder strdup unsuccess, path=%s, errno=%d", path, errno);
+        return HNP_ERRNO_BASE_STRDUP_FAILED;
+    }
+
+    for (char *q = p + 1; *q; q++) {
+        if (*q != '/') {
+            continue;
+        }
+        *q = '\0';
+        if (stat(path, &buffer) != 0) {
+            ret = mkdir(p, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+            if ((ret != 0) && (errno != EEXIST)) {
+                HNP_LOGE("delete folder unsuccess, ret=%d, p=%s, errno:%d", ret, p, errno);
+            }
+        }
+        *q = '/';
+    }
+
+    if (path[strlen(path) - 1] != '/') {
+        ret = mkdir(p, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+        if ((ret != 0) && (errno != EEXIST)) {
+            HNP_LOGE("delete folder unsuccess, ret=%d, path=%s, errno:%d", ret, path, errno);
+        }
+    }
+    free(p);
+
+    if (errno == EEXIST) {
+        ret = 0;
+    }
+    return ret;
+#endif
 }
 
 #ifdef __cplusplus
