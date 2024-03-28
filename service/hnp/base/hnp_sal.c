@@ -30,6 +30,8 @@ int HnpProgramRunCheck(const char *programName)
     char command[HNP_COMMAND_LEN];
     int ret;
 
+    HNP_LOGI("program[%s] running check", programName);
+
     /* 对programName进行空格过滤，防止外部命令注入 */
     if (strchr(programName, ' ') != NULL) {
         HNP_LOGE("hnp install program name[%s] inval", programName);

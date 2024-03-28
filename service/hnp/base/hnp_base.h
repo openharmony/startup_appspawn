@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
+#include <stdbool.h>
 
 #include "securec.h"
 
@@ -77,11 +78,6 @@ enum {
     HNP_INDEX_6,
     HNP_INDEX_7
 };
-
-typedef enum {
-    FALSE,
-    TRUE
-} Bool;
 
 // 错误码生成
 #define HNP_ERRNO_HNP_MID               0x80
@@ -201,6 +197,8 @@ int HnpProgramRunCheck(const char *programName);
 int HnpDeleteFolder(const char *path);
 
 int HnpCreateFolder(const char* path);
+
+int HnpWriteInfoToFile(const char* filePath, char *buff, int len);
 
 #define HNP_LOGI(args...) \
     HnpLogPrintf(HNP_LOG_INFO, "HNP", ##args)
