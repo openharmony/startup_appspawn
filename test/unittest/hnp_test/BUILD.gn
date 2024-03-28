@@ -31,14 +31,18 @@ if (!defined(ohos_lite)) {
     include_dirs = [
       "${appspawn_path}/service/hnp/base",
       "${appspawn_path}/service/hnp/pack/include",
+      "${appspawn_path}/service/hnp/installer/include",
     ]
 
     sources = [
       "${appspawn_path}/service/hnp/base/hnp_file.c",
       "${appspawn_path}/service/hnp/base/hnp_log.c",
       "${appspawn_path}/service/hnp/base/hnp_zip.c",
+      "${appspawn_path}/service/hnp/base/hnp_sal.c",
       "${appspawn_path}/service/hnp/pack/src/hnp_pack.c",
+      "${appspawn_path}/service/hnp/installer/src/hnp_installer.c",
       "hnp_pack_test.cpp",
+      "hnp_installer_test.cpp",
     ]
 
     defines = [ "APPSPAWN_TEST" ]
