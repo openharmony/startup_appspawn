@@ -296,7 +296,7 @@ int HnpWriteToZipHead(const char *zipFile, char *buff, int len)
         return ret;
     }
 
-    FILE *fp = fopen(zipFile, "w");
+    FILE *fp = fopen(zipFile, "wb");
     if (fp == NULL) {
         free(buffTmp);
         HNP_LOGE("open file:%s unsuccess!", zipFile);

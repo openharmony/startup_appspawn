@@ -58,8 +58,8 @@ static BOOL Initialize(Service *service, Identity identity)
     AppSpawnService *spawnService = (AppSpawnService *)service;
     spawnService->identity = identity;
 
-    APPSPAWN_LOGI("[appspawn] initialize, identity<%d, %d, %p>", \
-        identity.serviceId, identity.featureId, identity.queueId);
+    APPSPAWN_LOGI("[appspawn] initialize, identity<%d, %d>", \
+        identity.serviceId, identity.featureId);
     return TRUE;
 }
 
@@ -186,7 +186,7 @@ void AppSpawnInit(void)
         return;
     }
 
-    APPSPAWN_LOGI("[appspawn] register service succeed. %p.", &g_appSpawnService);
+    APPSPAWN_LOGI("[appspawn] register service succeed.");
 
     if (SAMGR_GetInstance()->RegisterDefaultFeatureApi(APPSPAWN_SERVICE_NAME, \
         GET_IUNKNOWN(g_appSpawnService)) != TRUE) {
