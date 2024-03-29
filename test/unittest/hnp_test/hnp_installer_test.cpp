@@ -105,7 +105,7 @@ void HnpPackWithBin(void)
     EXPECT_EQ(mkdir("hnp_sample/bin", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
     FILE *fp = fopen("hnp_sample/bin/out", "wb");
     EXPECT_NE(fp, NULL);
-    fclose(fp);
+    (void)fclose(fp);
     EXPECT_EQ(mkdir("hnp_out", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
     char arg1[] = "hnpcli";
     char arg2[] = "pack";
@@ -131,18 +131,19 @@ void HnpPackWithBinDelete(void)
 
 void HnpPackWithCfg(void)
 {
+    FILE *fp;
     EXPECT_EQ(mkdir("hnp_sample", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
     EXPECT_EQ(mkdir("hnp_sample/bin", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
     EXPECT_EQ(mkdir("hnp_out", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
-    FILE *fp = fopen("hnp_sample/bin/out", "wb");
+    fp = fopen("hnp_sample/bin/out", "wb");
     EXPECT_NE(fp, NULL);
-    fclose(fp);
+    (void)fclose(fp);
     fp = fopen("hnp_sample/bin/out2", "wb");
     EXPECT_NE(fp, NULL);
-    fclose(fp);
+    (void)fclose(fp);
     fp = fopen("hnp.cfg", "w");
     EXPECT_NE(fp, nullptr);
-    fclose(fp);
+    (void)fclose(fp);
 
     char arg1[] = "hnp";
     char arg2[] = "pack";
@@ -157,7 +158,7 @@ void HnpPackWithCfg(void)
         "\"target\":\"out2\"}]}}";
     fp = fopen("./hnp.cfg", "w");
     EXPECT_EQ(fwrite(cfg, sizeof(char), strlen(cfg) + 1, fp), strlen(cfg) + 1);
-    fclose(fp);
+    (void)fclose(fp);
 
     EXPECT_EQ(HnpCmdPack(argc, argv), 0);
 }
@@ -184,7 +185,7 @@ void HnpInstall(void)
     char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6};
     int argc = sizeof(argv) / sizeof(argv[0]);
 
-     EXPECT_EQ(HnpCmdInstall(argc, argv), 0);
+    EXPECT_EQ(HnpCmdInstall(argc, argv), 0);
 }
 
 void HnpUnInstall(void)
@@ -212,7 +213,7 @@ void HnpInstallPrivate(void)
     char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6};
     int argc = sizeof(argv) / sizeof(argv[0]);
 
-     EXPECT_EQ(HnpCmdInstall(argc, argv), 0);
+    EXPECT_EQ(HnpCmdInstall(argc, argv), 0);
 }
 
 void HnpUnInstallPrivate(void)
@@ -338,8 +339,8 @@ HWTEST(HnpInstallerTest, Hnp_Install_002, TestSize.Level0)
         char arg6[] = "-f";
         char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6};
         int argc = sizeof(argv) / sizeof(argv[0]);
-        EXPECT_EQ(access(HNP_BASE_PATH"/hnp_public/bin/out", F_OK), 0);
         EXPECT_EQ(HnpCmdInstall(argc, argv), 0);
+        EXPECT_EQ(access(HNP_BASE_PATH"/hnp_public/bin/out", F_OK), 0);
     }
 
     HnpDeleteFolder(HNP_BASE_PATH);
@@ -416,7 +417,7 @@ HWTEST(HnpInstallerTest, Hnp_Install_004, TestSize.Level0)
         int data[5] = {1, 2, 3, 4, 5};
         EXPECT_NE(fp, NULL);
         fwrite(data, sizeof(int), 5, fp);
-        fclose(fp);
+        (void)fclose(fp);
         char arg3[] = "10000";
         char arg4[] = "./hnp_out";
         char arg5[] = "null";
@@ -431,7 +432,7 @@ HWTEST(HnpInstallerTest, Hnp_Install_004, TestSize.Level0)
         int data[15] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
         EXPECT_NE(fp, NULL);
         fwrite(data, sizeof(int), 15, fp);
-        fclose(fp);
+        (void)fclose(fp);
         char arg3[] = "10000";
         char arg4[] = "./hnp_out";
         char arg5[] = "null";

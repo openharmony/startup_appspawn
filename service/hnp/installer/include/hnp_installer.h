@@ -24,6 +24,7 @@ extern "C" {
 
 typedef struct NativeHnpPathStru {
     char hnpProgramName[MAX_FILE_PATH_LEN];
+    char hnpBasePath[MAX_FILE_PATH_LEN];
     char hnpProgramPath[MAX_FILE_PATH_LEN];
     char hnpVersionPath[MAX_FILE_PATH_LEN];
 } NativeHnpPath;
@@ -51,6 +52,9 @@ typedef struct NativeHnpPathStru {
 
 // 0x801308 安装命令参数uid错误
 #define HNP_ERRNO_INSTALLER_ARGV_UID_INVALID               HNP_ERRNO_COMMON(HNP_MID_INSTALLER, 0x8)
+
+// 0x801309 获取版本目录失败
+#define HNP_ERRNO_INSTALLER_VERSION_FILE_GET_FAILED        HNP_ERRNO_COMMON(HNP_MID_INSTALLER, 0x9)
 
 #define HNP_DEFAULT_INSTALL_ROOT_PATH "/data/app/el1/bundle/"
 

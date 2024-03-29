@@ -25,30 +25,78 @@
 extern "C" {
 #endif
 
-int HnpProgramRunCheck(const char *programName)
+int HnpPidGetByProgramName(const char *programName, int *pids, int *count)
 {
+    FILE *cmdOutput;
+    char cmdBuffer[BUFFER_SIZE];
     char command[HNP_COMMAND_LEN];
+    int pidNum = 0;
+
+    /* programName为卸载命令输入的进程名拼接命令command */
+    if (sprintf_s(command, HNP_COMMAND_LEN, "pgrep -x %s", programName) < 0) {
+        HNP_LOGE("hnp uninstall program[%s] run command sprintf unsuccess", programName);
+        return HNP_ERRNO_BASE_SPRINTF_FAILED;
+    }
+
+    cmdOutput = popen(command, "rb");
+    if (cmdOutput == NULL) {
+        HNP_LOGE("hnp uninstall program[%s] not found", programName);
+        return HNP_ERRNO_BASE_PROGRAM_NOT_FOUND;
+    }
+
+    while (fgets(cmdBuffer, sizeof(cmdBuffer), cmdOutput)) {
+        pids[pidNum++] = atoi(cmdBuffer);
+        if (pidNum >= MAX_PROCESSES) {
+            HNP_LOGI("hnp uninstall program[%s] num over size", programName);
+            break;
+        }
+    }
+    pclose(cmdOutput);
+    *count = pidNum;
+
+    return 0;
+}
+
+int HnpProgramRunCheck(const char *programName, const char *basePath)
+{
     int ret;
+    int pids[MAX_PROCESSES];
+    int count = 0;
+    char command[HNP_COMMAND_LEN];
+    char cmdBuffer[BUFFER_SIZE];
 
     HNP_LOGI("program[%s] running check", programName);
 
     /* 对programName进行空格过滤，防止外部命令注入 */
     if (strchr(programName, ' ') != NULL) {
-        HNP_LOGE("hnp install program name[%s] inval", programName);
+        HNP_LOGE("hnp uninstall program name[%s] inval", programName);
         return HNP_ERRNO_BASE_PARAMS_INVALID;
     }
 
-    /* programName为卸载命令输入的进程名拼接命令command */
-    if (sprintf_s(command, HNP_COMMAND_LEN, "pgrep -x %s", programName) < 0) {
-        HNP_LOGE("hnp install program[%s] run command sprintf unsuccess", programName);
-        return HNP_ERRNO_BASE_SPRINTF_FAILED;
+    ret = HnpPidGetByProgramName(programName, pids, &count);
+    if ((ret != 0) || (count == 0)) { // 返回非0代表未找到进程对应的pid
+        return 0;
     }
 
     /* 判断进程是否运行 */
-    ret = system(command);
-    if (ret == 0) {
-        HNP_LOGE("hnp install program[%s] is running now", programName);
-        return HNP_ERRNO_PROGRAM_RUNNING;
+    for (int index = 0; index < count; index++) {
+        if (sprintf_s(command, HNP_COMMAND_LEN, "lsof -p %d", pids[index]) < 0) {
+            HNP_LOGE("hnp uninstall pid[%d] run check command sprintf unsuccess", pids[index]);
+            return HNP_ERRNO_BASE_SPRINTF_FAILED;
+        }
+        FILE *cmdOutput = popen(command, "rb");
+        if (cmdOutput == NULL) {
+            HNP_LOGE("hnp uninstall pid[%d] not found", pids[index]);
+            continue;
+        }
+        while (fgets(cmdBuffer, sizeof(cmdBuffer), cmdOutput)) {
+            if (strstr(cmdBuffer, basePath) != NULL) {
+                pclose(cmdOutput);
+                HNP_LOGE("hnp install program[%s] is running now", programName);
+                return HNP_ERRNO_PROGRAM_RUNNING;
+            }
+        }
+        pclose(cmdOutput);
     }
 
     return 0;
