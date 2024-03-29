@@ -25,7 +25,7 @@
 extern "C" {
 #endif
 
-int HnpPidGetByProgramName(const char *programName, int *pids, int *count)
+static int HnpPidGetByProgramName(const char *programName, int *pids, int *count)
 {
     FILE *cmdOutput;
     char cmdBuffer[BUFFER_SIZE];
@@ -44,7 +44,7 @@ int HnpPidGetByProgramName(const char *programName, int *pids, int *count)
         return HNP_ERRNO_BASE_PROGRAM_NOT_FOUND;
     }
 
-    while (fgets(cmdBuffer, sizeof(cmdBuffer), cmdOutput)) {
+    while (fgets(cmdBuffer, sizeof(cmdBuffer), cmdOutput) != NULL) {
         pids[pidNum++] = atoi(cmdBuffer);
         if (pidNum >= MAX_PROCESSES) {
             HNP_LOGI("hnp uninstall program[%s] num over size", programName);
@@ -89,7 +89,7 @@ int HnpProgramRunCheck(const char *programName, const char *basePath)
             HNP_LOGE("hnp uninstall pid[%d] not found", pids[index]);
             continue;
         }
-        while (fgets(cmdBuffer, sizeof(cmdBuffer), cmdOutput)) {
+        while (fgets(cmdBuffer, sizeof(cmdBuffer), cmdOutput) != NULL) {
             if (strstr(cmdBuffer, basePath) != NULL) {
                 pclose(cmdOutput);
                 HNP_LOGE("hnp install program[%s] is running now", programName);

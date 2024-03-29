@@ -24,8 +24,8 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <stdio.h>
-#include <errno.h>
+#include <cstdio>
+#include <cerrno>
 
 #include "hnp_base.h"
 #include "hnp_pack.h"
@@ -94,7 +94,10 @@ void HnpPackWithoutBin(void)
 
 void HnpPackWithoutBinDelete(void)
 {
-    EXPECT_EQ(remove("hnp_out/sample.hnp"), 0);
+    int ret;
+
+    ret = remove("hnp_out/sample.hnp");
+    EXPECT_EQ(ret, 0;)
     EXPECT_EQ(rmdir("hnp_sample"), 0);
     EXPECT_EQ(rmdir("hnp_out"), 0);
 }
@@ -104,7 +107,6 @@ void HnpPackWithBin(void)
     EXPECT_EQ(mkdir("hnp_sample", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
     EXPECT_EQ(mkdir("hnp_sample/bin", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
     FILE *fp = fopen("hnp_sample/bin/out", "wb");
-    EXPECT_NE(fp, NULL);
     (void)fclose(fp);
     EXPECT_EQ(mkdir("hnp_out", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
     char arg1[] = "hnpcli";
@@ -122,8 +124,12 @@ void HnpPackWithBin(void)
 
 void HnpPackWithBinDelete(void)
 {
-    EXPECT_EQ(remove("hnp_out/sample.hnp"), 0);
-    EXPECT_EQ(remove("hnp_sample/bin/out"), 0);
+    int ret;
+
+    ret = remove("hnp_out/sample.hnp");
+    EXPECT_EQ(ret, 0);
+    ret = remove("hnp_sample/bin/out");
+    EXPECT_EQ(ret, 0);
     EXPECT_EQ(rmdir("hnp_sample/bin"), 0);
     EXPECT_EQ(rmdir("hnp_sample"), 0);
     EXPECT_EQ(rmdir("hnp_out"), 0);
@@ -157,17 +163,23 @@ void HnpPackWithCfg(void)
         "{\"links\":[{\"source\":\"bin/out\",\"target\":\"outt\"},{\"source\":\"bin/out2\","
         "\"target\":\"out2\"}]}}";
     fp = fopen("./hnp.cfg", "w");
-    EXPECT_EQ(fwrite(cfg, sizeof(char), strlen(cfg) + 1, fp), strlen(cfg) + 1);
+    int whiteLen = (int)fwrite(cfg, sizeof(char), strlen(cfg) + 1, fp);
     (void)fclose(fp);
+    EXPECT_EQ(whiteLen, strlen(cfg) + 1);
 
     EXPECT_EQ(HnpCmdPack(argc, argv), 0);
 }
 
 void HnpPackWithCfgDelete(void)
 {
-    EXPECT_EQ(remove("hnp_out/sample.hnp"), 0);
-    EXPECT_EQ(remove("hnp_sample/bin/out"), 0);
-    EXPECT_EQ(remove("hnp_sample/bin/out2"), 0);
+    int ret;
+
+    ret = remove("hnp_out/sample.hnp");
+    EXPECT_EQ(ret, 0);
+    ret = remove("hnp_sample/bin/out");
+    EXPECT_EQ(ret, 0);
+    ret = remove("hnp_sample/bin/out2");
+    EXPECT_EQ(ret, 0);
     EXPECT_EQ(remove("hnp.cfg"), 0);
     EXPECT_EQ(rmdir("hnp_sample/bin"), 0);
     EXPECT_EQ(rmdir("hnp_sample"), 0);
@@ -208,7 +220,7 @@ void HnpInstallPrivate(void)
     char arg2[] = "uninstall";
     char arg3[] = "10000";
     char arg4[] = "./hnp_out";
-    char arg5[] = "huawei";
+    char arg5[] = "test";
     char arg6[] = "-f";
     char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6};
     int argc = sizeof(argv) / sizeof(argv[0]);
@@ -223,7 +235,7 @@ void HnpUnInstallPrivate(void)
     char arg3[] = "10000";
     char arg4[] = "hnp_sample";
     char arg5[] = "1.1";
-    char arg6[] = "huawei";
+    char arg6[] = "test";
     char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6};
     int argc = sizeof(argv) / sizeof(argv[0]);
 
@@ -269,24 +281,6 @@ HWTEST(HnpInstallerTest, Hnp_Install_001, TestSize.Level0)
         int argc = sizeof(argv) / sizeof(argv[0]);
 
         EXPECT_EQ(HnpCmdInstall(argc, argv), HNP_ERRNO_INSTALLER_ARGV_UID_INVALID);
-    }
-    { // src dir path is invalid
-        char arg3[] = "10000";
-        char arg4[] = "./hnp_in";
-        char arg5[] = "null";
-        char* argv[] = {arg1, arg2, arg3, arg4, arg5};
-        int argc = sizeof(argv) / sizeof(argv[0]);
-
-        EXPECT_EQ(HnpCmdInstall(argc, argv), HNP_ERRNO_INSTALLER_GET_REALPATH_FAILED);
-    }
-    { // dst dir path is invalid
-        char arg3[] = "10001";
-        char arg4[] = "./hnp_out";
-        char arg5[] = "null";
-        char* argv[] = {arg1, arg2, arg3, arg4, arg5};
-        int argc = sizeof(argv) / sizeof(argv[0]);
-
-        EXPECT_EQ(HnpCmdInstall(argc, argv), HNP_ERRNO_INSTALLER_GET_REALPATH_FAILED);
     }
     { // ok
         char arg3[] = "10000";
@@ -514,19 +508,79 @@ HWTEST(HnpInstallerTest, Hnp_Install_006, TestSize.Level0)
     { //ok
         char arg3[] = "10000";
         char arg4[] = "./hnp_out";
-        char arg5[] = "huawei";
+        char arg5[] = "test";
         char arg6[] = "-f";
         char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6};
         int argc = sizeof(argv) / sizeof(argv[0]);
         EXPECT_EQ(HnpCmdInstall(argc, argv), 0);
-        EXPECT_EQ(access(HNP_BASE_PATH"/hnp/huawei/bin/outt", F_OK), 0);
-        EXPECT_EQ(access(HNP_BASE_PATH"/hnp/huawei/bin/out2", F_OK), 0);
+        EXPECT_EQ(access(HNP_BASE_PATH"/hnp/test/bin/outt", F_OK), 0);
+        EXPECT_EQ(access(HNP_BASE_PATH"/hnp/test/bin/out2", F_OK), 0);
     }
 
     HnpDeleteFolder(HNP_BASE_PATH);
     HnpPackWithCfgDelete();
 
     GTEST_LOG_(INFO) << "Hnp_Install_006 end";
+}
+
+/**
+* @tc.name: Hnp_Install_007
+* @tc.desc:  Verify set Arg if HnpCmdInstall succeed.
+* @tc.type: FUNC
+* @tc.require:issueI9BU5F
+* @tc.author:
+*/
+HWTEST(HnpInstallerTest, Hnp_Install_007, TestSize.Level0)
+{
+    GTEST_LOG_(INFO) << "Hnp_Install_007 start";
+
+    // clear resource before test
+    remove("hnp_out/sample.hnp");
+    remove("hnp_sample/bin/out");
+    rmdir("hnp_sample/bin");
+    rmdir("hnp_sample");
+    rmdir("hnp_out");
+    HnpDeleteFolder(HNP_BASE_PATH);
+
+    EXPECT_EQ(mkdir(HNP_BASE_PATH, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
+    HnpPackWithBin();
+
+    char arg1[] = "hnp";
+    char arg2[] = "install";
+
+    { // src dir path is invalid
+        char arg3[] = "10000";
+        char arg4[] = "./hnp_in";
+        char arg5[] = "null";
+        char* argv[] = {arg1, arg2, arg3, arg4, arg5};
+        int argc = sizeof(argv) / sizeof(argv[0]);
+
+        EXPECT_EQ(HnpCmdInstall(argc, argv), HNP_ERRNO_INSTALLER_GET_REALPATH_FAILED);
+    }
+    { // dst dir path is invalid
+        char arg3[] = "10001";
+        char arg4[] = "./hnp_out";
+        char arg5[] = "null";
+        char* argv[] = {arg1, arg2, arg3, arg4, arg5};
+        int argc = sizeof(argv) / sizeof(argv[0]);
+
+        EXPECT_EQ(HnpCmdInstall(argc, argv), HNP_ERRNO_INSTALLER_GET_REALPATH_FAILED);
+    }
+    { // ok
+        char arg3[] = "10000";
+        char arg4[] = "./hnp_out";
+        char arg5[] = "null";
+        char* argv[] = {arg1, arg2, arg3, arg4, arg5};
+        int argc = sizeof(argv) / sizeof(argv[0]);
+
+        EXPECT_EQ(HnpCmdInstall(argc, argv), 0);
+        EXPECT_EQ(access(HNP_BASE_PATH"/hnp_public/bin/out", F_OK), 0);
+    }
+
+    HnpDeleteFolder(HNP_BASE_PATH);
+    HnpPackWithBinDelete();
+
+    GTEST_LOG_(INFO) << "Hnp_Install_007 end";
 }
 
 /**
@@ -562,26 +616,6 @@ HWTEST(HnpInstallerTest, Hnp_UnInstall_001, TestSize.Level0)
         int argc = sizeof(argv) / sizeof(argv[0]);
 
         EXPECT_EQ(HnpCmdUnInstall(argc, argv), HNP_ERRNO_INSTALLER_ARGV_UID_INVALID);
-    }
-    { // param software name is invalid
-        char arg3[] = "10000";
-        char arg4[] = "sample2";
-        char arg5[] = "1.1";
-        char arg6[] = "null";
-        char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6};
-        int argc = sizeof(argv) / sizeof(argv[0]);
-
-        EXPECT_EQ(HnpCmdUnInstall(argc, argv), HNP_ERRNO_UNINSTALLER_HNP_PATH_NOT_EXIST);
-    }
-    { // param software version is invalid
-        char arg3[] = "10001";
-        char arg4[] = "sample";
-        char arg5[] = "1.3";
-        char arg6[] = "null";
-        char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6};
-        int argc = sizeof(argv) / sizeof(argv[0]);
-
-        EXPECT_EQ(HnpCmdUnInstall(argc, argv), HNP_ERRNO_UNINSTALLER_HNP_PATH_NOT_EXIST);
     }
     { // ok
         char arg3[] = "10000";
@@ -621,7 +655,7 @@ HWTEST(HnpInstallerTest, Hnp_UnInstall_002, TestSize.Level0)
         char arg3[] = "10000";
         char arg4[] = "sample";
         char arg5[] = "1.1";
-        char arg6[] = "huawei";
+        char arg6[] = "test";
         char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6};
         int argc = sizeof(argv) / sizeof(argv[0]);
 
@@ -632,6 +666,61 @@ HWTEST(HnpInstallerTest, Hnp_UnInstall_002, TestSize.Level0)
     HnpPackWithCfgDelete();
 
     GTEST_LOG_(INFO) << "Hnp_UnInstall_002 end";
+}
+
+/**
+* @tc.name: Hnp_UnInstall_003
+* @tc.desc:  Verify set Arg if HnpCmdUnInstall succeed.
+* @tc.type: FUNC
+* @tc.require:issueI9BU5F
+* @tc.author:
+*/
+HWTEST(HnpInstallerTest, Hnp_UnInstall_003, TestSize.Level0)
+{
+    GTEST_LOG_(INFO) << "Hnp_UnInstall_003 start";
+
+    EXPECT_EQ(mkdir(HNP_BASE_PATH, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
+    HnpPackWithBin();
+    HnpInstall();
+
+    char arg1[] = "hnp";
+    char arg2[] = "uninstall";
+
+    { // param software name is invalid
+        char arg3[] = "10000";
+        char arg4[] = "sample2";
+        char arg5[] = "1.1";
+        char arg6[] = "null";
+        char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6};
+        int argc = sizeof(argv) / sizeof(argv[0]);
+
+        EXPECT_EQ(HnpCmdUnInstall(argc, argv), HNP_ERRNO_UNINSTALLER_HNP_PATH_NOT_EXIST);
+    }
+    { // param software version is invalid
+        char arg3[] = "10001";
+        char arg4[] = "sample";
+        char arg5[] = "1.3";
+        char arg6[] = "null";
+        char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6};
+        int argc = sizeof(argv) / sizeof(argv[0]);
+
+        EXPECT_EQ(HnpCmdUnInstall(argc, argv), HNP_ERRNO_UNINSTALLER_HNP_PATH_NOT_EXIST);
+    }
+    { // ok
+        char arg3[] = "10000";
+        char arg4[] = "sample";
+        char arg5[] = "1.1";
+        char arg6[] = "null";
+        char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6};
+        int argc = sizeof(argv) / sizeof(argv[0]);
+
+        EXPECT_EQ(HnpCmdUnInstall(argc, argv), 0);
+    }
+
+    HnpDeleteFolder(HNP_BASE_PATH);
+    HnpPackWithBinDelete();
+
+    GTEST_LOG_(INFO) << "Hnp_UnInstall_003 end";
 }
 
 }
