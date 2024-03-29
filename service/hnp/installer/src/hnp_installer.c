@@ -296,7 +296,7 @@ static int HnpUnInstall(NativeHnpPath *hnpDstPath, const char *versionPath, bool
     return ret;
 }
 
-int HnpGetVersionPathInProgramPath(const char *programPath, char *versionPath)
+static int HnpGetVersionPathInProgramPath(const char *programPath, char *versionPath)
 {
     DIR *dir;
     struct dirent *entry;
