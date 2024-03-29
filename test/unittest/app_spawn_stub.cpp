@@ -199,7 +199,6 @@ pid_t AppSpawnFork(int (*childFunc)(void *arg), void *args)
     if (forkArg == nullptr) {
         return -1;
     }
-    printf("ThreadFunc TestFork args %p forkArg %p\n", args, forkArg);
     forkArg->childFunc = childFunc;
     forkArg->args = args;
     int ret = pthread_create(&thread, nullptr, ThreadFunc, forkArg);
