@@ -483,7 +483,7 @@ int HnpCmdInstall(int argc, char *argv[])
     }
 
     if (strcmp(argv[HNP_INDEX_4], "null") == 0) {
-        ret = sprintf_s(hnpDstPath.hnpBasePath, MAX_FILE_PATH_LEN, "%shnp_public/", dstPath);
+        ret = sprintf_s(hnpDstPath.hnpBasePath, MAX_FILE_PATH_LEN, "%shnppublic/", dstPath);
     } else {
         ret = sprintf_s(hnpDstPath.hnpBasePath, MAX_FILE_PATH_LEN, "%shnp/%s/", dstPath, argv[HNP_INDEX_4]);
     }
@@ -518,7 +518,7 @@ int HnpCmdUnInstall(int argc, char *argv[])
     }
 
     if (strcmp(argv[HNP_INDEX_5], "null") == 0) {
-        ret = sprintf_s(pathTmp, MAX_FILE_PATH_LEN, "hnp_public");
+        ret = sprintf_s(pathTmp, MAX_FILE_PATH_LEN, "hnppublic");
     } else {
         ret = sprintf_s(pathTmp, MAX_FILE_PATH_LEN, "hnp/%s", argv[HNP_INDEX_5]);
     }

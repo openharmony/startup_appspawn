@@ -97,7 +97,7 @@ void HnpPackWithoutBinDelete(void)
     int ret;
 
     ret = remove("hnp_out/sample.hnp");
-    EXPECT_EQ(ret, 0;)
+    EXPECT_EQ(ret, 0);
     EXPECT_EQ(rmdir("hnp_sample"), 0);
     EXPECT_EQ(rmdir("hnp_out"), 0);
 }
@@ -107,6 +107,7 @@ void HnpPackWithBin(void)
     EXPECT_EQ(mkdir("hnp_sample", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
     EXPECT_EQ(mkdir("hnp_sample/bin", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
     FILE *fp = fopen("hnp_sample/bin/out", "wb");
+    EXPECT_NE(fp, nullptr);
     (void)fclose(fp);
     EXPECT_EQ(mkdir("hnp_out", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
     char arg1[] = "hnpcli";
@@ -163,9 +164,8 @@ void HnpPackWithCfg(void)
         "{\"links\":[{\"source\":\"bin/out\",\"target\":\"outt\"},{\"source\":\"bin/out2\","
         "\"target\":\"out2\"}]}}";
     fp = fopen("./hnp.cfg", "w");
-    int whiteLen = (int)fwrite(cfg, sizeof(char), strlen(cfg) + 1, fp);
+    EXPECT_EQ(fwrite(cfg, sizeof(char), strlen(cfg) + 1, fp), strlen(cfg) + 1);
     (void)fclose(fp);
-    EXPECT_EQ(whiteLen, strlen(cfg) + 1);
 
     EXPECT_EQ(HnpCmdPack(argc, argv), 0);
 }
@@ -180,7 +180,8 @@ void HnpPackWithCfgDelete(void)
     EXPECT_EQ(ret, 0);
     ret = remove("hnp_sample/bin/out2");
     EXPECT_EQ(ret, 0);
-    EXPECT_EQ(remove("hnp.cfg"), 0);
+    ret = remove("hnp.cfg");
+    EXPECT_EQ(ret, 0);
     EXPECT_EQ(rmdir("hnp_sample/bin"), 0);
     EXPECT_EQ(rmdir("hnp_sample"), 0);
     EXPECT_EQ(rmdir("hnp_out"), 0);
@@ -290,7 +291,7 @@ HWTEST(HnpInstallerTest, Hnp_Install_001, TestSize.Level0)
         int argc = sizeof(argv) / sizeof(argv[0]);
 
         EXPECT_EQ(HnpCmdInstall(argc, argv), 0);
-        EXPECT_EQ(access(HNP_BASE_PATH"/hnp_public/bin/out", F_OK), 0);
+        EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/bin/out", F_OK), 0);
     }
 
     HnpDeleteFolder(HNP_BASE_PATH);
@@ -334,7 +335,7 @@ HWTEST(HnpInstallerTest, Hnp_Install_002, TestSize.Level0)
         char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6};
         int argc = sizeof(argv) / sizeof(argv[0]);
         EXPECT_EQ(HnpCmdInstall(argc, argv), 0);
-        EXPECT_EQ(access(HNP_BASE_PATH"/hnp_public/bin/out", F_OK), 0);
+        EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/bin/out", F_OK), 0);
     }
 
     HnpDeleteFolder(HNP_BASE_PATH);
@@ -367,7 +368,7 @@ HWTEST(HnpInstallerTest, Hnp_Install_003, TestSize.Level0)
         int argc = sizeof(argv) / sizeof(argv[0]);
 
         EXPECT_EQ(HnpCmdInstall(argc, argv), 0);
-        EXPECT_EQ(access(HNP_BASE_PATH"/hnp_public/bin/out", F_OK), -1);
+        EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/bin/out", F_OK), -1);
         HnpPackWithoutBinDelete();
         HnpDeleteFolder(HNP_BASE_PATH);
     }
@@ -381,7 +382,7 @@ HWTEST(HnpInstallerTest, Hnp_Install_003, TestSize.Level0)
         int argc = sizeof(argv) / sizeof(argv[0]);
 
         EXPECT_EQ(HnpCmdInstall(argc, argv), 0);
-        EXPECT_EQ(access(HNP_BASE_PATH"/hnp_public/bin/out", F_OK), 0);
+        EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/bin/out", F_OK), 0);
         HnpPackWithBinDelete();
     }
     HnpDeleteFolder(HNP_BASE_PATH);
@@ -444,7 +445,7 @@ HWTEST(HnpInstallerTest, Hnp_Install_004, TestSize.Level0)
         char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6};
         int argc = sizeof(argv) / sizeof(argv[0]);
         EXPECT_EQ(HnpCmdInstall(argc, argv), 0);
-        EXPECT_EQ(access(HNP_BASE_PATH"/hnp_public/bin/out", F_OK), 0);
+        EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/bin/out", F_OK), 0);
     }
 
     HnpDeleteFolder(HNP_BASE_PATH);
@@ -478,8 +479,8 @@ HWTEST(HnpInstallerTest, Hnp_Install_005, TestSize.Level0)
         char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6};
         int argc = sizeof(argv) / sizeof(argv[0]);
         EXPECT_EQ(HnpCmdInstall(argc, argv), 0);
-        EXPECT_EQ(access(HNP_BASE_PATH"/hnp_public/bin/outt", F_OK), 0);
-        EXPECT_EQ(access(HNP_BASE_PATH"/hnp_public/bin/out2", F_OK), 0);
+        EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/bin/outt", F_OK), 0);
+        EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/bin/out2", F_OK), 0);
     }
 
     HnpDeleteFolder(HNP_BASE_PATH);
@@ -574,7 +575,7 @@ HWTEST(HnpInstallerTest, Hnp_Install_007, TestSize.Level0)
         int argc = sizeof(argv) / sizeof(argv[0]);
 
         EXPECT_EQ(HnpCmdInstall(argc, argv), 0);
-        EXPECT_EQ(access(HNP_BASE_PATH"/hnp_public/bin/out", F_OK), 0);
+        EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/bin/out", F_OK), 0);
     }
 
     HnpDeleteFolder(HNP_BASE_PATH);
