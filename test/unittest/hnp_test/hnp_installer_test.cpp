@@ -139,6 +139,8 @@ void HnpPackWithBinDelete(void)
 void HnpPackWithCfg(void)
 {
     FILE *fp;
+    int whiteLen;
+
     EXPECT_EQ(mkdir("hnp_sample", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
     EXPECT_EQ(mkdir("hnp_sample/bin", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
     EXPECT_EQ(mkdir("hnp_out", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
@@ -164,8 +166,9 @@ void HnpPackWithCfg(void)
         "{\"links\":[{\"source\":\"bin/out\",\"target\":\"outt\"},{\"source\":\"bin/out2\","
         "\"target\":\"out2\"}]}}";
     fp = fopen("./hnp.cfg", "w");
-    EXPECT_EQ(fwrite(cfg, sizeof(char), strlen(cfg) + 1, fp), strlen(cfg) + 1);
+    whiteLen = fwrite(cfg, sizeof(char), strlen(cfg) + 1, fp);
     (void)fclose(fp);
+    EXPECT_EQ(whiteLen, strlen(cfg) + 1);
 
     EXPECT_EQ(HnpCmdPack(argc, argv), 0);
 }

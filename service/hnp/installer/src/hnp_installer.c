@@ -50,33 +50,35 @@ static int HnpGenerateSoftLinkAllByJson(const char *installPath, const char *dst
     char uninstallFile[MAX_FILE_PATH_LEN];
     NativeBinLink *currentLink = hnpHead->links;
     char *fileName;
-    int ret;
+    char *fileNameTmp;
 
     if (access(dstPath, F_OK) != 0) {
-        ret = mkdir(dstPath, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+        int ret = mkdir(dstPath, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
         if ((ret != 0) && (errno != EEXIST)) {
             HNP_LOGE("mkdir [%s] unsuccess, ret=%d, errno:%d", dstPath, ret, errno);
+            return HNP_ERRNO_BASE_MKDIR_PATH_FAILED;
         }
     }
 
     for (unsigned int i = 0; i < hnpHead->linkNum; i++) {
-        ret = sprintf_s(srcFile, MAX_FILE_PATH_LEN, "%s%s", installPath, currentLink->source);
+        int ret = sprintf_s(srcFile, MAX_FILE_PATH_LEN, "%s%s", installPath, currentLink->source);
         if (ret < 0) {
             HNP_LOGE("sprintf install bin src file unsuccess.");
             return HNP_ERRNO_BASE_SPRINTF_FAILED;
         }
         /* 如果target为空则使用源二进制名称 */
         if (strcmp(currentLink->target, "") == 0) {
-            fileName = strrchr(currentLink->source, '/');
-            if (fileName == NULL) {
-                fileName = currentLink->source;
-            } else {
-                fileName++;
-            }
-            ret = sprintf_s(dstFile, MAX_FILE_PATH_LEN, "%s%s", dstPath, fileName);
+            fileNameTmp = currentLink->source;
         } else {
-            ret = sprintf_s(dstFile, MAX_FILE_PATH_LEN, "%s%s", dstPath, currentLink->target);
+            fileNameTmp = currentLink->target;
         }
+        fileName = strrchr(fileNameTmp, '/');
+        if (fileName == NULL) {
+            fileName = fileNameTmp;
+        } else {
+            fileName++;
+        }
+        ret = sprintf_s(dstFile, MAX_FILE_PATH_LEN, "%s%s", dstPath, fileName);
         if (ret < 0) {
             HNP_LOGE("sprintf install bin dst file unsuccess.");
             return HNP_ERRNO_BASE_SPRINTF_FAILED;
@@ -90,7 +92,7 @@ static int HnpGenerateSoftLinkAllByJson(const char *installPath, const char *dst
         currentLink++;
     }
 
-    ret = sprintf_s(uninstallFile, MAX_FILE_PATH_LEN, "%s"HNP_UNSTALL_INFO_FILE, installPath);
+    int ret = sprintf_s(uninstallFile, MAX_FILE_PATH_LEN, "%s"HNP_UNSTALL_INFO_FILE, installPath);
     if (ret < 0) {
         HNP_LOGE("sprintf install info file unsuccess.");
         return HNP_ERRNO_BASE_SPRINTF_FAILED;
@@ -117,7 +119,7 @@ static int HnpGenerateSoftLinkAll(const char *installPath, const char *dstPath)
     }
 
     if ((dir = opendir(srcPath)) == NULL) {
-        HNP_LOGE("generate soft link opendir:%s unsuccess", srcPath);
+        HNP_LOGI("soft link bin file:%s not exist", srcPath);
         return 0;
     }
 
@@ -125,6 +127,7 @@ static int HnpGenerateSoftLinkAll(const char *installPath, const char *dstPath)
         ret = mkdir(dstPath, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
         if ((ret != 0) && (errno != EEXIST)) {
             HNP_LOGE("mkdir [%s] unsuccess, ret=%d, errno:%d", dstPath, ret, errno);
+            return HNP_ERRNO_BASE_MKDIR_PATH_FAILED;
         }
     }
 

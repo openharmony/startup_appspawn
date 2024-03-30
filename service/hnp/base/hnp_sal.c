@@ -25,7 +25,7 @@
 extern "C" {
 #endif
 
-static int HnpPidGetByProgramName(const char *programName, int *pids, int *count)
+static int HnpPidGetByBinName(const char *programName, int *pids, int *count)
 {
     FILE *cmdOutput;
     char cmdBuffer[BUFFER_SIZE];
@@ -57,7 +57,7 @@ static int HnpPidGetByProgramName(const char *programName, int *pids, int *count
     return 0;
 }
 
-int HnpProgramRunCheck(const char *programName, const char *runPath)
+int HnpProgramRunCheck(const char *binName, const char *runPath)
 {
     int ret;
     int pids[MAX_PROCESSES];
@@ -65,15 +65,15 @@ int HnpProgramRunCheck(const char *programName, const char *runPath)
     char command[HNP_COMMAND_LEN];
     char cmdBuffer[BUFFER_SIZE];
 
-    HNP_LOGI("program[%s] running check", programName);
+    HNP_LOGI("process[%s] running check", binName);
 
     /* 对programName进行空格过滤，防止外部命令注入 */
-    if (strchr(programName, ' ') != NULL) {
-        HNP_LOGE("hnp uninstall program name[%s] inval", programName);
+    if (strchr(binName, ' ') != NULL) {
+        HNP_LOGE("hnp uninstall program name[%s] inval", binName);
         return HNP_ERRNO_BASE_PARAMS_INVALID;
     }
 
-    ret = HnpPidGetByProgramName(programName, pids, &count);
+    ret = HnpPidGetByBinName(binName, pids, &count);
     if ((ret != 0) || (count == 0)) { // 返回非0代表未找到进程对应的pid
         return 0;
     }
@@ -92,7 +92,7 @@ int HnpProgramRunCheck(const char *programName, const char *runPath)
         while (fgets(cmdBuffer, sizeof(cmdBuffer), cmdOutput) != NULL) {
             if (strstr(cmdBuffer, runPath) != NULL) {
                 pclose(cmdOutput);
-                HNP_LOGE("hnp install program[%s] is running now", programName);
+                HNP_LOGE("hnp install process[%s] is running now", binName);
                 return HNP_ERRNO_PROGRAM_RUNNING;
             }
         }
