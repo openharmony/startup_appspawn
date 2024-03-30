@@ -44,13 +44,15 @@ int HnpShowHelp(int argc, char *argv[])
 
     HNP_LOGI("\r\nusage:hnp <command> <args>\r\n"
         "\r\nThese are common hnp commands used in various situations:\r\n"
+        "\r\nIf the [package name] is null, it represents a public install/nuninstall,\r\n"
+        "    or it represents a private install/nuninstall\r\n"
         "\r\ninstall:    install native software"
-        "\r\n            hnp install [user id] [hnp package dir] <-f>\r\n"
+        "\r\n            hnp install [user id] [hnp package dir] [package name] <-f>\r\n"
         "\r\nuninstall:    uninstall native software"
-        "\r\n              hnp uninstall [user id] [software name] [software version]\r\n"
+        "\r\n              hnp uninstall [user id] [software name] [software version] [package name]\r\n"
         "\r\nfor example:\r\n"
-        "\r\n    hnp install 1000 /usr1/hnp -f\r\n"
-        "    hnp uninstall 1000 native_sample 1.1\r\n");
+        "\r\n    hnp install 1000 /usr1/hnp wechat -f\r\n"
+        "    hnp uninstall 1000 native_sample 1.1 wechat\r\n");
 
     return 0;
 }

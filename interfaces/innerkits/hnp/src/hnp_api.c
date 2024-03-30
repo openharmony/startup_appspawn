@@ -81,12 +81,12 @@ static int StartHnpProcess(char *const argv[], char *const apcEnv[])
     return exitVal;
 }
 
-int NativeInstallHnp(const char *userId, const char *hnpPath, Bool isForce)
+int NativeInstallHnp(const char *userId, const char *hnpPath, const char *packageName, Bool isForce)
 {
     char *argv[MAX_ARGV_NUM] = {0};
     char *apcEnv[MAX_ENV_NUM] = {0};
 
-    if ((userId == NULL) || (hnpPath == NULL)) {
+    if ((userId == NULL) || (hnpPath == NULL))) {
         return HNP_API_ERRNO_PARAM_INVALID;
     }
 
@@ -98,10 +98,20 @@ int NativeInstallHnp(const char *userId, const char *hnpPath, Bool isForce)
     argv[HNP_INDEX_2] = (char*)userId;
     argv[HNP_INDEX_3] = (char*)hnpPath;
 
+    if (packageName == NULL) {
+        argv[HNP_INDEX_4] = "null";
+    } else {
+        argv[HNP_INDEX_4] = (char*)packageName;
+    }
+
+    if (isForce == TRUE) {
+        argv[HNP_INDEX_5] = "-f";
+    }
+
     return StartHnpProcess(argv, apcEnv);
 }
 
-int NativeUnInstallHnp(const char *userId, const char *hnpName, const char *hnpVersion)
+int NativeUnInstallHnp(const char *userId, const char *hnpName, const char *hnpVersion, const char *packageName)
 {
     char *argv[MAX_ARGV_NUM] = {0};
     char *apcEnv[MAX_ENV_NUM] = {0};
@@ -118,7 +128,13 @@ int NativeUnInstallHnp(const char *userId, const char *hnpName, const char *hnpV
     argv[HNP_INDEX_2] = (char*)userId;
     argv[HNP_INDEX_3] = (char*)hnpName;
     argv[HNP_INDEX_4] = (char*)hnpVersion;
-    
+
+    if (packageName == NULL) {
+        argv[HNP_INDEX_5] = "null";
+    } else {
+        argv[HNP_INDEX_5] = (char*)packageName;
+    }
+
     return StartHnpProcess(argv, apcEnv);
 }
 
