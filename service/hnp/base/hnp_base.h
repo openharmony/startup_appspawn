@@ -199,7 +199,7 @@ int HnpReadFromZipHead(const char *zipFile, NativeHnpHead **hnpHead);
 
 int HnpSymlink(const char *srcFile, const char *dstFile);
 
-int HnpProgramRunCheck(const char *programName, const char *basePath);
+int HnpProgramRunCheck(const char *programName, const char *runPath);
 
 int HnpDeleteFolder(const char *path);
 

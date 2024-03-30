@@ -57,7 +57,7 @@ static int HnpPidGetByProgramName(const char *programName, int *pids, int *count
     return 0;
 }
 
-int HnpProgramRunCheck(const char *programName, const char *basePath)
+int HnpProgramRunCheck(const char *programName, const char *runPath)
 {
     int ret;
     int pids[MAX_PROCESSES];
@@ -90,7 +90,7 @@ int HnpProgramRunCheck(const char *programName, const char *basePath)
             continue;
         }
         while (fgets(cmdBuffer, sizeof(cmdBuffer), cmdOutput) != NULL) {
-            if (strstr(cmdBuffer, basePath) != NULL) {
+            if (strstr(cmdBuffer, runPath) != NULL) {
                 pclose(cmdOutput);
                 HNP_LOGE("hnp install program[%s] is running now", programName);
                 return HNP_ERRNO_PROGRAM_RUNNING;

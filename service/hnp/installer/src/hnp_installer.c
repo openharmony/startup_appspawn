@@ -192,7 +192,7 @@ static int HnpInstall(const char *hnpFile, NativeHnpPath *hnpDstPath, NativeHnpH
     return HnpGenerateSoftLink(hnpDstPath->hnpVersionPath, hnpDstPath->hnpBasePath, hnpHead);
 }
 
-static int HnpProgramRunCheckWithFile(const char *file, NativeHnpPath *hnpDstPath)
+static int HnpProgramRunCheckWithFile(const char *file, NativeHnpPath *hnpDstPath, const char *versionPath)
 {
     int ret;
     NativeHnpHead *hnpHead;
@@ -214,9 +214,9 @@ static int HnpProgramRunCheckWithFile(const char *file, NativeHnpPath *hnpDstPat
             } else {
                 fileName++;
             }
-            ret = HnpProgramRunCheck(fileName, hnpDstPath->hnpBasePath);
+            ret = HnpProgramRunCheck(fileName, versionPath);
         } else {
-            ret = HnpProgramRunCheck(currentLink->target, hnpDstPath->hnpBasePath);
+            ret = HnpProgramRunCheck(currentLink->target, versionPath);
         }
         if (ret != 0) {
             free(hnpHead);
@@ -229,7 +229,7 @@ static int HnpProgramRunCheckWithFile(const char *file, NativeHnpPath *hnpDstPat
     return 0;
 }
 
-static int HnpProgramRunCheckWithPath(const char *path, NativeHnpPath *hnpDstPath)
+static int HnpProgramRunCheckWithPath(const char *path, NativeHnpPath *hnpDstPath, const char *versionPath)
 {
     DIR *dir;
     struct dirent *entry;
@@ -245,7 +245,7 @@ static int HnpProgramRunCheckWithPath(const char *path, NativeHnpPath *hnpDstPat
             continue;
         }
         /* 查询软件是否正在运行 */
-        ret = HnpProgramRunCheck(entry->d_name, hnpDstPath->hnpBasePath);
+        ret = HnpProgramRunCheck(entry->d_name, versionPath);
         if (ret != 0) {
             closedir(dir);
             return ret;
@@ -277,14 +277,14 @@ static int HnpUnInstall(NativeHnpPath *hnpDstPath, const char *versionPath, bool
         return HNP_ERRNO_BASE_SPRINTF_FAILED;
     }
     if (access(uninstallFile, F_OK) == 0) {
-        ret = HnpProgramRunCheckWithFile(uninstallFile, hnpDstPath);
+        ret = HnpProgramRunCheckWithFile(uninstallFile, hnpDstPath, versionPath);
     } else {
         ret = sprintf_s(binPath, MAX_FILE_PATH_LEN, "%s/bin", versionPath);
         if (ret < 0) {
             HNP_LOGE("sprintf uninstall info file unsuccess.");
             return HNP_ERRNO_BASE_SPRINTF_FAILED;
         }
-        ret = HnpProgramRunCheckWithPath(binPath, hnpDstPath);
+        ret = HnpProgramRunCheckWithPath(binPath, hnpDstPath, versionPath);
     }
 
     if (ret != 0) {
