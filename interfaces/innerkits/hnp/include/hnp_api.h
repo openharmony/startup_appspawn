@@ -45,7 +45,7 @@ typedef enum {
  *
  * @return 0:success;other means failure.
  */
-int NativeInstallHnp(const char *userId, const char *hnpPath, Bool isForce);
+int NativeInstallHnp(const char *userId, const char *hnpPath, const char *packageName, Bool isForce);
 
 /**
  * Uninstall native software package.
@@ -56,7 +56,7 @@ int NativeInstallHnp(const char *userId, const char *hnpPath, Bool isForce);
  *
  * @return 0:success;other means failure.
  */
-int NativeUnInstallHnp(const char *userId, const char *hnpName, const char *hnpVersion);
+int NativeUnInstallHnp(const char *userId, const char *hnpName, const char *hnpVersion, const char *packageName);
 
 #ifdef __cplusplus
 }

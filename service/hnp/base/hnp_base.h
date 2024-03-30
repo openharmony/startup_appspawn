@@ -34,6 +34,7 @@ extern "C" {
 #define HNP_VERSION_LEN 32
 #define BUFFER_SIZE 1024
 #define HNP_COMMAND_LEN 128
+#define MAX_PROCESSES 32
 
 #ifdef _WIN32
 #define DIR_SPLIT_SYMBOL '\\'
@@ -172,6 +173,15 @@ enum {
 // 0x801118 删除目录失败
 #define HNP_ERRNO_BASE_UNLINK_FAILED            HNP_ERRNO_COMMON(HNP_MID_BASE, 0x18)
 
+// 0x801119 对应进程不存在
+#define HNP_ERRNO_BASE_PROGRAM_NOT_FOUND        HNP_ERRNO_COMMON(HNP_MID_BASE, 0x19)
+
+// 0x80111a 进程超过最大值
+#define HNP_ERRNO_BASE_PROGRAM_NUM_OVERSIZE     HNP_ERRNO_COMMON(HNP_MID_BASE, 0x1a)
+
+// 0x80111b 创建路径失败
+#define HNP_ERRNO_BASE_MKDIR_PATH_FAILED        HNP_ERRNO_COMMON(HNP_MID_BASE, 0x1b)
+
 int GetFileSizeByHandle(FILE *file, int *size);
 
 int ReadFileToStream(const char *filePath, char **stream, int *streamLen);
@@ -192,11 +202,13 @@ int HnpReadFromZipHead(const char *zipFile, NativeHnpHead **hnpHead);
 
 int HnpSymlink(const char *srcFile, const char *dstFile);
 
-int HnpProgramRunCheck(const char *programName);
+int HnpProgramRunCheck(const char *binName, const char *runPath);
 
 int HnpDeleteFolder(const char *path);
 
 int HnpCreateFolder(const char* path);
+
+int HnpWriteInfoToFile(const char* filePath, char *buff, int len);
 
 #define HNP_LOGI(args...) \
     HnpLogPrintf(HNP_LOG_INFO, "HNP", ##args)

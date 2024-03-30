@@ -130,6 +130,25 @@ int ReadFileToStreamBySize(const char *filePath, char **stream, int readSize)
     return 0;
 }
 
+int HnpWriteInfoToFile(const char* filePath, char *buff, int len)
+{
+    FILE *fp = fopen(filePath, "w");
+    if (fp == NULL) {
+        HNP_LOGE("open file:%s unsuccess!", filePath);
+        return HNP_ERRNO_BASE_FILE_OPEN_FAILED;
+    }
+    int writeLen = fwrite(buff, sizeof(char), len, fp);
+    if (writeLen != len) {
+        HNP_LOGE("write file:%s unsuccess! len=%d, write=%d", filePath, len, writeLen);
+        (void)fclose(fp);
+        return HNP_ERRNO_BASE_FILE_WRITE_FAILED;
+    }
+
+    (void)fclose(fp);
+
+    return 0;
+}
+
 int GetRealPath(char *srcPath, char *realPath)
 {
     char dstTmpPath[PATH_MAX];
