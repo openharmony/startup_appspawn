@@ -25,6 +25,7 @@ int32_t SetEnvInfo(struct AppSpawnContent_ *content, AppSpawnClient *client)
     int ret = 0;
     OHOS::AppSpawn::ClientSocket::AppProperty *appProperty = &reinterpret_cast<AppSpawnClientExt *>(client)->property;
     std::string appEnvInfo = OHOS::AppSpawn::SandboxUtils::GetExtraInfoByType(appProperty, APPENVLIST_TYPE);
+    APPSPAWN_LOGW("SetEnvInfo: %{public}s", appEnvInfo.c_str());
     if (appEnvInfo.length() == 0) {
         return ret;
     }
@@ -39,5 +40,6 @@ int32_t SetEnvInfo(struct AppSpawnContent_ *content, AppSpawnClient *client)
         ret = setenv(name.c_str(), value.c_str(), 1);
         APPSPAWN_CHECK(ret == 0, return ret, "setenv failed, errno is %{public}d", errno);
     }
+    APPSPAWN_LOGI("SetEnvInfo success");
     return ret;
 }

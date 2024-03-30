@@ -86,6 +86,12 @@ int DoStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client, char *l
         content->handleInternetPermission(client);
     }
 
+    if (content->setEnvInfo) {
+        ret = content->setEnvInfo(content, client);
+        APPSPAWN_CHECK(ret == 0, NotifyResToParent(content, client, ret);
+            return ret, "Failed to setEnvInfo");
+    }
+
     if (content->setAppSandbox) {
         ret = content->setAppSandbox(content, client);
         APPSPAWN_CHECK(ret == 0, NotifyResToParent(content, client, ret);
@@ -127,12 +133,6 @@ int DoStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client, char *l
         ret = content->setCapabilities(content, client);
         APPSPAWN_CHECK(ret == 0, NotifyResToParent(content, client, ret);
             return ret, "Failed to setCapabilities");
-    }
-
-    if (content->setEnvInfo) {
-        ret = content->setEnvInfo(content, client);
-        APPSPAWN_CHECK(ret == 0, NotifyResToParent(content, client, ret);
-            return ret, "Failed to setEnvInfo");
     }
 
     if (content->waitForDebugger) {
