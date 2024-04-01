@@ -70,7 +70,7 @@ void LoadAppSandboxConfig(AppSpawnContent *content)
     content->sandboxNsFlags = SandboxUtils::GetSandboxNsFlags(content->isNweb);
 }
 
-int32_t SetAppSandboxProperty(struct AppSpawnContent_ *content, AppSpawnClient *client)
+int32_t SetAppSandboxProperty(struct AppSpawnContent *content, AppSpawnClient *client)
 {
     APPSPAWN_CHECK(client != NULL, return -1, "Invalid appspwn client");
     AppSpawnClientExt *clientExt = reinterpret_cast<AppSpawnClientExt *>(client);

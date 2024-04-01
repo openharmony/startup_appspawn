@@ -15,18 +15,45 @@ import("//base/startup/appspawn/appspawn.gni")
 import("//build/test.gni")
 
 ohos_executable("AppSpawnTest") {
-  sources = [ "${appspawn_path}/test/moduletest/appspawn_test_cmd.cpp" ]
+  sources = [
+    "${appspawn_path}/test/moduletest/appspawn_test_cmder.cpp",
+    "${appspawn_path}/test/moduletest/appspawn_test_main.cpp",
+    "${appspawn_path}/util/src/appspawn_utils.c",
+  ]
 
-  configs = [ "${appspawn_path}:appspawn_config" ]
+  include_dirs = [
+    "${appspawn_path}",
+    "${appspawn_path}/common",
+    "${appspawn_path}/standard",
+    "${appspawn_path}/modules/modulemgr",
+    "${appspawn_path}/modules/ace_adapter",
+    "${appspawn_path}/modules/common",
+    "${appspawn_path}/modules/sandbox",
+    "${appspawn_path}/test/moduletest/threadpool",
+    "${appspawn_innerkits_path}/include",
+    "${appspawn_innerkits_path}/client",
+    "${appspawn_innerkits_path}/permission",
+    "${appspawn_innerkits_path}/module_engine/include",
+    "${appspawn_path}/test/mock",
+    "${appspawn_path}/test/unittest",
+    "${appspawn_path}/util/include",
+  ]
 
-  deps = [ "${appspawn_path}/interfaces/innerkits:appspawn_socket_client" ]
+  deps = [
+    "${appspawn_innerkits_path}/client:appspawn_client",
+    "${appspawn_path}/test/moduletest/threadpool:libappspawn_threadpool",
+  ]
 
   external_deps = [
+    "cJSON:cjson",
     "c_utils:utils",
+    "config_policy:configpolicy_util",
     "hilog:libhilog",
     "init:libbegetutil",
     "zlib:libz",
   ]
+  subsystem_name = "${subsystem_name}"
+  part_name = "${part_name}"
 }
 
 ohos_moduletest("AppSpawnModuleTest") {
@@ -35,39 +62,49 @@ ohos_moduletest("AppSpawnModuleTest") {
   sources = [
     "${appspawn_path}/test/moduletest/appspawn_client_test.cpp",
     "${appspawn_path}/test/moduletest/appspawn_module_test.cpp",
+    "${appspawn_path}/test/moduletest/appspawn_test_cmder.cpp",
+    "${appspawn_path}/util/src/appspawn_utils.c",
   ]
 
   include_dirs = [
-    "//commonlibrary/c_utils/base/include",
-    "//third_party/zlib/contrib/minizip",
-    "//third_party/zlib",
-  ]
-
-  configs = [
-    "${appspawn_path}:appspawn_config",
-    "${ability_runtime_path}/services/appmgr:appmgr_config",
+    "${appspawn_path}",
+    "${appspawn_path}/common",
+    "${appspawn_path}/standard",
+    "${appspawn_path}/modules/modulemgr",
+    "${appspawn_path}/modules/ace_adapter",
+    "${appspawn_path}/modules/common",
+    "${appspawn_path}/modules/sandbox",
+    "${appspawn_path}/test/moduletest/threadpool",
+    "${appspawn_innerkits_path}/include",
+    "${appspawn_innerkits_path}/client",
+    "${appspawn_innerkits_path}/permission",
+    "${appspawn_innerkits_path}/module_engine/include",
+    "${appspawn_path}/test/mock",
+    "${appspawn_path}/test/unittest",
+    "${appspawn_path}/util/include",
   ]
 
   deps = [
-    "${ability_runtime_path}/services/appmgr:libappms",
-    "${appspawn_path}/interfaces/innerkits:appspawn_socket_client",
+    "${appspawn_innerkits_path}/client:appspawn_client",
     "//third_party/googletest:gtest_main",
   ]
 
   external_deps = [
-    "bundle_framework:appexecfwk_base",
+    "cJSON:cjson",
     "c_utils:utils",
+    "config_policy:configpolicy_util",
     "hilog:libhilog",
     "init:libbegetutil",
   ]
+  subsystem_name = "${subsystem_name}"
+  part_name = "${part_name}"
 }
 
 group("moduletest") {
   testonly = true
-
-  deps = [ ":AppSpawnModuleTest" ]
+  deps = [
+    ":AppSpawnModuleTest",
+    ":AppSpawnTest",
+  ]
   deps += [ "hnp_sample:hnpsample" ]
-  if (appspawn_test_cmd) {
-    deps += [ ":AppSpawnTest" ]
-  }
 }

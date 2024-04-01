@@ -249,7 +249,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_10, TestSize.Level0)
 HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_012, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_012 start";
-    AppSpawnContent_ appContent = {0};
+    AppSpawnContent appContent = {0};
     AppSpawnClient appClient = {0};
     pid_t pid = -1;
     AppSandboxArg *sandboxArg = (AppSandboxArg *)malloc(sizeof(AppSandboxArg));

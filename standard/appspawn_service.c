@@ -16,7 +16,6 @@
 #include "appspawn_service.h"
 #include "appspawn_adapter.h"
 #include "appspawn_server.h"
-#include "appspawn_msg.h"
 
 #include <fcntl.h>
 #include <stdlib.h>
@@ -50,7 +49,6 @@
 #define USER_ID_SIZE 4
 
 static AppSpawnContentExt *g_appSpawnContent = NULL;
-static const uint32_t EXTRAINFO_TOTAL_LENGTH_MAX = 32 * 1024;
 
 static int AppInfoHashNodeCompare(const HashNode *node1, const HashNode *node2)
 {
@@ -140,6 +138,11 @@ static void OnClose(const TaskHandle taskHandle)
     APPSPAWN_CHECK(client != NULL, return, "Invalid client");
     APPSPAWN_LOGI("OnClose %{public}d processName = %{public}s",
         client->client.id, client->property.processName);
+    if (client->receiverCtx.incompleteMsg) {
+        DeleteAppSpawnMsg(client->receiverCtx.incompleteMsg);
+        client->receiverCtx.incompleteMsg = NULL;
+        client->receiverCtx.msgRecvLen = 0;
+    }
     if (client->property.extraInfo.data != NULL) {
         free(client->property.extraInfo.data);
         client->property.extraInfo.totalLength = 0;
@@ -161,14 +164,15 @@ static void SendMessageComplete(const TaskHandle taskHandle, BufferHandle handle
     }
 }
 
-static int SendResponse(AppSpawnClientExt *client, const char *buff, size_t buffSize)
+static int SendResponse(AppSpawnClientExt *client, int result, pid_t pid)
 {
-    uint32_t bufferSize = buffSize;
+    uint32_t bufferSize = sizeof(AppSpawnResponseMsg);
     BufferHandle handle = LE_CreateBuffer(LE_GetDefaultLoop(), bufferSize);
-    char *buffer = (char *)LE_GetBufferInfo(handle, NULL, &bufferSize);
-    int ret = memcpy_s(buffer, bufferSize, buff, buffSize);
-    APPSPAWN_CHECK(ret == 0, return -1, "Failed to memcpy_s bufferSize");
-    return LE_Send(LE_GetDefaultLoop(), client->stream, handle, buffSize);
+    AppSpawnResponseMsg *buffer = (AppSpawnResponseMsg *)LE_GetBufferInfo(handle, NULL, &bufferSize);
+    APPSPAWN_CHECK(buffer != NULL, return -1, "Failed to get buffer");
+    buffer->result.result = result;
+    buffer->result.pid = pid;
+    return LE_Send(LE_GetDefaultLoop(), client->stream, handle, bufferSize);
 }
 
 #ifndef APPSPAWN_TEST
@@ -436,41 +440,6 @@ static void CheckColdAppEnabled(AppSpawnClientExt *appProperty)
     }
 }
 
-static bool ReceiveRequestDataToExtraInfo(const TaskHandle taskHandle, AppSpawnClientExt *client,
-    const uint8_t *buffer, uint32_t buffLen)
-{
-    if (client->property.extraInfo.totalLength) {
-        ExtraInfo *extraInfo = &client->property.extraInfo;
-        if (extraInfo->savedLength == 0) {
-            extraInfo->data = (char *)malloc(extraInfo->totalLength);
-            APPSPAWN_CHECK(extraInfo->data != NULL, LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
-                return false, "ReceiveRequestData: malloc extraInfo failed %{public}u", extraInfo->totalLength);
-        }
-
-        uint32_t saved = extraInfo->savedLength;
-        uint32_t total = extraInfo->totalLength;
-        char *data = extraInfo->data;
-
-        APPSPAWN_LOGI("Receiving extraInfo: (%{public}u saved + %{public}u incoming) / %{public}u total",
-            saved, buffLen, total);
-
-        APPSPAWN_CHECK((total - saved) >= buffLen, LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
-            return false, "ReceiveRequestData: too many data for extraInfo %{public}u ", buffLen);
-
-        int ret = memcpy_s(data + saved, buffLen, buffer, buffLen);
-        APPSPAWN_CHECK(ret == 0, LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
-            return false, "ReceiveRequestData: memcpy extraInfo failed");
-
-        extraInfo->savedLength += buffLen;
-        if (extraInfo->savedLength < extraInfo->totalLength) {
-            return false;
-        }
-        extraInfo->data[extraInfo->totalLength - 1] = 0;
-        return true;
-    }
-    return true;
-}
-
 static int CheckRequestMsgValid(AppSpawnClientExt *client)
 {
     if (client->property.extraInfo.totalLength >= EXTRAINFO_TOTAL_LENGTH_MAX) {
@@ -485,44 +454,6 @@ static int CheckRequestMsgValid(AppSpawnClientExt *client)
 
     APPSPAWN_LOGE("processname invalid");
     return -1;
-}
-
-APPSPAWN_STATIC bool ReceiveRequestData(const TaskHandle taskHandle, AppSpawnClientExt *client,
-    const uint8_t *buffer, uint32_t buffLen)
-{
-    APPSPAWN_CHECK(buffer != NULL && buffLen > 0, LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
-        return false, "ReceiveRequestData: Invalid buff, bufferLen:%{public}d", buffLen);
-
-    // 1. receive AppParamter
-    if (client->property.extraInfo.totalLength == 0) {
-        APPSPAWN_CHECK(buffLen >= sizeof(client->property), LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
-            return false, "ReceiveRequestData: Invalid buffLen %{public}u", buffLen);
-
-        int ret = memcpy_s(&client->property, sizeof(client->property), buffer, sizeof(client->property));
-        APPSPAWN_CHECK(ret == 0, LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
-            return false, "ReceiveRequestData: memcpy failed %{public}d:%{public}u", ret, buffLen);
-
-        // reset extraInfo
-        client->property.extraInfo.savedLength = 0;
-        client->property.extraInfo.data = NULL;
-
-        // update buffer
-        buffer += sizeof(client->property);
-        buffLen -= sizeof(client->property);
-        ret = CheckRequestMsgValid(client);
-        APPSPAWN_CHECK(ret == 0, LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
-            return false, "Invalid request msg");
-    }
-
-    // 2. check whether extraInfo exist
-    if (client->property.extraInfo.totalLength == 0) { // no extraInfo
-        APPSPAWN_LOGV("ReceiveRequestData: no extraInfo");
-        return true;
-    } else if (buffLen == 0) {
-        APPSPAWN_LOGV("ReceiveRequestData: waiting for extraInfo");
-        return false;
-    }
-    return ReceiveRequestDataToExtraInfo(taskHandle, client, buffer, buffLen);
 }
 
 static int HandleMessage(AppSpawnClientExt *appProperty)
@@ -558,35 +489,29 @@ static int HandleMessage(AppSpawnClientExt *appProperty)
             info->uid = appProperty->property.uid;
             ProcessAppAdd(g_appSpawnContent, info);
         }
-        SendResponse(appProperty, (char *)&appProperty->pid, sizeof(appProperty->pid));
+        SendResponse(appProperty, 0, appProperty->pid);
     } else {
-        SendResponse(appProperty, (char *)&result, sizeof(result));
+        SendResponse(appProperty, result, 0);
     }
     return 0;
 }
 
-static void OnReceiveRequest(const TaskHandle taskHandle, const uint8_t *buffer, uint32_t buffLen)
+static int ProcessRecvMsg(const TaskHandle taskHandle, AppSpawnClientExt *appProperty)
 {
-    AppSpawnClientExt *appProperty = (AppSpawnClientExt *)LE_GetUserData(taskHandle);
-    APPSPAWN_CHECK(appProperty != NULL, LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
-        return, "alloc client Failed");
-
-    if (!ReceiveRequestData(taskHandle, appProperty, buffer, buffLen)) {
-        return;
+    if (CheckRequestMsgValid(appProperty)) {
+        return -1;
     }
-
     if (g_appSpawnContent->content.isNweb) {
         // get render process termination status, only nwebspawn need this logic.
         if (appProperty->property.code == GET_RENDER_TERMINATION_STATUS) {
             int ret = GetProcessTerminationStatus(&appProperty->client);
             RemoveAppInfo(appProperty->property.pid);
-            SendResponse(appProperty, (char *)&ret, sizeof(ret));
-            return;
+            SendResponse(appProperty, ret, 0);
+            return 0;
         }
     }
     APPSPAWN_CHECK(appProperty->property.gidCount <= APP_MAX_GIDS && strlen(appProperty->property.processName) > 0,
-        LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
-        return, "Invalid property %{public}u", appProperty->property.gidCount);
+        return -1, "Invalid property %{public}u", appProperty->property.gidCount);
 
     // special handle bundle name medialibrary and scanner
     HandleSpecial(appProperty);
@@ -596,9 +521,48 @@ static void OnReceiveRequest(const TaskHandle taskHandle, const uint8_t *buffer,
     }
     appProperty->pid = 0;
     CheckColdAppEnabled(appProperty);
-    int ret = HandleMessage(appProperty);
-    if (ret != 0) {
-        LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
+    return HandleMessage(appProperty);
+}
+
+static void OnReceiveRequest(const TaskHandle taskHandle, const uint8_t *buffer, uint32_t buffLen)
+{
+    AppSpawnClientExt *appProperty = (AppSpawnClientExt *)LE_GetUserData(taskHandle);
+    APPSPAWN_CHECK(appProperty != NULL, LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
+        return, "alloc client Failed");
+    APPSPAWN_CHECK(buffLen < MAX_MSG_TOTAL_LENGTH, LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
+        return, "Message too long %{public}u", buffLen);
+
+    uint32_t reminder = 0;
+    uint32_t currLen = 0;
+    AppSpawnMsgNode *message = appProperty->receiverCtx.incompleteMsg; // incomplete msg
+    appProperty->receiverCtx.incompleteMsg = NULL;
+    int ret = 0;
+    do {
+        ret = GetAppSpawnMsgFromBuffer(buffer + currLen, buffLen - currLen,
+            &message, &appProperty->receiverCtx.msgRecvLen, &reminder);
+        APPSPAWN_CHECK_ONLY_EXPER(ret == 0, break);
+
+        if (appProperty->receiverCtx.msgRecvLen != message->msgHeader.msgLen) {  // recv complete msg
+            appProperty->receiverCtx.incompleteMsg = message;
+            message = NULL;
+            break;
+        }
+        appProperty->receiverCtx.msgRecvLen = 0;
+        // change msg to app property and free message
+        ret = ChangeAppSpawnMsg2Property(message, appProperty);
+        message = NULL;
+        if (ret == 0) {
+            ret = ProcessRecvMsg(taskHandle, appProperty);
+        }
+        if (ret != 0) {
+            LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
+            break;
+        }
+        currLen += buffLen - reminder;
+    } while (reminder > 0);
+
+    if (message) {
+        DeleteAppSpawnMsg(message);
     }
 }
 
@@ -634,6 +598,8 @@ APPSPAWN_STATIC TaskHandle AcceptClient(const LoopHandle loopHandle, const TaskH
     client->property.extraInfo.totalLength = 0;
     client->property.extraInfo.savedLength = 0;
     client->property.extraInfo.data = NULL;
+    client->receiverCtx.msgRecvLen = 0;
+    client->receiverCtx.incompleteMsg = NULL;
     APPSPAWN_LOGI("OnConnection client fd %{public}d Id %{public}d", LE_GetSocketFd(stream), client->client.id);
     return stream;
 }
@@ -645,7 +611,7 @@ static int OnConnection(const LoopHandle loopHandle, const TaskHandle server)
     return 0;
 }
 
-static void NotifyResToParent(struct AppSpawnContent_ *content, AppSpawnClient *client, int result)
+static void NotifyResToParent(struct AppSpawnContent *content, AppSpawnClient *client, int result)
 {
     AppSpawnClientExt *appProperty = (AppSpawnClientExt *)client;
     int fd = appProperty->fd[1];

@@ -16,10 +16,12 @@ import("//build/ohos.gni")
 config("appspawn_config") {
   visibility = [ "./*" ]
   include_dirs = [
+    "${appspawn_path}",
     "common",
     "standard",
     "adapter",
     "interfaces/innerkits/include",
+    "interfaces/innerkits_new/include",
     "util/include",
     "//third_party/json/include",
   ]
@@ -61,6 +63,7 @@ if (!defined(ohos_lite)) {
       "ability_runtime:runtime",
       "access_token:libtoken_setproc",
       "ace_engine:ace_forward_compatibility",
+      "cJSON:cjson",
       "c_utils:utils",
       "common_event_service:cesfwk_innerkits",
       "config_policy:configpolicy_util",
@@ -132,6 +135,7 @@ if (!defined(ohos_lite)) {
       "${appspawn_path}/adapter/appspawn_sandbox.cpp",
       "${appspawn_path}/common/appspawn_server.c",
       "${appspawn_path}/interfaces/innerkits/src/appspawn_mount_permission.cpp",
+      "${appspawn_path}/standard/appspawn_msgmgr.c",
       "${appspawn_path}/standard/appspawn_process.c",
       "${appspawn_path}/standard/appspawn_service.c",
       "${appspawn_path}/util/src/env_utils.cpp",
@@ -148,10 +152,12 @@ if (!defined(ohos_lite)) {
     }
     configs = [ ":appspawn_config" ]
     ldflags = [ "-Wl,--dynamic-linker,/system/bin/linker64z" ]
+    deps = []
     external_deps = [
       "ability_runtime:appkit_native",
       "access_token:libtoken_setproc",
       "access_token:libtokenid_sdk",
+      "cJSON:cjson",
       "c_utils:utils",
       "config_policy:configpolicy_util",
       "eventhandler:libeventhandler",
@@ -191,7 +197,7 @@ if (!defined(ohos_lite)) {
 
     if (appspawn_report_event) {
       cflags += [ "-DREPORT_EVENT" ]
-      deps = [ "adapter/sysevent:event_reporter" ]
+      deps += [ "adapter/sysevent:event_reporter" ]
     }
 
     subsystem_name = "${subsystem_name}"
