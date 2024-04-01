@@ -50,14 +50,101 @@ using nlohmann::json;
     extern "C" {
 #endif
 TaskHandle AcceptClient(const LoopHandle loopHandle, const TaskHandle server, uint32_t flags);
-bool ReceiveRequestData(const TaskHandle taskHandle, AppSpawnClientExt *appProperty,
-    const uint8_t *buffer, uint32_t buffLen);
 void AddAppInfo(pid_t pid, const char *processName, AppOperateType code);
 void SignalHandler(const struct signalfd_siginfo *siginfo);
 int GetCgroupPath(const AppSpawnAppInfo *appInfo, char *buffer, uint32_t buffLen);
 #ifdef __cplusplus
     }
 #endif
+
+static bool ReceiveRequestDataToExtraInfo(const TaskHandle taskHandle, AppSpawnClientExt *client,
+    const uint8_t *buffer, uint32_t buffLen)
+{
+    if (client->property.extraInfo.totalLength) {
+        ExtraInfo *extraInfo = &client->property.extraInfo;
+        if (extraInfo->savedLength == 0) {
+            extraInfo->data = (char *)malloc(extraInfo->totalLength);
+            APPSPAWN_CHECK(extraInfo->data != NULL, LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
+                return false, "ReceiveRequestData: malloc extraInfo failed %{public}u", extraInfo->totalLength);
+        }
+
+        uint32_t saved = extraInfo->savedLength;
+        uint32_t total = extraInfo->totalLength;
+        char *data = extraInfo->data;
+
+        APPSPAWN_LOGI("Receiving extraInfo: (%{public}u saved + %{public}u incoming) / %{public}u total",
+            saved, buffLen, total);
+
+        APPSPAWN_CHECK((total - saved) >= buffLen, LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
+            return false, "ReceiveRequestData: too many data for extraInfo %{public}u ", buffLen);
+
+        int ret = memcpy_s(data + saved, buffLen, buffer, buffLen);
+        APPSPAWN_CHECK(ret == 0, LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
+            return false, "ReceiveRequestData: memcpy extraInfo failed");
+
+        extraInfo->savedLength += buffLen;
+        if (extraInfo->savedLength < extraInfo->totalLength) {
+            return false;
+        }
+        extraInfo->data[extraInfo->totalLength - 1] = 0;
+        return true;
+    }
+    return true;
+}
+
+static int CheckRequestMsgValid(AppSpawnClientExt *client)
+{
+    if (client->property.extraInfo.totalLength >= EXTRAINFO_TOTAL_LENGTH_MAX) {
+        APPSPAWN_LOGE("extrainfo total length invalid,len: %{public}d", client->property.extraInfo.totalLength);
+        return -1;
+    }
+    for (int i = 0; i < APP_LEN_PROC_NAME; i++) {
+        if (client->property.processName[i] == '\0') {
+            return 0;
+        }
+    }
+
+    APPSPAWN_LOGE("processname invalid");
+    return -1;
+}
+
+bool ReceiveRequestData(const TaskHandle taskHandle, AppSpawnClientExt *client,
+    const uint8_t *buffer, uint32_t buffLen)
+{
+    APPSPAWN_CHECK(buffer != NULL && buffLen > 0, LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
+        return false, "ReceiveRequestData: Invalid buff, bufferLen:%{public}d", buffLen);
+
+    // 1. receive AppParamter
+    if (client->property.extraInfo.totalLength == 0) {
+        APPSPAWN_CHECK(buffLen >= sizeof(client->property), LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
+            return false, "ReceiveRequestData: Invalid buffLen %{public}u", buffLen);
+
+        int ret = memcpy_s(&client->property, sizeof(client->property), buffer, sizeof(client->property));
+        APPSPAWN_CHECK(ret == 0, LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
+            return false, "ReceiveRequestData: memcpy failed %{public}d:%{public}u", ret, buffLen);
+
+        // reset extraInfo
+        client->property.extraInfo.savedLength = 0;
+        client->property.extraInfo.data = NULL;
+
+        // update buffer
+        buffer += sizeof(client->property);
+        buffLen -= sizeof(client->property);
+        ret = CheckRequestMsgValid(client);
+        APPSPAWN_CHECK(ret == 0, LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
+            return false, "Invalid request msg");
+    }
+
+    // 2. check whether extraInfo exist
+    if (client->property.extraInfo.totalLength == 0) { // no extraInfo
+        APPSPAWN_LOGV("ReceiveRequestData: no extraInfo");
+        return true;
+    } else if (buffLen == 0) {
+        APPSPAWN_LOGV("ReceiveRequestData: waiting for extraInfo");
+        return false;
+    }
+    return ReceiveRequestDataToExtraInfo(taskHandle, client, buffer, buffLen);
+}
 
 static int MakeDir(const char *dir, mode_t mode)
 {
@@ -152,7 +239,7 @@ void AppSpawnStandardTest::SetUp()
 void AppSpawnStandardTest::TearDown()
 {}
 
-int32_t TestSetAppSandboxProperty(struct AppSpawnContent_ *content, AppSpawnClient *client)
+int32_t TestSetAppSandboxProperty(struct AppSpawnContent *content, AppSpawnClient *client)
 {
     return 0;
 }
@@ -590,7 +677,7 @@ HWTEST(AppSpawnStandardTest, App_Spawn_Standard_005, TestSize.Level0)
     AppSpawnContent *content = AppSpawnCreateContent("AppSpawn", (char*)longProcName.c_str(), longProcNameLen, 1);
     content->loadExtendLib = LoadExtendLib;
     content->runChildProcessor = RunChildProcessor;
-    int ret = DoStartApp((AppSpawnContent_*)content, &clientExt->client, (char*)"", 0);
+    int ret = DoStartApp((AppSpawnContent*)content, &clientExt->client, (char*)"", 0);
     EXPECT_EQ(ret, 0);
 
     if (strcpy_s(clientExt->property.bundleName, APP_LEN_BUNDLE_NAME, "moduleTestProcessName") != 0) {
@@ -598,12 +685,12 @@ HWTEST(AppSpawnStandardTest, App_Spawn_Standard_005, TestSize.Level0)
     }
     ret = SetAppSandboxProperty(nullptr, nullptr);
     EXPECT_NE(ret, 0);
-    ret = SetAppSandboxProperty((AppSpawnContent_*)content, &clientExt->client);
+    ret = SetAppSandboxProperty((AppSpawnContent*)content, &clientExt->client);
     EXPECT_EQ(ret, 0);
 
     // APP_NO_SANDBOX
     clientExt->property.flags |= APP_NO_SANDBOX;
-    ret = SetAppSandboxProperty((AppSpawnContent_*)content, &clientExt->client);
+    ret = SetAppSandboxProperty((AppSpawnContent*)content, &clientExt->client);
     EXPECT_EQ(ret, 0);
 
     clientExt->property.flags &= ~APP_NO_SANDBOX;
@@ -614,7 +701,7 @@ HWTEST(AppSpawnStandardTest, App_Spawn_Standard_005, TestSize.Level0)
             \"versions\":[\"v10001\", \"v10002\"] \
         }");
     clientExt->property.extraInfo.totalLength = strlen(clientExt->property.extraInfo.data);
-    ret = SetAppSandboxProperty((AppSpawnContent_*)content, &clientExt->client);
+    ret = SetAppSandboxProperty((AppSpawnContent*)content, &clientExt->client);
     EXPECT_EQ(ret, 0);
 
     free(content);

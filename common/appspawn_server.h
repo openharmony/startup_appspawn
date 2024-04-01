@@ -38,63 +38,63 @@ extern "C" {
 
 #define APPSPAWN_CHECK_EXIT "AppSpawnCheckUnexpectedExitCall"
 
-typedef struct AppSpawnClient_ {
+typedef struct AppSpawnClient {
     uint32_t id;
     uint32_t flags; // Save negotiated flags
     uint32_t cloneFlags; // for clone flags
 } AppSpawnClient;
 
 #define MAX_SOCKEYT_NAME_LEN 128
-typedef struct AppSpawnContent_ {
+typedef struct AppSpawnContent {
     char *longProcName;
     uint32_t longProcNameLen;
     uint32_t sandboxNsFlags;
     bool isNweb;
 
     // system
-    void (*loadExtendLib)(struct AppSpawnContent_ *content);
-    int (*initAppSpawn)(struct AppSpawnContent_ *content);
-    void (*runAppSpawn)(struct AppSpawnContent_ *content, int argc, char *const argv[]);
-    void (*setUidGidFilter)(struct AppSpawnContent_ *content);
+    void (*loadExtendLib)(struct AppSpawnContent *content);
+    int (*initAppSpawn)(struct AppSpawnContent *content);
+    void (*runAppSpawn)(struct AppSpawnContent *content, int argc, char *const argv[]);
+    void (*setUidGidFilter)(struct AppSpawnContent *content);
 
     // for child
-    void (*clearEnvironment)(struct AppSpawnContent_ *content, AppSpawnClient *client);
-    void (*initDebugParams)(struct AppSpawnContent_ *content, AppSpawnClient *client);
-    int (*setAppAccessToken)(struct AppSpawnContent_ *content, AppSpawnClient *client);
-    int (*setAppSandbox)(struct AppSpawnContent_ *content, AppSpawnClient *client);
-    int (*setKeepCapabilities)(struct AppSpawnContent_ *content, AppSpawnClient *client);
-    int (*setFileDescriptors)(struct AppSpawnContent_ *content, AppSpawnClient *client);
-    int (*setEnvInfo)(struct AppSpawnContent_ *content, AppSpawnClient *client);
-    int (*setProcessName)(struct AppSpawnContent_ *content, AppSpawnClient *client,
+    void (*clearEnvironment)(struct AppSpawnContent *content, AppSpawnClient *client);
+    void (*initDebugParams)(struct AppSpawnContent *content, AppSpawnClient *client);
+    int (*setAppAccessToken)(struct AppSpawnContent *content, AppSpawnClient *client);
+    int (*setAppSandbox)(struct AppSpawnContent *content, AppSpawnClient *client);
+    int (*setKeepCapabilities)(struct AppSpawnContent *content, AppSpawnClient *client);
+    int (*setFileDescriptors)(struct AppSpawnContent *content, AppSpawnClient *client);
+    int (*setEnvInfo)(struct AppSpawnContent *content, AppSpawnClient *client);
+    int (*setProcessName)(struct AppSpawnContent *content, AppSpawnClient *client,
     char *longProcName, uint32_t longProcNameLen);
-    int (*setUidGid)(struct AppSpawnContent_ *content, AppSpawnClient *client);
-    int (*setCapabilities)(struct AppSpawnContent_ *content, AppSpawnClient *client);
-    int (*setXpmConfig)(struct AppSpawnContent_ *content, AppSpawnClient *client);
+    int (*setUidGid)(struct AppSpawnContent *content, AppSpawnClient *client);
+    int (*setCapabilities)(struct AppSpawnContent *content, AppSpawnClient *client);
+    int (*setXpmConfig)(struct AppSpawnContent *content, AppSpawnClient *client);
 
-    void (*notifyResToParent)(struct AppSpawnContent_ *content, AppSpawnClient *client, int result);
-    void (*runChildProcessor)(struct AppSpawnContent_ *content, AppSpawnClient *client);
+    void (*notifyResToParent)(struct AppSpawnContent *content, AppSpawnClient *client, int result);
+    void (*runChildProcessor)(struct AppSpawnContent *content, AppSpawnClient *client);
 #ifndef ASAN_DETECTOR
-    int (*setAsanEnabledEnv)(struct AppSpawnContent_ *content, AppSpawnClient *client);
+    int (*setAsanEnabledEnv)(struct AppSpawnContent *content, AppSpawnClient *client);
 #endif
     // for pid namespace
-    int (*enablePidNs)(struct AppSpawnContent_ *content);
+    int (*enablePidNs)(struct AppSpawnContent *content);
 
     // for cold start
-    int (*coldStartApp)(struct AppSpawnContent_ *content, AppSpawnClient *client);
-    int (*getWrapBundleNameValue)(struct AppSpawnContent_ *content, AppSpawnClient *client);
-    int (*setSeccompFilter)(struct AppSpawnContent_ *content, AppSpawnClient *client);
+    int (*coldStartApp)(struct AppSpawnContent *content, AppSpawnClient *client);
+    int (*getWrapBundleNameValue)(struct AppSpawnContent *content, AppSpawnClient *client);
+    int (*setSeccompFilter)(struct AppSpawnContent *content, AppSpawnClient *client);
     void (*handleInternetPermission)(const AppSpawnClient *client);
     int (*waitForDebugger)(AppSpawnClient *client);
 } AppSpawnContent;
 
 typedef struct {
-    struct AppSpawnContent_ *content;
+    struct AppSpawnContent *content;
     AppSpawnClient *client;
 } AppSandboxArg;
 
 AppSpawnContent *AppSpawnCreateContent(const char *socketName, char *longProcName, uint32_t longProcNameLen, int cold);
 int AppSpawnProcessMsg(AppSandboxArg *sandbox, pid_t *childPid);
-int DoStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client, char *longProcName, uint32_t longProcNameLen);
+int DoStartApp(struct AppSpawnContent *content, AppSpawnClient *client, char *longProcName, uint32_t longProcNameLen);
 long long DiffTime(struct timespec *startTime);
 pid_t AppSpawnFork(int (*childFunc)(void *arg), void *args);
 #define UNUSED(x) (void)(x)

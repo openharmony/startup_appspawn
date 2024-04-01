@@ -18,7 +18,9 @@
 
 #include <unistd.h>
 #include <stdbool.h>
-#include "appspawn_msg.h"
+#include "interfaces/innerkits/include/appspawn_msg.h"
+#include "interfaces/innerkits_new/include/appspawn.h"
+#include "interfaces/innerkits_new/module_engine/include/appspawn_msg.h"
 #include "appspawn_server.h"
 #include "init_hashmap.h"
 #include "loop_event.h"
@@ -47,15 +49,30 @@ extern bool may_init_gwp_asan(bool forceInit);
 #define EXTRA_INFO_INDEX 5
 #define NULL_INDEX 6
 #define PARAM_BUFFER_LEN 128
+
+typedef struct TagAppSpawnMsgNode {
+    AppSpawnMsg msgHeader;
+    uint32_t tlvCount;
+    uint32_t *tlvOffset;
+    uint8_t *buffer;
+} AppSpawnMsgNode;
+
+typedef struct TagAppSpawnMsgReceiverCtx {
+    uint32_t nextMsgId;
+    uint32_t msgRecvLen;
+    AppSpawnMsgNode *incompleteMsg;
+} AppSpawnMsgReceiverCtx;
+
 typedef struct {
     AppSpawnClient client;
     TaskHandle stream;
     int32_t fd[2];  // 2 fd count
+    AppSpawnMsgReceiverCtx receiverCtx;
     AppParameter property;
     pid_t pid;
 } AppSpawnClientExt;
 
-typedef struct AppInfo_ {
+typedef struct AppInfo {
     HashNode node;
     pid_t pid;
     AppOperateType code;
@@ -63,7 +80,7 @@ typedef struct AppInfo_ {
     char name[0];
 } AppInfo, AppSpawnAppInfo;
 
-typedef struct AppSpawnContentExt_ {
+typedef struct AppSpawnContentExt {
     AppSpawnContent content;
     uint32_t flags;
     TaskHandle server;
@@ -94,6 +111,11 @@ do { \
     APPSPAWN_LOGI("setAllowInternet %{public}d allowInternet %{public}d ",                          \
         (clientExt)->property.setAllowInternet, (clientExt)->property.allowInternet);               \
 } while (0)
+
+int GetAppSpawnMsgFromBuffer(const uint8_t *buffer, uint32_t bufferLen,
+    AppSpawnMsgNode **outMsg, uint32_t *msgRecvLen, uint32_t *reminder);
+int ChangeAppSpawnMsg2Property(AppSpawnMsgNode *message, AppSpawnClientExt *appProperty);
+void DeleteAppSpawnMsg(AppSpawnMsgNode *msgNode);
 
 #ifdef __cplusplus
 }

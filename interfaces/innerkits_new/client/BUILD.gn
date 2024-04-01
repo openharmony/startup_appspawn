@@ -24,8 +24,7 @@ if (!defined(ohos_lite)) {
     sources = [
       "${appspawn_path}/modules/sandbox/appspawn_permission.c",
       "${appspawn_path}/util/src/appspawn_utils.c",
-      "${appspawn_path}/util/src/json_utils.cpp",
-      "../permission/appspawn_mount_permission.cpp",
+      "../permission/appspawn_mount_permission.c",
       "appspawn_client.c",
       "appspawn_msg.c",
     ]
@@ -35,6 +34,7 @@ if (!defined(ohos_lite)) {
       "../permission",
       "../module_engine/include",
       "${appspawn_path}",
+      "${appspawn_path}/common",
       "${appspawn_path}/modules/sandbox",
       "${appspawn_path}/util/include",
     ]
@@ -52,8 +52,8 @@ if (!defined(ohos_lite)) {
     public_configs = [ ":exported_header_files" ]
     version_script = "libappspawn_client.versionscript"
 
-    deps = [ "//third_party/cJSON:cjson" ]
     external_deps = [
+      "cJSON:cjson",
       "c_utils:utils",
       "config_policy:configpolicy_util",
       "hilog:libhilog",

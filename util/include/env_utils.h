@@ -24,7 +24,7 @@
 extern "C" {
 #endif // __cplusplus
 
-int32_t SetEnvInfo(struct AppSpawnContent_ *content, AppSpawnClient *client);
+int32_t SetEnvInfo(struct AppSpawnContent *content, AppSpawnClient *client);
 
 #ifdef __cplusplus
 }

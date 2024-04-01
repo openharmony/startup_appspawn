@@ -24,19 +24,19 @@
 extern "C" {
 #endif
 
-typedef struct AppSpawnContentExt_  AppSpawnContentExt;
-typedef struct AppInfo_ AppSpawnAppInfo;
+typedef struct AppSpawnContentExt AppSpawnContentExt;
+typedef struct AppInfo AppSpawnAppInfo;
 
-int32_t SetAppSandboxProperty(struct AppSpawnContent_ *content, AppSpawnClient *client);
-int SetAppAccessToken(struct AppSpawnContent_ *content, AppSpawnClient *client);
-int SetSelinuxCon(struct AppSpawnContent_ *content, AppSpawnClient *client);
+int32_t SetAppSandboxProperty(struct AppSpawnContent *content, AppSpawnClient *client);
+int SetAppAccessToken(struct AppSpawnContent *content, AppSpawnClient *client);
+int SetSelinuxCon(struct AppSpawnContent *content, AppSpawnClient *client);
 void LoadExtendLib(AppSpawnContent *content);
 void LoadExtendLibNweb(AppSpawnContent *content);
 void RunChildProcessor(AppSpawnContent *content, AppSpawnClient *client);
 void RunChildProcessorNweb(AppSpawnContent *content, AppSpawnClient *client);
 void LoadAppSandboxConfig(AppSpawnContent *content);
-void SetUidGidFilter(struct AppSpawnContent_ *content);
-int SetSeccompFilter(struct AppSpawnContent_ *content, AppSpawnClient *client);
+void SetUidGidFilter(struct AppSpawnContent *content);
+int SetSeccompFilter(struct AppSpawnContent *content, AppSpawnClient *client);
 void HandleInternetPermission(const AppSpawnClient *client);
 
 void DisallowInternet(void);

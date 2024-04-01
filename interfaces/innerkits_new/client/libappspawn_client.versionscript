@@ -31,6 +31,9 @@
     AppSpawnReqMsgSetFlags;
     AppSpawnReqMsgAddStringInfo;
     AppSpawnTerminateMsgCreate;
+    GetPermissionIndex;
+    GetMaxPermissionIndex;
+    GetPermissionByIndex;
   local:
     *;
 };

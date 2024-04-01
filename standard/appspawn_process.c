@@ -50,7 +50,7 @@
 
 // ide-asan
 #ifndef ASAN_DETECTOR
-static int SetAsanEnabledEnv(struct AppSpawnContent_ *content, AppSpawnClient *client)
+static int SetAsanEnabledEnv(struct AppSpawnContent *content, AppSpawnClient *client)
 {
     AppParameter *appProperty = &((AppSpawnClientExt *)client)->property;
     if (appProperty->code == SPAWN_NATIVE_PROCESS) {
@@ -82,7 +82,7 @@ static int SetAsanEnabledEnv(struct AppSpawnContent_ *content, AppSpawnClient *c
 }
 #endif
 
-static void SetGwpAsanEnabled(struct AppSpawnContent_ *content, AppSpawnClient *client)
+static void SetGwpAsanEnabled(struct AppSpawnContent *content, AppSpawnClient *client)
 {
     AppParameter *appProperty = &((AppSpawnClientExt *)client)->property;
     char debugValue[10] = {0};
@@ -98,7 +98,7 @@ static void SetGwpAsanEnabled(struct AppSpawnContent_ *content, AppSpawnClient *
     }
 }
 
-static int SetProcessName(struct AppSpawnContent_ *content, AppSpawnClient *client,
+static int SetProcessName(struct AppSpawnContent *content, AppSpawnClient *client,
     char *longProcName, uint32_t longProcNameLen)
 {
     AppSpawnClientExt *appPropertyExt = (AppSpawnClientExt *)client;
@@ -134,7 +134,7 @@ static int SetProcessName(struct AppSpawnContent_ *content, AppSpawnClient *clie
     return 0;
 }
 
-static int SetKeepCapabilities(struct AppSpawnContent_ *content, AppSpawnClient *client)
+static int SetKeepCapabilities(struct AppSpawnContent *content, AppSpawnClient *client)
 {
     AppSpawnClientExt *appProperty = (AppSpawnClientExt *)client;
     // set keep capabilities when user not root.
@@ -145,7 +145,7 @@ static int SetKeepCapabilities(struct AppSpawnContent_ *content, AppSpawnClient 
     return 0;
 }
 
-static int SetCapabilities(struct AppSpawnContent_ *content, AppSpawnClient *client)
+static int SetCapabilities(struct AppSpawnContent *content, AppSpawnClient *client)
 {
     // init cap
     struct __user_cap_header_struct cap_header;
@@ -186,7 +186,7 @@ static int SetCapabilities(struct AppSpawnContent_ *content, AppSpawnClient *cli
     return 0;
 }
 
-static void InitDebugParams(struct AppSpawnContent_ *content, AppSpawnClient *client)
+static void InitDebugParams(struct AppSpawnContent *content, AppSpawnClient *client)
 {
 #ifndef APPSPAWN_TEST
     AppSpawnClientExt *appProperty = (AppSpawnClientExt *)client;
@@ -230,7 +230,7 @@ static void ClearEnvironment(AppSpawnContent *content, AppSpawnClient *client)
     return;
 }
 
-int SetXpmConfig(struct AppSpawnContent_ *content, AppSpawnClient *client)
+int SetXpmConfig(struct AppSpawnContent *content, AppSpawnClient *client)
 {
 #ifdef CODE_SIGNATURE_ENABLE
     // nwebspawn no permission set xpm config
@@ -256,7 +256,7 @@ int SetXpmConfig(struct AppSpawnContent_ *content, AppSpawnClient *client)
     return 0;
 }
 
-static int SetUidGid(struct AppSpawnContent_ *content, AppSpawnClient *client)
+static int SetUidGid(struct AppSpawnContent *content, AppSpawnClient *client)
 {
 #ifdef GRAPHIC_PERMISSION_CHECK
     AppSpawnClientExt *appProperty = (AppSpawnClientExt *)client;
@@ -298,7 +298,7 @@ static int SetUidGid(struct AppSpawnContent_ *content, AppSpawnClient *client)
     return 0;
 }
 
-static int32_t SetFileDescriptors(struct AppSpawnContent_ *content, AppSpawnClient *client)
+static int32_t SetFileDescriptors(struct AppSpawnContent *content, AppSpawnClient *client)
 {
 #ifndef APPSPAWN_TEST
     // close stdin stdout stderr
@@ -417,7 +417,7 @@ static void Free(char **argv, ExtraInfo *extraInfo)
 
 #ifdef ASAN_DETECTOR
 #define WRAP_VALUE_MAX_LENGTH 96
-static int GetWrapBundleNameValue(struct AppSpawnContent_ *content, AppSpawnClient *client)
+static int GetWrapBundleNameValue(struct AppSpawnContent *content, AppSpawnClient *client)
 {
     AppParameter *appProperty = &((AppSpawnClientExt *)client)->property;
     char wrapBundleNameKey[WRAP_VALUE_MAX_LENGTH] = {0};
@@ -465,7 +465,7 @@ static int EncodeAppClient(AppSpawnClient *client, char *param, int32_t originLe
     return 0;
 }
 
-static int ColdStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client)
+static int ColdStartApp(struct AppSpawnContent *content, AppSpawnClient *client)
 {
     AppParameter *appProperty = &((AppSpawnClientExt *)client)->property;
     APPSPAWN_LOGI("ColdStartApp::appName %{public}s", appProperty->processName);
@@ -489,12 +489,9 @@ static int ColdStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client
 #endif
         ret = strcpy_s(argv[0], APP_LEN_PROC_NAME, appSpawnPath);
         APPSPAWN_CHECK(ret >= 0, break, "Invalid strcpy");
-        ret = -1;
-        if (content->isNweb) {
-            argv[START_INDEX] = strdup(NWEBSPAWN_COLDSTART_KEY);
-        } else {
-            argv[START_INDEX] = strdup(APPSPAWN_COLDSTART_KEY);
-        }
+        (content->isNweb) ? (argv[START_INDEX] = strdup(NWEBSPAWN_COLDSTART_KEY)) :
+            (argv[START_INDEX] = strdup(APPSPAWN_COLDSTART_KEY));
+
         APPSPAWN_CHECK(argv[START_INDEX] != NULL, break, "Invalid strdup");
         argv[FD_INDEX] = strdup(buffer);
         APPSPAWN_CHECK(argv[FD_INDEX] != NULL, break, "Invalid strdup");
@@ -515,9 +512,7 @@ static int ColdStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client
 #else
         ret = -1;
 #endif
-        if (ret) {
-            APPSPAWN_LOGE("Failed to execv, errno = %{public}d", errno);
-        }
+        APPSPAWN_CHECK_ONLY_LOG(ret == 0, "Failed to execv, errno = %{public}d", errno)
     }
     argv[0] = NULL;
     Free(argv, &appProperty->extraInfo);
