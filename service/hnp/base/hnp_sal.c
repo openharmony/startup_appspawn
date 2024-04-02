@@ -17,13 +17,121 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
+#include <sys/resource.h>
 #include <unistd.h>
+#include <errno.h>
 
 #include "hnp_base.h"
+
+#define READ 0
+#define WRITE 1
+
+#define SHELL "/bin/bash"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+pid_t *gChildPid = NULL;
+int gMax = 0;
+
+static void HnpPopenForChild(int pipefd[], const char *command, const char *mode)
+{
+    close(pipefd[READ]);
+    if (mode[0] == 'r') {
+        if (pipefd[WRITE] != STDOUT_FILENO) {
+            dup2(pipefd[WRITE], STDOUT_FILENO);
+            close(pipefd[WRITE]);
+        }
+    } else {
+        if (pipefd[WRITE] != STDIN_FILENO) {
+            dup2(pipefd[WRITE], STDIN_FILENO);
+            close(pipefd[WRITE]);
+        }
+    }
+
+    for (int i = 0; i < gMax; i++) {
+        if (gChildPid[i] > 0) {
+            close(i);
+        }
+    }
+
+    execl(SHELL, "sh", "-c", command, NULL);
+    _exit(EISCONN);
+}
+
+static FILE* HnpPopen(const char *command, const char *mode)
+{
+    int pipefd[2];
+    pid_t pid;
+    FILE *stream;
+
+    if (mode[0] != 'r' && mode[0] != 'w') {
+        return NULL;
+    }
+
+    if (gChildPid == NULL) {
+        gMax = sysconf(_SC_OPEN_MAX);
+        gChildPid = (pid_t *)calloc(gMax, sizeof(pid_t));
+        if (gChildPid == NULL) {
+            return NULL;
+        }
+    }
+
+    if (pipe(pipefd) < 0) {
+        return NULL;
+    }
+
+    if ((pipefd[READ] >= gMax) || (pipefd[WRITE] >= gMax)) {
+        close(pipefd[READ]);
+        close(pipefd[WRITE]);
+        return NULL;
+    }
+
+    pid = fork();
+    if (pid < 0) {
+        return NULL;
+    }
+    if (pid == 0) {
+        HnpPopenForChild(pipefd, command, mode);
+    }
+
+    if (mode[0] == 'r') {
+        close(pipefd[WRITE]);
+        stream = fdopen(pipefd[READ], mode);
+    } else {
+        close(pipefd[READ]);
+        stream = fdopen(pipefd[WRITE], mode);
+    }
+    if (stream != NULL) {
+        gChildPid[fileno(stream)] = pid;
+    }
+    return stream;
+}
+
+static int HnpPclose(FILE *stream)
+{
+    int status;
+    pid_t pid;
+
+    if (stream == NULL) {
+        return -1;
+    }
+
+    if (gChildPid == NULL) {
+        return -1;
+    }
+
+    pid = gChildPid[fileno(stream)];
+    if (pid <= 0) {
+        return -1;
+    }
+
+    gChildPid[fileno(stream)] = 0;
+    waitpid(pid, &status, 0);
+    return status;
+}
 
 static int HnpPidGetByBinName(const char *binName, int *pids, int *count)
 {
@@ -38,7 +146,7 @@ static int HnpPidGetByBinName(const char *binName, int *pids, int *count)
         return HNP_ERRNO_BASE_SPRINTF_FAILED;
     }
 
-    cmdOutput = popen(command, "rb");
+    cmdOutput = HnpPopen(command, "rb");
     if (cmdOutput == NULL) {
         HNP_LOGI("hnp uninstall process[%s] not found", binName);
         return HNP_ERRNO_BASE_PROCESS_NOT_FOUND;
@@ -51,7 +159,7 @@ static int HnpPidGetByBinName(const char *binName, int *pids, int *count)
             break;
         }
     }
-    pclose(cmdOutput);
+    HnpPclose(cmdOutput);
     *count = pidNum;
 
     return 0;
@@ -69,7 +177,7 @@ int HnpProcessRunCheck(const char *binName, const char *runPath)
 
     /* 对programName进行空格过滤，防止外部命令注入 */
     if (strchr(binName, ' ') != NULL) {
-        HNP_LOGE("hnp uninstall program name[%s] inval", binName);
+        HNP_LOGE("hnp uninstall program name[%s] invalid", binName);
         return HNP_ERRNO_BASE_PARAMS_INVALID;
     }
 
@@ -80,23 +188,23 @@ int HnpProcessRunCheck(const char *binName, const char *runPath)
 
     /* 判断进程是否运行 */
     for (int index = 0; index < count; index++) {
-        if (sprintf_s(command, HNP_COMMAND_LEN, "lsof -p %d", pids[index]) < 0) {
+        if (sprintf_s(command, HNP_COMMAND_LEN, "lsof -p %d | grep txt", pids[index]) < 0) {
             HNP_LOGE("hnp uninstall pid[%d] run check command sprintf unsuccess", pids[index]);
             return HNP_ERRNO_BASE_SPRINTF_FAILED;
         }
-        FILE *cmdOutput = popen(command, "rb");
+        FILE *cmdOutput = HnpPopen(command, "rb");
         if (cmdOutput == NULL) {
             HNP_LOGE("hnp uninstall pid[%d] not found", pids[index]);
             continue;
         }
         while (fgets(cmdBuffer, sizeof(cmdBuffer), cmdOutput) != NULL) {
             if (strstr(cmdBuffer, runPath) != NULL) {
-                pclose(cmdOutput);
+                HnpPclose(cmdOutput);
                 HNP_LOGE("hnp install process[%s] is running now", binName);
                 return HNP_ERRNO_PROCESS_RUNNING;
             }
         }
-        pclose(cmdOutput);
+        HnpPclose(cmdOutput);
     }
 
     return 0;
