@@ -25,29 +25,29 @@
 extern "C" {
 #endif
 
-static int HnpPidGetByBinName(const char *programName, int *pids, int *count)
+static int HnpPidGetByBinName(const char *binName, int *pids, int *count)
 {
     FILE *cmdOutput;
     char cmdBuffer[BUFFER_SIZE];
     char command[HNP_COMMAND_LEN];
     int pidNum = 0;
 
-    /* programName为卸载命令输入的进程名拼接命令command */
-    if (sprintf_s(command, HNP_COMMAND_LEN, "pgrep -x %s", programName) < 0) {
-        HNP_LOGE("hnp uninstall program[%s] run command sprintf unsuccess", programName);
+    /* binName为卸载命令输入的进程名拼接命令command */
+    if (sprintf_s(command, HNP_COMMAND_LEN, "pgrep -x %s", binName) < 0) {
+        HNP_LOGE("hnp uninstall process[%s] run command sprintf unsuccess", binName);
         return HNP_ERRNO_BASE_SPRINTF_FAILED;
     }
 
     cmdOutput = popen(command, "rb");
     if (cmdOutput == NULL) {
-        HNP_LOGE("hnp uninstall program[%s] not found", programName);
-        return HNP_ERRNO_BASE_PROGRAM_NOT_FOUND;
+        HNP_LOGI("hnp uninstall process[%s] not found", binName);
+        return HNP_ERRNO_BASE_PROCESS_NOT_FOUND;
     }
 
     while (fgets(cmdBuffer, sizeof(cmdBuffer), cmdOutput) != NULL) {
         pids[pidNum++] = atoi(cmdBuffer);
         if (pidNum >= MAX_PROCESSES) {
-            HNP_LOGI("hnp uninstall program[%s] num over size", programName);
+            HNP_LOGI("hnp uninstall process[%s] num over size", binName);
             break;
         }
     }
@@ -57,7 +57,7 @@ static int HnpPidGetByBinName(const char *programName, int *pids, int *count)
     return 0;
 }
 
-int HnpProgramRunCheck(const char *binName, const char *runPath)
+int HnpProcessRunCheck(const char *binName, const char *runPath)
 {
     int ret;
     int pids[MAX_PROCESSES];
@@ -93,7 +93,7 @@ int HnpProgramRunCheck(const char *binName, const char *runPath)
             if (strstr(cmdBuffer, runPath) != NULL) {
                 pclose(cmdOutput);
                 HNP_LOGE("hnp install process[%s] is running now", binName);
-                return HNP_ERRNO_PROGRAM_RUNNING;
+                return HNP_ERRNO_PROCESS_RUNNING;
             }
         }
         pclose(cmdOutput);

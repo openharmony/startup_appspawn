@@ -35,6 +35,7 @@ extern "C" {
 #define BUFFER_SIZE 1024
 #define HNP_COMMAND_LEN 128
 #define MAX_PROCESSES 32
+#define MAX_SOFTWARE_NUM 32
 
 #ifdef _WIN32
 #define DIR_SPLIT_SYMBOL '\\'
@@ -156,7 +157,7 @@ enum {
 #define HNP_ERRNO_GENERATE_SOFT_LINK_FAILED     HNP_ERRNO_COMMON(HNP_MID_BASE, 0x12)
 
 // 0x801113 进程正在运行
-#define HNP_ERRNO_PROGRAM_RUNNING               HNP_ERRNO_COMMON(HNP_MID_BASE, 0x13)
+#define HNP_ERRNO_PROCESS_RUNNING               HNP_ERRNO_COMMON(HNP_MID_BASE, 0x13)
 
 // 0x801114 打开管道失败
 #define HNP_ERRNO_BASE_POPEN_FAILED             HNP_ERRNO_COMMON(HNP_MID_BASE, 0x14)
@@ -174,13 +175,10 @@ enum {
 #define HNP_ERRNO_BASE_UNLINK_FAILED            HNP_ERRNO_COMMON(HNP_MID_BASE, 0x18)
 
 // 0x801119 对应进程不存在
-#define HNP_ERRNO_BASE_PROGRAM_NOT_FOUND        HNP_ERRNO_COMMON(HNP_MID_BASE, 0x19)
+#define HNP_ERRNO_BASE_PROCESS_NOT_FOUND        HNP_ERRNO_COMMON(HNP_MID_BASE, 0x19)
 
-// 0x80111a 进程超过最大值
-#define HNP_ERRNO_BASE_PROGRAM_NUM_OVERSIZE     HNP_ERRNO_COMMON(HNP_MID_BASE, 0x1a)
-
-// 0x80111b 创建路径失败
-#define HNP_ERRNO_BASE_MKDIR_PATH_FAILED        HNP_ERRNO_COMMON(HNP_MID_BASE, 0x1b)
+// 0x80111a 创建路径失败
+#define HNP_ERRNO_BASE_MKDIR_PATH_FAILED        HNP_ERRNO_COMMON(HNP_MID_BASE, 0x1a)
 
 int GetFileSizeByHandle(FILE *file, int *size);
 
@@ -202,7 +200,7 @@ int HnpReadFromZipHead(const char *zipFile, NativeHnpHead **hnpHead);
 
 int HnpSymlink(const char *srcFile, const char *dstFile);
 
-int HnpProgramRunCheck(const char *binName, const char *runPath);
+int HnpProcessRunCheck(const char *binName, const char *runPath);
 
 int HnpDeleteFolder(const char *path);
 
