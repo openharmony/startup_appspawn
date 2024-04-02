@@ -72,7 +72,7 @@ static int HnpGenerateSoftLinkAllByJson(const char *installPath, const char *dst
         } else {
             fileNameTmp = currentLink->target;
         }
-        fileName = strrchr(fileNameTmp, '/');
+        fileName = strrchr(fileNameTmp, DIR_SPLIT_SYMBOL);
         if (fileName == NULL) {
             fileName = fileNameTmp;
         } else {
@@ -195,7 +195,7 @@ static int HnpInstall(const char *hnpFile, NativeHnpPath *hnpDstPath, NativeHnpH
     return HnpGenerateSoftLink(hnpDstPath->hnpVersionPath, hnpDstPath->hnpBasePath, hnpHead);
 }
 
-static int HnpProgramRunCheckWithFile(const char *file, NativeHnpPath *hnpDstPath, const char *versionPath)
+static int HnpProcessRunCheckWithFile(const char *file, NativeHnpPath *hnpDstPath, const char *versionPath)
 {
     int ret;
     NativeHnpHead *hnpHead;
@@ -211,15 +211,15 @@ static int HnpProgramRunCheckWithFile(const char *file, NativeHnpPath *hnpDstPat
     for (unsigned int i = 0; i < hnpHead->linkNum; i++) {
         /* 如果target为空则使用源二进制名称 */
         if (strcmp(currentLink->target, "") == 0) {
-            fileName = strrchr(currentLink->source, '/');
+            fileName = strrchr(currentLink->source, DIR_SPLIT_SYMBOL);
             if (fileName == NULL) {
                 fileName = currentLink->source;
             } else {
                 fileName++;
             }
-            ret = HnpProgramRunCheck(fileName, versionPath);
+            ret = HnpProcessRunCheck(fileName, versionPath);
         } else {
-            ret = HnpProgramRunCheck(currentLink->target, versionPath);
+            ret = HnpProcessRunCheck(currentLink->target, versionPath);
         }
         if (ret != 0) {
             free(hnpHead);
@@ -232,7 +232,7 @@ static int HnpProgramRunCheckWithFile(const char *file, NativeHnpPath *hnpDstPat
     return 0;
 }
 
-static int HnpProgramRunCheckWithPath(const char *path, NativeHnpPath *hnpDstPath, const char *versionPath)
+static int HnpProcessRunCheckWithPath(const char *path, NativeHnpPath *hnpDstPath, const char *versionPath)
 {
     DIR *dir;
     struct dirent *entry;
@@ -248,7 +248,7 @@ static int HnpProgramRunCheckWithPath(const char *path, NativeHnpPath *hnpDstPat
             continue;
         }
         /* 查询软件是否正在运行 */
-        ret = HnpProgramRunCheck(entry->d_name, versionPath);
+        ret = HnpProcessRunCheck(entry->d_name, versionPath);
         if (ret != 0) {
             closedir(dir);
             return ret;
@@ -265,11 +265,11 @@ static int HnpUnInstall(NativeHnpPath *hnpDstPath, const char *versionPath, bool
     char uninstallFile[MAX_FILE_PATH_LEN];
     char binPath[MAX_FILE_PATH_LEN];
 
-    HNP_LOGI("hnp uninstall start now! path=%s program name[%s], run check=%d", hnpDstPath->hnpProgramPath,
-        hnpDstPath->hnpProgramName, runCheck);
+    HNP_LOGI("hnp uninstall start now! path=%s program name[%s], run check=%d", hnpDstPath->hnpSoftwarePath,
+        hnpDstPath->hnpSoftwareName, runCheck);
 
     if (runCheck == false) {
-        ret = HnpDeleteFolder(hnpDstPath->hnpProgramPath);
+        ret = HnpDeleteFolder(hnpDstPath->hnpSoftwarePath);
         HNP_LOGI("hnp uninstall end! ret=%d", ret);
         return ret;
     }
@@ -280,21 +280,21 @@ static int HnpUnInstall(NativeHnpPath *hnpDstPath, const char *versionPath, bool
         return HNP_ERRNO_BASE_SPRINTF_FAILED;
     }
     if (access(uninstallFile, F_OK) == 0) {
-        ret = HnpProgramRunCheckWithFile(uninstallFile, hnpDstPath, versionPath);
+        ret = HnpProcessRunCheckWithFile(uninstallFile, hnpDstPath, versionPath);
     } else {
         ret = sprintf_s(binPath, MAX_FILE_PATH_LEN, "%s/bin", versionPath);
         if (ret < 0) {
             HNP_LOGE("sprintf uninstall info file unsuccess.");
             return HNP_ERRNO_BASE_SPRINTF_FAILED;
         }
-        ret = HnpProgramRunCheckWithPath(binPath, hnpDstPath, versionPath);
+        ret = HnpProcessRunCheckWithPath(binPath, hnpDstPath, versionPath);
     }
 
     if (ret != 0) {
         return ret;
     }
 
-    ret = HnpDeleteFolder(hnpDstPath->hnpProgramPath);
+    ret = HnpDeleteFolder(hnpDstPath->hnpSoftwarePath);
     HNP_LOGI("hnp uninstall end! ret=%d", ret);
     return ret;
 }
@@ -335,12 +335,12 @@ static int HnpInstallPathGet(const char *fileName, bool isForce, char* hnpVersio
     char versionOldPath[MAX_FILE_PATH_LEN];
 
     /* 裁剪获取文件名使用 */
-    ret = strcpy_s(hnpDstPath->hnpProgramName, MAX_FILE_PATH_LEN, fileName);
+    ret = strcpy_s(hnpDstPath->hnpSoftwareName, MAX_FILE_PATH_LEN, fileName);
     if (ret != EOK) {
         HNP_LOGE("hnp install program path strcpy unsuccess.");
         return HNP_ERRNO_BASE_COPY_FAILED;
     }
-    hnpNameTmp = strrchr(hnpDstPath->hnpProgramName, '.');
+    hnpNameTmp = strrchr(hnpDstPath->hnpSoftwareName, '.');
     if (hnpNameTmp && !strcmp(hnpNameTmp, ".hnp")) {
         *hnpNameTmp = '\0';
     } else {
@@ -348,28 +348,28 @@ static int HnpInstallPathGet(const char *fileName, bool isForce, char* hnpVersio
     }
 
     /* 拼接安装路径 */
-    ret = sprintf_s(hnpDstPath->hnpProgramPath, MAX_FILE_PATH_LEN, "%s%s.org/", hnpDstPath->hnpBasePath,
-        hnpDstPath->hnpProgramName);
+    ret = sprintf_s(hnpDstPath->hnpSoftwarePath, MAX_FILE_PATH_LEN, "%s%s.org/", hnpDstPath->hnpBasePath,
+        hnpDstPath->hnpSoftwareName);
     if (ret < 0) {
         HNP_LOGE("hnp install sprintf hnp base path unsuccess.");
         return HNP_ERRNO_BASE_SPRINTF_FAILED;
     }
 
     /* 拼接安装路径 */
-    ret = sprintf_s(hnpDstPath->hnpVersionPath, MAX_FILE_PATH_LEN, "%s%s_%s/", hnpDstPath->hnpProgramPath,
-        hnpDstPath->hnpProgramName, hnpVersion);
+    ret = sprintf_s(hnpDstPath->hnpVersionPath, MAX_FILE_PATH_LEN, "%s%s_%s/", hnpDstPath->hnpSoftwarePath,
+        hnpDstPath->hnpSoftwareName, hnpVersion);
     if (ret < 0) {
         HNP_LOGE("hnp install sprintf install path unsuccess.");
         return HNP_ERRNO_BASE_SPRINTF_FAILED;
     }
 
     /* 判断安装目录是否存在，存在判断是否是强制安装，如果是则走卸载流程，否则返回错误 */
-    if (access(hnpDstPath->hnpProgramPath, F_OK) == 0) {
+    if (access(hnpDstPath->hnpSoftwarePath, F_OK) == 0) {
         if (isForce == false) {
-            HNP_LOGE("hnp install path[%s] exist, but force is false", hnpDstPath->hnpProgramPath);
+            HNP_LOGE("hnp install path[%s] exist, but force is false", hnpDstPath->hnpSoftwarePath);
             return HNP_ERRNO_INSTALLER_PATH_IS_EXIST;
         } else {
-            ret = HnpGetVersionPathInProgramPath(hnpDstPath->hnpProgramPath, versionOldPath);
+            ret = HnpGetVersionPathInProgramPath(hnpDstPath->hnpSoftwarePath, versionOldPath);
             if (ret != 0) {
                 return ret;
             }
@@ -387,86 +387,51 @@ static int HnpInstallPathGet(const char *fileName, bool isForce, char* hnpVersio
     return ret;
 }
 
-static int HnpDirReadAndInstall(const char *srcPath, NativeHnpPath *hnpDstPath, bool isForce)
+static int HnpReadAndInstall(char *srcFile, NativeHnpPath *hnpDstPath, bool isForce)
 {
-    struct dirent *entry;
-    char hnpFile[MAX_FILE_PATH_LEN];
     NativeHnpHead *hnpHead;
-    int count = 0;
+    int ret;
+    char *fileName;
 
-    DIR *dir = opendir(srcPath);
-    if (dir == NULL) {
-        HNP_LOGE("hnp install opendir:%s unsuccess, errno=%d", srcPath, errno);
-        return HNP_ERRNO_BASE_DIR_OPEN_FAILED;
+    /* 从hnp头文件获取头文件信息，由于大小不固定，内存在方法内申请，失败需要手动释放 */
+    ret = HnpReadFromZipHead(srcFile, &hnpHead);
+    if (ret != 0) {
+        return ret; /* 内部已打印日志 */
     }
 
-    /* 遍历hnp目录 */
-    while ((entry = readdir(dir)) != NULL) {
-        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
-            continue;
-        }
-        int ret = sprintf_s(hnpFile, MAX_FILE_PATH_LEN, "%s/%s", srcPath, entry->d_name);
-        if (ret < 0) {
-            HNP_LOGE("hnp install sprintf hnp path unsuccess.");
-            closedir(dir);
-            return HNP_ERRNO_BASE_SPRINTF_FAILED;
-        }
-
-        /* 从hnp头文件获取头文件信息，由于大小不固定，内存在方法内申请，失败需要手动释放 */
-        ret = HnpReadFromZipHead(hnpFile, &hnpHead);
-        if (ret != 0) {
-            closedir(dir);
-            return ret; /* 内部已打印日志 */
-        }
-
-        /* 获取安装路径 */
-        ret = HnpInstallPathGet(entry->d_name, isForce, hnpHead->hnpVersion, hnpDstPath);
-        if (ret != 0) {
-            closedir(dir);
-            free(hnpHead);
-            return ret; /* 内部已打印日志 */
-        }
-
-        /* hnp安装 */
-        ret = HnpInstall(hnpFile, hnpDstPath, hnpHead);
-        if (ret != 0) {
-            closedir(dir);
-            free(hnpHead);
-            /* 安装失败卸载当前包 */
-            HnpUnInstall(hnpDstPath, hnpDstPath->hnpVersionPath, false);
-            return ret;
-        }
+    /* 获取安装路径 */
+    fileName = strrchr(srcFile, DIR_SPLIT_SYMBOL);
+    if (fileName == NULL) {
+        fileName = srcFile;
+    } else {
+        fileName++;
+    }
+    ret = HnpInstallPathGet(fileName, isForce, hnpHead->hnpVersion, hnpDstPath);
+    if (ret != 0) {
         free(hnpHead);
-        hnpHead = NULL;
-        HNP_LOGI("install hnp path[%s], dst path[%s]", srcPath, hnpDstPath->hnpVersionPath);
-        count++;
+        return ret; /* 内部已打印日志 */
     }
-    closedir(dir);
-    if (count == 0) {
-        HNP_LOGI("install hnp path[%s] is empty.", srcPath);
+
+    /* hnp安装 */
+    ret = HnpInstall(srcFile, hnpDstPath, hnpHead);
+    free(hnpHead);
+    if (ret != 0) {
+        /* 安装失败卸载当前包 */
+        HnpUnInstall(hnpDstPath, hnpDstPath->hnpVersionPath, false);
+        return ret;
     }
+    hnpHead = NULL;
+
     return 0;
 }
 
-int HnpCmdInstall(int argc, char *argv[])
+static int HnpInsatllPre(unsigned long uid, char *softwarePath[], int count, const char *installPath, bool isForce)
 {
-    char srcPath[MAX_FILE_PATH_LEN];
+    char srcFile[count][MAX_FILE_PATH_LEN];
     char dstPath[MAX_FILE_PATH_LEN];
-    unsigned long uid;
-    bool isForce = false;
-    int ret;
     NativeHnpPath hnpDstPath = {0};
-
-    if (argc < HNP_INDEX_5) {
-        HNP_LOGE("hnp install args num[%u] unsuccess!", argc);
-        return HNP_ERRNO_INSTALLER_ARGV_NUM_INVALID;
-    }
-
-    ret = HnpInstallerUidGet(argv[HNP_INDEX_2], &uid);
-    if (ret != 0) {
-        HNP_LOGE("hnp install arg uid[%s] invalid", argv[HNP_INDEX_2]);
-        return ret;
-    }
+    int ret;
+    int i;
 
     /* 拼接安装路径 */
     if (sprintf_s(dstPath, MAX_FILE_PATH_LEN, HNP_DEFAULT_INSTALL_ROOT_PATH"%lu/", uid) < 0) {
@@ -474,66 +439,98 @@ int HnpCmdInstall(int argc, char *argv[])
         return HNP_ERRNO_INSTALLER_GET_HNP_PATH_FAILED;
     }
 
-    /* 验证native软件包路径与安装路径是否存在 */
-    if ((GetRealPath(argv[HNP_INDEX_3], srcPath) != 0) || (access(dstPath, F_OK) != 0)) {
-        HNP_LOGE("hnp install path invalid! src path=%s, dst path=%s", argv[HNP_INDEX_3], dstPath);
+    /* 验证安装路径是否存在 */
+    if (access(dstPath, F_OK) != 0) {
+        HNP_LOGE("hnp install uid path[%s] is not exist", dstPath);
         return HNP_ERRNO_INSTALLER_GET_REALPATH_FAILED;
     }
 
-    /* 获取参数是否需要强制覆盖 */
-    if ((argc == HNP_INDEX_6) && (strcmp(argv[HNP_INDEX_5], "-f") == 0)) {
-        isForce = true;
+    /* 验证native软件包路径是否存在 */
+    for (i = 0; i < count; i++) {
+        if (GetRealPath(softwarePath[i], srcFile[i]) != 0) {
+            HNP_LOGE("hnp install path invalid! src path=%s", softwarePath[i]);
+            return HNP_ERRNO_INSTALLER_GET_REALPATH_FAILED;
+        }
     }
 
-    if (strcmp(argv[HNP_INDEX_4], "null") == 0) {
-        ret = sprintf_s(hnpDstPath.hnpBasePath, MAX_FILE_PATH_LEN, "%shnppublic/", dstPath);
-    } else {
-        ret = sprintf_s(hnpDstPath.hnpBasePath, MAX_FILE_PATH_LEN, "%shnp/%s/", dstPath, argv[HNP_INDEX_4]);
-    }
+    ret = sprintf_s(hnpDstPath.hnpBasePath, MAX_FILE_PATH_LEN, "%shnp/%s/", dstPath, installPath);
     if (ret < 0) {
         HNP_LOGE("hnp install public base path sprintf unsuccess.");
         return HNP_ERRNO_INSTALLER_GET_HNP_PATH_FAILED;
     }
 
-    HNP_LOGI("hnp install start now! src path=%s, dst path=%s, is force=%d", argv[HNP_INDEX_3], hnpDstPath.hnpBasePath,
-        isForce);
-    ret = HnpDirReadAndInstall(srcPath, &hnpDstPath, isForce);
-    HNP_LOGI("hnp install end, ret=%d", ret);
-    return ret;
+    for (i = 0; i < count; i++) {
+        HNP_LOGI("hnp install start now! src file=%s, dst path=%s, is force=%d", srcFile[i],
+            hnpDstPath.hnpBasePath, isForce);
+        ret = HnpReadAndInstall(srcFile[i], &hnpDstPath, isForce);
+        HNP_LOGI("hnp install src file=%s end, ret=%d", srcFile[i], ret);
+        if (ret != 0) {
+            return ret;
+        }
+    }
+
+    return 0;
 }
 
-int HnpCmdUnInstall(int argc, char *argv[])
+int HnpCmdInstall(int argc, char *argv[])
 {
-    unsigned long uid;
-    char pathTmp[MAX_FILE_PATH_LEN];
-    NativeHnpPath hnpDstPath = {0};
+    char *installPath = "hnppublic";
+    char *softwarePath[MAX_SOFTWARE_NUM] = {0};
+    int count = 0;
+    unsigned long uid = 0;
+    char *uidArg = NULL;
+    bool isForce = false;
     int ret;
+    int ch;
 
-    if (argc < HNP_INDEX_6) {
-        HNP_LOGE("hnp uninstall args num[%u] unsuccess!", argc);
-        return HNP_ERRNO_UNINSTALLER_ARGV_NUM_INVALID;
+    while ((ch = getopt(argc, argv, "u:p:if")) != -1) {
+        switch (ch) {
+            case 'u': //uid
+                uidArg = optarg;
+                ret = HnpInstallerUidGet(uidArg, &uid);
+                if (ret != 0) {
+                    HNP_LOGE("hnp install arg uid[%s] invalid", uidArg);
+                    return ret;
+                }
+                break;
+            case 'p': //hnp software path
+                if ((count + 1) >= MAX_SOFTWARE_NUM) {
+                    HNP_LOGE("hnp install software must less than %d", MAX_SOFTWARE_NUM);
+                    return HNP_ERRNO_INSTALLER_SOFTWARE_NUM_OVERSIZE;
+                }
+                softwarePath[count++] = (char *)optarg;
+                break;
+            case 'i': //private package name
+                if (optarg == NULL) {
+                    break;
+                }
+                installPath = (char *)optarg;
+                break;
+            case 'f': //is force
+                isForce = true;
+                break;
+            default:
+                HNP_LOGE("hnp install invalid params");
+                return HNP_ERRNO_INSTALLER_CALL_HELP;
+            }
     }
 
-    ret = HnpInstallerUidGet(argv[HNP_INDEX_2], &uid);
-    if (ret != 0) {
-        HNP_LOGE("hnp installer arg uid[%s] invalid", argv[HNP_INDEX_2]);
-        return HNP_ERRNO_INSTALLER_ARGV_UID_INVALID;
+    if ((uidArg == NULL) || (count == 0)) {
+        HNP_LOGE("hnp install params invalid, uid[%s] hnp software num[%d]", uidArg, count);
+        return HNP_ERRNO_INSTALLER_CALL_HELP;
     }
 
-    if (strcmp(argv[HNP_INDEX_5], "null") == 0) {
-        ret = sprintf_s(pathTmp, MAX_FILE_PATH_LEN, "hnppublic");
-    } else {
-        ret = sprintf_s(pathTmp, MAX_FILE_PATH_LEN, "hnp/%s", argv[HNP_INDEX_5]);
-    }
-    if (ret < 0) {
-        HNP_LOGE("hnp uninstall path sprintf unsuccess.");
-        return HNP_ERRNO_BASE_COPY_FAILED;
-    }
+    return HnpInsatllPre(uid, softwarePath, count, installPath, isForce);
+}
+
+static int HnpUnInstallPre(unsigned int uid, const char *hnpName, const char *version, const char *packagePath)
+{
+    NativeHnpPath hnpDstPath = {0};
 
     if (sprintf_s(hnpDstPath.hnpVersionPath, MAX_FILE_PATH_LEN, HNP_DEFAULT_INSTALL_ROOT_PATH"%lu/%s/%s.org/%s_%s/",
-        uid, pathTmp, argv[HNP_INDEX_3], argv[HNP_INDEX_3], argv[HNP_INDEX_4]) < 0) {
-        HNP_LOGE("hnp uninstall  path sprintf unsuccess, uid:%lu， program name[%s], version[%s]", uid,
-            argv[HNP_INDEX_3], argv[HNP_INDEX_4]);
+        uid, packagePath, hnpName, hnpName, version) < 0) {
+        HNP_LOGE("hnp uninstall  path sprintf unsuccess, uid:%lu， program name[%s], version[%s]", uid, hnpName,
+            version);
         return HNP_ERRNO_BASE_SPRINTF_FAILED;
     }
 
@@ -544,22 +541,69 @@ int HnpCmdUnInstall(int argc, char *argv[])
     }
 
     /* 拼接基本路径 */
-    if (sprintf_s(hnpDstPath.hnpProgramPath, MAX_FILE_PATH_LEN, HNP_DEFAULT_INSTALL_ROOT_PATH"%lu/%s/%s.org/", uid,
-        pathTmp, argv[HNP_INDEX_3]) < 0) {
-        HNP_LOGE("hnp uninstall pro path sprintf unsuccess, uid:%lu, program name[%s]", uid, argv[HNP_INDEX_3]);
+    if (sprintf_s(hnpDstPath.hnpSoftwarePath, MAX_FILE_PATH_LEN, HNP_DEFAULT_INSTALL_ROOT_PATH"%lu/%s/%s.org/", uid,
+        packagePath, hnpName) < 0) {
+        HNP_LOGE("hnp uninstall pro path sprintf unsuccess, uid:%lu, program name[%s]", uid, hnpName);
         return HNP_ERRNO_BASE_SPRINTF_FAILED;
     }
     if (sprintf_s(hnpDstPath.hnpBasePath, MAX_FILE_PATH_LEN, HNP_DEFAULT_INSTALL_ROOT_PATH"%lu/%s/", uid,
-        pathTmp) < 0) {
-        HNP_LOGE("hnp uninstall base path sprintf unsuccess, uid:%lu, program name[%s]", uid, argv[HNP_INDEX_3]);
+        packagePath) < 0) {
+        HNP_LOGE("hnp uninstall base path sprintf unsuccess, uid:%lu, program name[%s]", uid, hnpName);
         return HNP_ERRNO_BASE_SPRINTF_FAILED;
     }
-    if (strcpy_s(hnpDstPath.hnpProgramName, MAX_FILE_PATH_LEN, argv[HNP_INDEX_3]) != EOK) {
+    if (strcpy_s(hnpDstPath.hnpSoftwareName, MAX_FILE_PATH_LEN, hnpName) != EOK) {
         HNP_LOGE("hnp uninstall strcpy unsuccess.");
         return HNP_ERRNO_BASE_COPY_FAILED;
     }
 
     return HnpUnInstall(&hnpDstPath, hnpDstPath.hnpVersionPath, true);
+}
+
+int HnpCmdUnInstall(int argc, char *argv[])
+{
+    char *installPath = "hnppublic";
+    unsigned long uid;
+    char *uidArg = NULL;
+    char *hnpName = NULL;
+    char *version = NULL;
+    int ret;
+    int ch;
+
+    while ((ch = getopt(argc, argv, "u:n:v:i")) != -1) {
+        switch (ch) {
+            case 'u': //uid
+                uidArg = optarg;
+                ret = HnpInstallerUidGet(uidArg, &uid);
+                if (ret != 0) {
+                    HNP_LOGE("hnp install arg uid[%s] invalid", uidArg);
+                    return ret;
+                }
+                break;
+            case 'n': //hnp software name
+                hnpName = optarg;
+                break;
+            case 'v': //version
+                version = optarg;
+                break;
+            case 'i': //package name
+                if (optarg == NULL) {
+                    break;
+                }
+                installPath = (char *)optarg;
+                break;
+
+            default:
+                HNP_LOGE("hnp uninstall invalid params");
+                return HNP_ERRNO_INSTALLER_CALL_HELP;
+            }
+    }
+
+    if ((uidArg == NULL) || (hnpName == NULL) || (version == NULL)) {
+        HNP_LOGE("hnp uninstall params invalid uid[%s], hnp software[%s], version[%s]", uidArg, hnpName, version);
+        return HNP_ERRNO_INSTALLER_CALL_HELP;
+    }
+
+    return HnpUnInstallPre(uid, hnpName, version, installPath);
 }
 
 #ifdef __cplusplus

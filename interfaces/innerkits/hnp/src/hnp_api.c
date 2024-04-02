@@ -43,6 +43,11 @@ enum {
     HNP_INDEX_7
 };
 
+typedef enum {
+    OPTION_INDEX_FORCE = 0,
+    OPTION_INDEX_BUTT = 32,
+} HnpInstallOptionIndex;
+
 static int StartHnpProcess(char *const argv[], char *const apcEnv[])
 {
     pid_t pid;
@@ -56,7 +61,7 @@ static int StartHnpProcess(char *const argv[], char *const apcEnv[])
         return HNP_API_ERRNO_FORK_FAILED;
     } else if (pid == 0) {
         HNPAPI_LOG("\r\n [HNP API] this is fork children!\r\n");
-        ret = execve("./hnp", argv, apcEnv);
+        ret = execve("/system/bin/hnp", argv, apcEnv);
         if (ret < 0) {
             HNPAPI_LOG("\r\n [HNP API] execve unsuccess!\r\n");
             _exit(-1);
@@ -81,40 +86,55 @@ static int StartHnpProcess(char *const argv[], char *const apcEnv[])
     return exitVal;
 }
 
-int NativeInstallHnp(const char *userId, const char *hnpPath, const char *packageName, Bool isForce)
+static Bool NativeInstallOptionCheck(int installOptions, HnpInstallOptionIndex HnpOptionIndex)
+{
+    if (((installOptions >> HnpOptionIndex) & 1) == 1) {
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+int NativeInstallHnp(const char *userId, const char *packages[], int count, const char installPath, int installOptions)
 {
     char *argv[MAX_ARGV_NUM] = {0};
     char *apcEnv[MAX_ENV_NUM] = {0};
+    int index = 0;
 
-    if ((userId == NULL) || (hnpPath == NULL))) {
+    if ((userId == NULL) || (packages == NULL) || (count == 0))) {
         return HNP_API_ERRNO_PARAM_INVALID;
     }
 
-    HNPAPI_LOG("\r\n [HNP API] native package install! userId=%s, hnpPath=%s, IsForce=%d\r\n",
-        userId, hnpPath, isForce);
+    HNPAPI_LOG("\r\n [HNP API] native package install! userId=%s, hnpPath count=%d, install path=%s "
+        "install options=%d\r\n", userId, count, installPath, installOptions);
 
-    argv[HNP_INDEX_0] = "hnp";
-    argv[HNP_INDEX_1] = "install";
-    argv[HNP_INDEX_2] = (char*)userId;
-    argv[HNP_INDEX_3] = (char*)hnpPath;
+    argv[index++] = "hnp";
+    argv[index++] = "install";
+    argv[index++] = "-u";
+    argv[index++] = (char*)userId;
 
-    if (packageName == NULL) {
-        argv[HNP_INDEX_4] = "null";
-    } else {
-        argv[HNP_INDEX_4] = (char*)packageName;
+    for (int i = 0; i < count; i++) {
+        argv[index++] = "-p";
+        argv[index++] = (char*)packages[i];
     }
 
-    if (isForce == TRUE) {
-        argv[HNP_INDEX_5] = "-f";
+    if (installPath != NULL) {
+        argv[index++] = "-i";
+        argv[index++] = (char*)installPath;
+    }
+
+    if (NativeInstallOptionCheck(installOptions, OPTION_INDEX_FORCE) == TRUE) {
+        argv[index++] = "-f";
     }
 
     return StartHnpProcess(argv, apcEnv);
 }
 
-int NativeUnInstallHnp(const char *userId, const char *hnpName, const char *hnpVersion, const char *packageName)
+int NativeUnInstallHnp(const char *userId, const char *hnpName, const char *hnpVersion, const char *installPath)
 {
     char *argv[MAX_ARGV_NUM] = {0};
     char *apcEnv[MAX_ENV_NUM] = {0};
+    int index = 0;
 
     if ((userId == NULL) || (hnpName == NULL) || (hnpVersion == NULL)) {
         return HNP_API_ERRNO_PARAM_INVALID;
@@ -123,16 +143,18 @@ int NativeUnInstallHnp(const char *userId, const char *hnpName, const char *hnpV
     HNPAPI_LOG("\r\n [HNP API] native package uninstall! userId=%s, hnpName=%s, hnpVersion=%s\r\n",
         userId, hnpName, hnpVersion);
 
-    argv[HNP_INDEX_0] = "hnp";
-    argv[HNP_INDEX_1] = "uninstall";
-    argv[HNP_INDEX_2] = (char*)userId;
-    argv[HNP_INDEX_3] = (char*)hnpName;
-    argv[HNP_INDEX_4] = (char*)hnpVersion;
+    argv[index++] = "hnp";
+    argv[index++] = "uninstall";
+    argv[index++] = "-u";
+    argv[index++] = (char*)userId;
+    argv[index++] = "-n";
+    argv[index++] = (char*)hnpName;
+    argv[index++] = "-v";
+    argv[index++] = (char*)hnpVersion;
 
-    if (packageName == NULL) {
-        argv[HNP_INDEX_5] = "null";
-    } else {
-        argv[HNP_INDEX_5] = (char*)packageName;
+    if (installPath != NULL) {
+        argv[index++] = "-i";
+        argv[index++] = (char*)installPath;
     }
 
     return StartHnpProcess(argv, apcEnv);

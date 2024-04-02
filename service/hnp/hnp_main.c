@@ -14,6 +14,7 @@
  */
 
 #include <string.h>
+#include <unistd.h>
 
 #include "hnp_base.h"
 #include "hnp_installer.h"
@@ -32,6 +33,7 @@ typedef struct NativeManagerCmdInfoStru {
 } NativeManagerCmdInfo;
 
 NativeManagerCmdInfo g_nativeManagerCmd[] = {
+    {"-h", HnpShowHelp},
     {"help", HnpShowHelp},
     {"install", HnpCmdInstall},
     {"uninstall", HnpCmdUnInstall}
@@ -46,13 +48,21 @@ int HnpShowHelp(int argc, char *argv[])
         "\r\nThese are common hnp commands used in various situations:\r\n"
         "\r\nIf the [package name] is null, it represents a public install/nuninstall,\r\n"
         "    or it represents a private install/nuninstall\r\n"
-        "\r\ninstall:    install native software"
-        "\r\n            hnp install [user id] [hnp package dir] [package name] <-f>\r\n"
+        "\r\ninstall:      install native software"
+        "\r\n              hnp install [--user id] [--hnp package dir] [--package name] <-f>\r\n"
+        "\r\n              -u, --user id (required param)\r\n"
+        "\r\n              -p, --hnp software name, support multiple (required param)\r\n"
+        "\r\n              -i, --hnp install dir (optional param)\r\n"
+        "\r\n              -f,  is force install (optional param)\r\n"
         "\r\nuninstall:    uninstall native software"
-        "\r\n              hnp uninstall [user id] [software name] [software version] [package name]\r\n"
+        "\r\n              hnp uninstall [--user id] [--software name] [--software version] [--package name]\r\n"
+        "\r\n              -u, --user id (required param)\r\n"
+        "\r\n              -n, --software name (required param)\r\n"
+        "\r\n              -v, --software version (required param)\r\n"
+        "\r\n              -i, --hnp install dir (optional param)\r\n"
         "\r\nfor example:\r\n"
-        "\r\n    hnp install 1000 /usr1/hnp wechat -f\r\n"
-        "    hnp uninstall 1000 native_sample 1.1 wechat\r\n");
+        "\r\n    hnp install -u 1000 -p /usr1/hnp/sample.hnp -p /usr1/hnp/sample2.hnp -i wechat -f\r\n"
+        "    hnp uninstall -u 1000 -n native_sample -v 1.1 -i wechat\r\n");
 
     return 0;
 }
@@ -85,14 +95,18 @@ int main(int argc, char *argv[])
     /* 检验用户命令，获取对应的处理函数 */
     cmdInfo = HnpCmdCheck(argv[HNP_INDEX_1]);
     if (cmdInfo == NULL) {
-        HNP_LOGE("invalid cmd!. cmd:%s", argv[HNP_INDEX_1]);
+        HNP_LOGE("invalid cmd!. cmd:%s\r\n", argv[HNP_INDEX_1]);
         return HNP_ERRNO_OPERATOR_TYPE_INVALID;
     }
 
     /* 执行命令 */
     ret = cmdInfo->process(argc, argv);
+    if (ret == HNP_ERRNO_INSTALLER_CALL_HELP) {
+        HnpShowHelp(argc, argv);
+        return HNP_ERRNO_PARAM_INVALID;
+    }
 
-    HNP_LOGI("native manager process exit. ret=%d ", ret);
+    HNP_LOGI("native manager process exit. ret=%d \r\n", ret);
     return ret;
 }
 

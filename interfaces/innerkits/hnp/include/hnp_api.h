@@ -40,12 +40,14 @@ typedef enum {
  * Install native software package.
  *
  * @param userId Indicates id of user.
- * @param hnpPath  Indicates the directory path of hnp file.
- * @param isForce Indicates whether to force install.
+ * @param packages  Indicates the path of hnp file.
+ * @param count  Indicates num of hnp file.
+ * @param installPath  Indicates the path for private hnp file.
+ * @param installOptions Indicates install options.
  *
  * @return 0:success;other means failure.
  */
-int NativeInstallHnp(const char *userId, const char *hnpPath, const char *packageName, Bool isForce);
+int NativeInstallHnp(const char *userId, const char *packages[], int count, const char installPath, int installOptions);
 
 /**
  * Uninstall native software package.
@@ -53,10 +55,11 @@ int NativeInstallHnp(const char *userId, const char *hnpPath, const char *packag
  * @param userId Indicates id of user.
  * @param hnpName  Indicates the name of native software.
  * @param hnpVersion Indicates the version of native software.
+ * @param installPath  Indicates the path for private hnp file.
  *
  * @return 0:success;other means failure.
  */
-int NativeUnInstallHnp(const char *userId, const char *hnpName, const char *hnpVersion, const char *packageName);
+int NativeUnInstallHnp(const char *userId, const char *hnpName, const char *hnpVersion, const char *installPath);
 
 #ifdef __cplusplus
 }
