@@ -28,7 +28,6 @@ extern "C" {
 static int ParseLinksJsonToCfgInfo(cJSON *linksItem, HnpCfgInfo *hnpCfg)
 {
     NativeBinLink *linkArray = NULL;
-    int i;
 
     int linkArrayNum = cJSON_GetArraySize(linksItem);
     if (linkArrayNum != 0) {
@@ -38,7 +37,7 @@ static int ParseLinksJsonToCfgInfo(cJSON *linksItem, HnpCfgInfo *hnpCfg)
             HNP_LOGE("malloc unsuccess.");
             return HNP_ERRNO_NOMEM;
         }
-        for (i = 0; i < linkArrayNum; i++) {
+        for (int i = 0; i < linkArrayNum; i++) {
             cJSON *link = cJSON_GetArrayItem(linksItem, i);
             if (link == NULL) {
                 free(linkArray);
@@ -151,7 +150,7 @@ int HnpCfgGetFromSteam(char *cfgStream, HnpCfgInfo *hnpCfg)
     int ret;
 
     if (cfgStream == NULL) {
-        HNP_LOGE("zip cfg file not found.");
+        HNP_LOGE("hnp cfg file not found.");
         return HNP_ERRNO_BASE_READ_FILE_STREAM_FAILED;
     }
 
@@ -165,32 +164,18 @@ int HnpCfgGetFromSteam(char *cfgStream, HnpCfgInfo *hnpCfg)
 
     return ret;
 }
-
-int CreateHnpJsonFile(char *path, HnpCfgInfo *hnpCfg)
+int GetHnpJsonBuff(HnpCfgInfo *hnpCfg, char **buff)
 {
     cJSON *root = cJSON_CreateObject();
 
     cJSON_AddStringToObject(root, "type", "hnp-config");
     cJSON_AddStringToObject(root, "name", hnpCfg->name);
     cJSON_AddStringToObject(root, "version", hnpCfg->version);
-    cJSON_AddArrayToObject(root, "install");
+    cJSON_AddObjectToObject(root, "install");
     char *str = cJSON_Print(root);
     cJSON_Delete(root);
 
-    FILE *fp = fopen(path, "wb");
-    if (fp == NULL) {
-        free(str);
-        HNP_LOGE("open file[%s] unsuccess ", path);
-        return HNP_ERRNO_BASE_FILE_OPEN_FAILED;
-    }
-    int size = strlen(str) + 1;
-    int ret = fwrite(str, sizeof(char), size, fp);
-    fclose(fp);
-    free(str);
-    if (ret != size) {
-        HNP_LOGE("write file:%s unsuccess! len=%d, write=%d", path, size, ret);
-        return HNP_ERRNO_BASE_FILE_WRITE_FAILED;
-    }
+    *buff = str;
     return 0;
 }
 

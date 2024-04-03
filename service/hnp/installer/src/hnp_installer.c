@@ -247,7 +247,7 @@ static int HnpUnInstall(NativeHnpPath *hnpDstPath, const char *uninstallPath, bo
     char binPath[MAX_FILE_PATH_LEN];
     HnpCfgInfo hnpCfg = {0};
 
-    HNP_LOGI("hnp uninstall start now! path=%s program name[%s], run check=%d", hnpDstPath->hnpSoftwarePath,
+    HNP_LOGI("hnp uninstall start now! path=%s process name[%s], run check=%d", hnpDstPath->hnpSoftwarePath,
         hnpDstPath->hnpSoftwareName, runCheck);
 
     if (runCheck == false) {
@@ -526,7 +526,7 @@ static int HnpUnInstallPre(unsigned int uid, const char *hnpName, const char *ve
 
     if (sprintf_s(hnpDstPath.hnpVersionPath, MAX_FILE_PATH_LEN, HNP_DEFAULT_INSTALL_ROOT_PATH"%lu/%s/%s.org/%s_%s/",
         uid, packagePath, hnpName, hnpName, version) < 0) {
-        HNP_LOGE("hnp uninstall  path sprintf unsuccess, uid:%lu， program name[%s], version[%s]", uid, hnpName,
+        HNP_LOGE("hnp uninstall  path sprintf unsuccess, uid:%lu， process name[%s], version[%s]", uid, hnpName,
             version);
         return HNP_ERRNO_BASE_SPRINTF_FAILED;
     }
@@ -540,12 +540,12 @@ static int HnpUnInstallPre(unsigned int uid, const char *hnpName, const char *ve
     /* 拼接基本路径 */
     if (sprintf_s(hnpDstPath.hnpSoftwarePath, MAX_FILE_PATH_LEN, HNP_DEFAULT_INSTALL_ROOT_PATH"%lu/%s/%s.org/", uid,
         packagePath, hnpName) < 0) {
-        HNP_LOGE("hnp uninstall pro path sprintf unsuccess, uid:%lu, program name[%s]", uid, hnpName);
+        HNP_LOGE("hnp uninstall pro path sprintf unsuccess, uid:%lu, process name[%s]", uid, hnpName);
         return HNP_ERRNO_BASE_SPRINTF_FAILED;
     }
     if (sprintf_s(hnpDstPath.hnpBasePath, MAX_FILE_PATH_LEN, HNP_DEFAULT_INSTALL_ROOT_PATH"%lu/%s/", uid,
         packagePath) < 0) {
-        HNP_LOGE("hnp uninstall base path sprintf unsuccess, uid:%lu, program name[%s]", uid, hnpName);
+        HNP_LOGE("hnp uninstall base path sprintf unsuccess, uid:%lu, process name[%s]", uid, hnpName);
         return HNP_ERRNO_BASE_SPRINTF_FAILED;
     }
     if (strcpy_s(hnpDstPath.hnpSoftwareName, MAX_FILE_PATH_LEN, hnpName) != EOK) {
@@ -566,6 +566,7 @@ int HnpCmdUnInstall(int argc, char *argv[])
     int ret;
     int ch;
 
+    optind = 1;  // 从头开始遍历参数
     while ((ch = getopt(argc, argv, "hu:n:v:i")) != -1) {
         switch (ch) {
             case 'h' :

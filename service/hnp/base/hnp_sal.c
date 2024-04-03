@@ -177,7 +177,7 @@ int HnpProcessRunCheck(const char *binName, const char *runPath)
 
     /* 对programName进行空格过滤，防止外部命令注入 */
     if (strchr(binName, ' ') != NULL) {
-        HNP_LOGE("hnp uninstall program name[%s] invalid", binName);
+        HNP_LOGE("hnp uninstall process name[%s] invalid", binName);
         return HNP_ERRNO_BASE_PARAMS_INVALID;
     }
 

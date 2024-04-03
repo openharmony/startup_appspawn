@@ -34,6 +34,7 @@ typedef struct NativeManagerCmdInfoStru {
 
 NativeManagerCmdInfo g_nativeManagerCmd[] = {
     {"help", HnpCliShowHelp},
+    {"-h", HnpCliShowHelp},
     {"pack", HnpCmdPack}
 };
 
@@ -46,11 +47,11 @@ int HnpCliShowHelp(int argc, char *argv[])
         "[-n <native package name>][-v <native package version>]\r\n"
         "\r\nThese are common hnpcli commands used in various situations:\r\n"
         "\r\npack:    packet native software package to .hnp file"
-        "\r\n         hnpcli pack -i [source path] -o [dst path] -name [software name] -v [software version]"
-        "\r\n         -i    : [needed]    input path of software package dir"
-        "\r\n         -o    : [select]  output path of hnp file. if not set then ouput to current directory"
-        "\r\n         -n    : [select]  software name. if not hnp.json in input dir then must set"
-        "\r\n         -v    : [select]  software version. if not hnp.json in input dir then must set\r\n"
+        "\r\n         hnpcli pack -i [source path] <-o [dst path]> <-name [software name]> <-v [software version]>"
+        "\r\n         -i    : [required]    input path of software package dir"
+        "\r\n         -o    : [optional]    output path of hnp file. if not set then ouput to current directory"
+        "\r\n         -n    : [optional]    software name. if not hnp.json in input dir then must set"
+        "\r\n         -v    : [optional]    software version. if not hnp.json in input dir then must set\r\n"
         "\r\nfor example:\r\n"
         "\r\n    hnpcli pack -i /usr1/native_sample -o /usr1/output -n native_sample -v 1.1\r\n");
         
@@ -73,7 +74,6 @@ static NativeManagerCmdInfo* HnpCmdCheck(const char *cmd)
 int main(int argc, char *argv[])
 {
     int ret;
-    int opt;
     NativeManagerCmdInfo *cmdInfo = NULL;
 
     if (argc < HNP_INDEX_2) {
@@ -82,16 +82,6 @@ int main(int argc, char *argv[])
     }
 
     HNP_LOGI("native manager process start.");
-
-    while ((opt = getopt(argc, argv, "h")) != -1) {
-        switch (opt) {
-            case 'h' :
-                HnpCliShowHelp(argc, argv);
-                return 0;
-            default:
-                break;
-        }
-    }
 
     /* 检验用户命令，获取对应的处理函数 */
     cmdInfo = HnpCmdCheck(argv[HNP_INDEX_1]);
