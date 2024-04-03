@@ -29,13 +29,13 @@ extern "C" {
 
 #define MAX_FILE_PATH_LEN PATH_MAX
 
-#define HNP_HEAD_MAGIC 0x12345678
-#define HNP_HEAD_VERSION 1
 #define HNP_VERSION_LEN 32
 #define BUFFER_SIZE 1024
 #define HNP_COMMAND_LEN 128
 #define MAX_PROCESSES 32
 #define MAX_SOFTWARE_NUM 32
+
+#define HNP_CFG_FILE_NAME "hnp.json"
 
 #ifdef _WIN32
 #define DIR_SPLIT_SYMBOL '\\'
@@ -48,17 +48,6 @@ typedef struct NativeBinLinkStru {
     char source[MAX_FILE_PATH_LEN];
     char target[MAX_FILE_PATH_LEN];
 } NativeBinLink;
-
-/* hnp文件头结构 */
-typedef struct NativeHnpHeadStru {
-    unsigned int magic;     // 魔术字校验
-    unsigned int version;   // 版本号
-    unsigned int headLen;   // hnp结构头大小
-    unsigned int reserve;   // 预留字段
-    char hnpVersion[HNP_VERSION_LEN];    // Native软件包版本号
-    unsigned int linkNum;   // 软链接配置个数
-    NativeBinLink links[0];
-} NativeHnpHead;
 
 /* hnp配置文件信息 */
 typedef struct HnpCfgInfoStru {
@@ -188,23 +177,20 @@ enum {
 // 0x801119 对应进程不存在
 #define HNP_ERRNO_BASE_PROCESS_NOT_FOUND        HNP_ERRNO_COMMON(HNP_MID_BASE, 0x19)
 
-// 0x80111a 进程超过最大值
-#define HNP_ERRNO_BASE_PROCESS_NUM_OVERSIZE     HNP_ERRNO_COMMON(HNP_MID_BASE, 0x1a)
+// 0x80111a 创建路径失败
+#define HNP_ERRNO_BASE_MKDIR_PATH_FAILED        HNP_ERRNO_COMMON(HNP_MID_BASE, 0x1a)
 
-// 0x80111b 创建路径失败
-#define HNP_ERRNO_BASE_MKDIR_PATH_FAILED        HNP_ERRNO_COMMON(HNP_MID_BASE, 0x1b)
+// 0x80111b 读取配置文件流失败
+#define HNP_ERRNO_BASE_READ_FILE_STREAM_FAILED  HNP_ERRNO_COMMON(HNP_MID_BASE, 0x1b)
 
-// 0x80111c 读取配置文件流失败
-#define HNP_ERRNO_BASE_READ_FILE_STREAM_FAILED  HNP_ERRNO_COMMON(HNP_MID_BASE, 0x1c)
+// 0x80111c 解析json信息失败
+#define HNP_ERRNO_BASE_PARSE_JSON_FAILED        HNP_ERRNO_COMMON(HNP_MID_BASE, 0x1c)
 
-// 0x80111d 解析json信息失败
-#define HNP_ERRNO_BASE_PARSE_JSON_FAILED        HNP_ERRNO_COMMON(HNP_MID_BASE, 0x1d)
+// 0x80111d 未找到json项
+#define HNP_ERRNO_BASE_PARSE_ITEM_NO_FOUND      HNP_ERRNO_COMMON(HNP_MID_BASE, 0x1d)
 
-// 0x80111e 未找到json项
-#define HNP_ERRNO_BASE_PARSE_ITEM_NO_FOUND      HNP_ERRNO_COMMON(HNP_MID_BASE, 0x1e)
-
-// 0x80111f 解析json数组失败
-#define HNP_ERRNO_BASE_GET_ARRAY_ITRM_FAILED    HNP_ERRNO_COMMON(HNP_MID_BASE, 0x1f)
+// 0x80111e 解析json数组失败
+#define HNP_ERRNO_BASE_GET_ARRAY_ITRM_FAILED    HNP_ERRNO_COMMON(HNP_MID_BASE, 0x1e)
 
 int GetFileSizeByHandle(FILE *file, int *size);
 
@@ -220,7 +206,7 @@ int HnpUnZip(const char *inputFile, const char *outputDir);
 
 void HnpLogPrintf(int logLevel, char *module, const char *format, ...);
 
-int HnpReadFromZipHead(const char *zipFile, NativeHnpHead **hnpHead);
+int HnpCfgGetFromZip(const char *inputFile, HnpCfgInfo *hnpCfg);
 
 int HnpSymlink(const char *srcFile, const char *dstFile);
 
@@ -234,7 +220,9 @@ int HnpWriteInfoToFile(const char* filePath, char *buff, int len);
 
 int ParseHnpCfgFile(const char *hnpCfgPath, HnpCfgInfo *hnpCfg);
 
-int CreateHnpJsonFile(char *path, HnpCfgInfo *hnpCfg)
+int CreateHnpJsonFile(char *path, HnpCfgInfo *hnpCfg);
+
+int HnpCfgGetFromSteam(char *cfgStream, HnpCfgInfo *hnpCfg);
 
 #define HNP_LOGI(args...) \
     HnpLogPrintf(HNP_LOG_INFO, "HNP", ##args)

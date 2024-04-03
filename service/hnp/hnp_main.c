@@ -92,7 +92,7 @@ int main(int argc, char *argv[])
 
     HNP_LOGI("native manager process start.");
 
-    while ((opt = getopt(argc, argv, "h")) != -1) {
+    while ((opt = getopt(argc, argv, "hu:p:ifn:v:")) != -1) {
         switch (opt) {
             case 'h' :
                 HnpShowHelp(argc, argv);

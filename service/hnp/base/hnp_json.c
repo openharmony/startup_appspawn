@@ -145,6 +145,27 @@ int ParseHnpCfgFile(const char *hnpCfgPath, HnpCfgInfo *hnpCfg)
     return ret;
 }
 
+int HnpCfgGetFromSteam(char *cfgStream, HnpCfgInfo *hnpCfg)
+{
+    cJSON *json;
+    int ret;
+
+    if (cfgStream == NULL) {
+        HNP_LOGE("zip cfg file not found.");
+        return HNP_ERRNO_BASE_READ_FILE_STREAM_FAILED;
+    }
+
+    json = cJSON_Parse(cfgStream);
+    if (json == NULL) {
+        HNP_LOGE("parse json file unsuccess.");
+        return HNP_ERRNO_BASE_PARSE_JSON_FAILED;
+    }
+    ret = ParseJsonStreamToHnpCfgInfo(json, hnpCfg);
+    cJSON_Delete(json);
+
+    return ret;
+}
+
 int CreateHnpJsonFile(char *path, HnpCfgInfo *hnpCfg)
 {
     cJSON *root = cJSON_CreateObject();

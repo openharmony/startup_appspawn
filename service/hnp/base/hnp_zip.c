@@ -285,53 +285,52 @@ int HnpUnZip(const char *inputFile, const char *outputDir)
     return 0;
 }
 
-int HnpReadFromZipHead(const char *zipFile, NativeHnpHead **hnpHead)
+int HnpCfgGetFromZip(const char *inputFile, HnpCfgInfo *hnpCfg)
 {
-    char *buffTmp;
-    int headLen;
-    NativeHnpHead *hnpHeadTmp;
+    char fileName[MAX_FILE_PATH_LEN];
+    unz_file_info fileInfo;
+    char *cfgStream = NULL;
 
-    int ret = ReadFileToStreamBySize(zipFile, &buffTmp, sizeof(NativeHnpHead));
-    if (ret != 0) {
-        HNP_LOGE("read file:%s to stream unsuccess!", zipFile);
-        return ret;
+    unzFile zipFile = unzOpen(zipFile);
+    if (zipFile == NULL) {
+        HNP_LOGE("unzip open zip:%s unsuccess!", inputFile);
+        return HNP_ERRNO_BASE_UNZIP_OPEN_FAILED;
     }
 
-    /* 读取native头的大小 */
-    hnpHeadTmp = (NativeHnpHead *)buffTmp;
-    if (hnpHeadTmp->magic != HNP_HEAD_MAGIC) {
-        free(buffTmp);
-        HNP_LOGE("read file unsuccess,%s is invalid hnp file", zipFile);
-        return HNP_ERRNO_BASE_MAGIC_CHECK_FAILED;
-    }
-    headLen = hnpHeadTmp->headLen;
-    free(buffTmp);
-    buffTmp = NULL;
+    int ret = unzGoToFirstFile(zipFile);
+    while (ret == UNZ_OK) {
+        ret = unzGetCurrentFileInfo(zipFile, &fileInfo, fileName, sizeof(fileName), NULL, 0, NULL, 0);
+        if (ret != UNZ_OK) {
+            HNP_LOGE("unzip get zip:%s info unsuccess!", inputFile);
+            unzClose(zipFile);
+            return HNP_ERRNO_BASE_UNZIP_GET_INFO_FAILED;
+        }
 
-    FILE *fp = fopen(zipFile, "rb");
-    if (fp == NULL) {
-        HNP_LOGE("open file[%s] unsuccess. errno=%d", zipFile, errno);
-        return HNP_ERRNO_BASE_FILE_OPEN_FAILED;
-    }
+        if (strcmp(fileName, HNP_CFG_FILE_NAME) != 0) {
+            ret = unzGoToNextFile(zipFile);
+            continue;
+        }
 
-    buffTmp = (char*)malloc(headLen);
-    if (buffTmp == NULL) {
-        HNP_LOGE("malloc unsuccess. size=%d, errno=%d", headLen, errno);
-        (void)fclose(fp);
-        return HNP_ERRNO_NOMEM;
+        unzOpenCurrentFile(zipFile);
+        cfgStream = malloc(fileInfo.compressed_size);
+        if (cfgStream == NULL) {
+            HNP_LOGE("malloc unsuccess. size=%d, errno=%d", fileInfo.compressed_size, errno);
+            return HNP_ERRNO_NOMEM;
+        }
+        uLong readSize = unzReadCurrentFile(zipFile, cfgStream, fileInfo.compressed_size);
+        if (readSize != fileInfo.compressed_size) {
+            free(cfgStream);
+            unzClose(zipFile);
+            HNP_LOGE("unzip read zip:%s info size[%lu]=>[%lu] error!", inputFile, fileInfo.compressed_size, readSize);
+            return HNP_ERRNO_BASE_FILE_READ_FAILED;
+        }
+        break;
     }
+    unzClose(zipFile);
 
-    ret = fread(buffTmp, sizeof(char), headLen, fp);
-    if (ret != headLen) {
-        HNP_LOGE("fread unsuccess. ret=%d, size=%d, errno=%d", ret, headLen, errno);
-        (void)fclose(fp);
-        free(buffTmp);
-        return HNP_ERRNO_BASE_FILE_READ_FAILED;
-    }
-
-    *hnpHead = (NativeHnpHead *)buffTmp;
-    (void)fclose(fp);
-    return 0;
+    ret = HnpCfgGetFromSteam(cfgStream, hnpCfg);
+    free(cfgStream);
+    return ret;
 }
 
 #ifdef __cplusplus
