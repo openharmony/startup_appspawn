@@ -48,20 +48,20 @@ int HnpShowHelp(int argc, char *argv[])
         "[-i <private path>][-f]\r\n"
         "\r\nThese are common hnp commands used in various situations:\r\n"
         "\r\ninstall:      install native software"
-        "\r\n              hnp install -u [user id] -i [hnp package dir] -p [package name] -f\r\n"
+        "\r\n              hnp install -u [user id] -i [hnp install dir] -p [package name] -f\r\n"
         "\r\n              -u    : [required]    user id \r\n"
         "\r\n              -p    : [required]    input path of software package dir, is support multiple\r\n"
         "\r\n              -i    : [optional]    hnp install dir, if not input, it will be use public path\r\n"
         "\r\n              -f    : [optional]    is force install\r\n"
         "\r\nuninstall:    uninstall native software"
-        "\r\n              hnp uninstall -u [user id] -n [software name] -v [software version] -i [package name]\r\n"
+        "\r\n              hnp uninstall -u [user id] -n [software name] -v [software version] -i [uninstall dir]\r\n"
         "\r\n              -u    : [required]    user id \r\n"
         "\r\n              -n    : [required]    software name\r\n"
         "\r\n              -v    : [required]    software version\r\n"
         "\r\n              -i    : [optional]    hnp install dir, it will be use public path\r\n"
         "\r\nfor example:\r\n"
-        "\r\n    hnp install -u 1000 -p /usr1/hnp/sample.hnp -p /usr1/hnp/sample2.hnp -i wechat -f\r\n"
-        "    hnp uninstall -u 1000 -n native_sample -v 1.1 -i wechat\r\n");
+        "\r\n    hnp install -u 1000 -p /usr1/hnp/sample.hnp -p /usr1/hnp/sample2.hnp -i /data/app/el1/bundle/ -f\r\n"
+        "    hnp uninstall -u 1000 -n native_sample -v 1.1 -i /data/app/el1/bundle/\r\n");
 
     return 0;
 }
