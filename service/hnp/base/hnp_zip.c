@@ -328,7 +328,7 @@ int HnpCfgGetFromZip(const char *inputFile, HnpCfgInfo *hnpCfg)
         ret = unzGetCurrentFileInfo(zipFile, &fileInfo, fileName, sizeof(fileName), NULL, 0, NULL, 0);
         if (ret != UNZ_OK) {
             HNP_LOGE("unzip get zip:%s info unsuccess!", inputFile);
-                unzClose(zipFile);
+            unzClose(zipFile);
             return HNP_ERRNO_BASE_UNZIP_GET_INFO_FAILED;
         }
         if (strstr(fileName, HNP_CFG_FILE_NAME) == NULL) {
@@ -340,6 +340,7 @@ int HnpCfgGetFromZip(const char *inputFile, HnpCfgInfo *hnpCfg)
         cfgStream = malloc(fileInfo.uncompressed_size);
         if (cfgStream == NULL) {
             HNP_LOGE("malloc unsuccess. size=%d, errno=%d", fileInfo.uncompressed_size, errno);
+            unzClose(zipFile);
             return HNP_ERRNO_NOMEM;
         }
         uLong readSize = unzReadCurrentFile(zipFile, cfgStream, fileInfo.uncompressed_size);

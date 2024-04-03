@@ -30,7 +30,7 @@ static int ParseLinksJsonToCfgInfo(cJSON *linksItem, HnpCfgInfo *hnpCfg)
     NativeBinLink *linkArray = NULL;
 
     int linkArrayNum = cJSON_GetArraySize(linksItem);
-    if (linkArrayNum != 0) {
+    if (linkArrayNum > 0) {
         hnpCfg->linkNum = linkArrayNum;
         linkArray = (NativeBinLink*)malloc(sizeof(NativeBinLink) * linkArrayNum);
         if (linkArray == NULL) {

@@ -47,14 +47,14 @@ int HnpCliShowHelp(int argc, char *argv[])
         "[-n <native package name>][-v <native package version>]\r\n"
         "\r\nThese are common hnpcli commands used in various situations:\r\n"
         "\r\npack:    packet native software package to .hnp file"
-        "\r\n         hnpcli pack -i [source path] <-o [dst path]> <-name [software name]> <-v [software version]>"
+        "\r\n         hnpcli pack -i [source path] <-o [dst path]> <-n [software name]> <-v [software version]>"
         "\r\n         -i    : [required]    input path of software package dir"
         "\r\n         -o    : [optional]    output path of hnp file. if not set then ouput to current directory"
         "\r\n         -n    : [optional]    software name. if not hnp.json in input dir then must set"
         "\r\n         -v    : [optional]    software version. if not hnp.json in input dir then must set\r\n"
         "\r\nfor example:\r\n"
         "\r\n    hnpcli pack -i /usr1/native_sample -o /usr1/output -n native_sample -v 1.1\r\n");
-        
+
     return 0;
 }
 

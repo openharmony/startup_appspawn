@@ -33,8 +33,8 @@
 extern "C" {
 #endif
 
-pid_t *gChildPid = NULL;
-int gMax = 0;
+pid_t *g_hnpPopenChildPid = NULL;
+int g_hnpPopenMax = 0;
 
 static void HnpPopenForChild(int pipefd[], const char *command, const char *mode)
 {
@@ -51,8 +51,8 @@ static void HnpPopenForChild(int pipefd[], const char *command, const char *mode
         }
     }
 
-    for (int i = 0; i < gMax; i++) {
-        if (gChildPid[i] > 0) {
+    for (int i = 0; i < g_hnpPopenMax; i++) {
+        if (g_hnpPopenChildPid[i] > 0) {
             close(i);
         }
     }
@@ -71,10 +71,14 @@ static FILE* HnpPopen(const char *command, const char *mode)
         return NULL;
     }
 
-    if (gChildPid == NULL) {
-        gMax = sysconf(_SC_OPEN_MAX);
-        gChildPid = (pid_t *)calloc(gMax, sizeof(pid_t));
-        if (gChildPid == NULL) {
+    if (g_hnpPopenChildPid == NULL) {
+        g_hnpPopenMax = sysconf(_SC_OPEN_MAX);
+        if (g_hnpPopenMax > 0) {
+            g_hnpPopenChildPid = (pid_t *)calloc(g_hnpPopenMax, sizeof(pid_t));
+            if (g_hnpPopenChildPid == NULL) {
+                return NULL;
+            }
+        } else {
             return NULL;
         }
     }
@@ -83,7 +87,7 @@ static FILE* HnpPopen(const char *command, const char *mode)
         return NULL;
     }
 
-    if ((pipefd[READ] >= gMax) || (pipefd[WRITE] >= gMax)) {
+    if ((pipefd[READ] >= g_hnpPopenMax) || (pipefd[WRITE] >= g_hnpPopenMax)) {
         close(pipefd[READ]);
         close(pipefd[WRITE]);
         return NULL;
@@ -105,7 +109,7 @@ static FILE* HnpPopen(const char *command, const char *mode)
         stream = fdopen(pipefd[WRITE], mode);
     }
     if (stream != NULL) {
-        gChildPid[fileno(stream)] = pid;
+        g_hnpPopenChildPid[fileno(stream)] = pid;
     }
     return stream;
 }
@@ -119,16 +123,16 @@ static void HnpPclose(FILE *stream)
         return;
     }
 
-    if (gChildPid == NULL) {
+    if (g_hnpPopenChildPid == NULL) {
         return;
     }
 
-    pid = gChildPid[fileno(stream)];
+    pid = g_hnpPopenChildPid[fileno(stream)];
     if (pid <= 0) {
         return;
     }
 
-    gChildPid[fileno(stream)] = 0;
+    g_hnpPopenChildPid[fileno(stream)] = 0;
     waitpid(pid, &status, 0);
     return;
 }
@@ -174,12 +178,6 @@ int HnpProcessRunCheck(const char *binName, const char *runPath)
     char cmdBuffer[BUFFER_SIZE];
 
     HNP_LOGI("process[%s] running check", binName);
-
-    /* 对programName进行空格过滤，防止外部命令注入 */
-    if (strchr(binName, ' ') != NULL) {
-        HNP_LOGE("hnp uninstall process name[%s] invalid", binName);
-        return HNP_ERRNO_BASE_PARAMS_INVALID;
-    }
 
     ret = HnpPidGetByBinName(binName, pids, &count);
     if ((ret != 0) || (count == 0)) { // 返回非0代表未找到进程对应的pid

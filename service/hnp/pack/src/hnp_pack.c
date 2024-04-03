@@ -105,7 +105,7 @@ static int PackHnp(const char *hnpSrcPath, const char *hnpDstPath, HnpPackInfo *
     return ret;
 }
 
-int GetHnpCfgInfo(const char *hnpCfgPath, const char *sourcePath, HnpCfgInfo *hnpCfg)
+static int GetHnpCfgInfo(const char *hnpCfgPath, const char *sourcePath, HnpCfgInfo *hnpCfg)
 {
     NativeBinLink *linkArr = NULL;
     char linksource[MAX_FILE_PATH_LEN] = {0};
@@ -135,7 +135,7 @@ int GetHnpCfgInfo(const char *hnpCfgPath, const char *sourcePath, HnpCfgInfo *hn
     return 0;
 }
 
-int ParsePackArgs(HnpPackArgv *packArgv, HnpPackInfo *packInfo)
+static int ParsePackArgs(HnpPackArgv *packArgv, HnpPackInfo *packInfo)
 {
     char cfgPath[MAX_FILE_PATH_LEN];
 
@@ -192,6 +192,7 @@ int HnpCmdPack(int argc, char *argv[])
     HnpPackInfo packInfo = {0};
     int opt;
 
+    optind = 1; // 从头开始遍历参数
     while ((opt = getopt_long(argc, argv, "hi:o:n:v:", NULL, NULL)) != -1) {
         switch (opt) {
             case 'h' :
