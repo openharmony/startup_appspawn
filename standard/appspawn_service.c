@@ -736,6 +736,12 @@ static void AppSpawnRun(AppSpawnContent *content, int argc, char *const argv[])
     }
     LE_CloseSignalTask(LE_GetDefaultLoop(), appSpawnContent->sigHandler);
     // release resource
+    if (content->nsInitPidFd > 0) {
+        close(content->nsInitPidFd);
+    }
+    if (content->nsSelfPidFd > 0) {
+        close(content->nsSelfPidFd);
+    }
     OH_HashMapDestory(appSpawnContent->appMap, NULL);
     LE_CloseStreamTask(LE_GetDefaultLoop(), appSpawnContent->server);
     LE_CloseLoop(LE_GetDefaultLoop());
