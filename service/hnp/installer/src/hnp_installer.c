@@ -43,12 +43,11 @@ static int HnpInstallerUidGet(const char *uidIn, unsigned long *uidOut)
     return 0;
 }
 
-static int HnpGenerateSoftLinkAllByJson(const char *installPath, const char *dstPath, NativeHnpHead *hnpHead)
+static int HnpGenerateSoftLinkAllByJson(const char *installPath, const char *dstPath, HnpCfgInfo *hnpCfg)
 {
     char srcFile[MAX_FILE_PATH_LEN];
     char dstFile[MAX_FILE_PATH_LEN];
-    char uninstallFile[MAX_FILE_PATH_LEN];
-    NativeBinLink *currentLink = hnpHead->links;
+    NativeBinLink *currentLink = hnpCfg->links;
     char *fileName;
     char *fileNameTmp;
 
@@ -60,7 +59,7 @@ static int HnpGenerateSoftLinkAllByJson(const char *installPath, const char *dst
         }
     }
 
-    for (unsigned int i = 0; i < hnpHead->linkNum; i++) {
+    for (unsigned int i = 0; i < hnpCfg->linkNum; i++) {
         int ret = sprintf_s(srcFile, MAX_FILE_PATH_LEN, "%s%s", installPath, currentLink->source);
         if (ret < 0) {
             HNP_LOGE("sprintf install bin src file unsuccess.");
@@ -92,15 +91,7 @@ static int HnpGenerateSoftLinkAllByJson(const char *installPath, const char *dst
         currentLink++;
     }
 
-    int ret = sprintf_s(uninstallFile, MAX_FILE_PATH_LEN, "%s"HNP_UNSTALL_INFO_FILE, installPath);
-    if (ret < 0) {
-        HNP_LOGE("sprintf install info file unsuccess.");
-        return HNP_ERRNO_BASE_SPRINTF_FAILED;
-    }
-    /* 向生成的hnp_unstall.txt文件头写入配置信息便于卸载 */
-    ret = HnpWriteInfoToFile(uninstallFile, (char*)hnpHead, hnpHead->headLen);
-
-    return ret;
+    return 0;
 }
 
 static int HnpGenerateSoftLinkAll(const char *installPath, const char *dstPath)
@@ -161,7 +152,7 @@ static int HnpGenerateSoftLinkAll(const char *installPath, const char *dstPath)
     return 0;
 }
 
-static int HnpGenerateSoftLink(const char *installPath, const char *hnpBasePath, NativeHnpHead *hnpHead)
+static int HnpGenerateSoftLink(const char *installPath, const char *hnpBasePath, HnpCfgInfo *hnpCfg)
 {
     int ret = 0;
     char binPath[MAX_FILE_PATH_LEN];
@@ -172,16 +163,16 @@ static int HnpGenerateSoftLink(const char *installPath, const char *hnpBasePath,
         return HNP_ERRNO_BASE_SPRINTF_FAILED;
     }
 
-    if (hnpHead->linkNum == 0) {
+    if (hnpCfg->linkNum == 0) {
         ret = HnpGenerateSoftLinkAll(installPath, binPath);
     } else {
-        ret = HnpGenerateSoftLinkAllByJson(installPath, binPath, hnpHead);
+        ret = HnpGenerateSoftLinkAllByJson(installPath, binPath, hnpCfg);
     }
 
     return ret;
 }
 
-static int HnpInstall(const char *hnpFile, NativeHnpPath *hnpDstPath, NativeHnpHead *hnpHead)
+static int HnpInstall(const char *hnpFile, NativeHnpPath *hnpDstPath, HnpCfgInfo *hnpCfg)
 {
     int ret;
 
@@ -192,23 +183,16 @@ static int HnpInstall(const char *hnpFile, NativeHnpPath *hnpDstPath, NativeHnpH
     }
 
     /* 生成软链 */
-    return HnpGenerateSoftLink(hnpDstPath->hnpVersionPath, hnpDstPath->hnpBasePath, hnpHead);
+    return HnpGenerateSoftLink(hnpDstPath->hnpVersionPath, hnpDstPath->hnpBasePath, hnpCfg);
 }
 
-static int HnpProcessRunCheckWithFile(const char *file, NativeHnpPath *hnpDstPath, const char *versionPath)
+static int HnpProcessRunCheckWithCfg(HnpCfgInfo *hnpCfg, NativeHnpPath *hnpDstPath, const char *uninstallPath)
 {
     int ret;
-    NativeHnpHead *hnpHead;
-    NativeBinLink *currentLink;
     char *fileName;
+    NativeBinLink *currentLink = hnpCfg->links;
 
-    ret = HnpReadFromZipHead(file, &hnpHead);
-    if (ret != 0) {
-        return ret; /* 内部已打印日志 */
-    }
-
-    currentLink = hnpHead->links;
-    for (unsigned int i = 0; i < hnpHead->linkNum; i++) {
+    for (unsigned int i = 0; i < hnpCfg->linkNum; i++) {
         /* 如果target为空则使用源二进制名称 */
         if (strcmp(currentLink->target, "") == 0) {
             fileName = strrchr(currentLink->source, DIR_SPLIT_SYMBOL);
@@ -217,22 +201,19 @@ static int HnpProcessRunCheckWithFile(const char *file, NativeHnpPath *hnpDstPat
             } else {
                 fileName++;
             }
-            ret = HnpProcessRunCheck(fileName, versionPath);
+            ret = HnpProcessRunCheck(fileName, uninstallPath);
         } else {
-            ret = HnpProcessRunCheck(currentLink->target, versionPath);
+            ret = HnpProcessRunCheck(currentLink->target, uninstallPath);
         }
         if (ret != 0) {
-            free(hnpHead);
             return ret;
         }
         currentLink++;
     }
-
-    free(hnpHead);
     return 0;
 }
 
-static int HnpProcessRunCheckWithPath(const char *path, NativeHnpPath *hnpDstPath, const char *versionPath)
+static int HnpProcessRunCheckWithPath(const char *path, NativeHnpPath *hnpDstPath, const char *uninstallPath)
 {
     DIR *dir;
     struct dirent *entry;
@@ -248,7 +229,7 @@ static int HnpProcessRunCheckWithPath(const char *path, NativeHnpPath *hnpDstPat
             continue;
         }
         /* 查询软件是否正在运行 */
-        ret = HnpProcessRunCheck(entry->d_name, versionPath);
+        ret = HnpProcessRunCheck(entry->d_name, uninstallPath);
         if (ret != 0) {
             closedir(dir);
             return ret;
@@ -259,11 +240,12 @@ static int HnpProcessRunCheckWithPath(const char *path, NativeHnpPath *hnpDstPat
     return 0;
 }
 
-static int HnpUnInstall(NativeHnpPath *hnpDstPath, const char *versionPath, bool runCheck)
+static int HnpUnInstall(NativeHnpPath *hnpDstPath, const char *uninstallPath, bool runCheck)
 {
     int ret;
-    char uninstallFile[MAX_FILE_PATH_LEN];
+    char hnpCfgPath[MAX_FILE_PATH_LEN];
     char binPath[MAX_FILE_PATH_LEN];
+    HnpCfgInfo hnpCfg = {0};
 
     HNP_LOGI("hnp uninstall start now! path=%s program name[%s], run check=%d", hnpDstPath->hnpSoftwarePath,
         hnpDstPath->hnpSoftwareName, runCheck);
@@ -274,22 +256,33 @@ static int HnpUnInstall(NativeHnpPath *hnpDstPath, const char *versionPath, bool
         return ret;
     }
 
-    ret = sprintf_s(uninstallFile, MAX_FILE_PATH_LEN, "%s/"HNP_UNSTALL_INFO_FILE, versionPath);
+    ret = sprintf_s(hnpCfgPath, MAX_FILE_PATH_LEN, "%s/"HNP_CFG_FILE_NAME, uninstallPath);
     if (ret < 0) {
         HNP_LOGE("sprintf uninstall info file unsuccess.");
         return HNP_ERRNO_BASE_SPRINTF_FAILED;
     }
-    if (access(uninstallFile, F_OK) == 0) {
-        ret = HnpProcessRunCheckWithFile(uninstallFile, hnpDstPath, versionPath);
-    } else {
-        ret = sprintf_s(binPath, MAX_FILE_PATH_LEN, "%s/bin", versionPath);
+
+    ret = ParseHnpCfgFile(hnpCfgPath, &hnpCfg);
+    if (ret != 0) {
+        HNP_LOGE("parse hnp cfg[%s] unsuccess! ret=%d", hnpCfgPath, ret);
+        return ret;
+    }
+
+    if (hnpCfg.linkNum == 0) {
+        ret = sprintf_s(binPath, MAX_FILE_PATH_LEN, "%s/bin", uninstallPath);
         if (ret < 0) {
             HNP_LOGE("sprintf uninstall info file unsuccess.");
             return HNP_ERRNO_BASE_SPRINTF_FAILED;
         }
-        ret = HnpProcessRunCheckWithPath(binPath, hnpDstPath, versionPath);
+        ret = HnpProcessRunCheckWithPath(binPath, hnpDstPath, uninstallPath);
+    } else {
+        ret = HnpProcessRunCheckWithCfg(&hnpCfg, hnpDstPath, uninstallPath);
     }
 
+    if (hnpCfg.links != NULL) {
+        free(hnpCfg.links);
+        hnpCfg.links = NULL;
+    }
     if (ret != 0) {
         return ret;
     }
@@ -299,31 +292,31 @@ static int HnpUnInstall(NativeHnpPath *hnpDstPath, const char *versionPath, bool
     return ret;
 }
 
-static int HnpGetVersionPathInProgramPath(const char *programPath, char *versionPath)
+static int HnpGetUninstallPath(const char *softwarePath, char *uninstallPath)
 {
     DIR *dir;
     struct dirent *entry;
     int ret;
 
-    if ((dir = opendir(programPath)) == NULL) {
-        HNP_LOGE("get version file opendir:%s unsuccess", programPath);
+    if ((dir = opendir(softwarePath)) == NULL) {
+        HNP_LOGE("get version file opendir:%s unsuccess", softwarePath);
         return HNP_ERRNO_BASE_FILE_OPEN_FAILED;
     }
     while (((entry = readdir(dir)) != NULL)) {
         if ((strcmp(entry->d_name, ".") == 0) || (strcmp(entry->d_name, "..") == 0)) {
             continue;
         }
-        ret = sprintf_s(versionPath, MAX_FILE_PATH_LEN, "%s/%s", programPath, entry->d_name);
+        ret = sprintf_s(uninstallPath, MAX_FILE_PATH_LEN, "%s/%s", softwarePath, entry->d_name);
         if (ret < 0) {
             closedir(dir);
             HNP_LOGE("get version file sprintf_s unsuccess.");
             return HNP_ERRNO_BASE_SPRINTF_FAILED;
         }
-        HNP_LOGI("get version file:%s success", versionPath);
         closedir(dir);
         return 0;
     }
 
+    HNP_LOGE("get uninstall path in[%s] unsuccess", softwarePath);
     closedir(dir);
     return HNP_ERRNO_INSTALLER_VERSION_FILE_GET_FAILED;
 }
@@ -332,7 +325,7 @@ static int HnpInstallPathGet(const char *fileName, bool isForce, char* hnpVersio
 {
     int ret;
     char *hnpNameTmp;
-    char versionOldPath[MAX_FILE_PATH_LEN];
+    char uninstallPath[MAX_FILE_PATH_LEN];
 
     /* 裁剪获取文件名使用 */
     ret = strcpy_s(hnpDstPath->hnpSoftwareName, MAX_FILE_PATH_LEN, fileName);
@@ -369,11 +362,11 @@ static int HnpInstallPathGet(const char *fileName, bool isForce, char* hnpVersio
             HNP_LOGE("hnp install path[%s] exist, but force is false", hnpDstPath->hnpSoftwarePath);
             return HNP_ERRNO_INSTALLER_PATH_IS_EXIST;
         } else {
-            ret = HnpGetVersionPathInProgramPath(hnpDstPath->hnpSoftwarePath, versionOldPath);
+            ret = HnpGetUninstallPath(hnpDstPath->hnpSoftwarePath, uninstallPath);
             if (ret != 0) {
                 return ret;
             }
-            ret = HnpUnInstall(hnpDstPath, versionOldPath, true);
+            ret = HnpUnInstall(hnpDstPath, uninstallPath, true);
             if (ret != 0) {
                 return ret;
             }
@@ -389,38 +382,40 @@ static int HnpInstallPathGet(const char *fileName, bool isForce, char* hnpVersio
 
 static int HnpReadAndInstall(char *srcFile, NativeHnpPath *hnpDstPath, bool isForce)
 {
-    NativeHnpHead *hnpHead;
     int ret;
     char *fileName;
+    HnpCfgInfo hnpCfg = {0};
 
-    /* 从hnp头文件获取头文件信息，由于大小不固定，内存在方法内申请，失败需要手动释放 */
-    ret = HnpReadFromZipHead(srcFile, &hnpHead);
+    /* 从hnp zip获取cfg信息 */
+    ret = HnpCfgGetFromZip(srcFile, &hnpCfg);
     if (ret != 0) {
         return ret; /* 内部已打印日志 */
     }
 
-    /* 获取安装路径 */
+    /* 获取文件名称 */
     fileName = strrchr(srcFile, DIR_SPLIT_SYMBOL);
     if (fileName == NULL) {
         fileName = srcFile;
     } else {
         fileName++;
     }
-    ret = HnpInstallPathGet(fileName, isForce, hnpHead->hnpVersion, hnpDstPath);
+    ret = HnpInstallPathGet(fileName, isForce, hnpCfg.version, hnpDstPath);
     if (ret != 0) {
-        free(hnpHead);
         return ret; /* 内部已打印日志 */
     }
 
     /* hnp安装 */
-    ret = HnpInstall(srcFile, hnpDstPath, hnpHead);
-    free(hnpHead);
+    ret = HnpInstall(srcFile, hnpDstPath, &hnpCfg);
+    // 释放软链接占用的内存
+    if (hnpCfg.links != NULL) {
+        free(hnpCfg.links);
+        hnpCfg.links = NULL;
+    }
     if (ret != 0) {
         /* 安装失败卸载当前包 */
         HnpUnInstall(hnpDstPath, hnpDstPath->hnpVersionPath, false);
         return ret;
     }
-    hnpHead = NULL;
 
     return 0;
 }

@@ -61,8 +61,6 @@ typedef struct NativeHnpPathStru {
 
 #define HNP_DEFAULT_INSTALL_ROOT_PATH "/data/app/el1/bundle/"
 
-#define HNP_UNSTALL_INFO_FILE "hnp_uninstall.txt"
-
 int HnpCmdInstall(int argc, char *argv[]);
 
 int HnpCmdUnInstall(int argc, char *argv[]);
