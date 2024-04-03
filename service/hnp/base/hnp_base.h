@@ -204,6 +204,8 @@ int HnpZip(const char *inputDir, const char *outputFile);
 
 int HnpUnZip(const char *inputFile, const char *outputDir);
 
+int HnpAddFileToZip(char *zipfile, char *filename, char *buff, int size);
+
 void HnpLogPrintf(int logLevel, char *module, const char *format, ...);
 
 int HnpCfgGetFromZip(const char *inputFile, HnpCfgInfo *hnpCfg);
@@ -220,7 +222,7 @@ int HnpWriteInfoToFile(const char* filePath, char *buff, int len);
 
 int ParseHnpCfgFile(const char *hnpCfgPath, HnpCfgInfo *hnpCfg);
 
-int CreateHnpJsonFile(char *path, HnpCfgInfo *hnpCfg);
+int GetHnpJsonBuff(HnpCfgInfo *hnpCfg, char **buff);
 
 int HnpCfgGetFromSteam(char *cfgStream, HnpCfgInfo *hnpCfg);
 

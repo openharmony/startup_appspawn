@@ -34,6 +34,7 @@ typedef struct NativeManagerCmdInfoStru {
 
 NativeManagerCmdInfo g_nativeManagerCmd[] = {
     {"help", HnpShowHelp},
+    {"-h", HnpShowHelp},
     {"install", HnpCmdInstall},
     {"uninstall", HnpCmdUnInstall}
 };
@@ -43,22 +44,21 @@ int HnpShowHelp(int argc, char *argv[])
     (void)argc;
     (void)argv;
 
-    HNP_LOGI("\r\nusage:hnp <command> <args>\r\n"
+    HNP_LOGI("\r\nusage:hnp <command> <args> [-u <user id>][-p <software package path>]"
+        "[-i <private path>][-f]\r\n"
         "\r\nThese are common hnp commands used in various situations:\r\n"
-        "\r\nIf the [package name] is null, it represents a public install/nuninstall,\r\n"
-        "    or it represents a private install/nuninstall\r\n"
         "\r\ninstall:      install native software"
-        "\r\n              hnp install [--user id] [--hnp package dir] [--package name] <-f>\r\n"
-        "\r\n              -u, --user id (required param)\r\n"
-        "\r\n              -p, --hnp software name, support multiple (required param)\r\n"
-        "\r\n              -i, --hnp install dir (optional param)\r\n"
-        "\r\n              -f,  is force install (optional param)\r\n"
+        "\r\n              hnp install -u [user id] -i [hnp package dir] -p [package name] -f\r\n"
+        "\r\n              -u    : [required]    user id \r\n"
+        "\r\n              -p    : [required]    input path of software package dir, is support multiple\r\n"
+        "\r\n              -i    : [optional]    hnp install dir, if not input, it will be use public path\r\n"
+        "\r\n              -f    : [optional]    is force install\r\n"
         "\r\nuninstall:    uninstall native software"
-        "\r\n              hnp uninstall [--user id] [--software name] [--software version] [--package name]\r\n"
-        "\r\n              -u, --user id (required param)\r\n"
-        "\r\n              -n, --software name (required param)\r\n"
-        "\r\n              -v, --software version (required param)\r\n"
-        "\r\n              -i, --hnp install dir (optional param)\r\n"
+        "\r\n              hnp uninstall -u [user id] -n [software name] -v [software version] -i [package name]\r\n"
+        "\r\n              -u    : [required]    user id \r\n"
+        "\r\n              -n    : [required]    software name\r\n"
+        "\r\n              -v    : [required]    software version\r\n"
+        "\r\n              -i    : [optional]    hnp install dir, it will be use public path\r\n"
         "\r\nfor example:\r\n"
         "\r\n    hnp install -u 1000 -p /usr1/hnp/sample.hnp -p /usr1/hnp/sample2.hnp -i wechat -f\r\n"
         "    hnp uninstall -u 1000 -n native_sample -v 1.1 -i wechat\r\n");
@@ -82,7 +82,6 @@ static NativeManagerCmdInfo* HnpCmdCheck(const char *cmd)
 int main(int argc, char *argv[])
 {
     int ret;
-    int opt;
     NativeManagerCmdInfo *cmdInfo = NULL;
 
     if (argc < HNP_INDEX_2) {
@@ -91,16 +90,6 @@ int main(int argc, char *argv[])
     }
 
     HNP_LOGI("native manager process start.");
-
-    while ((opt = getopt(argc, argv, "hu:p:ifn:v:")) != -1) {
-        switch (opt) {
-            case 'h' :
-                HnpShowHelp(argc, argv);
-                return 0;
-            default:
-                break;
-        }
-    }
 
     /* 检验用户命令，获取对应的处理函数 */
     cmdInfo = HnpCmdCheck(argv[HNP_INDEX_1]);

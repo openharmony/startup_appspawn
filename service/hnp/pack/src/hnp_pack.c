@@ -16,6 +16,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <getopt.h>
 
 #include "securec.h"
 
@@ -25,10 +26,50 @@
 extern "C" {
 #endif
 
-static int PackHnp(const char *hnpSrcPath, const char *hnpDstPath, HnpCfgInfo *hnpCfg)
+static int AddHnpCfgFileToZip(char *zipPath, const char *hnpSrcPath, HnpCfgInfo *hnpCfg)
+{
+    int ret;
+    char *strPtr;
+    int offset;
+    char hnpCfgFile[MAX_FILE_PATH_LEN];
+    char *buff;
+
+    // zip压缩文件内只保存相对路径，不保存绝对路径信息，偏移到压缩文件夹位置
+    strPtr = strrchr(hnpSrcPath, DIR_SPLIT_SYMBOL);
+    if (strPtr == NULL) {
+        offset = 0;
+    } else {
+        offset = strPtr - hnpSrcPath + 1;
+    }
+
+    // zip函数根据后缀是否'/'区分目录还是文件
+    ret = sprintf_s(hnpCfgFile, MAX_FILE_PATH_LEN, "%s%c"HNP_CFG_FILE_NAME, hnpSrcPath + offset, DIR_SPLIT_SYMBOL);
+    if (ret < 0) {
+        HNP_LOGE("sprintf unsuccess.");
+        return HNP_ERRNO_BASE_SPRINTF_FAILED;
+    }
+    // 根据配置信息生成hnp.json内容
+    ret = GetHnpJsonBuff(hnpCfg, &buff);
+    if (ret != 0) {
+        HNP_LOGE("get hnp json content by cfg info unsuccess.");
+        return ret;
+    }
+    // 将hnp.json文件写入到.hnp压缩文件中
+    ret = HnpAddFileToZip(zipPath, hnpCfgFile, buff, strlen(buff) + 1);
+    free(buff);
+    if (ret != 0) {
+        HNP_LOGE("add file to zip failed.zip=%s, file=%s", zipPath, hnpCfgFile);
+        return ret;
+    }
+
+    return 0;
+}
+
+static int PackHnp(const char *hnpSrcPath, const char *hnpDstPath, HnpPackInfo *hnpPack)
 {
     int ret;
     char hnp_file_path[MAX_FILE_PATH_LEN];
+    HnpCfgInfo *hnpCfg = &hnpPack->cfgInfo;
 
     HNP_LOGI("PackHnp start. srcPath=%s, hnpName=%s, hnpVer=%s, hnpDstPath=%s ",
         hnpSrcPath, hnpCfg->name, hnpCfg->version, hnpDstPath);
@@ -46,6 +87,16 @@ static int PackHnp(const char *hnpSrcPath, const char *hnpDstPath, HnpCfgInfo *h
         HNP_LOGE("zip dir unsuccess! srcPath=%s, hnpName=%s, hnpVer=%s, hnpDstPath=%s ret=%d",
             hnpSrcPath, hnpCfg->name, hnpCfg->version, hnpDstPath, ret);
         return HNP_ERRNO_PACK_ZIP_DIR_FAILED;
+    }
+
+    /* 如果软件包中不存在hnp.json文件，则需要在hnp压缩文件中添加 */
+    if (hnpPack->hnpCfgExist == 0) {
+        ret = AddHnpCfgFileToZip(hnp_file_path, hnpSrcPath, &hnpPack->cfgInfo);
+        if (ret != 0) {
+            HNP_LOGE("add file to zip failed ret=%d. zip=%s, src=%s",
+                ret, hnp_file_path, hnpSrcPath);
+            return ret;
+        }
     }
 
     HNP_LOGI("PackHnp end. srcPath=%s, hnpName=%s, hnpVer=%s, hnpDstPath=%s, linkNum=%d, ret=%d",
@@ -77,106 +128,107 @@ int GetHnpCfgInfo(const char *hnpCfgPath, const char *sourcePath, HnpCfgInfo *hn
         if (access(linksource, F_OK) != 0) {
             free(hnpCfg->links);
             hnpCfg->links = NULL;
+            HNP_LOGE("links source[%s] not exist.", linksource);
             return HNP_ERRNO_PACK_GET_REALPATH_FAILED;
         }
     }
     return 0;
 }
 
-int ParsePackArgs(HnpPackArgv *hnpPackArgv, HnpPackInfo *hnpPackInfo)
+int ParsePackArgs(HnpPackArgv *packArgv, HnpPackInfo *packInfo)
 {
     char cfgPath[MAX_FILE_PATH_LEN];
 
-    if (hnpPackArgv->source == NULL) {
+    if (packArgv->source == NULL) {
         HNP_LOGE("source dir is null.");
         return HNP_ERRNO_OPERATOR_ARGV_MISS;
     }
-    if (GetRealPath(hnpPackArgv->source, hnpPackInfo->source) != 0) {
-        HNP_LOGE("source dir path=%s is invalid.", hnpPackArgv->source);
+    if (GetRealPath(packArgv->source, packInfo->source) != 0) {
+        HNP_LOGE("source dir path=%s is invalid.", packArgv->source);
         return HNP_ERRNO_PACK_GET_REALPATH_FAILED;
     }
-    if (hnpPackArgv->output != NULL) {
-        if (GetRealPath(hnpPackArgv->output, hnpPackInfo->output) != 0) {
-            HNP_LOGE("output dir path=%s is invalid.", hnpPackArgv->output);
-            return HNP_ERRNO_PACK_GET_REALPATH_FAILED;
-        }
-    } else {
-        if (GetRealPath(".", hnpPackInfo->output) != 0) {
-            HNP_LOGE("output dir path=. is invalid.");
-            return HNP_ERRNO_PACK_GET_REALPATH_FAILED;
-        }
+    if (packArgv->output == NULL) {
+        packArgv->output = ".";
     }
 
-    int ret = sprintf_s(cfgPath, MAX_FILE_PATH_LEN, "%s/"HNP_CFG_FILE_NAME, hnpPackInfo->source);
+    if (GetRealPath(packArgv->output, packInfo->output) != 0) {
+        HNP_LOGE("output dir path=%s is invalid.", packArgv->output);
+        return HNP_ERRNO_PACK_GET_REALPATH_FAILED;
+    }
+    /* 确认hnp.json文件是否存在，存在则对hnp.json文件进行解析并校验内容是否正确 */
+    int ret = sprintf_s(cfgPath, MAX_FILE_PATH_LEN, "%s/"HNP_CFG_FILE_NAME, packInfo->source);
     if (ret < 0) {
         HNP_LOGE("sprintf unsuccess.");
         return HNP_ERRNO_BASE_SPRINTF_FAILED;
     }
     if (access(cfgPath, F_OK) != 0) {
-        if ((hnpPackArgv->name == NULL) || (hnpPackArgv->version == NULL)) {
+        /* hnp.json文件不存在则要求用户传入name和version信息 */
+        if ((packArgv->name == NULL) || (packArgv->version == NULL)) {
             HNP_LOGE("name or version argv is miss.");
             return HNP_ERRNO_OPERATOR_ARGV_MISS;
         }
-        strcpy_s(hnpPackInfo->cfgInfo.name, MAX_FILE_PATH_LEN, hnpPackArgv->name);
-        strcpy_s(hnpPackInfo->cfgInfo.version, HNP_VERSION_LEN, hnpPackArgv->version);
-        ret = CreateHnpJsonFile(cfgPath, &hnpPackInfo->cfgInfo);
-        if (ret != 0) {
-            return ret;
+        if (strcpy_s(packInfo->cfgInfo.name, MAX_FILE_PATH_LEN, packArgv->name) != EOK) {
+            HNP_LOGE("strcpy name argv unsuccess.");
+            return HNP_ERRNO_BASE_COPY_FAILED;
         }
+        if (strcpy_s(packInfo->cfgInfo.version, HNP_VERSION_LEN, packArgv->version) != EOK) {
+            HNP_LOGE("strcpy version argv unsuccess.");
+            return HNP_ERRNO_BASE_COPY_FAILED;
+        }
+        packInfo->hnpCfgExist = 0;
     } else {
-        ret = GetHnpCfgInfo(cfgPath, hnpPackInfo->source, &hnpPackInfo->cfgInfo);
+        ret = GetHnpCfgInfo(cfgPath, packInfo->source, &packInfo->cfgInfo);
         if (ret != 0) {
             return ret;
         }
+        packInfo->hnpCfgExist = 1;
     }
     return 0;
 }
 
 int HnpCmdPack(int argc, char *argv[])
 {
-    HnpPackArgv hnpPackArgv = {0};
-    HnpPackInfo hnpPackInfo = {0};
+    HnpPackArgv packArgv = {0};
+    HnpPackInfo packInfo = {0};
     int opt;
 
-    optind = 1;  // 从头开始遍历参数
-    while ((opt = getopt(argc, argv, "hi:o:n:v:")) != -1) {
+    while ((opt = getopt_long(argc, argv, "hi:o:n:v:", NULL, NULL)) != -1) {
         switch (opt) {
             case 'h' :
                 return HNP_ERRNO_OPERATOR_ARGV_MISS;
             case 'i' :
-                hnpPackArgv.source = optarg;
+                packArgv.source = optarg;
                 break;
             case 'o' :
-                hnpPackArgv.output = optarg;
+                packArgv.output = optarg;
                 break;
             case 'n' :
-                hnpPackArgv.name = optarg;
+                packArgv.name = optarg;
                 break;
             case 'v' :
-                hnpPackArgv.version = optarg;
+                packArgv.version = optarg;
                 break;
             default:
                 break;
         }
     }
+
     // 解析参数并生成打包信息
-    int ret = ParsePackArgs(&hnpPackArgv, &hnpPackInfo);
+    int ret = ParsePackArgs(&packArgv, &packInfo);
     if (ret != 0) {
         return ret;
     }
 
     // 根据打包信息进行打包操作
-    ret = PackHnp(hnpPackInfo.source, hnpPackInfo.output, &hnpPackInfo.cfgInfo);
-    if (ret != 0) {
-        return ret;
-    }
+    ret = PackHnp(packInfo.source, packInfo.output, &packInfo);
 
     // 释放软链接占用的内存
-    if (hnpPackInfo.cfgInfo.links != NULL) {
-        free(hnpPackInfo.cfgInfo.links);
-        hnpPackInfo.cfgInfo.links = NULL;
+    if (packInfo.cfgInfo.links != NULL) {
+        free(packInfo.cfgInfo.links);
+        packInfo.cfgInfo.links = NULL;
     }
-    return 0;
+
+    return ret;
 }
 
 #ifdef __cplusplus

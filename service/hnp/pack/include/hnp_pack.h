@@ -49,7 +49,8 @@ typedef struct HnpPackArgvStru {
 typedef struct HnpPackInfoStru {
     char source[MAX_FILE_PATH_LEN];     // 待打包目录
     char output[MAX_FILE_PATH_LEN];     // 打包后文件存放目录
-    HnpCfgInfo cfgInfo;                // hnp配置信息
+    HnpCfgInfo cfgInfo;                 // hnp配置信息
+    int hnpCfgExist;                    // 是否存在配置文件
 } HnpPackInfo;
 
 int HnpCmdPack(int argc, char *argv[]);
