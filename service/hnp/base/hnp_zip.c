@@ -285,40 +285,6 @@ int HnpUnZip(const char *inputFile, const char *outputDir)
     return 0;
 }
 
-int HnpWriteToZipHead(const char *zipFile, char *buff, int len)
-{
-    int size;
-    char *buffTmp;
-
-    int ret = ReadFileToStream(zipFile, &buffTmp, &size);
-    if (ret != 0) {
-        HNP_LOGE("read file:%s to stream unsuccess!", zipFile);
-        return ret;
-    }
-
-    FILE *fp = fopen(zipFile, "wb");
-    if (fp == NULL) {
-        free(buffTmp);
-        HNP_LOGE("open file:%s unsuccess!", zipFile);
-        return HNP_ERRNO_BASE_FILE_OPEN_FAILED;
-    }
-    int writeLen = fwrite(buff, sizeof(char), len, fp);
-    if (writeLen != len) {
-        HNP_LOGE("write file:%s unsuccess! len=%d, write=%d", zipFile, len, writeLen);
-        (void)fclose(fp);
-        free(buffTmp);
-        return HNP_ERRNO_BASE_FILE_WRITE_FAILED;
-    }
-    writeLen = fwrite(buffTmp, sizeof(char), size, fp);
-    (void)fclose(fp);
-    free(buffTmp);
-    if (writeLen != size) {
-        HNP_LOGE("write file:%s unsuccess! size=%d, write=%d", zipFile, size, writeLen);
-        return HNP_ERRNO_BASE_FILE_WRITE_FAILED;
-    }
-    return 0;
-}
-
 int HnpReadFromZipHead(const char *zipFile, NativeHnpHead **hnpHead)
 {
     char *buffTmp;

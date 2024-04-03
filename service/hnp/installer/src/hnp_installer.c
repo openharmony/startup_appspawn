@@ -483,8 +483,11 @@ int HnpCmdInstall(int argc, char *argv[])
     int ret;
     int ch;
 
-    while ((ch = getopt(argc, argv, "u:p:if")) != -1) {
+    optind = 1;  // 从头开始遍历参数
+    while ((ch = getopt(argc, argv, "hu:p:if")) != -1) {
         switch (ch) {
+            case 'h' :
+                return HNP_ERRNO_OPERATOR_ARGV_MISS;
             case 'u': //uid
                 uidArg = optarg;
                 ret = HnpInstallerUidGet(uidArg, &uid);
@@ -510,14 +513,13 @@ int HnpCmdInstall(int argc, char *argv[])
                 isForce = true;
                 break;
             default:
-                HNP_LOGE("hnp install invalid params");
-                return HNP_ERRNO_INSTALLER_CALL_HELP;
+                break;
             }
     }
 
     if ((uidArg == NULL) || (count == 0)) {
         HNP_LOGE("hnp install params invalid, uid[%s] hnp software num[%d]", uidArg, count);
-        return HNP_ERRNO_INSTALLER_CALL_HELP;
+        return HNP_ERRNO_OPERATOR_ARGV_MISS;
     }
 
     return HnpInsatllPre(uid, softwarePath, count, installPath, isForce);
@@ -569,8 +571,10 @@ int HnpCmdUnInstall(int argc, char *argv[])
     int ret;
     int ch;
 
-    while ((ch = getopt(argc, argv, "u:n:v:i")) != -1) {
+    while ((ch = getopt(argc, argv, "hu:n:v:i")) != -1) {
         switch (ch) {
+            case 'h' :
+                return HNP_ERRNO_OPERATOR_ARGV_MISS;
             case 'u': //uid
                 uidArg = optarg;
                 ret = HnpInstallerUidGet(uidArg, &uid);
@@ -593,14 +597,13 @@ int HnpCmdUnInstall(int argc, char *argv[])
                 break;
 
             default:
-                HNP_LOGE("hnp uninstall invalid params");
-                return HNP_ERRNO_INSTALLER_CALL_HELP;
+                break;
             }
     }
 
     if ((uidArg == NULL) || (hnpName == NULL) || (version == NULL)) {
         HNP_LOGE("hnp uninstall params invalid uid[%s], hnp software[%s], version[%s]", uidArg, hnpName, version);
-        return HNP_ERRNO_INSTALLER_CALL_HELP;
+        return HNP_ERRNO_OPERATOR_ARGV_MISS;
     }
 
     return HnpUnInstallPre(uid, hnpName, version, installPath);

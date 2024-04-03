@@ -33,7 +33,6 @@ typedef struct NativeManagerCmdInfoStru {
 } NativeManagerCmdInfo;
 
 NativeManagerCmdInfo g_nativeManagerCmd[] = {
-    {"-h", HnpShowHelp},
     {"help", HnpShowHelp},
     {"install", HnpCmdInstall},
     {"uninstall", HnpCmdUnInstall}
@@ -83,6 +82,7 @@ static NativeManagerCmdInfo* HnpCmdCheck(const char *cmd)
 int main(int argc, char *argv[])
 {
     int ret;
+    int opt;
     NativeManagerCmdInfo *cmdInfo = NULL;
 
     if (argc < HNP_INDEX_2) {
@@ -91,6 +91,16 @@ int main(int argc, char *argv[])
     }
 
     HNP_LOGI("native manager process start.");
+
+    while ((opt = getopt(argc, argv, "h")) != -1) {
+        switch (opt) {
+            case 'h' :
+                HnpShowHelp(argc, argv);
+                return 0;
+            default:
+                break;
+        }
+    }
 
     /* 检验用户命令，获取对应的处理函数 */
     cmdInfo = HnpCmdCheck(argv[HNP_INDEX_1]);
@@ -101,9 +111,8 @@ int main(int argc, char *argv[])
 
     /* 执行命令 */
     ret = cmdInfo->process(argc, argv);
-    if (ret == HNP_ERRNO_INSTALLER_CALL_HELP) {
+    if (ret == HNP_ERRNO_OPERATOR_ARGV_MISS) {
         HnpShowHelp(argc, argv);
-        return HNP_ERRNO_PARAM_INVALID;
     }
 
     HNP_LOGI("native manager process exit. ret=%d \r\n", ret);

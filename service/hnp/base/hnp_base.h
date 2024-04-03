@@ -60,6 +60,14 @@ typedef struct NativeHnpHeadStru {
     NativeBinLink links[0];
 } NativeHnpHead;
 
+/* hnp配置文件信息 */
+typedef struct HnpCfgInfoStru {
+    char name[MAX_FILE_PATH_LEN];
+    char version[HNP_VERSION_LEN];    // Native软件包版本号
+    unsigned int linkNum;   // 软链接配置个数
+    NativeBinLink *links;
+} HnpCfgInfo;
+
 /* 日志级别 */
 typedef enum  {
     HNP_LOG_INFO    = 0,
@@ -100,6 +108,9 @@ enum {
 /* hnp_main模块*/
 // 0x801001 操作类型非法
 #define HNP_ERRNO_OPERATOR_TYPE_INVALID         HNP_ERRNO_COMMON(HNP_MID_MAIN, 0x1)
+
+// 0x801002 缺少必要的操作参数
+#define HNP_ERRNO_OPERATOR_ARGV_MISS            HNP_ERRNO_COMMON(HNP_MID_MAIN, 0x2)
 
 /* hnp_base模块*/
 // 0x801101 打开文件失败
@@ -177,8 +188,23 @@ enum {
 // 0x801119 对应进程不存在
 #define HNP_ERRNO_BASE_PROCESS_NOT_FOUND        HNP_ERRNO_COMMON(HNP_MID_BASE, 0x19)
 
-// 0x80111a 创建路径失败
-#define HNP_ERRNO_BASE_MKDIR_PATH_FAILED        HNP_ERRNO_COMMON(HNP_MID_BASE, 0x1a)
+// 0x80111a 进程超过最大值
+#define HNP_ERRNO_BASE_PROCESS_NUM_OVERSIZE     HNP_ERRNO_COMMON(HNP_MID_BASE, 0x1a)
+
+// 0x80111b 创建路径失败
+#define HNP_ERRNO_BASE_MKDIR_PATH_FAILED        HNP_ERRNO_COMMON(HNP_MID_BASE, 0x1b)
+
+// 0x80111c 读取配置文件流失败
+#define HNP_ERRNO_BASE_READ_FILE_STREAM_FAILED  HNP_ERRNO_COMMON(HNP_MID_BASE, 0x1c)
+
+// 0x80111d 解析json信息失败
+#define HNP_ERRNO_BASE_PARSE_JSON_FAILED        HNP_ERRNO_COMMON(HNP_MID_BASE, 0x1d)
+
+// 0x80111e 未找到json项
+#define HNP_ERRNO_BASE_PARSE_ITEM_NO_FOUND      HNP_ERRNO_COMMON(HNP_MID_BASE, 0x1e)
+
+// 0x80111f 解析json数组失败
+#define HNP_ERRNO_BASE_GET_ARRAY_ITRM_FAILED    HNP_ERRNO_COMMON(HNP_MID_BASE, 0x1f)
 
 int GetFileSizeByHandle(FILE *file, int *size);
 
@@ -191,8 +217,6 @@ int GetRealPath(char *srcPath, char *realPath);
 int HnpZip(const char *inputDir, const char *outputFile);
 
 int HnpUnZip(const char *inputFile, const char *outputDir);
-
-int HnpWriteToZipHead(const char *zipFile, char *buff, int len);
 
 void HnpLogPrintf(int logLevel, char *module, const char *format, ...);
 
@@ -207,6 +231,10 @@ int HnpDeleteFolder(const char *path);
 int HnpCreateFolder(const char* path);
 
 int HnpWriteInfoToFile(const char* filePath, char *buff, int len);
+
+int ParseHnpCfgFile(const char *hnpCfgPath, HnpCfgInfo *hnpCfg);
+
+int CreateHnpJsonFile(char *path, HnpCfgInfo *hnpCfg)
 
 #define HNP_LOGI(args...) \
     HnpLogPrintf(HNP_LOG_INFO, "HNP", ##args)
