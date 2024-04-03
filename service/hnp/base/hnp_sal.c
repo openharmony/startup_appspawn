@@ -110,27 +110,27 @@ static FILE* HnpPopen(const char *command, const char *mode)
     return stream;
 }
 
-static int HnpPclose(FILE *stream)
+static void HnpPclose(FILE *stream)
 {
     int status;
     pid_t pid;
 
     if (stream == NULL) {
-        return -1;
+        return;
     }
 
     if (gChildPid == NULL) {
-        return -1;
+        return;
     }
 
     pid = gChildPid[fileno(stream)];
     if (pid <= 0) {
-        return -1;
+        return;
     }
 
     gChildPid[fileno(stream)] = 0;
     waitpid(pid, &status, 0);
-    return status;
+    return;
 }
 
 static int HnpPidGetByBinName(const char *binName, int *pids, int *count)

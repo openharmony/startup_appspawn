@@ -47,6 +47,7 @@ if (!defined(ohos_lite)) {
     ]
     sources = [
       "${appspawn_path}/service/hnp/base/hnp_file.c",
+      "${appspawn_path}/service/hnp/base/hnp_json.c",
       "${appspawn_path}/service/hnp/base/hnp_log.c",
       "${appspawn_path}/service/hnp/base/hnp_zip.c",
       "${appspawn_path}/service/hnp/hnpcli_main.c",
@@ -54,11 +55,10 @@ if (!defined(ohos_lite)) {
     ]
     configs = []
     cflags = []
-    deps = [ "//third_party/cJSON:cjson" ]
+    deps = [ "//third_party/cJSON:cjson_static" ]
     external_deps = [
-      "bounds_checking_function:libsec_shared",
-      "hilog:libhilog",
-      "zlib:shared_libz",
+      "bounds_checking_function:libsec_static",
+      "zlib:libz",
     ]
     install_enable = true
     subsystem_name = "${subsystem_name}"

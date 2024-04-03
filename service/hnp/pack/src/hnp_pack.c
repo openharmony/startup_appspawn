@@ -15,9 +15,9 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "securec.h"
-#include "cJSON.h"
 
 #include "hnp_pack.h"
 
@@ -25,16 +25,16 @@
 extern "C" {
 #endif
 
-static int PackHnp(const char *hnpSrcPath, const char *hnpDstPath, const char *hnpName, NativeHnpHead *hnpHead)
+static int PackHnp(const char *hnpSrcPath, const char *hnpDstPath, HnpCfgInfo *hnpCfg)
 {
     int ret;
     char hnp_file_path[MAX_FILE_PATH_LEN];
 
     HNP_LOGI("PackHnp start. srcPath=%s, hnpName=%s, hnpVer=%s, hnpDstPath=%s ",
-        hnpSrcPath, hnpName, hnpHead->hnpVersion, hnpDstPath);
+        hnpSrcPath, hnpCfg->name, hnpCfg->version, hnpDstPath);
     
     /* 拼接hnp文件名 */
-    ret = sprintf_s(hnp_file_path, MAX_FILE_PATH_LEN, "%s/%s.hnp", hnpDstPath, hnpName);
+    ret = sprintf_s(hnp_file_path, MAX_FILE_PATH_LEN, "%s/%s.hnp", hnpDstPath, hnpCfg->name);
     if (ret < 0) {
         HNP_LOGE("sprintf unsuccess.");
         return HNP_ERRNO_PACK_GET_HNP_PATH_FAILED;
@@ -44,238 +44,139 @@ static int PackHnp(const char *hnpSrcPath, const char *hnpDstPath, const char *h
     ret = HnpZip(hnpSrcPath, hnp_file_path);
     if (ret != 0) {
         HNP_LOGE("zip dir unsuccess! srcPath=%s, hnpName=%s, hnpVer=%s, hnpDstPath=%s ret=%d",
-            hnpSrcPath, hnpName, hnpHead->hnpVersion, hnpDstPath, ret);
+            hnpSrcPath, hnpCfg->name, hnpCfg->version, hnpDstPath, ret);
         return HNP_ERRNO_PACK_ZIP_DIR_FAILED;
     }
 
-    hnpHead->magic = HNP_HEAD_MAGIC;
-    hnpHead->version = HNP_HEAD_VERSION;
-    hnpHead->headLen = sizeof(NativeHnpHead) + hnpHead->linkNum * sizeof(NativeBinLink);
-
-    /* 向生成的.hnp文件头写入配置信息 */
-    ret = HnpWriteToZipHead(hnp_file_path, (char*)hnpHead, hnpHead->headLen);
-
-    HNP_LOGI("PackHnp end. srcPath=%s, hnpName=%s, hnpVer=%s, hnpDstPath=%s headlen=%d, linkNum=%d, ret=%d",
-        hnpSrcPath, hnpName, hnpHead->hnpVersion, hnpDstPath, hnpHead->headLen, hnpHead->linkNum, ret);
+    HNP_LOGI("PackHnp end. srcPath=%s, hnpName=%s, hnpVer=%s, hnpDstPath=%s, linkNum=%d, ret=%d",
+        hnpSrcPath, hnpCfg->name, hnpCfg->version, hnpDstPath, hnpCfg->linkNum, ret);
 
     return ret;
 }
 
-static int ParseLinksJsonToHnpHead(cJSON *linksItem, NativeHnpHead *hnpHead, NativeBinLink **linkArr)
+int GetHnpCfgInfo(const char *hnpCfgPath, const char *sourcePath, HnpCfgInfo *hnpCfg)
 {
-    NativeBinLink *linkArray = NULL;
-    int i;
-
-    int linkArrayNum = cJSON_GetArraySize(linksItem);
-    if (linkArrayNum != 0) {
-        hnpHead->linkNum = linkArrayNum;
-        linkArray = (NativeBinLink*)malloc(sizeof(NativeBinLink) * linkArrayNum);
-        if (linkArray == NULL) {
-            HNP_LOGE("malloc unsuccess.");
-            return HNP_ERRNO_NOMEM;
-        }
-        for (i = 0; i < linkArrayNum; i++) {
-            cJSON *link = cJSON_GetArrayItem(linksItem, i);
-            if (link == NULL) {
-                free(linkArray);
-                return HNP_ERRNO_PACK_GET_ARRAY_ITRM_FAILED;
-            }
-            cJSON *sourceItem = cJSON_GetObjectItem(link, "source");
-            if ((sourceItem == NULL) || (sourceItem->valuestring == NULL)) {
-                HNP_LOGE("get source info in cfg unsuccess.");
-                free(linkArray);
-                return HNP_ERRNO_PACK_PARSE_ITEM_NO_FOUND;
-            }
-            if (strcpy_s(linkArray[i].source, MAX_FILE_PATH_LEN, sourceItem->valuestring) != EOK) {
-                HNP_LOGE("strcpy unsuccess.");
-                free(linkArray);
-                return HNP_ERRNO_BASE_COPY_FAILED;
-            }
-            linkArray[i].target[0] = '\0';  //允许target不填，软链接默认使用原二进制名称
-            cJSON *targetItem = cJSON_GetObjectItem(link, "target");
-            if ((targetItem != NULL) && (targetItem->valuestring != NULL) &&
-                (strcpy_s(linkArray[i].target, MAX_FILE_PATH_LEN, targetItem->valuestring) != EOK)) {
-                HNP_LOGE("strcpy unsuccess.");
-                free(linkArray);
-                return HNP_ERRNO_BASE_COPY_FAILED;
-            }
-        }
-        *linkArr = linkArray;
-    } else {
-        hnpHead->linkNum = 0;
-    }
-    return 0;
-}
-
-static int ParseJsonStreamToHnpHead(cJSON *json, char *name, NativeHnpHead *hnpHead, NativeBinLink **linkArr)
-{
-    int ret;
-
-    cJSON *typeItem = cJSON_GetObjectItem(json, "type");
-    if ((typeItem == NULL) || (typeItem->valuestring == NULL)) {
-        HNP_LOGE("get type info in cfg unsuccess.");
-        return HNP_ERRNO_PACK_PARSE_ITEM_NO_FOUND;
-    }
-    if (strcmp(typeItem->valuestring, "hnp-config") != 0) {
-        HNP_LOGE("type info not match.type=%s", typeItem->valuestring);
-        return HNP_ERRNO_PACK_PARSE_ITEM_NO_FOUND;
-    }
-    cJSON *nameItem = cJSON_GetObjectItem(json, "name");
-    if ((nameItem == NULL) || (nameItem->valuestring == NULL)) {
-        HNP_LOGE("get name info in cfg unsuccess.");
-        return HNP_ERRNO_PACK_PARSE_ITEM_NO_FOUND;
-    }
-    ret = strcpy_s(name, MAX_FILE_PATH_LEN, nameItem->valuestring);
-    if (ret != EOK) {
-        HNP_LOGE("strcpy unsuccess.");
-        return HNP_ERRNO_BASE_COPY_FAILED;
-    }
-    cJSON *versionItem = cJSON_GetObjectItem(json, "version");
-    if ((versionItem == NULL) || (versionItem->valuestring == NULL)) {
-        HNP_LOGE("get version info in cfg unsuccess.");
-        return HNP_ERRNO_PACK_PARSE_ITEM_NO_FOUND;
-    }
-    ret = strcpy_s(hnpHead->hnpVersion, HNP_VERSION_LEN, versionItem->valuestring);
-    if (ret != EOK) {
-        HNP_LOGE("strcpy unsuccess.");
-        return HNP_ERRNO_BASE_COPY_FAILED;
-    }
-    cJSON *installItem = cJSON_GetObjectItem(json, "install");
-    if (installItem == NULL) {
-        HNP_LOGE("get install info in cfg unsuccess.");
-        return HNP_ERRNO_PACK_PARSE_ITEM_NO_FOUND;
-    }
-    cJSON *linksItem = cJSON_GetObjectItem(installItem, "links");
-    if (linksItem != NULL) {
-        ret = ParseLinksJsonToHnpHead(linksItem, hnpHead, linkArr);
-        if (ret != 0) {
-            return ret;
-        }
-    } else {
-        hnpHead->linkNum = 0;
-    }
-    return 0;
-}
-
-static int ParseHnpCfgToHead(const char *hnpCfgPath, char *name, NativeHnpHead *hnpHead, NativeBinLink **linkArr)
-{
-    int ret;
-    char *cfgStream = NULL;
-    cJSON *json;
-    int size;
-
-    ret = ReadFileToStream(hnpCfgPath, &cfgStream, &size);
-    if (ret != 0) {
-        HNP_LOGE("read cfg file[%s] unsuccess.", hnpCfgPath);
-        return HNP_ERRNO_PACK_READ_FILE_STREAM_FAILED;
-    }
-    json = cJSON_Parse(cfgStream);
-    free(cfgStream);
-    if (json == NULL) {
-        HNP_LOGE("parse json file[%s] unsuccess.", hnpCfgPath);
-        return HNP_ERRNO_PACK_PARSE_JSON_FAILED;
-    }
-    ret = ParseJsonStreamToHnpHead(json, name, hnpHead, linkArr);
-    cJSON_Delete(json);
-
-    return ret;
-}
-
-static int PackHnpWithCfg(const char *hnpSrcPath, const char *hnpDstPath, const char *hnpCfgPath)
-{
-    NativeHnpHead head;
-    NativeHnpHead *hnpHead;
     NativeBinLink *linkArr = NULL;
-    char name[MAX_FILE_PATH_LEN] = {0};
-    int ret;
+    char linksource[MAX_FILE_PATH_LEN] = {0};
 
-    HNP_LOGI("pack hnp start. srcPath=%s, hnpCfg=%s, hnpDstPath=%s",
-        hnpSrcPath, hnpCfgPath, hnpDstPath);
-
-    ret = ParseHnpCfgToHead(hnpCfgPath, name, &head, &linkArr);
+    int ret = ParseHnpCfgFile(hnpCfgPath, hnpCfg);
     if (ret != 0) {
         HNP_LOGE("parse hnp cfg[%s] unsuccess! ret=%d", hnpCfgPath, ret);
         return ret;
     }
-    int headLen = sizeof(NativeHnpHead) + head.linkNum * sizeof(NativeBinLink);
-
-    if (head.linkNum != 0) {
-        hnpHead = (NativeHnpHead*)malloc(headLen);
-        if (hnpHead == NULL) {
-            free(linkArr);
-            return HNP_ERRNO_NOMEM;
+    /* 校验软连接的source文件是否存在 */
+    linkArr = hnpCfg->links;
+    for (unsigned int i = 0; i < hnpCfg->linkNum; i++, linkArr++) {
+        int ret = sprintf_s(linksource, MAX_FILE_PATH_LEN, "%s/%s", sourcePath, linkArr->source);
+        if (ret < 0) {
+            free(hnpCfg->links);
+            hnpCfg->links = NULL;
+            HNP_LOGE("sprintf unsuccess.");
+            return HNP_ERRNO_BASE_SPRINTF_FAILED;
         }
-        (void)memcpy_s(hnpHead, headLen, &head, sizeof(NativeHnpHead));
-        (void)memcpy_s(hnpHead->links, sizeof(NativeBinLink) * head.linkNum,
-            linkArr, sizeof(NativeBinLink) * head.linkNum);
+        if (access(linksource, F_OK) != 0) {
+            free(hnpCfg->links);
+            hnpCfg->links = NULL;
+            return HNP_ERRNO_PACK_GET_REALPATH_FAILED;
+        }
+    }
+    return 0;
+}
+
+int ParsePackArgs(HnpPackArgv *hnpPackArgv, HnpPackInfo *hnpPackInfo)
+{
+    char cfgPath[MAX_FILE_PATH_LEN];
+
+    if (hnpPackArgv->source == NULL) {
+        HNP_LOGE("source dir is null.");
+        return HNP_ERRNO_OPERATOR_ARGV_MISS;
+    }
+    if (GetRealPath(hnpPackArgv->source, hnpPackInfo->source) != 0) {
+        HNP_LOGE("source dir path=%s is invalid.", hnpPackArgv->source);
+        return HNP_ERRNO_PACK_GET_REALPATH_FAILED;
+    }
+    if (hnpPackArgv->output != NULL) {
+        if (GetRealPath(hnpPackArgv->output, hnpPackInfo->output) != 0) {
+            HNP_LOGE("output dir path=%s is invalid.", hnpPackArgv->output);
+            return HNP_ERRNO_PACK_GET_REALPATH_FAILED;
+        }
     } else {
-        hnpHead = &head;
+        if (GetRealPath(".", hnpPackInfo->output) != 0) {
+            HNP_LOGE("output dir path=. is invalid.");
+            return HNP_ERRNO_PACK_GET_REALPATH_FAILED;
+        }
     }
 
-    HNP_LOGI("pack hnp end. ret=%d, hnpName=%s, version=%s, linksNum=%d",
-        ret, name, hnpHead->hnpVersion, hnpHead->linkNum);
-
-    ret = PackHnp(hnpSrcPath, hnpDstPath, name, hnpHead);
-
-    if (head.linkNum != 0) {
-        free(linkArr);
-        free(hnpHead);
+    int ret = sprintf_s(cfgPath, MAX_FILE_PATH_LEN, "%s/hnp.json", hnpPackInfo->source);
+    if (ret < 0) {
+        HNP_LOGE("sprintf unsuccess.");
+        return HNP_ERRNO_BASE_SPRINTF_FAILED;
     }
-    
-    return ret;
+    if (access(cfgPath, F_OK) != 0) {
+        if ((hnpPackArgv->name == NULL) || (hnpPackArgv->version == NULL)) {
+            HNP_LOGE("name or version argv is miss.");
+            return HNP_ERRNO_OPERATOR_ARGV_MISS;
+        }
+        strcpy_s(hnpPackInfo->cfgInfo.name, MAX_FILE_PATH_LEN, hnpPackArgv->name);
+        strcpy_s(hnpPackInfo->cfgInfo.version, HNP_VERSION_LEN, hnpPackArgv->version);
+        ret = CreateHnpJsonFile(cfgPath, &hnpPackInfo->cfgInfo);
+        if (ret != 0) {
+            return ret;
+        }
+    } else {
+        ret = GetHnpCfgInfo(cfgPath, hnpPackInfo->source, &hnpPackInfo->cfgInfo);
+        if (ret != 0) {
+            return ret;
+        }
+    }
+    return 0;
 }
 
 int HnpCmdPack(int argc, char *argv[])
 {
-    int index = 0;
-    char srcPath[MAX_FILE_PATH_LEN];
-    char dstPath[MAX_FILE_PATH_LEN];
-    char cfgPath[MAX_FILE_PATH_LEN] = {0};
-    char *name = NULL;
-    char *version = NULL;
+    HnpPackArgv hnpPackArgv = {0};
+    HnpPackInfo hnpPackInfo = {0};
+    int opt;
 
-    if (argc < HNP_INDEX_4) {
-        HNP_LOGE("pack args num[%u] unsuccess!", argc);
-        return HNP_ERRNO_PACK_ARGV_NUM_INVALID;
-    }
-
-    if ((GetRealPath(argv[HNP_INDEX_2], srcPath) != 0) || (GetRealPath(argv[HNP_INDEX_3], dstPath) != 0)) {
-        HNP_LOGE("pack path invalid! srcPath=%s, dstPath=%s", argv[HNP_INDEX_2], argv[HNP_INDEX_3]);
-        return HNP_ERRNO_PACK_GET_REALPATH_FAILED;
-    }
-
-    index = HNP_INDEX_4;
-    while (index < argc) {
-        if ((!strcmp(argv[index], "-name")) && (index + 1 < argc)) {
-            name = argv[++index];
-        } else if ((!strcmp(argv[index], "-v")) && (index + 1 < argc)) {
-            version = argv[++index];
-        } else if ((!strcmp(argv[index], "-cfg")) && (index + 1 < argc)) {
-            if (GetRealPath(argv[++index], cfgPath) != 0) {
-                HNP_LOGE("cfg path[%s] invalid!", argv[index]);
-                return HNP_ERRNO_PACK_GET_REALPATH_FAILED;
-            }
+    optind = 1;  // 从头开始遍历参数
+    while ((opt = getopt(argc, argv, "hi:o:n:v:")) != -1) {
+        switch (opt) {
+            case 'h' :
+                return HNP_ERRNO_OPERATOR_ARGV_MISS;
+            case 'i' :
+                hnpPackArgv.source = optarg;
+                break;
+            case 'o' :
+                hnpPackArgv.output = optarg;
+                break;
+            case 'n' :
+                hnpPackArgv.name = optarg;
+                break;
+            case 'v' :
+                hnpPackArgv.version = optarg;
+                break;
+            default:
+                break;
         }
-        index++;
+    }
+    // 解析参数并生成打包信息
+    int ret = ParsePackArgs(&hnpPackArgv, &hnpPackInfo);
+    if (ret != 0) {
+        return ret;
     }
 
-    if ((name != NULL) && (strlen(name) != 0) && (version != NULL) && (strlen(version) != 0)) {
-        NativeHnpHead hnpHead;
-        hnpHead.linkNum = 0;
-        if (strcpy_s(hnpHead.hnpVersion, HNP_VERSION_LEN, version) != EOK) {
-            HNP_LOGE("strcpy unsuccess.");
-            return HNP_ERRNO_BASE_COPY_FAILED;
-        }
-        return PackHnp(srcPath, dstPath, name, &hnpHead);
+    // 根据打包信息进行打包操作
+    ret = PackHnp(hnpPackInfo.source, hnpPackInfo.output, &hnpPackInfo.cfgInfo);
+    if (ret != 0) {
+        return ret;
     }
 
-    if (cfgPath[0] != '\0') {
-        return PackHnpWithCfg(srcPath, dstPath, cfgPath);
+    // 释放软链接占用的内存
+    if (hnpPackInfo.cfgInfo.links != NULL) {
+        free(hnpPackInfo.cfgInfo.links);
+        hnpPackInfo.cfgInfo.links = NULL;
     }
-
-    HNP_LOGE("pack args parse miss!");
-
-    return HNP_ERRNO_PACK_MISS_OPERATOR_PARAM;
+    return 0;
 }
 
 #ifdef __cplusplus

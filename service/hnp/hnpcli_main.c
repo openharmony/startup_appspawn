@@ -14,6 +14,7 @@
  */
 
 #include <string.h>
+#include <unistd.h>
 
 #include "hnp_base.h"
 #include "hnp_pack.h"
@@ -41,15 +42,17 @@ int HnpCliShowHelp(int argc, char *argv[])
     (void)argc;
     (void)argv;
 
-    HNP_LOGI("\r\nusage:hnpcli <command> <args> [-cfg <link cfg file>][-name <native package name>]"
-        "[-v <native package version>]\r\n"
-        "\r\nThese are common hnp commands used in various situations:\r\n"
+    HNP_LOGI("\r\nusage:hnpcli <command> <args> [-i <software package dir>][-o <hnp output path>]"
+        "[-n <native package name>][-v <native package version>]\r\n"
+        "\r\nThese are common hnpcli commands used in various situations:\r\n"
         "\r\npack:    packet native software package to .hnp file"
-        "\r\n         hnpcli pack [source path] [dst path] -name [software name] -v [software version]"
-        "\r\n         hnpcli pack [source path] [dst path] -cfg [link config file]\r\n"
+        "\r\n         hnpcli pack -i [source path] -o [dst path] -name [software name] -v [software version]"
+        "\r\n         -i    : [needed]    input path of software package dir"
+        "\r\n         -o    : [select]  output path of hnp file. if not set then ouput to current directory"
+        "\r\n         -n    : [select]  software name. if not hnp.json in input dir then must set"
+        "\r\n         -v    : [select]  software version. if not hnp.json in input dir then must set\r\n"
         "\r\nfor example:\r\n"
-        "\r\n    hnpcli pack /usr1/native_sample /usr1/output -name native_sample -v 1.1\r\n"
-        "    hnpcli pack /usr1/native_sample /usr1/output -cfg /usr1/native_sample.cfg\r\n");
+        "\r\n    hnpcli pack -i /usr1/native_sample -o /usr1/output -n native_sample -v 1.1\r\n");
         
     return 0;
 }
@@ -70,14 +73,25 @@ static NativeManagerCmdInfo* HnpCmdCheck(const char *cmd)
 int main(int argc, char *argv[])
 {
     int ret;
+    int opt;
     NativeManagerCmdInfo *cmdInfo = NULL;
 
     if (argc < HNP_INDEX_2) {
         HnpCliShowHelp(argc, argv);
-        return HNP_ERRNO_PARAM_INVALID;
+        return HNP_ERRNO_OPERATOR_ARGV_MISS;
     }
 
     HNP_LOGI("native manager process start.");
+
+    while ((opt = getopt(argc, argv, "h")) != -1) {
+        switch (opt) {
+            case 'h' :
+                HnpCliShowHelp(argc, argv);
+                return 0;
+            default:
+                break;
+        }
+    }
 
     /* 检验用户命令，获取对应的处理函数 */
     cmdInfo = HnpCmdCheck(argv[HNP_INDEX_1]);
@@ -88,6 +102,9 @@ int main(int argc, char *argv[])
 
     /* 执行命令 */
     ret = cmdInfo->process(argc, argv);
+    if (ret == HNP_ERRNO_OPERATOR_ARGV_MISS) {
+        HnpCliShowHelp(argc, argv);
+    }
 
     HNP_LOGI("native manager process exit. ret=%d ", ret);
     return ret;

@@ -31,23 +31,26 @@ extern "C" {
 // 0x801203 缺少操作参数
 #define HNP_ERRNO_PACK_MISS_OPERATOR_PARAM      HNP_ERRNO_COMMON(HNP_MID_PACK, 0x3)
 
-// 0x801204 读取配置文件流失败
-#define HNP_ERRNO_PACK_READ_FILE_STREAM_FAILED  HNP_ERRNO_COMMON(HNP_MID_PACK, 0x4)
-
-// 0x801205 解析json信息失败
-#define HNP_ERRNO_PACK_PARSE_JSON_FAILED        HNP_ERRNO_COMMON(HNP_MID_PACK, 0x5)
-
-// 0x801206 未找到json项
-#define HNP_ERRNO_PACK_PARSE_ITEM_NO_FOUND      HNP_ERRNO_COMMON(HNP_MID_PACK, 0x6)
-
-// 0x801207 解析json数组失败
-#define HNP_ERRNO_PACK_GET_ARRAY_ITRM_FAILED    HNP_ERRNO_COMMON(HNP_MID_PACK, 0x7)
-
 // 0x801208 组装hnp输出路径失败
 #define HNP_ERRNO_PACK_GET_HNP_PATH_FAILED      HNP_ERRNO_COMMON(HNP_MID_PACK, 0x8)
 
 // 0x801209 压缩目录失败
 #define HNP_ERRNO_PACK_ZIP_DIR_FAILED           HNP_ERRNO_COMMON(HNP_MID_PACK, 0x9)
+
+/* hnp打包参数 */
+typedef struct HnpPackArgvStru {
+    char *source;       // 待打包目录
+    char *output;       // 打包后文件存放目录
+    char *name;         // 软件包名
+    char *version;      // 版本号
+} HnpPackArgv;
+
+/* hnp打包信息 */
+typedef struct HnpPackInfoStru {
+    char source[MAX_FILE_PATH_LEN];     // 待打包目录
+    char output[MAX_FILE_PATH_LEN];     // 打包后文件存放目录
+    HnpCfgInfo cfgInfo;                // hnp配置信息
+} HnpPackInfo;
 
 int HnpCmdPack(int argc, char *argv[]);
 

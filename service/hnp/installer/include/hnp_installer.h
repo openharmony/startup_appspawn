@@ -59,9 +59,6 @@ typedef struct NativeHnpPathStru {
 // 0x80130a 安装包超过最大值
 #define HNP_ERRNO_INSTALLER_SOFTWARE_NUM_OVERSIZE          HNP_ERRNO_COMMON(HNP_MID_INSTALLER, 0x1a)
 
-// 0x8013ff 安装卸载需要调用help
-#define HNP_ERRNO_INSTALLER_CALL_HELP                      HNP_ERRNO_COMMON(HNP_MID_INSTALLER, 0xff)
-
 #define HNP_DEFAULT_INSTALL_ROOT_PATH "/data/app/el1/bundle/"
 
 #define HNP_UNSTALL_INFO_FILE "hnp_uninstall.txt"
