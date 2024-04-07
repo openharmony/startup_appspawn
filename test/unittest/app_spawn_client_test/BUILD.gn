@@ -34,6 +34,7 @@ ohos_unittest("AppSpawn_client_ut") {
     "waitpid=WaitpidStub",
     "HapContext=HapContextStub",
     "APPSPAWN_TEST",
+    "APPSPAWN_CLIENT",
     "OHOS_DEBUG",
     "GRAPHIC_PERMISSION_CHECK",
   ]
@@ -45,11 +46,13 @@ ohos_unittest("AppSpawn_client_ut") {
     "${appspawn_path}/adapter",
     "${appspawn_path}/adapter/sysevent",
     "${appspawn_path}/modules/sandbox",
+    "${appspawn_path}/modules//module_engine//include",
     "${appspawn_path}/interfaces/innerkits_new/include",
     "${appspawn_path}/interfaces/innerkits_new/client",
     "${appspawn_path}/interfaces/innerkits_new/permission",
     "${appspawn_path}/util/include",
     "${appspawn_path}/interfaces/innerkits_new/module_engine/include",
+    "${appspawn_path}/modules/module_engine/include",
     "//third_party/json/include",
   ]
   sources = [

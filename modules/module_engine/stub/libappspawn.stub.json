@@ -1,0 +1,19 @@
+[
+    { "name": "AddPreloadHook" },
+    { "name": "AddProcessMgrHook" },
+    { "name": "AddAppSpawnHook" },
+    { "name": "AppSpawnHookExecute" },
+    { "name": "AppSpawnEnvClear" },
+    { "name": "GetAppSpawnMsgInfo" },
+    { "name": "GetAppSpawnMsgExtInfo" },
+    { "name": "CheckAppSpawnMsgFlag" },
+    { "name": "SetAppSpawnMsgFlag" },
+    { "name": "RegChildLooper" },
+    { "name": "MakeDirRec" },
+    { "name": "SandboxMountPath" },
+    { "name": "AddVariableReplaceHandler" },
+    { "name": "GetSpawnedProcess" },
+    { "name": "DumpAppSpawnMsg" },
+    { "name": "AppSpawnDump" },
+    { "name": "RegisterExpandSandboxCfgHandler" }
+]

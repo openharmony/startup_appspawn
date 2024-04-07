@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,38 +13,24 @@
  * limitations under the License.
  */
 
-#ifndef APPSPAWN_CLIENT_MOUNT_PERMISSION_H
-#define APPSPAWN_CLIENT_MOUNT_PERMISSION_H
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-
-#include "list.h"
+#ifndef APPSPAWN_ADPATER_CPP
+#define APPSPAWN_ADPATER_CPP
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef struct TagSandboxQueue {
-    struct ListNode front;
-    uint32_t type;
-} SandboxQueue;
+int SetAppAccessToken(const AppSpawnMgr *content, const AppSpawningCtx *property);
+int SetSelinuxCon(const AppSpawnMgr *content, const AppSpawningCtx *property);
 
-typedef struct TagParseJsonContext {
-    uint32_t type;
-} ParseJsonContext;
+int SetUidGidFilter(const AppSpawnMgr *content);
+int SetSeccompFilter(const AppSpawnMgr *content, const AppSpawningCtx *property);
+int SetInternetPermission(const AppSpawningCtx *property);
+int32_t SetEnvInfo(const AppSpawnMgr *content, const AppSpawningCtx *property);
 
-typedef struct {
-    struct ListNode node;
-} SandboxMountNode;
-
-typedef struct TagPermissionNode {
-    SandboxMountNode sandboxNode;
-    uint32_t permissionIndex;
-    char name[0];
-} SandboxPermissionNode;
-
+// stub for extend func
+void DisallowInternet(void);
 #ifdef __cplusplus
 }
 #endif
-#endif  // APPSPAWN_CLIENT_MOUNT_PERMISSION_H
+#endif
