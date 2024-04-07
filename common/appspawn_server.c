@@ -21,6 +21,9 @@
 #include <unistd.h>
 #include <signal.h>
 #include <malloc.h>
+#include <fcntl.h>
+#include <stdio.h>
+
 #undef _GNU_SOURCE
 #define _GNU_SOURCE
 #include <sched.h>
@@ -207,6 +210,25 @@ static int CloneAppSpawn(void *arg)
     return 0;
 }
 
+static int ForkProcess(AppSandboxArg *sandbox)
+{
+    pid_t pid = fork();
+    if (pid == 0) {
+        ProcessExit(AppSpawnChild((void *)sandbox));
+    }
+    return pid;
+}
+
+// after calling setns, new process will be in the same pid namespace of the input pid
+static int SetPidNamespace(int nsPidFd, int nsType)
+{
+    if (setns(nsPidFd, nsType) < 0) {
+        APPSPAWN_LOGE("set pid namespace nsType:%{pudblic}d failed", nsType);
+        return -1;
+    }
+    return 0;
+}
+
 int AppSpawnProcessMsg(AppSandboxArg *sandbox, pid_t *childPid)
 {
     APPSPAWN_CHECK(sandbox != NULL && sandbox->content != NULL, return -1, "Invalid content for appspawn");
@@ -217,9 +239,12 @@ int AppSpawnProcessMsg(AppSandboxArg *sandbox, pid_t *childPid)
     if (sandbox->content->isNweb) {
         pid = clone(CloneAppSpawn, NULL, sandbox->client->cloneFlags | SIGCHLD, (void *)sandbox);
     } else {
-        pid = fork();
-        if (pid == 0) {
-            ProcessExit(AppSpawnChild((void *)sandbox));
+        if (sandbox->content->sandboxNsFlags & CLONE_NEWPID) {
+            SetPidNamespace(sandbox->content->nsInitPidFd, CLONE_NEWPID); // pid_ns_init is the init process
+            pid = ForkProcess(sandbox);
+            SetPidNamespace(sandbox->content->nsSelfPidFd, 0); // go back to original pid namespace
+        } else {
+            pid = ForkProcess(sandbox);
         }
     }
     APPSPAWN_CHECK(pid >= 0, return -errno, "fork child process error: %{public}d", -errno);

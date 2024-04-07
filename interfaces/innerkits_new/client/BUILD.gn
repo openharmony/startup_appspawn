@@ -37,6 +37,7 @@ if (!defined(ohos_lite)) {
       "${appspawn_path}/common",
       "${appspawn_path}/modules/sandbox",
       "${appspawn_path}/util/include",
+      "${appspawn_path}/modules//module_engine//include",
     ]
 
     defines = [

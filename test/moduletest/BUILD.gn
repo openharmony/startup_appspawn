@@ -29,6 +29,7 @@ ohos_executable("AppSpawnTest") {
     "${appspawn_path}/modules/ace_adapter",
     "${appspawn_path}/modules/common",
     "${appspawn_path}/modules/sandbox",
+    "${appspawn_path}/modules//module_engine//include",
     "${appspawn_path}/test/moduletest/threadpool",
     "${appspawn_innerkits_path}/include",
     "${appspawn_innerkits_path}/client",
@@ -37,6 +38,7 @@ ohos_executable("AppSpawnTest") {
     "${appspawn_path}/test/mock",
     "${appspawn_path}/test/unittest",
     "${appspawn_path}/util/include",
+    "${appspawn_path}/modules/module_engine/include",
   ]
 
   deps = [
@@ -82,6 +84,7 @@ ohos_moduletest("AppSpawnModuleTest") {
     "${appspawn_path}/test/mock",
     "${appspawn_path}/test/unittest",
     "${appspawn_path}/util/include",
+    "${appspawn_path}/modules/module_engine/include",
   ]
 
   deps = [

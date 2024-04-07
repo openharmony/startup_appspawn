@@ -13,10 +13,14 @@
  * limitations under the License.
  */
 #include "appspawn_permission.h"
-#include "appspawn_utils.h"
+#ifdef APPSPAWN_CLIENT
+#include "appspawn_mount_permission.h"
+#else
+#include "appspawn_sandbox.h"
+#endif
 #include "appspawn_msg.h"
+#include "appspawn_utils.h"
 #include "securec.h"
-#include "interfaces/innerkits_new/permission/appspawn_mount_permission.h"
 
 static int PermissionNodeCompareIndex(ListNode *node, void *data)
 {
@@ -27,18 +31,35 @@ static int PermissionNodeCompareIndex(ListNode *node, void *data)
 static int PermissionNodeCompareName(ListNode *node, void *data)
 {
     SandboxPermissionNode *permissionNode = (SandboxPermissionNode *)ListEntry(node, SandboxMountNode, node);
+#ifdef APPSPAWN_CLIENT
     return strcmp(permissionNode->name, (char *)data);
+#else
+    return strcmp(permissionNode->section.name, (char *)data);
+#endif
 }
 
 static int PermissionNodeCompareProc(ListNode *node, ListNode *newNode)
 {
     SandboxPermissionNode *permissionNode = (SandboxPermissionNode *)ListEntry(node, SandboxMountNode, node);
     SandboxPermissionNode *newPermissionNode = (SandboxPermissionNode *)ListEntry(newNode, SandboxMountNode, node);
+#ifdef APPSPAWN_CLIENT
     return strcmp(permissionNode->name, newPermissionNode->name);
+#else
+    return strcmp(permissionNode->section.name, newPermissionNode->section.name);
+#endif
 }
 
 int AddSandboxPermissionNode(const char *name, SandboxQueue *queue)
 {
+    APPSPAWN_CHECK_ONLY_EXPER(name != NULL && queue != NULL, return APPSPAWN_ARG_INVALID);
+#ifndef APPSPAWN_CLIENT
+    size_t len = sizeof(SandboxPermissionNode);
+    SandboxPermissionNode *node = (SandboxPermissionNode *)CreateSandboxSection(
+        name, len, SANDBOX_TAG_PERMISSION);
+    APPSPAWN_CHECK(node != NULL, return APPSPAWN_SYSTEM_ERROR, "Failed to create permission node");
+    node->permissionIndex = 0;
+    OH_ListAddWithOrder(&queue->front, &node->section.sandboxNode.node, PermissionNodeCompareProc);
+#else
     size_t len = APPSPAWN_ALIGN(strlen(name) + 1) + sizeof(SandboxPermissionNode);
     SandboxPermissionNode *node = (SandboxPermissionNode *)calloc(1, len);
     APPSPAWN_CHECK(node != NULL, return APPSPAWN_SYSTEM_ERROR, "Failed to create permission node");
@@ -48,18 +69,25 @@ int AddSandboxPermissionNode(const char *name, SandboxQueue *queue)
     APPSPAWN_CHECK(ret == 0, free(node);
         return APPSPAWN_SYSTEM_ERROR, "Failed to copy name");
     OH_ListAddWithOrder(&queue->front, &node->sandboxNode.node, PermissionNodeCompareProc);
+#endif
     return 0;
 }
 
 int32_t PermissionRenumber(SandboxQueue *queue)
 {
+    APPSPAWN_CHECK_ONLY_EXPER(queue != NULL, return -1);
     ListNode *node = queue->front.next;
     int index = -1;
     while (node != &queue->front) {
         SandboxPermissionNode *permissionNode = (SandboxPermissionNode *)ListEntry(node, SandboxMountNode, node);
         permissionNode->permissionIndex = ++index;
+#ifdef APPSPAWN_CLIENT
         APPSPAWN_LOGV("Permission index %{public}d name %{public}s",
             permissionNode->permissionIndex, permissionNode->name);
+#else
+        APPSPAWN_LOGV("Permission index %{public}d name %{public}s",
+            permissionNode->permissionIndex, permissionNode->section.name);
+#endif
         node = node->next;
     }
     return index + 1;
@@ -85,6 +113,7 @@ const SandboxPermissionNode *GetPermissionNodeInQueueByIndex(SandboxQueue *queue
 
 int32_t GetPermissionIndexInQueue(SandboxQueue *queue, const char *permission)
 {
+    APPSPAWN_CHECK_ONLY_EXPER(queue != NULL && permission != NULL, return INVALID_PERMISSION_INDEX);
     const SandboxPermissionNode *permissionNode = GetPermissionNodeInQueue(queue, permission);
     return permissionNode == NULL ? INVALID_PERMISSION_INDEX : permissionNode->permissionIndex;
 }

@@ -26,14 +26,15 @@ extern "C" {
 #endif
 
 #define APP_SANDBOX_FILE_NAME "/appdata-sandbox.json"
-typedef struct TagSandboxSection SandboxQueue;
+#define WEB_SANDBOX_FILE_NAME "/appdata-sandbox-nweb.json"
+
+typedef struct TagSandboxQueue SandboxQueue;
 typedef struct TagPermissionNode SandboxPermissionNode;
 
 int32_t AddSandboxPermissionNode(const char *name, SandboxQueue *queue);
 int32_t GetPermissionIndexInQueue(SandboxQueue *queue, const char *permission);
 const SandboxPermissionNode *GetPermissionNodeInQueue(SandboxQueue *queue, const char *permission);
 const SandboxPermissionNode *GetPermissionNodeInQueueByIndex(SandboxQueue *queue, int32_t index);
-const SandboxPermissionNode *GetPermissionNode(const char *permission);
 int32_t PermissionRenumber(SandboxQueue *queue);
 
 #ifdef __cplusplus

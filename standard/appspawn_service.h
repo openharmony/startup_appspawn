@@ -20,7 +20,7 @@
 #include <stdbool.h>
 #include "interfaces/innerkits/include/appspawn_msg.h"
 #include "interfaces/innerkits_new/include/appspawn.h"
-#include "interfaces/innerkits_new/module_engine/include/appspawn_msg.h"
+#include "modules/module_engine/include/appspawn_msg.h"
 #include "appspawn_server.h"
 #include "init_hashmap.h"
 #include "loop_event.h"
