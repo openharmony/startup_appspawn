@@ -27,7 +27,6 @@
 
 #include "appspawn_adapter.h"
 #include "appspawn_hook.h"
-#include "appspawn_manager.h"
 #include "appspawn_utils.h"
 #include "securec.h"
 

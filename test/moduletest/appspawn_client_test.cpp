@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,18 +13,17 @@
  * limitations under the License.
  */
 
-#include "appspawn_test_client.h"
-
-#include "gtest/gtest.h"
+#include "appspawn.h"
+#include "appspawn_utils.h"
 #include "securec.h"
 
+#include <gtest/gtest.h>
+using namespace testing;
 using namespace testing::ext;
-using namespace OHOS;
 
 namespace OHOS {
 namespace AppSpawn {
-
-class AppSpawnClientTest : public testing::Test, public AppSpawnTestClient {
+class AppSpawnClientTest : public testing::Test {
 public:
     static void SetUpTestCase() {}
     static void TearDownTestCase() {}
@@ -32,317 +31,68 @@ public:
     void TearDown() {}
 };
 
-HWTEST_F(AppSpawnClientTest, AppSpawn_Client_AppSpawn_1, TestSize.Level0)
+static AppSpawnReqMsgHandle CreateMsg(AppSpawnClientHandle handle, const char *bundleName)
 {
-    int ret = ClientCreateSocket("/dev/unix/socket/AppSpawn");
-    EXPECT_EQ(ret, 0);
+    AppSpawnReqMsgHandle reqHandle = 0;
+    int ret = AppSpawnReqMsgCreate(MSG_APP_SPAWN, bundleName, &reqHandle);
+    APPSPAWN_CHECK(ret == 0, return 0, "Failed to create req %{public}s", bundleName);
+    do {
+        ret = AppSpawnReqMsgSetBundleInfo(reqHandle, 0, bundleName);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create req %{public}s", bundleName);
 
-    AppParameter request = {};
-    memset_s((void *)(&request), sizeof(request), 0, sizeof(request));
-    ClientFillMsg(&request, "ohos.samples.clock", "ls -l > aaa.txt");
-    request.code = SPAWN_NATIVE_PROCESS;
-    ret = ClientSendMsg(reinterpret_cast<const uint8_t *>(&request), sizeof(request));
-    EXPECT_EQ(ret, 0);
-    pid_t pid = 0;
-    ret = ClientRecvMsg(pid);
-    EXPECT_LT(ret, 0);
-    if (pid > 0) {
-        kill(pid, SIGKILL);
-    }
-    // close client
-    ClientClose();
+        AppDacInfo dacInfo = {};
+        dacInfo.uid = 20010029; // 20010029 test data
+        dacInfo.gid = 20010029; // 20010029 test data
+        dacInfo.gidCount = 2; // 2 count
+        dacInfo.gidTable[0] = 20010029; // 20010029 test data
+        dacInfo.gidTable[1] = 20010029 + 1; // 20010029 test data
+        (void)strcpy_s(dacInfo.userName, sizeof(dacInfo.userName), "test-app-name");
+        ret = AppSpawnReqMsgSetAppDacInfo(reqHandle, &dacInfo);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to add dac %{public}s", APPSPAWN_SERVER_NAME);
+
+        AppSpawnReqMsgSetAppFlag(reqHandle, static_cast<AppFlagsIndex>(10)); // 10 test
+
+        ret = AppSpawnReqMsgSetAppAccessToken(reqHandle, 12345678);  // 12345678
+        APPSPAWN_CHECK(ret == 0, break, "Failed to add access token %{public}s", APPSPAWN_SERVER_NAME);
+
+        static const char *permissions[] = {
+            "ohos.permission.READ_IMAGEVIDEO",
+            "ohos.permission.FILE_CROSS_APP",
+            "ohos.permission.ACTIVATE_THEME_PACKAGE",
+            "ohos.permission.GET_WALLPAPER",
+        };
+        size_t count = sizeof(permissions) / sizeof(permissions[0]);
+        for (size_t i = 0; i < count; i++) {
+            ret = AppSpawnReqMsgAddPermission(reqHandle, permissions[i]);
+            APPSPAWN_CHECK(ret == 0, break, "Failed to create req %{public}s", bundleName);
+        }
+        return reqHandle;
+    } while (0);
+    AppSpawnReqMsgFree(reqHandle);
+    return INVALID_REQ_HANDLE;
 }
 
-HWTEST_F(AppSpawnClientTest, AppSpawn_Client_AppSpawn_2, TestSize.Level0)
+static AppSpawnClientHandle CreateClient(const char *serviceName)
 {
-    int ret = ClientCreateSocket("/dev/unix/socket/AppSpawn");
-    EXPECT_EQ(ret, 0);
-
-    AppParameter request = {};
-    memset_s((void *)(&request), sizeof(request), 0, sizeof(request));
-    ClientFillMsg(&request, "ohos.samples.clock", "ls -l > aaa.txt");
-
-    // more gid
-    request.gidCount = APP_MAX_GIDS + 1;
-    ret = ClientSendMsg(reinterpret_cast<const uint8_t *>(&request), sizeof(request));
-    EXPECT_EQ(ret, 0);
-    pid_t pid = 0;
-    ret = ClientRecvMsg(pid);
-    EXPECT_NE(ret, 0);
-    if (pid > 0) {
-        kill(pid, SIGKILL);
-    }
-    // close client
-    ClientClose();
+    AppSpawnClientHandle clientHandle = NULL;
+    int ret = AppSpawnClientInit(serviceName, &clientHandle);
+    APPSPAWN_CHECK(ret == 0, return nullptr, "Failed to create client %{public}s", serviceName);
+    return clientHandle;
 }
 
-// has hsp data,read json from etc
-static const std::string g_jsonStr = "{ "
-    "\"bundles\": [{ "
-        "\"name\":\"test_service\", "
-        "\"path\":[\"/data/init_ut/test_service\"], "
-        "\"importance\":-20, "
-        "\"uid\":\"system\", "
-        "\"writepid\":[\"/dev/test_service\"], "
-        "\"console\":1, "
-        "\"caps\":[\"TEST_ERR\"], "
-        "\"gid\":[\"system\"], "
-        "\"critical\":1  "
-    "}], "
-    "\"modules\": [{ "
-        "\"name\":\"test_service\", "
-        "\"path\":[\"/data/init_ut/test_service\"], "
-        "\"importance\":-20, "
-        "\"uid\":\"system\", "
-        "\"writepid\":[\"/dev/test_service\"], "
-        "\"console\":1, "
-        "\"caps\":[\"TEST_ERR\"], "
-        "\"gid\":[\"system\"], "
-        "\"critical\":1  "
-    "}], "
-    " \"versions\": [{ "
-        "\"name\":\"test_service\", "
-        "\"path\":[\"/data/init_ut/test_service\"], "
-        "\"importance\":-20, "
-        "\"uid\":\"system\", "
-        "\"writepid\":[\"/dev/test_service\"], "
-        "\"console\":1, "
-        "\"caps\":[\"TEST_ERR\"], "
-        "\"gid\":[\"system\"], "
-        "\"critical\":1  "
-    "}] "
-"}";
-
-HWTEST_F(AppSpawnClientTest, AppSpawn_Client_AppSpawn_3, TestSize.Level0)
+HWTEST(AppSpawnClientTest, AppSpawn_Client_test001, TestSize.Level0)
 {
-    APPSPAWN_LOGI("AppSpawn_Client_AppSpawn_3");
-    int ret = ClientCreateSocket("/dev/unix/socket/AppSpawn");
-    EXPECT_EQ(ret, 0);
+    AppSpawnClientHandle clientHandle = CreateClient(APPSPAWN_SERVER_NAME);
+    ASSERT_EQ(clientHandle != NULL, 1);
+    AppSpawnReqMsgHandle reqHandle = CreateMsg(clientHandle, "ohos.samples.clock");
+    ASSERT_EQ(reqHandle != INVALID_REQ_HANDLE, 1);
 
-    AppParameter request = {};
-    memset_s((void *)(&request), sizeof(request), 0, sizeof(request));
-    ClientFillMsg(&request, "ohos.samples.clock", "ls -l > aaa.txt");
-
-    printf("AppSpawn_Client_AppSpawn_3 hsp %zu %s \n", g_jsonStr.size(), g_jsonStr.c_str());
-    request.extraInfo.totalLength = g_jsonStr.size();
-    std::vector<char *> data(sizeof(request) + g_jsonStr.size());
-    memcpy_s(data.data(), sizeof(request), &request, sizeof(request));
-    memcpy_s(data.data() + sizeof(request), g_jsonStr.size(), g_jsonStr.data(), g_jsonStr.size());
-    ret = ClientSendMsg(reinterpret_cast<const uint8_t *>(data.data()), data.size());
-    EXPECT_EQ(ret, 0);
-    pid_t pid = 0;
-    ret = ClientRecvMsg(pid);
-    if (pid > 0) {
-        kill(pid, SIGKILL);
+    AppSpawnResult result = {};
+    int ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
+    if (ret == 0 && result.pid > 0) {
+        kill(result.pid, SIGKILL);
     }
-    // close client
-    ClientClose();
-}
-
-// has env data,read json from etc
-static const std::string g_envJsonStr = "|AppEnv|{"
-    "\"test.name1\": \"test.value1\","
-    "\"test.name2\": \"test.value2\""
-"}|AppEnv|";
-
-HWTEST_F(AppSpawnClientTest, AppSpawn_Client_AppSpawn_3_1, TestSize.Level0)
-{
-    APPSPAWN_LOGI("AppSpawn_Client_AppSpawn_3_1 start");
-    int ret = ClientCreateSocket("/dev/unix/socket/AppSpawn");
-    EXPECT_EQ(ret, 0);
-
-    AppParameter request = {};
-    memset_s((void *)(&request), sizeof(request), 0, sizeof(request));
-    ClientFillMsg(&request, "ohos.samples.clock", "ls -l > aaa.txt");
-
-    printf("AppSpawn_Client_AppSpawn_3_1 env %zu %s \n", g_envJsonStr.size(), g_envJsonStr.c_str());
-    request.extraInfo.totalLength = g_envJsonStr.size();
-    std::vector<char *> data(sizeof(request) + g_envJsonStr.size());
-    memcpy_s(data.data(), sizeof(request), &request, sizeof(request));
-    memcpy_s(data.data() + sizeof(request), g_envJsonStr.size(), g_envJsonStr.data(), g_envJsonStr.size());
-    ret = ClientSendMsg(reinterpret_cast<const uint8_t *>(data.data()), data.size());
-    EXPECT_EQ(ret, 0);
-    pid_t pid = 0;
-    ret = ClientRecvMsg(pid);
-    if (pid > 0) {
-        kill(pid, SIGKILL);
-    }
-    // close client
-    ClientClose();
-    APPSPAWN_LOGI("AppSpawn_Client_AppSpawn_3_1 end");
-}
-
-HWTEST_F(AppSpawnClientTest, AppSpawn_Client_AppSpawn_4, TestSize.Level0)
-{
-    APPSPAWN_LOGI("AppSpawn_Client_AppSpawn_4");
-    int ret = ClientCreateSocket("/dev/unix/socket/AppSpawn");
-    EXPECT_EQ(ret, 0);
-
-    AppParameter request = {};
-    memset_s((void *)(&request), sizeof(request), 0, sizeof(request));
-    ClientFillMsg(&request, "ohos.samples.clock", "ls -l > aaa.txt");
-
-    // has hsp data,read json from etc
-    const std::string jsonPath("/system/etc/sandbox/system-sandbox.json");
-    std::ifstream jsonFileStream;
-    jsonFileStream.open(jsonPath.c_str(), std::ios::in);
-    EXPECT_EQ(jsonFileStream.is_open() == true, 1);
-    std::vector<char> buf;
-    char ch;
-    while (jsonFileStream.get(ch)) {
-        buf.insert(buf.end(), ch);
-    }
-    jsonFileStream.close();
-
-    printf("AppSpawn_Client_AppSpawn_4 hsp %zu \n", buf.size());
-    request.extraInfo.totalLength = buf.size();
-    std::vector<char *> data(sizeof(request) + buf.size());
-    memcpy_s(data.data(), sizeof(request), &request, sizeof(request));
-    memcpy_s(data.data() + sizeof(request), buf.size(), buf.data(), buf.size());
-    ret = ClientSendMsg(reinterpret_cast<const uint8_t *>(data.data()), data.size());
-    EXPECT_EQ(ret, 0);
-    pid_t pid = 0;
-    ret = ClientRecvMsg(pid);
-    if (pid > 0) {
-        kill(pid, SIGKILL);
-    }
-    // close client
-    ClientClose();
-}
-
-HWTEST_F(AppSpawnClientTest, AppSpawn_Client_AppSpawn_5, TestSize.Level0)
-{
-    APPSPAWN_LOGI("AppSpawn_Client_AppSpawn_5 start");
-    int ret = ClientCreateSocket("/dev/unix/socket/AppSpawn");
-    EXPECT_EQ(ret, 0);
-
-    AppParameter request = {};
-    memset_s((void *)(&request), sizeof(request), 0, sizeof(request));
-    ClientFillMsg(&request, "ohos.samples.clock", "ls -l > aaa.txt");
-
-    // more hsp data,read json from etc
-    const std::string jsonPath("/system/etc/sandbox/appdata-sandbox.json");
-    std::ifstream jsonFileStream;
-    jsonFileStream.open(jsonPath.c_str(), std::ios::in);
-    EXPECT_EQ(jsonFileStream.is_open() == true, 1);
-    std::vector<char> buf;
-    char ch;
-    while (jsonFileStream.get(ch)) {
-        buf.insert(buf.end(), ch);
-    }
-    jsonFileStream.close();
-
-    request.extraInfo.totalLength = buf.size();
-    std::vector<char *> data(sizeof(request) + buf.size());
-    memcpy_s(data.data(), sizeof(request), &request, sizeof(request));
-    memcpy_s(data.data() + sizeof(request), buf.size(), buf.data(), buf.size());
-    ret = ClientSendMsg(reinterpret_cast<const uint8_t *>(data.data()), data.size());
-    EXPECT_EQ(ret, 0);
-    pid_t pid = 0;
-    ret = ClientRecvMsg(pid);
-    if (pid > 0) {
-        kill(pid, SIGKILL);
-    }
-    // close client
-    ClientClose();
-    APPSPAWN_LOGI("AppSpawn_Client_AppSpawn_5 end");
-}
-
-HWTEST_F(AppSpawnClientTest, AppSpawn_Client_AppSpawn_6, TestSize.Level0)
-{
-    APPSPAWN_LOGI("AppSpawn_Client_AppSpawn_6 start");
-    int ret = ClientCreateSocket("/dev/unix/socket/AppSpawn");
-    EXPECT_EQ(ret, 0);
-
-    SetParameter("startup.appspawn.cold.boot", "1");
-    SetParameter("persist.appspawn.client.timeout", "10");
-    AppParameter request = {};
-    memset_s((void *)(&request), sizeof(request), 0, sizeof(request));
-    ClientFillMsg(&request, "ohos.samples.clock", "ls -l > /data/aaa.txt");
-    request.flags = APP_COLD_BOOT;
-    request.code = SPAWN_NATIVE_PROCESS;
-    ret = ClientSendMsg(reinterpret_cast<const uint8_t *>(&request), sizeof(request));
-    EXPECT_EQ(ret, 0);
-    pid_t pid = 0;
-    ret = ClientRecvMsg(pid);
-    EXPECT_LT(ret, 0);
-    if (pid > 0) {
-        kill(pid, SIGKILL);
-    }
-    // close client
-    ClientClose();
-    APPSPAWN_LOGI("AppSpawn_Client_AppSpawn_6 end");
-}
-
-HWTEST_F(AppSpawnClientTest, AppSpawn_Client_AppSpawn_7, TestSize.Level0)
-{
-    APPSPAWN_LOGI("AppSpawn_Client_AppSpawn_7 start");
-    int ret = ClientCreateSocket("/dev/unix/socket/AppSpawn");
-    EXPECT_EQ(ret, 0);
-
-    SetParameter("startup.appspawn.cold.boot", "1");
-    SetParameter("persist.appspawn.client.timeout", "10");
-    AppParameter request = {};
-    memset_s((void *)(&request), sizeof(request), 0, sizeof(request));
-    ClientFillMsg(&request, "ohos.samples.2222222222222clock", "ls -l > /data/aaa.txt");
-    request.flags = APP_COLD_BOOT | APP_NO_SANDBOX;
-    request.code = SPAWN_NATIVE_PROCESS;
-    ret = ClientSendMsg(reinterpret_cast<const uint8_t *>(&request), sizeof(request));
-    EXPECT_EQ(ret, 0);
-    pid_t pid = 0;
-    ret = ClientRecvMsg(pid);
-    EXPECT_EQ(ret, 0);
-    if (pid > 0) {
-        kill(pid, SIGKILL);
-    }
-    // close client
-    ClientClose();
-    APPSPAWN_LOGI("AppSpawn_Client_AppSpawn_7 end");
-}
-
-
-HWTEST_F(AppSpawnClientTest, AppSpawn_Client_NWebSpawn_1, TestSize.Level0)
-{
-    int ret = ClientCreateSocket("/dev/unix/socket/NWebSpawn");
-    EXPECT_EQ(ret, 0);
-
-    AppParameter request = {};
-    memset_s((void *)(&request), sizeof(request), 0, sizeof(request));
-    ClientFillMsg(&request, "ohos.samples.clock", "ls -l > aaa.txt");
-    ret = ClientSendMsg(reinterpret_cast<const uint8_t *>(&request), sizeof(request));
-    EXPECT_EQ(ret, 0);
-    pid_t pid = 0;
-    ret = ClientRecvMsg(pid);
-    EXPECT_EQ(ret, 0);
-    if (pid > 0) {
-        kill(pid, SIGKILL);
-    }
-    // close client
-    ClientClose();
-}
-
-HWTEST_F(AppSpawnClientTest, AppSpawn_Client_NWebSpawn_2, TestSize.Level0)
-{
-    int ret = ClientCreateSocket("/dev/unix/socket/NWebSpawn");
-    EXPECT_EQ(ret, 0);
-
-    AppParameter request = {};
-    memset_s((void *)(&request), sizeof(request), 0, sizeof(request));
-    ClientFillMsg(&request, "ohos.samples.clock", "ls -l > aaa.txt");
-    ret = ClientSendMsg(reinterpret_cast<const uint8_t *>(&request), sizeof(request));
-    EXPECT_EQ(ret, 0);
-    pid_t pid = 0;
-    ret = ClientRecvMsg(pid);
-    EXPECT_EQ(ret, 0);
-    printf("AppSpawn_Client_NWebSpawn_2 pid %d \n", pid);
-    request.code = GET_RENDER_TERMINATION_STATUS;
-    request.pid = pid;
-    ret = ClientSendMsg(reinterpret_cast<const uint8_t *>(&request), sizeof(request));
-    EXPECT_EQ(ret, 0);
-    ret = ClientRecvMsg(pid);
-    printf("AppSpawn_Client_NWebSpawn_2 result %d \n", ret);
-    // close client
-    ClientClose();
+    AppSpawnClientDestroy(clientHandle);
 }
 }  // namespace AppSpawn
 }  // namespace OHOS

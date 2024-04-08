@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 
-#include "appspawn_manager.h"
 #include "appspawn_sandbox.h"
 #include "appspawn_utils.h"
 #include "modulemgr.h"

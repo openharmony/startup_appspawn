@@ -20,7 +20,7 @@
 
 const std::string APPENVLIST_TYPE = "|AppEnv|";
 
-int32_t SetEnvInfo(struct AppSpawnContent_ *content, AppSpawnClient *client)
+int32_t SetEnvInfo(struct AppSpawnContent *content, AppSpawnClient *client)
 {
     int ret = 0;
     OHOS::AppSpawn::ClientSocket::AppProperty *appProperty = &reinterpret_cast<AppSpawnClientExt *>(client)->property;

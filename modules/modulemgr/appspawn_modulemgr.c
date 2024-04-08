@@ -16,7 +16,6 @@
 #include "appspawn_modulemgr.h"
 
 #include "appspawn_hook.h"
-#include "appspawn_manager.h"
 #include "appspawn_utils.h"
 #include "hookmgr.h"
 #include "modulemgr.h"
@@ -254,7 +253,7 @@ int AddProcessMgrHook(AppSpawnHookStage stage, int prio, ProcessChangeHook hook)
     return HookMgrAddEx(GetAppSpawnHookMgr(), &info);
 }
 
-void RegChildLooper(struct TagAppSpawnContent *content, ChildLoop loop)
+void RegChildLooper(struct AppSpawnContent *content, ChildLoop loop)
 {
     APPSPAWN_CHECK(content != NULL && loop != NULL, return, "Invalid content for RegChildLooper");
     content->runChildProcessor = loop;

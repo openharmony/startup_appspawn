@@ -36,13 +36,16 @@ config("utest_config") {
   }
 
   include_dirs = [
+    "${appspawn_path}",
     "${appspawn_path}/test/unittest",
     "${appspawn_path}/test/mock/include",
     "${appspawn_path}/common",
     "${appspawn_path}/standard",
     "${appspawn_path}/adapter",
     "${appspawn_path}/adapter/sysevent",
+    "${appspawn_path}/modules/sandbox",
     "${appspawn_path}/interfaces/innerkits/include",
+    "${appspawn_path}/interfaces/innerkits_new/include",
     "${appspawn_path}/util/include",
     "//commonlibrary/c_utils/base/include",
     "ability_runtime_kits_path/appkit/native/app/include",
@@ -98,6 +101,7 @@ if (!defined(ohos_lite)) {
       "${appspawn_path}/interfaces/innerkits/client/appspawn_socket.cpp",
       "${appspawn_path}/interfaces/innerkits/client/client_socket.cpp",
       "${appspawn_path}/interfaces/innerkits/src/appspawn_mount_permission.cpp",
+      "${appspawn_path}/standard/appspawn_msgmgr.c",
       "${appspawn_path}/standard/appspawn_process.c",
       "${appspawn_path}/standard/appspawn_service.c",
       "${appspawn_path}/util/src/command_lexer.cpp",
@@ -128,6 +132,7 @@ if (!defined(ohos_lite)) {
       "ace_engine:ace_forward_compatibility",
       "bundle_framework:appexecfwk_base",
       "bundle_framework:appexecfwk_core",
+      "cJSON:cjson",
       "c_utils:utils",
       "config_policy:configpolicy_util",
       "eventhandler:libeventhandler",

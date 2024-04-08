@@ -13,22 +13,38 @@
  * limitations under the License.
  */
 
-#ifndef APPSPAWN_MOUNT_PERMISSION_H
-#define APPSPAWN_MOUNT_PERMISSION_H
+#ifndef APPSPAWN_CLIENT_MOUNT_PERMISSION_H
+#define APPSPAWN_CLIENT_MOUNT_PERMISSION_H
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "list.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-typedef struct TagPermissionNode PermissionNode;
-int32_t GetPermissionIndex(const char *permission);
-int32_t GetMaxPermissionIndex(void);
-const PermissionNode *GetPermissionNode(const char *permission);
-const PermissionNode *GetPermissionNodeByIndex(int32_t index);
+
+typedef struct TagSandboxQueue {
+    struct ListNode front;
+    uint32_t type;
+} SandboxQueue;
+
+typedef struct TagParseJsonContext {
+    uint32_t type;
+} ParseJsonContext;
+
+typedef struct {
+    struct ListNode node;
+} SandboxMountNode;
+
+typedef struct TagPermissionNode {
+    SandboxMountNode sandboxNode;
+    uint32_t permissionIndex;
+    char name[0];
+} SandboxPermissionNode;
 
 #ifdef __cplusplus
 }
 #endif
-#endif  // APPSPAWN_MOUNT_PERMISSION_H
+#endif  // APPSPAWN_CLIENT_MOUNT_PERMISSION_H
