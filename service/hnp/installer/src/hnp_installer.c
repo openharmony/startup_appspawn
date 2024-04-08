@@ -29,10 +29,9 @@
 extern "C" {
 #endif
 
-static int HnpInstallerUidGet(const char *uidIn, unsigned long *uidOut)
+static int HnpInstallerUidGet(const char *uidIn, int *uidOut)
 {
     int index;
-    char *endptr;
 
     for (index = 0; uidIn[index] != '\0'; index++) {
         if (!isdigit(uidIn[index])) {
@@ -40,7 +39,7 @@ static int HnpInstallerUidGet(const char *uidIn, unsigned long *uidOut)
         }
     }
 
-    *uidOut = strtoul(uidIn, &endptr, 10); // 转化为10进制
+    *uidOut = atoi(uidIn); // 转化为10进制
     return 0;
 }
 
@@ -426,7 +425,7 @@ static int HnpReadAndInstall(char *srcFile, NativeHnpPath *hnpDstPath, bool isFo
     return 0;
 }
 
-static int HnpInsatllPre(unsigned long uid, char *softwarePath[], int count, const char *installPath, bool isForce)
+static int HnpInsatllPre(int uid, char *softwarePath[], int count, const char *installPath, bool isForce)
 {
     char srcFile[count][MAX_FILE_PATH_LEN];
     char dstPath[MAX_FILE_PATH_LEN];
@@ -444,8 +443,8 @@ static int HnpInsatllPre(unsigned long uid, char *softwarePath[], int count, con
 
     if (installPath == NULL) {
         /* 拼接安装路径 */
-        if (sprintf_s(dstPath, MAX_FILE_PATH_LEN, HNP_DEFAULT_INSTALL_ROOT_PATH"%lu/", uid) < 0) {
-            HNP_LOGE("hnp install sprintf unsuccess, uid:%lu", uid);
+        if (sprintf_s(dstPath, MAX_FILE_PATH_LEN, HNP_DEFAULT_INSTALL_ROOT_PATH"%d/", uid) < 0) {
+            HNP_LOGE("hnp install sprintf unsuccess, uid:%d", uid);
             return HNP_ERRNO_INSTALLER_GET_HNP_PATH_FAILED;
         }
 
@@ -489,7 +488,7 @@ int HnpCmdInstall(int argc, char *argv[])
     char *installPath = NULL;
     char *softwarePath[MAX_SOFTWARE_NUM] = {0};
     int count = 0;
-    unsigned long uid = 0;
+    int uid = 0;
     char *uidArg = NULL;
     bool isForce = false;
     int ret;
@@ -543,15 +542,15 @@ int HnpCmdInstall(int argc, char *argv[])
     return HnpInsatllPre(uid, softwarePath, count, installPath, isForce);
 }
 
-static int HnpUnInstallPre(unsigned int uid, const char *hnpName, const char *version, const char *uninstallPath)
+static int HnpUnInstallPre(int uid, const char *hnpName, const char *version, const char *uninstallPath)
 {
     NativeHnpPath hnpDstPath = {0};
 
     if (uninstallPath == NULL) {
         /* 拼接基本路径 */
-        if (sprintf_s(hnpDstPath.hnpBasePath, MAX_FILE_PATH_LEN, HNP_DEFAULT_INSTALL_ROOT_PATH"%lu/hnp/hnppublic/",
+        if (sprintf_s(hnpDstPath.hnpBasePath, MAX_FILE_PATH_LEN, HNP_DEFAULT_INSTALL_ROOT_PATH"%d/hnp/hnppublic/",
             uid) < 0) {
-            HNP_LOGE("hnp uninstall base path sprintf unsuccess,uid:%lu, process name[%s]", uid, hnpName);
+            HNP_LOGE("hnp uninstall base path sprintf unsuccess,uid:%d, process name[%s]", uid, hnpName);
             return HNP_ERRNO_BASE_SPRINTF_FAILED;
         }
     } else {
@@ -590,7 +589,7 @@ static int HnpUnInstallPre(unsigned int uid, const char *hnpName, const char *ve
 int HnpCmdUnInstall(int argc, char *argv[])
 {
     char *uninstallPath = NULL;
-    unsigned long uid;
+    int uid;
     char *uidArg = NULL;
     char *hnpName = NULL;
     char *version = NULL;
