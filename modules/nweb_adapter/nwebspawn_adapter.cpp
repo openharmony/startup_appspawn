@@ -28,7 +28,6 @@
 #endif
 
 #include "appspawn_hook.h"
-#include "appspawn_manager.h"
 
 #ifdef WITH_SECCOMP
 #include "seccomp_policy.h"

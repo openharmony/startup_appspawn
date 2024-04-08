@@ -60,7 +60,8 @@
                 "ui_lite",
                 "code_signature",
                 "bounds_checking_function",
-                "zlib"
+                "zlib",
+                "cJSON"
             ],
 	    "third_party": [
                 "bounds_checking_function",
@@ -74,6 +75,15 @@
                 "//base/startup/appspawn:appspawn_all"
             ],
             "inner_kits": [
+                {
+                    "header": {
+                        "header_base": "//base/startup/appspawn/interfaces/innerkits_new/include/",
+                        "header_files": [
+                            "appspawn.h"
+                        ]
+                    },
+                    "name": "//base/startup/appspawn/interfaces/innerkits_new/client:appspawn_client"
+                },
                 {
                     "header": {
                         "header_base": "//base/startup/appspawn/interfaces/innerkits/include/",

@@ -253,6 +253,10 @@ int AppSpawnClientDestroy(AppSpawnClientHandle handle)
     }
     pthread_mutex_unlock(&g_mutex);
     pthread_mutex_destroy(&reqMgr->mutex);
+    if (reqMgr->socketId >= 0) {
+        CloseClientSocket(reqMgr->socketId);
+        reqMgr->socketId = -1;
+    }
     free(reqMgr);
     return 0;
 }

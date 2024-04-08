@@ -24,7 +24,10 @@ group("moduletest") {
 group("unittest") {
   if (!defined(ohos_lite)) {
     testonly = true
-    deps = [ "unittest:AppSpawn_ut" ]
+    deps = [
+      "unittest:AppSpawn_ut",
+      "unittest/app_spawn_client_test:AppSpawn_client_ut",
+    ]
     deps += [ "unittest/hnp_test:HnpTest" ]
   } else {
     testonly = true

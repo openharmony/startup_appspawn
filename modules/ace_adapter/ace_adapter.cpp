@@ -24,7 +24,6 @@
 
 #include "appspawn_hook.h"
 #include "appspawn_server.h"
-#include "appspawn_manager.h"
 #include "appspawn_utils.h"
 #include "command_lexer.h"
 #include "config_policy_utils.h"

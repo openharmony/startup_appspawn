@@ -40,7 +40,6 @@
 #include "appspawn_adapter.h"
 #include "appspawn_hook.h"
 #include "appspawn_msg.h"
-#include "appspawn_manager.h"
 #include "init_param.h"
 #include "parameter.h"
 #include "securec.h"

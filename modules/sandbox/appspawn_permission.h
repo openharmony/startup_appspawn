@@ -25,7 +25,7 @@
 extern "C" {
 #endif
 
-#define APP_SANDBOX_FILE_NAME "/appdata-sandbox-app.json"
+#define APP_SANDBOX_FILE_NAME "/appdata-sandbox.json"
 #define WEB_SANDBOX_FILE_NAME "/appdata-sandbox-nweb.json"
 
 typedef struct TagSandboxQueue SandboxQueue;

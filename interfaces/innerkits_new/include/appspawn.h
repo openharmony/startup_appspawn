@@ -32,6 +32,8 @@ extern "C" {
  * 如果调用AppSpawnClientSendMsg后，消息句柄不需要处理
  * 否则需要调用 AppSpawnReqMsgFree 释放句柄
  *
+ * 所有字符串输入的接口，只能接受合法的字符串，输入null、""、和大于合法长度的字符串都返回错误
+ *
  */
 typedef void *AppSpawnReqMsgHandle;
 
@@ -41,6 +43,7 @@ typedef void *AppSpawnReqMsgHandle;
  */
 typedef void *AppSpawnClientHandle;
 
+#define INVALID_PERMISSION_INDEX (-1)
 #define INVALID_REQ_HANDLE NULL
 #define NWEBSPAWN_SERVER_NAME "nwebspawn"
 #define APPSPAWN_SERVER_NAME "appspawn"
@@ -239,6 +242,30 @@ int AppSpawnReqMsgAddExtInfo(AppSpawnReqMsgHandle reqHandle, const char *name, c
  * @return if succeed return 0,else return other value
  */
 int AppSpawnReqMsgAddStringInfo(AppSpawnReqMsgHandle reqHandle, const char *name, const char *value);
+
+/**
+ * @brief Get the permission index by permission name
+ *
+ * @param permission permission name
+ * @return int32_t permission index, if not exit, return INVALID_PERMISSION_INDEX
+ */
+int32_t GetPermissionIndex(const char *permission);
+
+/**
+ * @brief Get the max permission Index
+ *
+ * @return int32_t max permission Index
+ */
+int32_t GetMaxPermissionIndex(void);
+
+/**
+ * @brief Get the permission name by index
+ *
+ * @param index permission index
+ * @return const char* permission name
+ */
+const char *GetPermissionByIndex(int32_t index);
+
 #ifdef __cplusplus
 }
 #endif

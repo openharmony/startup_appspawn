@@ -14,45 +14,24 @@
 import("//base/startup/appspawn/appspawn.gni")
 import("//build/ohos.gni")
 
-ohos_shared_library("appspawn_sandbox") {
-  sources = [
-    "appspawn_mount_template.c",
-    "appspawn_permission.c",
-    "appspawn_sandbox.c",
-    "sandbox_cfgvar.c",
-    "sandbox_expand.c",
-    "sandbox_load.c",
-    "sandbox_manager.c",
-  ]
+config("appspawn_threadpool") {
+  include_dirs = [ "." ]
+}
 
+ohos_source_set("libappspawn_threadpool") {
+  sources = [ "thread_manager.c" ]
   include_dirs = [
     ".",
+    "${appspawn_path}/util/include",
     "${appspawn_path}/common",
-    "${appspawn_path}/standard",
-    "${appspawn_path}/modules//module_engine//include",
   ]
 
-  configs = [ "${appspawn_path}:appspawn_config" ]
-
-  defines = []
-  deps = [
-    "${appspawn_path}/modules/module_engine:libappspawn_module_engine",
-    "${appspawn_path}/util:libappspawn_util",
-    "//third_party/cJSON:cjson",
-  ]
   external_deps = [
     "c_utils:utils",
     "hilog:libhilog",
     "init:libbegetutil",
   ]
+  public_configs = [ ":appspawn_threadpool" ]
   subsystem_name = "${subsystem_name}"
   part_name = "${part_name}"
-  install_enable = true
-  if (target_cpu == "arm64" || target_cpu == "x86_64" ||
-      target_cpu == "riscv64") {
-    defines += [ "APPSPAWN_64" ]
-    module_install_dir = "lib64/appspawn/common"
-  } else {
-    module_install_dir = "lib/appspawn/common"
-  }
 }

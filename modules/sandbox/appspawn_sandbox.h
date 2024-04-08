@@ -17,10 +17,9 @@
 #define APPSPAWN_SANDBOX_H
 
 #include <limits.h>
-
+#include ""
 #include "appspawn.h"
 #include "appspawn_hook.h"
-#include "appspawn_manager.h"
 #include "appspawn_utils.h"
 #include "list.h"
 
