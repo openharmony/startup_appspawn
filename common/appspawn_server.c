@@ -89,11 +89,6 @@ int DoStartApp(struct AppSpawnContent *content, AppSpawnClient *client, char *lo
         content->handleInternetPermission(client);
     }
 
-    if (content->setEnvInfo) {
-        ret = content->setEnvInfo(content, client);
-        APPSPAWN_CHECK(ret == 0, NotifyResToParent(content, client, ret); return ret, "Failed to setEnvInfo");
-    }
-
     if (content->setAppSandbox) {
         ret = content->setAppSandbox(content, client);
         APPSPAWN_CHECK(ret == 0, NotifyResToParent(content, client, ret); return ret, "Failed to set app sandbox");
@@ -155,8 +150,7 @@ static int AppSpawnChild(void *arg)
 
     if (content->setProcessName) {
         ret = content->setProcessName(content, client, content->longProcName, content->longProcNameLen);
-        APPSPAWN_CHECK(ret == 0, NotifyResToParent(content, client, ret);
-            return ret, "Failed to set setProcessName");
+        APPSPAWN_CHECK(ret == 0, NotifyResToParent(content, client, ret); return ret, "Failed to set setProcessName");
     }
 
 #ifdef OHOS_DEBUG
@@ -170,10 +164,12 @@ static int AppSpawnChild(void *arg)
 
     if (content->setAppAccessToken != NULL) {
         ret = content->setAppAccessToken(content, client);
-        if (ret != 0) {
-            APPSPAWN_LOGE("AppSpawnChild, set app token id failed");
-            return -1;
-        }
+        APPSPAWN_CHECK(ret == 0, return -1, "AppSpawnChild, set app token id failed");
+    }
+
+    if (content->setEnvInfo) {
+        ret = content->setEnvInfo(content, client);
+        APPSPAWN_CHECK(ret == 0, NotifyResToParent(content, client, ret); return ret, "Failed to setEnvInfo");
     }
 
     if ((content->getWrapBundleNameValue != NULL && content->getWrapBundleNameValue(content, client) == 0) ||
