@@ -314,6 +314,7 @@ int HnpUnZip(const char *inputFile, const char *outputDir)
 int HnpCfgGetFromZip(const char *inputFile, HnpCfgInfo *hnpCfg)
 {
     char fileName[MAX_FILE_PATH_LEN];
+    char *fileNameTmp;
     unz_file_info fileInfo;
     char *cfgStream = NULL;
 
@@ -331,7 +332,13 @@ int HnpCfgGetFromZip(const char *inputFile, HnpCfgInfo *hnpCfg)
             unzClose(zipFile);
             return HNP_ERRNO_BASE_UNZIP_GET_INFO_FAILED;
         }
-        if (strstr(fileName, HNP_CFG_FILE_NAME) == NULL) {
+        fileNameTmp = strrchr(fileName, DIR_SPLIT_SYMBOL);
+        if (fileNameTmp == NULL) {
+            fileNameTmp = fileName;
+        } else {
+            fileNameTmp++;
+        }
+        if (strcmp(fileNameTmp, HNP_CFG_FILE_NAME) != 0) {
             ret = unzGoToNextFile(zipFile);
             continue;
         }

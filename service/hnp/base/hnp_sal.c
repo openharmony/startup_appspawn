@@ -38,16 +38,17 @@ int g_hnpPopenMax = 0;
 
 static void HnpPopenForChild(int pipefd[], const char *command, const char *mode)
 {
-    close(pipefd[READ]);
     if (mode[0] == 'r') {
+        close(pipefd[READ]);
         if (pipefd[WRITE] != STDOUT_FILENO) {
             dup2(pipefd[WRITE], STDOUT_FILENO);
             close(pipefd[WRITE]);
         }
     } else {
-        if (pipefd[WRITE] != STDIN_FILENO) {
-            dup2(pipefd[WRITE], STDIN_FILENO);
-            close(pipefd[WRITE]);
+        close(pipefd[WRITE]);
+        if (pipefd[READ] != STDIN_FILENO) {
+            dup2(pipefd[READ], STDIN_FILENO);
+            close(pipefd[READ]);
         }
     }
 
@@ -58,7 +59,7 @@ static void HnpPopenForChild(int pipefd[], const char *command, const char *mode
     }
 
     execl(SHELL, "sh", "-c", command, NULL);
-    _exit(EISCONN);
+    exit(0);
 }
 
 static FILE* HnpPopen(const char *command, const char *mode)
@@ -95,6 +96,8 @@ static FILE* HnpPopen(const char *command, const char *mode)
 
     pid = fork();
     if (pid < 0) {
+        close(pipefd[READ]);
+        close(pipefd[WRITE]);
         return NULL;
     }
     if (pid == 0) {
@@ -133,6 +136,8 @@ static void HnpPclose(FILE *stream)
     }
 
     g_hnpPopenChildPid[fileno(stream)] = 0;
+    free(g_hnpPopenChildPid);
+    g_hnpPopenChildPid = NULL;
     waitpid(pid, &status, 0);
     return;
 }
