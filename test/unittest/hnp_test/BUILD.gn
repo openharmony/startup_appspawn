@@ -48,10 +48,9 @@ if (!defined(ohos_lite)) {
 
     defines = [ "APPSPAWN_TEST" ]
 
-    deps = [ "//third_party/cJSON:cjson" ]
-
     external_deps = [
       "bounds_checking_function:libsec_shared",
+      "cJSON:cjson",
       "hilog:libhilog",
       "zlib:shared_libz",
     ]

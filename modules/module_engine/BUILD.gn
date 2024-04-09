@@ -23,7 +23,7 @@ config("appspawn_module_engine_exported_config") {
   visibility += [ "include" ]
   include_dirs = [
     "${appspawn_innerkits_path}/include",
-    "${appspawn_innerkits_path}/module_engine/include",
+    "${appspawn_path}/modules/module_engine/include",
     "${appspawn_path}/util/include",
   ]
 }

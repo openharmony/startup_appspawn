@@ -30,9 +30,9 @@ if (!defined(ohos_lite)) {
     ]
     configs = []
     cflags = []
-    deps = [ "//third_party/cJSON:cjson" ]
     external_deps = [
       "bounds_checking_function:libsec_shared",
+      "cJSON:cjson",
       "hilog:libhilog",
       "zlib:shared_libz",
     ]
@@ -56,10 +56,12 @@ if (!defined(ohos_lite)) {
     ]
     configs = []
     cflags = []
-    deps = [ "//third_party/cJSON:cjson_static" ]
+
     external_deps = [
-      "bounds_checking_function:libsec_static",
-      "zlib:libz",
+      "bounds_checking_function:libsec_shared",
+      "cJSON:cjson",
+      "hilog:libhilog",
+      "zlib:shared_libz",
     ]
     install_enable = true
     subsystem_name = "${subsystem_name}"

@@ -80,13 +80,13 @@ typedef enum AppOperateType_ {
 #define APPSPAWN_COLDSTART_KEY "cold-start"
 #define NWEBSPAWN_COLDSTART_KEY "nweb-cold-start"
 
-typedef struct ExtraInfo_ {
+typedef struct ExtraInfo {
     uint32_t totalLength;
     uint32_t savedLength;
     char* data;
 } ExtraInfo;
 
-typedef struct AppParameter_ {
+typedef struct AppParameter {
     AppOperateType code;
     uint32_t flags;
     int32_t pid;                     // query render process exited status by render process pid
