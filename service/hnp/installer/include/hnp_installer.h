@@ -53,7 +53,7 @@ typedef struct NativeHnpPathStru {
 // 0x801308 安装包超过最大值
 #define HNP_ERRNO_INSTALLER_SOFTWARE_NUM_OVERSIZE          HNP_ERRNO_COMMON(HNP_MID_INSTALLER, 0x8)
 
-#define HNP_DEFAULT_INSTALL_ROOT_PATH "/data/app/el1/bundle/"
+#define HNP_DEFAULT_INSTALL_ROOT_PATH "/data/app/el1/bundle"
 
 int HnpCmdInstall(int argc, char *argv[]);
 

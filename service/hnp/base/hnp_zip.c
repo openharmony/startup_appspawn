@@ -232,7 +232,7 @@ static int HnpUnZipForFile(const char *fileName, const char *outputDir, unzFile 
     char buffer[BUFFER_SIZE];
     int readSize = 0;
 
-    ret = sprintf_s(filePath, MAX_FILE_PATH_LEN, "%s%s", outputDir, fileName);
+    ret = sprintf_s(filePath, MAX_FILE_PATH_LEN, "%s/%s", outputDir, fileName);
     if (ret < 0) {
         HNP_LOGE("sprintf unsuccess.");
         return HNP_ERRNO_BASE_SPRINTF_FAILED;

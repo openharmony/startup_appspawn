@@ -185,7 +185,7 @@ void HnpInstall(void)
 {
     char arg1[] = "hnp";
     char arg2[] = "install";
-    char arg3[] = "-u"; char arg4[] = "10000"; char arg5[] = "-p"; char arg6[] = "./hnp_out/sample.hnp";
+    char arg3[] = "-u", arg4[] = "10000", arg5[] = "-p", arg6[] = "./hnp_out/sample.hnp";
     char arg7[] = "-f";
     char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6, arg7};
     int argc = sizeof(argv) / sizeof(argv[0]);
@@ -197,8 +197,8 @@ void HnpUnInstall(void)
 {
     char arg1[] = "hnp";
     char arg2[] = "uninstall";
-    char arg3[] = "-u"; char arg4[] = "10000"; char arg5[] = "-n"; char arg6[] = "hnp_sample";
-    char arg7[] = "-v"; char arg8[] = "1.1";
+    char arg3[] = "-u", arg4[] = "10000", arg5[] = "-n", arg6[] = "hnp_sample";
+    char arg7[] = "-v", arg8[] = "1.1";
     char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8};
     int argc = sizeof(argv) / sizeof(argv[0]);
 
@@ -209,8 +209,8 @@ void HnpInstallPrivate(void)
 {
     char arg1[] = "hnp";
     char arg2[] = "install";
-    char arg3[] = "-u"; char arg4[] = "10000"; char arg5[] = "-p"; char arg6[] = "./hnp_out/sample.hnp";
-    char arg7[] = "-i"; char arg8[] = HNP_BASE_PATH"/test"; char arg9[] = "-f";
+    char arg3[] = "-u", arg4[] = "10000", arg5[] = "-p", arg6[] = "./hnp_out/sample.hnp";
+    char arg7[] = "-i", arg8[] = HNP_BASE_PATH"/test", arg9[] = "-f";
     char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9};
     int argc = sizeof(argv) / sizeof(argv[0]);
 
@@ -221,8 +221,8 @@ void HnpUnInstallPrivate(void)
 {
     char arg1[] = "hnp";
     char arg2[] = "uninstall";
-    char arg3[] = "-u"; char arg4[] = "10000"; char arg5[] = "-n"; char arg6[] = "hnp_sample";
-    char arg7[] = "-v"; char arg8[] = "1.1"; char arg9[] = "-i"; char arg10[] = "test";
+    char arg3[] = "-u", arg4[] = "10000", arg5[] = "-n", arg6[] = "hnp_sample";
+    char arg7[] = "-v", arg8[] = "1.1", arg9[] = "-i", arg10[] = "test";
     char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10};
     int argc = sizeof(argv) / sizeof(argv[0]);
 
@@ -261,16 +261,16 @@ HWTEST(HnpInstallerTest, Hnp_Install_001, TestSize.Level0)
         EXPECT_EQ(HnpCmdInstall(argc, argv), HNP_ERRNO_OPERATOR_ARGV_MISS);
     }
     { // param uid is invalid
-        char arg3[] = "-u"; char arg4[] = "asd1231";
-        char arg5[] = "-p"; char arg6[] = "./hnp_out/sample.hnp";
+        char arg3[] = "-u", arg4[] = "asd1231";
+        char arg5[] = "-p", arg6[] = "./hnp_out/sample.hnp";
         char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6};
         int argc = sizeof(argv) / sizeof(argv[0]);
 
         EXPECT_EQ(HnpCmdInstall(argc, argv), HNP_ERRNO_INSTALLER_ARGV_UID_INVALID);
     }
     { // ok
-        char arg3[] = "-u"; char arg4[] = "10000";
-        char arg5[] = "-p"; char arg6[] = "./hnp_out/sample.hnp";
+        char arg3[] = "-u", arg4[] = "10000";
+        char arg5[] = "-p", arg6[] = "./hnp_out/sample.hnp";
         char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6};
         int argc = sizeof(argv) / sizeof(argv[0]);
 
@@ -302,8 +302,8 @@ HWTEST(HnpInstallerTest, Hnp_Install_002, TestSize.Level0)
     char arg2[] = "install";
 
     { // dir exist but force is false
-        char arg3[] = "-u"; char arg4[] = "10000";
-        char arg5[] = "-p"; char arg6[] = "./hnp_out/sample.hnp";
+        char arg3[] = "-u", arg4[] = "10000";
+        char arg5[] = "-p", arg6[] = "./hnp_out/sample.hnp";
         char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6};
         int argc = sizeof(argv) / sizeof(argv[0]);
 
@@ -311,8 +311,8 @@ HWTEST(HnpInstallerTest, Hnp_Install_002, TestSize.Level0)
         EXPECT_EQ(HnpCmdInstall(argc, argv), HNP_ERRNO_INSTALLER_PATH_IS_EXIST);
     }
     { //ok
-        char arg3[] = "-u"; char arg4[] = "10000";
-        char arg5[] = "-p"; char arg6[] = "./hnp_out/sample.hnp";
+        char arg3[] = "-u", arg4[] = "10000";
+        char arg5[] = "-p", arg6[] = "./hnp_out/sample.hnp";
         char arg7[] = "-f";
         char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6, arg7};
         int argc = sizeof(argv) / sizeof(argv[0]);
@@ -343,8 +343,8 @@ HWTEST(HnpInstallerTest, Hnp_Install_003, TestSize.Level0)
     { // scr path bin not exist
         EXPECT_EQ(mkdir(HNP_BASE_PATH, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
         HnpPackWithoutBin();
-        char arg3[] = "-u"; char arg4[] = "10000";
-        char arg5[] = "-p"; char arg6[] = "./hnp_out/sample.hnp";
+        char arg3[] = "-u", arg4[] = "10000";
+        char arg5[] = "-p", arg6[] = "./hnp_out/sample.hnp";
         char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6};
         int argc = sizeof(argv) / sizeof(argv[0]);
 
@@ -356,8 +356,8 @@ HWTEST(HnpInstallerTest, Hnp_Install_003, TestSize.Level0)
     { //ok
         EXPECT_EQ(mkdir(HNP_BASE_PATH, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
         HnpPackWithBin();
-        char arg3[] = "-u"; char arg4[] = "10000";
-        char arg5[] = "-p"; char arg6[] = "./hnp_out/sample.hnp";
+        char arg3[] = "-u", arg4[] = "10000";
+        char arg5[] = "-p", arg6[] = "./hnp_out/sample.hnp";
         char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6};
         int argc = sizeof(argv) / sizeof(argv[0]);
 
@@ -393,8 +393,8 @@ HWTEST(HnpInstallerTest, Hnp_Install_004, TestSize.Level0)
         EXPECT_NE(fp, NULL);
         fwrite(data, sizeof(int), 5, fp);
         (void)fclose(fp);
-        char arg3[] = "-u"; char arg4[] = "10000";
-        char arg5[] = "-p"; char arg6[] = "./hnp_out/example.zip";
+        char arg3[] = "-u", arg4[] = "10000";
+        char arg5[] = "-p", arg6[] = "./hnp_out/example.zip";
         char arg7[] = "-f";
         char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6, arg7};
         int argc = sizeof(argv) / sizeof(argv[0]);
@@ -407,8 +407,8 @@ HWTEST(HnpInstallerTest, Hnp_Install_004, TestSize.Level0)
         EXPECT_NE(fp, NULL);
         fwrite(data, sizeof(int), 15, fp);
         (void)fclose(fp);
-        char arg3[] = "-u"; char arg4[] = "10000";
-        char arg5[] = "-p"; char arg6[] = "./hnp_out/example.zip";
+        char arg3[] = "-u", arg4[] = "10000";
+        char arg5[] = "-p", arg6[] = "./hnp_out/example.zip";
         char arg7[] = "-f";
         char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6, arg7};
         int argc = sizeof(argv) / sizeof(argv[0]);
@@ -416,8 +416,8 @@ HWTEST(HnpInstallerTest, Hnp_Install_004, TestSize.Level0)
         remove("./hnp_out/example.zip");
     }
     { //ok
-        char arg3[] = "-u"; char arg4[] = "10000";
-        char arg5[] = "-p"; char arg6[] = "./hnp_out/sample.hnp";
+        char arg3[] = "-u", arg4[] = "10000";
+        char arg5[] = "-p", arg6[] = "./hnp_out/sample.hnp";
         char arg7[] = "-f";
         char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6, arg7};
         int argc = sizeof(argv) / sizeof(argv[0]);
@@ -449,8 +449,8 @@ HWTEST(HnpInstallerTest, Hnp_Install_005, TestSize.Level0)
     char arg2[] = "install";
 
     { //ok
-        char arg3[] = "-u"; char arg4[] = "10000";
-        char arg5[] = "-p"; char arg6[] = "./hnp_out/sample.hnp";
+        char arg3[] = "-u", arg4[] = "10000";
+        char arg5[] = "-p", arg6[] = "./hnp_out/sample.hnp";
         char arg7[] = "-f";
         char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6, arg7};
         int argc = sizeof(argv) / sizeof(argv[0]);
@@ -485,9 +485,9 @@ HWTEST(HnpInstallerTest, Hnp_Install_006, TestSize.Level0)
     char arg2[] = "install";
 
     { //ok
-        char arg3[] = "-u"; char arg4[] = "10000";
-        char arg5[] = "-p"; char arg6[] = "./hnp_out/sample.hnp";
-        char arg7[] = "-i"; char arg8[] = HNP_BASE_PATH"/test";
+        char arg3[] = "-u", arg4[] = "10000";
+        char arg5[] = "-p", arg6[] = "./hnp_out/sample.hnp";
+        char arg7[] = "-i", arg8[] = HNP_BASE_PATH"/test";
         char arg9[] = "-f";
         char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9};
         int argc = sizeof(argv) / sizeof(argv[0]);
@@ -528,33 +528,33 @@ HWTEST(HnpInstallerTest, Hnp_Install_007, TestSize.Level0)
     char arg2[] = "install";
 
     { // src dir path is invalid
-        char arg3[] = "-u"; char arg4[] = "10000";
-        char arg5[] = "-p"; char arg6[] = "./hnp_in/sample.hnp";
+        char arg3[] = "-u", arg4[] = "10000";
+        char arg5[] = "-p", arg6[] = "./hnp_in/sample.hnp";
         char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6};
         int argc = sizeof(argv) / sizeof(argv[0]);
 
         EXPECT_EQ(HnpCmdInstall(argc, argv), HNP_ERRNO_INSTALLER_GET_REALPATH_FAILED);
     }
     { // dst dir path is invalid
-        char arg3[] = "-u"; char arg4[] = "10001";
-        char arg5[] = "-p"; char arg6[] = "./hnp_out/sample.hnp";
+        char arg3[] = "-u", arg4[] = "10001";
+        char arg5[] = "-p", arg6[] = "./hnp_out/sample.hnp";
         char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6};
         int argc = sizeof(argv) / sizeof(argv[0]);
 
         EXPECT_EQ(HnpCmdInstall(argc, argv), HNP_ERRNO_INSTALLER_GET_REALPATH_FAILED);
     }
     { // install dir path is invalid
-        char arg3[] = "-u"; char arg4[] = "10000";
-        char arg5[] = "-p"; char arg6[] = "./hnp_out/sample.hnp";
-        char arg7[] = "-i"; char arg8[] = "/test";
+        char arg3[] = "-u", arg4[] = "10000";
+        char arg5[] = "-p", arg6[] = "./hnp_out/sample.hnp";
+        char arg7[] = "-i", arg8[] = "/test";
         char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8};
         int argc = sizeof(argv) / sizeof(argv[0]);
 
         EXPECT_EQ(HnpCmdInstall(argc, argv), HNP_ERRNO_INSTALLER_GET_REALPATH_FAILED);
     }
     { // ok
-        char arg3[] = "-u"; char arg4[] = "10000";
-        char arg5[] = "-p"; char arg6[] = "./hnp_out/sample.hnp";
+        char arg3[] = "-u", arg4[] = "10000";
+        char arg5[] = "-p", arg6[] = "./hnp_out/sample.hnp";
         char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6};
         int argc = sizeof(argv) / sizeof(argv[0]);
 
@@ -593,28 +593,28 @@ HWTEST(HnpInstallerTest, Hnp_UnInstall_001, TestSize.Level0)
         EXPECT_EQ(HnpCmdUnInstall(argc, argv), HNP_ERRNO_OPERATOR_ARGV_MISS);
     }
     { // param uid is invalid
-        char arg3[] = "-u"; char arg4[] = "asd1231";
-        char arg5[] = "-n"; char arg6[] = "sample";
-        char arg7[] = "-v"; char arg8[] = "1.1";
+        char arg3[] = "-u", arg4[] = "asd1231";
+        char arg5[] = "-n", arg6[] = "sample";
+        char arg7[] = "-v", arg8[] = "1.1";
         char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8};
         int argc = sizeof(argv) / sizeof(argv[0]);
 
         EXPECT_EQ(HnpCmdUnInstall(argc, argv), HNP_ERRNO_INSTALLER_ARGV_UID_INVALID);
     }
     { // param uninstall path is invalid
-        char arg3[] = "-u"; char arg4[] = "10000";
-        char arg5[] = "-n"; char arg6[] = "sample";
-        char arg7[] = "-v"; char arg8[] = "1.1";
-        char arg9[] = "-i"; char arg10[] = "/test";
+        char arg3[] = "-u", arg4[] = "10000";
+        char arg5[] = "-n", arg6[] = "sample";
+        char arg7[] = "-v", arg8[] = "1.1";
+        char arg9[] = "-i", arg10[] = "/test";
         char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10};
         int argc = sizeof(argv) / sizeof(argv[0]);
 
         EXPECT_EQ(HnpCmdUnInstall(argc, argv), HNP_ERRNO_UNINSTALLER_HNP_PATH_NOT_EXIST);
     }
     { // ok
-        char arg3[] = "-u"; char arg4[] = "10000";
-        char arg5[] = "-n"; char arg6[] = "sample";
-        char arg7[] = "-v"; char arg8[] = "1.1";
+        char arg3[] = "-u", arg4[] = "10000";
+        char arg5[] = "-n", arg6[] = "sample";
+        char arg7[] = "-v", arg8[] = "1.1";
         char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8};
         int argc = sizeof(argv) / sizeof(argv[0]);
 
@@ -646,10 +646,10 @@ HWTEST(HnpInstallerTest, Hnp_UnInstall_002, TestSize.Level0)
     char arg1[] = "hnp";
     char arg2[] = "uninstall";
     { // ok
-        char arg3[] = "-u"; char arg4[] = "10000";
-        char arg5[] = "-n"; char arg6[] = "sample";
-        char arg7[] = "-v"; char arg8[] = "1.1";
-        char arg9[] = "-i"; char arg10[] = HNP_BASE_PATH"/test";
+        char arg3[] = "-u", arg4[] = "10000";
+        char arg5[] = "-n", arg6[] = "sample";
+        char arg7[] = "-v", arg8[] = "1.1";
+        char arg9[] = "-i", arg10[] = HNP_BASE_PATH"/test";
         char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10};
         int argc = sizeof(argv) / sizeof(argv[0]);
 
@@ -681,27 +681,27 @@ HWTEST(HnpInstallerTest, Hnp_UnInstall_003, TestSize.Level0)
     char arg2[] = "uninstall";
 
     { // param software name is invalid
-        char arg3[] = "-u"; char arg4[] = "10000";
-        char arg5[] = "-n"; char arg6[] = "sample2";
-        char arg7[] = "-v"; char arg8[] = "1.1";
+        char arg3[] = "-u", arg4[] = "10000";
+        char arg5[] = "-n", arg6[] = "sample2";
+        char arg7[] = "-v", arg8[] = "1.1";
         char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8};
         int argc = sizeof(argv) / sizeof(argv[0]);
 
         EXPECT_EQ(HnpCmdUnInstall(argc, argv), HNP_ERRNO_UNINSTALLER_HNP_PATH_NOT_EXIST);
     }
     { // param software version is invalid
-        char arg3[] = "-u"; char arg4[] = "10001";
-        char arg5[] = "-n"; char arg6[] = "sample";
-        char arg7[] = "-v"; char arg8[] = "1.3";
+        char arg3[] = "-u", arg4[] = "10001";
+        char arg5[] = "-n", arg6[] = "sample";
+        char arg7[] = "-v", arg8[] = "1.3";
         char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8};
         int argc = sizeof(argv) / sizeof(argv[0]);
 
         EXPECT_EQ(HnpCmdUnInstall(argc, argv), HNP_ERRNO_UNINSTALLER_HNP_PATH_NOT_EXIST);
     }
     { // ok
-        char arg3[] = "-u"; char arg4[] = "10000";
-        char arg5[] = "-n"; char arg6[] = "sample";
-        char arg7[] = "-v"; char arg8[] = "1.1";
+        char arg3[] = "-u", arg4[] = "10000";
+        char arg5[] = "-n", arg6[] = "sample";
+        char arg7[] = "-v", arg8[] = "1.1";
         char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8};
         int argc = sizeof(argv) / sizeof(argv[0]);
 
