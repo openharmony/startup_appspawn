@@ -13,12 +13,15 @@
  * limitations under the License.
  */
 
-#include "json_utils.h"
-#include "appspawn_server.h"
-
 #include <cerrno>
 #include <sstream>
 #include <fstream>
+
+#include "appspawn_server.h"
+#include "cJSON.h"
+#include "config_policy_utils.h"
+#include "json_utils.h"
+#include "appspawn_utils.h"
 
 using namespace std;
 using namespace OHOS;
@@ -56,3 +59,54 @@ bool JsonUtils::GetStringFromJson(const nlohmann::json &json, const std::string 
 }
 } // namespace AppSpawn
 } // namespace OHOS
+
+#ifdef __cplusplus
+extern "C" {
+#endif  // __cplusplus
+
+cJSON *GetJsonObjFromFile(const char *jsonPath)
+{
+    std::ifstream jsonFileStream;
+    jsonFileStream.open(jsonPath, std::ios::in);
+    APPSPAWN_CHECK_ONLY_EXPER(jsonFileStream.is_open(), return nullptr);
+    std::ostringstream buf;
+    char ch;
+    while (buf && jsonFileStream.get(ch)) {
+        buf.put(ch);
+    }
+    jsonFileStream.close();
+    return cJSON_Parse(buf.str().c_str());
+}
+
+int ParseJsonConfig(const char *basePath, const char *fileName, ParseConfig parseConfig, ParseJsonContext *context)
+{
+    // load sandbox config
+    CfgFiles *files = GetCfgFiles(basePath);
+    if (files == nullptr) {
+        return APPSPAWN_SANDBOX_NONE;
+    }
+    int ret = 0;
+    for (int i = 0; i < MAX_CFG_POLICY_DIRS_CNT; ++i) {
+        if (files->paths[i] == nullptr) {
+            continue;
+        }
+        std::string path = files->paths[i];
+        path += fileName;
+        APPSPAWN_LOGI("LoadAppSandboxConfig %{public}s", path.c_str());
+
+        cJSON *root = GetJsonObjFromFile(path.c_str());
+        APPSPAWN_CHECK(root != nullptr, ret = APPSPAWN_SANDBOX_INVALID;
+            continue, "Failed to load app data sandbox config %{public}s", path.c_str());
+        int rc = parseConfig(root, context);
+        if (rc != 0) {
+            ret = rc;
+        }
+        cJSON_Delete(root);
+    }
+    FreeCfgFiles(files);
+    return ret;
+}
+
+#ifdef __cplusplus
+}
+#endif  // __cplusplus

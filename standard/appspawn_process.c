@@ -32,6 +32,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include <sched.h>
+#include <dirent.h>
 
 #include "securec.h"
 #include "selinux/selinux.h"
@@ -50,7 +51,7 @@
 
 // ide-asan
 #ifndef ASAN_DETECTOR
-static int SetAsanEnabledEnv(struct AppSpawnContent_ *content, AppSpawnClient *client)
+static int SetAsanEnabledEnv(struct AppSpawnContent *content, AppSpawnClient *client)
 {
     AppParameter *appProperty = &((AppSpawnClientExt *)client)->property;
     if (appProperty->code == SPAWN_NATIVE_PROCESS) {
@@ -82,7 +83,7 @@ static int SetAsanEnabledEnv(struct AppSpawnContent_ *content, AppSpawnClient *c
 }
 #endif
 
-static void SetGwpAsanEnabled(struct AppSpawnContent_ *content, AppSpawnClient *client)
+static void SetGwpAsanEnabled(struct AppSpawnContent *content, AppSpawnClient *client)
 {
     AppParameter *appProperty = &((AppSpawnClientExt *)client)->property;
     char debugValue[10] = {0};
@@ -98,7 +99,7 @@ static void SetGwpAsanEnabled(struct AppSpawnContent_ *content, AppSpawnClient *
     }
 }
 
-static int SetProcessName(struct AppSpawnContent_ *content, AppSpawnClient *client,
+static int SetProcessName(struct AppSpawnContent *content, AppSpawnClient *client,
     char *longProcName, uint32_t longProcNameLen)
 {
     AppSpawnClientExt *appPropertyExt = (AppSpawnClientExt *)client;
@@ -134,7 +135,7 @@ static int SetProcessName(struct AppSpawnContent_ *content, AppSpawnClient *clie
     return 0;
 }
 
-static int SetKeepCapabilities(struct AppSpawnContent_ *content, AppSpawnClient *client)
+static int SetKeepCapabilities(struct AppSpawnContent *content, AppSpawnClient *client)
 {
     AppSpawnClientExt *appProperty = (AppSpawnClientExt *)client;
     // set keep capabilities when user not root.
@@ -145,7 +146,7 @@ static int SetKeepCapabilities(struct AppSpawnContent_ *content, AppSpawnClient 
     return 0;
 }
 
-static int SetCapabilities(struct AppSpawnContent_ *content, AppSpawnClient *client)
+static int SetCapabilities(struct AppSpawnContent *content, AppSpawnClient *client)
 {
     // init cap
     struct __user_cap_header_struct cap_header;
@@ -186,7 +187,7 @@ static int SetCapabilities(struct AppSpawnContent_ *content, AppSpawnClient *cli
     return 0;
 }
 
-static void InitDebugParams(struct AppSpawnContent_ *content, AppSpawnClient *client)
+static void InitDebugParams(struct AppSpawnContent *content, AppSpawnClient *client)
 {
 #ifndef APPSPAWN_TEST
     AppSpawnClientExt *appProperty = (AppSpawnClientExt *)client;
@@ -230,7 +231,7 @@ static void ClearEnvironment(AppSpawnContent *content, AppSpawnClient *client)
     return;
 }
 
-int SetXpmConfig(struct AppSpawnContent_ *content, AppSpawnClient *client)
+int SetXpmConfig(struct AppSpawnContent *content, AppSpawnClient *client)
 {
 #ifdef CODE_SIGNATURE_ENABLE
     // nwebspawn no permission set xpm config
@@ -256,7 +257,7 @@ int SetXpmConfig(struct AppSpawnContent_ *content, AppSpawnClient *client)
     return 0;
 }
 
-static int SetUidGid(struct AppSpawnContent_ *content, AppSpawnClient *client)
+static int SetUidGid(struct AppSpawnContent *content, AppSpawnClient *client)
 {
 #ifdef GRAPHIC_PERMISSION_CHECK
     AppSpawnClientExt *appProperty = (AppSpawnClientExt *)client;
@@ -298,7 +299,7 @@ static int SetUidGid(struct AppSpawnContent_ *content, AppSpawnClient *client)
     return 0;
 }
 
-static int32_t SetFileDescriptors(struct AppSpawnContent_ *content, AppSpawnClient *client)
+static int32_t SetFileDescriptors(struct AppSpawnContent *content, AppSpawnClient *client)
 {
 #ifndef APPSPAWN_TEST
     // close stdin stdout stderr
@@ -417,7 +418,7 @@ static void Free(char **argv, ExtraInfo *extraInfo)
 
 #ifdef ASAN_DETECTOR
 #define WRAP_VALUE_MAX_LENGTH 96
-static int GetWrapBundleNameValue(struct AppSpawnContent_ *content, AppSpawnClient *client)
+static int GetWrapBundleNameValue(struct AppSpawnContent *content, AppSpawnClient *client)
 {
     AppParameter *appProperty = &((AppSpawnClientExt *)client)->property;
     char wrapBundleNameKey[WRAP_VALUE_MAX_LENGTH] = {0};
@@ -465,7 +466,7 @@ static int EncodeAppClient(AppSpawnClient *client, char *param, int32_t originLe
     return 0;
 }
 
-static int ColdStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client)
+static int ColdStartApp(struct AppSpawnContent *content, AppSpawnClient *client)
 {
     AppParameter *appProperty = &((AppSpawnClientExt *)client)->property;
     APPSPAWN_LOGI("ColdStartApp::appName %{public}s", appProperty->processName);
@@ -489,12 +490,9 @@ static int ColdStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client
 #endif
         ret = strcpy_s(argv[0], APP_LEN_PROC_NAME, appSpawnPath);
         APPSPAWN_CHECK(ret >= 0, break, "Invalid strcpy");
-        ret = -1;
-        if (content->isNweb) {
-            argv[START_INDEX] = strdup(NWEBSPAWN_COLDSTART_KEY);
-        } else {
-            argv[START_INDEX] = strdup(APPSPAWN_COLDSTART_KEY);
-        }
+        (content->isNweb) ? (argv[START_INDEX] = strdup(NWEBSPAWN_COLDSTART_KEY)) :
+            (argv[START_INDEX] = strdup(APPSPAWN_COLDSTART_KEY));
+
         APPSPAWN_CHECK(argv[START_INDEX] != NULL, break, "Invalid strdup");
         argv[FD_INDEX] = strdup(buffer);
         APPSPAWN_CHECK(argv[FD_INDEX] != NULL, break, "Invalid strdup");
@@ -515,9 +513,7 @@ static int ColdStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client
 #else
         ret = -1;
 #endif
-        if (ret) {
-            APPSPAWN_LOGE("Failed to execv, errno = %{public}d", errno);
-        }
+        APPSPAWN_CHECK_ONLY_LOG(ret == 0, "Failed to execv, errno = %{public}d", errno)
     }
     argv[0] = NULL;
     Free(argv, &appProperty->extraInfo);
@@ -610,6 +606,79 @@ int GetAppSpawnClientFromArg(int argc, char *const argv[], AppSpawnClientExt *cl
     return ret;
 }
 
+static pid_t GetPidByName(const char *name)
+{
+    int pid = -1; // initial pid set to -1
+    DIR *dir = opendir("/proc");
+    if (dir == NULL) {
+        return -1;
+    }
+
+    struct dirent *entry;
+    while ((entry = readdir(dir)) != NULL) {
+        if (entry->d_type != DT_DIR) {
+            continue;
+        }
+        long pidNum = strtol(entry->d_name, NULL, 10); // pid will not exceed a 10-digit decimal number
+        if (pidNum <= 0) {
+            continue;
+        }
+
+        char path[32]; // path that contains the process name
+        if (snprintf_s(path, sizeof(path), sizeof(path) - 1, "/proc/%s/comm", entry->d_name) < 0) {
+            continue;
+        }
+        FILE *file = fopen(path, "r");
+        if (file == NULL) {
+            continue;
+        }
+        char buffer[32]; // read the process name
+        if (fgets(buffer, sizeof(buffer), file) == NULL) {
+            (void)fclose(file);
+            continue;
+        }
+        buffer[strcspn(buffer, "\n")] = 0;
+        if (strcmp(buffer, name) != 0) {
+            (void)fclose(file);
+            continue;
+        }
+
+        APPSPAWN_LOGI("get pid of %{public}s success", name);
+        pid = (int)pidNum;
+        (void)fclose(file);
+        break;
+    }
+
+    closedir(dir);
+    return pid;
+}
+
+static int NsInitFunc()
+{
+    setuid(PID_NS_INIT_UID);
+    setgid(PID_NS_INIT_GID);
+    setcon("u:r:pid_ns_init:s0");
+    char* argv[] = {"/system/bin/pid_ns_init", NULL};
+    execve("/system/bin/pid_ns_init", argv, NULL);
+    return 0;
+}
+
+static int GetNsPidFd(pid_t pid)
+{
+    char nsPath[256]; // filepath of ns pid
+    int ret = snprintf_s(nsPath, sizeof(nsPath), sizeof(nsPath) - 1, "/proc/%d/ns/pid", pid);
+    if (ret < 0) {
+        APPSPAWN_LOGE("SetPidNamespace failed, snprintf_s error:%{public}s", strerror(errno));
+        return -1;
+    }
+    int nsFd = open(nsPath, O_RDONLY);
+    if (nsFd < 0) {
+        APPSPAWN_LOGE("open ns pid:%{public}d failed, err:%{public}s", pid, strerror(errno));
+        return -1;
+    }
+    return nsFd;
+}
+
 static int EnablePidNs(AppSpawnContent *content)
 {
     AppSpawnContentExt *appSpawnContent = (AppSpawnContentExt *)content;
@@ -621,16 +690,30 @@ static int EnablePidNs(AppSpawnContent *content)
         return 0;
     }
 
-    int ret = unshare(CLONE_NEWPID);
-    APPSPAWN_CHECK(ret == 0, return -1, "unshare CLONE_NWEPID failed, errno=%{public}d", errno);
+    // check if process pid_ns_init exists, this is the init process for pid namespace
+    pid_t pid = GetPidByName("pid_ns_init");
+    if (pid == -1) {
+        APPSPAWN_LOGI("Start Create pid_ns_init");
+        pid = clone(NsInitFunc, NULL, CLONE_NEWPID, NULL);
+        if (pid < 0) {
+            APPSPAWN_LOGE("clone pid ns init failed");
+            return -1;
+        }
+    } else {
+        APPSPAWN_LOGI("pid_ns_init exists, no need to create");
+    }
 
-    pid_t pid = fork();
-    if (pid == 0) {
-        setuid(PID_NS_INIT_UID);
-        setgid(PID_NS_INIT_GID);
-        setcon("u:r:pid_ns_init:s0");
-        char* argv[] = {"/system/bin/pid_ns_init", NULL};
-        execve("/system/bin/pid_ns_init", argv, NULL);
+    content->nsSelfPidFd = GetNsPidFd(getpid());
+    if (content->nsSelfPidFd < 0) {
+        APPSPAWN_LOGE("open ns pid of appspawn fail");
+        return -1;
+    }
+
+    content->nsInitPidFd = GetNsPidFd(pid);
+    if (content->nsInitPidFd < 0) {
+        APPSPAWN_LOGE("open ns pid of pid_ns_init fail");
+        close(content->nsSelfPidFd);
+        return -1;
     }
 
     APPSPAWN_LOGI("Enable pid namespace success.");

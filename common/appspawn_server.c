@@ -21,6 +21,9 @@
 #include <unistd.h>
 #include <signal.h>
 #include <malloc.h>
+#include <fcntl.h>
+#include <stdio.h>
+
 #undef _GNU_SOURCE
 #define _GNU_SOURCE
 #include <sched.h>
@@ -44,7 +47,7 @@ long long DiffTime(struct timespec *startTime)
     return diff;
 }
 
-static void NotifyResToParent(struct AppSpawnContent_ *content, AppSpawnClient *client, int result)
+static void NotifyResToParent(struct AppSpawnContent *content, AppSpawnClient *client, int result)
 {
     if (content->notifyResToParent != NULL) {
         content->notifyResToParent(content, client, result);
@@ -78,7 +81,7 @@ void exit(int code)
 }
 #endif
 
-int DoStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client, char *longProcName, uint32_t longProcNameLen)
+int DoStartApp(struct AppSpawnContent *content, AppSpawnClient *client, char *longProcName, uint32_t longProcNameLen)
 {
     int32_t ret = 0;
     APPSPAWN_LOGV("DoStartApp id %{public}d longProcNameLen %{public}u", client->id, longProcNameLen);
@@ -86,16 +89,9 @@ int DoStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client, char *l
         content->handleInternetPermission(client);
     }
 
-    if (content->setEnvInfo) {
-        ret = content->setEnvInfo(content, client);
-        APPSPAWN_CHECK(ret == 0, NotifyResToParent(content, client, ret);
-            return ret, "Failed to setEnvInfo");
-    }
-
     if (content->setAppSandbox) {
         ret = content->setAppSandbox(content, client);
-        APPSPAWN_CHECK(ret == 0, NotifyResToParent(content, client, ret);
-            return ret, "Failed to set app sandbox");
+        APPSPAWN_CHECK(ret == 0, NotifyResToParent(content, client, ret); return ret, "Failed to set app sandbox");
     }
 
     (void)umask(DEFAULT_UMASK);
@@ -107,38 +103,32 @@ int DoStartApp(struct AppSpawnContent_ *content, AppSpawnClient *client, char *l
 
     if (content->setXpmConfig) {
         ret = content->setXpmConfig(content, client);
-        APPSPAWN_CHECK(ret == 0, NotifyResToParent(content, client, ret);
-            return ret, "Failed to set setXpmConfig");
+        APPSPAWN_CHECK(ret == 0, NotifyResToParent(content, client, ret); return ret, "Failed to set setXpmConfig");
     }
 
     if (content->setProcessName) {
         ret = content->setProcessName(content, client, content->longProcName, content->longProcNameLen);
-        APPSPAWN_CHECK(ret == 0, NotifyResToParent(content, client, ret);
-            return ret, "Failed to set setProcessName");
+        APPSPAWN_CHECK(ret == 0, NotifyResToParent(content, client, ret); return ret, "Failed to set setProcessName");
     }
 
     if (content->setUidGid) {
         ret = content->setUidGid(content, client);
-        APPSPAWN_CHECK(ret == 0, NotifyResToParent(content, client, ret);
-            return ret, "Failed to setUidGid");
+        APPSPAWN_CHECK(ret == 0, NotifyResToParent(content, client, ret); return ret, "Failed to setUidGid");
     }
 
     if (content->setFileDescriptors) {
         ret = content->setFileDescriptors(content, client);
-        APPSPAWN_CHECK(ret == 0, NotifyResToParent(content, client, ret);
-            return ret, "Failed to setFileDescriptors");
+        APPSPAWN_CHECK(ret == 0, NotifyResToParent(content, client, ret); return ret, "Failed to setFileDescriptors");
     }
 
     if (content->setCapabilities) {
         ret = content->setCapabilities(content, client);
-        APPSPAWN_CHECK(ret == 0, NotifyResToParent(content, client, ret);
-            return ret, "Failed to setCapabilities");
+        APPSPAWN_CHECK(ret == 0, NotifyResToParent(content, client, ret); return ret, "Failed to setCapabilities");
     }
 
     if (content->waitForDebugger) {
         ret = content->waitForDebugger(client);
-        APPSPAWN_CHECK(ret == 0, NotifyResToParent(content, client, ret);
-            return ret, "Failed to waitForDebugger");
+        APPSPAWN_CHECK(ret == 0, NotifyResToParent(content, client, ret); return ret, "Failed to waitForDebugger");
     }
 
 #ifdef SECURITY_COMPONENT_ENABLE
@@ -154,14 +144,13 @@ static int AppSpawnChild(void *arg)
 {
     APPSPAWN_CHECK(arg != NULL, return -1, "Invalid arg for appspawn child");
     AppSandboxArg *sandbox = (AppSandboxArg *)arg;
-    struct AppSpawnContent_ *content = sandbox->content;
+    struct AppSpawnContent *content = sandbox->content;
     AppSpawnClient *client = sandbox->client;
     int ret = -1;
 
     if (content->setProcessName) {
         ret = content->setProcessName(content, client, content->longProcName, content->longProcNameLen);
-        APPSPAWN_CHECK(ret == 0, NotifyResToParent(content, client, ret);
-            return ret, "Failed to set setProcessName");
+        APPSPAWN_CHECK(ret == 0, NotifyResToParent(content, client, ret); return ret, "Failed to set setProcessName");
     }
 
 #ifdef OHOS_DEBUG
@@ -175,10 +164,12 @@ static int AppSpawnChild(void *arg)
 
     if (content->setAppAccessToken != NULL) {
         ret = content->setAppAccessToken(content, client);
-        if (ret != 0) {
-            APPSPAWN_LOGE("AppSpawnChild, set app token id failed");
-            return -1;
-        }
+        APPSPAWN_CHECK(ret == 0, return -1, "AppSpawnChild, set app token id failed");
+    }
+
+    if (content->setEnvInfo) {
+        ret = content->setEnvInfo(content, client);
+        APPSPAWN_CHECK(ret == 0, NotifyResToParent(content, client, ret); return ret, "Failed to setEnvInfo");
     }
 
     if ((content->getWrapBundleNameValue != NULL && content->getWrapBundleNameValue(content, client) == 0) ||
@@ -215,6 +206,25 @@ static int CloneAppSpawn(void *arg)
     return 0;
 }
 
+static int ForkProcess(AppSandboxArg *sandbox)
+{
+    pid_t pid = fork();
+    if (pid == 0) {
+        ProcessExit(AppSpawnChild((void *)sandbox));
+    }
+    return pid;
+}
+
+// after calling setns, new process will be in the same pid namespace of the input pid
+static int SetPidNamespace(int nsPidFd, int nsType)
+{
+    if (setns(nsPidFd, nsType) < 0) {
+        APPSPAWN_LOGE("set pid namespace nsType:%{pudblic}d failed", nsType);
+        return -1;
+    }
+    return 0;
+}
+
 int AppSpawnProcessMsg(AppSandboxArg *sandbox, pid_t *childPid)
 {
     APPSPAWN_CHECK(sandbox != NULL && sandbox->content != NULL, return -1, "Invalid content for appspawn");
@@ -225,9 +235,12 @@ int AppSpawnProcessMsg(AppSandboxArg *sandbox, pid_t *childPid)
     if (sandbox->content->isNweb) {
         pid = clone(CloneAppSpawn, NULL, sandbox->client->cloneFlags | SIGCHLD, (void *)sandbox);
     } else {
-        pid = fork();
-        if (pid == 0) {
-            ProcessExit(AppSpawnChild((void *)sandbox));
+        if (sandbox->content->sandboxNsFlags & CLONE_NEWPID) {
+            SetPidNamespace(sandbox->content->nsInitPidFd, CLONE_NEWPID); // pid_ns_init is the init process
+            pid = ForkProcess(sandbox);
+            SetPidNamespace(sandbox->content->nsSelfPidFd, 0); // go back to original pid namespace
+        } else {
+            pid = ForkProcess(sandbox);
         }
     }
     APPSPAWN_CHECK(pid >= 0, return -errno, "fork child process error: %{public}d", -errno);

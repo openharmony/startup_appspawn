@@ -37,7 +37,7 @@ const char* RENDERER_NAME = "renderer";
 #define NWEBSPAWN_SERVER_NAME "nwebspawn"
 using namespace OHOS::Security::AccessToken;
 
-int SetAppAccessToken(struct AppSpawnContent_ *content, AppSpawnClient *client)
+int SetAppAccessToken(struct AppSpawnContent *content, AppSpawnClient *client)
 {
     AppSpawnClientExt *appProperty = reinterpret_cast<AppSpawnClientExt *>(client);
     int32_t ret = 0;
@@ -64,7 +64,7 @@ int SetAppAccessToken(struct AppSpawnContent_ *content, AppSpawnClient *client)
     return 0;
 }
 
-int SetSelinuxCon(struct AppSpawnContent_ *content, AppSpawnClient *client)
+int SetSelinuxCon(struct AppSpawnContent *content, AppSpawnClient *client)
 {
 #ifdef WITH_SELINUX
     if (content->isNweb) {
@@ -100,7 +100,7 @@ int SetSelinuxCon(struct AppSpawnContent_ *content, AppSpawnClient *client)
     return 0;
 }
 
-void SetUidGidFilter(struct AppSpawnContent_ *content)
+void SetUidGidFilter(struct AppSpawnContent *content)
 {
 #ifdef WITH_SECCOMP
     bool ret = false;
@@ -123,7 +123,7 @@ void SetUidGidFilter(struct AppSpawnContent_ *content)
 #endif
 }
 
-int SetSeccompFilter(struct AppSpawnContent_ *content, AppSpawnClient *client)
+int SetSeccompFilter(struct AppSpawnContent *content, AppSpawnClient *client)
 {
 #ifdef WITH_SECCOMP
     const char *appName = APP_NAME;
