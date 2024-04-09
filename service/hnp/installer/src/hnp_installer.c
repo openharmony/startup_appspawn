@@ -488,7 +488,7 @@ int HnpCmdInstall(int argc, char *argv[])
     char *uidArg = NULL;
     bool isForce = false;
     int ch;
-    char *ptr = NULL;
+    char *ptr;
 
     optind = 1;  // 从头开始遍历参数
     while ((ch = getopt_long(argc, argv, "hu:p:i:f", NULL, NULL)) != -1) {
@@ -516,9 +516,7 @@ int HnpCmdInstall(int argc, char *argv[])
                 softwarePath[count++] = (char *)optarg;
                 break;
             case 'i': //private package name
-                if (optarg != NULL) {
-                    installPath = (char *)optarg;
-                }
+                installPath = (char *)optarg;
                 break;
             case 'f': //is force
                 isForce = true;
@@ -610,9 +608,6 @@ int HnpCmdUnInstall(int argc, char *argv[])
                 version = optarg;
                 break;
             case 'i': //package name
-                if (optarg == NULL) {
-                    break;
-                }
                 uninstallPath = (char *)optarg;
                 break;
 

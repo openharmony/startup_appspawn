@@ -33,113 +33,58 @@
 extern "C" {
 #endif
 
-pid_t *g_hnpPopenChildPid = NULL;
-int g_hnpPopenMax = 0;
-
-static void HnpPopenForChild(int pipefd[], const char *command, const char *mode)
-{
-    if (mode[0] == 'r') {
-        close(pipefd[READ]);
-        if (pipefd[WRITE] != STDOUT_FILENO) {
-            dup2(pipefd[WRITE], STDOUT_FILENO);
-            close(pipefd[WRITE]);
-        }
-    } else {
-        close(pipefd[WRITE]);
-        if (pipefd[READ] != STDIN_FILENO) {
-            dup2(pipefd[READ], STDIN_FILENO);
-            close(pipefd[READ]);
-        }
-    }
-
-    for (int i = 0; i < g_hnpPopenMax; i++) {
-        if (g_hnpPopenChildPid[i] > 0) {
-            close(i);
-        }
-    }
-
-    execl(SHELL, "sh", "-c", command, NULL);
-    exit(0);
-}
-
 static FILE* HnpPopen(const char *command, const char *mode)
 {
-    int pipefd[2];
+    int pfd[2];
     pid_t pid;
-    FILE *stream;
+    int modeFd;
+    int status;
 
-    if (mode[0] != 'r' && mode[0] != 'w') {
+    if (pipe(pfd) < 0) {
         return NULL;
     }
 
-    if (g_hnpPopenChildPid == NULL) {
-        g_hnpPopenMax = sysconf(_SC_OPEN_MAX);
-        if (g_hnpPopenMax > 0) {
-            g_hnpPopenChildPid = (pid_t *)calloc(g_hnpPopenMax, sizeof(pid_t));
-            if (g_hnpPopenChildPid == NULL) {
-                return NULL;
-            }
-        } else {
-            return NULL;
-        }
-    }
-
-    if (pipe(pipefd) < 0) {
-        return NULL;
-    }
-
-    if ((pipefd[READ] >= g_hnpPopenMax) || (pipefd[WRITE] >= g_hnpPopenMax)) {
-        close(pipefd[READ]);
-        close(pipefd[WRITE]);
+    if ((*mode != 'r') || (*mode != 'w')) {
         return NULL;
     }
 
     pid = fork();
     if (pid < 0) {
-        close(pipefd[READ]);
-        close(pipefd[WRITE]);
+        close(pfd[READ]);
+        close(pfd[WRITE]);
         return NULL;
     }
+
     if (pid == 0) {
-        HnpPopenForChild(pipefd, command, mode);
+        if (*mode == 'r') {
+            close(pfd[READ]);
+            dup2(pfd[WRITE], STDOUT_FILENO);
+        } else {
+            close(pfd[WRITE]);
+            dup2(pfd[READ], STDIN_FILENO);
+        }
+
+        execl(SHELL, "sh", "-c", command, NULL);
+        exit(0);
     }
 
-    if (mode[0] == 'r') {
-        close(pipefd[WRITE]);
-        stream = fdopen(pipefd[READ], mode);
+    waitpid(pid, &status, 0);
+
+    if (*mode == 'r') {
+        modeFd = READ;
+        close(pfd[WRITE]);
     } else {
-        close(pipefd[READ]);
-        stream = fdopen(pipefd[WRITE], mode);
+        modeFd = WRITE;
+        close(pfd[READ]);
     }
-    if (stream != NULL) {
-        g_hnpPopenChildPid[fileno(stream)] = pid;
-    }
-    return stream;
+
+    return fdopen(pfd[modeFd], mode);
 }
 
 static void HnpPclose(FILE *stream)
 {
-    int status;
-    pid_t pid;
+    (void)fclose(stream);
 
-    if (stream == NULL) {
-        return;
-    }
-
-    if (g_hnpPopenChildPid == NULL) {
-        return;
-    }
-
-    pid = g_hnpPopenChildPid[fileno(stream)];
-    if (pid <= 0) {
-        return;
-    }
-
-    g_hnpPopenChildPid[fileno(stream)] = 0;
-    free(g_hnpPopenChildPid);
-    fclose(stream);
-    g_hnpPopenChildPid = NULL;
-    waitpid(pid, &status, 0);
     return;
 }
 
@@ -163,7 +108,6 @@ static int HnpPidGetByBinName(const char *binName, int *pids, int *count)
     }
 
     while (fgets(cmdBuffer, sizeof(cmdBuffer), cmdOutput) != NULL) {
-        HNP_LOGI("hnp uninstall pid[%s]", cmdBuffer);
         pids[pidNum++] = atoi(cmdBuffer);
         if (pidNum >= MAX_PROCESSES) {
             HNP_LOGI("hnp uninstall process[%s] num over size", binName);
@@ -203,7 +147,6 @@ int HnpProcessRunCheck(const char *binName, const char *runPath)
             continue;
         }
         while (fgets(cmdBuffer, sizeof(cmdBuffer), cmdOutput) != NULL) {
-            HNP_LOGI("hnp install path[%s]", cmdBuffer);
             if (strstr(cmdBuffer, runPath) != NULL) {
                 HnpPclose(cmdOutput);
                 HNP_LOGE("hnp install process[%s] is running now", binName);

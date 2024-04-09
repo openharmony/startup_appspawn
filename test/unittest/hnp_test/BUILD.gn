@@ -32,9 +32,11 @@ if (!defined(ohos_lite)) {
       "${appspawn_path}/service/hnp/base",
       "${appspawn_path}/service/hnp/pack/include",
       "${appspawn_path}/service/hnp/installer/include",
+      "${appspawn_path}/interfaces/innerkits/hnp/include",
     ]
 
     sources = [
+      "${appspawn_path}/interfaces/innerkits/hnp/src/hnp_api.c",
       "${appspawn_path}/service/hnp/base/hnp_file.c",
       "${appspawn_path}/service/hnp/base/hnp_json.c",
       "${appspawn_path}/service/hnp/base/hnp_log.c",
