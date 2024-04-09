@@ -47,7 +47,8 @@ typedef enum {
  *
  * @return 0:success;other means failure.
  */
-int NativeInstallHnp(const char *userId, const char *packages[], int count, const char installPath, int installOptions);
+int NativeInstallHnp(const char *userId, const char *packages[], int count, const char *installPath,
+    int installOptions);
 
 /**
  * Uninstall native software package.

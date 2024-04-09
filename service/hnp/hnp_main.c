@@ -50,7 +50,7 @@ int HnpShowHelp(int argc, char *argv[])
         "\r\ninstall:   install native software"
         "\r\n           hnp install <-u [user id]> <-i [hnp install dir]> <-p [package name]> <-f>"
         "\r\n           -u    : [required]    user id"
-        "\r\n           -p    : [required]    input path of software package dir, is support multiple"
+        "\r\n           -p    : [required]    input path of software package path, is support multiple"
         "\r\n           -i    : [optional]    hnp install dir, if not input, it will be use public path"
         "\r\n           -f    : [optional]    is force install\r\n"
         "\r\nuninstall: uninstall native software"

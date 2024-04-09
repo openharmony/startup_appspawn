@@ -95,13 +95,13 @@ static Bool NativeInstallOptionCheck(int installOptions, HnpInstallOptionIndex H
     return FALSE;
 }
 
-int NativeInstallHnp(const char *userId, const char *packages[], int count, const char installPath, int installOptions)
+int NativeInstallHnp(const char *userId, const char *packages[], int count, const char *installPath, int installOptions)
 {
     char *argv[MAX_ARGV_NUM] = {0};
     char *apcEnv[MAX_ENV_NUM] = {0};
     int index = 0;
 
-    if ((userId == NULL) || (packages == NULL) || (count == 0))) {
+    if ((userId == NULL) || (packages == NULL) || (count == 0)) {
         return HNP_API_ERRNO_PARAM_INVALID;
     }
 
