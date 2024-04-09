@@ -137,6 +137,7 @@ static void HnpPclose(FILE *stream)
 
     g_hnpPopenChildPid[fileno(stream)] = 0;
     free(g_hnpPopenChildPid);
+    fclose(stream);
     g_hnpPopenChildPid = NULL;
     waitpid(pid, &status, 0);
     return;
@@ -162,6 +163,7 @@ static int HnpPidGetByBinName(const char *binName, int *pids, int *count)
     }
 
     while (fgets(cmdBuffer, sizeof(cmdBuffer), cmdOutput) != NULL) {
+        HNP_LOGI("hnp uninstall pid[%s]", cmdBuffer);
         pids[pidNum++] = atoi(cmdBuffer);
         if (pidNum >= MAX_PROCESSES) {
             HNP_LOGI("hnp uninstall process[%s] num over size", binName);
@@ -182,7 +184,7 @@ int HnpProcessRunCheck(const char *binName, const char *runPath)
     char command[HNP_COMMAND_LEN];
     char cmdBuffer[BUFFER_SIZE];
 
-    HNP_LOGI("process[%s] running check", binName);
+    HNP_LOGI("process[%s] running check, runPath[%s]", binName, runPath);
 
     ret = HnpPidGetByBinName(binName, pids, &count);
     if ((ret != 0) || (count == 0)) { // 返回非0代表未找到进程对应的pid
@@ -201,6 +203,7 @@ int HnpProcessRunCheck(const char *binName, const char *runPath)
             continue;
         }
         while (fgets(cmdBuffer, sizeof(cmdBuffer), cmdOutput) != NULL) {
+            HNP_LOGI("hnp install path[%s]", cmdBuffer);
             if (strstr(cmdBuffer, runPath) != NULL) {
                 HnpPclose(cmdOutput);
                 HNP_LOGE("hnp install process[%s] is running now", binName);
