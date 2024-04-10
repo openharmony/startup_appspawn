@@ -16,6 +16,8 @@
 #ifndef APPSPAWN_ADPATER_CPP
 #define APPSPAWN_ADPATER_CPP
 
+#include "appspawn_manager.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif

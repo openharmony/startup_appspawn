@@ -36,7 +36,8 @@ default                      MS_BIND MS_REC                                     
 rdonly                       MS_NODEV MS_RDONLY                                     只读挂载
 epfs            epfs         MS_NODEV                                                待讨论
 dac_override                 MS_NODEV MS_RDONLY             "support_overwrite=1"
-开启const.filemanager.full_mount.enable fuse            fuse         MS_NOSUID MS_NODEV MS_NOEXEC MS_NOATIME MS_LAZYTIME
+开启const.filemanager.full_mount.enable
+fuse            fuse         MS_NOSUID MS_NODEV MS_NOEXEC MS_NOATIME MS_LAZYTIME
 dlp_fuse        fuse         MS_NOSUID MS_NODEV MS_NOEXEC MS_NOATIME MS_LAZYTIME     为dlpmanager管理应用专用的挂载参数
 shared                       MS_BIND MS_REC                                           root
 namespace上是MS_SHARED方式挂载
@@ -182,6 +183,6 @@ void DumpMountPathMountNode(const PathMountNode *pathNode)
     APPSPAPWN_DUMP("        sandbox node options: %{public}s", tmp->options ? tmp->options : "null");
     APPSPAPWN_DUMP("        sandbox node fsType: %{public}s", tmp->fsType ? tmp->fsType : "null");
     DumpMode("        sandbox node destMode: ", pathNode->destMode);
-    APPSPAPWN_DUMP("        sandbox node mountSharedFlag: %{public}s",
+    APPSPAPWN_DUMP("        sandbox node config mountSharedFlag: %{public}s",
         pathNode->mountSharedFlag ? "MS_SHARED" : "MS_SLAVE");
 }

@@ -24,6 +24,7 @@
 
 #include "appspawn_hook.h"
 #include "appspawn_server.h"
+#include "appspawn_manager.h"
 #include "appspawn_utils.h"
 #include "command_lexer.h"
 #include "config_policy_utils.h"
@@ -48,9 +49,9 @@ static const bool DEFAULT_PRELOAD_VALUE = true;
 #endif
 static const std::string PRELOAD_JSON_CONFIG("/appspawn_preload.json");
 
-typedef struct TagAppSpawnSandboxCfg {
+typedef struct TagParseJsonContext {
     std::set<std::string> modules;
-} AppSpawnSandboxCfg;
+} ParseJsonContext;
 
 static void GetModules(const cJSON *root, std::set<std::string> &modules)
 {
@@ -73,7 +74,7 @@ static void GetModules(const cJSON *root, std::set<std::string> &modules)
     }
 }
 
-static int GetModuleSet(const cJSON *root, AppSpawnSandboxCfg *context)
+static int GetModuleSet(const cJSON *root, ParseJsonContext *context)
 {
     GetModules(root, context->modules);
     return 0;
@@ -92,8 +93,8 @@ static void PreloadModule(void)
         return;
     }
 
-    AppSpawnSandboxCfg context = {};
-    (void)ParseSandboxConfig("etc/appspawn", PRELOAD_JSON_CONFIG.c_str(), GetModuleSet, &context);
+    ParseJsonContext context = {};
+    (void)ParseJsonConfig("etc/appspawn", PRELOAD_JSON_CONFIG.c_str(), GetModuleSet, &context);
     for (std::string moduleName : context.modules) {
         APPSPAWN_LOGI("moduleName %{public}s", moduleName.c_str());
         runtime->PreloadSystemModule(moduleName);

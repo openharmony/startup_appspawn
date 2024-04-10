@@ -40,6 +40,7 @@
 #include "appspawn_adapter.h"
 #include "appspawn_hook.h"
 #include "appspawn_msg.h"
+#include "appspawn_manager.h"
 #include "init_param.h"
 #include "parameter.h"
 #include "securec.h"
@@ -178,7 +179,9 @@ static void ClearEnvironment(const AppSpawnMgr *content, const AppSpawningCtx *p
     sigaddset(&mask, SIGTERM);
     sigprocmask(SIG_UNBLOCK, &mask, NULL);
     // close child fd
-    close(property->forkCtx.fd[0]);
+    AppSpawningCtx *ctx = (AppSpawningCtx *)property;
+    close(ctx->forkCtx.fd[0]);
+    ctx->forkCtx.fd[0] = -1;
     return;
 }
 
@@ -425,39 +428,10 @@ static int SpawnGetSpawningFlag(AppSpawnMgr *content, AppSpawningCtx *property)
     return 0;
 }
 
-static int PreLoadEnablePidNs(AppSpawnMgr *content)
-{
-    APPSPAWN_LOGI("Enable pid namespace %{public}d %{public}d sandboxNsFlags: %{public}x",
-        IsNWebSpawnMode(content), IsColdRunMode(content), content->content.sandboxNsFlags);
-    if (IsNWebSpawnMode(content) || IsColdRunMode(content)) {
-        return 0;
-    }
-    if (!(content->content.sandboxNsFlags & CLONE_NEWPID)) {
-        return 0;
-    }
-
-    int ret = unshare(CLONE_NEWPID);
-    APPSPAWN_CHECK(ret == 0, return -1, "unshare CLONE_NWEPID failed, errno=%{public}d", errno);
-
-    pid_t pid = fork();
-    if (pid == 0) {
-        setuid(PID_NS_INIT_UID);
-        setgid(PID_NS_INIT_GID);
-#ifdef WITH_SELINUX
-        setcon("u:r:pid_ns_init:s0");
-#endif
-        char *argv[] = {"/system/bin/pid_ns_init", NULL};
-        execve("/system/bin/pid_ns_init", argv, NULL);
-        _exit(0x7f);
-    }
-    return 0;
-}
-
 MODULE_CONSTRUCTOR(void)
 {
     APPSPAWN_LOGV("Load common module ...");
     AddPreloadHook(HOOK_PRIO_COMMON, PreLoadSetSeccompFilter);
-    AddPreloadHook(HOOK_PRIO_LOWEST, PreLoadEnablePidNs);
 
     AddAppSpawnHook(STAGE_PARENT_PRE_FORK, HOOK_PRIO_HIGHEST, SpawnGetSpawningFlag);
     AddAppSpawnHook(STAGE_CHILD_PRE_COLDBOOT, HOOK_PRIO_HIGHEST, SpawnInitSpawningEnv);
