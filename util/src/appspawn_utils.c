@@ -63,52 +63,6 @@ int MakeDirRec(const char *path, mode_t mode, int lastPath)
     return 0;
 }
 
-static void CheckDirRecursive(const char *path)
-{
-    char buffer[PATH_MAX] = {0};
-    const char slash = '/';
-    const char *p = path;
-    char *curPos = strchr(path, slash);
-    while (curPos != NULL) {
-        int len = curPos - p;
-        p = curPos + 1;
-        if (len == 0) {
-            curPos = strchr(p, slash);
-            continue;
-        }
-        int ret = memcpy_s(buffer, PATH_MAX, path, p - path - 1);
-        APPSPAWN_CHECK(ret == 0, return, "Failed to copy path");
-        ret = access(buffer, F_OK);
-        APPSPAWN_CHECK(ret == 0, return, "Dir not exit %{public}s errno: %{public}d", buffer, errno);
-        curPos = strchr(p, slash);
-    }
-    int ret = access(path, F_OK);
-    APPSPAWN_CHECK(ret == 0, return, "Dir not exit %{public}s errno: %{public}d", buffer, errno);
-    return;
-}
-
-int SandboxMountPath(const MountArg *arg)
-{
-    APPSPAWN_CHECK(arg != NULL && arg->originPath != NULL && arg->destinationPath != NULL,
-        return APPSPAWN_ARG_INVALID, "Invalid arg ");
-    int ret = mount(arg->originPath, arg->destinationPath, arg->fsType, arg->mountFlags, arg->options);
-    if (ret != 0) {
-        if (arg->originPath != NULL && strstr(arg->originPath, "/data/app/el2/") != NULL) {
-            CheckDirRecursive(arg->originPath);
-        }
-        APPSPAWN_LOGW("errno is: %{public}d, bind mount %{public}s => %{public}s",
-            errno, arg->originPath, arg->destinationPath);
-        return errno;
-    }
-    ret = mount(NULL, arg->destinationPath, NULL, arg->mountSharedFlag, NULL);
-    if (ret != 0) {
-        APPSPAWN_LOGW("errno is: %{public}d, bind mount %{public}s => %{public}s",
-            errno, arg->originPath, arg->destinationPath);
-        return errno;
-    }
-    return 0;
-}
-
 static void TrimTail(char *buffer, uint32_t maxLen)
 {
     int32_t index = maxLen - 1;

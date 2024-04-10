@@ -62,7 +62,7 @@ static int MountAllHsp(const SandboxContext *context, const cJSON *hsps)
         APPSPAWN_CHECK(len > 0, return -1, "Failed to format install path");
         // sandbox path
         len = sprintf_s(context->buffer[1].buffer, context->buffer[1].bufferLen, "%s%s%s/%s",
-            context->sandboxPackagePath, SANDBOX_INSTALL_PATH, libBundleName, libModuleName);
+            context->rootPath, SANDBOX_INSTALL_PATH, libBundleName, libModuleName);
         APPSPAWN_CHECK(len > 0, return -1, "Failed to format install path");
 
         CreateSandboxDir(context->buffer[1].buffer, FILE_MODE);
@@ -105,7 +105,7 @@ static int MountAllGroup(const SandboxContext *context, const cJSON *groups)
 
         char *dataGroupUuid = GetLastPath(libPhysicalPath);
         int len = sprintf_s(context->buffer[0].buffer, context->buffer[0].bufferLen, "%s%s%s",
-            context->sandboxPackagePath, SANDBOX_GROUP_PATH, dataGroupUuid);
+            context->rootPath, SANDBOX_GROUP_PATH, dataGroupUuid);
         APPSPAWN_CHECK(len > 0, return -1, "Failed to format install path");
         APPSPAWN_LOGV("MountAllGroup src: '%{public}s' =>'%{public}s'", libPhysicalPath, context->buffer[0].buffer);
 
@@ -153,7 +153,7 @@ static int SetOverlayAppPath(const char *hapPath, void *context)
         return 0;
     }
     int len = sprintf_s(sandboxContext->buffer[1].buffer, sandboxContext->buffer[1].bufferLen, "%s%s",
-        sandboxContext->sandboxPackagePath, SANDBOX_OVERLAY_PATH);
+        sandboxContext->rootPath, SANDBOX_OVERLAY_PATH);
     APPSPAWN_CHECK(len > 0, return -1, "Failed to format install path");
     ret = strcat_s(sandboxContext->buffer[1].buffer, sandboxContext->buffer[1].bufferLen - len, tmp + 1);
     APPSPAWN_CHECK(ret == 0, return ret, "mount library failed %{public}d", ret);

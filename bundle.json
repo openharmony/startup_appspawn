@@ -97,7 +97,8 @@
             ],
             "test": [
                 "//base/startup/appspawn/test:moduletest",
-                "//base/startup/appspawn/test:unittest"
+                "//base/startup/appspawn/test:unittest",
+                "//base/startup/appspawn/test:fuzztest"
             ]
         }
     }

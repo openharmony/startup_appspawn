@@ -18,6 +18,7 @@
 #include "securec.h"
 
 #include <gtest/gtest.h>
+
 using namespace testing;
 using namespace testing::ext;
 
@@ -41,16 +42,16 @@ static AppSpawnReqMsgHandle CreateMsg(AppSpawnClientHandle handle, const char *b
         APPSPAWN_CHECK(ret == 0, break, "Failed to create req %{public}s", bundleName);
 
         AppDacInfo dacInfo = {};
-        dacInfo.uid = 20010029; // 20010029 test data
-        dacInfo.gid = 20010029; // 20010029 test data
-        dacInfo.gidCount = 2; // 2 count
-        dacInfo.gidTable[0] = 20010029; // 20010029 test data
-        dacInfo.gidTable[1] = 20010029 + 1; // 20010029 test data
+        dacInfo.uid = 20010029;              // 20010029 test data
+        dacInfo.gid = 20010029;              // 20010029 test data
+        dacInfo.gidCount = 2;                // 2 count
+        dacInfo.gidTable[0] = 20010029;      // 20010029 test data
+        dacInfo.gidTable[1] = 20010029 + 1;  // 20010029 test data
         (void)strcpy_s(dacInfo.userName, sizeof(dacInfo.userName), "test-app-name");
         ret = AppSpawnReqMsgSetAppDacInfo(reqHandle, &dacInfo);
         APPSPAWN_CHECK(ret == 0, break, "Failed to add dac %{public}s", APPSPAWN_SERVER_NAME);
 
-        AppSpawnReqMsgSetAppFlag(reqHandle, static_cast<AppFlagsIndex>(10)); // 10 test
+        AppSpawnReqMsgSetAppFlag(reqHandle, static_cast<AppFlagsIndex>(10));  // 10 test
 
         ret = AppSpawnReqMsgSetAppAccessToken(reqHandle, 12345678);  // 12345678
         APPSPAWN_CHECK(ret == 0, break, "Failed to add access token %{public}s", APPSPAWN_SERVER_NAME);

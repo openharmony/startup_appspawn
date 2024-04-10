@@ -16,6 +16,7 @@
 #include "appspawn_modulemgr.h"
 
 #include "appspawn_hook.h"
+#include "appspawn_manager.h"
 #include "appspawn_utils.h"
 #include "hookmgr.h"
 #include "modulemgr.h"
@@ -100,10 +101,10 @@ void DeleteAppSpawnHookMgr(void)
     g_appspawnHookMgr = NULL;
 }
 
-static int PreloadHookRun(const HOOK_INFO *hookInfo, void *executionContext)
+static int ServerStageHookRun(const HOOK_INFO *hookInfo, void *executionContext)
 {
     AppSpawnHookArg *arg = (AppSpawnHookArg *)executionContext;
-    PreloadHook realHook = (PreloadHook)hookInfo->hookCookie;
+    ServerStageHook realHook = (ServerStageHook)hookInfo->hookCookie;
     return realHook((void *)arg->content);
 }
 
@@ -125,8 +126,11 @@ static void PostHookExec(const HOOK_INFO *hookInfo, void *executionContext, int 
         hookInfo->stage, hookInfo->prio, diff, executionRetVal);
 }
 
-int PreloadHookExecute(AppSpawnContent *content)
+int ServerStageHookExecute(AppSpawnHookStage stage, AppSpawnContent *content)
 {
+    APPSPAWN_CHECK(content != NULL, return APPSPAWN_ARG_INVALID, "Invalid content");
+    APPSPAWN_CHECK((stage >= STAGE_SERVER_PRELOAD) && (stage <= STAGE_SERVER_EXIT),
+        return APPSPAWN_ARG_INVALID, "Invalid stage %{public}d", (int)stage);
     AppSpawnHookArg arg;
     arg.content = content;
     arg.client = NULL;
@@ -134,20 +138,22 @@ int PreloadHookExecute(AppSpawnContent *content)
     options.flags = TRAVERSE_STOP_WHEN_ERROR;
     options.preHook = PreHookExec;
     options.postHook = PostHookExec;
-    int ret = HookMgrExecute(GetAppSpawnHookMgr(), STAGE_SERVER_PRELOAD, (void *)(&arg), &options);
-    APPSPAWN_LOGI("Execute hook [%{public}d] result %{public}d", STAGE_SERVER_PRELOAD, ret);
+    int ret = HookMgrExecute(GetAppSpawnHookMgr(), stage, (void *)(&arg), &options);
+    APPSPAWN_LOGV("Execute hook [%{public}d] result %{public}d", stage, ret);
     return ret == ERR_NO_HOOK_STAGE ? 0 : ret;
 }
 
-int AddPreloadHook(int prio, PreloadHook hook)
+int AddServerStageHook(AppSpawnHookStage stage, int prio, ServerStageHook hook)
 {
     APPSPAWN_CHECK(hook != NULL, return APPSPAWN_ARG_INVALID, "Invalid hook");
+    APPSPAWN_CHECK((stage >= STAGE_SERVER_PRELOAD) && (stage <= STAGE_SERVER_EXIT),
+        return APPSPAWN_ARG_INVALID, "Invalid stage %{public}d", (int)stage);
     HOOK_INFO info;
-    info.stage = STAGE_SERVER_PRELOAD;
+    info.stage = stage;
     info.prio = prio;
-    info.hook = PreloadHookRun;
+    info.hook = ServerStageHookRun;
     info.hookCookie = (void *)hook;
-    APPSPAWN_LOGI("AddPreloadHook prio: %{public}d", prio);
+    APPSPAWN_LOGI("AddServerStageHook prio: %{public}d", prio);
     return HookMgrAddEx(GetAppSpawnHookMgr(), &info);
 }
 
@@ -162,7 +168,7 @@ static void PreAppSpawnHookExec(const HOOK_INFO *hookInfo, void *executionContex
 {
     AppSpawnHookArg *arg = (AppSpawnHookArg *)executionContext;
     clock_gettime(CLOCK_MONOTONIC, &arg->tmStart);
-    APPSPAWN_LOGI("Hook stage: %{public}d prio: %{public}d start", hookInfo->stage, hookInfo->prio);
+    APPSPAWN_LOGV("Hook stage: %{public}d prio: %{public}d start", hookInfo->stage, hookInfo->prio);
 }
 
 static void PostAppSpawnHookExec(const HOOK_INFO *hookInfo, void *executionContext, int executionRetVal)
@@ -170,13 +176,16 @@ static void PostAppSpawnHookExec(const HOOK_INFO *hookInfo, void *executionConte
     AppSpawnHookArg *arg = (AppSpawnHookArg *)executionContext;
     clock_gettime(CLOCK_MONOTONIC, &arg->tmEnd);
     uint64_t diff = DiffTime(&arg->tmStart, &arg->tmEnd);
-    APPSPAWN_LOGI("Hook stage: %{public}d prio: %{public}d end time %{public}" PRId64 " ns result: %{public}d",
+    APPSPAWN_LOGV("Hook stage: %{public}d prio: %{public}d end time %{public}" PRId64 " ns result: %{public}d",
         hookInfo->stage, hookInfo->prio, diff, executionRetVal);
 }
 
 int AppSpawnHookExecute(AppSpawnHookStage stage, uint32_t flags, AppSpawnContent *content, AppSpawnClient *client)
 {
+    APPSPAWN_CHECK(content != NULL && client != NULL, return APPSPAWN_ARG_INVALID, "Invalid arg");
     APPSPAWN_LOGV("Execute hook [%{public}d] for app: %{public}s", stage, GetProcessName((AppSpawningCtx *)client));
+    APPSPAWN_CHECK((stage >= STAGE_PARENT_PRE_FORK) && (stage <= STAGE_CHILD_PRE_RUN),
+        return APPSPAWN_ARG_INVALID, "Invalid stage %{public}d", (int)stage);
     AppSpawnHookArg forkArg;
     forkArg.client = client;
     forkArg.content = content;
@@ -216,6 +225,8 @@ void AppSpawnEnvClear(AppSpawnContent *content, AppSpawnClient *client)
 int AddAppSpawnHook(AppSpawnHookStage stage, int prio, AppSpawnHook hook)
 {
     APPSPAWN_CHECK(hook != NULL, return APPSPAWN_ARG_INVALID, "Invalid hook");
+    APPSPAWN_CHECK((stage >= STAGE_PARENT_PRE_FORK) && (stage <= STAGE_CHILD_PRE_RUN),
+        return APPSPAWN_ARG_INVALID, "Invalid stage %{public}d", (int)stage);
     HOOK_INFO info;
     info.stage = stage;
     info.prio = prio;
@@ -228,6 +239,10 @@ int AddAppSpawnHook(AppSpawnHookStage stage, int prio, AppSpawnHook hook)
 int ProcessMgrHookExecute(AppSpawnHookStage stage, const AppSpawnContent *content,
     const AppSpawnedProcessInfo *appInfo)
 {
+    APPSPAWN_CHECK(content != NULL && appInfo != NULL, return APPSPAWN_ARG_INVALID, "Invalid hook");
+    APPSPAWN_CHECK((stage >= STAGE_SERVER_APP_ADD) && (stage <= STAGE_SERVER_APP_DIED),
+        return APPSPAWN_ARG_INVALID, "Invalid stage %{public}d", (int)stage);
+
     AppSpawnAppArg arg;
     arg.appInfo = appInfo;
     arg.content = content;
@@ -245,6 +260,8 @@ static int ProcessMgrHookRun(const HOOK_INFO *hookInfo, void *executionContext)
 int AddProcessMgrHook(AppSpawnHookStage stage, int prio, ProcessChangeHook hook)
 {
     APPSPAWN_CHECK(hook != NULL, return APPSPAWN_ARG_INVALID, "Invalid hook");
+    APPSPAWN_CHECK((stage >= STAGE_SERVER_APP_ADD) && (stage <= STAGE_SERVER_APP_DIED),
+        return APPSPAWN_ARG_INVALID, "Invalid stage %{public}d", (int)stage);
     HOOK_INFO info;
     info.stage = stage;
     info.prio = prio;
