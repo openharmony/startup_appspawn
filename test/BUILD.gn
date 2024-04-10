@@ -34,3 +34,10 @@ group("unittest") {
     deps = [ "unittest/app_spawn_lite_test:unittest" ]
   }
 }
+
+group("fuzztest") {
+  if (!defined(ohos_lite)) {
+    testonly = true
+    deps = [ "fuzztest:app_spawn_fuzztest" ]
+  }
+}

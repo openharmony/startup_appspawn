@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include "appspawn_manager.h"
 #include "appspawn_sandbox.h"
 #include "appspawn_utils.h"
 #include "modulemgr.h"
@@ -57,10 +58,10 @@ static int VarCurrentUseIdReplace(const SandboxContext *context,
     APPSPAWN_CHECK(info != NULL, return APPSPAWN_TLV_NONE,
         "No tlv %{public}d in msg %{public}s", TLV_DAC_INFO, context->bundleName);
     int len = 0;
-    if (extraData == NULL || extraData->sandboxTag != SANDBOX_TAG_PERMISSION) {
+    if (extraData == NULL || !CHECK_FLAGS_BY_INDEX(extraData->operation, SANDBOX_TAG_PERMISSION)) {
         len = sprintf_s((char *)buffer, bufferLen, "%u", info->uid / UID_BASE);
     } else if (context->appFullMountEnable && strlen(info->userName) > 0) {
-        len = sprintf_s((char *)buffer, bufferLen, "%s", info->userName);
+        len = sprintf_s((char *)buffer, bufferLen, "%s", "currentUser");
     } else {
         len = sprintf_s((char *)buffer, bufferLen, "%s", "currentUser");
     }
@@ -96,15 +97,43 @@ static int ReplaceVariableByParameter(const char *varData, SandboxBuffer *sandbo
     return 0;
 }
 
-static int ReplaceVariableForDeps(const SandboxContext *context,
-    SandboxBuffer *sandboxBuffer, const VarExtraData *extraData)
+static int ReplaceVariableForDepSandboxPath(const SandboxContext *context,
+    const char *buffer, uint32_t bufferLen, uint32_t *realLen, const VarExtraData *extraData)
 {
     APPSPAWN_CHECK(extraData != NULL, return -1, "Invalid extra data ");
     uint32_t len = strlen(extraData->data.depNode->target);
-    int ret = memcpy_s(sandboxBuffer->buffer + sandboxBuffer->current,
-        sandboxBuffer->bufferLen - sandboxBuffer->current, extraData->data.depNode->target, len);
+    int ret = memcpy_s((char *)buffer, bufferLen, extraData->data.depNode->target, len);
     APPSPAWN_CHECK(ret == 0, return -1, "Failed to copy real data");
-    sandboxBuffer->current += len;
+    *realLen = len;
+    return 0;
+}
+
+static int ReplaceVariableForDepSrcPath(const SandboxContext *context,
+    const char *buffer, uint32_t bufferLen, uint32_t *realLen, const VarExtraData *extraData)
+{
+    APPSPAWN_CHECK(extraData != NULL, return -1, "Invalid extra data ");
+    uint32_t len = strlen(extraData->data.depNode->source);
+    int ret = memcpy_s((char *)buffer, bufferLen, extraData->data.depNode->source, len);
+    APPSPAWN_CHECK(ret == 0, return -1, "Failed to copy real data");
+    *realLen = len;
+    return 0;
+}
+
+static int ReplaceVariableForDepPath(const SandboxContext *context,
+    const char *buffer, uint32_t bufferLen, uint32_t *realLen, const VarExtraData *extraData)
+{
+    APPSPAWN_CHECK(extraData != NULL, return -1, "Invalid extra data ");
+    char *path = extraData->data.depNode->source;
+    if (CHECK_FLAGS_BY_INDEX(extraData->operation, MOUNT_PATH_OP_REPLACE_BY_SANDBOX)) {
+        path = extraData->data.depNode->target;
+    } else if (CHECK_FLAGS_BY_INDEX(extraData->operation, MOUNT_PATH_OP_REPLACE_BY_SRC) && IsPathEmpty(path)) {
+        path = extraData->data.depNode->target;
+    }
+    APPSPAWN_CHECK(path != NULL, return -1, "Invalid path %{public}x ", extraData->operation);
+    uint32_t len = strlen(path);
+    int ret = memcpy_s((char *)buffer, bufferLen, path, len);
+    APPSPAWN_CHECK(ret == 0, return -1, "Failed to copy real data");
+    *realLen = len;
     return 0;
 }
 
@@ -129,12 +158,12 @@ static int GetVariableName(char *varData, uint32_t len, const char *varStart, ui
 static int ReplaceVariable(const SandboxContext *context,
     const char *varStart, SandboxBuffer *sandboxBuffer, uint32_t *varLen, const VarExtraData *extraData)
 {
-    char varData[128] = {0}; // 128 max len for var
-    int ret = GetVariableName(varData, sizeof(varData), varStart, varLen);
+    char varName[128] = {0};  // 128 max len for var
+    int ret = GetVariableName(varName, sizeof(varName), varStart, varLen);
     APPSPAWN_CHECK(ret == 0, return -1, "Failed to get variable name");
 
     uint32_t valueLen = 0;
-    AppSandboxVarNode *node = GetAppSandboxVarNode(varData);
+    AppSandboxVarNode *node = GetAppSandboxVarNode(varName);
     if (node != NULL) {
         ret = node->replaceVar(context, sandboxBuffer->buffer + sandboxBuffer->current,
             sandboxBuffer->bufferLen - sandboxBuffer->current - 1, &valueLen, extraData);
@@ -144,32 +173,28 @@ static int ReplaceVariable(const SandboxContext *context,
         return 0;
     }
     // "<param:persist.nweb.sandbox.src_path>"
-    if (strncmp(varData, "<param:", sizeof("<param:") - 1) == 0) {  // retry param:
-        varData[*varLen - 1] = '\0';                                          // erase last >
-        return ReplaceVariableByParameter(varData, sandboxBuffer);
+    if (strncmp(varName, "<param:", sizeof("<param:") - 1) == 0) {  // retry param:
+        varName[*varLen - 1] = '\0';                                // erase last >
+        return ReplaceVariableByParameter(varName, sandboxBuffer);
     }
-    if (strncmp(varData, "<lib>", sizeof("<lib>") - 1) == 0) {  // retry lib
+    if (strncmp(varName, "<lib>", sizeof("<lib>") - 1) == 0) {  // retry lib
         ret = memcpy_s(sandboxBuffer->buffer + sandboxBuffer->current,
             sandboxBuffer->bufferLen - sandboxBuffer->current, APPSPAWN_LIB_NAME, strlen(APPSPAWN_LIB_NAME));
         APPSPAWN_CHECK(ret == 0, return -1, "Failed to copy real data");
         sandboxBuffer->current += strlen(APPSPAWN_LIB_NAME);
         return 0;
     }
-    // <deps-sandbox-path>
-    if (strncmp(varData, "<deps-sandbox-path>", sizeof("<deps-sandbox-path>") - 1) == 0) {
-        return ReplaceVariableForDeps(context, sandboxBuffer, extraData);
-    }
     // no match revered origin data
-    APPSPAWN_LOGE("ReplaceVariable var '%{public}s' no match variable", varData);
+    APPSPAWN_LOGE("ReplaceVariable var '%{public}s' no match variable", varName);
     ret = memcpy_s(sandboxBuffer->buffer + sandboxBuffer->current,
-        sandboxBuffer->bufferLen - sandboxBuffer->current, varData, *varLen);
+        sandboxBuffer->bufferLen - sandboxBuffer->current, varName, *varLen);
     APPSPAWN_CHECK(ret == 0, return -1, "Failed to copy real data");
     sandboxBuffer->current += *varLen;
     return 0;
 }
 
-static int HandleVariableReplace(const SandboxContext *context, SandboxBuffer *sandboxBuffer,
-    const char *source, const VarExtraData *extraData)
+static int HandleVariableReplace(const SandboxContext *context,
+    SandboxBuffer *sandboxBuffer, const char *source, const VarExtraData *extraData)
 {
     size_t sourceLen = strlen(source);
     for (size_t i = 0; i < sourceLen; i++) {
@@ -195,6 +220,7 @@ const char *GetSandboxRealVar(const SandboxContext *context,
     APPSPAWN_CHECK_ONLY_EXPER(context != NULL, return NULL);
     APPSPAWN_CHECK(bufferType < ARRAY_LENGTH(context->buffer), return NULL, "Invalid index for buffer");
     SandboxBuffer *sandboxBuffer = &((SandboxContext *)context)->buffer[bufferType];
+    APPSPAWN_CHECK_ONLY_EXPER(sandboxBuffer != NULL && sandboxBuffer->buffer != NULL, return NULL);
     const char *tmp = source;
     int ret = 0;
     if (prefix != NULL) {  // copy prefix data
@@ -212,6 +238,18 @@ const char *GetSandboxRealVar(const SandboxContext *context,
     sandboxBuffer->buffer[sandboxBuffer->current] = '\0';
     // restore buffer
     sandboxBuffer->current = 0;
+
+    // For the depNode scenario, if there are variables in the deps path, a secondary replacement is required
+    if (extraData != NULL && extraData->sandboxTag == SANDBOX_TAG_NAME_GROUP && extraData->data.depNode != NULL) {
+        if (strstr(sandboxBuffer->buffer, "<") != NULL) {
+            SandboxBuffer *tmpBuffer = &((SandboxContext *)context)->buffer[BUFFER_FOR_TMP];
+            ret = HandleVariableReplace(context, tmpBuffer, sandboxBuffer->buffer, extraData);
+            APPSPAWN_CHECK(ret == 0, return NULL, "Failed to replace source %{public}s ", sandboxBuffer->buffer);
+            tmpBuffer->buffer[tmpBuffer->current] = '\0';
+            ret = strcpy_s(sandboxBuffer->buffer, sandboxBuffer->bufferLen, tmpBuffer->buffer);
+            APPSPAWN_CHECK(ret == 0, return NULL, "Failed to copy source %{public}s ", sandboxBuffer->buffer);
+        }
+    }
     return sandboxBuffer->buffer;
 }
 
@@ -239,6 +277,18 @@ void AddDefaultVariable(void)
     AddVariableReplaceHandler(PARAMETER_PACKAGE_NAME, VarPackageNameReplace);
     AddVariableReplaceHandler(PARAMETER_USER_ID, VarCurrentUseIdReplace);
     AddVariableReplaceHandler(PARAMETER_PACKAGE_INDEX, VarPackageNameIndexReplace);
+    /*
+        deps-path路径变量的含义：
+        1）首次挂载时，表示mount-paths-deps->sandbox-path  【STAGE_GLOBAL或者应用孵化时的挂载】
+        使用 MOUNT_PATH_OP_REPLACE_BY_SANDBOX 标记
+        2）二次挂载时，表示mount-paths-deps->src-path；
+            如果mount-paths-deps->src-path为空，则使用mount-paths-deps->sandbox-path
+        使用 MOUNT_PATH_OP_ONLY_SANDBOX + MOUNT_PATH_OP_REPLACE_BY_SRC，只使用源目录，不添加root-dir
+        【RemountByName时，如el2解锁或nweb更新时】
+    */
+    AddVariableReplaceHandler("<deps-sandbox-path>", ReplaceVariableForDepSandboxPath);
+    AddVariableReplaceHandler("<deps-src-path>", ReplaceVariableForDepSrcPath);
+    AddVariableReplaceHandler("<deps-path>", ReplaceVariableForDepPath);
 }
 
 void ClearVariable(void)

@@ -1,0 +1,167 @@
+# Copyright (c) 2024 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//base/startup/appspawn/appspawn.gni")
+import("//build/test.gni")
+
+ohos_unittest("AppSpawn_ut") {
+  module_out_path = "${module_output_path}"
+  deps = []
+  defines = [
+    "APPSPAWN_BASE_DIR=\"/data/appspawn_ut\"",
+    "APPSPAWN_LABEL=\"APPSPAWN_UT\"",
+    "APPSPAWN_TEST",
+    "APPSPAWN_DEBUG",
+    "USER_TIMER_TO_CHECK",
+    "OHOS_DEBUG",
+    "GRAPHIC_PERMISSION_CHECK",
+    "capset=CapsetStub",
+    "unshare=UnshareStub",
+    "mount=MountStub",
+    "symlink=SymlinkStub",
+    "chdir=ChdirStub",
+    "chroot=ChrootStub",
+    "syscall=SyscallStub",
+    "umount2=Umount2Stub",
+    "access=AccessStub",
+    "dlopen=DlopenStub",
+    "dlsym=DlsymStub",
+    "dlclose=DlcloseStub",
+    "execv=ExecvStub",
+    "getprocpid=GetprocpidStub",
+    "setgroups=SetgroupsStub",
+    "setresgid=SetresgidStub",
+    "setresuid=SetresuidStub",
+    "setuid=SetuidStub",
+    "setgid=SetgidStub",
+    "execvp=ExecvpStub",
+  ]
+
+  include_dirs = [
+    "${appspawn_path}",
+    "${appspawn_path}/common",
+    "${appspawn_path}/standard",
+    "${appspawn_path}/modules/modulemgr",
+    "${appspawn_path}/modules/ace_adapter",
+    "${appspawn_path}/modules/common",
+    "${appspawn_path}/modules/sandbox",
+    "${appspawn_innerkits_path}/client",
+    "${appspawn_innerkits_path}/include",
+    "${appspawn_innerkits_path}/permission",
+    "${appspawn_path}/modules/module_engine/include",
+    "${appspawn_path}/test/mock",
+    "${appspawn_path}/test/unittest",
+    "${appspawn_path}/util/include",
+  ]
+  sources = [
+    "${appspawn_path}/common/appspawn_server.c",
+    "${appspawn_path}/modules/modulemgr/appspawn_modulemgr.c",
+    "${appspawn_path}/standard/appspawn_appmgr.c",
+    "${appspawn_path}/standard/appspawn_msgmgr.c",
+    "${appspawn_path}/standard/appspawn_service.c",
+    "${appspawn_path}/standard/nwebspawn_launcher.c",
+    "${appspawn_path}/util/src/appspawn_base64.c",
+    "${appspawn_path}/util/src/appspawn_utils.c",
+  ]
+
+  # client
+  sources += [
+    "${appspawn_innerkits_path}/client/appspawn_client.c",
+    "${appspawn_innerkits_path}/client/appspawn_msg.c",
+    "${appspawn_innerkits_path}/permission/appspawn_mount_permission.c",
+  ]
+
+  # modules sources
+  sources += [
+    "${appspawn_path}/modules/ace_adapter/ace_adapter.cpp",
+    "${appspawn_path}/modules/ace_adapter/command_lexer.cpp",
+    "${appspawn_path}/modules/common/appspawn_adapter.cpp",
+    "${appspawn_path}/modules/common/appspawn_cgroup.c",
+    "${appspawn_path}/modules/common/appspawn_common.c",
+    "${appspawn_path}/modules/common/appspawn_namespace.c",
+    "${appspawn_path}/modules/nweb_adapter/nwebspawn_adapter.cpp",
+    "${appspawn_path}/modules/sandbox/appspawn_mount_template.c",
+    "${appspawn_path}/modules/sandbox/appspawn_permission.c",
+    "${appspawn_path}/modules/sandbox/appspawn_sandbox.c",
+    "${appspawn_path}/modules/sandbox/sandbox_cfgvar.c",
+    "${appspawn_path}/modules/sandbox/sandbox_expand.c",
+    "${appspawn_path}/modules/sandbox/sandbox_load.c",
+    "${appspawn_path}/modules/sandbox/sandbox_manager.c",
+  ]
+
+  # add stub
+  include_dirs += [ "${appspawn_path}/test/mock" ]
+  sources += [
+    "${appspawn_path}/test/mock/app_spawn_stub.cpp",
+    "${appspawn_path}/test/mock/app_system_stub.c",
+  ]
+
+  # add test
+  include_dirs += [ "${appspawn_path}/test/unittest" ]
+  sources += [
+    "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_cgroup_test.cpp",
+    "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_cold_run_test.cpp",
+    "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_command_lexer_test.cpp",
+    "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_sandbox_test.cpp",
+    "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_service_test.cpp",
+    "${appspawn_path}/test/unittest/app_spawn_standard_test/nweb_spawn_service_test.cpp",
+    "${appspawn_path}/test/unittest/app_spawn_test_helper.cpp",
+  ]
+
+  configs = [ "${appspawn_path}:appspawn_config" ]
+  external_deps = [
+    "ability_base:want",
+    "ability_runtime:app_manager",
+    "ability_runtime:appkit_native",
+    "ability_runtime:runtime",
+    "access_token:libtoken_setproc",
+    "access_token:libtokenid_sdk",
+    "ace_engine:ace_forward_compatibility",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
+    "cJSON:cjson",
+    "c_utils:utils",
+    "config_policy:configpolicy_util",
+    "eventhandler:libeventhandler",
+    "hilog:libhilog",
+    "hitrace:hitrace_meter",
+    "init:libbegetutil",
+    "init:seccomp",
+    "ipc:ipc_core",
+    "napi:ace_napi",
+    "os_account:os_account_innerkits",
+    "resource_management:global_resmgr",
+  ]
+
+  if (asan_detector || is_asan) {
+    defines += [ "ASAN_DETECTOR" ]
+    sources += [ "${appspawn_path}/modules/asan_detector/asan_detector.c" ]
+  }
+
+  if (build_selinux) {
+    defines += [ "WITH_SELINUX" ]
+    deps += [ "//third_party/selinux:libselinux" ]
+    external_deps += [ "selinux_adapter:libhap_restorecon" ]
+  }
+
+  if (appspawn_report_event) {
+    defines += [ "REPORT_EVENT" ]
+    sources += [ "${appspawn_path}/modules/sysevent/event_reporter.cpp" ]
+    external_deps += [ "hisysevent:libhisysevent" ]
+  }
+
+  if (target_cpu == "arm64" || target_cpu == "x86_64" ||
+      target_cpu == "riscv64") {
+    defines += [ "APPSPAWN_64" ]
+  }
+}

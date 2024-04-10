@@ -38,31 +38,32 @@ typedef struct AppSpawnClient AppSpawnClient;
 typedef struct TagAppSpawnedProcess AppSpawnedProcessInfo;
 
 typedef enum {
-    EXT_DATA_SANDBOX
+    EXT_DATA_SANDBOX,
+    EXT_DATA_NAMESPACE,
 } ExtDataType;
 
 struct TagAppSpawnExtData;
 typedef void (*AppSpawnExtDataFree)(struct TagAppSpawnExtData *data);
 typedef void (*AppSpawnExtDataDump)(struct TagAppSpawnExtData *data);
-typedef void (*AppSpawnExtDataClear)(struct TagAppSpawnExtData *data);
 typedef struct TagAppSpawnExtData {
     ListNode node;
     uint32_t dataId;
     AppSpawnExtDataFree freeNode;
-    AppSpawnExtDataClear clearNode;
     AppSpawnExtDataDump dumpNode;
 } AppSpawnExtData;
 
 typedef enum TagAppSpawnHookStage {
-    // run in init
+    // 服务状态处理
     STAGE_SERVER_PRELOAD  = 10,
+    STAGE_SERVER_EXIT,
+    // 应用状态处理
     STAGE_SERVER_APP_ADD,
     STAGE_SERVER_APP_DIED,
-
     // run before fork
     STAGE_PARENT_PRE_FORK = 20,
-    STAGE_PARENT_PRE_RELY = 21,
-    STAGE_PARENT_POST_RELY = 22,
+    STAGE_PARENT_POST_FORK = 21,
+    STAGE_PARENT_PRE_RELY = 22,
+    STAGE_PARENT_POST_RELY = 23,
 
     // run in child process
     STAGE_CHILD_PRE_COLDBOOT = 30, // clear env, set token before cold boot
@@ -80,11 +81,72 @@ typedef enum TagAppSpawnHookPrio {
     HOOK_PRIO_LOWEST = 5000,
 } AppSpawnHookPrio;
 
-typedef int (*PreloadHook)(AppSpawnMgr *content);
+/**
+ * @brief 预加载处理函数
+ *
+ * @param content appspawn appspawn管理数据
+ * @return int
+ */
+typedef int (*ServerStageHook)(AppSpawnMgr *content);
+
+/**
+ * @brief 应用孵化各阶段注册函数
+ *
+ * @param content appspawn appspawn管理数据
+ * @param property 业务孵化数据
+ * @return int
+ */
 typedef int (*AppSpawnHook)(AppSpawnMgr *content, AppSpawningCtx *property);
+
+/**
+ * @brief 业务进程变化注册函数
+ *
+ * @param content appspawn appspawn管理数据
+ * @param appInfo 业务进程信息
+ * @return int
+ */
 typedef int (*ProcessChangeHook)(const AppSpawnMgr *content, const AppSpawnedProcessInfo *appInfo);
-int AddPreloadHook(int prio, PreloadHook hook);
+
+/**
+ * @brief 添加服务阶段的处理函数
+ *
+ * @param stage 阶段信息
+ * @param prio 优先级
+ * @param hook 预加载处理函数
+ * @return int
+ */
+int AddServerStageHook(AppSpawnHookStage stage, int prio, ServerStageHook hook);
+
+/**
+ * @brief 添加预加载处理函数
+ *
+ * @param prio 优先级
+ * @param hook 预加载处理函数
+ * @return int
+ */
+__attribute__((always_inline)) inline int AddPreloadHook(int prio, ServerStageHook hook)
+{
+    return AddServerStageHook(STAGE_SERVER_PRELOAD, prio, hook);
+}
+
+/**
+ * @brief 按阶段添加应用孵化处理函数
+ *
+ * @param stage 阶段信息
+ * @param prio 优先级
+ * @param hook 应用孵化阶段处理函数
+ * @return int
+ */
 int AddAppSpawnHook(AppSpawnHookStage stage, int prio, AppSpawnHook hook);
+
+/**
+ * @brief 添加业务进程处理函数
+ *
+ * @param stage 阶段信息
+ * @param prio 优先级
+ * @param hook 业务进程变化处理函数
+ * @return int
+ */
 int AddProcessMgrHook(AppSpawnHookStage stage, int prio, ProcessChangeHook hook);
 
 typedef int (*ChildLoop)(AppSpawnContent *content, AppSpawnClient *client);
@@ -109,17 +171,6 @@ __attribute__((always_inline)) inline int CreateSandboxDir(const char *path, mod
 {
     return MakeDirRec(path, mode, 1);
 }
-
-typedef struct {
-    const char *originPath;
-    const char *destinationPath;
-    const char *fsType;
-    unsigned long mountFlags;
-    const char *options;
-    mode_t mountSharedFlag;
-} MountArg;
-
-int SandboxMountPath(const MountArg *arg);
 
 // 扩展变量
 typedef struct TagSandboxContext SandboxContext;

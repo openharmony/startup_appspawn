@@ -1,0 +1,40 @@
+{
+        "msg-type": 0,
+        "msg-flags": [1, 2 ],
+        "process-name" : "com.example.myapplication",
+        "pid": 328018,
+        "dac-info" : {
+                "uid" : 20010043,
+                "gid" : 20010043,
+                "gid-table" : [20010043],
+                "user-name" : ""
+        },
+        "access-token": {
+                "accessTokenIdEx": 537854093
+        },
+        "permission": [
+                "ohos.permission.READ_IMAGEVIDEO",
+                "ohos.permission.FILE_CROSS_APP",
+                "ohos.permission.ACTIVATE_THEME_PACKAGE"
+        ],
+        "internet-permission": {
+                "set-allow-internet": 0,
+                "allow-internet": 0
+        },
+        "bundle-info": {
+                "bundle-index": 0,
+                "bundle-name": "com.example.myapplication"
+        },
+        "owner-id": "",
+        "render-cmd": "1234567890",
+        "domain-info": {
+                "hap-flags": 0,
+                "apl": "system_core"
+        },
+        "ext-info": [
+                {
+                        "name": "hiplist",
+                        "value": "{ \"bundles\": [\"test.bundle1\", \"test.bundle2\"],\"modules\":[\"module1\", \"module2\"],\"versions\":[\"v10001\", \"v10002\"] }"
+                }
+        ]
+}
