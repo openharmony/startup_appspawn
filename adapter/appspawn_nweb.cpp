@@ -46,8 +46,10 @@ struct RenderProcessNode {
 
 namespace {
     constexpr int32_t RENDER_PROCESS_MAX_NUM = 16;
+#if defined(webview_arm)
     constexpr int32_t RETRY_MAX_TIMES = 60;
     constexpr int32_t WAIT_NWEB_LIB_MARGIN = 5;
+#endif
     std::map<int32_t, RenderProcessNode> g_renderProcessMap;
     std::mutex g_mutex;
     void *g_nwebRenderHandle = nullptr;
