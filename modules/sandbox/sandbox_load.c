@@ -57,9 +57,10 @@ static const SandboxFlagInfo NAME_GROUP_TYPE_MAP[] = {
     {"app-variable", (unsigned long)SANDBOX_TAG_APP_VARIABLE}
 };
 
-static inline PathMountNode *CreatePathMountNode(uint32_t type)
+static inline PathMountNode *CreatePathMountNode(uint32_t type, uint32_t hasDemandInfo)
 {
-    return (PathMountNode *)CreateSandboxMountNode(sizeof(PathMountNode), type);
+    uint32_t len = hasDemandInfo ? sizeof(PathDemandInfo) : 0;
+    return (PathMountNode *)CreateSandboxMountNode(sizeof(PathMountNode) + len, type);
 }
 
 static inline SymbolLinkNode *CreateSymbolLinkNode(void)
@@ -80,15 +81,13 @@ static inline SandboxFlagsNode *CreateSandboxFlagsNode(const char *name)
 
 static inline SandboxNameGroupNode *CreateSandboxNameGroupNode(const char *name)
 {
-    return (SandboxNameGroupNode *)CreateSandboxSection(name,
-        sizeof(SandboxNameGroupNode), SANDBOX_TAG_NAME_GROUP);
+    return (SandboxNameGroupNode *)CreateSandboxSection(name, sizeof(SandboxNameGroupNode), SANDBOX_TAG_NAME_GROUP);
 }
 
 static inline SandboxPermissionNode *CreateSandboxPermissionNode(const char *name)
 {
     size_t len = sizeof(SandboxPermissionNode);
-    SandboxPermissionNode *node = (SandboxPermissionNode *)
-        CreateSandboxSection(name, len, SANDBOX_TAG_PERMISSION);
+    SandboxPermissionNode *node = (SandboxPermissionNode *)CreateSandboxSection(name, len, SANDBOX_TAG_PERMISSION);
     APPSPAWN_CHECK(node != NULL, return NULL, "Failed to create permission node");
     node->permissionIndex = 0;
     return node;
@@ -187,16 +186,31 @@ static uint32_t GetFlagIndexFromJson(const cJSON *config)
     return 0;
 }
 
-static PathMountNode *DecodeMountPathConfig(const cJSON *config, uint32_t type)
+static void FillPathDemandInfo(const cJSON *config, PathMountNode *sandboxNode)
+{
+    APPSPAWN_CHECK_ONLY_EXPER(config != NULL, return);
+    sandboxNode->demandInfo->uid = GetIntValueFromJsonObj(config, "uid", -1);
+    sandboxNode->demandInfo->gid = GetIntValueFromJsonObj(config, "gid", -1);
+    sandboxNode->demandInfo->mode = GetIntValueFromJsonObj(config, "ugo", -1);
+}
+
+static PathMountNode *DecodeMountPathConfig(const SandboxSection *section, const cJSON *config, uint32_t type)
 {
     char *srcPath = GetStringFromJsonObj(config, "src-path");
     char *dstPath = GetStringFromJsonObj(config, "sandbox-path");
     if (srcPath == NULL || dstPath == NULL) {
         return NULL;
     }
+    PathMountNode *tmp = GetPathMountNode(section, type, srcPath, dstPath);
+    if (tmp != NULL) { // 删除老的节点，保存新的节点
+        DeleteSandboxMountNode((SandboxMountNode *)tmp);
+        APPSPAWN_LOGW("path %{public}s %{public}s repeat config, delete old", srcPath, dstPath);
+    }
 
-    PathMountNode *sandboxNode = CreatePathMountNode(type);
+    cJSON *demandInfo = cJSON_GetObjectItemCaseSensitive(config, "create-on-demand");
+    PathMountNode *sandboxNode = CreatePathMountNode(type, demandInfo != NULL);
     APPSPAWN_CHECK_ONLY_EXPER(sandboxNode != NULL, return NULL);
+    sandboxNode->createDemand = demandInfo != NULL;
     sandboxNode->source = strdup(srcPath);
     sandboxNode->target = strdup(dstPath);
 
@@ -209,6 +223,7 @@ static PathMountNode *DecodeMountPathConfig(const cJSON *config, uint32_t type)
     if (value != NULL) {
         sandboxNode->appAplName = strdup(value);
     }
+    FillPathDemandInfo(demandInfo, sandboxNode);
 
     if (sandboxNode->source == NULL || sandboxNode->target == NULL) {
         APPSPAWN_LOGE("Failed to get sourc or target path");
@@ -229,19 +244,25 @@ static int ParseMountPathsConfig(AppSpawnSandboxCfg *sandbox,
         if (mntJson == NULL) {
             continue;
         }
-        PathMountNode *sandboxNode = DecodeMountPathConfig(mntJson, type);
+        PathMountNode *sandboxNode = DecodeMountPathConfig(section, mntJson, type);
         APPSPAWN_CHECK_ONLY_EXPER(sandboxNode != NULL, continue);
         AddSandboxMountNode(&sandboxNode->sandboxNode, section);
     }
     return 0;
 }
 
-static SymbolLinkNode *DecodeSymbolLinksConfig(const cJSON *config)
+static SymbolLinkNode *DecodeSymbolLinksConfig(const SandboxSection *section, const cJSON *config)
 {
     const char *target = GetStringFromJsonObj(config, "target-name");
     const char *linkName = GetStringFromJsonObj(config, "link-name");
     if (target == NULL || linkName == NULL) {
         return NULL;
+    }
+
+    SymbolLinkNode *tmp = GetSymbolLinkNode(section, target, linkName);
+    if (tmp != NULL) { // 删除老的节点，保存新的节点
+        DeleteSandboxMountNode((SandboxMountNode *)tmp);
+        APPSPAWN_LOGW("SymbolLink %{public}s %{public}s repeat config, delete old", target, linkName);
     }
 
     SymbolLinkNode *node = CreateSymbolLinkNode();
@@ -258,8 +279,7 @@ static SymbolLinkNode *DecodeSymbolLinksConfig(const cJSON *config)
     return node;
 }
 
-static int ParseSymbolLinksConfig(AppSpawnSandboxCfg *sandbox,
-    const cJSON *symbolLinkConfigs, SandboxSection *section)
+static int ParseSymbolLinksConfig(AppSpawnSandboxCfg *sandbox, const cJSON *symbolLinkConfigs, SandboxSection *section)
 {
     APPSPAWN_CHECK_ONLY_EXPER(symbolLinkConfigs != NULL && cJSON_IsArray(symbolLinkConfigs), return -1);
     uint32_t symlinkPointSize = cJSON_GetArraySize(symbolLinkConfigs);
@@ -268,7 +288,7 @@ static int ParseSymbolLinksConfig(AppSpawnSandboxCfg *sandbox,
         if (symConfig == NULL) {
             continue;
         }
-        SymbolLinkNode *node = DecodeSymbolLinksConfig(symConfig);
+        SymbolLinkNode *node = DecodeSymbolLinksConfig(section, symConfig);
         APPSPAWN_CHECK_ONLY_EXPER(node != NULL, return -1);
         AddSandboxMountNode(&node->sandboxNode, section);
     }
@@ -282,12 +302,24 @@ static int ParseGidTableConfig(AppSpawnSandboxCfg *sandbox, const cJSON *configs
     APPSPAWN_CHECK_ONLY_EXPER(arrayLen > 0, return 0);
     APPSPAWN_CHECK(arrayLen < APP_MAX_GIDS, arrayLen = APP_MAX_GIDS, "More gid in gids json.");
 
+    // 配置存在，以后面的配置为准
+    if (section->gidTable) {
+        free(section->gidTable);
+        section->gidTable = NULL;
+        section->gidCount = 0;
+    }
     section->gidTable = (gid_t *)calloc(1, sizeof(gid_t) * arrayLen);
     APPSPAWN_CHECK(section->gidTable != NULL, return APPSPAWN_SYSTEM_ERROR, "Failed to alloc memory.");
 
     for (uint32_t i = 0; i < arrayLen; i++) {
-        char *value = cJSON_GetStringValue(cJSON_GetArrayItem(configs, i));
-        gid_t gid = DecodeGid(value);
+        cJSON *item = cJSON_GetArrayItem(configs, i);
+        gid_t gid = 0;
+        if (cJSON_IsNumber(item)) {
+            gid = (gid_t)cJSON_GetNumberValue(item);
+        } else {
+            char *value = cJSON_GetStringValue(item);
+            gid = DecodeGid(value);
+        }
         if (gid <= 0) {
             continue;
         }
@@ -301,13 +333,27 @@ static int ParseMountGroupsConfig(AppSpawnSandboxCfg *sandbox, const cJSON *grou
     APPSPAWN_CHECK(cJSON_IsArray(groupConfig),
         return APPSPAWN_SANDBOX_INVALID, "Invalid mount-groups config %{public}s", section->name);
 
+    // 合并name-group
     uint32_t count = (uint32_t)cJSON_GetArraySize(groupConfig);
-    section->nameGroups = (SandboxMountNode **)malloc(sizeof(SandboxMountNode *) * count);
-    APPSPAWN_CHECK(section->nameGroups != NULL, return APPSPAWN_SYSTEM_ERROR, "Failed to alloc memory for group name");
+    APPSPAWN_LOGV("mount-group in section %{public}s  %{public}u", section->name, count);
+    APPSPAWN_CHECK_ONLY_EXPER(count > 0, return 0);
+    count += section->number;
+    SandboxMountNode **nameGroups = (SandboxMountNode **)calloc(1, sizeof(SandboxMountNode *) * count);
+    APPSPAWN_CHECK(nameGroups != NULL, return APPSPAWN_SYSTEM_ERROR, "Failed to alloc memory for group name");
+
+    uint32_t j = 0;
+    uint32_t number = 0;
+    for (j = 0; j < section->number; j++) { // copy old
+        if (section->nameGroups[j] == NULL) {
+            continue;
+        }
+        nameGroups[number++] = section->nameGroups[j];
+    }
 
     SandboxNameGroupNode *mountNode = NULL;
     for (uint32_t i = 0; i < count; i++) {
-        section->nameGroups[i] = NULL;
+        nameGroups[number] = NULL;
+
         char *name = cJSON_GetStringValue(cJSON_GetArrayItem(groupConfig, i));
         mountNode = (SandboxNameGroupNode *)GetSandboxSection(&sandbox->nameGroupsQueue, name);
         if (mountNode == NULL) {
@@ -319,8 +365,25 @@ static int ParseMountGroupsConfig(AppSpawnSandboxCfg *sandbox, const cJSON *grou
             APPSPAWN_LOGE("Invalid name-group %{public}s", name);
             continue;
         }
-        section->nameGroups[section->number++] = (SandboxMountNode *)mountNode;
+        // 过滤重复的节点
+        for (j = 0; j < section->number; j++) {
+            if (section->nameGroups[j] != NULL && section->nameGroups[j] == (SandboxMountNode *)mountNode) {
+                APPSPAWN_LOGE("Name-group %{public}s bas been set", name);
+                break;
+            }
+        }
+        if (j < section->number) {
+            continue;
+        }
+        nameGroups[number++] = (SandboxMountNode *)mountNode;
+        APPSPAWN_LOGV("Name-group %{public}d %{public}s set", section->number, name);
     }
+    if (section->nameGroups != NULL) {
+        free(section->nameGroups);
+    }
+    section->nameGroups = nameGroups;
+    section->number = number;
+    APPSPAWN_LOGV("mount-group in section %{public}s  %{public}u", section->name, section->number);
     return 0;
 }
 
@@ -367,7 +430,10 @@ static int ParseBaseConfig(AppSpawnSandboxCfg *sandbox, SandboxSection *section,
 static int ParsePackageNameConfig(AppSpawnSandboxCfg *sandbox, const char *name, const cJSON *packageNameConfigs)
 {
     APPSPAWN_LOGV("Parse package-name config %{public}s", name);
-    SandboxPackageNameNode *node = CreateSandboxPackageNameNode(name);
+    SandboxPackageNameNode *node = (SandboxPackageNameNode *)GetSandboxSection(&sandbox->packageNameQueue, name);
+    if (node == NULL) {
+        node = CreateSandboxPackageNameNode(name);
+    }
     APPSPAWN_CHECK_ONLY_EXPER(node != NULL, return -1);
 
     int ret = ParseBaseConfig(sandbox, &node->section, packageNameConfigs);
@@ -384,8 +450,10 @@ static int ParseSpawnFlagsConfig(AppSpawnSandboxCfg *sandbox, const char *name, 
 {
     uint32_t flagIndex = GetFlagIndexFromJson(flagsConfig);
     APPSPAWN_LOGV("Parse spawn-flags config %{public}s flagIndex %{public}u", name, flagIndex);
-
-    SandboxFlagsNode *node = CreateSandboxFlagsNode(name);
+    SandboxFlagsNode *node = (SandboxFlagsNode *)GetSandboxSection(&sandbox->spawnFlagsQueue, name);
+    if (node == NULL) {
+        node = CreateSandboxFlagsNode(name);
+    }
     APPSPAWN_CHECK_ONLY_EXPER(node != NULL, return -1);
     node->flagIndex = flagIndex;
 
@@ -402,7 +470,10 @@ static int ParseSpawnFlagsConfig(AppSpawnSandboxCfg *sandbox, const char *name, 
 static int ParsePermissionConfig(AppSpawnSandboxCfg *sandbox, const char *name, const cJSON *permissionConfig)
 {
     APPSPAWN_LOGV("Parse permission config %{public}s", name);
-    SandboxPermissionNode *node = CreateSandboxPermissionNode(name);
+    SandboxPermissionNode *node = (SandboxPermissionNode *)GetSandboxSection(&sandbox->permissionQueue, name);
+    if (node == NULL) {
+        node = CreateSandboxPermissionNode(name);
+    }
     APPSPAWN_CHECK_ONLY_EXPER(node != NULL, return -1);
 
     int ret = ParseBaseConfig(sandbox, &node->section, permissionConfig);
@@ -421,18 +492,24 @@ static SandboxNameGroupNode *ParseNameGroup(AppSpawnSandboxCfg *sandbox, const c
     char *name = GetStringFromJsonObj(groupConfig, "name");
     APPSPAWN_CHECK(name != NULL, return NULL, "No name in name group config");
     APPSPAWN_LOGV("Parse name-group config %{public}s", name);
-    SandboxNameGroupNode *node = CreateSandboxNameGroupNode(name);
+    SandboxNameGroupNode *node = (SandboxNameGroupNode *)GetSandboxSection(&sandbox->nameGroupsQueue, name);
+    if (node == NULL) {
+        node = CreateSandboxNameGroupNode(name);
+    }
     APPSPAWN_CHECK_ONLY_EXPER(node != NULL, return NULL);
 
     cJSON *obj = cJSON_GetObjectItemCaseSensitive(groupConfig, "mount-paths-deps");
     if (obj) {
-        node->depNode = DecodeMountPathConfig(obj, SANDBOX_TAG_MOUNT_PATH);
+        if (node->depNode) { // free repeat
+            DeleteSandboxMountNode((SandboxMountNode *)node->depNode);
+        }
+        node->depNode = DecodeMountPathConfig(NULL, obj, SANDBOX_TAG_MOUNT_PATH);
         if (node->depNode == NULL) {
             DeleteSandboxSection((SandboxSection *)node);
             return NULL;
         }
-        // "mount-mode": "not-exists"
-        node->mountMode = GetMountModeFromConfig(obj, "mount-mode", MOUNT_MODE_ALWAYS);
+        // "deps-mode": "not-exists"
+        node->depMode = GetMountModeFromConfig(groupConfig, "deps-mode", MOUNT_MODE_ALWAYS);
     }
 
     ret = ParseBaseConfig(sandbox, &node->section, groupConfig);
@@ -457,8 +534,6 @@ static int ParseNameGroupsConfig(AppSpawnSandboxCfg *sandbox, const cJSON *root)
     int count = cJSON_GetArraySize(configs);
     APPSPAWN_CHECK_ONLY_EXPER(count > 0, return 0);
 
-    sandbox->depGroupNodes = (SandboxNameGroupNode **)calloc(1, sizeof(SandboxNameGroupNode *) * count);
-    APPSPAWN_CHECK(sandbox->depGroupNodes != NULL, return APPSPAWN_SYSTEM_ERROR, "Failed alloc memory ");
     sandbox->depNodeCount = 0;
     for (int i = 0; i < count; i++) {
         cJSON *json = cJSON_GetArrayItem(configs, i);
@@ -468,7 +543,7 @@ static int ParseNameGroupsConfig(AppSpawnSandboxCfg *sandbox, const cJSON *root)
         SandboxNameGroupNode *node = ParseNameGroup(sandbox, json);
         APPSPAWN_CHECK_ONLY_EXPER(node != NULL, return APPSPAWN_SANDBOX_INVALID);
         if (node->depNode) {
-            sandbox->depGroupNodes[sandbox->depNodeCount++] = node;
+            sandbox->depNodeCount++;
         }
     }
     APPSPAWN_LOGV("ParseNameGroupsConfig depNodeCount %{public}d", sandbox->depNodeCount);
@@ -506,6 +581,9 @@ static int ParseGlobalSandboxConfig(AppSpawnSandboxCfg *sandbox, const cJSON *ro
         sandbox->sandboxNsFlags = GetSandboxNsFlags(json);
         char *rootPath = GetStringFromJsonObj(json, "sandbox-root");
         APPSPAWN_CHECK(rootPath != NULL, return APPSPAWN_SYSTEM_ERROR, "No root path in config");
+        if (sandbox->rootPath) {
+            free(sandbox->rootPath);
+        }
         sandbox->rootPath = strdup(rootPath);
         APPSPAWN_CHECK(sandbox->rootPath != NULL, return APPSPAWN_SYSTEM_ERROR, "Failed to copy root path");
         sandbox->topSandboxSwitch = GetBoolValueFromJsonObj(json, "top-sandbox-switch", true);
@@ -513,9 +591,15 @@ static int ParseGlobalSandboxConfig(AppSpawnSandboxCfg *sandbox, const cJSON *ro
     return 0;
 }
 
-APPSPAWN_STATIC int ParseAppSandboxConfig(const cJSON *root, AppSpawnSandboxCfg *sandbox)
+typedef struct TagParseJsonContext {
+    AppSpawnSandboxCfg *sandboxCfg;
+}ParseJsonContext;
+
+APPSPAWN_STATIC int ParseAppSandboxConfig(const cJSON *root, ParseJsonContext *context)
 {
-    APPSPAWN_CHECK(root != NULL && sandbox, return APPSPAWN_SYSTEM_ERROR, "Invalid json");
+    APPSPAWN_CHECK(root != NULL && context != NULL && context->sandboxCfg != NULL,
+        return APPSPAWN_SYSTEM_ERROR, "Invalid json");
+    AppSpawnSandboxCfg *sandbox = context->sandboxCfg;
     int ret = ParseGlobalSandboxConfig(sandbox, root);  // "global":
     APPSPAWN_CHECK_ONLY_EXPER(ret == 0, return APPSPAWN_SANDBOX_INVALID);
     ret = ParseNameGroupsConfig(sandbox, root);  // name-groups
@@ -525,10 +609,13 @@ APPSPAWN_STATIC int ParseAppSandboxConfig(const cJSON *root, AppSpawnSandboxCfg 
     cJSON *required = cJSON_GetObjectItemCaseSensitive(root, "required");
     if (required) {
         cJSON *config = NULL;
-        cJSON_ArrayForEach(config, required) {
+        cJSON_ArrayForEach(config, required)
+        {
             APPSPAWN_LOGI("Sandbox required config: %{public}s", config->string);
-            SandboxSection *section = CreateSandboxSection(config->string, sizeof(SandboxSection),
-                SANDBOX_TAG_REQUIRED);
+            SandboxSection *section = GetSandboxSection(&sandbox->requiredQueue, config->string);
+            if (section == NULL) {
+                section = CreateSandboxSection(config->string, sizeof(SandboxSection), SANDBOX_TAG_REQUIRED);
+            }
             APPSPAWN_CHECK_ONLY_EXPER(section != NULL, return -1);
 
             int ret = ParseBaseConfig(sandbox, section, config);
@@ -564,7 +651,10 @@ int LoadAppSandboxConfig(AppSpawnSandboxCfg *sandbox, int nwebSpawn)
 {
     APPSPAWN_CHECK_ONLY_EXPER(sandbox != NULL, return APPSPAWN_ARG_INVALID);
     const char *sandboxName = nwebSpawn ? WEB_SANDBOX_FILE_NAME : APP_SANDBOX_FILE_NAME;
-    int ret = ParseSandboxConfig("etc/sandbox", sandboxName, ParseAppSandboxConfig, sandbox);
+
+    ParseJsonContext context = {};
+    context.sandboxCfg = sandbox;
+    int ret = ParseJsonConfig("etc/sandbox", sandboxName, ParseAppSandboxConfig, &context);
     if (ret == APPSPAWN_SANDBOX_NONE) {
         APPSPAWN_LOGW("No sandbox config");
         ret = 0;
@@ -574,5 +664,22 @@ int LoadAppSandboxConfig(AppSpawnSandboxCfg *sandbox, int nwebSpawn)
     sandbox->appFullMountEnable = CheckAppFullMountEnable();
     APPSPAWN_LOGI("Sandbox pidNamespaceSupport: %{public}d appFullMountEnable: %{public}d",
         sandbox->pidNamespaceSupport, sandbox->appFullMountEnable);
+
+    uint32_t depNodeCount = sandbox->depNodeCount;
+    APPSPAWN_CHECK_ONLY_EXPER(depNodeCount > 0, return ret);
+
+    sandbox->depGroupNodes = (SandboxNameGroupNode **)calloc(1, sizeof(SandboxNameGroupNode *) * depNodeCount);
+    APPSPAWN_CHECK(sandbox->depGroupNodes != NULL, return APPSPAWN_SYSTEM_ERROR, "Failed alloc memory ");
+    sandbox->depNodeCount = 0;
+    ListNode *node = sandbox->nameGroupsQueue.front.next;
+    while (node != &sandbox->nameGroupsQueue.front) {
+        SandboxNameGroupNode *groupNode = (SandboxNameGroupNode *)ListEntry(node, SandboxMountNode, node);
+        if (groupNode->depNode) {
+            sandbox->depGroupNodes[sandbox->depNodeCount++] = groupNode;
+        }
+        node = node->next;
+    }
+    APPSPAWN_LOGI("LoadAppSandboxConfig depNodeCount %{public}d", sandbox->depNodeCount);
+
     return 0;
 }

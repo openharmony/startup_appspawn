@@ -52,6 +52,11 @@ static int PermissionNodeCompareProc(ListNode *node, ListNode *newNode)
 int AddSandboxPermissionNode(const char *name, SandboxQueue *queue)
 {
     APPSPAWN_CHECK_ONLY_EXPER(name != NULL && queue != NULL, return APPSPAWN_ARG_INVALID);
+    APPSPAWN_LOGV("Add permission name %{public}s ", name);
+    if (GetPermissionNodeInQueue(queue, name) != NULL) {
+        APPSPAWN_LOGW("Permission name %{public}s has been exist", name);
+        return 0;
+    }
 #ifndef APPSPAWN_CLIENT
     size_t len = sizeof(SandboxPermissionNode);
     SandboxPermissionNode *node = (SandboxPermissionNode *)CreateSandboxSection(

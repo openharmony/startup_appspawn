@@ -28,7 +28,6 @@ ohos_shared_library("appspawn_ace") {
   deps = [
     "${appspawn_path}/modules/module_engine:libappspawn_module_engine",
     "${appspawn_path}/util:libappspawn_util",
-    "//third_party/cJSON:cjson",
   ]
   defines = []
   if (asan_detector || is_asan) {
@@ -41,6 +40,7 @@ ohos_shared_library("appspawn_ace") {
     "ability_runtime:runtime",
     "access_token:libtoken_setproc",
     "ace_engine:ace_forward_compatibility",
+    "cJSON:cjson",
     "c_utils:utils",
     "common_event_service:cesfwk_innerkits",
     "config_policy:configpolicy_util",

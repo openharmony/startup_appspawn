@@ -17,9 +17,10 @@
 #define APPSPAWN_SANDBOX_H
 
 #include <limits.h>
-#include ""
+
 #include "appspawn.h"
 #include "appspawn_hook.h"
+#include "appspawn_manager.h"
 #include "appspawn_utils.h"
 #include "list.h"
 
@@ -27,6 +28,7 @@
 extern "C" {
 #endif
 
+#define SANDBOX_STAMP_FILE_SUFFIX ".stamp"
 #define JSON_FLAGS_INTERNAL "__internal__"
 #define SANDBOX_NWEBSPAWN_ROOT_PATH APPSPAWN_BASE_DIR "/mnt/sandbox/com.ohos.render/"
 #define OHOS_RENDER "__internal__.com.ohos.render"
@@ -59,9 +61,12 @@ extern "C" {
 #define MOUNT_MODE_ALWAYS 1     // "always"
 #define MOUNT_MODE_NOT_EXIST 2  // "not-exists"
 
-#define MOUNT_PATH_OP_NO_SYMLINK 0x01
-#define MOUNT_PATH_OP_UNMOUNT 0x02
-
+#define MOUNT_PATH_OP_NONE    ((uint32_t)-1)
+#define MOUNT_PATH_OP_SYMLINK SANDBOX_TAG_INVALID
+#define MOUNT_PATH_OP_UNMOUNT    (SANDBOX_TAG_INVALID + 1)
+#define MOUNT_PATH_OP_ONLY_SANDBOX    (SANDBOX_TAG_INVALID + 2)
+#define MOUNT_PATH_OP_REPLACE_BY_SANDBOX    (SANDBOX_TAG_INVALID + 3)
+#define MOUNT_PATH_OP_REPLACE_BY_SRC    (SANDBOX_TAG_INVALID + 4)
 #define FILE_CROSS_APP_MODE "ohos.permission.FILE_CROSS_APP"
 
 typedef enum SandboxTag {
@@ -89,15 +94,30 @@ typedef struct TagSandboxQueue {
     uint32_t type;
 } SandboxQueue;
 
+/*
+"create-on-demand": {
+    "uid": "userId", // 默认使用消息的uid、gid
+    "gid":  "groupId",
+    "ugo": 750
+    }
+*/
+typedef struct {
+    uid_t uid;
+    gid_t gid;
+    uint32_t mode;
+} PathDemandInfo;
+
 typedef struct TagPathMountNode {
     SandboxMountNode sandboxNode;
     char *source;                  // source 目录，一般是全局的fs 目录
     char *target;                  // 沙盒化后的目录
     mode_t destMode;               // "dest-mode": "S_IRUSR | S_IWOTH | S_IRWXU "  默认值：0
     uint32_t mountSharedFlag : 1;  // "mount-shared-flag" : "true", 默认值：false
+    uint32_t createDemand : 1;
     uint32_t checkErrorFlag : 1;
     uint32_t category;
     char *appAplName;
+    PathDemandInfo demandInfo[0];
 } PathMountNode;
 
 typedef struct TagSymbolLinkNode {
@@ -131,10 +151,10 @@ typedef struct {
 
 typedef struct TagSandboxGroupNode {
     SandboxSection section;
-    uint32_t caps;  // "caps": [ "shared" ],
     uint32_t destType;
     PathMountNode *depNode;
-    uint32_t mountMode;
+    uint32_t depMode;
+    uint32_t depMounted : 1; // 是否执行了挂载
 } SandboxNameGroupNode;
 
 typedef struct TagPermissionNode {
@@ -157,13 +177,14 @@ typedef struct TagAppSpawnSandboxCfg {
     uint32_t topSandboxSwitch : 1;  // "top-sandbox-switch": "ON",
     uint32_t appFullMountEnable : 1;
     uint32_t pidNamespaceSupport : 1;
-    uint32_t systemUids[10];
+    uint32_t mounted : 1;
     char *rootPath;
 } AppSpawnSandboxCfg;
 
 enum {
     BUFFER_FOR_SOURCE,
     BUFFER_FOR_TARGET,
+    BUFFER_FOR_TMP,
     MAX_BUFFER
 };
 
@@ -185,7 +206,6 @@ typedef struct TagSandboxContext {
     uint32_t appFullMountEnable : 1;
     uint32_t nwebspawn : 1;
     char *rootPath;
-    char *sandboxPackagePath;
 } SandboxContext;
 
 /**
@@ -220,6 +240,8 @@ SandboxMountNode *CreateSandboxMountNode(uint32_t dataLen, uint32_t type);
 SandboxMountNode *GetFirstSandboxMountNode(const SandboxSection *section);
 void DeleteSandboxMountNode(SandboxMountNode *mountNode);
 void AddSandboxMountNode(SandboxMountNode *node, SandboxSection *section);
+PathMountNode *GetPathMountNode(const SandboxSection *section, int type, const char *source, const char *target);
+SymbolLinkNode *GetSymbolLinkNode(const SandboxSection *section, const char *target, const char *linkName);
 
 /**
  * @brief sandbox mount interface
@@ -229,7 +251,9 @@ int MountSandboxConfigs(const AppSpawnSandboxCfg *sandbox, const AppSpawningCtx 
 int StagedMountSystemConst(const AppSpawnSandboxCfg *sandbox, const AppSpawningCtx *property, int nwebspawn);
 int StagedMountPreUnShare(const SandboxContext *context, const AppSpawnSandboxCfg *sandbox);
 int StagedMountPostUnshare(const SandboxContext *context, const AppSpawnSandboxCfg *sandbox);
-int UnmountSandboxConfigs(const AppSpawnSandboxCfg *sandbox);
+// 在子进程退出时，由父进程发起unmount操作
+int UnmountDepPaths(const AppSpawnSandboxCfg *sandbox, uid_t uid);
+int UnmountSandboxConfigs(const AppSpawnSandboxCfg *sandbox, uid_t uid, const char *name);
 
 /**
  * @brief Variable op
@@ -243,6 +267,7 @@ typedef struct {
 
 typedef struct TagVarExtraData {
     uint32_t sandboxTag;
+    uint32_t operation;
     union {
         PathMountNode *depNode;
     } data;
@@ -318,6 +343,25 @@ const SandboxFlagInfo *GetSandboxFlagInfo(const char *key, const SandboxFlagInfo
 int GetPathMode(const char *name);
 
 void DumpMountPathMountNode(const PathMountNode *pathNode);
+
+typedef struct {
+    const char *originPath;
+    const char *destinationPath;
+    const char *fsType;
+    unsigned long mountFlags;
+    const char *options;
+    mode_t mountSharedFlag;
+} MountArg;
+
+int SandboxMountPath(const MountArg *arg);
+
+__attribute__((always_inline)) inline int IsPathEmpty(const char *path)
+{
+    if (path == NULL || path[0] == '\0') {
+        return 1;
+    }
+    return 0;
+}
 
 #ifdef __cplusplus
 }
