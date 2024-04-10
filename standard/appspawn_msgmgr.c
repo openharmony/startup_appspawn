@@ -167,7 +167,7 @@ static int CheckExtTlvInfo(const AppSpawnTlv *tlv, uint32_t remainLen)
     APPSPAWN_LOGV("Recv type [%{public}s %{public}u] real len: %{public}u",
         tlvExt->tlvName, tlvExt->tlvLen, tlvExt->dataLen);
     if (tlvExt->dataLen > tlvExt->tlvLen - sizeof(AppSpawnTlvExt)) {
-        APPSPAWN_LOGE("Invalid tlv [%{public}s %{public}u] real len: %{public}u %{public}u",
+        APPSPAWN_LOGE("Invalid tlv [%{public}s %{public}u] real len: %{public}u %{public}lu",
             tlvExt->tlvName, tlvExt->tlvLen, tlvExt->dataLen, sizeof(AppSpawnTlvExt));
         return APPSPAWN_MSG_INVALID;
     }
