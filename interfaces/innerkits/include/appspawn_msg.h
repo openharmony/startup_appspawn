@@ -73,6 +73,7 @@ typedef enum AppOperateType_ {
 #define GET_BUNDLE_RESOURCES_FLAG 0x200
 #define APP_GWP_ENABLED_FORCE 0x400
 #define APP_GWP_ENABLED_NORMAL 0x800
+#define APP_TSANENABLED 0x1000
 #define BITLEN32 32
 #define FDLEN2 2
 #define FD_INIT_VALUE 0
