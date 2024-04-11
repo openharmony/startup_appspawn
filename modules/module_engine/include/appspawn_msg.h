@@ -43,7 +43,7 @@ extern "C" {
 #define APP_LEN_BUNDLE_NAME 256  // bundle name length
 #define APP_LEN_SO_PATH 256      // load so lib
 #define APP_APL_MAX_LEN 32
-#define APP_RENDER_CMD_MAX_LEN 1024
+#define APP_RENDER_CMD_MAX_LEN 2048
 #define APP_OWNER_ID_LEN 64
 
 typedef enum {
