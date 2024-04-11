@@ -30,6 +30,7 @@ extern "C" {
     HILOG_INFO(LOG_CORE, "[%{public}s:%{public}d]" fmt, (__FILE_NAME__), (__LINE__), ##__VA_ARGS__)
 #define MAX_ARGV_NUM 256
 #define MAX_ENV_NUM (128 + 2)
+#define IS_OPTION_SET(x, option) ((x) & (1 << (option)))
 
 /* 数字索引 */
 enum {
@@ -42,11 +43,6 @@ enum {
     HNP_INDEX_6,
     HNP_INDEX_7
 };
-
-typedef enum {
-    OPTION_INDEX_FORCE = 0,
-    OPTION_INDEX_BUTT = 32,
-} HnpInstallOptionIndex;
 
 static int StartHnpProcess(char *const argv[], char *const apcEnv[])
 {
@@ -86,15 +82,6 @@ static int StartHnpProcess(char *const argv[], char *const apcEnv[])
     return exitVal;
 }
 
-static Bool NativeInstallOptionCheck(int installOptions, HnpInstallOptionIndex HnpOptionIndex)
-{
-    if (((installOptions >> HnpOptionIndex) & 1) == 1) {
-        return TRUE;
-    }
-
-    return FALSE;
-}
-
 int NativeInstallHnp(const char *userId, const char *packages[], int count, const char *installPath, int installOptions)
 {
     char *argv[MAX_ARGV_NUM] = {0};
@@ -123,7 +110,7 @@ int NativeInstallHnp(const char *userId, const char *packages[], int count, cons
         argv[index++] = (char*)installPath;
     }
 
-    if (NativeInstallOptionCheck(installOptions, OPTION_INDEX_FORCE) == TRUE) {
+    if (IS_OPTION_SET(installOptions, OPTION_INDEX_FORCE)) {
         argv[index++] = "-f";
     }
 
