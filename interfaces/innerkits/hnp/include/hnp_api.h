@@ -25,6 +25,11 @@ typedef enum {
     TRUE
 } Bool;
 
+typedef enum {
+    OPTION_INDEX_FORCE = 0,
+    OPTION_INDEX_BUTT
+} HnpInstallOptionIndex;
+
 #define HNP_API_ERRNO_BASE 0x2000
 
 // 0x2001 参数非法
