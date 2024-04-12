@@ -206,7 +206,7 @@ int HnpCfgGetFromZip(const char *inputFile, HnpCfgInfo *hnpCfg);
 
 int HnpSymlink(const char *srcFile, const char *dstFile);
 
-int HnpProcessRunCheck(const char *binName, const char *runPath);
+int HnpProcessRunCheck(const char *runPath);
 
 int HnpDeleteFolder(const char *path);
 
