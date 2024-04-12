@@ -309,6 +309,12 @@ static int ChangeAppSpawnMsgExt2Property(AppSpawnMsgNode *message, AppSpawnClien
     static const char *extraNames[] = { "|HspList|", "|Overlay|", "|DataGroup|", "|AppEnv|"};
     char *data[sizeof(extInfoNames) / sizeof(extInfoNames[0])] = {};
 
+    char *renderCmd = (char *)GetAppSpawnMsgExtInfo(message, MSG_EXT_NAME_RENDER_CMD, NULL);
+    if (renderCmd != NULL) {
+        int ret = strcpy_s(appProperty->property.renderCmd, sizeof(appProperty->property.renderCmd), renderCmd);
+        APPSPAWN_CHECK(ret == 0, return -1, "Failed to copy renderCmd");
+    }
+
     AppSpawnMsgDacInfo *dacInfo = (AppSpawnMsgDacInfo *)GetAppSpawnMsgInfo(message, TLV_DAC_INFO);
     if (dacInfo != NULL) {
         appProperty->property.uid = dacInfo->uid;
@@ -330,9 +336,7 @@ static int ChangeAppSpawnMsgExt2Property(AppSpawnMsgNode *message, AppSpawnClien
             totalLength += currLen + strlen(extraNames[i]) * 2 + 1; // 2 format |type1|...|type1|type2|...|type2|
         }
     }
-    if (totalLength == 0) {
-        return 0;
-    }
+    APPSPAWN_CHECK_ONLY_EXPER(totalLength != 0, return 0);
 
     extraInfo->data = (char *)calloc(1, totalLength);
     APPSPAWN_CHECK(extraInfo->data != NULL, return -1, "Failed to alloc mem for extra");
@@ -359,9 +363,14 @@ static int ChangeAppSpawnMsgExt2Property(AppSpawnMsgNode *message, AppSpawnClien
 int ChangeAppSpawnMsg2Property(AppSpawnMsgNode *message, AppSpawnClientExt *appProperty)
 {
     APPSPAWN_CHECK_ONLY_EXPER(message != NULL && appProperty != NULL, return -1);
+    appProperty->property.code = (AppOperateType)message->msgHeader.msgType;
+    if (message->msgHeader.msgType == MSG_GET_RENDER_TERMINATION_STATUS) {
+         appProperty->property.code = GET_RENDER_TERMINATION_STATUS;
+    } else if (message->msgHeader.msgType == MSG_SPAWN_NATIVE_PROCESS) {
+        appProperty->property.code = SPAWN_NATIVE_PROCESS;
+    }
     int ret = 0;
     do {
-        appProperty->property.code = (AppOperateType)message->msgHeader.msgType;
         ret = strcpy_s(appProperty->property.processName, APP_LEN_PROC_NAME, message->msgHeader.processName);
         APPSPAWN_CHECK(ret == 0, break, "Failed to copy processName");
         ret = DecodeAppSpawnMsg(message);
@@ -397,11 +406,8 @@ int ChangeAppSpawnMsg2Property(AppSpawnMsgNode *message, AppSpawnClientExt *appP
             appProperty->property.allowInternet = info->allowInternet;
             appProperty->property.setAllowInternet = info->setAllowInternet;
         }
-        char *renderCmd = (char *)GetAppSpawnMsgExtInfo(message, MSG_EXT_NAME_RENDER_CMD, NULL);
-        if (renderCmd != NULL) {
-            ret = strcpy_s(appProperty->property.renderCmd, sizeof(appProperty->property.renderCmd), renderCmd);
-            APPSPAWN_CHECK(ret == 0, break, "Failed to copy renderCmd");
-        }
+        pid_t *pid = (pid_t *)GetAppSpawnMsgInfo(message, TLV_RENDER_TERMINATION_INFO);
+        APPSPAWN_CHECK_ONLY_EXPER(pid == NULL, appProperty->property.pid = *pid);
         ret = ChangeAppSpawnMsgExt2Property(message, appProperty);
     } while (0);
     DeleteAppSpawnMsg(message);
