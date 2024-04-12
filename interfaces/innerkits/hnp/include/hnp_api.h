@@ -26,7 +26,7 @@ typedef enum {
 } Bool;
 
 typedef enum {
-    OPTION_INDEX_FORCE = 0,
+    OPTION_INDEX_FORCE = 0,     /* installed forcely */
     OPTION_INDEX_BUTT
 } HnpInstallOptionIndex;
 

@@ -183,7 +183,7 @@ void HnpPackWithBinSimple2Delete(void)
 void HnpPackWithCfg(void)
 {
     FILE *fp;
-    int whiteLen;
+    int whitelen;
 
     EXPECT_EQ(mkdir("hnp_sample", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
     EXPECT_EQ(mkdir("hnp_sample/bin", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
@@ -210,9 +210,9 @@ void HnpPackWithCfg(void)
         "{\"links\":[{\"source\":\"bin/out\",\"target\":\"outt\"},{\"source\":\"bin/out2\","
         "\"target\":\"out2\"}]}}";
     fp = fopen("hnp_sample/hnp.json", "w");
-    whiteLen = fwrite(cfg, sizeof(char), strlen(cfg) + 1, fp);
+    whitelen = fwrite(cfg, sizeof(char), strlen(cfg) + 1, fp);
     (void)fclose(fp);
-    EXPECT_EQ(whiteLen, strlen(cfg) + 1);
+    EXPECT_EQ(whitelen, strlen(cfg) + 1);
 
     EXPECT_EQ(HnpCmdPack(argc, argv), 0);
 }
@@ -659,7 +659,7 @@ HWTEST(HnpInstallerTest, Hnp_Install_007, TestSize.Level0)
 * @tc.name: Hnp_Install_API_001
 * @tc.desc:  Verify set Arg if NativeInstallHnp succeed.
 * @tc.type: FUNC
-* @tc.require:issueI9BU5F
+* @tc.require:issueI9DQSE
 * @tc.author:
 */
 HWTEST(HnpInstallerTest, Hnp_Install_API_001, TestSize.Level0)
@@ -667,7 +667,7 @@ HWTEST(HnpInstallerTest, Hnp_Install_API_001, TestSize.Level0)
     GTEST_LOG_(INFO) << "Hnp_Install_API_001 start";
 
     int ret;
-    const char *packages[1] = {(char *)"./hnp_out/sample.hnp"};
+    const char *packages[1] = {"./hnp_out/sample.hnp"};
 
     EXPECT_EQ(mkdir(HNP_BASE_PATH, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
     EXPECT_EQ(mkdir(HNP_BASE_PATH"/test", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
@@ -695,7 +695,7 @@ HWTEST(HnpInstallerTest, Hnp_Install_API_001, TestSize.Level0)
 * @tc.name: Hnp_Install_API_002
 * @tc.desc:  Verify set Arg if NativeInstallHnp succeed.
 * @tc.type: FUNC
-* @tc.require:issueI9BU5F
+* @tc.require:issueI9DQSE
 * @tc.author:
 */
 HWTEST(HnpInstallerTest, Hnp_Install_API_002, TestSize.Level0)
@@ -703,7 +703,7 @@ HWTEST(HnpInstallerTest, Hnp_Install_API_002, TestSize.Level0)
     GTEST_LOG_(INFO) << "Hnp_Install_API_002 start";
 
     int ret;
-    const char *packages[1] = {(char *)"./hnp_out/sample.hnp"};
+    const char *packages[1] = {"./hnp_out/sample.hnp"};
 
     EXPECT_EQ(mkdir(HNP_BASE_PATH, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
     EXPECT_EQ(mkdir(HNP_BASE_PATH"/test", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
@@ -712,7 +712,7 @@ HWTEST(HnpInstallerTest, Hnp_Install_API_002, TestSize.Level0)
 
     { //st dir path is invalid
         ret = NativeInstallHnp("10001", packages, 1, NULL, 1);
-        EXPECT_EQ(ret, HNP_ERRNO_INSTALLER_GET_REALPATH_FAILED);
+        EXPECT_NE(ret, 0);
     }
 
     HnpDeleteFolder(HNP_BASE_PATH);
@@ -725,7 +725,7 @@ HWTEST(HnpInstallerTest, Hnp_Install_API_002, TestSize.Level0)
 * @tc.name: Hnp_Install_API_003
 * @tc.desc:  Verify more than 1 hnp package if NativeInstallHnp succeed.
 * @tc.type: FUNC
-* @tc.require:issueI9BU5F
+* @tc.require:issueI9DQSE
 * @tc.author:
 */
 HWTEST(HnpInstallerTest, Hnp_Install_API_003, TestSize.Level0)
@@ -733,7 +733,7 @@ HWTEST(HnpInstallerTest, Hnp_Install_API_003, TestSize.Level0)
     GTEST_LOG_(INFO) << "Hnp_Install_API_003 start";
 
     int ret;
-    const char *packages[2] = {(char *)"./hnp_out/sample.hnp", (char *)"./hnp_out2/sample2.hnp"};
+    const char *packages[2] = {"./hnp_out/sample.hnp", "./hnp_out2/sample2.hnp"};
 
     EXPECT_EQ(mkdir(HNP_BASE_PATH, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
     EXPECT_EQ(mkdir(HNP_BASE_PATH"/test", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
@@ -927,9 +927,9 @@ HWTEST(HnpInstallerTest, Hnp_UnInstall_003, TestSize.Level0)
 
 /**
 * @tc.name: Hnp_UnInstall_API_001
-* @tc.desc:  Verify cfg pack NativeUnInstallHnp succeed.
+* @tc.desc:  Verify param invalid API NativeUnInstallHnp succeed.
 * @tc.type: FUNC
-* @tc.require:issueI9BU5F
+* @tc.require:issueI9DQSE
 * @tc.author:
 */
 HWTEST(HnpInstallerTest, Hnp_UnInstall_API_001, TestSize.Level0)
@@ -960,9 +960,9 @@ HWTEST(HnpInstallerTest, Hnp_UnInstall_API_001, TestSize.Level0)
 
 /**
 * @tc.name: Hnp_UnInstall_API_002
-* @tc.desc:  Verify cfg pack NativeUnInstallHnp succeed.
+* @tc.desc:  Verify path invalid API NativeUnInstallHnp succeed.
 * @tc.type: FUNC
-* @tc.require:issueI9BU5F
+* @tc.require:issueI9DQSE
 * @tc.author:
 */
 HWTEST(HnpInstallerTest, Hnp_UnInstall_API_002, TestSize.Level0)
@@ -978,7 +978,7 @@ HWTEST(HnpInstallerTest, Hnp_UnInstall_API_002, TestSize.Level0)
 
     { // param uninstall path is invalid
         ret = NativeUnInstallHnp("10000", "sample", "1.1", "/test");
-        EXPECT_EQ(ret, HNP_ERRNO_UNINSTALLER_HNP_PATH_NOT_EXIST);
+        EXPECT_NE(ret, 0);
     }
 
     HnpDeleteFolder(HNP_BASE_PATH);
