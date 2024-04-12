@@ -199,7 +199,9 @@ static int GetProcessTerminationStatusInner(int32_t pid, int *status)
         // this shows that the parent process has received SIGCHLD signal.
         return 0;
     }
-
+    if (pid <= 0) {
+        return -1;
+    }
     if (kill(pid, SIGKILL) != 0) {
         APPSPAWN_LOGE("unable to kill render process, pid: %{public}d ret %{public}d", pid, errno);
     }
