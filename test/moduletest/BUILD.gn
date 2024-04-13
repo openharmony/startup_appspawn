@@ -18,7 +18,6 @@ ohos_executable("AppSpawnTest") {
   sources = [
     "${appspawn_path}/test/moduletest/appspawn_test_cmder.cpp",
     "${appspawn_path}/test/moduletest/appspawn_test_main.cpp",
-    "${appspawn_path}/util/src/appspawn_utils.c",
   ]
 
   include_dirs = [
@@ -29,21 +28,20 @@ ohos_executable("AppSpawnTest") {
     "${appspawn_path}/modules/ace_adapter",
     "${appspawn_path}/modules/common",
     "${appspawn_path}/modules/sandbox",
-    "${appspawn_path}/modules//module_engine//include",
     "${appspawn_path}/test/moduletest/threadpool",
     "${appspawn_innerkits_path}/include",
     "${appspawn_innerkits_path}/client",
     "${appspawn_innerkits_path}/permission",
-    "${appspawn_innerkits_path}/module_engine/include",
+    "${appspawn_path}/modules/module_engine/include",
     "${appspawn_path}/test/mock",
     "${appspawn_path}/test/unittest",
     "${appspawn_path}/util/include",
-    "${appspawn_path}/modules/module_engine/include",
   ]
 
   deps = [
     "${appspawn_innerkits_path}/client:appspawn_client",
     "${appspawn_path}/test/moduletest/threadpool:libappspawn_threadpool",
+    "${appspawn_path}/util:libappspawn_util",
   ]
 
   external_deps = [
@@ -65,7 +63,6 @@ ohos_moduletest("AppSpawnModuleTest") {
     "${appspawn_path}/test/moduletest/appspawn_client_test.cpp",
     "${appspawn_path}/test/moduletest/appspawn_module_test.cpp",
     "${appspawn_path}/test/moduletest/appspawn_test_cmder.cpp",
-    "${appspawn_path}/util/src/appspawn_utils.c",
   ]
 
   include_dirs = [
@@ -80,15 +77,15 @@ ohos_moduletest("AppSpawnModuleTest") {
     "${appspawn_innerkits_path}/include",
     "${appspawn_innerkits_path}/client",
     "${appspawn_innerkits_path}/permission",
-    "${appspawn_innerkits_path}/module_engine/include",
+    "${appspawn_path}/modules/module_engine/include",
     "${appspawn_path}/test/mock",
     "${appspawn_path}/test/unittest",
     "${appspawn_path}/util/include",
-    "${appspawn_path}/modules/module_engine/include",
   ]
 
   deps = [
     "${appspawn_innerkits_path}/client:appspawn_client",
+    "${appspawn_path}/util:libappspawn_util",
     "//third_party/googletest:gtest_main",
   ]
 
@@ -108,6 +105,7 @@ group("moduletest") {
   deps = [
     ":AppSpawnModuleTest",
     ":AppSpawnTest",
+    "plugin-sample:appspawn_plugin_sample",
   ]
   deps += [ "hnp_sample:hnpsample" ]
 }

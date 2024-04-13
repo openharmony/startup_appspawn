@@ -31,6 +31,19 @@
 static const int INVALID_PID = -1;
 static const int CLIENT_ID = 100;
 
+#ifdef OHOS_DEBUG
+uint64_t DiffTime(const struct timespec *startTime, const struct timespec *endTime)
+{
+    uint64_t diff = (uint64_t)((endTime->tv_sec - startTime->tv_sec) * 1000000);  // 1000000 s-us
+    if (endTime->tv_nsec > startTime->tv_nsec) {
+        diff += (endTime->tv_nsec - startTime->tv_nsec) / 1000;  // 1000 ns - us
+    } else {
+        diff -= (startTime->tv_nsec - endTime->tv_nsec) / 1000;  // 1000 ns - us
+    }
+    return diff;
+}
+#endif
+
 typedef struct AppSpawnFeatureApi {
     INHERIT_SERVER_IPROXY;
 } AppSpawnFeatureApi;
@@ -131,7 +144,6 @@ static int Invoke(IServerProxy *iProxy, int funcId, void *origin, IpcIo *req, Ip
     AppSpawnClientLite client = {};
     client.client.id = CLIENT_ID;
     client.client.flags = 0;
-    client.client.cloneFlags = 0;
     if (GetMessageSt(&client.message, req) != EC_SUCCESS) {
         APPSPAWN_LOGE("[appspawn] invoke, parse failed! reply %d.", INVALID_PID);
         WriteInt64(reply, INVALID_PID);
@@ -140,27 +152,18 @@ static int Invoke(IServerProxy *iProxy, int funcId, void *origin, IpcIo *req, Ip
 
     APPSPAWN_LOGI("[appspawn] invoke, msg<%s,%s,%d,%d %d>", client.message.bundleName, client.message.identityID,
         client.message.uID, client.message.gID, client.message.capsCnt);
-    /* Clone support only one parameter, so need to package application parameters */
-    AppSandboxArg *sandboxArg = (AppSandboxArg *)malloc(sizeof(AppSandboxArg));
-    if (sandboxArg == NULL) {
-        WriteInt64(reply, INVALID_PID);
-        return EC_FAILURE;
-    }
-    (void)memset_s(sandboxArg, sizeof(AppSandboxArg), 0, sizeof(AppSandboxArg));
-
     pid_t newPid = 0;
-    sandboxArg->content = &g_appSpawnContentLite->content;
-    sandboxArg->client = &client.client;
-    int ret = AppSpawnProcessMsg(sandboxArg, &newPid);
+    int ret = AppSpawnProcessMsg(&g_appSpawnContentLite->content, &client.client, &newPid);
     if (ret != 0) {
         newPid = -1;
     }
     FreeMessageSt(&client.message);
     WriteInt64(reply, newPid);
-    free(sandboxArg);
 
 #ifdef OHOS_DEBUG
-    long long diff = DiffTime(&tmStart);
+    struct timespec tmEnd = {0};
+    clock_gettime(CLOCK_MONOTONIC, &tmEnd);
+    long long diff = DiffTime(&tmStart, &tmEnd);
     APPSPAWN_LOGI("[appspawn] invoke, reply pid %d, timeused %lld ns.", newPid, diff);
 #else
     APPSPAWN_LOGI("[appspawn] invoke, reply pid %d.", newPid);

@@ -29,6 +29,7 @@
 #include <vector>
 
 #include "appspawn.h"
+#include "appspawn_client.h"
 #include "appspawn_hook.h"
 #include "appspawn_server.h"
 #include "appspawn_service.h"
@@ -80,9 +81,21 @@ public:
         return defaultTestBundleIndex_;
     }
 
+    void SetTestMsgFlags(uint32_t flags)
+    {
+        defaultMsgFlags_ = flags;
+    }
+    void SetTestApl(const char *apl)
+    {
+        defaultApl_ = std::string(apl);
+    }
     void SetTestUid(uid_t uid)
     {
         defaultTestUid_ = uid;
+    }
+    void SetTestGid(gid_t gid)
+    {
+        defaultTestGid_ = gid;
     }
     void SetProcessName(const char *name)
     {
@@ -104,14 +117,28 @@ public:
     static uint32_t GenRandom(void);
     static CmdArgs *ToCmdList(const char *cmd);
     static AppSpawnContent *StartSpawnServer(std::string &cmd, CmdArgs *&args);
+
+    int AppSpawnReqMsgSetFlags(AppSpawnReqMsgHandle reqHandle, uint32_t tlv, uint32_t flags)
+    {
+        AppSpawnReqMsgNode *reqNode = (AppSpawnReqMsgNode *)reqHandle;
+        APPSPAWN_CHECK_ONLY_EXPER(reqNode != NULL, return APPSPAWN_ARG_INVALID);
+        if (tlv == TLV_MSG_FLAGS) {
+            *(uint32_t *)reqNode->msgFlags->flags = flags;
+        } else if (tlv == TLV_PERMISSION) {
+            *(uint32_t *)reqNode->permissionFlags->flags = flags;
+        }
+        return 0;
+    }
 private:
     AppSpawnMsgNode *CreateAppSpawnMsg(AppSpawnMsg *msg);
 
     std::string processName_ = {};
+    std::string defaultApl_ = "system_core";
     uid_t defaultTestUid_;
     gid_t defaultTestGid_;
     gid_t defaultTestGidGroup_;
     int32_t defaultTestBundleIndex_;
+    uint32_t defaultMsgFlags_ = 0;
     std::vector<const char *> permissions_ = {
         const_cast<char *>("ohos.permission.READ_IMAGEVIDEO"),
         const_cast<char *>("ohos.permission.FILE_CROSS_APP"),
@@ -126,14 +153,14 @@ private:
 class AppSpawnTestServer : public AppSpawnTestHelper {
 public:
     explicit AppSpawnTestServer(const char *cmd, bool testServer)
-        : AppSpawnTestHelper(), serviceCmd_(cmd), testServer_(testServer), protectTime_(2000)  // 2000 2s
+        : AppSpawnTestHelper(), serviceCmd_(cmd), testServer_(testServer), protectTime_(defaultProtectTime)
     {
         serverId_ = AppSpawnTestServer::serverId;
         AppSpawnTestServer::serverId++;
     }
 
     explicit AppSpawnTestServer(const char *cmd)
-        : AppSpawnTestHelper(), serviceCmd_(cmd), testServer_(true), protectTime_(2000)  // 2000 2s
+        : AppSpawnTestHelper(), serviceCmd_(cmd), testServer_(true), protectTime_(defaultProtectTime)
     {
         serverId_ = AppSpawnTestServer::serverId;
         AppSpawnTestServer::serverId++;
@@ -141,10 +168,11 @@ public:
     ~AppSpawnTestServer();
 
     void Start(void);
-    void Start(RecvMsgProcess process, uint32_t time = 2000);  // 2000 default 2s
+    void Start(RecvMsgProcess process, uint32_t time = defaultProtectTime);
     void Stop();
     void KillNWebSpawnServer();
 
+    static const uint32_t defaultProtectTime;
 private:
     void CloseCheckHandler(void);
     void StartCheckHandler(void);

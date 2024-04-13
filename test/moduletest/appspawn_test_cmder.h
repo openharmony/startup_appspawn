@@ -25,39 +25,12 @@
 #include "appspawn_msg.h"
 #include "appspawn_utils.h"
 #include "cJSON.h"
+#include "json_utils.h"
 #include "securec.h"
 #include "thread_manager.h"
 
 typedef struct TagThreadContext {
 } ThreadContext;
-
-__attribute__((always_inline)) inline char *GetStringFromJsonObj(const cJSON *json, const char *key)
-{
-    APPSPAWN_CHECK_ONLY_EXPER(key != NULL && json != NULL, NULL);
-    APPSPAWN_CHECK(cJSON_IsObject(json), return NULL, "json is not object %{public}s %s", key, cJSON_Print(json));
-    cJSON *obj = cJSON_GetObjectItemCaseSensitive(json, key);
-    APPSPAWN_CHECK_ONLY_EXPER(obj != NULL, return NULL);
-    APPSPAWN_CHECK(cJSON_IsString(obj), return NULL, "json is not string %{public}s %s", key, cJSON_Print(obj));
-    return cJSON_GetStringValue(obj);
-}
-
-__attribute__((always_inline)) inline bool GetBoolValueFromJsonObj(const cJSON *json, const char *key, bool def)
-{
-    char *value = GetStringFromJsonObj(json, key);
-    APPSPAWN_CHECK_ONLY_EXPER(value != NULL, return def);
-
-    if (strcmp(value, "true") == 0 || strcmp(value, "ON") == 0 || strcmp(value, "True") == 0) {
-        return true;
-    }
-    return false;
-}
-
-__attribute__((always_inline)) inline uint32_t GetIntValueFromJsonObj(const cJSON *json, const char *key, uint32_t def)
-{
-    APPSPAWN_CHECK(json != NULL, return def, "Invalid json");
-    APPSPAWN_CHECK(cJSON_IsObject(json), return def, "json is not object.");
-    return cJSON_GetNumberValue(cJSON_GetObjectItemCaseSensitive(json, key));
-}
 
 namespace OHOS {
 namespace AppSpawnModuleTest {
@@ -68,7 +41,14 @@ public:
         exit_ = 0;
         appSpawn_ = 1;
         dumpFlags = 0;
-        msgType_ = 0;
+        msgType_ = MAX_TYPE_INVALID;
+    }
+    AppSpawnTestCommander(int serverType)
+    {
+        exit_ = 0;
+        appSpawn_ = serverType;
+        dumpFlags = 0;
+        msgType_ = MAX_TYPE_INVALID;
     }
     ~AppSpawnTestCommander()
     {
@@ -86,10 +66,15 @@ public:
     int Run();
 
     int CreateOtherMsg(AppSpawnReqMsgHandle &reqHandle, pid_t pid);
-    int CreateMsg(AppSpawnReqMsgHandle &reqHandle, const char *defaultConfig);
+    int CreateMsg(AppSpawnReqMsgHandle &reqHandle, const char *defaultConfig,
+                    uint32_t defMsgType = MAX_TYPE_INVALID);
     int StartSendMsg();
     int SendMsg();
-    AppSpawnClientHandle GetClientHandle() { return clientHandle_; }
+    AppSpawnClientHandle GetClientHandle()
+    {
+        return clientHandle_;
+    }
+
 private:
     std::vector<std::string> split(const std::string &str, const std::string &pattern);
     int InitPtyInterface();
@@ -97,9 +82,9 @@ private:
     int AddExtTlv(const cJSON *appInfoConfig, AppSpawnReqMsgHandle reqHandle);
     int BuildMsgFromJson(const cJSON *appInfoConfig, AppSpawnReqMsgHandle reqHandle);
     int AddBundleInfoFromJson(const cJSON *appInfoConfig, AppSpawnReqMsgHandle reqHandle);
-    int GetDacInfoFromJson(const cJSON *appInfoConfig, AppDacInfo &info);
-    int GetInternetPermissionInfoFromJson(const cJSON *appInfoConfig, AppSpawnMsgInternetInfo &info);
-    int GetAccessTokenFromJson(const cJSON *appInfoConfig, AppSpawnMsgAccessToken &info);
+    int AddDacInfoFromJson(const cJSON *appInfoConfig, AppSpawnReqMsgHandle reqHandle);
+    int AddInternetPermissionInfoFromJson(const cJSON *appInfoConfig, AppSpawnReqMsgHandle reqHandle);
+    int AddAccessTokenFromJson(const cJSON *appInfoConfig, AppSpawnReqMsgHandle reqHandle);
     int AddDomainInfoFromJson(const cJSON *appInfoConfig, AppSpawnReqMsgHandle reqHandle);
     uint32_t GetUint32ArrayFromJson(const cJSON *json, const char *name, uint32_t dataArray[], uint32_t maxCount);
     static AppSpawnTestCommander *ConvertTo(const ThreadContext *context)
@@ -121,7 +106,7 @@ private:
     std::string ptyName_{};
     std::string testFileName_{};
     std::string processName_{};
-    cJSON *appInfoConfig_ { nullptr};
+    cJSON *appInfoConfig_{nullptr};
     AppSpawnClientHandle clientHandle_{nullptr};
     ThreadMgr threadMgr_{nullptr};
     ThreadTaskHandle inputHandle_{0};

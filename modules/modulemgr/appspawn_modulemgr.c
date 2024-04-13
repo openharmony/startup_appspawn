@@ -194,7 +194,11 @@ int AppSpawnHookExecute(AppSpawnHookStage stage, uint32_t flags, AppSpawnContent
     options.preHook = PreAppSpawnHookExec;
     options.postHook = PostAppSpawnHookExec;
     int ret = HookMgrExecute(GetAppSpawnHookMgr(), stage, (void *)(&forkArg), &options);
-    return ret == ERR_NO_HOOK_STAGE ? 0 : ret;
+    ret = (ret == ERR_NO_HOOK_STAGE) ? 0 : ret;
+    if (ret != 0) {
+        APPSPAWN_LOGE("Execute hook [%{public}d] result %{public}d", stage, ret);
+    }
+    return ret;
 }
 
 int AppSpawnExecuteClearEnvHook(AppSpawnContent *content, AppSpawnClient *client)
@@ -239,7 +243,8 @@ int AddAppSpawnHook(AppSpawnHookStage stage, int prio, AppSpawnHook hook)
 int ProcessMgrHookExecute(AppSpawnHookStage stage, const AppSpawnContent *content,
     const AppSpawnedProcessInfo *appInfo)
 {
-    APPSPAWN_CHECK(content != NULL && appInfo != NULL, return APPSPAWN_ARG_INVALID, "Invalid hook");
+    APPSPAWN_CHECK(content != NULL && appInfo != NULL,
+        return APPSPAWN_ARG_INVALID, "Invalid hook");
     APPSPAWN_CHECK((stage >= STAGE_SERVER_APP_ADD) && (stage <= STAGE_SERVER_APP_DIED),
         return APPSPAWN_ARG_INVALID, "Invalid stage %{public}d", (int)stage);
 

@@ -55,6 +55,7 @@ AppSpawnSandboxCfg *CreateAppSpawnSandbox(void);
 void AddDefaultVariable(void);
 
 int AppSpawnChild(AppSpawnContent *content, AppSpawnClient *client);
+int WriteMsgToChild(AppSpawningCtx *property);
 
 int WriteToFile(const char *path, int truncated, pid_t pids[], uint32_t count);
 int GetCgroupPath(const AppSpawnedProcess *appInfo, char *buffer, uint32_t buffLen);

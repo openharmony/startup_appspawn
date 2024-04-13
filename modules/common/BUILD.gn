@@ -40,8 +40,10 @@ ohos_shared_library("appspawn_common") {
   ]
   if (build_selinux) {
     defines += [ "WITH_SELINUX" ]
-    deps += [ "//third_party/selinux:libselinux" ]
-    external_deps += [ "selinux_adapter:libhap_restorecon" ]
+    external_deps += [
+      "selinux:libselinux",
+      "selinux_adapter:libhap_restorecon",
+    ]
   }
   if (build_seccomp) {
     defines += [ "WITH_SECCOMP" ]

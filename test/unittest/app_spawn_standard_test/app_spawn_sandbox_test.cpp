@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -14,21 +14,20 @@
  */
 
 #include <gtest/gtest.h>
-#include <string>
+
 #include <cerrno>
 #include <memory>
+#include <string>
 
-#include "appspawn_service.h"
-#include "appspawn_adapter.h"
 #include "appspawn_server.h"
-#include "app_spawn_stub.h"
-#include "securec.h"
+#include "appspawn_service.h"
 #include "json_utils.h"
-#include "init_hashmap.h"
-#include "le_task.h"
-#include "loop_event.h"
-#include "sandbox_utils.h"
 #include "parameter.h"
+#include "sandbox_utils.h"
+#include "securec.h"
+
+#include "app_spawn_stub.h"
+#include "app_spawn_test_helper.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -36,6 +35,8 @@ using namespace OHOS::AppSpawn;
 using nlohmann::json;
 
 namespace OHOS {
+AppSpawnTestHelper g_testHelper;
+
 class AppSpawnSandboxTest : public testing::Test {
 public:
     static void SetUpTestCase();
@@ -44,153 +45,136 @@ public:
     void TearDown();
 };
 
-void AppSpawnSandboxTest::SetUpTestCase()
-{}
+void AppSpawnSandboxTest::SetUpTestCase() {}
 
-void AppSpawnSandboxTest::TearDownTestCase()
-{}
+void AppSpawnSandboxTest::TearDownTestCase() {}
 
-void AppSpawnSandboxTest::SetUp()
-{}
+void AppSpawnSandboxTest::SetUp() {}
 
-void AppSpawnSandboxTest::TearDown()
-{}
+void AppSpawnSandboxTest::TearDown() {}
 
-static AppSpawnClientExt *GetAppSpawnClientExt(void)
+static AppSpawningCtx *GetTestAppProperty()
 {
-    static AppSpawnClientExt client;
-    return &client;
+    AppSpawnClientHandle clientHandle = nullptr;
+    int ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+    APPSPAWN_CHECK(ret == 0, return nullptr, "Failed to create reqMgr");
+    AppSpawnReqMsgHandle reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+    APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, return nullptr, "Failed to create req");
+    return g_testHelper.GetAppProperty(clientHandle, reqHandle);
 }
 
-static ClientSocket::AppProperty *GetAppProperty(void)
+static AppSpawningCtx *GetTestAppPropertyWithExtInfo(const char *name, const char *value)
 {
-    return &GetAppSpawnClientExt()->property;
-}
-
-static AppSpawnClient *GetAppSpawnClient(void)
-{
-    return &GetAppSpawnClientExt()->client;
+    AppSpawnClientHandle clientHandle = nullptr;
+    int ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+    APPSPAWN_CHECK(ret == 0, return nullptr, "Failed to create reqMgr");
+    AppSpawnReqMsgHandle reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+    APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, return nullptr, "Failed to create req");
+    AppSpawnReqMsgAddStringInfo(reqHandle, name, value);
+    return g_testHelper.GetAppProperty(clientHandle, reqHandle);
 }
 
 /**
-* @tc.name: App_Spawn_Sandbox_005
-* @tc.desc: load system config SetAppSandboxProperty by App ohos.samples.ecg.
-* @tc.type: FUNC
-* @tc.require:issueI5NTX6
-* @tc.author:
-*/
+ * @tc.name: App_Spawn_Sandbox_005
+ * @tc.desc: load system config SetAppSandboxProperty by App ohos.samples.ecg.
+ * @tc.type: FUNC
+ * @tc.require:issueI5NTX6
+ * @tc.author:
+ */
 HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_08, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_08 start";
-    ClientSocket::AppProperty *m_appProperty = GetAppProperty();
-
-    m_appProperty->uid = 1000; // the UNIX uid that the child process setuid() to after fork()
-    m_appProperty->gid = 1000; // the UNIX gid that the child process setgid() to after fork()
-    m_appProperty->gidCount = 1;
-
-    if (strcpy_s(m_appProperty->processName, APP_LEN_PROC_NAME, "ohos.samples.ecg") != 0) {
-        GTEST_LOG_(INFO) << "SetAppSandboxProperty start 1" << std::endl;
-    }
-
-    if (strcpy_s(m_appProperty->bundleName, APP_LEN_BUNDLE_NAME, "ohos.samples.ecg") != 0) {
-        GTEST_LOG_(INFO) << "SetAppSandboxProperty start 2" << std::endl;
-    }
-
-    if (strcpy_s(m_appProperty->apl, APP_APL_MAX_LEN, "normal") != 0) {
-        GTEST_LOG_(INFO) << "SetAppSandboxProperty start 3" << std::endl;
-    }
-
-    GTEST_LOG_(INFO) << "SetAppSandboxProperty section 2"  << std::endl;
-
-    m_appProperty->accessTokenId = 671201800; // 671201800 is accessTokenId
-    m_appProperty->pid = 354; // query render process exited status by render process pid
-
-    OHOS::AppSpawn::SandboxUtils::SetAppSandboxProperty(GetAppSpawnClient());
+    g_testHelper.SetTestUid(1000);  // 1000 test
+    g_testHelper.SetTestGid(1000);  // 1000 test
+    g_testHelper.SetProcessName("ohos.samples.ecg");
+    AppSpawningCtx *appProperty = GetTestAppProperty();
+    OHOS::AppSpawn::SandboxUtils::SetAppSandboxProperty(appProperty);
+    DeleteAppSpawningCtx(appProperty);
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_08 end";
 }
 
 /**
-* @tc.name: App_Spawn_Sandbox_09
-* @tc.desc: load system config SetAppSandboxProperty by App com.ohos.dlpmanager.
-* @tc.type: FUNC
-* @tc.require:issueI5NTX6
-* @tc.author:
-*/
+ * @tc.name: App_Spawn_Sandbox_09
+ * @tc.desc: load system config SetAppSandboxProperty by App com.ohos.dlpmanager.
+ * @tc.type: FUNC
+ * @tc.require:issueI5NTX6
+ * @tc.author:
+ */
 HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_09, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_09 start";
-    ClientSocket::AppProperty *m_appProperty = GetAppProperty();
-
-    m_appProperty->uid = 1000; // the UNIX uid that the child process setuid() to after fork()
-    m_appProperty->gid = 1000; // the UNIX gid that the child process setgid() to after fork()
-    m_appProperty->gidCount = 1;
-
-    if (strcpy_s(m_appProperty->processName, APP_LEN_PROC_NAME, "com.ohos.dlpmanager") != 0) {
-        GTEST_LOG_(INFO) << "SetAppSandboxProperty start 1" << std::endl;
-    }
-
-    if (strcpy_s(m_appProperty->bundleName, APP_LEN_BUNDLE_NAME, "com.ohos.dlpmanager") != 0) {
-        GTEST_LOG_(INFO) << "SetAppSandboxProperty start 2" << std::endl;
-    }
-
-    if (strcpy_s(m_appProperty->apl, APP_APL_MAX_LEN, "normal") != 0) {
-        GTEST_LOG_(INFO) << "SetAppSandboxProperty start 3" << std::endl;
-    }
-
-    GTEST_LOG_(INFO) << "SetAppSandboxProperty section 2"  << std::endl;
-    m_appProperty->accessTokenId = 671201800; // 671201800 is accessTokenId
-    m_appProperty->pid = 354; // query render process exited status by render process pid
-
-    OHOS::AppSpawn::SandboxUtils::SetAppSandboxProperty(GetAppSpawnClient());
+    g_testHelper.SetProcessName("com.ohos.dlpmanager");
+    g_testHelper.SetTestApl("normal");
+    AppSpawningCtx *appProperty = GetTestAppProperty();
+    OHOS::AppSpawn::SandboxUtils::SetAppSandboxProperty(appProperty);
+    DeleteAppSpawningCtx(appProperty);
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_09 end";
 }
 
 HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_09_1, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_09_1 start";
-    ClientSocket::AppProperty *m_appProperty = GetAppProperty();
-
-    m_appProperty->uid = 1000; // the UNIX uid that the child process setuid() to after fork()
-    m_appProperty->gid = 1000; // the UNIX gid that the child process setgid() to after fork()
-    m_appProperty->gidCount = 1;
-
-    if (strcpy_s(m_appProperty->processName, APP_LEN_PROC_NAME, "com.ohos.dlpmanager") != 0) {
-        GTEST_LOG_(INFO) << "SetAppSandboxProperty start 1" << std::endl;
-    }
-
-    if (strcpy_s(m_appProperty->apl, APP_APL_MAX_LEN, "normal") != 0) {
-        GTEST_LOG_(INFO) << "SetAppSandboxProperty start 3" << std::endl;
-    }
-
-    GTEST_LOG_(INFO) << "SetAppSandboxProperty section 2"  << std::endl;
-    m_appProperty->accessTokenId = 671201800; // 671201800 is accessTokenId
-    m_appProperty->pid = 354; // query render process exited status by render process pid
-
+    g_testHelper.SetTestUid(1000);  // 1000 test
+    g_testHelper.SetTestGid(1000);  // 1000 test
+    g_testHelper.SetProcessName("com.ohos.dlpmanager");
+    g_testHelper.SetTestApl("normal");
+    AppSpawningCtx *appProperty = GetTestAppProperty();
     int ret = OHOS::AppSpawn::SandboxUtils::SetAppSandboxProperty(nullptr);
     EXPECT_NE(ret, 0);
-    m_appProperty->bundleName[0] = '\0';
-    ret = OHOS::AppSpawn::SandboxUtils::SetAppSandboxProperty(GetAppSpawnClient());
+    DeleteAppSpawningCtx(appProperty);
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_09_1 end";
+}
+
+HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_09_2, TestSize.Level0)
+{
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_09_1 start";
+    g_testHelper.SetTestUid(1000);  // 1000 test
+    g_testHelper.SetTestGid(1000);  // 1000 test
+    g_testHelper.SetProcessName("");
+    g_testHelper.SetTestApl("normal");
+    AppSpawningCtx *appProperty = GetTestAppProperty();
+
+    int ret = OHOS::AppSpawn::SandboxUtils::SetAppSandboxProperty(appProperty);
     EXPECT_NE(ret, 0);
-    if (strcpy_s(m_appProperty->bundleName, APP_LEN_BUNDLE_NAME, "com.\\ohos.dlpmanager") != 0) {
-        GTEST_LOG_(INFO) << "SetAppSandboxProperty start 2" << std::endl;
-    }
-    ret = OHOS::AppSpawn::SandboxUtils::SetAppSandboxProperty(GetAppSpawnClient());
+    DeleteAppSpawningCtx(appProperty);
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_09_1 end";
+}
+
+HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_09_3, TestSize.Level0)
+{
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_09_1 start";
+    g_testHelper.SetTestUid(1000);  // 1000 test
+    g_testHelper.SetTestGid(1000);  // 1000 test
+    g_testHelper.SetProcessName("com.\\ohos.dlpmanager");
+    g_testHelper.SetTestApl("normal");
+    AppSpawningCtx *appProperty = GetTestAppProperty();
+    int ret = OHOS::AppSpawn::SandboxUtils::SetAppSandboxProperty(appProperty);
     EXPECT_NE(ret, 0);
-    if (strcpy_s(m_appProperty->bundleName, APP_LEN_BUNDLE_NAME, "com./ohos.dlpmanager") != 0) {
-        GTEST_LOG_(INFO) << "SetAppSandboxProperty start 2" << std::endl;
-    }
-    ret = OHOS::AppSpawn::SandboxUtils::SetAppSandboxProperty(GetAppSpawnClient());
+    DeleteAppSpawningCtx(appProperty);
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_09_1 end";
+}
+
+HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_09_4, TestSize.Level0)
+{
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_09_1 start";
+    g_testHelper.SetTestUid(1000);  // 1000 test
+    g_testHelper.SetTestGid(1000);  // 1000 test
+    g_testHelper.SetProcessName("com./ohos.dlpmanager");
+    g_testHelper.SetTestApl("normal");
+    AppSpawningCtx *appProperty = GetTestAppProperty();
+    int ret = OHOS::AppSpawn::SandboxUtils::SetAppSandboxProperty(appProperty);
     EXPECT_NE(ret, 0);
+    DeleteAppSpawningCtx(appProperty);
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_09_1 end";
 }
 
 /**
-* @tc.name: App_Spawn_Sandbox_10
-* @tc.desc: parse config define by self Set App Sandbox Property.
-* @tc.type: FUNC
-* @tc.require:issueI5NTX6
-* @tc.author:
-*/
+ * @tc.name: App_Spawn_Sandbox_10
+ * @tc.desc: parse config define by self Set App Sandbox Property.
+ * @tc.type: FUNC
+ * @tc.require:issueI5NTX6
+ * @tc.author:
+ */
 HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_10, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_10 start";
@@ -214,66 +198,25 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_10, TestSize.Level0)
     nlohmann::json j_config = nlohmann::json::parse(mJsconfig.c_str());
 
     OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config);
-
     GTEST_LOG_(INFO) << "SetAppSandboxProperty start" << std::endl;
-    ClientSocket::AppProperty *m_appProperty = GetAppProperty();
-
-    m_appProperty->uid = 1000; // the UNIX uid that the child process setuid() to after fork()
-    m_appProperty->gid = 1000; // the UNIX gid that the child process setgid() to after fork()
-
-    if (strcpy_s(m_appProperty->processName, APP_LEN_PROC_NAME, "test.appspawn") != 0) {
-        GTEST_LOG_(INFO) << "SetAppSandboxProperty start 1" << std::endl;
-    }
-    if (strcpy_s(m_appProperty->bundleName, APP_LEN_BUNDLE_NAME, "test.bundle.name") != 0) {
-        GTEST_LOG_(INFO) << "SetAppSandboxProperty start 2" << std::endl;
-    }
-    if (strcpy_s(m_appProperty->apl, APP_APL_MAX_LEN, "normal") != 0) {
-        GTEST_LOG_(INFO) << "SetAppSandboxProperty start 3" << std::endl;
-    }
-
-    GTEST_LOG_(INFO) << "SetAppSandboxProperty section 2"  << std::endl;
-    m_appProperty->accessTokenId = 671201800; // 671201800 is accessTokenId
-    m_appProperty->pid = 354; // query render process exited status by render process pid
-
-    OHOS::AppSpawn::SandboxUtils::SetAppSandboxProperty(GetAppSpawnClient());
+    g_testHelper.SetTestUid(1000);  // 1000 test
+    g_testHelper.SetTestGid(1000);  // 1000 test
+    g_testHelper.SetProcessName("test.appspawn");
+    g_testHelper.SetTestApl("normal");
+    AppSpawningCtx *appProperty = GetTestAppProperty();
+    GTEST_LOG_(INFO) << "SetAppSandboxProperty section 2" << std::endl;
+    OHOS::AppSpawn::SandboxUtils::SetAppSandboxProperty(appProperty);
+    DeleteAppSpawningCtx(appProperty);
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_10 end";
 }
 
 /**
-* @tc.name: App_Spawn_Sandbox_012
-* @tc.desc: Create an application process parameter check.
-* @tc.type: FUNC
-* @tc.require: issueI5OE8Q
-* @tc.author:
-*/
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_012, TestSize.Level0)
-{
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_012 start";
-    AppSpawnContent appContent = {0};
-    AppSpawnClient appClient = {0};
-    pid_t pid = -1;
-    AppSandboxArg *sandboxArg = (AppSandboxArg *)malloc(sizeof(AppSandboxArg));
-    EXPECT_TRUE(sandboxArg != nullptr);
-    (void)memset_s(sandboxArg, sizeof(AppSandboxArg), 0, sizeof(AppSandboxArg));
-    int ret = AppSpawnProcessMsg(sandboxArg, &pid);
-    EXPECT_TRUE(ret < 0);
-    sandboxArg->content = &appContent;
-    ret = AppSpawnProcessMsg(sandboxArg, &pid);
-    EXPECT_TRUE(ret < 0);
-    sandboxArg->client = &appClient;
-    ret = AppSpawnProcessMsg(sandboxArg, NULL);
-    EXPECT_TRUE(ret < 0);
-    free(sandboxArg);
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_012 end";
-}
-
-/**
-* @tc.name: App_Spawn_Sandbox_13
-* @tc.desc: parse config define by self Set App Sandbox Property.
-* @tc.type: FUNC
-* @tc.require:issueI5NTX6
-* @tc.author:
-*/
+ * @tc.name: App_Spawn_Sandbox_13
+ * @tc.desc: parse config define by self Set App Sandbox Property.
+ * @tc.type: FUNC
+ * @tc.require:issueI5NTX6
+ * @tc.author:
+ */
 HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_13, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_13 start";
@@ -298,36 +241,23 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_13, TestSize.Level0)
     OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config);
 
     GTEST_LOG_(INFO) << "SetAppSandboxProperty start" << std::endl;
-    ClientSocket::AppProperty *m_appProperty = GetAppProperty();
-
-    m_appProperty->uid = 1000; // the UNIX uid that the child process setuid() to after fork()
-    m_appProperty->gid = 1000; // the UNIX gid that the child process setgid() to after fork()
-
-    if (strcpy_s(m_appProperty->processName, APP_LEN_PROC_NAME, "test.appspawn") != 0) {
-        GTEST_LOG_(INFO) << "SetAppSandboxProperty start 1" << std::endl;
-    }
-    if (strcpy_s(m_appProperty->bundleName, APP_LEN_BUNDLE_NAME, "test.bundle.name") != 0) {
-        GTEST_LOG_(INFO) << "SetAppSandboxProperty start 2" << std::endl;
-    }
-    if (strcpy_s(m_appProperty->apl, APP_APL_MAX_LEN, "normal") != 0) {
-        GTEST_LOG_(INFO) << "SetAppSandboxProperty start 3" << std::endl;
-    }
-
-    GTEST_LOG_(INFO) << "SetAppSandboxProperty section 2"  << std::endl;
-    m_appProperty->accessTokenId = 671201800; // 671201800 is accessTokenId
-    m_appProperty->pid = 354; // query render process exited status by render process pid
-
-    OHOS::AppSpawn::SandboxUtils::SetAppSandboxProperty(GetAppSpawnClient());
+    g_testHelper.SetTestUid(1000);  // 1000 test
+    g_testHelper.SetTestGid(1000);  // 1000 test
+    g_testHelper.SetProcessName("test.appspawn");
+    g_testHelper.SetTestApl("normal");
+    AppSpawningCtx *appProperty = GetTestAppProperty();
+    OHOS::AppSpawn::SandboxUtils::SetAppSandboxProperty(appProperty);
+    DeleteAppSpawningCtx(appProperty);
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_13 end";
 }
 
 /**
-* @tc.name: App_Spawn_Sandbox_14
-* @tc.desc: parse sandbox config without sandbox-root label
-* @tc.type: FUNC
-* @tc.require:issueI5NTX6
-* @tc.author:
-*/
+ * @tc.name: App_Spawn_Sandbox_14
+ * @tc.desc: parse sandbox config without sandbox-root label
+ * @tc.type: FUNC
+ * @tc.require:issueI5NTX6
+ * @tc.author:
+ */
 HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_14, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_14 start";
@@ -351,36 +281,26 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_14, TestSize.Level0)
     OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config);
 
     GTEST_LOG_(INFO) << "SetAppSandboxProperty start" << std::endl;
-    ClientSocket::AppProperty *m_appProperty = GetAppProperty();
 
-    m_appProperty->uid = 1000; // the UNIX uid that the child process setuid() to after fork()
-    m_appProperty->gid = 1000; // the UNIX gid that the child process setgid() to after fork()
+    g_testHelper.SetTestUid(1000);  // 1000 test
+    g_testHelper.SetTestGid(1000);  // 1000 test
+    g_testHelper.SetProcessName("test.appspawn");
+    g_testHelper.SetTestApl("normal");
+    AppSpawningCtx *appProperty = GetTestAppProperty();
 
-    if (strcpy_s(m_appProperty->processName, APP_LEN_PROC_NAME, "test.appspawn") != 0) {
-        GTEST_LOG_(INFO) << "SetAppSandboxProperty start 1" << std::endl;
-    }
-    if (strcpy_s(m_appProperty->bundleName, APP_LEN_BUNDLE_NAME, "test.bundle.name") != 0) {
-        GTEST_LOG_(INFO) << "SetAppSandboxProperty start 2" << std::endl;
-    }
-    if (strcpy_s(m_appProperty->apl, APP_APL_MAX_LEN, "normal") != 0) {
-        GTEST_LOG_(INFO) << "SetAppSandboxProperty start 3" << std::endl;
-    }
-
-    GTEST_LOG_(INFO) << "SetAppSandboxProperty section 2"  << std::endl;
-    m_appProperty->accessTokenId = 671201800; // 671201800 is accessTokenId
-    m_appProperty->pid = 354; // query render process exited status by render process pid
-
-    OHOS::AppSpawn::SandboxUtils::SetAppSandboxProperty(GetAppSpawnClient());
+    GTEST_LOG_(INFO) << "SetAppSandboxProperty section 2" << std::endl;
+    OHOS::AppSpawn::SandboxUtils::SetAppSandboxProperty(appProperty);
+    DeleteAppSpawningCtx(appProperty);
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_14 end";
 }
 
 /**
-* @tc.name: App_Spawn_Sandbox_15
-* @tc.desc: parse app sandbox config with PackageName_index label
-* @tc.type: FUNC
-* @tc.require:issueI5NTX6
-* @tc.author:
-*/
+ * @tc.name: App_Spawn_Sandbox_15
+ * @tc.desc: parse app sandbox config with PackageName_index label
+ * @tc.type: FUNC
+ * @tc.require:issueI5NTX6
+ * @tc.author:
+ */
 HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_15, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_15 start";
@@ -405,36 +325,24 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_15, TestSize.Level0)
     OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config);
 
     GTEST_LOG_(INFO) << "SetAppSandboxProperty start" << std::endl;
-    ClientSocket::AppProperty *m_appProperty = GetAppProperty();
-
-    m_appProperty->uid = 1000; // the UNIX uid that the child process setuid() to after fork()
-    m_appProperty->gid = 1000; // the UNIX gid that the child process setgid() to after fork()
-
-    if (strcpy_s(m_appProperty->processName, APP_LEN_PROC_NAME, "test.appspawn") != 0) {
-        GTEST_LOG_(INFO) << "SetAppSandboxProperty start 1" << std::endl;
-    }
-    if (strcpy_s(m_appProperty->bundleName, APP_LEN_BUNDLE_NAME, "test.bundle.name") != 0) {
-        GTEST_LOG_(INFO) << "SetAppSandboxProperty start 2" << std::endl;
-    }
-    if (strcpy_s(m_appProperty->apl, APP_APL_MAX_LEN, "normal") != 0) {
-        GTEST_LOG_(INFO) << "SetAppSandboxProperty start 3" << std::endl;
-    }
-
-    GTEST_LOG_(INFO) << "SetAppSandboxProperty section 2"  << std::endl;
-    m_appProperty->accessTokenId = 671201800; // 671201800 is accessTokenId
-    m_appProperty->pid = 354; // query render process exited status by render process pid
-
-    OHOS::AppSpawn::SandboxUtils::SetAppSandboxProperty(GetAppSpawnClient());
+    g_testHelper.SetTestUid(1000);  // 1000 test
+    g_testHelper.SetTestGid(1000);  // 1000 test
+    g_testHelper.SetProcessName("test.appspawn");
+    g_testHelper.SetTestApl("normal");
+    AppSpawningCtx *appProperty = GetTestAppProperty();
+    GTEST_LOG_(INFO) << "SetAppSandboxProperty section 2" << std::endl;
+    OHOS::AppSpawn::SandboxUtils::SetAppSandboxProperty(appProperty);
+    DeleteAppSpawningCtx(appProperty);
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_15 end";
 }
 
 /**
-* @tc.name: App_Spawn_Sandbox_16
-* @tc.desc: parse config define by self Set App Sandbox Property.
-* @tc.type: FUNC
-* @tc.require:issueI5NTX6
-* @tc.author:
-*/
+ * @tc.name: App_Spawn_Sandbox_16
+ * @tc.desc: parse config define by self Set App Sandbox Property.
+ * @tc.type: FUNC
+ * @tc.require:issueI5NTX6
+ * @tc.author:
+ */
 HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_16, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_16 start";
@@ -452,26 +360,13 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_16, TestSize.Level0)
     OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config);
 
     GTEST_LOG_(INFO) << "SetAppSandboxProperty start" << std::endl;
-    ClientSocket::AppProperty *m_appProperty = GetAppProperty();
-
-    m_appProperty->uid = 1000; // the UNIX uid that the child process setuid() to after fork()
-    m_appProperty->gid = 1000; // the UNIX gid that the child process setgid() to after fork()
-
-    if (strcpy_s(m_appProperty->processName, APP_LEN_PROC_NAME, "test.appspawn") != 0) {
-        GTEST_LOG_(INFO) << "SetAppSandboxProperty start 1" << std::endl;
-    }
-    if (strcpy_s(m_appProperty->bundleName, APP_LEN_BUNDLE_NAME, "test.bundle.name") != 0) {
-        GTEST_LOG_(INFO) << "SetAppSandboxProperty start 2" << std::endl;
-    }
-    if (strcpy_s(m_appProperty->apl, APP_APL_MAX_LEN, "normal") != 0) {
-        GTEST_LOG_(INFO) << "SetAppSandboxProperty start 3" << std::endl;
-    }
-
-    GTEST_LOG_(INFO) << "SetAppSandboxProperty section 2"  << std::endl;
-    m_appProperty->accessTokenId = 671201800; // 671201800 is accessTokenId
-    m_appProperty->pid = 354; // query render process exited status by render process pid
-
-    OHOS::AppSpawn::SandboxUtils::SetAppSandboxProperty(GetAppSpawnClient());
+    g_testHelper.SetTestUid(1000);  // 1000 test
+    g_testHelper.SetTestGid(1000);  // 1000 test
+    g_testHelper.SetProcessName("test.appspawn");
+    g_testHelper.SetTestApl("normal");
+    AppSpawningCtx *appProperty = GetTestAppProperty();
+    OHOS::AppSpawn::SandboxUtils::SetAppSandboxProperty(appProperty);
+    DeleteAppSpawningCtx(appProperty);
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_16 end";
 }
 
@@ -481,7 +376,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_17, TestSize.Level0)
     nlohmann::json appSandboxConfig;
     bool rc = JsonUtils::GetJsonObjFromJson(appSandboxConfig, "");
     EXPECT_FALSE(rc);
-    std::string path(256, 'w'); // 256 test
+    std::string path(256, 'w');  // 256 test
     rc = JsonUtils::GetJsonObjFromJson(appSandboxConfig, path);
     EXPECT_FALSE(rc);
 
@@ -530,38 +425,6 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_18, TestSize.Level0)
     EXPECT_TRUE(ret);
 }
 
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_19, TestSize.Level0)
-{
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_19 start";
-    int ret = OHOS::AppSpawn::SandboxUtils::SetAppSandboxProperty(nullptr);
-    EXPECT_EQ(ret, -1);
-
-    ClientSocket::AppProperty *m_appProperty = GetAppProperty();
-    ret = memset_s(m_appProperty->bundleName, APP_LEN_BUNDLE_NAME, 0, APP_LEN_BUNDLE_NAME);
-    if (ret != 0) {
-        GTEST_LOG_(ERROR) << "Failed to memset_s err=" << errno;
-        ASSERT_TRUE(0);
-    }
-    ret = OHOS::AppSpawn::SandboxUtils::SetAppSandboxProperty(GetAppSpawnClient());
-    EXPECT_EQ(ret, -1);
-
-    ret = strncpy_s(m_appProperty->bundleName, APP_LEN_BUNDLE_NAME, "\\test", APP_LEN_BUNDLE_NAME - 1);
-    if (ret != 0) {
-        GTEST_LOG_(ERROR) << "Failed to strncpy_s err=" << errno;
-        ASSERT_TRUE(0);
-    }
-    ret = OHOS::AppSpawn::SandboxUtils::SetAppSandboxProperty(GetAppSpawnClient());
-    EXPECT_EQ(ret, -1);
-
-    ret = strncpy_s(m_appProperty->bundleName, APP_LEN_BUNDLE_NAME, "/test", APP_LEN_BUNDLE_NAME - 1);
-    if (ret != 0) {
-        GTEST_LOG_(ERROR) << "Failed to strncpy_s err=" << errno;
-        ASSERT_TRUE(0);
-    }
-    ret = OHOS::AppSpawn::SandboxUtils::SetAppSandboxProperty(GetAppSpawnClient());
-    EXPECT_EQ(ret, -1);
-}
-
 HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_20, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_20 start";
@@ -577,21 +440,14 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_20, TestSize.Level0)
     }";
     nlohmann::json j_config = nlohmann::json::parse(mJsconfig.c_str());
     OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config);
-    ClientSocket::AppProperty *m_appProperty = GetAppProperty();
 
-    m_appProperty->uid = 1000; // the UNIX uid that the child process setuid() to after fork()
-    m_appProperty->gid = 1000; // the UNIX gid that the child process setgid() to after fork()
+    g_testHelper.SetTestUid(1000);  // 1000 test
+    g_testHelper.SetTestGid(1000);  // 1000 test
+    g_testHelper.SetProcessName("test.appspawn");
+    g_testHelper.SetTestApl("normal");
+    AppSpawningCtx *appProperty = GetTestAppProperty();
 
-    if (strcpy_s(m_appProperty->processName, APP_LEN_PROC_NAME, "test.appspawn") != 0) {
-        GTEST_LOG_(INFO) << "Failed to strcpy_s err=" << errno << std::endl;
-    }
-    if (strcpy_s(m_appProperty->bundleName, APP_LEN_BUNDLE_NAME, "test.bundle.name") != 0) {
-        GTEST_LOG_(INFO) << "Failed to strcpy_s err=" << errno << std::endl;
-    }
-    if (strcpy_s(m_appProperty->apl, APP_APL_MAX_LEN, "normal") != 0) {
-        GTEST_LOG_(INFO) << "Failed to strcpy_s err=" << errno << std::endl;
-    }
-    OHOS::AppSpawn::SandboxUtils::SetAppSandboxProperty(GetAppSpawnClient());
+    OHOS::AppSpawn::SandboxUtils::SetAppSandboxProperty(appProperty);
 
     std::string mJsconfig1 = "{ \
         \"common\":[{ \
@@ -609,7 +465,8 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_20, TestSize.Level0)
     }";
     nlohmann::json j_config1 = nlohmann::json::parse(mJsconfig1.c_str());
     OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config1);
-    OHOS::AppSpawn::SandboxUtils::SetAppSandboxProperty(GetAppSpawnClient());
+    OHOS::AppSpawn::SandboxUtils::SetAppSandboxProperty(appProperty);
+    DeleteAppSpawningCtx(appProperty);
 }
 
 HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_21, TestSize.Level0)
@@ -630,28 +487,16 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_22, TestSize.Level0)
     nlohmann::json j_config1 = nlohmann::json::parse(mJsconfig1.c_str());
     OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config1);
 
-    ClientSocket::AppProperty *m_appProperty = GetAppProperty();
-    int ret = strcpy_s(m_appProperty->apl, APP_APL_MAX_LEN, "system_basic");
-    if (ret != 0) {
-        GTEST_LOG_(ERROR) << "Failed to strcpy_s err=" << errno;
-        ASSERT_TRUE(0);
-    }
+    g_testHelper.SetTestUid(1000);  // 1000 test
+    g_testHelper.SetTestGid(1000);  // 1000 test
+    g_testHelper.SetProcessName("test.appspawn");
+    g_testHelper.SetTestApl("system_basic");
+    AppSpawningCtx *appProperty = GetTestAppProperty();
+
     const char *strl1 = "/mnt/sandbox/100/test.bundle1";
     std::string testBundle = strl1;
-    ret = OHOS::AppSpawn::SandboxUtils::SetCommonAppSandboxProperty(m_appProperty,
-            testBundle);
-    EXPECT_EQ(ret, 0);
-
-    if (memset_s(m_appProperty->apl, APP_APL_MAX_LEN, 0, APP_APL_MAX_LEN) != 0) {
-        GTEST_LOG_(ERROR) << "Failed to memset_s err=" << errno;
-        ASSERT_TRUE(0);
-    }
-    if (strcpy_s(m_appProperty->apl, APP_APL_MAX_LEN, "system_core") != 0) {
-        GTEST_LOG_(ERROR) << "Failed to strcpy_s err=" << errno;
-        ASSERT_TRUE(0);
-    }
-    ret = OHOS::AppSpawn::SandboxUtils::SetCommonAppSandboxProperty(m_appProperty,
-            testBundle);
+    int ret = OHOS::AppSpawn::SandboxUtils::SetCommonAppSandboxProperty(appProperty, testBundle);
+    DeleteAppSpawningCtx(appProperty);
     EXPECT_EQ(ret, 0);
 }
 
@@ -660,19 +505,20 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_23, TestSize.Level0)
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_23 start";
     const char *strl1 = "/mnt/sandbox/100/test.bundle1";
     std::string testBundle = strl1;
-    int ret = OHOS::AppSpawn::SandboxUtils::SetRenderSandboxProperty(nullptr,
-            testBundle);
+    int ret = OHOS::AppSpawn::SandboxUtils::SetRenderSandboxProperty(nullptr, testBundle);
     EXPECT_EQ(ret, 0);
 }
 
 HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_24, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_24 start";
-    ClientSocket::AppProperty *m_appProperty = GetAppProperty();
-    if (strcpy_s(m_appProperty->bundleName, APP_LEN_BUNDLE_NAME, "test.bundle.name1") != 0) {
-        GTEST_LOG_(INFO) << "Failed to strcpy_s err=" << errno << std::endl;
-    }
-    m_appProperty->bundleIndex = 1;
+
+    g_testHelper.SetTestUid(1000);  // 1000 test
+    g_testHelper.SetTestGid(1000);  // 1000 test
+    g_testHelper.SetProcessName("test.bundle.name1");
+    g_testHelper.SetTestApl("system_basic");
+    AppSpawningCtx *appProperty = GetTestAppProperty();
+
     std::string mJsconfig1 = "{ \
         \"common\":[{ \
             \"app-base\":[{ \
@@ -695,7 +541,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_24, TestSize.Level0)
         }] \
     }";
     nlohmann::json j_config1 = nlohmann::json::parse(mJsconfig1.c_str());
-    int ret = OHOS::AppSpawn::SandboxUtils::DoSandboxFileCommonSymlink(m_appProperty, j_config1);
+    int ret = OHOS::AppSpawn::SandboxUtils::DoSandboxFileCommonSymlink(appProperty, j_config1);
     EXPECT_EQ(ret, 0);
 
     std::string mJsconfig2 = "{ \
@@ -711,18 +557,21 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_24, TestSize.Level0)
         }] \
     }";
     nlohmann::json j_config2 = nlohmann::json::parse(mJsconfig2.c_str());
-    ret = OHOS::AppSpawn::SandboxUtils::DoSandboxFileCommonSymlink(m_appProperty, j_config2);
-    EXPECT_NE(ret, 0);
+    ret = OHOS::AppSpawn::SandboxUtils::DoSandboxFileCommonSymlink(appProperty, j_config2);
+    DeleteAppSpawningCtx(appProperty);
+    EXPECT_EQ(ret, 0);
 }
 
 HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_25, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_25 start";
-    ClientSocket::AppProperty *m_appProperty = GetAppProperty();
-    if (strcpy_s(m_appProperty->bundleName, APP_LEN_BUNDLE_NAME, "test.bundle.wps") != 0) {
-        GTEST_LOG_(INFO) << "Failed to strcpy_s err=" << errno << std::endl;
-    }
-    m_appProperty->flags = 4; // 4 is test parameter
+    g_testHelper.SetTestUid(1000);  // 1000 test
+    g_testHelper.SetTestGid(1000);  // 1000 test
+    g_testHelper.SetProcessName("test.bundle.wps");
+    g_testHelper.SetTestApl("system_basic");
+    g_testHelper.SetTestMsgFlags(4);  // 4 is test parameter
+    AppSpawningCtx *appProperty = GetTestAppProperty();
+
     std::string mJsconfig1 = "{ \
         \"common\":[{ \
             \"app-resources\" : [{ \
@@ -746,17 +595,22 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_25, TestSize.Level0)
         }] \
     }";
     nlohmann::json j_config1 = nlohmann::json::parse(mJsconfig1.c_str());
-    int ret = OHOS::AppSpawn::SandboxUtils::DoSandboxFileCommonBind(m_appProperty, j_config1);
+    int ret = OHOS::AppSpawn::SandboxUtils::DoSandboxFileCommonBind(appProperty, j_config1);
     EXPECT_EQ(ret, 0);
 
-    ret = OHOS::AppSpawn::SandboxUtils::DoSandboxFileCommonFlagsPointHandle(m_appProperty, j_config1);
+    ret = OHOS::AppSpawn::SandboxUtils::DoSandboxFileCommonFlagsPointHandle(appProperty, j_config1);
+    DeleteAppSpawningCtx(appProperty);
     EXPECT_EQ(ret, 0);
 }
 
 HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_26, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_26 start";
-    ClientSocket::AppProperty *m_appProperty = GetAppProperty();
+    g_testHelper.SetTestUid(1000);  // 1000 test
+    g_testHelper.SetTestGid(1000);  // 1000 test
+    g_testHelper.SetProcessName("com.ohos.dlpmanager");
+    g_testHelper.SetTestApl("system_basic");
+    AppSpawningCtx *appProperty = GetTestAppProperty();
     std::string mJsconfig2 = "{ \
         \"common\":[{ \
             \"app-base\" : [{ \
@@ -772,23 +626,20 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_26, TestSize.Level0)
         }] \
     }";
     nlohmann::json j_config2 = nlohmann::json::parse(mJsconfig2.c_str());
-    if (memset_s(m_appProperty->bundleName, APP_LEN_BUNDLE_NAME, 0, APP_LEN_BUNDLE_NAME) != 0) {
-        GTEST_LOG_(INFO) << "Failed to memset_s err=" << errno << std::endl;
-    }
-    if (strcpy_s(m_appProperty->bundleName, APP_LEN_BUNDLE_NAME, "com.ohos.dlpmanager") != 0) {
-        GTEST_LOG_(INFO) << "Failed to strcpy_s err=" << errno << std::endl;
-    }
-    int ret = OHOS::AppSpawn::SandboxUtils::DoSandboxFileCommonBind(m_appProperty, j_config2);
+    int ret = OHOS::AppSpawn::SandboxUtils::DoSandboxFileCommonBind(appProperty, j_config2);
+    DeleteAppSpawningCtx(appProperty);
     EXPECT_NE(ret, 0);
 }
 
 HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_27, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_27 start";
-    ClientSocket::AppProperty *m_appProperty = GetAppProperty();
-    if (strcpy_s(m_appProperty->bundleName, APP_LEN_BUNDLE_NAME, "test.bundle.name") != 0) {
-        GTEST_LOG_(INFO) << "Failed to strcpy_s err=" << errno << std::endl;
-    }
+    g_testHelper.SetTestUid(1000);  // 1000 test
+    g_testHelper.SetTestGid(1000);  // 1000 test
+    g_testHelper.SetProcessName("test.bundle.name");
+    g_testHelper.SetTestApl("system_basic");
+    AppSpawningCtx *appProperty = GetTestAppProperty();
+
     std::string mJsconfig1 = "{ \
         \"individual\": [{ \
             \"test.bundle.name\" : [{ \
@@ -798,7 +649,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_27, TestSize.Level0)
         }] \
     }";
     nlohmann::json j_config1 = nlohmann::json::parse(mJsconfig1.c_str());
-    int ret = OHOS::AppSpawn::SandboxUtils::DoSandboxFilePrivateFlagsPointHandle(m_appProperty, j_config1);
+    int ret = OHOS::AppSpawn::SandboxUtils::DoSandboxFilePrivateFlagsPointHandle(appProperty, j_config1);
     EXPECT_EQ(ret, 0);
 
     std::string mJsconfig2 = "{ \
@@ -819,18 +670,21 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_27, TestSize.Level0)
         }] \
     }";
     nlohmann::json j_config2 = nlohmann::json::parse(mJsconfig2.c_str());
-    ret = OHOS::AppSpawn::SandboxUtils::DoSandboxFilePrivateFlagsPointHandle(m_appProperty, j_config2);
+    ret = OHOS::AppSpawn::SandboxUtils::DoSandboxFilePrivateFlagsPointHandle(appProperty, j_config2);
+    DeleteAppSpawningCtx(appProperty);
     EXPECT_EQ(ret, 0);
 }
 
 HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_28, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_28 start";
-    ClientSocket::AppProperty *m_appProperty = GetAppProperty();
-    if (strcpy_s(m_appProperty->bundleName, APP_LEN_BUNDLE_NAME, "test.bundle.name") != 0) {
-        GTEST_LOG_(INFO) << "Failed to strcpy_s err=" << errno << std::endl;
-    }
-    m_appProperty->flags = 4;
+    g_testHelper.SetTestUid(1000);  // 1000 test
+    g_testHelper.SetTestGid(1000);  // 1000 test
+    g_testHelper.SetProcessName("test.bundle.name");
+    g_testHelper.SetTestApl("system_basic");
+    g_testHelper.SetTestMsgFlags(4);  // 4 is test parameter
+    AppSpawningCtx *appProperty = GetTestAppProperty();
+
     std::string mJsconfig3 = "{ \
         \"individual\": [{ \
             \"test.bundle.name\" : [{ \
@@ -850,18 +704,21 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_28, TestSize.Level0)
         }] \
     }";
     nlohmann::json j_config3 = nlohmann::json::parse(mJsconfig3.c_str());
-    int ret = OHOS::AppSpawn::SandboxUtils::DoSandboxFilePrivateFlagsPointHandle(m_appProperty, j_config3);
+    int ret = OHOS::AppSpawn::SandboxUtils::DoSandboxFilePrivateFlagsPointHandle(appProperty, j_config3);
+    DeleteAppSpawningCtx(appProperty);
     EXPECT_EQ(ret, 0);
 }
 
 HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_29, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_29 start";
-    ClientSocket::AppProperty *m_appProperty = GetAppProperty();
-    if (strcpy_s(m_appProperty->bundleName, APP_LEN_BUNDLE_NAME, "test.bundle.name") != 0) {
-        GTEST_LOG_(INFO) << "Failed to strcpy_s err=" << errno << std::endl;
-    }
-    m_appProperty->flags = 4;
+    g_testHelper.SetTestUid(1000);  // 1000 test
+    g_testHelper.SetTestGid(1000);  // 1000 test
+    g_testHelper.SetProcessName("test.bundle.name");
+    g_testHelper.SetTestApl("system_basic");
+    g_testHelper.SetTestMsgFlags(4);  // 4 is test parameter
+    AppSpawningCtx *appProperty = GetTestAppProperty();
+
     std::string mJsconfig3 = "{ \
         \"individual\": [{ \
             \"test.bundle.name\" : [{ \
@@ -881,18 +738,20 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_29, TestSize.Level0)
         }] \
     }";
     nlohmann::json j_config3 = nlohmann::json::parse(mJsconfig3.c_str());
-    int ret = OHOS::AppSpawn::SandboxUtils::DoSandboxFilePrivateFlagsPointHandle(m_appProperty, j_config3);
+    int ret = OHOS::AppSpawn::SandboxUtils::DoSandboxFilePrivateFlagsPointHandle(appProperty, j_config3);
+    DeleteAppSpawningCtx(appProperty);
     EXPECT_EQ(ret, 0);
 }
 
 HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_30, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_30 start";
-    ClientSocket::AppProperty *m_appProperty = GetAppProperty();
-
-    if (strcpy_s(m_appProperty->apl, APP_APL_MAX_LEN, "apl123") != 0) {
-        GTEST_LOG_(INFO) << "Failed to strcpy_s err=" << errno << std::endl;
-    }
+    g_testHelper.SetTestUid(1000);  // 1000 test
+    g_testHelper.SetTestGid(1000);  // 1000 test
+    g_testHelper.SetProcessName("com.ohos.wps");
+    g_testHelper.SetTestApl("apl123");
+    g_testHelper.SetTestMsgFlags(4);  // 4 is test parameter
+    AppSpawningCtx *appProperty = GetTestAppProperty();
 
     std::string mJsconfig3 = "{ \
         \"flags\": \"DLP_MANAGER\", \
@@ -905,14 +764,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_30, TestSize.Level0)
         }] \
     }";
     nlohmann::json j_config3 = nlohmann::json::parse(mJsconfig3.c_str());
-    m_appProperty->flags = 4;
-    if (memset_s(m_appProperty->bundleName, APP_LEN_BUNDLE_NAME, 0, APP_LEN_BUNDLE_NAME) != 0) {
-        GTEST_LOG_(INFO) << "Failed to memset_s err=" << errno << std::endl;
-    }
-    if (strcpy_s(m_appProperty->bundleName, APP_LEN_BUNDLE_NAME, "com.ohos.wps") != 0) {
-        GTEST_LOG_(INFO) << "Failed to strcpy_s err=" << errno << std::endl;
-    }
-    int ret = OHOS::AppSpawn::SandboxUtils::DoAllMntPointsMount(m_appProperty, j_config3);
+    int ret = OHOS::AppSpawn::SandboxUtils::DoAllMntPointsMount(appProperty, j_config3);
     EXPECT_EQ(ret, 0);
 
     std::string mJsconfig4 = "{ \
@@ -926,17 +778,20 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_30, TestSize.Level0)
         }] \
     }";
     nlohmann::json j_config4 = nlohmann::json::parse(mJsconfig4.c_str());
-    ret = OHOS::AppSpawn::SandboxUtils::DoAllMntPointsMount(m_appProperty, j_config4);
+    ret = OHOS::AppSpawn::SandboxUtils::DoAllMntPointsMount(appProperty, j_config4);
+    DeleteAppSpawningCtx(appProperty);
     EXPECT_EQ(ret, 0);
 }
 
 HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_31, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_31 start";
-    ClientSocket::AppProperty *m_appProperty = GetAppProperty();
-    if (strcpy_s(m_appProperty->bundleName, APP_LEN_BUNDLE_NAME, "com.ohos.dlpmanager") != 0) {
-        GTEST_LOG_(INFO) << "Failed to strcpy_s err=" << errno << std::endl;
-    }
+    g_testHelper.SetTestUid(1000);  // 1000 test
+    g_testHelper.SetTestGid(1000);  // 1000 test
+    g_testHelper.SetProcessName("com.ohos.dlpmanager");
+    g_testHelper.SetTestApl("apl123");
+    AppSpawningCtx *appProperty = GetTestAppProperty();
+
     std::string mJsconfig1 = "{ \
         \"flags\": \"DLP_TEST\", \
         \"sandbox-root\" : \"/mnt/sandbox/<currentUserId>/<PackageName>\", \
@@ -948,7 +803,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_31, TestSize.Level0)
         }] \
     }";
     nlohmann::json j_config1 = nlohmann::json::parse(mJsconfig1.c_str());
-    int ret = OHOS::AppSpawn::SandboxUtils::DoAllMntPointsMount(m_appProperty, j_config1);
+    int ret = OHOS::AppSpawn::SandboxUtils::DoAllMntPointsMount(appProperty, j_config1);
     EXPECT_EQ(ret, 0);
 
     std::string mJsconfig2 = "{ \
@@ -970,11 +825,9 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_31, TestSize.Level0)
         }] \
     }";
 
-    if (strcpy_s(m_appProperty->apl, APP_APL_MAX_LEN, "apl123") != 0) {
-        GTEST_LOG_(INFO) << "Failed to strcpy_s err=" << errno << std::endl;
-    }
     nlohmann::json j_config2 = nlohmann::json::parse(mJsconfig2.c_str());
-    ret = OHOS::AppSpawn::SandboxUtils::DoAllMntPointsMount(m_appProperty, j_config2);
+    ret = OHOS::AppSpawn::SandboxUtils::DoAllMntPointsMount(appProperty, j_config2);
+    DeleteAppSpawningCtx(appProperty);
     EXPECT_TRUE(ret != 0);
 }
 
@@ -997,225 +850,227 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_32, TestSize.Level0)
 HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_34, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_34 start";
-    ClientSocket::AppProperty *m_appProperty = GetAppProperty();
+    g_testHelper.SetTestUid(1000);  // 1000 test
+    g_testHelper.SetTestGid(1000);  // 1000 test
+    g_testHelper.SetProcessName("com.ohos.dlpmanager");
+    g_testHelper.SetTestApl("apl123");
+
     const char *strl1 = "/mnt/sandbox/100/test.bundle1";
     std::string testBundle = strl1;
-
-    { // totalLength is 0
-        m_appProperty->extraInfo = {};
-        int ret = OHOS::AppSpawn::SandboxUtils::MountAllHsp(m_appProperty, testBundle);
-        EXPECT_EQ(0, ret);
-    }
-    { // data is nullptr
-        m_appProperty->extraInfo = {1, 0, nullptr};
-        int ret = OHOS::AppSpawn::SandboxUtils::MountAllHsp(m_appProperty, testBundle);
-        EXPECT_EQ(0, ret);
-    }
-    { // success
-        char hspListStr[] = "|HspList|{ \
-            \"bundles\":[\"test.bundle1\", \"test.bundle2\"], \
-            \"modules\":[\"module1\", \"module2\"], \
-            \"versions\":[\"v10001\", \"v10002\"] \
-        }|HspList|";
-        m_appProperty->extraInfo = {strlen(hspListStr), 0, hspListStr};
-        int ret = OHOS::AppSpawn::SandboxUtils::MountAllHsp(m_appProperty, testBundle);
-        EXPECT_EQ(0, ret);
-    }
-
-    m_appProperty->extraInfo = {};
+    char hspListStr[] = "{ \
+        \"bundles\":[\"test.bundle1\", \"test.bundle2\"], \
+        \"modules\":[\"module1\", \"module2\"], \
+        \"versions\":[\"v10001\", \"v10002\"] \
+    }";
+    AppSpawningCtx *appProperty = GetTestAppPropertyWithExtInfo("HspList", hspListStr);
+    int ret = OHOS::AppSpawn::SandboxUtils::MountAllHsp(appProperty, testBundle);
+    DeleteAppSpawningCtx(appProperty);
+    EXPECT_EQ(0, ret);
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_34 end";
 }
 
-static void InvalidJsonTest(ClientSocket::AppProperty* appProperty, std::string &testBundle)
+static void InvalidJsonTest(std::string &testBundle)
 {
-    char hspListStr[] = "|HspList|{|HspList|";
-    appProperty->extraInfo = {strlen(hspListStr), 0, hspListStr};
+    char hspListStr[] = "{";
+    AppSpawningCtx *appProperty = GetTestAppPropertyWithExtInfo("HspList", hspListStr);
     int ret = OHOS::AppSpawn::SandboxUtils::MountAllHsp(appProperty, testBundle);
+    DeleteAppSpawningCtx(appProperty);
     EXPECT_NE(0, ret);
 }
 
-static void NoBundleTest(ClientSocket::AppProperty* appProperty, std::string &testBundle)
+static void NoBundleTest(std::string &testBundle)
 {
-    char hspListStr[] = "|HspList|{ \
+    char hspListStr[] = "{ \
         \"modules\":[\"module1\", \"module2\"], \
         \"versions\":[\"v10001\", \"v10002\"] \
-    }|HspList|";
-    appProperty->extraInfo = {strlen(hspListStr), 0, hspListStr};
+    }";
+    AppSpawningCtx *appProperty = GetTestAppPropertyWithExtInfo("HspList", hspListStr);
     int ret = OHOS::AppSpawn::SandboxUtils::MountAllHsp(appProperty, testBundle);
+    DeleteAppSpawningCtx(appProperty);
     EXPECT_NE(0, ret);
 }
 
-static void NoModulesTest(ClientSocket::AppProperty* appProperty, std::string &testBundle)
+static void NoModulesTest(std::string &testBundle)
 {
-    char hspListStr[] = "|HspList|{ \
+    char hspListStr[] = "{ \
         \"bundles\":[\"test.bundle1\", \"test.bundle2\"], \
         \"versions\":[\"v10001\", \"v10002\"] \
-    }|HspList|";
-    appProperty->extraInfo = {strlen(hspListStr), 0, hspListStr};
+    }";
+
+    AppSpawningCtx *appProperty = GetTestAppPropertyWithExtInfo("HspList", hspListStr);
     int ret = OHOS::AppSpawn::SandboxUtils::MountAllHsp(appProperty, testBundle);
+    DeleteAppSpawningCtx(appProperty);
     EXPECT_NE(0, ret);
 }
 
-static void NoVersionsTest(ClientSocket::AppProperty* appProperty, std::string &testBundle)
+static void NoVersionsTest(std::string &testBundle)
 {
-    char hspListStr[] = "|HspList|{ \
+    char hspListStr[] = "{ \
         \"bundles\":[\"test.bundle1\", \"test.bundle2\"], \
         \"modules\":[\"module1\", \"module2\"] \
-    }|HspList|";
-    appProperty->extraInfo = {strlen(hspListStr), 0, hspListStr};
+    }";
+    AppSpawningCtx *appProperty = GetTestAppPropertyWithExtInfo("HspList", hspListStr);
     int ret = OHOS::AppSpawn::SandboxUtils::MountAllHsp(appProperty, testBundle);
+    DeleteAppSpawningCtx(appProperty);
     EXPECT_NE(0, ret);
 }
 
-static void ListSizeNotSameTest(ClientSocket::AppProperty* appProperty, std::string &testBundle)
+static void ListSizeNotSameTest(std::string &testBundle)
 {
-    char hspListStr[] = "|HspList|{ \
+    char hspListStr[] = "{ \
         \"bundles\":[\"test.bundle1\", \"test.bundle2\"], \
         \"modules\":[\"module1\"], \
         \"versions\":[\"v10001\", \"v10002\"] \
-    }|HspList|";
-    appProperty->extraInfo = {strlen(hspListStr), 0, hspListStr};
+    }";
+    AppSpawningCtx *appProperty = GetTestAppPropertyWithExtInfo("HspList", hspListStr);
     int ret = OHOS::AppSpawn::SandboxUtils::MountAllHsp(appProperty, testBundle);
+    DeleteAppSpawningCtx(appProperty);
     EXPECT_NE(0, ret);
 }
 
-static void ValueTypeIsNotArraryTest(ClientSocket::AppProperty* appProperty, std::string &testBundle)
+static void ValueTypeIsNotArraryTest(std::string &testBundle)
 {
-    char hspListStr[] = "|HspList|{ \
+    char hspListStr[] = "{ \
         \"bundles\":[\"test.bundle1\", \"test.bundle2\"], \
         \"modules\":[\"module1\", \"module2\"], \
         \"versions\": 1001 \
-    }|HspList|";
-    appProperty->extraInfo = {strlen(hspListStr), 0, hspListStr};
+    }";
+    AppSpawningCtx *appProperty = GetTestAppPropertyWithExtInfo("HspList", hspListStr);
     int ret = OHOS::AppSpawn::SandboxUtils::MountAllHsp(appProperty, testBundle);
+    DeleteAppSpawningCtx(appProperty);
     EXPECT_NE(0, ret);
 }
 
-static void ElementTypeIsNotStringTest(ClientSocket::AppProperty* appProperty, std::string &testBundle)
+static void ElementTypeIsNotStringTest(std::string &testBundle)
 {
-    char hspListStr[] = "|HspList|{ \
+    char hspListStr[] = "{ \
         \"bundles\":[\"test.bundle1\", \"test.bundle2\"], \
         \"modules\":[\"module1\", \"module2\"], \
         \"versions\": [1001, 1002] \
-    }|HspList|";
-    appProperty->extraInfo = {strlen(hspListStr), 0, hspListStr};
+    }";
+    AppSpawningCtx *appProperty = GetTestAppPropertyWithExtInfo("HspList", hspListStr);
     int ret = OHOS::AppSpawn::SandboxUtils::MountAllHsp(appProperty, testBundle);
+    DeleteAppSpawningCtx(appProperty);
     EXPECT_NE(0, ret);
 }
 
-static void ElementTypeIsNotSameTestSN(ClientSocket::AppProperty* appProperty, std::string &testBundle)
+static void ElementTypeIsNotSameTestSN(std::string &testBundle)
 {
     // element type is not same, string + number
-    char hspListStr[] = "|HspList|{ \
+    char hspListStr[] = "{ \
         \"bundles\":[\"test.bundle1\", \"test.bundle2\"], \
         \"modules\":[\"module1\", \"module2\"], \
         \"versions\": [\"v10001\", 1002] \
-    }|HspList|";
-    appProperty->extraInfo = {strlen(hspListStr), 0, hspListStr};
+    }";
+    AppSpawningCtx *appProperty = GetTestAppPropertyWithExtInfo("HspList", hspListStr);
     int ret = OHOS::AppSpawn::SandboxUtils::MountAllHsp(appProperty, testBundle);
+    DeleteAppSpawningCtx(appProperty);
     EXPECT_NE(0, ret);
 }
 
-static void ElementTypeIsNotSameTestNS(ClientSocket::AppProperty* appProperty, std::string &testBundle)
+static void ElementTypeIsNotSameTestNS(std::string &testBundle)
 {
     // element type is not same, number + string
-    char hspListStr[] = "|HspList|{ \
+    char hspListStr[] = "{ \
         \"bundles\":[\"test.bundle1\", \"test.bundle2\"], \
         \"modules\":[\"module1\", \"module2\"], \
         \"versions\": [1001, \"v10002\"] \
-    }|HspList|";
-    appProperty->extraInfo = {strlen(hspListStr), 0, hspListStr};
+    }";
+    AppSpawningCtx *appProperty = GetTestAppPropertyWithExtInfo("HspList", hspListStr);
     int ret = OHOS::AppSpawn::SandboxUtils::MountAllHsp(appProperty, testBundle);
+    DeleteAppSpawningCtx(appProperty);
     EXPECT_NE(0, ret);
 }
 
 HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_35, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_35 start";
-    ClientSocket::AppProperty *appProperty = GetAppProperty();
     const char *strl1 = "/mnt/sandbox/100/test.bundle1";
     std::string testBundle = strl1;
-    InvalidJsonTest(appProperty, testBundle);
-    NoBundleTest(appProperty, testBundle);
-    NoModulesTest(appProperty, testBundle);
-    NoVersionsTest(appProperty, testBundle);
-    ListSizeNotSameTest(appProperty, testBundle);
-    ValueTypeIsNotArraryTest(appProperty, testBundle);
-    ElementTypeIsNotStringTest(appProperty, testBundle);
-    ElementTypeIsNotSameTestSN(appProperty, testBundle);
-    ElementTypeIsNotSameTestNS(appProperty, testBundle);
-    appProperty->extraInfo = {};
+    InvalidJsonTest(testBundle);
+    NoBundleTest(testBundle);
+    NoModulesTest(testBundle);
+    NoVersionsTest(testBundle);
+    ListSizeNotSameTest(testBundle);
+    ValueTypeIsNotArraryTest(testBundle);
+    ElementTypeIsNotStringTest(testBundle);
+    ElementTypeIsNotSameTestSN(testBundle);
+    ElementTypeIsNotSameTestNS(testBundle);
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_35 end";
 }
 
 HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_36, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_36 start";
-    ClientSocket::AppProperty *m_appProperty = GetAppProperty();
     const char *strl1 = "/mnt/sandbox/100/test.bundle1";
     std::string testBundle = strl1;
 
-    { // empty name
-        char hspListStr[] = "|HspList|{ \
+    {  // empty name
+        char hspListStr[] = "{ \
             \"bundles\":[\"\", \"test.bundle2\"], \
             \"modules\":[\"module1\", \"module2\"], \
             \"versions\":[\"v10001\", \"v10002\"] \
-        }|HspList|";
-        m_appProperty->extraInfo = {strlen(hspListStr), 0, hspListStr};
-        int ret = OHOS::AppSpawn::SandboxUtils::MountAllHsp(m_appProperty, testBundle);
+        }";
+        AppSpawningCtx *appProperty = GetTestAppPropertyWithExtInfo("HspList", hspListStr);
+        int ret = OHOS::AppSpawn::SandboxUtils::MountAllHsp(appProperty, testBundle);
+        DeleteAppSpawningCtx(appProperty);
         EXPECT_NE(0, ret);
     }
-    { // name is .
-        char hspListStr[] = "|HspList|{ \
+    {  // name is .
+        char hspListStr[] = "{ \
             \"bundles\":[\".\", \"test.bundle2\"], \
             \"modules\":[\"module1\", \"module2\"], \
             \"versions\":[\"v10001\", \"v10002\"] \
-        }|HspList|";
-        m_appProperty->extraInfo = {strlen(hspListStr), 0, hspListStr};
-        int ret = OHOS::AppSpawn::SandboxUtils::MountAllHsp(m_appProperty, testBundle);
+        }";
+        AppSpawningCtx *appProperty = GetTestAppPropertyWithExtInfo("HspList", hspListStr);
+        int ret = OHOS::AppSpawn::SandboxUtils::MountAllHsp(appProperty, testBundle);
+        DeleteAppSpawningCtx(appProperty);
         EXPECT_NE(0, ret);
     }
-    { // name is ..
-        char hspListStr[] = "|HspList|{ \
+    {  // name is ..
+        char hspListStr[] = "{ \
             \"bundles\":[\"..\", \"test.bundle2\"], \
             \"modules\":[\"module1\", \"module2\"], \
             \"versions\":[\"v10001\", \"v10002\"] \
-        }|HspList|";
-        m_appProperty->extraInfo = {strlen(hspListStr), 0, hspListStr};
-        int ret = OHOS::AppSpawn::SandboxUtils::MountAllHsp(m_appProperty, testBundle);
+        }";
+        AppSpawningCtx *appProperty = GetTestAppPropertyWithExtInfo("HspList", hspListStr);
+        int ret = OHOS::AppSpawn::SandboxUtils::MountAllHsp(appProperty, testBundle);
+        DeleteAppSpawningCtx(appProperty);
         EXPECT_NE(0, ret);
     }
-    { // name contains /
-        char hspListStr[] = "|HspList|{ \
+    {  // name contains /
+        char hspListStr[] = "{ \
             \"bundles\":[\"test/bundle1\", \"test.bundle2\"], \
             \"modules\":[\"module1\", \"module2\"], \
             \"versions\":[\"v10001\", \"v10002\"] \
-        }|HspList|";
-        m_appProperty->extraInfo = {strlen(hspListStr), 0, hspListStr};
-        int ret = OHOS::AppSpawn::SandboxUtils::MountAllHsp(m_appProperty, testBundle);
+        }";
+        AppSpawningCtx *appProperty = GetTestAppPropertyWithExtInfo("HspList", hspListStr);
+        int ret = OHOS::AppSpawn::SandboxUtils::MountAllHsp(appProperty, testBundle);
+        DeleteAppSpawningCtx(appProperty);
         EXPECT_NE(0, ret);
     }
-
-    m_appProperty->extraInfo = {};
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_36 end";
 }
 
 HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_37, TestSize.Level0)
 {
     APPSPAWN_LOGI("App_Spawn_Sandbox_37 start");
-    ClientSocket::AppProperty *m_appProperty = GetAppProperty();
-    m_appProperty->uid = 1000;
-    m_appProperty->gid = 1000;
-    (void)strcpy_s(m_appProperty->bundleName, sizeof(m_appProperty->bundleName), "ohos.samples.xxx");
-    AppSpawnContent content;
+    g_testHelper.SetTestUid(1000);  // 1000 test
+    g_testHelper.SetTestGid(1000);  // 1000 test
+    g_testHelper.SetProcessName("ohos.samples.xxx");
+    g_testHelper.SetTestApl("system_basic");
+    AppSpawningCtx *appProperty = GetTestAppProperty();
+
+    AppSpawnMgr content;
     LoadAppSandboxConfig(&content);
     std::string sandboxPackagePath = "/mnt/sandbox/100/";
-    const std::string bundleName = m_appProperty->bundleName;
+    const std::string bundleName = GetBundleName(appProperty);
     sandboxPackagePath += bundleName;
 
-    int ret = SandboxUtils::SetPrivateAppSandboxProperty(m_appProperty);
+    int ret = SandboxUtils::SetPrivateAppSandboxProperty(appProperty);
     EXPECT_EQ(0, ret);
-    ret = SandboxUtils::SetCommonAppSandboxProperty(m_appProperty, sandboxPackagePath);
+    ret = SandboxUtils::SetCommonAppSandboxProperty(appProperty, sandboxPackagePath);
+    DeleteAppSpawningCtx(appProperty);
     EXPECT_EQ(0, ret);
     APPSPAWN_LOGI("App_Spawn_Sandbox_37 end");
 }
@@ -1223,11 +1078,12 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_37, TestSize.Level0)
 HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_38, TestSize.Level0)
 {
     APPSPAWN_LOGI("App_Spawn_Sandbox_38 start");
-    ClientSocket::AppProperty *m_appProperty = GetAppProperty();
-    m_appProperty->uid = 1000;
-    m_appProperty->gid = 1000;
+    g_testHelper.SetTestUid(1000);  // 1000 test
+    g_testHelper.SetTestGid(1000);  // 1000 test
+    g_testHelper.SetProcessName("com.example.deviceinfo");
+    g_testHelper.SetTestApl("system_basic");
+    AppSpawningCtx *appProperty = GetTestAppProperty();
 
-    (void)strcpy_s(m_appProperty->bundleName, sizeof(m_appProperty->bundleName), "com.example.deviceinfo");
     std::string pJsconfig1 = "{ \
         \"common\":[],                      \
         \"individual\": [ {                  \
@@ -1250,126 +1106,82 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_38, TestSize.Level0)
         }] \
         }] \
     }";
-    try {
-        nlohmann::json p_config1 = nlohmann::json::parse(pJsconfig1.c_str());
-        OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(p_config1);
-    } catch (nlohmann::detail::exception& e) {
-        APPSPAWN_LOGE("App_Spawn_Sandbox_38 Invalid json");
-        EXPECT_EQ(0, 1);
-    }
+
+    nlohmann::json p_config1 = nlohmann::json::parse(pJsconfig1.c_str());
+    OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(p_config1);
+
     std::string sandboxPackagePath = "/mnt/sandbox/100/";
-    const std::string bundleName = m_appProperty->bundleName;
+    const std::string bundleName = GetBundleName(appProperty);
     sandboxPackagePath += bundleName;
-    int ret = SandboxUtils::SetPrivateAppSandboxProperty(m_appProperty);
+    int ret = SandboxUtils::SetPrivateAppSandboxProperty(appProperty);
     EXPECT_EQ(0, ret);
-    ret = SandboxUtils::SetCommonAppSandboxProperty(m_appProperty, sandboxPackagePath);
+    ret = SandboxUtils::SetCommonAppSandboxProperty(appProperty, sandboxPackagePath);
+    DeleteAppSpawningCtx(appProperty);
     EXPECT_EQ(0, ret);
     APPSPAWN_LOGI("App_Spawn_Sandbox_38 end");
 }
 
 /**
-* @tc.name: App_Spawn_Sandbox_39
-* @tc.desc: load overlay config SetAppSandboxProperty by App com.ohos.demo.
-* @tc.type: FUNC
-* @tc.require:issueI7D0H9
-* @tc.author:
-*/
+ * @tc.name: App_Spawn_Sandbox_39
+ * @tc.desc: load overlay config SetAppSandboxProperty by App com.ohos.demo.
+ * @tc.type: FUNC
+ * @tc.require:issueI7D0H9
+ * @tc.author:
+ */
 HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_39, TestSize.Level0)
 {
     APPSPAWN_LOGI("App_Spawn_Sandbox_39 start");
-    ClientSocket::AppProperty *m_appProperty = GetAppProperty();
-    m_appProperty->uid = 1000;
-    m_appProperty->gid = 1000;
-    m_appProperty->gidCount = 1;
-    m_appProperty->flags |= 0x100;
-    m_appProperty->extraInfo.totalLength = 55;
-    string overlayInfo = "|Overlay|/data/app/el1/bundle/public/com.ohos.demo/feature.hsp|";
-    overlayInfo+="/data/app/el1/bundle/public/com.ohos.demo/feature.hsp||Overlay|";
-    m_appProperty->extraInfo.data = new char[overlayInfo.length() + 1];
-    if (strcpy_s(m_appProperty->extraInfo.data, overlayInfo.length() + 1, overlayInfo.c_str()) != 0) {
-        GTEST_LOG_(INFO) << "SetAppSandboxProperty start 1" << std::endl;
-    }
+    g_testHelper.SetTestUid(1000);  // 1000 test
+    g_testHelper.SetTestGid(1000);  // 1000 test
+    g_testHelper.SetProcessName("com.ohos.demo");
+    g_testHelper.SetTestApl("normal");
+    g_testHelper.SetTestMsgFlags(0x100);  // 0x100 is test parameter
+
+    std::string overlayInfo = "/data/app/el1/bundle/public/com.ohos.demo/feature.hsp|";
+    overlayInfo += "/data/app/el1/bundle/public/com.ohos.demo/feature.hsp|";
+    AppSpawningCtx *appProperty = GetTestAppPropertyWithExtInfo("Overlay", overlayInfo.c_str());
     std::string sandBoxRootDir = "/mnt/sandbox/100/com.ohos.demo";
-
-    if (strcpy_s(m_appProperty->processName, APP_LEN_PROC_NAME, "com.ohos.demo") != 0) {
-        GTEST_LOG_(INFO) << "SetAppSandboxProperty start 2" << std::endl;
-    }
-
-    if (strcpy_s(m_appProperty->bundleName, APP_LEN_BUNDLE_NAME, "com.ohos.demo") != 0) {
-        GTEST_LOG_(INFO) << "SetAppSandboxProperty start 3" << std::endl;
-    }
-
-    if (strcpy_s(m_appProperty->apl, APP_APL_MAX_LEN, "normal") != 0) {
-        GTEST_LOG_(INFO) << "SetAppSandboxProperty start 4" << std::endl;
-    }
-
-    GTEST_LOG_(INFO) << "SetAppSandboxProperty section 2"  << std::endl;
-    m_appProperty->accessTokenId = 671201800; // 671201800 is accessTokenId
-    m_appProperty->pid = 354; // query render process exited status by render process pid
-
-    int32_t ret = OHOS::AppSpawn::SandboxUtils::SetOverlayAppSandboxProperty(m_appProperty, sandBoxRootDir);
+    int32_t ret = OHOS::AppSpawn::SandboxUtils::SetOverlayAppSandboxProperty(appProperty, sandBoxRootDir);
+    DeleteAppSpawningCtx(appProperty);
     EXPECT_EQ(0, ret);
-    m_appProperty->flags &= ~0x100;
-    m_appProperty->extraInfo.totalLength = 0;
-    if (m_appProperty->extraInfo.data != nullptr) {
-        delete [] m_appProperty->extraInfo.data;
-    }
-    m_appProperty->extraInfo = {};
-
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_39 end";
 }
 /**
-* @tc.name: App_Spawn_Sandbox_40
-* @tc.desc: load group info config SetAppSandboxProperty
-* @tc.type: FUNC
-* @tc.require:issueI7FUPV
-* @tc.author:
-*/
+ * @tc.name: App_Spawn_Sandbox_40
+ * @tc.desc: load group info config SetAppSandboxProperty
+ * @tc.type: FUNC
+ * @tc.require:issueI7FUPV
+ * @tc.author:
+ */
 HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_40, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_40 start";
-    ClientSocket::AppProperty *m_appProperty = GetAppProperty();
-    m_appProperty->uid = 1100;
-    m_appProperty->gid = 1100;
-    m_appProperty->gidCount = 2;
-    m_appProperty->flags |= 0x100;
+    g_testHelper.SetTestUid(1000);  // 1000 test
+    g_testHelper.SetTestGid(1000);  // 1000 test
+    g_testHelper.SetProcessName("com.ohos.demo");
+    g_testHelper.SetTestApl("normal");
+    g_testHelper.SetTestMsgFlags(0x100);
     std::string sandboxPrefix = "/mnt/sandbox/100/testBundle";
-
-    if (strcpy_s(m_appProperty->bundleName, APP_LEN_BUNDLE_NAME, "testBundle") != 0) {
-        GTEST_LOG_(INFO) << "SetAppSandboxProperty set bundleName" << std::endl;
-    }
-    { // totalLength is 0
-        m_appProperty->extraInfo = {};
-        int ret = OHOS::AppSpawn::SandboxUtils::MountAllGroup(m_appProperty, sandboxPrefix);
-        EXPECT_EQ(0, ret);
-    }
-    { // data is nullptr
-        m_appProperty->extraInfo = {1, 0, nullptr};
-        int ret = OHOS::AppSpawn::SandboxUtils::MountAllGroup(m_appProperty, sandboxPrefix);
-        EXPECT_EQ(0, ret);
-    }
-    { // success
-        char dataGroupInfoListStr[] = "|DataGroup|{ \
-            \"dataGroupId\":[\"1234abcd5678efgh\", \"abcduiop1234\"], \
-            \"dir\":[\"/data/app/el2/100/group/091a68a9-2cc9-4279-8849-28631b598975\", \
-                     \"/data/app/el2/100/group/ce876162-fe69-45d3-aa8e-411a047af564\"], \
-            \"gid\":[\"20100001\", \"20100002\"] \
-        }|DataGroup|";
-        m_appProperty->extraInfo = {strlen(dataGroupInfoListStr), 0, dataGroupInfoListStr};
-        int ret = OHOS::AppSpawn::SandboxUtils::MountAllGroup(m_appProperty, sandboxPrefix);
-        EXPECT_EQ(0, ret);
-    }
-    m_appProperty->extraInfo = {};
+    char dataGroupInfoListStr[] = "{ \
+        \"dataGroupId\":[\"1234abcd5678efgh\", \"abcduiop1234\"], \
+        \"dir\":[\"/data/app/el2/100/group/091a68a9-2cc9-4279-8849-28631b598975\", \
+                    \"/data/app/el2/100/group/ce876162-fe69-45d3-aa8e-411a047af564\"], \
+        \"gid\":[\"20100001\", \"20100002\"] \
+    }";
+    AppSpawningCtx *appProperty = GetTestAppPropertyWithExtInfo("DataGroup", dataGroupInfoListStr);
+    int ret = OHOS::AppSpawn::SandboxUtils::MountAllGroup(appProperty, sandboxPrefix);
+    DeleteAppSpawningCtx(appProperty);
+    EXPECT_EQ(0, ret);
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_40 end";
 }
 
 /**
-* @tc.name: App_Spawn_Sandbox_41
-* @tc.desc: parse namespace config.
-* @tc.type: FUNC
-* @tc.require:issueI8B63M
-* @tc.author:
-*/
+ * @tc.name: App_Spawn_Sandbox_41
+ * @tc.desc: parse namespace config.
+ * @tc.type: FUNC
+ * @tc.require:issueI8B63M
+ * @tc.author:
+ */
 HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_41, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_41 start";
@@ -1406,12 +1218,12 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_41, TestSize.Level0)
 }
 
 /**
-* @tc.name: App_Spawn_Sandbox_42
-* @tc.desc: parse config file for fstype .
-* @tc.type: FUNC
-* @tc.require: https://gitee.com/openharmony/startup_appspawn/issues/I8OF9K
-* @tc.author:
-*/
+ * @tc.name: App_Spawn_Sandbox_42
+ * @tc.desc: parse config file for fstype .
+ * @tc.type: FUNC
+ * @tc.require: https://gitee.com/openharmony/startup_appspawn/issues/I8OF9K
+ * @tc.author:
+ */
 HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_42, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_42 start";
@@ -1442,12 +1254,12 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_42, TestSize.Level0)
 }
 
 /**
-* @tc.name: App_Spawn_Sandbox_43
-* @tc.desc: get sandbox mount config when section is common.
-* @tc.type: FUNC
-* @tc.require: https://gitee.com/openharmony/startup_appspawn/issues/I8OF9K
-* @tc.author:
-*/
+ * @tc.name: App_Spawn_Sandbox_43
+ * @tc.desc: get sandbox mount config when section is common.
+ * @tc.type: FUNC
+ * @tc.require: https://gitee.com/openharmony/startup_appspawn/issues/I8OF9K
+ * @tc.author:
+ */
 HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_43, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_43 start";
@@ -1475,12 +1287,12 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_43, TestSize.Level0)
 }
 
 /**
-* @tc.name: App_Spawn_Sandbox_44
-* @tc.desc: get sandbox mount config when section is permission.
-* @tc.type: FUNC
-* @tc.require: https://gitee.com/openharmony/startup_appspawn/issues/I8OF9K
-* @tc.author:
-*/
+ * @tc.name: App_Spawn_Sandbox_44
+ * @tc.desc: get sandbox mount config when section is permission.
+ * @tc.type: FUNC
+ * @tc.require: https://gitee.com/openharmony/startup_appspawn/issues/I8OF9K
+ * @tc.author:
+ */
 HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_44, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_44 start";
@@ -1512,12 +1324,12 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_44, TestSize.Level0)
 }
 
 /**
-* @tc.name: App_Spawn_Sandbox_45
-* @tc.desc: parse config file for options.
-* @tc.type: FUNC
-* @tc.require: https://gitee.com/openharmony/startup_appspawn/issues/I8OF9K
-* @tc.author:
-*/
+ * @tc.name: App_Spawn_Sandbox_45
+ * @tc.desc: parse config file for options.
+ * @tc.type: FUNC
+ * @tc.require: https://gitee.com/openharmony/startup_appspawn/issues/I8OF9K
+ * @tc.author:
+ */
 HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_45, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_45 start";
@@ -1545,4 +1357,4 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_45, TestSize.Level0)
     }
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_45 end";
 }
-} // namespace OHOS
+}  // namespace OHOS

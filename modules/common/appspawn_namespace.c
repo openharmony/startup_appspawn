@@ -149,6 +149,7 @@ static int NsInitFunc()
     setcon("u:r:pid_ns_init:s0");
     char *argv[] = {"/system/bin/pid_ns_init", NULL};
     execve("/system/bin/pid_ns_init", argv, NULL);
+    _exit(0);
     return 0;
 }
 
@@ -172,6 +173,9 @@ static int PreLoadEnablePidNs(AppSpawnMgr *content)
 {
     APPSPAWN_LOGI("Enable pid namespace flags: 0x%{public}x", content->content.sandboxNsFlags);
     if (IsColdRunMode(content)) {
+        return 0;
+    }
+    if (IsNWebSpawnMode(content)) { // only for appspawn
         return 0;
     }
     if (!(content->content.sandboxNsFlags & CLONE_NEWPID)) {
@@ -222,7 +226,7 @@ static int SetPidNamespace(int nsPidFd, int nsType)
 {
     APPSPAWN_LOGI("SetPidNamespace 0x%{public}x", nsType);
     if (setns(nsPidFd, nsType) < 0) {
-        APPSPAWN_LOGE("set pid namespace nsType:%{pudblic}d failed", nsType);
+        APPSPAWN_LOGE("set pid namespace nsType:%{public}d failed", nsType);
         return -1;
     }
     return 0;

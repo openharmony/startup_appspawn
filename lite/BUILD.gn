@@ -47,6 +47,7 @@ executable("appspawn") {
     ".",
     "../common",
     "//base/startup/appspawn/interfaces/innerkits/include",
+    "//base/startup/appspawn/util/include",
     "//base/startup/init/interfaces/innerkits/include",
     "//foundation/systemabilitymgr/samgr_lite/interfaces/kits/samgr",
     "//foundation/systemabilitymgr/samgr_lite/interfaces/kits/registry",

@@ -20,7 +20,7 @@
 #include <unistd.h>
 
 #include <sys/ipc.h>
-#include <sys/shm.h>
+#include <sys/mman.h>
 #include <sys/mount.h>
 #include <sys/signalfd.h>
 #include <sys/socket.h>
@@ -231,7 +231,7 @@ AppSpawningCtx *CreateAppSpawningCtx(void)
     property->forkCtx.timer = NULL;
     property->forkCtx.fd[0] = -1;
     property->forkCtx.fd[1] = -1;
-    property->forkCtx.shmId = -1;
+    property->forkCtx.childMsg = NULL;
     property->message = NULL;
     property->pid = 0;
     property->state = APP_STATE_IDLE;
@@ -245,8 +245,22 @@ AppSpawningCtx *CreateAppSpawningCtx(void)
 void DeleteAppSpawningCtx(AppSpawningCtx *property)
 {
     APPSPAWN_CHECK_ONLY_EXPER(property != NULL, return);
+    APPSPAWN_LOGV("DeleteAppSpawningCtx");
+
+    if (property->forkCtx.childMsg != NULL) {
+        munmap((char *)property->forkCtx.childMsg, property->forkCtx.msgSize);
+        property->forkCtx.childMsg = NULL;
+        if (property->message != NULL) {
+            char path[PATH_MAX] = {};
+            int len = sprintf_s(path, sizeof(path),
+                APPSPAWN_MSG_DIR "/%s_%d", property->message->msgHeader.processName, property->client.id);
+            if (len > 0) {
+                unlink(path);
+            }
+        }
+    }
     DeleteAppSpawnMsg(property->message);
-    APPSPAWN_LOGV("DeleteAppSpawningCtx %{public}d %{public}d", property->forkCtx.fd[0], property->forkCtx.fd[1]);
+
     OH_ListRemove(&property->node);
     if (property->forkCtx.timer) {
         LE_StopTimer(LE_GetDefaultLoop(), property->forkCtx.timer);
@@ -266,10 +280,7 @@ void DeleteAppSpawningCtx(AppSpawningCtx *property)
     if (property->forkCtx.fd[1] >= 0) {
         close(property->forkCtx.fd[1]);
     }
-    if (property->forkCtx.shmId >= 0) {
-        (void)shmctl(property->forkCtx.shmId, IPC_RMID, NULL);
-        property->forkCtx.shmId = -1;
-    }
+
     free(property);
 }
 
@@ -346,7 +357,9 @@ static int DumpAppQueue(ListNode *node, void *data)
 static int DumpExtData(ListNode *node, void *data)
 {
     AppSpawnExtData *extData = ListEntry(node, AppSpawnExtData, node);
-    extData->dumpNode(extData);
+    if (extData->dumpNode) {
+        extData->dumpNode(extData);
+    }
     return 0;
 }
 

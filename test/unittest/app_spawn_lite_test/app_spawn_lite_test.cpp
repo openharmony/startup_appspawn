@@ -394,11 +394,9 @@ HWTEST_F(AppSpawnLiteTest, SetContentFunctionTest_001, TestSize.Level0)
     int ret = SplitMessage(validStr.c_str(), validStr.length(), &liteClient->message);
     EXPECT_EQ(ret, 0);
 
-    EXPECT_EQ(content->setProcessName(content, &liteClient->client, (char*)longProcName.c_str(),
-        longProcNameLen), 0);
-    EXPECT_EQ(content->setKeepCapabilities(content, &liteClient->client), 0);
-    EXPECT_EQ(content->setUidGid(content, &liteClient->client), 0);
-    EXPECT_EQ(content->setCapabilities(content, &liteClient->client), 0);
+    ret = AppSpawnExecuteSpawningHook(content, &liteClient->client);
+    EXPECT_EQ(ret, 0);
+
     content->runChildProcessor(content, &liteClient->client);
     free(liteClient);
     GTEST_LOG_(INFO) << "SetContentFunctionTest_001 end";

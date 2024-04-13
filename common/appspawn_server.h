@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,135 +17,52 @@
 #define APPSPAWN_SERVER_H
 #include <stdint.h>
 #include <stdio.h>
-#include <string.h>
 #include <unistd.h>
-#include <time.h>
-#include <stdbool.h>
-#include "beget_ext.h"
-#include "hilog/log.h"
-#include "securec.h"
+
+#include "appspawn_utils.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define UNUSED(x) (void)(x)
-#define APP_COLD_START 0x01
-#define ERR_PIPE_FAIL (-100)
-#define MAX_LEN_SHORT_NAME 16
-#define WAIT_DELAY_US (100 * 1000)  // 100ms
-#define GID_FILE_ACCESS 1006  // only used for ExternalFileManager.hap
-#define GID_USER_DATA_RW 1008
-
-#define APPSPAWN_CHECK_EXIT "AppSpawnCheckUnexpectedExitCall"
+typedef enum {
+    MODE_FOR_APP_SPAWN,
+    MODE_FOR_NWEB_SPAWN,
+    MODE_FOR_APP_COLD_RUN,
+    MODE_FOR_NWEB_COLD_RUN,
+    MODE_INVALID
+} RunMode;
 
 typedef struct AppSpawnClient {
     uint32_t id;
-    uint32_t flags; // Save negotiated flags
-    uint32_t cloneFlags; // for clone flags
+    uint32_t flags;  // Save negotiated flags
 } AppSpawnClient;
 
-#define MAX_SOCKEYT_NAME_LEN 128
 typedef struct AppSpawnContent {
     char *longProcName;
     uint32_t longProcNameLen;
     uint32_t sandboxNsFlags;
-    bool isNweb;
-    int nsSelfPidFd; // ns pid fd of appspawn
-    int nsInitPidFd; // ns pid fd of pid_ns_init
-    
+    RunMode mode;
+
     // system
-    void (*loadExtendLib)(struct AppSpawnContent *content);
-    int (*initAppSpawn)(struct AppSpawnContent *content);
     void (*runAppSpawn)(struct AppSpawnContent *content, int argc, char *const argv[]);
-    void (*setUidGidFilter)(struct AppSpawnContent *content);
-
-    // for child
-    void (*clearEnvironment)(struct AppSpawnContent *content, AppSpawnClient *client);
-    void (*initDebugParams)(struct AppSpawnContent *content, AppSpawnClient *client);
-    int (*setAppAccessToken)(struct AppSpawnContent *content, AppSpawnClient *client);
-    int (*setAppSandbox)(struct AppSpawnContent *content, AppSpawnClient *client);
-    int (*setKeepCapabilities)(struct AppSpawnContent *content, AppSpawnClient *client);
-    int (*setFileDescriptors)(struct AppSpawnContent *content, AppSpawnClient *client);
-    int (*setEnvInfo)(struct AppSpawnContent *content, AppSpawnClient *client);
-    int (*setProcessName)(struct AppSpawnContent *content, AppSpawnClient *client,
-    char *longProcName, uint32_t longProcNameLen);
-    int (*setUidGid)(struct AppSpawnContent *content, AppSpawnClient *client);
-    int (*setCapabilities)(struct AppSpawnContent *content, AppSpawnClient *client);
-    int (*setXpmConfig)(struct AppSpawnContent *content, AppSpawnClient *client);
-
     void (*notifyResToParent)(struct AppSpawnContent *content, AppSpawnClient *client, int result);
-    void (*runChildProcessor)(struct AppSpawnContent *content, AppSpawnClient *client);
-#ifndef ASAN_DETECTOR
-    int (*setAsanEnabledEnv)(struct AppSpawnContent *content, AppSpawnClient *client);
-#endif
-    // for pid namespace
-    int (*enablePidNs)(struct AppSpawnContent *content);
-
+    int (*runChildProcessor)(struct AppSpawnContent *content, AppSpawnClient *client);
     // for cold start
     int (*coldStartApp)(struct AppSpawnContent *content, AppSpawnClient *client);
-    int (*getWrapBundleNameValue)(struct AppSpawnContent *content, AppSpawnClient *client);
-    int (*setSeccompFilter)(struct AppSpawnContent *content, AppSpawnClient *client);
-    void (*handleInternetPermission)(const AppSpawnClient *client);
-    int (*waitForDebugger)(AppSpawnClient *client);
 } AppSpawnContent;
 
-typedef struct {
+typedef struct TagAppSpawnForkArg {
     struct AppSpawnContent *content;
     AppSpawnClient *client;
-} AppSandboxArg;
+} AppSpawnForkArg;
 
 AppSpawnContent *AppSpawnCreateContent(const char *socketName, char *longProcName, uint32_t longProcNameLen, int cold);
-int AppSpawnProcessMsg(AppSandboxArg *sandbox, pid_t *childPid);
-int DoStartApp(struct AppSpawnContent *content, AppSpawnClient *client, char *longProcName, uint32_t longProcNameLen);
-long long DiffTime(struct timespec *startTime);
-pid_t AppSpawnFork(int (*childFunc)(void *arg), void *args);
-#define UNUSED(x) (void)(x)
-
-#ifndef OHOS_LITE
-
-#undef LOG_TAG
-#define LOG_TAG "APPSPAWN"
-#undef LOG_DOMAIN
-#define LOG_DOMAIN (BASE_DOMAIN + 0x11)
-
-#define APPSPAWN_LOGI(fmt, ...) \
-    HILOG_INFO(LOG_CORE, "[%{public}s:%{public}d]" fmt, (FILE_NAME), (__LINE__), ##__VA_ARGS__)
-#define APPSPAWN_LOGE(fmt, ...) \
-    HILOG_ERROR(LOG_CORE, "[%{public}s:%{public}d]" fmt, (FILE_NAME), (__LINE__), ##__VA_ARGS__)
-#define APPSPAWN_LOGV(fmt, ...) \
-    HILOG_DEBUG(LOG_CORE, "[%{public}s:%{public}d]" fmt, (FILE_NAME), (__LINE__), ##__VA_ARGS__)
-#define APPSPAWN_LOGW(fmt, ...) \
-    HILOG_WARN(LOG_CORE, "[%{public}s:%{public}d]" fmt, (FILE_NAME), (__LINE__), ##__VA_ARGS__)
-#define APPSPAWN_LOGF(fmt, ...) \
-    HILOG_FATAL(LOG_CORE, "[%{public}s:%{public}d]" fmt, (FILE_NAME), (__LINE__), ##__VA_ARGS__)
-
-#else
-
-#define APPSPAWN_LOGI(fmt, ...) \
-    HILOG_INFO(HILOG_MODULE_HIVIEW, "[%s:%d]" fmt,  (FILE_NAME), (__LINE__), ##__VA_ARGS__)
-#define APPSPAWN_LOGE(fmt, ...) \
-    HILOG_ERROR(HILOG_MODULE_HIVIEW, "[%s:%d]" fmt,  (FILE_NAME), (__LINE__), ##__VA_ARGS__)
-#define APPSPAWN_LOGV(fmt, ...) \
-    HILOG_DEBUG(HILOG_MODULE_HIVIEW, "[%s:%d]" fmt,  (FILE_NAME), (__LINE__), ##__VA_ARGS__)
-#define APPSPAWN_LOGW(fmt, ...) \
-    HILOG_FATAL(HILOG_MODULE_HIVIEW, "[%s:%d]" fmt,  (FILE_NAME), (__LINE__), ##__VA_ARGS__)
-#endif
-
-#define APPSPAWN_CHECK(retCode, exper, fmt, ...) \
-    if (!(retCode)) {                    \
-        APPSPAWN_LOGE(fmt, ##__VA_ARGS__);         \
-        exper;                           \
-    }
-
-#define APPSPAWN_CHECK_ONLY_EXPER(retCode, exper) \
-    if (!(retCode)) {                  \
-        exper;                 \
-    }                         \
-
-#define APPSPAWN_CHECK_ONLY_LOG(retCode, fmt, ...) \
-    if (!(retCode)) {                    \
-        APPSPAWN_LOGE(fmt, ##__VA_ARGS__);      \
-    }
+int AppSpawnExecuteClearEnvHook(AppSpawnContent *content, AppSpawnClient *client);
+int AppSpawnExecuteSpawningHook(AppSpawnContent *content, AppSpawnClient *client);
+int AppSpawnExecutePreReplyHook(AppSpawnContent *content, AppSpawnClient *client);
+int AppSpawnExecutePostReplyHook(AppSpawnContent *content, AppSpawnClient *client);
+void AppSpawnEnvClear(AppSpawnContent *content, AppSpawnClient *client);
+int AppSpawnProcessMsg(AppSpawnContent *content, AppSpawnClient *client, pid_t *childPid);
 
 #ifdef __cplusplus
 }
