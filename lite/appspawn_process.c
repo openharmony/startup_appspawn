@@ -180,18 +180,46 @@ static void RunChildProcessor(AppSpawnContent *content, AppSpawnClient *client)
 void SetContentFunction(AppSpawnContent *content)
 {
     APPSPAWN_LOGI("SetContentFunction");
-    content->setProcessName = SetProcessName;
-    content->setKeepCapabilities = SetKeepCapabilities;
-    content->setUidGid = SetUidGid;
-    content->setCapabilities = SetCapabilities;
     content->runChildProcessor = RunChildProcessor;
+}
 
-    content->setFileDescriptors = NULL;
-    content->setAppSandbox = NULL;
-    content->setAppAccessToken = NULL;
-    content->notifyResToParent = NULL;
-    content->loadExtendLib = NULL;
-    content->initAppSpawn = NULL;
-    content->runAppSpawn = NULL;
-    content->clearEnvironment = NULL;
+int AppSpawnExecuteSpawningHook(AppSpawnContent *content, AppSpawnClient *client)
+{
+    (void)umask(DEFAULT_UMASK);
+    int ret = SetKeepCapabilities(content, client);
+    if (ret != 0) {
+        return ret;
+    }
+    ret = SetProcessName(content, client, content->longProcName, content->longProcNameLen);
+    if (ret != 0) {
+        return ret;
+    }
+    ret = SetUidGid(content, client);
+    if (ret != 0) {
+        return ret;
+    }
+    ret = SetCapabilities(content, client);
+    if (ret != 0) {
+        return ret;
+    }
+    return 0;
+}
+
+int AppSpawnExecuteClearEnvHook(AppSpawnContent *content, AppSpawnClient *client)
+{
+    return 0;
+}
+
+int AppSpawnExecutePreReplyHook(AppSpawnContent *content, AppSpawnClient *client)
+{
+    return 0;
+}
+
+int AppSpawnExecutePostReplyHook(AppSpawnContent *content, AppSpawnClient *client)
+{
+    return 0;
+}
+
+void AppSpawnEnvClear(AppSpawnContent *content, AppSpawnClient *client)
+{
 }

@@ -18,61 +18,69 @@ ohos_unittest("AppSpawn_client_ut") {
   module_out_path = "${module_output_path}"
   deps = []
   defines = [
-    "clone=CloneStub",
-    "bind=BindStub",
-    "listen=ListenStub",
-    "lchown=LchownStub",
-    "lchmod=LchmodStub",
-    "getsockopt=GetsockoptStub",
-    "setgroups=SetgroupsStub",
-    "setresuid=SetresuidStub",
-    "setresgid=SetresgidStub",
-    "capset=CapsetStub",
-    "dlopen=DlopenStub",
-    "dlsym=DlsymStub",
-    "dlclose=DlcloseStub",
-    "waitpid=WaitpidStub",
-    "HapContext=HapContextStub",
     "APPSPAWN_TEST",
     "APPSPAWN_CLIENT",
     "OHOS_DEBUG",
-    "GRAPHIC_PERMISSION_CHECK",
   ]
+
   include_dirs = [
     "${appspawn_path}",
-    "${appspawn_path}/test/unittest",
     "${appspawn_path}/common",
     "${appspawn_path}/standard",
-    "${appspawn_path}/adapter",
-    "${appspawn_path}/adapter/sysevent",
+    "${appspawn_path}/modules/modulemgr",
+    "${appspawn_path}/modules/ace_adapter",
+    "${appspawn_path}/modules/common",
     "${appspawn_path}/modules/sandbox",
-    "${appspawn_path}/modules//module_engine//include",
-    "${appspawn_path}/interfaces/innerkits_new/include",
-    "${appspawn_path}/interfaces/innerkits_new/client",
-    "${appspawn_path}/interfaces/innerkits_new/permission",
-    "${appspawn_path}/util/include",
-    "${appspawn_path}/interfaces/innerkits_new/module_engine/include",
     "${appspawn_path}/modules/module_engine/include",
-    "//third_party/json/include",
+    "${appspawn_innerkits_path}/client",
+    "${appspawn_innerkits_path}/include",
+    "${appspawn_innerkits_path}/permission",
+    "${appspawn_path}/util/include",
+    "${appspawn_path}/test/unittest",
+    "${appspawn_path}/test/mock",
   ]
+
+  # client
   sources = [
-    "${appspawn_path}/interfaces/innerkits_new/client/appspawn_client.c",
-    "${appspawn_path}/interfaces/innerkits_new/client/appspawn_msg.c",
-    "${appspawn_path}/interfaces/innerkits_new/permission/appspawn_mount_permission.c",
+    "${appspawn_innerkits_path}/client/appspawn_client.c",
+    "${appspawn_innerkits_path}/client/appspawn_msg.c",
+    "${appspawn_innerkits_path}/permission/appspawn_mount_permission.c",
     "${appspawn_path}/modules/sandbox/appspawn_permission.c",
+  ]
+
+  # server
+  sources += [
+    "${appspawn_path}/common/appspawn_server.c",
+    "${appspawn_path}/modules/modulemgr/appspawn_modulemgr.c",
+    "${appspawn_path}/standard/appspawn_appmgr.c",
+    "${appspawn_path}/standard/appspawn_msgmgr.c",
+    "${appspawn_path}/standard/appspawn_service.c",
+    "${appspawn_path}/standard/nwebspawn_launcher.c",
     "${appspawn_path}/util/src/appspawn_utils.c",
   ]
 
-  sources += [ "${appspawn_path}/test/unittest/app_spawn_client_test/app_spawn_interface_test.cpp" ]
-
-  deps += [
-    "//third_party/cJSON:cjson",
-    "//third_party/selinux:libselinux",
+  sources += [
+    "${appspawn_path}/test/unittest/app_spawn_client_test/app_spawn_client_test.cpp",
+    "${appspawn_path}/test/unittest/app_spawn_client_test/app_spawn_interface_test.cpp",
+    "${appspawn_path}/test/unittest/app_spawn_test_helper.cpp",
   ]
+
+  if (asan_detector || is_asan) {
+    defines += [ "ASAN_DETECTOR" ]
+  }
   external_deps = [
+    "cJSON:cjson",
     "c_utils:utils",
     "config_policy:configpolicy_util",
     "hilog:libhilog",
     "init:libbegetutil",
   ]
+
+  if (build_selinux) {
+    defines += [ "WITH_SELINUX" ]
+    external_deps += [
+      "selinux:libselinux",
+      "selinux_adapter:libhap_restorecon",
+    ]
+  }
 }

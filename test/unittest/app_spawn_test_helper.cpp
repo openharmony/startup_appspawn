@@ -15,12 +15,12 @@
 
 #include "app_spawn_test_helper.h"
 
-#include <csignal>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <fcntl.h>
 #include <pthread.h>
+#include <csignal>
 #include <string>
 #include <sys/eventfd.h>
 #include <sys/wait.h>
@@ -46,7 +46,21 @@ typedef struct {
     char bundleName[APP_LEN_BUNDLE_NAME];  // process name
 } AppBundleInfo;
 
+typedef struct {
+    uint32_t hapFlags;
+    char apl[APP_APL_MAX_LEN];
+} AppDomainInfo;
+
+const uint32_t AppSpawnTestServer::defaultProtectTime = 60000; // 60000 60s
+
 uint32_t AppSpawnTestServer::serverId = 0;
+static int TestChildLoopRun(AppSpawnContent *content, AppSpawnClient *client)
+{
+    APPSPAWN_LOGV("ChildLoopRun ...");
+    sleep(1);
+    return 0;
+}
+
 AppSpawnTestServer::~AppSpawnTestServer()
 {
     if (localServer_) {
@@ -106,6 +120,8 @@ void *AppSpawnTestServer::ServiceThread(void *arg)
                 APPSPAWN_LOGV("Save nwebspawn pid: %{public}d %{public}d", info->pid, server->serverId_);
                 server->appPid_.store(info->pid);
             }
+            // register
+            RegChildLooper(&content->content, TestChildLoopRun);
         }
         server->content_->runAppSpawn(server->content_, args->argc, args->argv);
         if (pid != getpid()) {  // 子进程退出
@@ -318,7 +334,7 @@ uint32_t AppSpawnTestHelper::GenRandom(void)
 
 CmdArgs *AppSpawnTestHelper::ToCmdList(const char *cmd)
 {
-    const uint32_t maxArgc = 10;
+    const uint32_t maxArgc = 20;
     const uint32_t length = sizeof(CmdArgs) + maxArgc * sizeof(char *) + strlen(cmd) + APP_LEN_PROC_NAME + 1 + 2;
     char *buffer = static_cast<char *>(malloc(length));
     CmdArgs *args = reinterpret_cast<CmdArgs *>(buffer);
@@ -384,6 +400,9 @@ AppSpawnReqMsgHandle AppSpawnTestHelper::CreateMsg(AppSpawnClientHandle handle, 
         ret = AppSpawnReqMsgSetAppAccessToken(reqHandle, 12345678);  // 12345678
         APPSPAWN_CHECK(ret == 0, break, "Failed to add access token %{public}s", processName_.c_str());
 
+        if (defaultMsgFlags_ != 0) {
+            (void)AppSpawnReqMsgSetFlags(reqHandle, TLV_MSG_FLAGS, defaultMsgFlags_);
+        }
         if (base) {
             return reqHandle;
         }
@@ -406,7 +425,7 @@ AppSpawnReqMsgHandle AppSpawnTestHelper::CreateMsg(AppSpawnClientHandle handle, 
         ret = AppSpawnReqMsgAddExtInfo(reqHandle, MSG_EXT_NAME_RENDER_CMD,
             reinterpret_cast<const uint8_t *>(renderCmd), strlen(renderCmd));
         APPSPAWN_CHECK(ret == 0, break, "Failed to render cmd %{public}s", processName_.c_str());
-        ret = AppSpawnReqMsgSetAppDomainInfo(reqHandle, 1, "system_core");
+        ret = AppSpawnReqMsgSetAppDomainInfo(reqHandle, 1, defaultApl_.c_str());
         APPSPAWN_CHECK(ret == 0, break, "Failed to domain info %{public}s", processName_.c_str());
         return reqHandle;
     } while (0);
@@ -473,6 +492,7 @@ AppSpawningCtx *AppSpawnTestHelper::GetAppProperty(AppSpawnClientHandle handle, 
     APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, DeleteAppSpawnMsg(msgNode);
         return nullptr);
     property->message = msgNode;
+    SetDefaultTestData();
     return property;
 }
 
@@ -483,6 +503,8 @@ void AppSpawnTestHelper::SetDefaultTestData()
     defaultTestGid_ = 20010029;       // 20010029 test
     defaultTestGidGroup_ = 20010029;  // 20010029 test
     defaultTestBundleIndex_ = 100;    // 100 test
+    defaultApl_ = std::string("system_core");
+    defaultMsgFlags_ = 0;
 }
 
 int AppSpawnTestHelper::CreateSocket(void)
@@ -543,6 +565,17 @@ static int inline AddOneTlv(uint8_t *buffer, uint32_t bufferLen, const AppSpawnT
     return 0;
 }
 
+#define ADD_TLV(type, value, currLen, tlvCount)  \
+do {    \
+    AppSpawnTlv d_tlv = {}; \
+    d_tlv.tlvType = (type);    \
+    d_tlv.tlvLen = sizeof(AppSpawnTlv) + sizeof(value);   \
+    ret = AddOneTlv(buffer + (currLen), bufferLen - (currLen), d_tlv, (uint8_t *)&(value));   \
+    APPSPAWN_CHECK(ret == 0, return -1, "Failed add tlv %{public}u", d_tlv.tlvType);  \
+    (currLen) += d_tlv.tlvLen;    \
+    (tlvCount)++;   \
+} while (0)
+
 int AppSpawnTestHelper::AddBaseTlv(uint8_t *buffer, uint32_t bufferLen, uint32_t &realLen, uint32_t &tlvCount)
 {
     // add app flage
@@ -563,38 +596,29 @@ int AppSpawnTestHelper::AddBaseTlv(uint8_t *buffer, uint32_t bufferLen, uint32_t
     currLen += tlv.tlvLen;
     tlvCount++;
 
+    AppDomainInfo domainInfo = {0, "normal"};
+    ADD_TLV(TLV_DOMAIN_INFO, domainInfo, currLen, tlvCount);
+
     AppSpawnMsgAccessToken token = {12345678};  // 12345678
-    tlv.tlvType = TLV_ACCESS_TOKEN_INFO;
-    tlv.tlvLen = sizeof(AppSpawnTlv) + sizeof(token);
-    ret = AddOneTlv(buffer + currLen, bufferLen - currLen, tlv, (uint8_t *)&token);
-    APPSPAWN_CHECK(ret == 0, return -1, "Failed add tlv %{public}u", tlv.tlvType);
-    currLen += tlv.tlvLen;
-    tlvCount++;
+    ADD_TLV(TLV_ACCESS_TOKEN_INFO, token, currLen, tlvCount);
+
+    AppSpawnMsgInternetInfo internetInfo = {0, 1};
+    ADD_TLV(TLV_INTERNET_INFO, internetInfo, currLen, tlvCount);
 
     // add bundle info
     AppBundleInfo info = {};
     (void)strcpy_s(info.bundleName, sizeof(info.bundleName), "test-bundleName");
     info.bundleIndex = 100;  // 100 test index
-    tlv.tlvType = TLV_BUNDLE_INFO;
-    tlv.tlvLen = sizeof(AppSpawnTlv) + sizeof(AppBundleInfo);
-    ret = AddOneTlv(buffer + currLen, bufferLen - currLen, tlv, (uint8_t *)&info);
-    APPSPAWN_CHECK(ret == 0, return -1, "Failed add tlv %{public}u", tlv.tlvType);
-    currLen += tlv.tlvLen;
-    tlvCount++;
+    ADD_TLV(TLV_BUNDLE_INFO, info, currLen, tlvCount);
 
     // add dac
-    AppDacInfo dacInfo = {};
-    dacInfo.uid = 20010029;              // 20010029
-    dacInfo.gid = 20010029;              // 20010029
-    dacInfo.gidCount = 2;                // 2 count
-    dacInfo.gidTable[0] = 20010029;      // 20010029
-    dacInfo.gidTable[1] = 20010029 + 1;  // 20010029
-    tlv.tlvType = TLV_DAC_INFO;
-    tlv.tlvLen = sizeof(AppSpawnTlv) + sizeof(dacInfo);
-    ret = AddOneTlv(buffer + currLen, bufferLen - currLen, tlv, (uint8_t *)&dacInfo);
-    APPSPAWN_CHECK(ret == 0, return -1, "Failed add tlv %{public}u", tlv.tlvType);
-    currLen += tlv.tlvLen;
-    tlvCount++;
+    AppDacInfo  dacInfo = {};
+    dacInfo.uid = 20010029; // 20010029 test uid
+    dacInfo.gid = 20010029; // 20010029 test gid
+    dacInfo.gidCount = 2; // 2 count
+    dacInfo.gidTable[0] = 20010029; // 20010029 test gid
+    dacInfo.gidTable[1] = 20010030; // 20010030 test gid
+    ADD_TLV(TLV_DAC_INFO, dacInfo, currLen, tlvCount);
     realLen = currLen;
     return 0;
 }
@@ -613,12 +637,12 @@ AppSpawnContent *AppSpawnTestHelper::StartSpawnServer(std::string &cmd, CmdArgs 
     if (args->argc <= MODE_VALUE_INDEX) {  // appspawn start
         startRrg.mode = MODE_FOR_APP_SPAWN;
     } else if (strcmp(args->argv[MODE_VALUE_INDEX], "app_cold") == 0) {  // cold start
-        APPSPAWN_CHECK(args->argc > PARAM_VALUE_INDEX, free(args);
+        APPSPAWN_CHECK(args->argc >= ARG_NULL, free(args);
             return NULL, "Invalid arg for cold start %{public}d", args->argc);
         startRrg.mode = MODE_FOR_APP_COLD_RUN;
         startRrg.initArg = 0;
     } else if (strcmp(args->argv[MODE_VALUE_INDEX], "nweb_cold") == 0) {  // cold start
-        APPSPAWN_CHECK(args->argc > PARAM_VALUE_INDEX, free(args);
+        APPSPAWN_CHECK(args->argc >= ARG_NULL, free(args);
             return NULL, "Invalid arg for cold start %{public}d", args->argc);
         startRrg.mode = MODE_FOR_NWEB_COLD_RUN;
         startRrg.serviceName = NWEBSPAWN_SERVER_NAME;
@@ -638,22 +662,3 @@ AppSpawnContent *AppSpawnTestHelper::StartSpawnServer(std::string &cmd, CmdArgs 
 }
 }  // namespace OHOS
 
-static int TestChildLoopRun(AppSpawnContent *content, AppSpawnClient *client)
-{
-    APPSPAWN_LOGV("ChildLoopRun ...");
-    sleep(1);
-    return 0;
-}
-
-static int TestPreLoad(AppSpawnMgr *content)
-{
-    // register
-    RegChildLooper(&content->content, TestChildLoopRun);
-    return 0;
-}
-
-MODULE_CONSTRUCTOR(void)
-{
-    APPSPAWN_LOGV("Load test module ...");
-    AddPreloadHook(HOOK_PRIO_LOWEST, TestPreLoad);
-}

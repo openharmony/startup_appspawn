@@ -37,9 +37,11 @@ extern "C" {
 #define FD_ID_INDEX 3
 #define FD_VALUE_INDEX 4
 #define FLAGS_VALUE_INDEX 5
-#define SHM_ID_INDEX 6
+#define SHM_SIZE_INDEX 6
 #define PARAM_ID_INDEX 7
 #define PARAM_VALUE_INDEX 8
+#define CLIENT_ID_INDEX 9
+#define ARG_NULL 10
 
 #define MAX_DIED_PROCESS_COUNT 5
 
@@ -66,8 +68,8 @@ typedef struct {
     int32_t fd[2];  // 2 fd count
     WatcherHandle watcherHandle;
     TimerHandle timer;
-    int shmId;
-    uint32_t memSize;
+    char *childMsg;
+    uint32_t msgSize;
     char *coldRunPath;
 } AppSpawnForkCtx;
 
@@ -144,12 +146,12 @@ int KillAndWaitStatus(pid_t pid, int sig);
 void ProcessAppSpawnDumpMsg(const AppSpawnMsgNode *message);
 int ProcessTerminationStatusMsg(const AppSpawnMsgNode *message, AppSpawnResult *result);
 
+AppSpawnMsgNode *CreateAppSpawnMsg(void);
 void DeleteAppSpawnMsg(AppSpawnMsgNode *msgNode);
 int CheckAppSpawnMsg(const AppSpawnMsgNode *message);
 int DecodeAppSpawnMsg(AppSpawnMsgNode *message);
 int GetAppSpawnMsgFromBuffer(const uint8_t *buffer, uint32_t bufferLen,
     AppSpawnMsgNode **outMsg, uint32_t *msgRecvLen, uint32_t *reminder);
-int SendAppSpawnMsgToChild(AppSpawningCtx *forkCtx, AppSpawnMsgNode *message);
 
 /**
  * @brief 消息内容操作接口
@@ -199,6 +201,9 @@ APPSPAWN_INLINE const char *GetProcessName(const AppSpawningCtx *property)
 
 APPSPAWN_INLINE const char *GetBundleName(const AppSpawningCtx *property)
 {
+    if (property == NULL || property->message == NULL) {
+        return NULL;
+    }
     AppSpawnMsgBundleInfo *info = (AppSpawnMsgBundleInfo *)GetAppSpawnMsgInfo(property->message, TLV_BUNDLE_INFO);
     if (info != NULL) {
         return info->bundleName;

@@ -518,15 +518,3 @@ int AppSpawnTerminateMsgCreate(pid_t pid, AppSpawnReqMsgHandle *reqHandle)
     *reqHandle = (AppSpawnReqMsgHandle)(reqNode);
     return 0;
 }
-
-int AppSpawnReqMsgSetFlags(AppSpawnReqMsgHandle reqHandle, uint32_t tlv, uint32_t flags)
-{
-    AppSpawnReqMsgNode *reqNode = (AppSpawnReqMsgNode *)reqHandle;
-    APPSPAWN_CHECK_ONLY_EXPER(reqNode != NULL, return APPSPAWN_ARG_INVALID);
-    if (tlv == TLV_MSG_FLAGS) {
-        *(uint32_t *)reqNode->msgFlags->flags = flags;
-    } else if (tlv == TLV_PERMISSION) {
-        *(uint32_t *)reqNode->permissionFlags->flags = flags;
-    }
-    return 0;
-}

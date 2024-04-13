@@ -1,0 +1,92 @@
+{
+    "global": {
+        "sandbox-root" : "/mnt/sandbox/com.ohos.render/<PackageName>",
+        "sandbox-ns-flags" : [ "pid", "net" ]
+    },
+    "required": {
+        "system-const": {
+            "mount-paths": [{
+                "src-path" : "/dev",
+                "sandbox-path" : "/dev"
+            }, {
+                "src-path" : "/proc",
+                "sandbox-path" : "/proc"
+            }, {
+                "src-path" : "/sys",
+                "sandbox-path" : "/sys"
+            }, {
+                "src-path" : "/system/fonts",
+                "sandbox-path" : "/system/fonts"
+            }, {
+                "src-path" : "/system/etc",
+                "sandbox-path" : "/system/etc"
+            }, {
+                "src-path" : "/system/bin",
+                "sandbox-path" : "/system/bin"
+            }, {
+                "src-path" : "/system/<lib>",
+                "sandbox-path" : "/system/<lib>"
+            }, {
+                "src-path" : "/data/app/el1/bundle/public/com.ohos.nweb",
+                "sandbox-path" : "/data/storage/el1/bundle/nweb"
+            }, {
+                "src-path" : "/system/<lib>/platformsdk",
+                "sandbox-path" : "/system/<lib>/platformsdk"
+            }, {
+                "src-path" : "/system/<lib>/ndk",
+                "sandbox-path" : "/system/<lib>/ndk"
+            }, {
+                "src-path" : "/system/<lib>/module",
+                "sandbox-path" : "/system/<lib>/module"
+            }, {
+                "src-path" : "/system/<lib>/chipset-pub-sdk",
+                "sandbox-path" : "/system/<lib>/chipset-pub-sdk"
+            }, {
+                "src-path" : "/system/<lib>/chipset-sdk",
+                "sandbox-path" : "/system/<lib>/chipset-sdk"
+            }, {
+                "src-path" : "/system/<lib>/seccomp",
+                "sandbox-path" : "/system/<lib>/seccomp"
+            }, {
+                "src-path" : "/system/<lib>/extensionability",
+                "sandbox-path" : "/system/<lib>/extensionability"
+            }, {
+                "src-path" : "/system/<lib>/media",
+                "sandbox-path" : "/system/<lib>/media"
+            }, {
+                "src-path" : "/system/app/com.ohos.nweb",
+                "sandbox-path" : "/system/app/com.ohos.nweb"
+            }, {
+                "src-path" : "/vendor/lib",
+                "sandbox-path" : "/vendor/lib",
+                "sandbox-flags" : [ "bind", "rec" ],
+                "check-action-status": "false"
+            }, {
+                "src-path" : "/system/app/NWeb",
+                "sandbox-path" : "/system/app/NWeb"
+            }],
+            "symbol-links" : [{
+                    "target-name" : "/system/etc",
+                    "link-name" : "/etc",
+                    "check-action-status": "false"
+                }, {
+                    "target-name" : "/system/bin",
+                    "link-name" : "/bin",
+                    "check-action-status": "false"
+                }, {
+                    "target-name" : "/system/lib",
+                    "link-name" : "/lib",
+                    "check-action-status": "false"
+                }
+            ],
+            "mount-files": [{
+                    "src-path" : "/system/<lib>/ld-musl-arm.so.1",
+                    "sandbox-path" : "/system/<lib>/ld-musl-arm.so.1"
+            }],
+            "mount-groups" : []
+        },
+        "app-variable": {
+            "mount-groups": []
+        }
+    }
+}
