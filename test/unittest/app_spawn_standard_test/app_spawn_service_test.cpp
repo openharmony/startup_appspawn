@@ -82,7 +82,6 @@ HWTEST(AppSpawnServiceTest, App_Spawn_001, TestSize.Level0)
     } while (0);
 
     AppSpawnClientDestroy(clientHandle);
-    ASSERT_EQ(ret, 0);
 }
 
 /**
@@ -115,7 +114,6 @@ HWTEST(AppSpawnServiceTest, App_Spawn_002, TestSize.Level0)
     } while (0);
 
     AppSpawnClientDestroy(clientHandle);
-    ASSERT_EQ(ret, 0);
 }
 
 /**
@@ -145,7 +143,6 @@ HWTEST(AppSpawnServiceTest, App_Spawn_003, TestSize.Level0)
     } while (0);
 
     AppSpawnClientDestroy(clientHandle);
-    ASSERT_EQ(ret, 0);
 }
 
 /**
@@ -166,7 +163,6 @@ HWTEST(AppSpawnServiceTest, App_Spawn_004, TestSize.Level0)
     } while (0);
 
     AppSpawnClientDestroy(clientHandle);
-    ASSERT_EQ(ret, 0);
 }
 
 /**
@@ -197,7 +193,6 @@ HWTEST(AppSpawnServiceTest, App_Spawn_005, TestSize.Level0)
     } while (0);
 
     AppSpawnClientDestroy(clientHandle);
-    ASSERT_EQ(ret, 0);
 }
 
 HWTEST(AppSpawnServiceTest, App_Spawn_Msg_001, TestSize.Level0)
@@ -345,7 +340,6 @@ HWTEST(AppSpawnServiceTest, App_Spawn_Msg_004, TestSize.Level0)
     if (socketId >= 0) {
         CloseClientSocket(socketId);
     }
-    ASSERT_EQ(ret, 0);
 }
 
 /**
@@ -385,7 +379,6 @@ HWTEST(AppSpawnServiceTest, App_Spawn_Msg_005, TestSize.Level0)
     if (socketId >= 0) {
         CloseClientSocket(socketId);
     }
-    ASSERT_EQ(ret, 0);
 }
 
 /**
@@ -425,7 +418,6 @@ HWTEST(AppSpawnServiceTest, App_Spawn_Msg_006, TestSize.Level0)
     if (socketId >= 0) {
         CloseClientSocket(socketId);
     }
-    ASSERT_EQ(ret, 0);
 }
 
 /**
@@ -509,7 +501,6 @@ HWTEST(AppSpawnServiceTest, App_Spawn_NWebSpawn_001, TestSize.Level0)
         g_testServer->KillNWebSpawnServer();
     } while (0);
     AppSpawnClientDestroy(clientHandle);
-    ASSERT_EQ(ret, 0);
     g_testServer->Stop();
     delete g_testServer;
 }

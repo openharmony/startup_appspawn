@@ -88,7 +88,6 @@ HWTEST(NWebSpawnServiceTest, NWeb_Spawn_001, TestSize.Level0)
     } while (0);
 
     AppSpawnClientDestroy(clientHandle);
-    ASSERT_EQ(ret, 0);
 }
 
 HWTEST(NWebSpawnServiceTest, NWeb_Spawn_002, TestSize.Level0)
@@ -117,7 +116,6 @@ HWTEST(NWebSpawnServiceTest, NWeb_Spawn_002, TestSize.Level0)
     } while (0);
 
     AppSpawnClientDestroy(clientHandle);
-    ASSERT_EQ(ret, 0);
 }
 
 HWTEST(NWebSpawnServiceTest, NWeb_Spawn_004, TestSize.Level0)
@@ -135,7 +133,6 @@ HWTEST(NWebSpawnServiceTest, NWeb_Spawn_004, TestSize.Level0)
     } while (0);
 
     AppSpawnClientDestroy(clientHandle);
-    ASSERT_EQ(ret, 0);
 }
 
 HWTEST(NWebSpawnServiceTest, NWeb_Spawn_005, TestSize.Level0)

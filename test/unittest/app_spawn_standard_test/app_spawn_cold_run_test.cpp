@@ -439,5 +439,4 @@ HWTEST(AppSpawnColdRunTest, App_Spawn_Cold_Run_009, TestSize.Level0)
     node->flags &= ~STUB_NEED_CHECK;
     ASSERT_EQ(ret, 0);
 }
-
 }  // namespace OHOS
