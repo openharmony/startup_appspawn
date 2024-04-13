@@ -660,5 +660,11 @@ AppSpawnContent *AppSpawnTestHelper::StartSpawnServer(std::string &cmd, CmdArgs 
     }
     return content;
 }
+
+MODULE_CONSTRUCTOR(void)
+{
+    MakeDirRec(APPSPAWN_MSG_DIR "appspawn", 0771, 1);
+    MakeDirRec(APPSPAWN_MSG_DIR "nwebspawn", 0771, 1);
+}
 }  // namespace OHOS
 

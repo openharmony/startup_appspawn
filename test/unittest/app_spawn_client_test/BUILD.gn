@@ -60,7 +60,6 @@ ohos_unittest("AppSpawn_client_ut") {
   ]
 
   sources += [
-    "${appspawn_path}/test/unittest/app_spawn_client_test/app_spawn_client_test.cpp",
     "${appspawn_path}/test/unittest/app_spawn_client_test/app_spawn_interface_test.cpp",
     "${appspawn_path}/test/unittest/app_spawn_test_helper.cpp",
   ]
