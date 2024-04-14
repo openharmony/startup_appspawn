@@ -70,7 +70,6 @@ ohos_unittest("AppSpawn_ut") {
     "${appspawn_path}/standard/appspawn_msgmgr.c",
     "${appspawn_path}/standard/appspawn_service.c",
     "${appspawn_path}/standard/nwebspawn_launcher.c",
-    "${appspawn_path}/util/src/appspawn_base64.c",
     "${appspawn_path}/util/src/appspawn_utils.c",
   ]
 
@@ -110,13 +109,23 @@ ohos_unittest("AppSpawn_ut") {
   include_dirs += [ "${appspawn_path}/test/unittest" ]
   sources += [
     "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_cgroup_test.cpp",
+    "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_child_test.cpp",
     "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_cold_run_test.cpp",
     "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_command_lexer_test.cpp",
-    "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_sandbox_test.cpp",
+    "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_module_interface_test.cpp",
     "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_service_test.cpp",
     "${appspawn_path}/test/unittest/app_spawn_standard_test/nweb_spawn_service_test.cpp",
     "${appspawn_path}/test/unittest/app_spawn_test_helper.cpp",
   ]
+
+  if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
+    sources += [ "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_sandbox_new_test.cpp" ]
+  } else {
+    sources += [
+      "${appspawn_path}/modules/sandbox/sandbox_utils.cpp",
+      "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_sandbox_test.cpp",
+    ]
+  }
 
   configs = [ "${appspawn_path}:appspawn_config" ]
   external_deps = [
@@ -150,8 +159,10 @@ ohos_unittest("AppSpawn_ut") {
 
   if (build_selinux) {
     defines += [ "WITH_SELINUX" ]
-    deps += [ "//third_party/selinux:libselinux" ]
-    external_deps += [ "selinux_adapter:libhap_restorecon" ]
+    external_deps += [
+      "selinux:libselinux",
+      "selinux_adapter:libhap_restorecon",
+    ]
   }
 
   if (appspawn_report_event) {

@@ -103,6 +103,7 @@ typedef struct {
 typedef struct {
     uint8_t setAllowInternet;
     uint8_t allowInternet;  // hap sockect allowed
+    uint8_t res[2];
 } AppSpawnMsgInternetInfo;
 
 typedef struct {

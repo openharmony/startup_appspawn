@@ -27,6 +27,7 @@ if (defined(ohos_lite)) {
       "//base/startup/appspawn/interfaces/innerkits/include",
       "//base/startup/appspawn/common/",
       "//base/startup/appspawn/lite/",
+      "//base/startup/appspawn/util/include",
       "//base/startup/init/interfaces/innerkits/include",
       "//base/hiviewdfx/hilog_lite/interfaces/native/innerkits/hilog",
       "//foundation/systemabilitymgr/samgr_lite/interfaces/kits/samgr",

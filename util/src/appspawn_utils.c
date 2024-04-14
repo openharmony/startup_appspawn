@@ -16,6 +16,7 @@
 #include "appspawn_utils.h"
 
 #include <ctype.h>
+#include <dirent.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -27,8 +28,20 @@
 #include "appspawn_hook.h"
 #include "cJSON.h"
 #include "config_policy_utils.h"
+#include "json_utils.h"
 #include "parameter.h"
 #include "securec.h"
+
+uint64_t DiffTime(const struct timespec *startTime, const struct timespec *endTime)
+{
+    uint64_t diff = (uint64_t)((endTime->tv_sec - startTime->tv_sec) * 1000000);  // 1000000 s-us
+    if (endTime->tv_nsec > startTime->tv_nsec) {
+        diff += (endTime->tv_nsec - startTime->tv_nsec) / 1000;  // 1000 ns - us
+    } else {
+        diff -= (startTime->tv_nsec - endTime->tv_nsec) / 1000;  // 1000 ns - us
+    }
+    return diff;
+}
 
 int MakeDirRec(const char *path, mode_t mode, int lastPath)
 {
@@ -122,7 +135,7 @@ char *GetLastStr(const char *str, const char *dst)
     char *end = (char *)str + strlen(str);
     size_t len = strlen(dst);
     while (end != str) {
-        if (isspace(*end)) { // clear space
+        if (isspace(*end)) {  // clear space
             *end = '\0';
             end--;
             continue;
@@ -149,7 +162,7 @@ static char *ReadFile(const char *fileName)
         fd = fopen(fileName, "r");
         APPSPAWN_CHECK(fd != NULL, break, "Failed to open file  %{public}s", fileName);
 
-        buffer = (char*)malloc((size_t)(fileStat.st_size + 1));
+        buffer = (char *)malloc((size_t)(fileStat.st_size + 1));
         APPSPAWN_CHECK(buffer != NULL, break, "Failed to alloc mem %{public}s", fileName);
 
         int ret = fread(buffer, fileStat.st_size, 1, fd);
@@ -174,7 +187,9 @@ cJSON *GetJsonObjFromFile(const char *jsonPath)
     APPSPAWN_CHECK_ONLY_EXPER(jsonPath != NULL && *jsonPath != '\0', NULL);
     char *buffer = ReadFile(jsonPath);
     APPSPAWN_CHECK_ONLY_EXPER(buffer != NULL, NULL);
-    return cJSON_Parse(buffer);
+    cJSON *json = cJSON_Parse(buffer);
+    free(buffer);
+    return json;
 }
 
 int ParseJsonConfig(const char *basePath, const char *fileName, ParseConfig parseConfig, ParseJsonContext *context)
@@ -206,8 +221,90 @@ int ParseJsonConfig(const char *basePath, const char *fileName, ParseConfig pars
     return ret;
 }
 
+void DumpCurrentDir(char *buffer, uint32_t bufferLen, const char *dirPath)
+{
+    char tmp[32] = {0};  // 32 max
+    int ret = GetParameter("startup.appspawn.cold.boot", "", tmp, sizeof(tmp));
+    if (ret <= 0 || strcmp(tmp, "1") != 0) {
+        return;
+    }
+
+    struct stat st = {};
+    if (stat(dirPath, &st) == 0 && S_ISREG(st.st_mode)) {
+        APPSPAWN_LOGW("file %{public}s", dirPath);
+        if (access(dirPath, F_OK) != 0) {
+            APPSPAWN_LOGW("file %{public}s not exist", dirPath);
+        }
+        return;
+    }
+
+    DIR *pDir = opendir(dirPath);
+    APPSPAWN_CHECK(pDir != NULL, return, "Read dir :%{public}s failed.%{public}d", dirPath, errno);
+
+    struct dirent *dp;
+    while ((dp = readdir(pDir)) != NULL) {
+        if (strcmp(dp->d_name, ".") == 0 || strcmp(dp->d_name, "..") == 0) {
+            continue;
+        }
+        if (dp->d_type == DT_DIR) {
+            APPSPAWN_LOGW(" Current path %{public}s/%{public}s ", dirPath, dp->d_name);
+            ret = snprintf_s(buffer, bufferLen, bufferLen - 1, "%s/%s", dirPath, dp->d_name);
+            APPSPAWN_CHECK(ret > 0, break, "Failed to snprintf_s errno: %{public}d", errno);
+            char *path = strdup(buffer);
+            DumpCurrentDir(buffer, bufferLen, path);
+            free(path);
+        }
+    }
+    closedir(pDir);
+    return;
+}
+
 static FILE *g_dumpToStream = NULL;
 void SetDumpToStream(FILE *stream)
 {
     g_dumpToStream = stream;
 }
+
+#if defined(__clang__)
+#    pragma clang diagnostic push
+#    pragma clang diagnostic ignored "-Wvarargs"
+#elif defined(__GNUC__)
+#    pragma GCC diagnostic push
+#    pragma GCC diagnostic ignored "-Wvarargs"
+#elif defined(_MSC_VER)
+#    pragma warning(push)
+#endif
+
+void AppSpawnDump(const char *fmt, ...)
+{
+    if (g_dumpToStream == NULL) {
+        return;
+    }
+    char format[128] = {0};  // 128 max buffer for format
+    uint32_t size = strlen(fmt);
+    int curr = 0;
+    for (uint32_t index = 0; index < size; index++) {
+        if (curr >= (int)sizeof(format)) {
+            format[curr - 1] = '\0';
+        }
+        if (fmt[index] == '%' && (strncmp(&fmt[index + 1], "{public}", strlen("{public}")) == 0)) {
+            format[curr++] = fmt[index];
+            index += strlen("{public}");
+            continue;
+        }
+        format[curr++] = fmt[index];
+    }
+    va_list vargs;
+    va_start(vargs, format);
+    (void)vfprintf(g_dumpToStream, format, vargs);
+    va_end(vargs);
+    (void)fflush(g_dumpToStream);
+}
+
+#if defined(__clang__)
+#    pragma clang diagnostic pop
+#elif defined(__GNUC__)
+#    pragma GCC diagnostic pop
+#elif defined(_MSC_VER)
+#    pragma warning(pop)
+#endif

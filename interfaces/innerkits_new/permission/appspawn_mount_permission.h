@@ -31,7 +31,8 @@ typedef struct TagSandboxQueue {
 } SandboxQueue;
 
 typedef struct TagParseJsonContext {
-    uint32_t type;
+    SandboxQueue permissionQueue;
+    int32_t maxPermissionIndex;
 } ParseJsonContext;
 
 typedef struct {

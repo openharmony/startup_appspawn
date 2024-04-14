@@ -29,6 +29,7 @@
 #include "appspawn_utils.h"
 #include "appspawn_test_cmder.h"
 #include "command_lexer.h"
+#include "json_utils.h"
 #include "cJSON.h"
 #include "securec.h"
 #include "thread_manager.h"

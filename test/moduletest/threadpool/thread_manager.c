@@ -108,8 +108,8 @@ static int AddExecutor(ThreadManager *mgr, const TaskNode *task)
     ListNode *node = task->executorList.next;
     while (node != &task->executorList) {
         TaskExecuteNode *executor = ListEntry(node, TaskExecuteNode, node);
-        APPSPAWN_LOGV("AddExecutor task: %{public}u executorCount: %{public}u executor: %{public}p %{public}u",
-            task->taskId, mgr->executorCount, executor, executor->task->taskId);
+        APPSPAWN_LOGV("AddExecutor task: %{public}u executorCount: %{public}u executor: %{public}u",
+            task->taskId, mgr->executorCount, executor->task->taskId);
 
         // 插入尾部执行
         pthread_mutex_lock(&mgr->mutex);
@@ -131,7 +131,7 @@ static void RunExecutor(ThreadManager *mgr, ThreadNode *threadNode, uint32_t max
     TaskExecuteNode *executor = PopTaskExecutor(mgr);
     uint32_t count = 0;
     while (executor != NULL && !threadNode->threadExit) {
-        APPSPAWN_LOGV("RunExecutor task: %{public}u executor: %{public}p", executor->task->taskId, executor);
+        APPSPAWN_LOGV("RunExecutor task: %{public}u", executor->task->taskId);
         atomic_fetch_add(&executor->task->finishTaskCount, 1);
         executor->executor(executor->task->taskId, executor->context);
         count++;

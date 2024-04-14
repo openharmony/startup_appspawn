@@ -223,7 +223,7 @@ const char *GetSandboxRealVar(const SandboxContext *context,
     APPSPAWN_CHECK_ONLY_EXPER(sandboxBuffer != NULL && sandboxBuffer->buffer != NULL, return NULL);
     const char *tmp = source;
     int ret = 0;
-    if (prefix != NULL) {  // copy prefix data
+    if (!IsPathEmpty(prefix)) {  // copy prefix data
         ret = HandleVariableReplace(context, sandboxBuffer, prefix, extraData);
         APPSPAWN_CHECK(ret == 0, return NULL, "Failed to replace source %{public}s ", prefix);
 
@@ -231,7 +231,7 @@ const char *GetSandboxRealVar(const SandboxContext *context,
             tmp = source + 1;
         }
     }
-    if (tmp != NULL) {  // copy source data
+    if (!IsPathEmpty(tmp)) {  // copy source data
         ret = HandleVariableReplace(context, sandboxBuffer, tmp, extraData);
         APPSPAWN_CHECK(ret == 0, return NULL, "Failed to replace source %{public}s ", source);
     }

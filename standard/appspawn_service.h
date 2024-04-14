@@ -16,106 +16,51 @@
 #ifndef APPSPAWN_SERVICE_H
 #define APPSPAWN_SERVICE_H
 
-#include <unistd.h>
+#include <limits.h>
 #include <stdbool.h>
-#include "interfaces/innerkits/include/appspawn_msg.h"
-#include "interfaces/innerkits_new/include/appspawn.h"
-#include "modules/module_engine/include/appspawn_msg.h"
+#include <unistd.h>
+
+#include "appspawn.h"
+#include "appspawn_hook.h"
+#include "appspawn_msg.h"
 #include "appspawn_server.h"
-#include "init_hashmap.h"
+#include "appspawn_utils.h"
+#include "list.h"
 #include "loop_event.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#ifdef APPSPAWN_TEST
-#define APPSPAWN_STATIC
-#else
-#define APPSPAWN_STATIC static
-#endif
+#define MAX_WAIT_MSG_COMPLETE (5 * 1000)  // 5s
+#define WAIT_CHILD_RESPONSE_TIMEOUT 3000  //3s
 
-extern bool may_init_gwp_asan(bool forceInit);
-#define APP_HASH_BUTT 32
-#define FLAGS_ON_DEMAND 0x1
-#define FLAGS_MODE_COLD 0x2
-#define FLAGS_SANDBOX_PRIVATE 0x10
-#define FLAGS_SANDBOX_APP 0x20
-
-#define START_INDEX 1
-#define FD_INDEX 2
-#define PARAM_INDEX 3
-#define EXTRA_INFO_LEN_INDEX 4
-#define EXTRA_INFO_INDEX 5
-#define NULL_INDEX 6
-#define PARAM_BUFFER_LEN 128
-
-typedef struct TagAppSpawnMsgNode {
-    AppSpawnMsg msgHeader;
-    uint32_t tlvCount;
-    uint32_t *tlvOffset;
-    uint8_t *buffer;
-} AppSpawnMsgNode;
-
+typedef struct TagAppSpawnMsgNode AppSpawnMsgNode;
 typedef struct TagAppSpawnMsgReceiverCtx {
-    uint32_t nextMsgId;
-    uint32_t msgRecvLen;
-    AppSpawnMsgNode *incompleteMsg;
+    uint32_t nextMsgId;              // 校验消息id
+    uint32_t msgRecvLen;             // 已经接收的长度
+    TimerHandle timer;               // 测试消息完整
+    AppSpawnMsgNode *incompleteMsg;  // 保存不完整的消息，额外保存消息头信息
 } AppSpawnMsgReceiverCtx;
 
-typedef struct {
-    AppSpawnClient client;
+typedef struct TagAppSpawnConnection {
+    uint32_t connectionId;
     TaskHandle stream;
-    int32_t fd[2];  // 2 fd count
     AppSpawnMsgReceiverCtx receiverCtx;
-    AppParameter property;
-    pid_t pid;
-} AppSpawnClientExt;
+} AppSpawnConnection;
 
-typedef struct AppInfo {
-    HashNode node;
-    pid_t pid;
-    AppOperateType code;
-    uid_t uid;
-    char name[0];
-} AppInfo, AppSpawnAppInfo;
+typedef struct TagAppSpawnStartArg {
+    RunMode mode;
+    uint32_t moduleType;
+    const char *socketName;
+    const char *serviceName;
+    uint32_t initArg : 1;
+} AppSpawnStartArg;
 
-typedef struct AppSpawnContentExt {
-    AppSpawnContent content;
-    uint32_t flags;
-    TaskHandle server;
-    SignalHandle sigHandler;
-    TimerHandle timer;
-    HashMapHandle appMap;  // save app pid and name
-} AppSpawnContentExt;
-
-AppInfo *GetAppInfo(pid_t pid);
-void SetContentFunction(AppSpawnContent *content);
-void AppSpawnColdRun(AppSpawnContent *content, int argc, char *const argv[]);
-void AddNwebInfo(pid_t pid, const char *processName);
-int GetAppSpawnClientFromArg(int argc, char *const argv[], AppSpawnClientExt *client);
-#define SHOW_CLIENT(info, clientExt) \
-do { \
-    APPSPAWN_LOGI("Info %{public}s id %{public}d code %{public}d ",                                 \
-        info, (clientExt)->client.id, (clientExt)->property.code);                                  \
-    APPSPAWN_LOGI("processname %{public}s flags 0x%{public}x",                                      \
-        (clientExt)->property.processName, (clientExt)->property.flags);                            \
-    APPSPAWN_LOGI("flags 0x%{public}x cloneFlags 0x%{public}x hapFlags 0x%{public}x",               \
-        (clientExt)->client.flags, (clientExt)->client.cloneFlags, (clientExt)->property.hapFlags); \
-    APPSPAWN_LOGI("bundleName %{public}s soPath %{public}s",                                        \
-        (clientExt)->property.bundleName, (clientExt)->property.soPath);                            \
-    APPSPAWN_LOGI("Access token apl %{public}s renderCmd %{public}s ownerId %{public}s",            \
-        (clientExt)->property.apl, (clientExt)->property.renderCmd, (clientExt)->property.ownerId); \
-    APPSPAWN_LOGI("uid %{public}u %{public}u gid count %{public}u",                                 \
-        (clientExt)->property.uid, (clientExt)->property.gid, (clientExt)->property.gidCount);      \
-    APPSPAWN_LOGI("setAllowInternet %{public}d allowInternet %{public}d ",                          \
-        (clientExt)->property.setAllowInternet, (clientExt)->property.allowInternet);               \
-} while (0)
-
-int GetAppSpawnMsgFromBuffer(const uint8_t *buffer, uint32_t bufferLen,
-    AppSpawnMsgNode **outMsg, uint32_t *msgRecvLen, uint32_t *reminder);
-int ChangeAppSpawnMsg2Property(AppSpawnMsgNode *message, AppSpawnClientExt *appProperty);
-void DeleteAppSpawnMsg(AppSpawnMsgNode *msgNode);
+pid_t NWebSpawnLaunch(void);
+void NWebSpawnInit(void);
+AppSpawnContent *StartSpawnService(const AppSpawnStartArg *arg, uint32_t argvSize, int argc, char *const argv[]);
+void AppSpawnDestroyContent(AppSpawnContent *content);
 
 #ifdef __cplusplus
 }
