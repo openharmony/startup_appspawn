@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+# Copyright (c) 2024 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -16,204 +16,26 @@ import("//build/ohos.gni")
 config("appspawn_config") {
   visibility = [ "./*" ]
   include_dirs = [
-    "${appspawn_path}",
-    "common",
-    "standard",
-    "adapter",
-    "interfaces/innerkits/include",
-    "interfaces/innerkits_new/include",
-    "util/include",
-    "//third_party/json/include",
+    "${appspawn_innerkits_path}/include",
+    "${appspawn_path}/modules/module_engine/include",
+    "${appspawn_path}/util/include",
+    "//commonlibrary/c_utils/base/include",
   ]
 
+  cflags = []
   if (build_selinux) {
-    cflags = [ "-DWITH_SELINUX" ]
+    cflags += [ "-DWITH_SELINUX" ]
+  }
+
+  if (build_seccomp) {
+    cflags += [ "-DWITH_SECCOMP" ]
   }
 }
 
 if (!defined(ohos_lite)) {
-  ohos_executable("appspawn") {
-    defines = []
-    if (target_cpu == "arm64") {
-      defines += [ "webview_arm64" ]
-    }
-    if (target_cpu == "x86_64") {
-      defines += [ "webview_x86_64" ]
-    }
-    sources = [
-      "${appspawn_path}/adapter/appspawn_ace.cpp",
-      "${appspawn_path}/adapter/appspawn_nweb.cpp",
-      "${appspawn_path}/adapter/nwebspawn_lancher.cpp",
-      "${appspawn_path}/interfaces/innerkits/src/appspawn_mount_permission.cpp",
-      "${appspawn_path}/standard/main.c",
-      "${appspawn_path}/util/src/command_lexer.cpp",
-      "${appspawn_path}/util/src/json_utils.cpp",
-      "${appspawn_path}/util/src/param_helper.c",
-      "${appspawn_path}/util/src/sandbox_utils.cpp",
-    ]
-    if (asan_detector || is_asan) {
-      defines += [ "ASAN_DETECTOR" ]
-    }
-    configs = [ ":appspawn_config" ]
-    deps = [ "${appspawn_path}:appspawn_server" ]
-    external_deps = [
-      "ability_base:want",
-      "ability_runtime:app_manager",
-      "ability_runtime:appkit_native",
-      "ability_runtime:runtime",
-      "access_token:libtoken_setproc",
-      "ace_engine:ace_forward_compatibility",
-      "cJSON:cjson",
-      "c_utils:utils",
-      "common_event_service:cesfwk_innerkits",
-      "config_policy:configpolicy_util",
-      "eventhandler:libeventhandler",
-      "hilog:libhilog",
-      "hitrace:hitrace_meter",
-      "init:libbegetutil",
-      "ipc:ipc_single",
-      "libuv:uv",
-      "napi:ace_napi",
-      "os_account:os_account_innerkits",
-      "resource_management:global_resmgr",
-      "selinux:libselinux",
-    ]
-
-    if (build_selinux) {
-      external_deps += [ "selinux_adapter:libhap_restorecon" ]
-    }
-    cflags = []
-
-    if (build_seccomp) {
-      cflags += [ "-DWITH_SECCOMP" ]
-      external_deps += [ "init:seccomp" ]
-    }
-
-    if (!defined(global_parts_info) ||
-        defined(global_parts_info.security_code_signature)) {
-      defines += [ "CODE_SIGNATURE_ENABLE" ]
-      external_deps += [ "code_signature:libcode_sign_attr_utils" ]
-    }
-
-    install_enable = true
-    subsystem_name = "${subsystem_name}"
-    part_name = "${part_name}"
-  }
-
-  ohos_shared_library("appspawn_helper") {
-    sources = [ "${appspawn_path}/common/appspawn_server.c" ]
-    configs = [ ":appspawn_config" ]
-    defines = [ "APPSPAWN_HELPER" ]
-    cflags = [
-      "-fvisibility=hidden",
-      "-fstack-protector-all",
-    ]
-    external_deps = [
-      "ability_runtime:appkit_native",
-      "access_token:libtoken_setproc",
-      "c_utils:utils",
-      "eventhandler:libeventhandler",
-      "hilog:libhilog",
-      "init:libbegetutil",
-      "ipc:ipc_single",
-      "libuv:uv",
-      "napi:ace_napi",
-      "resource_management:global_resmgr",
-      "selinux:libselinux",
-    ]
-
-    install_enable = true
-    subsystem_name = "${subsystem_name}"
-    part_name = "${part_name}"
-  }
-
-  ohos_static_library("appspawn_server") {
-    sources = [
-      "${appspawn_path}/adapter/appspawn_adapter.cpp",
-      "${appspawn_path}/adapter/appspawn_cgroup.c",
-      "${appspawn_path}/adapter/appspawn_nweb.cpp",
-      "${appspawn_path}/adapter/appspawn_sandbox.cpp",
-      "${appspawn_path}/common/appspawn_server.c",
-      "${appspawn_path}/interfaces/innerkits/src/appspawn_mount_permission.cpp",
-      "${appspawn_path}/standard/appspawn_msgmgr.c",
-      "${appspawn_path}/standard/appspawn_process.c",
-      "${appspawn_path}/standard/appspawn_service.c",
-      "${appspawn_path}/util/src/env_utils.cpp",
-      "${appspawn_path}/util/src/json_utils.cpp",
-      "${appspawn_path}/util/src/sandbox_utils.cpp",
-    ]
-    defines = [
-      "GRAPHIC_PERMISSION_CHECK",
-      "INIT_AGENT",
-    ]
-
-    if (asan_detector || is_asan) {
-      defines += [ "ASAN_DETECTOR" ]
-    }
-    configs = [ ":appspawn_config" ]
-    ldflags = [ "-Wl,--dynamic-linker,/system/bin/linker64z" ]
-    deps = []
-    external_deps = [
-      "ability_runtime:appkit_native",
-      "access_token:libtoken_setproc",
-      "access_token:libtokenid_sdk",
-      "cJSON:cjson",
-      "c_utils:utils",
-      "config_policy:configpolicy_util",
-      "eventhandler:libeventhandler",
-      "hilog:libhilog",
-      "init:libbegetutil",
-      "ipc:ipc_single",
-      "libuv:uv",
-      "napi:ace_napi",
-      "netmanager_base:netsys_client",
-      "os_account:os_account_innerkits",
-      "resource_management:global_resmgr",
-      "selinux:libselinux",
-    ]
-
-    if (!defined(global_parts_info) ||
-        defined(global_parts_info.security_security_component_manager)) {
-      defines += [ "SECURITY_COMPONENT_ENABLE" ]
-      external_deps +=
-          [ "security_component_manager:libsecurity_component_sdk" ]
-    }
-
-    if (!defined(global_parts_info) ||
-        defined(global_parts_info.security_code_signature)) {
-      defines += [ "CODE_SIGNATURE_ENABLE" ]
-      external_deps += [ "code_signature:libcode_sign_attr_utils" ]
-    }
-
-    if (build_selinux) {
-      external_deps += [ "selinux_adapter:libhap_restorecon" ]
-    }
-
-    cflags = []
-    if (build_seccomp) {
-      cflags += [ "-DWITH_SECCOMP" ]
-      external_deps += [ "init:seccomp" ]
-    }
-
-    if (appspawn_report_event) {
-      cflags += [ "-DREPORT_EVENT" ]
-      deps += [ "adapter/sysevent:event_reporter" ]
-    }
-
-    subsystem_name = "${subsystem_name}"
-    part_name = "${part_name}"
-  }
-
   ohos_prebuilt_etc("appspawn.rc") {
     source = "appspawn.cfg"
     relative_install_dir = "init"
-    subsystem_name = "${subsystem_name}"
-    part_name = "${part_name}"
-  }
-
-  ohos_executable("pid_ns_init") {
-    sources = [ "${appspawn_path}/standard/pid_ns_init.c" ]
-    install_enable = true
     subsystem_name = "${subsystem_name}"
     part_name = "${part_name}"
   }
@@ -222,13 +44,22 @@ if (!defined(ohos_lite)) {
 group("appspawn_all") {
   deps = []
   if (!defined(ohos_lite)) {
-    deps += [ ":pid_ns_init" ]
-    deps += [ ":appspawn" ]
+    deps += [ "standard:appspawn" ]
+    deps += [ "standard:appspawn_helper" ]
+    deps += [ "standard:pid_ns_init" ]
     deps += [ ":appspawn.rc" ]
-    deps += [ ":appspawn_helper" ]
-    deps += [ ":appspawn_server" ]
     deps += [ "etc:etc_files" ]
-    deps += [ "interfaces/innerkits:appspawn_socket_client" ]
+    deps += [ "modules/ace_adapter:appspawn_ace" ]
+    deps += [ "modules/asan:appspawn_asan" ]
+    deps += [ "modules/nweb_adapter:appspawn_nweb" ]
+    deps += [ "modules/sandbox:appspawn_sandbox" ]
+    deps += [ "modules/common:appspawn_common" ]
+    deps += [ "modules/sysevent:event_reporter" ]
+    deps += [ "${appspawn_innerkits_path}/client:appspawn_client" ]
+    deps += [
+      "${appspawn_path}/modules/module_engine:libappspawn_module_engine",
+      "${appspawn_path}/modules/module_engine:libappspawn_stub_empty",
+    ]
     deps += [ "service/hnp:hnp" ]
   } else {
     deps += [ "lite:appspawn_lite" ]

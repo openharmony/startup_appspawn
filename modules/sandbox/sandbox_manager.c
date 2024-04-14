@@ -77,6 +77,8 @@ SandboxMountNode *CreateSandboxMountNode(uint32_t dataLen, uint32_t type)
 
 void AddSandboxMountNode(SandboxMountNode *node, SandboxSection *queue)
 {
+    APPSPAWN_CHECK_ONLY_EXPER(node != NULL, return);
+    APPSPAWN_CHECK_ONLY_EXPER(queue != NULL, return);
     OH_ListAddWithOrder(&queue->front, &node->node, SandboxNodeCompareProc);
 }
 
@@ -130,6 +132,7 @@ SymbolLinkNode *GetSymbolLinkNode(const SandboxSection *section, const char *tar
 
 void DeleteSandboxMountNode(SandboxMountNode *sandboxNode)
 {
+    APPSPAWN_CHECK_ONLY_EXPER(sandboxNode != NULL, return);
     OH_ListRemove(&sandboxNode->node);
     OH_ListInit(&sandboxNode->node);
     switch (sandboxNode->type) {
@@ -149,7 +152,7 @@ void DeleteSandboxMountNode(SandboxMountNode *sandboxNode)
 
 SandboxMountNode *GetFirstSandboxMountNode(const SandboxSection *section)
 {
-    if (ListEmpty(section->front)) {
+    if (section == NULL || ListEmpty(section->front)) {
         return NULL;
     }
     return (SandboxMountNode *)ListEntry(section->front.next, SandboxMountNode, node);
@@ -157,6 +160,7 @@ SandboxMountNode *GetFirstSandboxMountNode(const SandboxSection *section)
 
 void DumpSandboxMountNode(const SandboxMountNode *sandboxNode, uint32_t index)
 {
+    APPSPAWN_CHECK_ONLY_EXPER(sandboxNode != NULL, return);
     switch (sandboxNode->type) {
         case SANDBOX_TAG_MOUNT_PATH:
         case SANDBOX_TAG_MOUNT_FILE: {
@@ -218,7 +222,6 @@ static void ClearSandboxSection(SandboxSection *section)
     }
     if (section->sandboxNode.type == SANDBOX_TAG_NAME_GROUP) {
         SandboxNameGroupNode *groupNode = (SandboxNameGroupNode *)section;
-        APPSPAWN_LOGV("Free deps %p ", groupNode->depNode);
         if (groupNode->depNode) {
             DeleteSandboxMountNode((SandboxMountNode *)groupNode->depNode);
         }
@@ -477,7 +480,7 @@ void DumpAppSpawnSandboxCfg(AppSpawnSandboxCfg *sandbox)
     DumpSandboxQueue(&sandbox->nameGroupsQueue.front, DumpSandboxNameGroupNode);
 }
 
-static int PreLoadSandboxCfg(AppSpawnMgr *content)
+APPSPAWN_STATIC int PreLoadSandboxCfg(AppSpawnMgr *content)
 {
     AppSpawnSandboxCfg *sandbox = GetAppSpawnSandbox(content);
     APPSPAWN_CHECK(sandbox == NULL, return 0, "Sandbox has been load");
@@ -497,7 +500,7 @@ static int PreLoadSandboxCfg(AppSpawnMgr *content)
     return 0;
 }
 
-static int SandboxHandleServerExit(AppSpawnMgr *content)
+APPSPAWN_STATIC int SandboxHandleServerExit(AppSpawnMgr *content)
 {
     AppSpawnSandboxCfg *sandbox = GetAppSpawnSandbox(content);
     APPSPAWN_CHECK(sandbox != NULL, return 0, "Sandbox not load");
@@ -521,6 +524,10 @@ int SpawnBuildSandboxEnv(AppSpawnMgr *content, AppSpawningCtx *property)
     appSandbox->mounted = 1;
     // for module test do not create sandbox
     if (strncmp(GetBundleName(property), MODULE_TEST_BUNDLE_NAME, strlen(MODULE_TEST_BUNDLE_NAME)) == 0) {
+        return 0;
+    }
+    // no sandbox
+    if (CheckAppMsgFlagsSet(property, APP_FLAGS_NO_SANDBOX)) {
         return 0;
     }
     return ret == 0 ? 0 : APPSPAWN_SANDBOX_MOUNT_FAIL;
@@ -588,7 +595,7 @@ int SpawnPrepareSandboxCfg(AppSpawnMgr *content, AppSpawningCtx *property)
     return 0;
 }
 
-static int SandboxUnmountPath(const AppSpawnMgr *content, const AppSpawnedProcessInfo *appInfo)
+APPSPAWN_STATIC int SandboxUnmountPath(const AppSpawnMgr *content, const AppSpawnedProcessInfo *appInfo)
 {
     APPSPAWN_CHECK_ONLY_EXPER(content != NULL, return -1);
     APPSPAWN_CHECK_ONLY_EXPER(appInfo != NULL, return -1);
@@ -597,6 +604,7 @@ static int SandboxUnmountPath(const AppSpawnMgr *content, const AppSpawnedProces
     return UnmountDepPaths(sandbox, appInfo->uid);
 }
 
+#ifdef APPSPAWN_SANDBOX_NEW
 MODULE_CONSTRUCTOR(void)
 {
     APPSPAWN_LOGV("Load sandbox module ...");
@@ -612,3 +620,4 @@ MODULE_DESTRUCTOR(void)
     ClearVariable();
     ClearExpandAppSandboxConfigHandle();
 }
+#endif

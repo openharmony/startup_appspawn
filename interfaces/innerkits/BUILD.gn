@@ -27,6 +27,8 @@ ohos_static_library("appspawn_socket_client") {
       "src/appspawn_mount_permission.cpp",
     ]
     include_dirs = [
+      "//base/startup/appspawn",
+      "//base/startup/appspawn/util/include",
       "include",
       "//base/startup/appspawn/common",
       "//third_party/json/include",

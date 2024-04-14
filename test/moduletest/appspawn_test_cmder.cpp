@@ -29,8 +29,9 @@
 #include "appspawn.h"
 #include "appspawn_msg.h"
 #include "appspawn_utils.h"
-#include "command_lexer.h"
 #include "cJSON.h"
+#include "command_lexer.h"
+#include "json_utils.h"
 #include "securec.h"
 #include "thread_manager.h"
 
@@ -41,7 +42,7 @@
 namespace OHOS {
 namespace AppSpawnModuleTest {
 static const std::string g_defaultAppInfo = "{ \
-    \"msg-type\": 0, \
+    \"msg-type\": \"MSG_APP_SPAWN\", \
     \"msg-flags\": [1, 2 ], \
     \"process-name\" : \"com.example.myapplication\", \
     \"dac-info\" : { \
@@ -170,39 +171,41 @@ int AppSpawnTestCommander::AddBundleInfoFromJson(const cJSON *appInfoConfig, App
     return 0;
 }
 
-int AppSpawnTestCommander::GetDacInfoFromJson(const cJSON *appInfoConfig, AppDacInfo &info)
+int AppSpawnTestCommander::AddDacInfoFromJson(const cJSON *appInfoConfig, AppSpawnReqMsgHandle reqHandle)
 {
     cJSON *config = cJSON_GetObjectItemCaseSensitive(appInfoConfig, "dac-info");
     APPSPAWN_CHECK_ONLY_EXPER(config, return 0);
 
+    AppDacInfo info = {};
     info.uid = GetIntValueFromJsonObj(config, "uid", 0);
     info.gid = GetIntValueFromJsonObj(config, "gid", 0);
     info.gidCount = GetUint32ArrayFromJson(config, "gid-table", info.gidTable, APP_MAX_GIDS);
     char *userName = GetStringFromJsonObj(config, "user-name");
     if (userName != nullptr) {
-        return strcpy_s(info.userName, sizeof(info.userName), userName);
+        int ret = strcpy_s(info.userName, sizeof(info.userName), userName);
+        APPSPAWN_CHECK(ret == 0, return ret, "Failed to add userName info req %{public}s", userName);
     }
-    return 0;
+    return AppSpawnReqMsgSetAppDacInfo(reqHandle, &info);
 }
 
-int AppSpawnTestCommander::GetInternetPermissionInfoFromJson(
-    const cJSON *appInfoConfig, AppSpawnMsgInternetInfo &info)
+int AppSpawnTestCommander::AddInternetPermissionInfoFromJson(
+    const cJSON *appInfoConfig, AppSpawnReqMsgHandle reqHandle)
 {
     cJSON *config = cJSON_GetObjectItemCaseSensitive(appInfoConfig, "internet-permission");
     APPSPAWN_CHECK_ONLY_EXPER(config, return 0);
 
-    info.setAllowInternet = GetIntValueFromJsonObj(config, "set-allow-internet", 0);
-    info.allowInternet = GetIntValueFromJsonObj(config, "allow-internet", 0);
-    return 0;
+    uint8_t setAllowInternet = GetIntValueFromJsonObj(config, "set-allow-internet", 0);
+    uint8_t allowInternet = GetIntValueFromJsonObj(config, "allow-internet", 0);
+    return AppSpawnReqMsgSetAppInternetPermissionInfo(reqHandle, allowInternet, setAllowInternet);
 }
 
-int AppSpawnTestCommander::GetAccessTokenFromJson(const cJSON *appInfoConfig, AppSpawnMsgAccessToken &info)
+int AppSpawnTestCommander::AddAccessTokenFromJson(const cJSON *appInfoConfig, AppSpawnReqMsgHandle reqHandle)
 {
     cJSON *config = cJSON_GetObjectItemCaseSensitive(appInfoConfig, "access-token");
     APPSPAWN_CHECK_ONLY_EXPER(config, return 0);
 
-    info.accessTokenIdEx = GetIntValueFromJsonObj(config, "accessTokenIdEx", 0);
-    return 0;
+    uint64_t accessTokenIdEx = GetIntValueFromJsonObj(config, "accessTokenIdEx", 0);
+    return AppSpawnReqMsgSetAppAccessToken(reqHandle, accessTokenIdEx);
 }
 
 int AppSpawnTestCommander::AddDomainInfoFromJson(const cJSON *appInfoConfig, AppSpawnReqMsgHandle reqHandle)
@@ -220,7 +223,7 @@ int AppSpawnTestCommander::AddDomainInfoFromJson(const cJSON *appInfoConfig, App
 int AppSpawnTestCommander::AddExtTlv(const cJSON *appInfoConfig, AppSpawnReqMsgHandle reqHandle)
 {
     cJSON *configs = cJSON_GetObjectItemCaseSensitive(appInfoConfig, "ext-info");
-    APPSPAWN_CHECK_ONLY_EXPER(configs, return 0);
+    APPSPAWN_CHECK_ONLY_EXPER(configs != nullptr, return 0);
 
     int ret = 0;
     uint32_t count = cJSON_GetArraySize(configs);
@@ -241,7 +244,8 @@ int AppSpawnTestCommander::AddExtTlv(const cJSON *appInfoConfig, AppSpawnReqMsgH
     dacInfo.gidTable[0] = 101;  // 101 test data
     dacInfo.gidCount = 1;
     (void)strcpy_s(dacInfo.userName, sizeof(dacInfo.userName), processName_.c_str());
-    ret = AppSpawnReqMsgAddExtInfo(reqHandle, "app-dac-info", reinterpret_cast<uint8_t *>(&dacInfo), sizeof(dacInfo));
+    ret = AppSpawnReqMsgAddExtInfo(reqHandle,
+        "app-dac-info", reinterpret_cast<uint8_t *>(&dacInfo), sizeof(dacInfo));
     APPSPAWN_CHECK(ret == 0, return ret, "Failed to add ext name app-info");
     return ret;
 }
@@ -254,16 +258,10 @@ int AppSpawnTestCommander::BuildMsgFromJson(const cJSON *appInfoConfig, AppSpawn
     ret = AddDomainInfoFromJson(appInfoConfig, reqHandle);
     APPSPAWN_CHECK(ret == 0, return ret, "Failed to add dac %{public}s", processName_.c_str());
 
-    AppDacInfo dacInfo = {};
-    ret = GetDacInfoFromJson(appInfoConfig, dacInfo);
-    APPSPAWN_LOGE("*************, %d", dacInfo.gidCount);
-    APPSPAWN_LOGE("*************, %d", dacInfo.uid);
-    ret = AppSpawnReqMsgSetAppDacInfo(reqHandle, &dacInfo);
+    ret = AddDacInfoFromJson(appInfoConfig, reqHandle);
     APPSPAWN_CHECK(ret == 0, return ret, "Failed to add dac %{public}s", processName_.c_str());
 
-    AppSpawnMsgAccessToken token = {};
-    ret = GetAccessTokenFromJson(appInfoConfig, token);
-    ret = AppSpawnReqMsgSetAppAccessToken(reqHandle, token.accessTokenIdEx);
+    ret = AddAccessTokenFromJson(appInfoConfig, reqHandle);
     APPSPAWN_CHECK(ret == 0, return ret, "Failed to add access token %{public}s", processName_.c_str());
 
     cJSON *obj = cJSON_GetObjectItemCaseSensitive(appInfoConfig, "permission");
@@ -277,10 +275,7 @@ int AppSpawnTestCommander::BuildMsgFromJson(const cJSON *appInfoConfig, AppSpawn
         }
     }
 
-    AppSpawnMsgInternetInfo internetInfo = {};
-    ret = GetInternetPermissionInfoFromJson(appInfoConfig, internetInfo);
-    ret = AppSpawnReqMsgSetAppInternetPermissionInfo(reqHandle,
-        internetInfo.allowInternet, internetInfo.setAllowInternet);
+    ret = AddInternetPermissionInfoFromJson(appInfoConfig, reqHandle);
     APPSPAWN_CHECK(ret == 0, return ret, "Failed to internet info %{public}s", processName_.c_str());
 
     std::string ownerId = GetStringFromJsonObj(appInfoConfig, "owner-id");
@@ -312,13 +307,31 @@ int AppSpawnTestCommander::CreateOtherMsg(AppSpawnReqMsgHandle &reqHandle, pid_t
     return 0;
 }
 
-int AppSpawnTestCommander::CreateMsg(AppSpawnReqMsgHandle &reqHandle, const char *defaultConfig)
+static uint32_t GetMsgTypeFromJson(const cJSON *json)
+{
+    const char *msgType = GetStringFromJsonObj(json, "msg-type");
+    if (msgType == nullptr) {
+        return MSG_APP_SPAWN;
+    }
+    if (strcmp(msgType, "MSG_SPAWN_NATIVE_PROCESS") == 0) {
+        return MSG_SPAWN_NATIVE_PROCESS;
+    }
+    if (strcmp(msgType, "MSG_GET_RENDER_TERMINATION_STATUS") == 0) {
+        return MSG_GET_RENDER_TERMINATION_STATUS;
+    }
+    if (strcmp(msgType, "MSG_DUMP") == 0) {
+        return MSG_DUMP;
+    }
+    return MSG_APP_SPAWN;
+}
+
+int AppSpawnTestCommander::CreateMsg(AppSpawnReqMsgHandle &reqHandle,
+    const char *defaultConfig, uint32_t defMsgType)
 {
     int ret = APPSPAWN_SYSTEM_ERROR;
     if (clientHandle_ == NULL) {
-        const char *name = appSpawn_ ? APPSPAWN_SERVER_NAME : NWEBSPAWN_SERVER_NAME;
-        ret = AppSpawnClientInit(name, &clientHandle_);
-        APPSPAWN_CHECK(ret == 0, return -1, "Failed to create client %{public}s", name);
+        ret = AppSpawnClientInit(appSpawn_ ? APPSPAWN_SERVER_NAME : NWEBSPAWN_SERVER_NAME, &clientHandle_);
+        APPSPAWN_CHECK(ret == 0, return -1, "Failed to create client %{public}d", appSpawn_);
     }
     reqHandle = INVALID_REQ_HANDLE;
     if (appInfoConfig_) {
@@ -342,9 +355,8 @@ int AppSpawnTestCommander::CreateMsg(AppSpawnReqMsgHandle &reqHandle, const char
     if (processName_.empty()) {
         processName_ = "com.example.myapplication";
     }
-    if (msgType_ == MAX_TYPE_INVALID) {
-        msgType_ = GetIntValueFromJsonObj(appInfoConfig_, "msg-type", MSG_APP_SPAWN);
-    }
+    msgType_ = (msgType_ == MAX_TYPE_INVALID) ? GetMsgTypeFromJson(appInfoConfig_) : msgType_;
+    msgType_ = (defMsgType != MAX_TYPE_INVALID) ? defMsgType : msgType_;
     if (msgType_ == MSG_DUMP) {
         return CreateOtherMsg(reqHandle, 0);
     } else if (msgType_ == MSG_GET_RENDER_TERMINATION_STATUS) {
@@ -354,11 +366,12 @@ int AppSpawnTestCommander::CreateMsg(AppSpawnReqMsgHandle &reqHandle, const char
     ret = AppSpawnReqMsgCreate(static_cast<AppSpawnMsgType>(msgType_), processName_.c_str(), &reqHandle);
     APPSPAWN_CHECK(ret == 0, return ret, "Failed to create req %{public}s", processName_.c_str());
 
-    uint32_t msgFlags[64] = {};
+    uint32_t msgFlags[64] = {};  // 64
     uint32_t count = GetUint32ArrayFromJson(appInfoConfig_, "msg-flags", msgFlags, ARRAY_LENGTH(msgFlags));
     for (uint32_t j = 0; j < count; j++) {
         (void)AppSpawnReqMsgSetAppFlag(reqHandle, static_cast<AppFlagsIndex>(msgFlags[j]));
     }
+    (void)AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_NO_SANDBOX);
     ret = BuildMsgFromJson(appInfoConfig_, reqHandle);
     APPSPAWN_CHECK(ret == 0, AppSpawnReqMsgFree(reqHandle);
         return ret, "Failed to build req %{public}s", processName_.c_str());
@@ -401,7 +414,8 @@ int AppSpawnTestCommander::SendMsg()
             }
             break;
         case MSG_GET_RENDER_TERMINATION_STATUS:
-            printf("Terminate app %s success, pid %d status 0x%x \n", processName_.c_str(), result.pid, result.result);
+            printf("Terminate app %s success, pid %d status 0x%x \n",
+                processName_.c_str(), result.pid, result.result);
             break;
         default:
             printf("Dump server %s result %d \n", server, ret);

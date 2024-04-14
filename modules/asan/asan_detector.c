@@ -46,6 +46,12 @@ static int SetAsanEnabledEnv(const AppSpawnMgr *content, const AppSpawningCtx *p
         setenv("ASAN_OPTIONS", asanOptions, 1);
         return 0;
     }
+    if (CheckAppMsgFlagsSet(property, APP_FLAGS_TSAN_ENABLED)) {
+        setenv("LD_PRELOAD", "/system/lib64/libclang_rt.tsan.so", 1);
+        unsetenv("UBSAN_OPTIONS");
+        setenv("TSAN_OPTIONS", "include=/system/etc/tsan.options", 1);
+        return 0;
+    }
     return -1;
 }
 

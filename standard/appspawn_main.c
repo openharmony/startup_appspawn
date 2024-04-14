@@ -70,11 +70,11 @@ int main(int argc, char *const argv[])
     if (argc <= MODE_VALUE_INDEX) {  // appspawn start
         arg.mode = MODE_FOR_APP_SPAWN;
     } else if (strcmp(argv[MODE_VALUE_INDEX], "app_cold") == 0) {  // cold start
-        APPSPAWN_CHECK(argc > PARAM_VALUE_INDEX, return 0, "Invalid arg for cold start %{public}d", argc);
+        APPSPAWN_CHECK(argc >= ARG_NULL, return 0, "Invalid arg for cold start %{public}d", argc);
         arg.mode = MODE_FOR_APP_COLD_RUN;
         arg.initArg = 0;
     } else if (strcmp(argv[MODE_VALUE_INDEX], "nweb_cold") == 0) {  // cold start
-        APPSPAWN_CHECK(argc > PARAM_VALUE_INDEX, return 0, "Invalid arg for cold start %{public}d", argc);
+        APPSPAWN_CHECK(argc >= ARG_NULL, return 0, "Invalid arg for cold start %{public}d", argc);
         arg.mode = MODE_FOR_NWEB_COLD_RUN;
         arg.moduleType = MODULE_NWEBSPAWN;
         arg.serviceName = NWEBSPAWN_SERVER_NAME;

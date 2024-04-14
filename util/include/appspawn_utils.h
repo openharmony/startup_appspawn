@@ -28,7 +28,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 
-#include "appspawn_server.h"
+#include "hilog/log.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -45,8 +45,10 @@ extern "C" {
 #endif
 #if defined(__MUSL__)
 #define APPSPAWN_SOCKET_DIR APPSPAWN_BASE_DIR "/dev/unix/socket/"
+#define APPSPAWN_MSG_DIR APPSPAWN_BASE_DIR "/mnt/startup/"
 #else
 #define APPSPAWN_SOCKET_DIR APPSPAWN_BASE_DIR "/dev/socket/"
+#define APPSPAWN_MSG_DIR APPSPAWN_BASE_DIR "/mnt/startup/"
 #endif
 
 #define APPSPAWN_CHECK_EXIT "AppSpawnCheckUnexpectedExitCall"
@@ -67,8 +69,6 @@ extern "C" {
 #define APPSPAWN_USEC_TO_NSEC 1000
 #define APPSPAWN_SEC_TO_MSEC 1000
 
-#define MAX_JSON_FILE_LEN 102400
-
 #define CHECK_FLAGS_BY_INDEX(flags, index) ((((flags) >> (index)) & 0x1) == 0x1)
 #ifndef ARRAY_LENGTH
 #define ARRAY_LENGTH(array) (sizeof((array)) / sizeof((array)[0]))
@@ -87,9 +87,9 @@ typedef enum {
     APPSPAWN_SANDBOX_NONE,
     APPSPAWN_SANDBOX_LOAD_FAIL,
     APPSPAWN_SANDBOX_INVALID,
-    APPSPAWN_SANDBOX_MOUNT_FAIL,
-    APPSPAWN_SPAWN_TIMEOUT,
-    APPSPAWN_CHILD_CRASH,
+    APPSPAWN_SANDBOX_MOUNT_FAIL,  // 0xD00000a
+    APPSPAWN_SPAWN_TIMEOUT,       // 0xD00000a
+    APPSPAWN_CHILD_CRASH,         // 0xD00000b
     APPSPAWN_NATIVE_NOT_SUPPORT,
     APPSPAWN_ACCESS_TOKEN_INVALID,
     APPSPAWN_PERMISSION_NOT_SUPPORT,
@@ -99,21 +99,79 @@ typedef enum {
     APPSPAWN_NODE_EXIST,
 } AppSpawnErrorCode;
 
-typedef struct cJSON cJSON;
-typedef struct TagParseJsonContext ParseJsonContext;
-typedef int (*ParseConfig)(const cJSON *root, ParseJsonContext *context);
-int ParseJsonConfig(const char *path, const char *fileName, ParseConfig parseConfig, ParseJsonContext *context);
-cJSON *GetJsonObjFromFile(const char *jsonPath);
-
-uint8_t *Base64Decode(const char *data, uint32_t dataLen, uint32_t *outLen);
-char *Base64Encode(const uint8_t *data, uint32_t len);
+uint64_t DiffTime(const struct timespec *startTime, const struct timespec *endTime);
 void AppSpawnDump(const char *fmt, ...);
 void SetDumpToStream(FILE *stream);
-
 typedef int (*SplitStringHandle)(const char *str, void *context);
 int32_t StringSplit(const char *str, const char *separator, void *context, SplitStringHandle handle);
 char *GetLastStr(const char *str, const char *dst);
 
+void DumpCurrentDir(char *buffer, uint32_t bufferLen, const char *dirPath);
+
+#ifndef APP_FILE_NAME
+#define APP_FILE_NAME   (strrchr((__FILE__), '/') ? strrchr((__FILE__), '/') + 1 : (__FILE__))
+#endif
+
+#ifndef OHOS_LITE
+#define APPSPAWN_DOMAIN (0xD002C00 + 0x11)
+#ifndef APPSPAWN_LABEL
+#define APPSPAWN_LABEL "APPSPAWN"
+#endif
+
+#undef LOG_TAG
+#define LOG_TAG APPSPAWN_LABEL
+#undef LOG_DOMAIN
+#define LOG_DOMAIN APPSPAWN_DOMAIN
+
+#define APPSPAWN_LOGI(fmt, ...) \
+    HILOG_INFO(LOG_CORE, "[%{public}s:%{public}d]" fmt, (APP_FILE_NAME), (__LINE__), ##__VA_ARGS__)
+#define APPSPAWN_LOGE(fmt, ...) \
+    HILOG_ERROR(LOG_CORE, "[%{public}s:%{public}d]" fmt, (APP_FILE_NAME), (__LINE__), ##__VA_ARGS__)
+#define APPSPAWN_LOGV(fmt, ...) \
+    HILOG_DEBUG(LOG_CORE, "[%{public}s:%{public}d]" fmt, (APP_FILE_NAME), (__LINE__), ##__VA_ARGS__)
+#define APPSPAWN_LOGW(fmt, ...) \
+    HILOG_WARN(LOG_CORE, "[%{public}s:%{public}d]" fmt, (APP_FILE_NAME), (__LINE__), ##__VA_ARGS__)
+#define APPSPAWN_LOGF(fmt, ...) \
+    HILOG_FATAL(LOG_CORE, "[%{public}s:%{public}d]" fmt, (APP_FILE_NAME), (__LINE__), ##__VA_ARGS__)
+
+#define APPSPAPWN_DUMP(fmt, ...) \
+    do { \
+        HILOG_INFO(LOG_CORE, fmt, ##__VA_ARGS__); \
+        AppSpawnDump(fmt "\n", ##__VA_ARGS__); \
+    } while (0)
+
+#else
+
+#define APPSPAWN_LOGI(fmt, ...) \
+    HILOG_INFO(HILOG_MODULE_HIVIEW, "[%{public}s:%{public}d]" fmt,  (APP_FILE_NAME), (__LINE__), ##__VA_ARGS__)
+#define APPSPAWN_LOGE(fmt, ...) \
+    HILOG_ERROR(HILOG_MODULE_HIVIEW, "[%{public}s:%{public}d]" fmt,  (APP_FILE_NAME), (__LINE__), ##__VA_ARGS__)
+#define APPSPAWN_LOGV(fmt, ...) \
+    HILOG_DEBUG(HILOG_MODULE_HIVIEW, "[%{public}s:%{public}d]" fmt,  (APP_FILE_NAME), (__LINE__), ##__VA_ARGS__)
+#define APPSPAWN_LOGW(fmt, ...) \
+    HILOG_FATAL(HILOG_MODULE_HIVIEW, "[%{public}s:%{public}d]" fmt,  (APP_FILE_NAME), (__LINE__), ##__VA_ARGS__)
+#endif
+
+#define APPSPAWN_CHECK(retCode, exper, fmt, ...) \
+    if (!(retCode)) {                    \
+        APPSPAWN_LOGE(fmt, ##__VA_ARGS__);         \
+        exper;                           \
+    }
+
+#define APPSPAWN_CHECK_ONLY_EXPER(retCode, exper) \
+    if (!(retCode)) {                  \
+        exper;                 \
+    }                         \
+
+#define APPSPAWN_ONLY_EXPER(retCode, exper) \
+    if ((retCode)) {                  \
+        exper;                 \
+    }
+
+#define APPSPAWN_CHECK_ONLY_LOG(retCode, fmt, ...) \
+    if (!(retCode)) {                    \
+        APPSPAWN_LOGE(fmt, ##__VA_ARGS__);      \
+    }
 #ifdef __cplusplus
 }
 #endif  // __cplusplus

@@ -15,19 +15,34 @@ import("//base/startup/appspawn/appspawn.gni")
 import("//base/startup/appspawn/etc/sandbox/appdata_sandbox_fixer.gni")
 import("//build/ohos.gni")
 
-ohos_prebuilt_appdata_sandbox("appdata-sandbox.json") {
-  source = "../appdata-sandbox.json"
-  patterns = []
-  extra_sandbox_cfgs = []
-  if (target_cpu == "arm64" || target_cpu == "x86_64") {
-    extra_sandbox_cfgs += [ "../appdata-sandbox64.json" ]
+if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
+  ohos_prebuilt_etc("appdata-sandbox-nweb.json") {
+    source = "../appdata-sandbox-nweb.json"
+    part_name = "${part_name}"
+    module_install_dir = "etc/sandbox"
   }
-  if (is_asan) {
-    extra_sandbox_cfgs += [ "../appdata-sandbox-asan.json" ]
+
+  ohos_prebuilt_etc("appdata-sandbox.json") {
+    source = "../appdata-sandbox-app.json"
+    output = "appdata-sandbox.json"
+    part_name = "${part_name}"
+    module_install_dir = "etc/sandbox"
   }
-  subsystem_name = "${subsystem_name}"
-  part_name = "${part_name}"
-  module_install_dir = "etc/sandbox"
+} else {
+  ohos_prebuilt_appdata_sandbox("appdata-sandbox.json") {
+    source = "../appdata-sandbox.json"
+    patterns = []
+    extra_sandbox_cfgs = []
+    if (target_cpu == "arm64" || target_cpu == "x86_64") {
+      extra_sandbox_cfgs += [ "../appdata-sandbox64.json" ]
+    }
+    if (is_asan) {
+      extra_sandbox_cfgs += [ "../appdata-sandbox-asan.json" ]
+    }
+    subsystem_name = "${subsystem_name}"
+    part_name = "${part_name}"
+    module_install_dir = "etc/sandbox"
+  }
 }
 
 ohos_prebuilt_etc("appspawn_preload.json") {
@@ -41,4 +56,7 @@ group("etc_files") {
     ":appdata-sandbox.json",
     ":appspawn_preload.json",
   ]
+  if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
+    deps += [ ":appdata-sandbox-nweb.json" ]
+  }
 }

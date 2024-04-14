@@ -12,19 +12,55 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <pthread.h>
 #include <stdlib.h>
+#include <pthread.h>
 
+#ifdef APPSPAWN_CLIENT
 #include "appspawn_mount_permission.h"
+#else
+#include "appspawn_sandbox.h"
+#endif
 #include "appspawn_msg.h"
 #include "appspawn_permission.h"
 #include "appspawn_utils.h"
-#include "cJSON.h"
+#include "json_utils.h"
 #include "securec.h"
 
 static pthread_mutex_t g_mutex = PTHREAD_MUTEX_INITIALIZER;
 static int32_t g_maxPermissionIndex = -1;
 static SandboxQueue g_permissionQueue = {0};
+
+#ifdef APPSPAWN_SANDBOX_NEW
+static int ParseAppSandboxConfig(const cJSON *root, ParseJsonContext *context)
+{
+    // conditional
+    cJSON *json = cJSON_GetObjectItemCaseSensitive(root, "conditional");
+    if (json == NULL) {
+        return 0;
+    }
+    // permission
+    cJSON *config = cJSON_GetObjectItemCaseSensitive(json, "permission");
+    if (config == NULL || !cJSON_IsArray(config)) {
+        return 0;
+    }
+
+    uint32_t configSize = cJSON_GetArraySize(config);
+    for (uint32_t i = 0; i < configSize; i++) {
+        cJSON *json = cJSON_GetArrayItem(config, i);
+        if (json == NULL) {
+            continue;
+        }
+        char *name = GetStringFromJsonObj(json, "name");
+        if (name == NULL) {
+            APPSPAWN_LOGE("No name in permission configs");
+            continue;
+        }
+        int ret = AddSandboxPermissionNode(name, &g_permissionQueue);
+        APPSPAWN_CHECK_ONLY_EXPER(ret == 0, return ret);
+    }
+    return 0;
+}
+#else
 
 static int ParsePermissionConfig(const cJSON *permissionConfigs)
 {
@@ -53,6 +89,7 @@ static int ParseAppSandboxConfig(const cJSON *appSandboxConfig, ParseJsonContext
     }
     return ret;
 }
+#endif
 
 static int LoadPermissionConfig(void)
 {
@@ -83,7 +120,11 @@ const char *GetPermissionByIndex(int32_t index)
         return NULL;
     }
     const SandboxPermissionNode *node = GetPermissionNodeInQueueByIndex(&g_permissionQueue, index);
+#ifdef APPSPAWN_CLIENT
     return node == NULL ? NULL : node->name;
+#else
+    return node == NULL ? NULL : node->section.name;
+#endif
 }
 
 static void LoadPermission(void)

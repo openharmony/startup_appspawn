@@ -182,15 +182,16 @@ HWTEST(AppSpawnColdRunTest, App_Spawn_Cold_Run_002, TestSize.Level0)
 static std::string GetColdRunArgs(AppSpawningCtx *property, const char *arg)
 {
     std::string argStr = arg;
-    const uint32_t memSize = (property->message->msgHeader.msgLen % 1024 + 1) * 1024;  // 1024
-    property->forkCtx.shmId = shmget(IPC_PRIVATE, memSize, 0600);                      // 0600 mask
-    APPSPAWN_CHECK(property->forkCtx.shmId >= 0, return nullptr,
+    int ret = WriteMsgToChild(property);
+    APPSPAWN_CHECK(ret == 0, return nullptr,
         "Failed to get shm for %{public}s errno %{public}d", GetProcessName(property), errno);
-    property->forkCtx.memSize = memSize;
-    SendAppSpawnMsgToChild(property, property->message);
-    argStr += "null";
+
     argStr += "  -fd -1 0  ";
-    argStr += std::to_string(property->forkCtx.shmId);
+    argStr += std::to_string(property->forkCtx.msgSize);
+    argStr += "  -param ";
+    argStr += GetProcessName(property);
+    argStr += "  ";
+    argStr += std::to_string(property->client.id);
     return argStr;
 }
 
@@ -214,7 +215,7 @@ HWTEST(AppSpawnColdRunTest, App_Spawn_Cold_Run_003, TestSize.Level0)
         property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
         APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
 
-        std::string cmd = GetColdRunArgs(property, "appspawn -mode app_cold -param ");
+        std::string cmd = GetColdRunArgs(property, "appspawn -mode app_cold ");
         content = AppSpawnTestHelper::StartSpawnServer(cmd, args);
         APPSPAWN_CHECK_ONLY_EXPER(content != nullptr, break);
 
@@ -252,7 +253,7 @@ HWTEST(AppSpawnColdRunTest, App_Spawn_Cold_Run_004, TestSize.Level0)
         property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
         APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
 
-        std::string cmd = GetColdRunArgs(property, "appspawn -mode nweb_cold -param ");
+        std::string cmd = GetColdRunArgs(property, "appspawn -mode nweb_cold ");
         content = AppSpawnTestHelper::StartSpawnServer(cmd, args);
         APPSPAWN_CHECK_ONLY_EXPER(content != nullptr, break);
         ASSERT_EQ(content->mode, MODE_FOR_NWEB_COLD_RUN);
@@ -297,7 +298,7 @@ HWTEST(AppSpawnColdRunTest, App_Spawn_Cold_Run_005, TestSize.Level0)
         property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
         APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
 
-        std::string cmd = GetColdRunArgs(property, "appspawn -mode app_cold -param ");
+        std::string cmd = GetColdRunArgs(property, "appspawn -mode app_cold ");
         content = AppSpawnTestHelper::StartSpawnServer(cmd, args);
         APPSPAWN_CHECK_ONLY_EXPER(content != nullptr, break);
         ASSERT_EQ(content->mode, MODE_FOR_APP_COLD_RUN);
@@ -342,7 +343,7 @@ HWTEST(AppSpawnColdRunTest, App_Spawn_Cold_Run_006, TestSize.Level0)
         property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
         APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
 
-        std::string cmd = GetColdRunArgs(property, "appspawn -mode app_cold -param ");
+        std::string cmd = GetColdRunArgs(property, "appspawn -mode app_cold ");
         content = AppSpawnTestHelper::StartSpawnServer(cmd, args);
         APPSPAWN_CHECK_ONLY_EXPER(content != nullptr, break);
         ASSERT_EQ(content->mode, MODE_FOR_APP_COLD_RUN);
@@ -437,157 +438,5 @@ HWTEST(AppSpawnColdRunTest, App_Spawn_Cold_Run_009, TestSize.Level0)
     AppSpawnClientDestroy(clientHandle);
     node->flags &= ~STUB_NEED_CHECK;
     ASSERT_EQ(ret, 0);
-}
-
-static int TestBase64(const char *data)
-{
-    uint32_t outLen = 0;
-    uint32_t inLen = strlen(data);
-    char *encodeData = nullptr;
-    uint8_t *result = nullptr;
-    int ret = -1;
-    do {
-        encodeData = Base64Encode(reinterpret_cast<const uint8_t *>(data), inLen);
-        APPSPAWN_CHECK(encodeData != nullptr, break, "Failed encode %{public}s", data);
-        result = Base64Decode(encodeData, strlen(encodeData), &outLen);
-        APPSPAWN_CHECK(result != nullptr, break, "Failed decode %{public}s", data);
-        APPSPAWN_CHECK(outLen == inLen, break, "Failed len %{public}s %{public}d %{public}d", data, outLen, inLen);
-        APPSPAWN_CHECK(memcmp(reinterpret_cast<char *>(result), data, outLen) == 0,
-            break, "result %{public}s %{public}s", data, result);
-        ret = 0;
-    } while (0);
-    if (encodeData) {
-        free(encodeData);
-    }
-    if (result) {
-        free(result);
-    }
-    return ret;
-}
-
-/**
- * @brief 测试base64
- *
- */
-HWTEST(AppSpawnColdRunTest, App_Spawn_Base64_001, TestSize.Level0)
-{
-    const char *data = "a";
-    int ret = TestBase64(data);
-    ASSERT_EQ(ret, 0);
-}
-
-/**
- * @brief 测试base64
- *
- */
-HWTEST(AppSpawnColdRunTest, App_Spawn_Base64_002, TestSize.Level0)
-{
-    const char *data = "ab";
-    int ret = TestBase64(data);
-    ASSERT_EQ(ret, 0);
-}
-
-/**
- * @brief 测试base64
- *
- */
-HWTEST(AppSpawnColdRunTest, App_Spawn_Base64_003, TestSize.Level0)
-{
-    const char *data = "abc";
-    int ret = TestBase64(data);
-    ASSERT_EQ(ret, 0);
-}
-
-/**
- * @brief 测试base64
- *
- */
-HWTEST(AppSpawnColdRunTest, App_Spawn_Base64_004, TestSize.Level0)
-{
-    const char *data = "abcd";
-    int ret = TestBase64(data);
-    ASSERT_EQ(ret, 0);
-}
-
-/**
- * @brief 测试base64
- *
- */
-HWTEST(AppSpawnColdRunTest, App_Spawn_Base64_005, TestSize.Level0)
-{
-    const char *data = "abcde";
-    int ret = TestBase64(data);
-    ASSERT_EQ(ret, 0);
-}
-
-/**
- * @brief 测试base64
- *
- */
-HWTEST(AppSpawnColdRunTest, App_Spawn_Base64_006, TestSize.Level0)
-{
-    const char *data = "abcdedf";
-    int ret = TestBase64(data);
-    ASSERT_EQ(ret, 0);
-}
-
-/**
- * @brief 测试base64
- *
- */
-HWTEST(AppSpawnColdRunTest, App_Spawn_Base64_007, TestSize.Level0)
-{
-    const char *data = "abcdedf";
-    uint32_t outLen = 0;
-    uint8_t *result = Base64Decode(data, strlen(data), &outLen);
-    ASSERT_EQ(result == nullptr, 1);
-}
-
-/**
- * @brief 测试base64
- *
- */
-HWTEST(AppSpawnColdRunTest, App_Spawn_Base64_008, TestSize.Level0)
-{
-    const char *data = "abcdedf";
-    uint32_t outLen = 0;
-    uint8_t *result = Base64Decode(data, strlen(data) + 1, &outLen);
-    ASSERT_EQ(result == nullptr, 1);
-}
-
-/**
- * @brief 测试base64
- *
- */
-HWTEST(AppSpawnColdRunTest, App_Spawn_Base64_009, TestSize.Level0)
-{
-    const char *data = "abcdedf{";
-    uint32_t outLen = 0;
-    uint8_t *result = Base64Decode(data, strlen(data), &outLen);
-    ASSERT_EQ(result == nullptr, 1);
-}
-
-/**
- * @brief 测试base64
- *
- */
-HWTEST(AppSpawnColdRunTest, App_Spawn_Base64_010, TestSize.Level0)
-{
-    const char *data = "*abcdedf{";
-    uint32_t outLen = 0;
-    uint8_t *result = Base64Decode(data, strlen(data), &outLen);
-    ASSERT_EQ(result == nullptr, 1);
-}
-
-/**
- * @brief 测试base64
- *
- */
-HWTEST(AppSpawnColdRunTest, App_Spawn_Base64_011, TestSize.Level0)
-{
-    const char *data = "a.bcdedf";
-    uint32_t outLen = 0;
-    uint8_t *result = Base64Decode(data, strlen(data), &outLen);
-    ASSERT_EQ(result == nullptr, 1);
 }
 }  // namespace OHOS
