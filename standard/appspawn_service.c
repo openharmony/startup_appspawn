@@ -160,12 +160,25 @@ static void OnClose(const TaskHandle taskHandle)
     }
     AppSpawnConnection *connection = (AppSpawnConnection *)LE_GetUserData(taskHandle);
     APPSPAWN_CHECK(connection != NULL, return, "Invalid connection");
+    if (connection->receiverCtx.timer) {
+        LE_StopTimer(LE_GetDefaultLoop(), connection->receiverCtx.timer);
+        connection->receiverCtx.timer = NULL;
+    }
     APPSPAWN_LOGI("OnClose connectionId: %{public}u socket %{public}d",
         connection->connectionId, LE_GetSocketFd(taskHandle));
     DeleteAppSpawnMsg(connection->receiverCtx.incompleteMsg);
     connection->receiverCtx.incompleteMsg = NULL;
     // connect close, to close spawning app
     AppSpawningCtxTraversal(AppSpawningCtxOnClose, connection);
+}
+
+static void OnDisConnect(const TaskHandle taskHandle)
+{
+    AppSpawnConnection *connection = (AppSpawnConnection *)LE_GetUserData(taskHandle);
+    APPSPAWN_CHECK(connection != NULL, return, "Invalid connection");
+    APPSPAWN_LOGI("OnDisConnect connectionId: %{public}u socket %{public}d",
+        connection->connectionId, LE_GetSocketFd(taskHandle));
+    OnClose(taskHandle);
 }
 
 static void SendMessageComplete(const TaskHandle taskHandle, BufferHandle handle)
@@ -233,7 +246,7 @@ static int OnConnection(const LoopHandle loopHandle, const TaskHandle server)
     info.baseInfo.flags = TASK_STREAM | TASK_PIPE | TASK_CONNECT;
     info.baseInfo.close = OnClose;
     info.baseInfo.userDataSize = sizeof(AppSpawnConnection);
-    info.disConnectComplete = NULL;
+    info.disConnectComplete = OnDisConnect;
     info.sendMessageComplete = SendMessageComplete;
     info.recvMessage = OnReceiveRequest;
     LE_STATUS ret = LE_AcceptStreamClient(loopHandle, server, &stream, &info);
@@ -316,13 +329,13 @@ static void OnReceiveRequest(const TaskHandle taskHandle, const uint8_t *buffer,
     return;
 }
 
-static char *GetMapMem(AppSpawnMgr *content, uint32_t clientId, const char *processName, uint32_t size, bool readOnly)
+static char *GetMapMem(uint32_t clientId, const char *processName, uint32_t size, bool readOnly, bool isNweb)
 {
     char path[PATH_MAX] = {};
     int len = sprintf_s(path, sizeof(path), APPSPAWN_MSG_DIR "%s/%s_%d",
-        IsNWebSpawnMode(content) ? "nwebspawn" : "appspawn", processName, clientId);
+        isNweb ? "nwebspawn" : "appspawn", processName, clientId);
     APPSPAWN_CHECK(len > 0, return NULL, "Failed to format path %{public}s", processName);
-
+    APPSPAWN_LOGV("GetMapMem for child %{public}s memSize %{public}u", path, size);
     int prot = PROT_READ;
     int mode = O_RDONLY;
     if (!readOnly) {
@@ -341,13 +354,12 @@ static char *GetMapMem(AppSpawnMgr *content, uint32_t clientId, const char *proc
     return (char *)areaAddr;
 }
 
-APPSPAWN_STATIC int WriteMsgToChild(AppSpawningCtx *property)
+APPSPAWN_STATIC int WriteMsgToChild(AppSpawningCtx *property, bool isNweb)
 {
-    const uint32_t memSize = (property->message->msgHeader.msgLen % 4096 + 1) * 4096; // 4096 4K
-    char *buffer = GetMapMem(GetAppSpawnMgr(), property->client.id, GetProcessName(property), memSize, false);
+    const uint32_t memSize = (property->message->msgHeader.msgLen / 4096 + 1) * 4096; // 4096 4K
+    char *buffer = GetMapMem(property->client.id, GetProcessName(property), memSize, false, isNweb);
     APPSPAWN_CHECK(buffer != NULL, return APPSPAWN_SYSTEM_ERROR,
         "Failed to map memory error %{public}d fileName %{public}s ", errno, GetProcessName(property));
-
     // copy msg header
     int ret = memcpy_s(buffer, memSize, &property->message->msgHeader, sizeof(AppSpawnMsg));
     if (ret == 0) {
@@ -361,6 +373,7 @@ APPSPAWN_STATIC int WriteMsgToChild(AppSpawningCtx *property)
     }
     property->forkCtx.msgSize = memSize;
     property->forkCtx.childMsg = buffer;
+    APPSPAWN_LOGV("Write msg to child: %{public}u success", property->client.id);
     return 0;
 }
 
@@ -377,7 +390,7 @@ static int InitForkContext(AppSpawningCtx *property)
 
     if (property->client.flags & APP_COLD_START) { // for cold run, use shared memory to exchange message
         APPSPAWN_LOGV("Write msg to child %{public}s", GetProcessName(property));
-        return WriteMsgToChild(property);
+        return WriteMsgToChild(property, IsNWebSpawnMode(GetAppSpawnMgr()));
     }
     return 0;
 }
@@ -611,7 +624,8 @@ static AppSpawningCtx *GetAppSpawningCtxFromArg(AppSpawnMgr *content, int argc, 
 
     uint32_t size = atoi(argv[SHM_SIZE_INDEX]);
     property->client.id = atoi(argv[CLIENT_ID_INDEX]);
-    uint8_t *buffer = (uint8_t *)GetMapMem(content, property->client.id, argv[PARAM_VALUE_INDEX], size, true);
+    uint8_t *buffer = (uint8_t *)GetMapMem(property->client.id,
+        argv[PARAM_VALUE_INDEX], size, true, IsNWebSpawnMode(content));
     if (buffer == NULL) {
         APPSPAWN_LOGE("Failed to map errno %{public}d %{public}s", property->client.id, argv[PARAM_VALUE_INDEX]);
         NotifyResToParent(&content->content, &property->client, APPSPAWN_SYSTEM_ERROR);
@@ -693,7 +707,7 @@ static void AppSpawnRun(AppSpawnContent *content, int argc, char *const argv[])
     AppSpawnDestroyContent(content);
 }
 
-static int AppSpawnClearEnv(AppSpawnMgr *content, AppSpawningCtx *property)
+APPSPAWN_STATIC int AppSpawnClearEnv(AppSpawnMgr *content, AppSpawningCtx *property)
 {
     APPSPAWN_CHECK(content != NULL, return 0, "Invalid appspawn content");
     bool isNweb = IsNWebSpawnMode(content);
