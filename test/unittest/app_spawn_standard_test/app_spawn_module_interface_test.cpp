@@ -626,6 +626,7 @@ HWTEST(AppSpawnModuleInterfaceTest, App_Spawn_CreateSandboxSection_001, TestSize
     EXPECT_EQ(SANDBOX_TAG_INVALID, GetSectionType(nullptr));
     EXPECT_NE(SANDBOX_TAG_INVALID, GetSectionType(&node));
 
+    free(mountNode);
     DeleteSandboxSection(nullptr);
 }
 

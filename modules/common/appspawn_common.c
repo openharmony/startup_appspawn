@@ -373,11 +373,9 @@ static int SpawnSetProperties(AppSpawnMgr *content, AppSpawningCtx *property)
     (void)umask(DEFAULT_UMASK);
     int ret = SetKeepCapabilities(content, property);
     APPSPAWN_CHECK_ONLY_EXPER(ret == 0, return ret);
-
     ret = SetXpmConfig(content, property);
     APPSPAWN_CHECK_ONLY_EXPER(ret == 0, return ret);
 
-    // 这里是否有必要
     ret = SetProcessName(content, property);
     APPSPAWN_CHECK_ONLY_EXPER(ret == 0, return ret);
 

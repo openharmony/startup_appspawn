@@ -66,6 +66,7 @@ APPSPAWN_STATIC int AppSpawnChild(AppSpawnContent *content, AppSpawnClient *clie
     int ret = AppSpawnExecuteClearEnvHook(content, client);
     APPSPAWN_CHECK_ONLY_EXPER(ret == 0,
         NotifyResToParent(content, client, ret);
+        AppSpawnEnvClear(content, client);
         return 0);
 
     if (client->flags & APP_COLD_START) {
@@ -78,11 +79,13 @@ APPSPAWN_STATIC int AppSpawnChild(AppSpawnContent *content, AppSpawnClient *clie
     ret = AppSpawnExecuteSpawningHook(content, client);
     APPSPAWN_CHECK_ONLY_EXPER(ret == 0,
         NotifyResToParent(content, client, ret);
+        AppSpawnEnvClear(content, client);
         return 0);
 
     ret = AppSpawnExecutePreReplyHook(content, client);
     APPSPAWN_CHECK_ONLY_EXPER(ret == 0,
         NotifyResToParent(content, client, ret);
+        AppSpawnEnvClear(content, client);
         return 0);
 
     // notify success to father process and start app process
