@@ -21,6 +21,7 @@ if (!defined(ohos_lite)) {
     ]
     sources = [
       "${appspawn_path}/service/hnp/base/hnp_file.c",
+      "${appspawn_path}/service/hnp/base/hnp_json.c",
       "${appspawn_path}/service/hnp/base/hnp_log.c",
       "${appspawn_path}/service/hnp/base/hnp_sal.c",
       "${appspawn_path}/service/hnp/base/hnp_zip.c",
@@ -47,6 +48,7 @@ if (!defined(ohos_lite)) {
     ]
     sources = [
       "${appspawn_path}/service/hnp/base/hnp_file.c",
+      "${appspawn_path}/service/hnp/base/hnp_json.c",
       "${appspawn_path}/service/hnp/base/hnp_log.c",
       "${appspawn_path}/service/hnp/base/hnp_zip.c",
       "${appspawn_path}/service/hnp/hnpcli_main.c",
