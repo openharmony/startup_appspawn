@@ -190,6 +190,7 @@ int KillAndWaitStatus(pid_t pid, int sig)
     int exitStatus = 0;
     if (kill(pid, sig) != 0) {
         APPSPAWN_LOGE("unable to kill process, pid: %{public}d ret %{public}d", pid, errno);
+        return -1;
     }
 
     pid_t exitPid = waitpid(pid, &exitStatus, 0);
