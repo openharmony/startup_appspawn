@@ -14,6 +14,7 @@
  */
 
 #include <string.h>
+#include <unistd.h>
 
 #include "hnp_base.h"
 #include "hnp_installer.h"
@@ -33,6 +34,7 @@ typedef struct NativeManagerCmdInfoStru {
 
 NativeManagerCmdInfo g_nativeManagerCmd[] = {
     {"help", HnpShowHelp},
+    {"-h", HnpShowHelp},
     {"install", HnpCmdInstall},
     {"uninstall", HnpCmdUnInstall}
 };
@@ -42,17 +44,28 @@ int HnpShowHelp(int argc, char *argv[])
     (void)argc;
     (void)argv;
 
-    HNP_LOGI("\r\nusage:hnp <command> <args>\r\n"
+    HNP_LOGI("\r\nusage:hnp <command> <args> [-u <user id>][-p <software package path>]"
+        "[-i <private path>][-f]\r\n"
         "\r\nThese are common hnp commands used in various situations:\r\n"
-        "\r\nIf the [package name] is null, it represents a public install/nuninstall,\r\n"
-        "    or it represents a private install/nuninstall\r\n"
-        "\r\ninstall:    install native software"
-        "\r\n            hnp install [user id] [hnp package dir] [package name] <-f>\r\n"
-        "\r\nuninstall:    uninstall native software"
-        "\r\n              hnp uninstall [user id] [software name] [software version] [package name]\r\n"
+        "\r\ninstall: install one or more native hnp packages"
+        "\r\n           hnp install <-u [user id]> <-p [hnp package path]> <-i [hnp install path]> <-f>"
+        "\r\n           -u    : [required]    user id"
+        "\r\n           -p    : [required]    path of hnp package to be installed, multiple packages are supported"
+        "\r\n           -i    : [optional]    hnp install path; if not provided, it will be installed to"
+            " public hnp path"
+        "\r\n           -f    : [optional]    if provided, the hnp package will be installed forcely, ignoring old"
+            " versions of the hnp package\r\n"
+        "\r\nuninstall: uninstall one hnp package"
+        "\r\n           hnp uninstall <-u [user id]> <-n [hnp package name]> <-v [hnp package version]>"
+            " <-i [hnp package uninstall path]>"
+        "\r\n           -u    : [required]    user id"
+        "\r\n           -n    : [required]    hnp package name"
+        "\r\n           -v    : [required]    hnp package version"
+        "\r\n           -i    : [optional]    the path for uninstalling the hnp package; if not provided, it will"
+            " install from the default public hnp path\r\n"
         "\r\nfor example:\r\n"
-        "\r\n    hnp install 1000 /usr1/hnp wechat -f\r\n"
-        "    hnp uninstall 1000 native_sample 1.1 wechat\r\n");
+        "\r\n    hnp install -u 1000 -p /usr1/hnp/sample.hnp -p /usr1/hnp/sample2.hnp -i /data/app/el1/bundle/ -f"
+        "\r\n    hnp uninstall -u 1000 -n native_sample -v 1.1 -i /data/app/el1/bundle/\r\n");
 
     return 0;
 }
@@ -85,14 +98,17 @@ int main(int argc, char *argv[])
     /* 检验用户命令，获取对应的处理函数 */
     cmdInfo = HnpCmdCheck(argv[HNP_INDEX_1]);
     if (cmdInfo == NULL) {
-        HNP_LOGE("invalid cmd!. cmd:%s", argv[HNP_INDEX_1]);
+        HNP_LOGE("invalid cmd!. cmd:%s\r\n", argv[HNP_INDEX_1]);
         return HNP_ERRNO_OPERATOR_TYPE_INVALID;
     }
 
     /* 执行命令 */
     ret = cmdInfo->process(argc, argv);
+    if (ret == HNP_ERRNO_OPERATOR_ARGV_MISS) {
+        HnpShowHelp(argc, argv);
+    }
 
-    HNP_LOGI("native manager process exit. ret=%d ", ret);
+    HNP_LOGI("native manager process exit. ret=%d \r\n", ret);
     return ret;
 }
 
