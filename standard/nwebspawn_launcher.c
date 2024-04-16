@@ -51,7 +51,9 @@ void NWebSpawnInit(void)
     // ownerId must been set before setcon & setuid
     (void)SetXpmOwnerId(PROCESS_OWNERID_EXTEND, NULL);
 #endif
+#ifdef WITH_SELINUX    
     setcon("u:r:nwebspawn:s0");
+#endif
     pid_t pid = getpid();
     setpriority(PRIO_PROCESS, pid, 0);
     struct  __user_cap_header_struct capHeader;

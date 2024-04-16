@@ -11,7 +11,7 @@
 | 接口名                                                       | 描述                                     |
 | :----------------------------------------------------------- | :--------------------------------------- |
 | [NativeInstallHnp](api_hnp.md#nativeinstallhnp)| 安装Native软件包          |
-|[NativeUnInstallHnp]((api_hnp.md#nativeuninstallhnp))| 卸载Native软件包 |
+|[NativeUnInstallHnp](api_hnp.md#nativeuninstallhnp)| 卸载Native软件包 |
 
 
 ## 开发步骤

@@ -100,8 +100,10 @@ static void KillProcessesByCGroup(const char *path, AppSpawnMgr *content, const 
             continue;
         }
         APPSPAWN_LOGI("Kill app pid %{public}d now ...", pid);
-#ifdef APPSPAWN_TEST
-        kill(pid, SIGKILL);
+#ifndef APPSPAWN_TEST
+        if (kill(pid, SIGKILL) != 0) {
+            APPSPAWN_LOGE("unable to kill process, pid: %{public}d ret %{public}d", pid, errno);
+        }
 #endif
     }
     (void)fclose(file);
