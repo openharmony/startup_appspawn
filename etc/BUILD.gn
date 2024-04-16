@@ -24,7 +24,7 @@ if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
 
   ohos_prebuilt_etc("appdata-sandbox.json") {
     source = "../appdata-sandbox-app.json"
-    output = "appdata-sandbox.json"
+    symlink_target_name = ["appdata-sandbox.json"]
     part_name = "${part_name}"
     module_install_dir = "etc/sandbox"
   }

@@ -151,7 +151,9 @@ static int NsInitFunc()
 {
     setuid(PID_NS_INIT_UID);
     setgid(PID_NS_INIT_GID);
+#ifdef WITH_SELINUX
     setcon("u:r:pid_ns_init:s0");
+#endif
     char *argv[] = {"/system/bin/pid_ns_init", NULL};
     execve("/system/bin/pid_ns_init", argv, NULL);
     _exit(0);
