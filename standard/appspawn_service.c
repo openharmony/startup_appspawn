@@ -62,8 +62,8 @@ static void AppQueueDestroyProc(const AppSpawnMgr *mgr, AppSpawnedProcess *appIn
     OH_ListRemove(&appInfo->node);
     OH_ListInit(&appInfo->node);
     free(appInfo);
-    if (pid > 0) {
-        kill(pid, SIGKILL);
+    if (pid > 0 && kill(pid, SIGKILL) != 0) {
+        APPSPAWN_LOGE("unable to kill process, pid: %{public}d errno: %{public}d", pid, errno);
     }
 }
 
