@@ -194,6 +194,16 @@
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
+                    "src-path" : "/data/local/shader_cache/local/<PackageName>",
+                    "sandbox-path" : "/data/storage/shader_cache/local",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/data/local/shader_cache/cloud/<PackageName>",
+                    "sandbox-path" : "/data/storage/shader_cache/cloud",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
                     "src-path" : "/mnt/share/<currentUserId>/<PackageName_index>",
                     "sandbox-path" : "/data/storage/el2/share",
                     "sandbox-flags" : [ "bind", "rec" ],
@@ -782,6 +792,15 @@
             "mount-paths": [{
                     "src-path": "/data/app/el2/<currentUserId>/database/com.ohos.medialibrary.medialibrarydata",
                     "sandbox-path": "/data/medialibrary/database",
+                    "sandbox-flags": [ "bind", "rec" ]
+                }
+            ]
+        }],
+        "ohos.permission.ACCESS_SHADER_CACHE_DIR":[{
+            "sandbox-switch": "ON",
+            "mount-paths": [{
+                    "src-path": "/data/local/shader_cache",
+                    "sandbox-path": "/data/storage/shader_caches",
                     "sandbox-flags": [ "bind", "rec" ]
                 }
             ]
