@@ -168,19 +168,19 @@ void AppSpawnTestServer::Start(RecvMsgProcess process, uint32_t time)
     int ret = 0;
     do {
         threadId_ = 0;
-        ret = pthread_create(&threadId_, NULL, ServiceHelperThread, static_cast<void *>(this));
+        ret = pthread_create(&threadId_, nullptr, ServiceHelperThread, static_cast<void *>(this));
         if (ret == 0) {
             break;
         }
         APPSPAWN_LOGE("AppSpawnTestServer::Start create thread fail %{public}d %{public}d", ret, errno);
-        usleep(2000000); // 2000 200ms
+        usleep(20000); // 20000 20ms
         retry++;
     } while (ret == EAGAIN && retry < 10); // 10 max retry
 
     // wait server thread run
     retry = 0;
     while (!running_ && (retry < 10)) { // 10 max retry
-        usleep(2000000); // 2000 200ms
+        usleep(20000); // 20000 20ms
         retry++;
     }
     APPSPAWN_LOGV("AppSpawnTestServer::Start retry %{public}u", retry);
@@ -607,7 +607,7 @@ int AppSpawnTestHelper::AddBaseTlv(uint8_t *buffer, uint32_t bufferLen, uint32_t
 {
     // add app flage
     uint32_t currLen = 0;
-    uint32_t flags[2] = {1, 0};
+    uint32_t flags[2] = {1, 0b1010};
     AppSpawnTlv tlv = {};
     tlv.tlvType = TLV_MSG_FLAGS;
     tlv.tlvLen = sizeof(AppSpawnTlv) + sizeof(flags);

@@ -15,8 +15,8 @@
 
 #include <dirent.h>
 #include <fcntl.h>
-#include <signal.h>
 #include <sched.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -182,7 +182,7 @@ APPSPAWN_STATIC int PreLoadEnablePidNs(AppSpawnMgr *content)
     if (IsColdRunMode(content)) {
         return 0;
     }
-    if (IsNWebSpawnMode(content)) { // only for appspawn
+    if (IsNWebSpawnMode(content)) {  // only for appspawn
         return 0;
     }
     if (!(content->content.sandboxNsFlags & CLONE_NEWPID)) {

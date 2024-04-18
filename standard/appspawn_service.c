@@ -73,7 +73,8 @@ static void StopAppSpawn(void)
     AppSpawnedProcess *appInfo = GetSpawnedProcessByName(NWEBSPAWN_SERVER_NAME);
     if (appInfo != NULL) {
         APPSPAWN_LOGI("kill %{public}s pid: %{public}d", appInfo->name, appInfo->pid);
-        KillAndWaitStatus(appInfo->pid, SIGTERM);
+        int exitStatus = 0;
+        KillAndWaitStatus(appInfo->pid, SIGTERM, &exitStatus);
         OH_ListRemove(&appInfo->node);
         OH_ListInit(&appInfo->node);
         free(appInfo);

@@ -70,7 +70,8 @@ typedef enum TagAppSpawnHookStage {
     STAGE_CHILD_EXECUTE,
     STAGE_CHILD_PRE_RELY,
     STAGE_CHILD_POST_RELY,
-    STAGE_CHILD_PRE_RUN
+    STAGE_CHILD_PRE_RUN,
+    STAGE_MAX
 } AppSpawnHookStage;
 
 typedef enum TagAppSpawnHookPrio {

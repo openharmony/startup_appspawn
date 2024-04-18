@@ -62,14 +62,33 @@ void *GetAppSpawnMsgExtInfo(const AppSpawnMsgNode *message, const char *name, ui
 
 int CheckAppSpawnMsgFlag(const AppSpawnMsgNode *message, uint32_t type, uint32_t index)
 {
+    APPSPAWN_CHECK(type == TLV_MSG_FLAGS || type == TLV_PERMISSION, return 0, "Invalid tlv %{public}u ", type);
     AppSpawnMsgFlags *msgFlags = (AppSpawnMsgFlags *)GetAppSpawnMsgInfo(message, type);
-    APPSPAWN_CHECK(msgFlags != NULL,
-        return 0, "No tlv %{public}u in msg %{public}s", type, message->msgHeader.processName);
+    APPSPAWN_CHECK(msgFlags != NULL, return 0, "No tlv %{public}u in msg", type);
     uint32_t blockIndex = index / 32;  // 32 max bit in int
     uint32_t bitIndex = index % 32;    // 32 max bit in int
     APPSPAWN_CHECK(blockIndex < msgFlags->count, return 0,
         "Invalid index %{public}d max: %{public}d", index, msgFlags->count);
     return CHECK_FLAGS_BY_INDEX(msgFlags->flags[blockIndex], bitIndex);
+}
+
+static inline int SetSpawnMsgFlags(AppSpawnMsgFlags *msgFlags, uint32_t index)
+{
+    uint32_t blockIndex = index / 32;  // 32 max bit in int
+    uint32_t bitIndex = index % 32;    // 32 max bit in int
+    APPSPAWN_CHECK(blockIndex < msgFlags->count, return APPSPAWN_ARG_INVALID,
+        "Invalid index %{public}u blockIndex %{public}u %{public}u ", index, blockIndex, msgFlags->count);
+    msgFlags->flags[blockIndex] |= (1 << bitIndex);
+    return 0;
+}
+
+int SetAppSpawnMsgFlag(const AppSpawnMsgNode *message, uint32_t type, uint32_t index)
+{
+    APPSPAWN_CHECK(type == TLV_MSG_FLAGS || type == TLV_PERMISSION,
+        return APPSPAWN_ARG_INVALID, "Invalid tlv %{public}u ", type);
+    AppSpawnMsgFlags *msgFlags = (AppSpawnMsgFlags *)GetAppSpawnMsgInfo(message, type);
+    APPSPAWN_CHECK(msgFlags != NULL, return APPSPAWN_ARG_INVALID, "No tlv %{public}d in msg", type);
+    return SetSpawnMsgFlags(msgFlags, index);
 }
 
 AppSpawnMsgNode *CreateAppSpawnMsg(void)
