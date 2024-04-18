@@ -32,6 +32,7 @@ typedef struct TagSandboxQueue SandboxQueue;
 typedef struct TagPermissionNode SandboxPermissionNode;
 
 int32_t AddSandboxPermissionNode(const char *name, SandboxQueue *queue);
+int32_t DeleteSandboxPermissions(SandboxQueue *queue);
 int32_t GetPermissionIndexInQueue(SandboxQueue *queue, const char *permission);
 const SandboxPermissionNode *GetPermissionNodeInQueue(SandboxQueue *queue, const char *permission);
 const SandboxPermissionNode *GetPermissionNodeInQueueByIndex(SandboxQueue *queue, int32_t index);

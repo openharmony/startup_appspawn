@@ -49,7 +49,6 @@ namespace {
     constexpr static mode_t BASIC_MOUNT_FLAGS = MS_REC | MS_BIND;
     constexpr std::string_view APL_SYSTEM_CORE("system_core");
     constexpr std::string_view APL_SYSTEM_BASIC("system_basic");
-    const std::string MODULE_TEST_BUNDLE_NAME("moduleTestProcessName");
     const std::string APP_JSON_CONFIG("/appdata-sandbox.json");
     const std::string g_physicalAppInstallPath = "/data/app/el1/bundle/public/";
     const std::string g_sandboxGroupPath = "/data/storage/el2/group/";
@@ -759,7 +758,7 @@ int32_t SandboxUtils::DoSandboxFilePermissionBind(AppSpawningCtx *appProperty,
     nlohmann::json permissionAppConfig = wholeConfig[g_permissionPrefix][0];
     for (nlohmann::json::iterator it = permissionAppConfig.begin(); it != permissionAppConfig.end(); ++it) {
         const std::string permission = it.key();
-        int index = GetPermissionIndex(permission.c_str());
+        int index = GetPermissionIndex(nullptr, permission.c_str());
         APPSPAWN_LOGV("DoSandboxFilePermissionBind mountPermissionFlags %{public}d", index);
         if (CheckAppPermissionFlagSet(appProperty, (uint32_t)index)) {
             DoAddGid(appProperty, permissionAppConfig[permission][0], permission.c_str(), g_permissionPrefix);
@@ -1390,7 +1389,7 @@ int32_t SandboxUtils::SetAppSandboxProperty(AppSpawningCtx *appProperty)
     APPSPAWN_CHECK(rc == 0, return rc, "unshare failed, packagename is %{public}s", bundleName.c_str());
 
     if (CheckAppFullMountEnable()) {
-        int index = GetPermissionIndex(FILE_CROSS_APP_MODE.c_str());
+        int index = GetPermissionIndex(nullptr, FILE_CROSS_APP_MODE.c_str());
         if (index > 0) {
             SetAppPermissionFlags(appProperty, index);
         }
@@ -1524,6 +1523,10 @@ int32_t SetAppSandboxProperty(AppSpawnMgr *content, AppSpawningCtx *property)
     APPSPAWN_CHECK(property != nullptr, return -1, "Invalid appspwn client");
     APPSPAWN_CHECK(content != nullptr, return -1, "Invalid appspwn content");
     int ret = 0;
+    // no sandbox
+    if (CheckAppMsgFlagsSet(property, APP_FLAGS_NO_SANDBOX)) {
+        return 0;
+    }
     if ((content->content.sandboxNsFlags & CLONE_NEWPID) == CLONE_NEWPID) {
         ret = getprocpid();
         if (ret < 0) {
@@ -1535,16 +1538,8 @@ int32_t SetAppSandboxProperty(AppSpawnMgr *content, AppSpawningCtx *property)
     } else {
         ret = OHOS::AppSpawn::SandboxUtils::SetAppSandboxProperty(property);
     }
-
-    // for module test do not create sandbox
-    if (strncmp(GetBundleName(property),
-        OHOS::AppSpawn::MODULE_TEST_BUNDLE_NAME.c_str(),
-        OHOS::AppSpawn::MODULE_TEST_BUNDLE_NAME.size()) == 0) {
-        APPSPAWN_LOGW("Do not care sandbox result %{public}d", ret);
-        return 0;
-    }
-    // no sandbox
-    if (CheckAppMsgFlagsSet(property, APP_FLAGS_NO_SANDBOX)) {
+    // for module test do not create sandbox, use APP_FLAGS_IGNORE_SANDBOX to ignore sandbox result
+    if (CheckAppMsgFlagsSet(property, APP_FLAGS_IGNORE_SANDBOX)) {
         APPSPAWN_LOGW("Do not care sandbox result %{public}d", ret);
         return 0;
     }

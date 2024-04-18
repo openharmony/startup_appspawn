@@ -25,15 +25,11 @@
 extern "C" {
 #endif
 
+#ifdef APPSPAWN_CLIENT
 typedef struct TagSandboxQueue {
     struct ListNode front;
     uint32_t type;
 } SandboxQueue;
-
-typedef struct TagParseJsonContext {
-    SandboxQueue permissionQueue;
-    int32_t maxPermissionIndex;
-} ParseJsonContext;
 
 typedef struct {
     struct ListNode node;
@@ -44,7 +40,7 @@ typedef struct TagPermissionNode {
     uint32_t permissionIndex;
     char name[0];
 } SandboxPermissionNode;
-
+#endif
 #ifdef __cplusplus
 }
 #endif
