@@ -36,6 +36,9 @@ static AppSpawnMgr *g_appSpawnMgr = NULL;
 
 AppSpawnMgr *CreateAppSpawnMgr(int mode)
 {
+    if (g_appSpawnMgr != NULL) {
+        return g_appSpawnMgr;
+    }
     AppSpawnMgr *appMgr = (AppSpawnMgr *)calloc(1, sizeof(AppSpawnMgr));
     APPSPAWN_CHECK(appMgr != NULL, return NULL, "Failed to alloc memory for appspawn");
     appMgr->content.longProcName = NULL;
@@ -131,6 +134,7 @@ AppSpawnedProcess *AddSpawnedProcess(pid_t pid, const char *processName)
     APPSPAWN_CHECK(g_appSpawnMgr != NULL && processName != NULL, return NULL, "Invalid mgr or process name");
     APPSPAWN_CHECK(pid > 0, return NULL, "Invalid pid for %{public}s", processName);
     size_t len = strlen(processName) + 1;
+    APPSPAWN_CHECK(len > 1, return NULL, "Invalid processName for %{public}s", processName);
     AppSpawnedProcess *node = (AppSpawnedProcess *)calloc(1, sizeof(AppSpawnedProcess) + len + 1);
     APPSPAWN_CHECK(node != NULL, return NULL, "Failed to malloc for appinfo");
 
@@ -151,20 +155,20 @@ AppSpawnedProcess *AddSpawnedProcess(pid_t pid, const char *processName)
 void TerminateSpawnedProcess(AppSpawnedProcess *node)
 {
     APPSPAWN_CHECK_ONLY_EXPER(g_appSpawnMgr != NULL && node != NULL, return);
+    // delete node
+    OH_ListRemove(&node->node);
     if (!IsNWebSpawnMode(g_appSpawnMgr)) {
-        OH_ListRemove(&node->node);
         free(node);
         return;
     }
     if (g_appSpawnMgr->diedAppCount >= MAX_DIED_PROCESS_COUNT) {
         AppSpawnedProcess *oldApp = ListEntry(g_appSpawnMgr->diedQueue.next, AppSpawnedProcess, node);
         OH_ListRemove(&oldApp->node);
-        free(node);
+        free(oldApp);
         g_appSpawnMgr->diedAppCount--;
     }
-    OH_ListRemove(&node->node);
-    OH_ListInit(&node->node);
     APPSPAWN_LOGI("ProcessAppDied %{public}s, pid=%{public}d", node->name, node->pid);
+    OH_ListInit(&node->node);
     OH_ListAddTail(&g_appSpawnMgr->diedQueue, &node->node);
     g_appSpawnMgr->diedAppCount++;
 }
@@ -180,6 +184,8 @@ AppSpawnedProcess *GetSpawnedProcess(pid_t pid)
 AppSpawnedProcess *GetSpawnedProcessByName(const char *name)
 {
     APPSPAWN_CHECK_ONLY_EXPER(g_appSpawnMgr != NULL, return NULL);
+    APPSPAWN_CHECK_ONLY_EXPER(name != NULL, return NULL);
+
     ListNode *node = OH_ListFind(&g_appSpawnMgr->appQueue, (void *)name, AppInfoNameComparePro);
     APPSPAWN_CHECK_ONLY_EXPER(node != NULL, return NULL);
     return ListEntry(node, AppSpawnedProcess, node);
@@ -187,6 +193,9 @@ AppSpawnedProcess *GetSpawnedProcessByName(const char *name)
 
 int KillAndWaitStatus(pid_t pid, int sig)
 {
+    if (pid <= 0) {
+        return 0;
+    }
     int exitStatus = 0;
     if (kill(pid, sig) != 0) {
         APPSPAWN_LOGE("unable to kill process, pid: %{public}d ret %{public}d", pid, errno);
