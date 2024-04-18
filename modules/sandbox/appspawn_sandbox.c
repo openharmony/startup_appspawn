@@ -817,6 +817,7 @@ int StagedMountSystemConst(const AppSpawnSandboxCfg *sandbox, const AppSpawningC
 
     if (IsSandboxMounted(sandbox, "system-const", context->rootPath)) {
         APPSPAWN_LOGV("Sandbox system-const %{public}s has been mount", context->rootPath);
+        DeleteSandboxContext(context);
         return 0;
     }
 

@@ -30,6 +30,7 @@ extern "C" {
     HILOG_INFO(LOG_CORE, "[%{public}s:%{public}d]" fmt, (__FILE_NAME__), (__LINE__), ##__VA_ARGS__)
 #define MAX_ARGV_NUM 256
 #define MAX_ENV_NUM (128 + 2)
+#define IS_OPTION_SET(x, option) ((x) & (1 << (option)))
 
 /* 数字索引 */
 enum {
@@ -56,7 +57,7 @@ static int StartHnpProcess(char *const argv[], char *const apcEnv[])
         return HNP_API_ERRNO_FORK_FAILED;
     } else if (pid == 0) {
         HNPAPI_LOG("\r\n [HNP API] this is fork children!\r\n");
-        ret = execve("./hnp", argv, apcEnv);
+        ret = execve("/system/bin/hnp", argv, apcEnv);
         if (ret < 0) {
             HNPAPI_LOG("\r\n [HNP API] execve unsuccess!\r\n");
             _exit(-1);
@@ -81,40 +82,46 @@ static int StartHnpProcess(char *const argv[], char *const apcEnv[])
     return exitVal;
 }
 
-int NativeInstallHnp(const char *userId, const char *hnpPath, const char *packageName, Bool isForce)
+int NativeInstallHnp(const char *userId, const char *packages[], int count, const char *installPath, int installOptions)
 {
     char *argv[MAX_ARGV_NUM] = {0};
     char *apcEnv[MAX_ENV_NUM] = {0};
+    int index = 0;
 
-    if ((userId == NULL) || (hnpPath == NULL))) {
+    if ((userId == NULL) || (packages == NULL) || (count == 0)) {
         return HNP_API_ERRNO_PARAM_INVALID;
     }
 
-    HNPAPI_LOG("\r\n [HNP API] native package install! userId=%s, hnpPath=%s, IsForce=%d\r\n",
-        userId, hnpPath, isForce);
+    HNPAPI_LOG("\r\n [HNP API] native package install! userId=%s, hnpPath count=%d, install path=%s "
+        "install options=%d\r\n", userId, count, installPath, installOptions);
 
-    argv[HNP_INDEX_0] = "hnp";
-    argv[HNP_INDEX_1] = "install";
-    argv[HNP_INDEX_2] = (char*)userId;
-    argv[HNP_INDEX_3] = (char*)hnpPath;
+    argv[index++] = "hnp";
+    argv[index++] = "install";
+    argv[index++] = "-u";
+    argv[index++] = (char*)userId;
 
-    if (packageName == NULL) {
-        argv[HNP_INDEX_4] = "null";
-    } else {
-        argv[HNP_INDEX_4] = (char*)packageName;
+    for (int i = 0; i < count; i++) {
+        argv[index++] = "-p";
+        argv[index++] = (char*)packages[i];
     }
 
-    if (isForce == TRUE) {
-        argv[HNP_INDEX_5] = "-f";
+    if (installPath != NULL) {
+        argv[index++] = "-i";
+        argv[index++] = (char*)installPath;
+    }
+
+    if (IS_OPTION_SET(installOptions, OPTION_INDEX_FORCE)) {
+        argv[index++] = "-f";
     }
 
     return StartHnpProcess(argv, apcEnv);
 }
 
-int NativeUnInstallHnp(const char *userId, const char *hnpName, const char *hnpVersion, const char *packageName)
+int NativeUnInstallHnp(const char *userId, const char *hnpName, const char *hnpVersion, const char *installPath)
 {
     char *argv[MAX_ARGV_NUM] = {0};
     char *apcEnv[MAX_ENV_NUM] = {0};
+    int index = 0;
 
     if ((userId == NULL) || (hnpName == NULL) || (hnpVersion == NULL)) {
         return HNP_API_ERRNO_PARAM_INVALID;
@@ -123,16 +130,18 @@ int NativeUnInstallHnp(const char *userId, const char *hnpName, const char *hnpV
     HNPAPI_LOG("\r\n [HNP API] native package uninstall! userId=%s, hnpName=%s, hnpVersion=%s\r\n",
         userId, hnpName, hnpVersion);
 
-    argv[HNP_INDEX_0] = "hnp";
-    argv[HNP_INDEX_1] = "uninstall";
-    argv[HNP_INDEX_2] = (char*)userId;
-    argv[HNP_INDEX_3] = (char*)hnpName;
-    argv[HNP_INDEX_4] = (char*)hnpVersion;
+    argv[index++] = "hnp";
+    argv[index++] = "uninstall";
+    argv[index++] = "-u";
+    argv[index++] = (char*)userId;
+    argv[index++] = "-n";
+    argv[index++] = (char*)hnpName;
+    argv[index++] = "-v";
+    argv[index++] = (char*)hnpVersion;
 
-    if (packageName == NULL) {
-        argv[HNP_INDEX_5] = "null";
-    } else {
-        argv[HNP_INDEX_5] = (char*)packageName;
+    if (installPath != NULL) {
+        argv[index++] = "-i";
+        argv[index++] = (char*)installPath;
     }
 
     return StartHnpProcess(argv, apcEnv);

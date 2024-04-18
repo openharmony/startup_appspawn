@@ -75,6 +75,7 @@ int ReadFileToStream(const char *filePath, char **stream, int *streamLen)
     }
     if (size == 0) {
         HNP_LOGE("get file[%s] size is null.", filePath);
+        (void)fclose(file);
         return HNP_ERRNO_BASE_GET_FILE_LEN_NULL;
     }
     streamTmp = (char*)malloc(size);

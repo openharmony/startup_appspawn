@@ -212,7 +212,7 @@ HWTEST(AppSpawnServiceTest, App_Spawn_006, TestSize.Level0)
     do {
         ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
         APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", APPSPAWN_SERVER_NAME);
-        auto sendMsg = [&]() {
+        auto sendMsg = [=]() {
             AppSpawnReqMsgHandle reqHandle = g_testServer->CreateMsg(clientHandle, MSG_SPAWN_NATIVE_PROCESS, 0);
 
             AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_DEBUGGABLE);
@@ -221,7 +221,7 @@ HWTEST(AppSpawnServiceTest, App_Spawn_006, TestSize.Level0)
             AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_ACCESS_BUNDLE_DIR);
 
             AppSpawnResult result = {};
-            ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
+            int ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
             APPSPAWN_CHECK(ret == 0, return, "Failed to send msg %{public}d", ret);
             if (ret == 0 && result.pid > 0) {
                 printf("App_Spawn_006 Kill pid %d \n", result.pid);
@@ -241,7 +241,6 @@ HWTEST(AppSpawnServiceTest, App_Spawn_006, TestSize.Level0)
         thread4.join();
         thread5.join();
     } while (0);
-
     AppSpawnClientDestroy(clientHandle);
     ASSERT_EQ(ret, 0);
 }
@@ -367,7 +366,7 @@ HWTEST(AppSpawnServiceTest, App_Spawn_Msg_004, TestSize.Level0)
         // 分片发送
         uint32_t sendStep = OHOS::AppSpawnTestHelper::GenRandom() % 70;  // 70 一次发送的字节数
         sendStep = (sendStep < 20) ? 33 : sendStep;                      // 20 33 一次发送的字节数
-        APPSPAWN_LOGV("App_Spawn_Msg_005 msgLen %{public}u sendStep: %{public}u", msgLen, sendStep);
+        APPSPAWN_LOGV("App_Spawn_Msg_004 msgLen %{public}u sendStep: %{public}u", msgLen, sendStep);
         uint32_t currIndex = 0;
         int len = 0;
         do {
@@ -390,7 +389,7 @@ HWTEST(AppSpawnServiceTest, App_Spawn_Msg_004, TestSize.Level0)
         APPSPAWN_CHECK(len >= static_cast<int>(sizeof(AppSpawnResponseMsg)), ret = -1;
             break, "Failed to recv msg %{public}s", APPSPAWN_SERVER_NAME);
         AppSpawnResponseMsg *respMsg = reinterpret_cast<AppSpawnResponseMsg *>(buffer.data());
-        APPSPAWN_LOGV("App_Spawn_Msg_005 recv msg %{public}s result: %{public}d",
+        APPSPAWN_LOGV("App_Spawn_Msg_004 recv msg %{public}s result: %{public}d",
             respMsg->msgHdr.processName, respMsg->result.result);
         ret = respMsg->result.result;
     } while (0);

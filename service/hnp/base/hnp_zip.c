@@ -195,6 +195,32 @@ int HnpZip(const char *inputDir, const char *outputFile)
     return ret;
 }
 
+int HnpAddFileToZip(char *zipfile, char *filename, char *buff, int size)
+{
+    zipFile zf;
+    int ret;
+
+    zf = zipOpen(zipfile, APPEND_STATUS_ADDINZIP);
+    if (zf == NULL) {
+        HNP_LOGE("open zip=%s unsuccess ", zipfile);
+        return HNP_ERRNO_BASE_CREATE_ZIP_FAILED;
+    }
+
+    // 将外层文件夹信息保存到zip文件中
+    ret = zipOpenNewFileInZip3(zf, filename, NULL, NULL, 0, NULL, 0, NULL, Z_DEFLATED, Z_BEST_COMPRESSION,
+        0, -MAX_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY, NULL, 0);
+    if (ret != ZIP_OK) {
+        HNP_LOGE("open new file[%s] in zip unsuccess ", filename);
+        zipClose(zf, NULL);
+        return HNP_ERRNO_BASE_CREATE_ZIP_FAILED;
+    }
+    zipWriteInFileInZip(zf, buff, size);
+    zipCloseFileInZip(zf);
+    zipClose(zf, NULL);
+
+    return 0;
+}
+
 static int HnpUnZipForFile(const char *fileName, const char *outputDir, unzFile zipFile)
 {
 #ifdef _WIN32
@@ -206,7 +232,7 @@ static int HnpUnZipForFile(const char *fileName, const char *outputDir, unzFile 
     char buffer[BUFFER_SIZE];
     int readSize = 0;
 
-    ret = sprintf_s(filePath, MAX_FILE_PATH_LEN, "%s%s", outputDir, fileName);
+    ret = sprintf_s(filePath, MAX_FILE_PATH_LEN, "%s/%s", outputDir, fileName);
     if (ret < 0) {
         HNP_LOGE("sprintf unsuccess.");
         return HNP_ERRNO_BASE_SPRINTF_FAILED;
@@ -253,7 +279,7 @@ int HnpUnZip(const char *inputFile, const char *outputDir)
 
     zipFile = unzOpen(inputFile);
     if (zipFile == NULL) {
-        HNP_LOGE("unzip open zip:%s unsuccess!", inputFile);
+        HNP_LOGE("unzip open hnp:%s unsuccess!", inputFile);
         return HNP_ERRNO_BASE_UNZIP_OPEN_FAILED;
     }
 
@@ -285,87 +311,58 @@ int HnpUnZip(const char *inputFile, const char *outputDir)
     return 0;
 }
 
-int HnpWriteToZipHead(const char *zipFile, char *buff, int len)
+int HnpCfgGetFromZip(const char *inputFile, HnpCfgInfo *hnpCfg)
 {
-    int size;
-    char *buffTmp;
+    char fileName[MAX_FILE_PATH_LEN];
+    char *fileNameTmp;
+    unz_file_info fileInfo;
+    char *cfgStream = NULL;
 
-    int ret = ReadFileToStream(zipFile, &buffTmp, &size);
-    if (ret != 0) {
-        HNP_LOGE("read file:%s to stream unsuccess!", zipFile);
-        return ret;
+    unzFile zipFile = unzOpen(inputFile);
+    if (zipFile == NULL) {
+        HNP_LOGE("unzip open hnp:%s unsuccess!", inputFile);
+        return HNP_ERRNO_BASE_UNZIP_OPEN_FAILED;
     }
 
-    FILE *fp = fopen(zipFile, "wb");
-    if (fp == NULL) {
-        free(buffTmp);
-        HNP_LOGE("open file:%s unsuccess!", zipFile);
-        return HNP_ERRNO_BASE_FILE_OPEN_FAILED;
-    }
-    int writeLen = fwrite(buff, sizeof(char), len, fp);
-    if (writeLen != len) {
-        HNP_LOGE("write file:%s unsuccess! len=%d, write=%d", zipFile, len, writeLen);
-        (void)fclose(fp);
-        free(buffTmp);
-        return HNP_ERRNO_BASE_FILE_WRITE_FAILED;
-    }
-    writeLen = fwrite(buffTmp, sizeof(char), size, fp);
-    (void)fclose(fp);
-    free(buffTmp);
-    if (writeLen != size) {
-        HNP_LOGE("write file:%s unsuccess! size=%d, write=%d", zipFile, size, writeLen);
-        return HNP_ERRNO_BASE_FILE_WRITE_FAILED;
-    }
-    return 0;
-}
+    int ret = unzGoToFirstFile(zipFile);
+    while (ret == UNZ_OK) {
+        ret = unzGetCurrentFileInfo(zipFile, &fileInfo, fileName, sizeof(fileName), NULL, 0, NULL, 0);
+        if (ret != UNZ_OK) {
+            HNP_LOGE("unzip get zip:%s info unsuccess!", inputFile);
+            unzClose(zipFile);
+            return HNP_ERRNO_BASE_UNZIP_GET_INFO_FAILED;
+        }
+        fileNameTmp = strrchr(fileName, DIR_SPLIT_SYMBOL);
+        if (fileNameTmp == NULL) {
+            fileNameTmp = fileName;
+        } else {
+            fileNameTmp++;
+        }
+        if (strcmp(fileNameTmp, HNP_CFG_FILE_NAME) != 0) {
+            ret = unzGoToNextFile(zipFile);
+            continue;
+        }
 
-int HnpReadFromZipHead(const char *zipFile, NativeHnpHead **hnpHead)
-{
-    char *buffTmp;
-    int headLen;
-    NativeHnpHead *hnpHeadTmp;
-
-    int ret = ReadFileToStreamBySize(zipFile, &buffTmp, sizeof(NativeHnpHead));
-    if (ret != 0) {
-        HNP_LOGE("read file:%s to stream unsuccess!", zipFile);
-        return ret;
+        unzOpenCurrentFile(zipFile);
+        cfgStream = malloc(fileInfo.uncompressed_size);
+        if (cfgStream == NULL) {
+            HNP_LOGE("malloc unsuccess. size=%d, errno=%d", fileInfo.uncompressed_size, errno);
+            unzClose(zipFile);
+            return HNP_ERRNO_NOMEM;
+        }
+        uLong readSize = unzReadCurrentFile(zipFile, cfgStream, fileInfo.uncompressed_size);
+        if (readSize != fileInfo.uncompressed_size) {
+            free(cfgStream);
+            unzClose(zipFile);
+            HNP_LOGE("unzip read zip:%s info size[%lu]=>[%lu] error!", inputFile, fileInfo.uncompressed_size, readSize);
+            return HNP_ERRNO_BASE_FILE_READ_FAILED;
+        }
+        break;
     }
-
-    /* 读取native头的大小 */
-    hnpHeadTmp = (NativeHnpHead *)buffTmp;
-    if (hnpHeadTmp->magic != HNP_HEAD_MAGIC) {
-        free(buffTmp);
-        HNP_LOGE("read file unsuccess,%s is invalid hnp file", zipFile);
-        return HNP_ERRNO_BASE_MAGIC_CHECK_FAILED;
-    }
-    headLen = hnpHeadTmp->headLen;
-    free(buffTmp);
-    buffTmp = NULL;
-
-    FILE *fp = fopen(zipFile, "rb");
-    if (fp == NULL) {
-        HNP_LOGE("open file[%s] unsuccess. errno=%d", zipFile, errno);
-        return HNP_ERRNO_BASE_FILE_OPEN_FAILED;
-    }
-
-    buffTmp = (char*)malloc(headLen);
-    if (buffTmp == NULL) {
-        HNP_LOGE("malloc unsuccess. size=%d, errno=%d", headLen, errno);
-        (void)fclose(fp);
-        return HNP_ERRNO_NOMEM;
-    }
-
-    ret = fread(buffTmp, sizeof(char), headLen, fp);
-    if (ret != headLen) {
-        HNP_LOGE("fread unsuccess. ret=%d, size=%d, errno=%d", ret, headLen, errno);
-        (void)fclose(fp);
-        free(buffTmp);
-        return HNP_ERRNO_BASE_FILE_READ_FAILED;
-    }
-
-    *hnpHead = (NativeHnpHead *)buffTmp;
-    (void)fclose(fp);
-    return 0;
+    unzClose(zipFile);
+    ret = HnpCfgGetFromSteam(cfgStream, hnpCfg);
+    free(cfgStream);
+    return ret;
 }
 
 #ifdef __cplusplus

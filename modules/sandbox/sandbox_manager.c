@@ -274,7 +274,9 @@ static void DumpSandboxSection(const SandboxSection *section)
 
 SandboxSection *CreateSandboxSection(const char *name, uint32_t dataLen, uint32_t type)
 {
-    APPSPAWN_CHECK(name != NULL, return NULL, "Invalid name %{public}u", type);
+    APPSPAWN_CHECK(type < SANDBOX_TAG_INVALID && type >= SANDBOX_TAG_PERMISSION,
+        return NULL, "Invalid type %{public}u", type);
+    APPSPAWN_CHECK(name != NULL && strlen(name) > 0, return NULL, "Invalid name %{public}u", type);
     APPSPAWN_CHECK(dataLen >= sizeof(SandboxSection), return NULL, "Invalid dataLen %{public}u", dataLen);
     APPSPAWN_CHECK(dataLen <= sizeof(SandboxNameGroupNode), return NULL, "Invalid dataLen %{public}u", dataLen);
     SandboxSection *section = (SandboxSection *)calloc(1, dataLen);

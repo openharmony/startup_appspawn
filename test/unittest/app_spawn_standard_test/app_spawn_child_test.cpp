@@ -564,6 +564,7 @@ HWTEST(AppSpawnChildTest, App_Spawn_Cold_Run_002, TestSize.Level0)
         free(args);
     }
     DeleteAppSpawningCtx(property);
+    DeleteAppSpawnMgr(GetAppSpawnMgr());
     AppSpawnClientDestroy(clientHandle);
     ASSERT_EQ(ret, 0);
 }
@@ -610,6 +611,7 @@ HWTEST(AppSpawnChildTest, App_Spawn_Cold_Run_003, TestSize.Level0)
         free(args);
     }
     DeleteAppSpawningCtx(property);
+    DeleteAppSpawnMgr(GetAppSpawnMgr());
     AppSpawnClientDestroy(clientHandle);
     ASSERT_EQ(ret, 0);
 }
@@ -659,6 +661,7 @@ HWTEST(AppSpawnChildTest, App_Spawn_Cold_Run_004, TestSize.Level0)
         free(args);
     }
     DeleteAppSpawningCtx(property);
+    DeleteAppSpawnMgr(GetAppSpawnMgr());
     AppSpawnClientDestroy(clientHandle);
     ASSERT_EQ(ret, 0);
 }
