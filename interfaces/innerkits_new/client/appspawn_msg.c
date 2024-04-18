@@ -274,9 +274,9 @@ static int CreateBaseMsg(AppSpawnReqMsgNode *reqNode, uint32_t msgType, const ch
     APPSPAWN_CHECK_ONLY_EXPER(msgType == MSG_APP_SPAWN || msgType == MSG_SPAWN_NATIVE_PROCESS, return 0);
     ret = SetFlagsTlv(reqNode, block, &reqNode->msgFlags, TLV_MSG_FLAGS, MAX_FLAGS_INDEX);
     APPSPAWN_CHECK_ONLY_EXPER(ret == 0, return ret);
-    int maxCount = GetMaxPermissionIndex();
+    int maxCount = GetPermissionMaxCount();
     APPSPAWN_CHECK(maxCount > 0, return APPSPAWN_SYSTEM_ERROR, "Invalid max for permission %{public}s", processName);
-    ret = SetFlagsTlv(reqNode, block, &reqNode->permissionFlags, TLV_PERMISSION, GetMaxPermissionIndex());
+    ret = SetFlagsTlv(reqNode, block, &reqNode->permissionFlags, TLV_PERMISSION, maxCount);
     APPSPAWN_CHECK_ONLY_EXPER(ret == 0, return ret);
     APPSPAWN_LOGV("CreateBaseMsg msgLen: %{public}u %{public}u", reqNode->msg->msgLen, block->currentIndex);
     return 0;
@@ -307,8 +307,8 @@ static AppSpawnReqMsgNode *CreateAppSpawnReqMsg(uint32_t msgType, const char *pr
     reqNode->msgFlags = NULL;
     reqNode->permissionFlags = NULL;
     int ret = CreateBaseMsg(reqNode, msgType, processName);
-    APPSPAWN_CHECK(ret == 0, return NULL;
-        DeleteAppSpawnReqMsg(reqNode), "Failed to create base msg for %{public}s", processName);
+    APPSPAWN_CHECK(ret == 0, DeleteAppSpawnReqMsg(reqNode);
+         return NULL, "Failed to create base msg for %{public}s", processName);
     APPSPAWN_LOGV("CreateAppSpawnReqMsg reqId: %{public}d msg type: %{public}u processName: %{public}s",
         reqNode->reqId, msgType, processName);
     return reqNode;
@@ -436,8 +436,8 @@ int AppSpawnReqMsgAddPermission(AppSpawnReqMsgHandle reqHandle, const char *perm
     APPSPAWN_CHECK(permission != NULL, return APPSPAWN_ARG_INVALID, "Invalid permission ");
     APPSPAWN_CHECK(reqNode->permissionFlags != NULL, return APPSPAWN_ARG_INVALID, "No permission tlv ");
 
-    int32_t maxIndex = GetMaxPermissionIndex();
-    int index = GetPermissionIndex(permission);
+    int32_t maxIndex = GetMaxPermissionIndex(NULL);
+    int index = GetPermissionIndex(NULL, permission);
     APPSPAWN_CHECK(index >= 0 && index < maxIndex,
         return APPSPAWN_PERMISSION_NOT_SUPPORT, "Invalid permission %{public}s", permission);
     APPSPAWN_LOGV("AetPermission index %{public}d name %{public}s", index, permission);
@@ -516,5 +516,24 @@ int AppSpawnTerminateMsgCreate(pid_t pid, AppSpawnReqMsgHandle *reqHandle)
     APPSPAWN_CHECK_ONLY_EXPER(ret == 0, DeleteAppSpawnReqMsg(reqNode);
         return ret);
     *reqHandle = (AppSpawnReqMsgHandle)(reqNode);
+    return 0;
+}
+
+int AppSpawnClientAddPermission(AppSpawnClientHandle handle, AppSpawnReqMsgHandle reqHandle, const char *permission)
+{
+    AppSpawnReqMsgMgr *reqMgr = (AppSpawnReqMsgMgr *)handle;
+    APPSPAWN_CHECK(reqMgr != NULL, return APPSPAWN_ARG_INVALID, "Invalid reqMgr");
+    AppSpawnReqMsgNode *reqNode = (AppSpawnReqMsgNode *)reqHandle;
+    APPSPAWN_CHECK_ONLY_EXPER(reqNode != NULL, return APPSPAWN_ARG_INVALID);
+    APPSPAWN_CHECK(permission != NULL, return APPSPAWN_ARG_INVALID, "Invalid permission ");
+    APPSPAWN_CHECK(reqNode->permissionFlags != NULL, return APPSPAWN_ARG_INVALID, "No permission tlv ");
+
+    int32_t maxIndex = GetMaxPermissionIndex(handle);
+    int index = GetPermissionIndex(handle, permission);
+    APPSPAWN_CHECK(index >= 0 && index < maxIndex,
+        return APPSPAWN_PERMISSION_NOT_SUPPORT, "Invalid permission %{public}s", permission);
+    APPSPAWN_LOGV("AetPermission index %{public}d name %{public}s", index, permission);
+    int ret = SetAppSpawnMsgFlags(reqNode->permissionFlags, index);
+    APPSPAWN_CHECK(ret == 0, return ret, "Invalid permission %{public}s", permission);
     return 0;
 }
