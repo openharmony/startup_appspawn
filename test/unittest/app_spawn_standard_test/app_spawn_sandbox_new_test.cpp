@@ -345,25 +345,27 @@ static int TestParseAppSandboxConfig(AppSpawnSandboxCfg *sandbox, const char *bu
         APPSPAWN_LOGE("TestParseAppSandboxConfig config %s", buffer);
         return -1;
     }
-    int ret = ParseAppSandboxConfig(config, sandbox);
-    APPSPAWN_CHECK_ONLY_EXPER(ret == 0, return ret);
+    int ret = 0;
+    do {
+        ret = ParseAppSandboxConfig(config, sandbox);
+        APPSPAWN_CHECK_ONLY_EXPER(ret == 0, break);
 
-    uint32_t depNodeCount = sandbox->depNodeCount;
-    APPSPAWN_CHECK_ONLY_EXPER(depNodeCount > 0, return ret);
+        uint32_t depNodeCount = sandbox->depNodeCount;
+        APPSPAWN_CHECK_ONLY_EXPER(depNodeCount > 0, break);
 
-    sandbox->depGroupNodes = (SandboxNameGroupNode **)calloc(1, sizeof(SandboxNameGroupNode *) * depNodeCount);
-    APPSPAWN_CHECK(sandbox->depGroupNodes != NULL, return APPSPAWN_SYSTEM_ERROR, "Failed alloc memory ");
-    sandbox->depNodeCount = 0;
-    ListNode *node = sandbox->nameGroupsQueue.front.next;
-    while (node != &sandbox->nameGroupsQueue.front) {
-        SandboxNameGroupNode *groupNode = (SandboxNameGroupNode *)ListEntry(node, SandboxMountNode, node);
-        if (groupNode->depNode) {
-            sandbox->depGroupNodes[sandbox->depNodeCount++] = groupNode;
+        sandbox->depGroupNodes = (SandboxNameGroupNode **)calloc(1, sizeof(SandboxNameGroupNode *) * depNodeCount);
+        APPSPAWN_CHECK(sandbox->depGroupNodes != NULL, break, "Failed alloc memory ");
+        sandbox->depNodeCount = 0;
+        ListNode *node = sandbox->nameGroupsQueue.front.next;
+        while (node != &sandbox->nameGroupsQueue.front) {
+            SandboxNameGroupNode *groupNode = (SandboxNameGroupNode *)ListEntry(node, SandboxMountNode, node);
+            if (groupNode->depNode) {
+                sandbox->depGroupNodes[sandbox->depNodeCount++] = groupNode;
+            }
+            node = node->next;
         }
-        node = node->next;
-    }
-    APPSPAWN_LOGI("LoadAppSandboxConfig depNodeCount %{public}d", sandbox->depNodeCount);
-
+        APPSPAWN_LOGI("LoadAppSandboxConfig depNodeCount %{public}d", sandbox->depNodeCount);
+    } while (0);
     cJSON_Delete(config);
     return ret;
 }

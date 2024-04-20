@@ -136,13 +136,12 @@ HWTEST(AppSpawnColdRunTest, App_Spawn_Cold_Run_001, TestSize.Level0)
         node->arg = reinterpret_cast<void *>(HandleExecvStub);
         AppSpawnResult result = {};
         ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
+        APPSPAWN_LOGV("App_Spawn_Cold_Run_001 Kill pid %{public}d %{public}d", result.pid, result.result);
         if (ret == 0 && result.pid > 0) {
-            APPSPAWN_LOGI("App_Spawn_Cold_Run_001 Kill pid %{public}d ", result.pid);
             kill(result.pid, SIGKILL);
         }
         ret = 0;
     } while (0);
-    g_testServer->Stop();
     AppSpawnClientDestroy(clientHandle);
     ASSERT_EQ(ret, 0);
 }
@@ -165,13 +164,12 @@ HWTEST(AppSpawnColdRunTest, App_Spawn_Cold_Run_002, TestSize.Level0)
         node->arg = reinterpret_cast<void *>(HandleExecvStub);
         AppSpawnResult result = {};
         ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
+        APPSPAWN_LOGV("App_Spawn_Cold_Run_002 Kill pid %{public}d %{public}d", result.pid, result.result);
         if (ret == 0 && result.pid > 0) {
-            APPSPAWN_LOGI("App_Spawn_Cold_Run_002 Kill pid %{public}d ", result.pid);
             kill(result.pid, SIGKILL);
         }
         ret = 0;
     } while (0);
-    g_testServer->Stop();
     AppSpawnClientDestroy(clientHandle);
     node->flags &= ~STUB_NEED_CHECK;
     ASSERT_EQ(ret, 0);
@@ -181,7 +179,7 @@ HWTEST(AppSpawnColdRunTest, App_Spawn_Cold_Run_002, TestSize.Level0)
  * @brief 测试子进程abort
  *
  */
-HWTEST(AppSpawnColdRunTest, App_Spawn_Cold_Run_008, TestSize.Level0)
+HWTEST(AppSpawnColdRunTest, App_Spawn_Cold_Run_003, TestSize.Level0)
 {
     // child abort
     int ret = 0;
@@ -200,14 +198,12 @@ HWTEST(AppSpawnColdRunTest, App_Spawn_Cold_Run_008, TestSize.Level0)
         node->arg = reinterpret_cast<void *>(ExecvAbortStub);
         AppSpawnResult result = {};
         ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
-        APPSPAWN_LOGI("AppSpawnClientSendMsg result %{public}d ", ret);
+        APPSPAWN_LOGV("App_Spawn_Cold_Run_003 Kill pid %{public}d %{public}d", result.pid, result.result);
         if (ret == 0 && result.pid > 0) {
-            APPSPAWN_LOGI("Kill pid %{public}d ", result.pid);
             kill(result.pid, SIGKILL);
         }
         ret = 0;
     } while (0);
-    g_testServer->Stop();
     AppSpawnClientDestroy(clientHandle);
     node->flags &= ~STUB_NEED_CHECK;
     ASSERT_EQ(ret, 0);
@@ -217,7 +213,7 @@ HWTEST(AppSpawnColdRunTest, App_Spawn_Cold_Run_008, TestSize.Level0)
  * @brief 测试子进程不回复，导致等到超时
  *
  */
-HWTEST(AppSpawnColdRunTest, App_Spawn_Cold_Run_009, TestSize.Level0)
+HWTEST(AppSpawnColdRunTest, App_Spawn_Cold_Run_004, TestSize.Level0)
 {
     int ret = 0;
     AppSpawnClientHandle clientHandle = nullptr;
@@ -235,14 +231,12 @@ HWTEST(AppSpawnColdRunTest, App_Spawn_Cold_Run_009, TestSize.Level0)
         node->arg = reinterpret_cast<void *>(ExecvTimeoutStub);
         AppSpawnResult result = {};
         ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
-        APPSPAWN_LOGI("AppSpawnClientSendMsg result %{public}d ", ret);
+        APPSPAWN_LOGV("App_Spawn_Cold_Run_004 Kill pid %{public}d %{public}d", result.pid, result.result);
         if (ret == 0 && result.pid > 0) {
-            APPSPAWN_LOGI("Kill pid %{public}d ", result.pid);
             kill(result.pid, SIGKILL);
         }
         ret = 0;
     } while (0);
-    g_testServer->Stop();
     AppSpawnClientDestroy(clientHandle);
     node->flags &= ~STUB_NEED_CHECK;
     ASSERT_EQ(ret, 0);

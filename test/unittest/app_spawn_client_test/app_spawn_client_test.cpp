@@ -654,7 +654,7 @@ HWTEST(AppSpawnClientTest, App_Client_Msg_012, TestSize.Level0)
         ret = 0;
         for (size_t i = 0; i < max; i++) {
             if (!CheckAppPermissionFlagSet(property, (uint32_t)i)) {
-                APPSPAWN_LOGE("Invalid permission not set %{public}d  %{public}s", i, GetPermissionByIndex(i));
+                APPSPAWN_LOGE("Invalid permission not set %{public}d %{public}s", i, GetPermissionByIndex(i));
                 ret = APPSPAWN_ARG_INVALID;
                 break;
             }

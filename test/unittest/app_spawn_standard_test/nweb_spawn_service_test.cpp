@@ -76,7 +76,7 @@ HWTEST(NWebSpawnServiceTest, NWeb_Spawn_001, TestSize.Level0)
         APPSPAWN_LOGV("NWeb_Spawn_001 recv result %{public}d  %{public}d", result.result, result.pid);
         APPSPAWN_CHECK(ret == 0, break, "Failed to send msg %{public}d", ret);
         if (ret == 0 && result.pid > 0) {
-            APPSPAWN_LOGI("NWeb_Spawn_Msg_001 Kill pid %{public}d ", result.pid);
+            APPSPAWN_LOGV("NWeb_Spawn_001 Kill pid %{public}d ", result.pid);
             kill(result.pid, SIGKILL);
         }
     } while (0);
@@ -106,6 +106,7 @@ HWTEST(NWebSpawnServiceTest, NWeb_Spawn_002, TestSize.Level0)
             break;
         }
         // stop child and termination
+        APPSPAWN_LOGV("NWeb_Spawn_002 kill pid %{public}d", result.pid);
         kill(result.pid, SIGKILL);
         // MSG_GET_RENDER_TERMINATION_STATUS
         ret = AppSpawnTerminateMsgCreate(result.pid, &reqHandle);

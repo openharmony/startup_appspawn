@@ -388,16 +388,12 @@ static int InitForkContext(AppSpawningCtx *property)
     if (option > 0) {
         (void)fcntl(property->forkCtx.fd[0], F_SETFD, option | O_NONBLOCK);
     }
-
-    if (property->client.flags & APP_COLD_START) { // for cold run, use shared memory to exchange message
-        APPSPAWN_LOGV("Write msg to child %{public}s", GetProcessName(property));
-        return WriteMsgToChild(property, IsNWebSpawnMode(GetAppSpawnMgr()));
-    }
     return 0;
 }
 
 static int AddChildWatcher(AppSpawningCtx *property)
 {
+    uint32_t timeout = WAIT_CHILD_RESPONSE_TIMEOUT;
     LE_WatchInfo watchInfo = {};
     watchInfo.fd = property->forkCtx.fd[0];
     watchInfo.flags = WATCHER_ONCE;
@@ -408,7 +404,7 @@ static int AddChildWatcher(AppSpawningCtx *property)
         return APPSPAWN_SYSTEM_ERROR, "Failed to watch child %{public}d", property->pid);
     status = LE_CreateTimer(LE_GetDefaultLoop(), &property->forkCtx.timer, WaitChildTimeout, property);
     if (status == LE_SUCCESS) {
-        status = LE_StartTimer(LE_GetDefaultLoop(), property->forkCtx.timer, WAIT_CHILD_RESPONSE_TIMEOUT, 0);
+        status = LE_StartTimer(LE_GetDefaultLoop(), property->forkCtx.timer, timeout * 1000, 0); // 1000 1s
     }
     if (status != LE_SUCCESS) {
         if (property->forkCtx.timer != NULL) {
@@ -590,6 +586,11 @@ static int AppSpawnColdStartApp(struct AppSpawnContent *content, AppSpawnClient 
     char *path = property->forkCtx.coldRunPath != NULL ? property->forkCtx.coldRunPath : "/system/bin/appspawn";
     APPSPAWN_LOGI("ColdStartApp::processName: %{public}s path: %{public}s", GetProcessName(property), path);
 
+    // for cold run, use shared memory to exchange message
+    APPSPAWN_LOGV("Write msg to child %{public}s", GetProcessName(property));
+    int ret = WriteMsgToChild(property, IsNWebSpawnMode((AppSpawnMgr *)content));
+    APPSPAWN_CHECK(ret == 0, return APPSPAWN_SYSTEM_ERROR, "Failed to write msg to child");
+
     char buffer[4][32] = {0};  // 4 32 buffer for fd
     char *mode = IsNWebSpawnMode((AppSpawnMgr *)content) ? "nweb_cold" : "app_cold";
     int len = sprintf_s(buffer[0], sizeof(buffer[0]), " %d ", property->forkCtx.fd[1]);
@@ -607,7 +608,7 @@ static int AppSpawnColdStartApp(struct AppSpawnContent *content, AppSpawnClient 
         "-param", GetProcessName(property), buffer[3], NULL
     };
 
-    int ret = execv(path, (char **)formatCmds);
+    ret = execv(path, (char **)formatCmds);
     if (ret != 0) {
         APPSPAWN_LOGE("Failed to execv, errno: %{public}d", errno);
     }
@@ -777,7 +778,7 @@ AppSpawnContent *StartSpawnService(const AppSpawnStartArg *startArg, uint32_t ar
 
     // load module appspawn/common
     AppSpawnLoadAutoRunModules(MODULE_COMMON);
-    AppSpawnModuleMgrInstall("libappspawn_asan");
+    AppSpawnModuleMgrInstall(ASAN_MODULE_PATH);
 
     APPSPAWN_CHECK(LE_GetDefaultLoop() != NULL, return NULL, "Invalid default loop");
     AppSpawnContent *content = AppSpawnCreateContent(arg->socketName, argv[0], argvSize, arg->mode);

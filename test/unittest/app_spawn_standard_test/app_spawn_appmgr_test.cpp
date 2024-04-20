@@ -956,7 +956,6 @@ HWTEST(AppSpawnAppMgrTest, App_Spawn_AppSpawningCtx_Msg_003, TestSize.Level0)
     result[3] = 1;
     for (int j = 0; j < MAX_FLAGS_INDEX; j++) {
         ret = CheckAppMsgFlagsSet(appCtx, j);
-        printf("CheckAppMsgFlagsSet %d indx %d ret %d \n", j, result[j], ret);
         EXPECT_EQ(result[j], ret);
     }
     DeleteAppSpawningCtx(appCtx);

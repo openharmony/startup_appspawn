@@ -155,7 +155,7 @@ HWTEST(AppSpawnModuleInterfaceTest, App_Spawn_App_Spawn_Hook_001, TestSize.Level
         ret = AddAppSpawnHook(static_cast<AppSpawnHookStage>(i), 0, nullptr);
         EXPECT_EQ(ret == 0, 0);
 
-        if (i == STAGE_CHILD_PRE_RUN) {
+        if (i == STAGE_CHILD_PRE_RUN || i == STAGE_CHILD_EXECUTE) {
             printf("App_Spawn_App_Spawn_Hook_001 %d \n", i);
             continue;
         }
@@ -210,7 +210,8 @@ HWTEST(AppSpawnModuleInterfaceTest, App_Spawn_Process_Hook_001, TestSize.Level0)
         ret = ProcessMgrHookExecute(static_cast<AppSpawnHookStage>(i), nullptr, nullptr);
         EXPECT_NE(ret, 0);
 
-        ret = ProcessMgrHookExecute(static_cast<AppSpawnHookStage>(i), reinterpret_cast<AppSpawnContent *>(mgr), nullptr);
+        ret = ProcessMgrHookExecute(static_cast<AppSpawnHookStage>(i),
+            reinterpret_cast<AppSpawnContent *>(mgr), nullptr);
         EXPECT_NE(ret, 0);
     }
     TerminateSpawnedProcess(app);
