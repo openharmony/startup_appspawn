@@ -1524,6 +1524,10 @@ int32_t SetAppSandboxProperty(AppSpawnMgr *content, AppSpawningCtx *property)
     APPSPAWN_CHECK(property != nullptr, return -1, "Invalid appspwn client");
     APPSPAWN_CHECK(content != nullptr, return -1, "Invalid appspwn content");
     int ret = 0;
+    // no sandbox
+    if (CheckAppMsgFlagsSet(property, APP_FLAGS_NO_SANDBOX)) {
+        return 0;
+    }
     if ((content->content.sandboxNsFlags & CLONE_NEWPID) == CLONE_NEWPID) {
         ret = getprocpid();
         if (ret < 0) {
@@ -1540,11 +1544,6 @@ int32_t SetAppSandboxProperty(AppSpawnMgr *content, AppSpawningCtx *property)
     if (strncmp(GetBundleName(property),
         OHOS::AppSpawn::MODULE_TEST_BUNDLE_NAME.c_str(),
         OHOS::AppSpawn::MODULE_TEST_BUNDLE_NAME.size()) == 0) {
-        APPSPAWN_LOGW("Do not care sandbox result %{public}d", ret);
-        return 0;
-    }
-    // no sandbox
-    if (CheckAppMsgFlagsSet(property, APP_FLAGS_NO_SANDBOX)) {
         APPSPAWN_LOGW("Do not care sandbox result %{public}d", ret);
         return 0;
     }

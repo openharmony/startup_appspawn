@@ -51,7 +51,7 @@ void NWebSpawnInit(void)
     // ownerId must been set before setcon & setuid
     (void)SetXpmOwnerId(PROCESS_OWNERID_EXTEND, NULL);
 #endif
-#ifdef WITH_SELINUX    
+#ifdef WITH_SELINUX
     setcon("u:r:nwebspawn:s0");
 #endif
     pid_t pid = getpid();
@@ -59,9 +59,11 @@ void NWebSpawnInit(void)
     struct  __user_cap_header_struct capHeader;
     capHeader.version = _LINUX_CAPABILITY_VERSION_3;
     capHeader.pid = 0;
-    const uint64_t inheriTable = 0x2000c0;
-    const uint64_t permitted = 0x2000c0;
-    const uint64_t effective = 0x2000c0;
+    // old CAP_SYS_ADMIN | CAP_SETGID | CAP_SETUID
+    const uint64_t inheriTable = CAP_TO_MASK(CAP_SYS_ADMIN) | CAP_TO_MASK(CAP_SETGID) |
+        CAP_TO_MASK(CAP_SETUID) | CAP_TO_MASK(CAP_KILL);
+    const uint64_t permitted = inheriTable;
+    const uint64_t effective = inheriTable;
     struct __user_cap_data_struct capData[CAP_NUM] = {};
     for (int j = 0; j < CAP_NUM; ++j) {
         capData[0].inheritable = (__u32)(inheriTable);
