@@ -512,6 +512,10 @@ int SpawnBuildSandboxEnv(AppSpawnMgr *content, AppSpawningCtx *property)
 {
     AppSpawnSandboxCfg *appSandbox = GetAppSpawnSandbox(content);
     APPSPAWN_CHECK(appSandbox != NULL, return -1, "Failed to get sandbox for %{public}s", GetProcessName(property));
+    // no sandbox
+    if (CheckAppMsgFlagsSet(property, APP_FLAGS_NO_SANDBOX)) {
+        return 0;
+    }
     // CLONE_NEWPID 0x20000000
     // CLONE_NEWNET 0x40000000
     if ((content->content.sandboxNsFlags & CLONE_NEWPID) == CLONE_NEWPID) {
@@ -524,10 +528,6 @@ int SpawnBuildSandboxEnv(AppSpawnMgr *content, AppSpawningCtx *property)
     appSandbox->mounted = 1;
     // for module test do not create sandbox
     if (strncmp(GetBundleName(property), MODULE_TEST_BUNDLE_NAME, strlen(MODULE_TEST_BUNDLE_NAME)) == 0) {
-        return 0;
-    }
-    // no sandbox
-    if (CheckAppMsgFlagsSet(property, APP_FLAGS_NO_SANDBOX)) {
         return 0;
     }
     return ret == 0 ? 0 : APPSPAWN_SANDBOX_MOUNT_FAIL;
