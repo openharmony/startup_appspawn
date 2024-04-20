@@ -72,10 +72,6 @@ static void DeleteAppSpawnNamespace(AppSpawnNamespace *namespace)
         namespace->nsSelfPidFd = -1;
     }
     free(namespace);
-    pid_t pid = GetPidByName("pid_ns_init");
-    if (pid > 0) {
-        kill(pid, SIGKILL);
-    }
 }
 
 static void FreeAppSpawnNamespace(struct TagAppSpawnExtData *data)

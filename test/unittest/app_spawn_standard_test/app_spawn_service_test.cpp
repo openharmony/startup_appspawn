@@ -77,7 +77,7 @@ HWTEST(AppSpawnServiceTest, App_Spawn_001, TestSize.Level0)
         APPSPAWN_LOGV("App_Spawn_001 recv result %{public}d  %{public}d", result.result, result.pid);
         APPSPAWN_CHECK(ret == 0, break, "Failed to send msg %{public}d", ret);
         if (ret == 0 && result.pid > 0) {
-            APPSPAWN_LOGI("App_Spawn_Msg_001 Kill pid %{public}d ", result.pid);
+            APPSPAWN_LOGV("App_Spawn_001 Kill pid %{public}d ", result.pid);
             kill(result.pid, SIGKILL);
         }
     } while (0);
@@ -107,6 +107,7 @@ HWTEST(AppSpawnServiceTest, App_Spawn_002, TestSize.Level0)
             break;
         }
         // stop child and termination
+        APPSPAWN_LOGI("App_Spawn_002 Kill pid %{public}d ", result.pid);
         kill(result.pid, SIGKILL);
         // MSG_GET_RENDER_TERMINATION_STATUS
         ret = AppSpawnTerminateMsgCreate(result.pid, &reqHandle);
@@ -192,7 +193,7 @@ HWTEST(AppSpawnServiceTest, App_Spawn_005, TestSize.Level0)
         ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
         APPSPAWN_CHECK(ret == 0, break, "Failed to send msg %{public}d", ret);
         if (ret == 0 && result.pid > 0) {
-            APPSPAWN_LOGI("App_Spawn_Msg_001 Kill pid %{public}d ", result.pid);
+            APPSPAWN_LOGI("App_Spawn_005 Kill pid %{public}d ", result.pid);
             kill(result.pid, SIGKILL);
         }
     } while (0);
@@ -212,7 +213,7 @@ HWTEST(AppSpawnServiceTest, App_Spawn_006, TestSize.Level0)
     do {
         ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
         APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", APPSPAWN_SERVER_NAME);
-        auto sendMsg = [=]() {
+        auto sendMsg = [](AppSpawnClientHandle clientHandle) {
             AppSpawnReqMsgHandle reqHandle = g_testServer->CreateMsg(clientHandle, MSG_SPAWN_NATIVE_PROCESS, 0);
 
             AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_DEBUGGABLE);
@@ -229,11 +230,11 @@ HWTEST(AppSpawnServiceTest, App_Spawn_006, TestSize.Level0)
             }
             ASSERT_EQ(ret, 0);
         };
-        std::thread thread1(sendMsg);
-        std::thread thread2(sendMsg);
-        std::thread thread3(sendMsg);
-        std::thread thread4(sendMsg);
-        std::thread thread5(sendMsg);
+        std::thread thread1(sendMsg, clientHandle);
+        std::thread thread2(sendMsg, clientHandle);
+        std::thread thread3(sendMsg, clientHandle);
+        std::thread thread4(sendMsg, clientHandle);
+        std::thread thread5(sendMsg, clientHandle);
 
         thread1.join();
         thread2.join();

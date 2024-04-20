@@ -36,7 +36,6 @@ extern "C" {
 #define PHYSICAL_APP_INSTALL_PATH "/data/app/el1/bundle/public/"
 #define APL_SYSTEM_CORE "system_core"
 #define APL_SYSTEM_BASIC "system_basic"
-#define MODULE_TEST_BUNDLE_NAME "moduleTestProcessName"
 #define DEFAULT_NWEB_SANDBOX_SEC_PATH "/data/app/el1/bundle/public/com.ohos.nweb"  // persist.nweb.sandbox.src_path
 
 #define PARAMETER_PACKAGE_NAME "<PackageName>"

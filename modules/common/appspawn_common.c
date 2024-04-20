@@ -119,7 +119,7 @@ static void MountAppEl2Dir(const AppSpawningCtx *property)
     MakeDirRec(path, DIR_MODE, 1);
     if (mount(path, path, NULL, MS_BIND | MS_REC, NULL) != 0) {
         free(path);
-        APPSPAWN_LOGI("mount el2 path failed!");
+        APPSPAWN_LOGI("mount el2 path failed! error: %{public}d %{public}s", errno, path);
         return;
     }
     if (mount(NULL, path, NULL, MS_SHARED, NULL) != 0) {

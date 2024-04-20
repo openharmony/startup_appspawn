@@ -25,6 +25,7 @@
 #include <sys/eventfd.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <inttypes.h>
 
 #include "appspawn.h"
 #include "appspawn_client.h"
@@ -239,7 +240,7 @@ void AppSpawnTestServer::ProcessIdle(const IdleHandle taskHandle, void *context)
     clock_gettime(CLOCK_MONOTONIC, &end);
     uint64_t diff = DiffTime(&server->startTime_, &end);
     if (diff >= (server->protectTime_ * 1000)) {  // 1000 ms -> us
-        APPSPAWN_LOGV("AppSpawnTestServer:: timeout %{public}u %{public}llu", server->protectTime_, diff);
+        APPSPAWN_LOGV("AppSpawnTestServer:: timeout %{public}u %{public}" PRIu64 "", server->protectTime_, diff);
         server->StopSpawnService();
         return;
     }

@@ -131,6 +131,12 @@
                 "src-path" : "/data/local/ark-profile/<currentUserId>/<PackageName>",
                 "sandbox-path" : "/data/storage/ark-profile"
             }, {
+                "src-path" : "/data/local/shader_cache/local/<PackageName>",
+                "sandbox-path" : "/data/storage/shader_cache/local"
+            }, {
+                "src-path" : "/data/local/shader_cache/cloud/<PackageName>",
+                "sandbox-path" : "/data/storage/shader_cache/cloud"
+            }, {
                 "src-path" : "/mnt/share/<currentUserId>/<PackageName_index>",
                 "sandbox-path" : "/data/storage/el2/share"
             }, {
@@ -243,6 +249,12 @@
                     "sandbox-path": "/data/medialibrary/database"
                 }
             ]
+        }, {
+            "name": "ohos.permission.ACCESS_SHADER_CACHE_DIR",
+            "mount-paths": [{
+                "sandbox-path": "/data/storage/shader_caches",
+                "src-path": "/data/local/shader_cache"
+            }]
         }],
         "spawn-flag": [{
             "name": "START_FLAGS_BACKUP",

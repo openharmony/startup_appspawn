@@ -47,6 +47,14 @@ public:
     void TearDown() {}
 };
 
+static int TestRunChildProcessor(AppSpawnContent *content, AppSpawnClient *client)
+{
+    APPSPAWN_LOGV("TestRunChildProcessor %{public}u", client->id);
+    AppSpawnEnvClear(content, client);
+    usleep(1000); // 1000 1ms
+    return 0;
+}
+
 static AppSpawnContent *CreateTestAppSpawnContent(const char *name, uint32_t mode)
 {
     static char path[PATH_MAX] = {};
@@ -517,6 +525,8 @@ HWTEST(AppSpawnChildTest, App_Spawn_Cold_Run_001, TestSize.Level0)
         AppSpawnHookExecute(STAGE_PARENT_PRE_FORK, 0, content, &property->client);
         AppSpawnHookExecute(STAGE_CHILD_PRE_COLDBOOT, 0, content, &property->client);
         // run in cold mode
+        // child run in TestRunChildProcessor
+        RegChildLooper(content, TestRunChildProcessor);
         content->runAppSpawn(content, args->argc, args->argv);
         ret = 0;
     } while (0);
@@ -557,6 +567,8 @@ HWTEST(AppSpawnChildTest, App_Spawn_Cold_Run_002, TestSize.Level0)
         AppSpawnHookExecute(STAGE_PARENT_PRE_FORK, 0, content, &property->client);
         AppSpawnHookExecute(STAGE_CHILD_PRE_COLDBOOT, 0, content, &property->client);
         // run in cold mode
+        // child run in TestRunChildProcessor
+        RegChildLooper(content, TestRunChildProcessor);
         content->runAppSpawn(content, args->argc, args->argv);
         ret = 0;
     } while (0);
@@ -604,6 +616,8 @@ HWTEST(AppSpawnChildTest, App_Spawn_Cold_Run_003, TestSize.Level0)
         AppSpawnHookExecute(STAGE_PARENT_PRE_FORK, 0, content, &property->client);
         AppSpawnHookExecute(STAGE_CHILD_PRE_COLDBOOT, 0, content, &property->client);
         // run in cold mode
+        // child run in TestRunChildProcessor
+        RegChildLooper(content, TestRunChildProcessor);
         content->runAppSpawn(content, args->argc, args->argv);
         ret = 0;
     } while (0);
@@ -653,6 +667,8 @@ HWTEST(AppSpawnChildTest, App_Spawn_Cold_Run_004, TestSize.Level0)
         AppSpawnHookExecute(STAGE_PARENT_PRE_FORK, 0, content, &property->client);
         AppSpawnHookExecute(STAGE_CHILD_PRE_COLDBOOT, 0, content, &property->client);
         // run in cold mode
+        // child run in TestRunChildProcessor
+        RegChildLooper(content, TestRunChildProcessor);
         content->runAppSpawn(content, args->argc, args->argv);
         property = nullptr;
         ret = 0;

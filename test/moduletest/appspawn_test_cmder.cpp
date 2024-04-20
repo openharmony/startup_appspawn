@@ -371,7 +371,7 @@ int AppSpawnTestCommander::CreateMsg(AppSpawnReqMsgHandle &reqHandle,
     for (uint32_t j = 0; j < count; j++) {
         (void)AppSpawnReqMsgSetAppFlag(reqHandle, static_cast<AppFlagsIndex>(msgFlags[j]));
     }
-    (void)AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_NO_SANDBOX);
+    (void)AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_IGNORE_SANDBOX);
     ret = BuildMsgFromJson(appInfoConfig_, reqHandle);
     APPSPAWN_CHECK(ret == 0, AppSpawnReqMsgFree(reqHandle);
         return ret, "Failed to build req %{public}s", processName_.c_str());
