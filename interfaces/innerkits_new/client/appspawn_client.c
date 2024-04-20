@@ -147,7 +147,7 @@ static int WriteMessage(int socketFd, const uint8_t *buf, ssize_t len)
     const uint8_t *offset = buf;
     for (ssize_t wLen = 0; remain > 0; offset += wLen, remain -= wLen, written += wLen) {
         wLen = send(socketFd, offset, remain, MSG_NOSIGNAL);
-        APPSPAWN_LOGV("Write msg errno: %{public}d %{public}d", errno, wLen);
+        APPSPAWN_LOGV("Write msg errno: %{public}d %{public}zd", errno, wLen);
         APPSPAWN_CHECK((wLen > 0) || (errno == EINTR), return -errno,
             "Failed to write message to fd %{public}d, wLen %{public}zd errno: %{public}d", socketFd, wLen, errno);
     }
