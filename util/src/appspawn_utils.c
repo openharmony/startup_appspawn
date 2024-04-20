@@ -308,3 +308,16 @@ void AppSpawnDump(const char *fmt, ...)
 #elif defined(_MSC_VER)
 #    pragma warning(pop)
 #endif
+
+uint32_t GetSpawnTimeout(uint32_t def)
+{
+    uint32_t value = def;
+    char data[32] = {};  // 32 length
+    int ret = GetParameter("persist.appspawn.reqMgr.timeout", "0", data, sizeof(data));
+    if (ret > 0 && strcmp(data, "0") != 0) {
+        errno = 0;
+        value = atoi(data);
+        return (errno != 0) ? def : ((value < def) ? def : value);
+    }
+    return value;
+}
