@@ -103,7 +103,7 @@ static int HnpGenerateSoftLinkAll(const char *installPath, const char *dstPath)
     DIR *dir;
     struct dirent *entry;
 
-    ret = sprintf_s(srcPath, MAX_FILE_PATH_LEN, "%s/bin/", installPath);
+    ret = sprintf_s(srcPath, MAX_FILE_PATH_LEN, "%s/bin", installPath);
     if (ret < 0) {
         HNP_LOGE("sprintf install bin path unsuccess.");
         return HNP_ERRNO_BASE_SPRINTF_FAILED;
@@ -157,7 +157,7 @@ static int HnpGenerateSoftLink(const char *installPath, const char *hnpBasePath,
     int ret = 0;
     char binPath[MAX_FILE_PATH_LEN];
 
-    ret = sprintf_s(binPath, MAX_FILE_PATH_LEN, "%s/bin/", hnpBasePath);
+    ret = sprintf_s(binPath, MAX_FILE_PATH_LEN, "%s/bin", hnpBasePath);
     if (ret < 0) {
         HNP_LOGE("sprintf install bin path unsuccess.");
         return HNP_ERRNO_BASE_SPRINTF_FAILED;
