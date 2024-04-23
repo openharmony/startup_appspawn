@@ -36,6 +36,7 @@ static AppSpawnMgr *g_appSpawnMgr = NULL;
 
 AppSpawnMgr *CreateAppSpawnMgr(int mode)
 {
+    APPSPAWN_CHECK_ONLY_EXPER(mode < MODE_INVALID, return NULL);
     if (g_appSpawnMgr != NULL) {
         return g_appSpawnMgr;
     }
@@ -191,23 +192,25 @@ AppSpawnedProcess *GetSpawnedProcessByName(const char *name)
     return ListEntry(node, AppSpawnedProcess, node);
 }
 
-int KillAndWaitStatus(pid_t pid, int sig)
+int KillAndWaitStatus(pid_t pid, int sig, int *exitStatus)
 {
+    APPSPAWN_CHECK_ONLY_EXPER(exitStatus != NULL, return 0);
+    *exitStatus = -1;
     if (pid <= 0) {
         return 0;
     }
-    int exitStatus = 0;
+
     if (kill(pid, sig) != 0) {
         APPSPAWN_LOGE("unable to kill process, pid: %{public}d ret %{public}d", pid, errno);
         return -1;
     }
 
-    pid_t exitPid = waitpid(pid, &exitStatus, 0);
+    pid_t exitPid = waitpid(pid, exitStatus, 0);
     if (exitPid != pid) {
-        APPSPAWN_LOGE("waitpid failed, pid: %{public}d %{public}d, status: %{public}d", exitPid, pid, exitStatus);
+        APPSPAWN_LOGE("waitpid failed, pid: %{public}d %{public}d, status: %{public}d", exitPid, pid, *exitStatus);
         return -1;
     }
-    return exitStatus;
+    return 0;
 }
 
 static int GetProcessTerminationStatus(pid_t pid)
@@ -226,7 +229,17 @@ static int GetProcessTerminationStatus(pid_t pid)
         free(info);
         return exitStatus;
     }
-    return KillAndWaitStatus(pid, SIGKILL);
+    AppSpawnedProcess *app = GetSpawnedProcess(pid);
+    if (app == NULL) {
+        APPSPAWN_LOGE("unable to get process, pid: %{public}d ", pid);
+        return -1;
+    }
+
+    if (KillAndWaitStatus(pid, SIGKILL, &exitStatus) == 0) { // kill success, delete app
+        OH_ListRemove(&app->node);
+        free(app);
+    }
+    return exitStatus;
 }
 
 AppSpawningCtx *CreateAppSpawningCtx(void)
@@ -321,26 +334,6 @@ void AppSpawningCtxTraversal(ProcessTraversal traversal, void *data)
         traversal(g_appSpawnMgr, ctx, data);
         node = next;
     }
-}
-
-static inline int SetSpawnMsgFlags(AppSpawnMsgFlags *msgFlags, uint32_t index)
-{
-    uint32_t blockIndex = index / 32;  // 32 max bit in int
-    uint32_t bitIndex = index % 32;    // 32 max bit in int
-    if (blockIndex >= msgFlags->count) {
-        return -1;
-    }
-    msgFlags->flags[blockIndex] |= (1 << bitIndex);
-    return 0;
-}
-
-int SetAppSpawnMsgFlag(const AppSpawnMsgNode *message, uint32_t type, uint32_t index)
-{
-    APPSPAWN_CHECK_ONLY_EXPER(message != NULL, return -1);
-    AppSpawnMsgFlags *msgFlags = (AppSpawnMsgFlags *)GetAppSpawnMsgInfo(message, type);
-    APPSPAWN_CHECK(msgFlags != NULL, return -1,
-        "No tlv %{public}d in msg %{public}s", type, message->msgHeader.processName);
-    return SetSpawnMsgFlags(msgFlags, index);
 }
 
 static int DumpAppSpawnQueue(ListNode *node, void *data)

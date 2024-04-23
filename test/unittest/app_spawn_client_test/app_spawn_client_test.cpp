@@ -259,10 +259,11 @@ HWTEST(AppSpawnClientTest, App_Client_Msg_003, TestSize.Level0)
     AppSpawnReqMsgHandle reqHandle = 0;
     AppSpawningCtx *property = nullptr;
     do {
-        g_testHelper.SetProcessName("test222222222222222234512345678test222222222222222234512345678"
+        std::string processName = "test222222222222222234512345678test222222222222222234512345678"
             "test222222222222222234512345678test222222222222222234512345678"
             "test222222222222222234512345678test222222222222222234512345678"
-            "test222222222222222234512345678test2222222222222222345123456781234567");
+            "test222222222222222234512345678test2222222222222222345123456781234567";
+        g_testHelper.SetProcessName(processName.c_str());
         ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
         APPSPAWN_CHECK(ret == 0, break, "Failed to create reqMgr %{public}s", APPSPAWN_SERVER_NAME);
         reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 1);
@@ -277,7 +278,7 @@ HWTEST(AppSpawnClientTest, App_Client_Msg_003, TestSize.Level0)
         APPSPAWN_CHECK(info->bundleIndex == g_testHelper.GetTestBundleIndex(),
             break, "Invalid bundleIndex %{public}d", info->bundleIndex);
         APPSPAWN_LOGV("info->bundleName %{public}s", info->bundleName);
-        APPSPAWN_CHECK(strcmp(info->bundleName, g_testHelper.GetDefaultTestAppBundleName()) == 0,
+        APPSPAWN_CHECK(strcmp(info->bundleName, processName.c_str()) == 0,
             break, "Invalid bundleName %{public}s", info->bundleName);
         ret = 0;
     } while (0);
@@ -653,7 +654,7 @@ HWTEST(AppSpawnClientTest, App_Client_Msg_012, TestSize.Level0)
         ret = 0;
         for (size_t i = 0; i < max; i++) {
             if (!CheckAppPermissionFlagSet(property, (uint32_t)i)) {
-                APPSPAWN_LOGE("Invalid permission not set %{public}d  %{public}s", i, GetPermissionByIndex(i));
+                APPSPAWN_LOGE("Invalid permission not set %{public}d %{public}s", i, GetPermissionByIndex(i));
                 ret = APPSPAWN_ARG_INVALID;
                 break;
             }
