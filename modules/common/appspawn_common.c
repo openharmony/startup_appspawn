@@ -41,7 +41,6 @@
 #include "appspawn_hook.h"
 #include "appspawn_msg.h"
 #include "appspawn_manager.h"
-#include "appspawn_silk.h"
 #include "init_param.h"
 #include "parameter.h"
 #include "securec.h"
@@ -441,17 +440,9 @@ static int SpawnEnableCache(AppSpawnMgr *content, AppSpawningCtx *property)
     return ret;
 }
 
-static void SpawnLoadSilk(const AppSpawnMgr *content, const AppSpawningCtx *property)
-{
-    const char *processName = GetBundleName(property);
-    APPSPAWN_CHECK(processName != NULL, return, "Can not get bundle name");
-    LoadSilkLibrary(processName);
-}
-
 static int SpawnSetProperties(AppSpawnMgr *content, AppSpawningCtx *property)
 {
     APPSPAWN_LOGV("Spawning: set child property");
-    SpawnLoadSilk(content, property);
     (void)umask(DEFAULT_UMASK);
     int ret = SetKeepCapabilities(content, property);
     APPSPAWN_CHECK_ONLY_EXPER(ret == 0, return ret);
@@ -521,17 +512,11 @@ static int SpawnGetSpawningFlag(AppSpawnMgr *content, AppSpawningCtx *property)
     return 0;
 }
 
-static int SpawnLoadConfig(AppSpawnMgr *content)
-{
-    LoadSilkConfig();
-    return 0;
-}
 MODULE_CONSTRUCTOR(void)
 {
     APPSPAWN_LOGV("Load common module ...");
     AddPreloadHook(HOOK_PRIO_COMMON, PreLoadSetSeccompFilter);
 
-    (void)AddServerStageHook(STAGE_SERVER_PRELOAD, HOOK_PRIO_LOWEST, SpawnLoadConfig);
     AddAppSpawnHook(STAGE_PARENT_PRE_FORK, HOOK_PRIO_HIGHEST, SpawnGetSpawningFlag);
     AddAppSpawnHook(STAGE_CHILD_PRE_COLDBOOT, HOOK_PRIO_HIGHEST, SpawnInitSpawningEnv);
     AddAppSpawnHook(STAGE_CHILD_EXECUTE, HOOK_PRIO_HIGHEST, SpawnEnableCache);

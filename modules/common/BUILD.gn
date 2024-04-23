@@ -20,7 +20,6 @@ ohos_shared_library("appspawn_common") {
     "appspawn_cgroup.c",
     "appspawn_common.c",
     "appspawn_namespace.c",
-    "appspawn_silk.cpp",
   ]
   include_dirs = [
     ".",
@@ -28,10 +27,7 @@ ohos_shared_library("appspawn_common") {
     "${appspawn_path}/standard",
   ]
   cflags = []
-  deps = [
-    "${appspawn_path}/modules/module_engine:libappspawn_module_engine",
-    "${appspawn_path}/util:libappspawn_util",
-  ]
+  deps = [ "${appspawn_path}/modules/module_engine:libappspawn_module_engine" ]
   defines = [ "GRAPHIC_PERMISSION_CHECK" ]
   external_deps = [
     "access_token:libtoken_setproc",
