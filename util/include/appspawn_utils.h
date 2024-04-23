@@ -105,7 +105,7 @@ void SetDumpToStream(FILE *stream);
 typedef int (*SplitStringHandle)(const char *str, void *context);
 int32_t StringSplit(const char *str, const char *separator, void *context, SplitStringHandle handle);
 char *GetLastStr(const char *str, const char *dst);
-
+uint32_t GetSpawnTimeout(uint32_t def);
 void DumpCurrentDir(char *buffer, uint32_t bufferLen, const char *dirPath);
 
 #ifndef APP_FILE_NAME

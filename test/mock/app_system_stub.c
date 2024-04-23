@@ -286,6 +286,11 @@ int SetgidStub(gid_t gid)
     return 0;
 }
 
+int IoctlStub(int fd, unsigned long request, ...)
+{
+    return 0;
+}
+
 #ifdef __cplusplus
 }
 #endif

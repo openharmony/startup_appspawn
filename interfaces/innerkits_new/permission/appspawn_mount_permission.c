@@ -39,30 +39,20 @@ static PermissionManager g_permissionMgr[CLIENT_MAX] = {};
 #ifdef APPSPAWN_SANDBOX_NEW
 static int ParseAppSandboxConfig(const cJSON *root, PermissionManager *mgr)
 {
-    APPSPAWN_LOGE("ParseAppSandboxConfig");
     // conditional
     cJSON *json = cJSON_GetObjectItemCaseSensitive(root, "conditional");
-    if (json == NULL) {
-        return 0;
-    }
+    APPSPAWN_CHECK(json != NULL, return 0, "No found conditional in config");
+
     // permission
     cJSON *config = cJSON_GetObjectItemCaseSensitive(json, "permission");
-    if (config == NULL || !cJSON_IsArray(config)) {
-        return 0;
-    }
+    APPSPAWN_CHECK(config != NULL && cJSON_IsArray(config), return 0, "No found permission in config");
 
     uint32_t configSize = cJSON_GetArraySize(config);
     for (uint32_t i = 0; i < configSize; i++) {
         cJSON *json = cJSON_GetArrayItem(config, i);
-        if (json == NULL) {
-            continue;
-        }
         char *name = GetStringFromJsonObj(json, "name");
-        APPSPAWN_LOGV("ParsePermissionConfig %{public}s", name);
-        if (name == NULL) {
-            APPSPAWN_LOGE("No name in permission configs");
-            continue;
-        }
+        APPSPAWN_CHECK(name != NULL, break, "No found name in config");
+
         int ret = AddSandboxPermissionNode(name, &mgr->permissionQueue);
         APPSPAWN_CHECK_ONLY_EXPER(ret == 0, return ret);
     }
@@ -83,7 +73,6 @@ static int ParsePermissionConfig(const cJSON *permissionConfigs, PermissionManag
     cJSON_ArrayForEach(config, permissionConfigs)
     {
         const char *name = config->string;
-        APPSPAWN_LOGV("ParsePermissionConfig %{public}s", name);
         int ret = AddSandboxPermissionNode(name, &mgr->permissionQueue);
         APPSPAWN_CHECK_ONLY_EXPER(ret == 0, return ret);
     }
@@ -115,52 +104,47 @@ static PermissionManager *GetPermissionMgrByType(AppSpawnClientType type)
 
 static int LoadPermissionConfig(PermissionManager *mgr)
 {
-    APPSPAWN_CHECK(mgr != NULL, return -1, "Invalid permission mgr");
     int ret = ParseJsonConfig("etc/sandbox",
         mgr->type == CLIENT_FOR_APPSPAWN ? APP_SANDBOX_FILE_NAME : WEB_SANDBOX_FILE_NAME, ParseAppSandboxConfig, mgr);
-    if (ret == APPSPAWN_SANDBOX_NONE) {
-        APPSPAWN_LOGW("No sandbox config");
-        ret = 0;
-    }
-    APPSPAWN_CHECK(ret == 0, return ret, "Load sandbox fail");
+    APPSPAWN_CHECK(ret == 0, return ret, "Load sandbox fail %{public}d", ret);
     mgr->maxPermissionIndex = PermissionRenumber(&mgr->permissionQueue);
+    return 0;
+}
+
+static inline int32_t CheckPermissionManager(PermissionManager *mgr)
+{
+    if (mgr != NULL && mgr->inited) {
+        return 1;
+    }
     return 0;
 }
 
 static int32_t PMGetPermissionIndex(AppSpawnClientType type, const char *permission)
 {
     PermissionManager *mgr = GetPermissionMgrByType(type);
-    APPSPAWN_CHECK_ONLY_EXPER(mgr != NULL, return INVALID_PERMISSION_INDEX);
-    APPSPAWN_CHECK_ONLY_EXPER(mgr->inited && mgr->maxPermissionIndex >= 0, return INVALID_PERMISSION_INDEX);
-    APPSPAWN_CHECK_ONLY_EXPER(permission != NULL, return INVALID_PERMISSION_INDEX);
+    APPSPAWN_CHECK_ONLY_EXPER(CheckPermissionManager(mgr), return INVALID_PERMISSION_INDEX);
     return GetPermissionIndexInQueue((SandboxQueue *)&mgr->permissionQueue, permission);
 }
 
 static int32_t PMGetMaxPermissionIndex(AppSpawnClientType type)
 {
     PermissionManager *mgr = GetPermissionMgrByType(type);
-    APPSPAWN_CHECK_ONLY_EXPER(mgr != NULL, return INVALID_PERMISSION_INDEX);
-    APPSPAWN_CHECK_ONLY_EXPER(mgr->inited && mgr->maxPermissionIndex >= 0, return INVALID_PERMISSION_INDEX);
+    APPSPAWN_CHECK_ONLY_EXPER(CheckPermissionManager(mgr), return INVALID_PERMISSION_INDEX);
     return mgr->maxPermissionIndex;
 }
 
 static const char *PMGetPermissionByIndex(AppSpawnClientType type, int32_t index)
 {
     PermissionManager *mgr = GetPermissionMgrByType(type);
-    APPSPAWN_CHECK_ONLY_EXPER(mgr != NULL, return NULL);
-    APPSPAWN_CHECK_ONLY_EXPER(mgr->inited && mgr->maxPermissionIndex >= 0, return NULL);
+    APPSPAWN_CHECK_ONLY_EXPER(CheckPermissionManager(mgr), return NULL);
     if (mgr->maxPermissionIndex <= index) {
         return NULL;
     }
     const SandboxPermissionNode *node = GetPermissionNodeInQueueByIndex((SandboxQueue *)&mgr->permissionQueue, index);
-#ifdef APPSPAWN_CLIENT
-    return node == NULL ? NULL : node->name;
-#else
-    return node == NULL ? NULL : node->section.name;
-#endif
+    return PERMISSION_NAME(node);
 }
 
-int LoadPermission(AppSpawnClientType type)
+APPSPAWN_STATIC int LoadPermission(AppSpawnClientType type)
 {
     APPSPAWN_LOGW("LoadPermission %{public}d", type);
     pthread_mutex_lock(&g_mutex);
@@ -178,25 +162,19 @@ int LoadPermission(AppSpawnClientType type)
     mgr->permissionQueue.type = 0;
     OH_ListInit(&mgr->permissionQueue.front);
     int ret = LoadPermissionConfig(mgr);
-    if (ret != 0) {
-        pthread_mutex_unlock(&g_mutex);
-        return ret;
+    if (ret == 0) {
+        mgr->inited = 1;
     }
-    mgr->inited = 1;
     pthread_mutex_unlock(&g_mutex);
-    return 0;
+    return ret;
 }
 
-void DeletePermission(AppSpawnClientType type)
+APPSPAWN_STATIC void DeletePermission(AppSpawnClientType type)
 {
     APPSPAWN_LOGW("DeletePermission %{public}d", type);
     pthread_mutex_lock(&g_mutex);
     PermissionManager *mgr = GetPermissionMgrByType(type);
-    if (mgr == NULL) {
-        pthread_mutex_unlock(&g_mutex);
-        return;
-    }
-    if (!mgr->inited) {
+    if (mgr == NULL || !mgr->inited) {
         pthread_mutex_unlock(&g_mutex);
         return;
     }

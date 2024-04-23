@@ -26,6 +26,11 @@ ohos_fuzztest("AppSpawnClientFuzzTest") {
   deps = [ "${appspawn_path}/interfaces/innerkits_new/client:appspawn_client" ]
   external_deps = [ "bounds_checking_function:libsec_static" ]
 
+  defines = []
+  if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
+    defines += [ "APPSPAWN_SANDBOX_NEW" ]
+  }
+
   cflags = [
     "-g",
     "-O0",

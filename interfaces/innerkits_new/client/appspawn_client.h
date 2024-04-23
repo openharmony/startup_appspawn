@@ -81,8 +81,6 @@ typedef struct {
     uint16_t dataType;
 } AppSpawnAppData;
 
-int LoadPermission(AppSpawnClientType type);
-void DeletePermission(AppSpawnClientType type);
 int32_t GetPermissionMaxCount();
 
 #ifdef __cplusplus

@@ -73,7 +73,8 @@ static void StopAppSpawn(void)
     AppSpawnedProcess *appInfo = GetSpawnedProcessByName(NWEBSPAWN_SERVER_NAME);
     if (appInfo != NULL) {
         APPSPAWN_LOGI("kill %{public}s pid: %{public}d", appInfo->name, appInfo->pid);
-        KillAndWaitStatus(appInfo->pid, SIGTERM);
+        int exitStatus = 0;
+        KillAndWaitStatus(appInfo->pid, SIGTERM, &exitStatus);
         OH_ListRemove(&appInfo->node);
         OH_ListInit(&appInfo->node);
         free(appInfo);
@@ -160,12 +161,25 @@ static void OnClose(const TaskHandle taskHandle)
     }
     AppSpawnConnection *connection = (AppSpawnConnection *)LE_GetUserData(taskHandle);
     APPSPAWN_CHECK(connection != NULL, return, "Invalid connection");
+    if (connection->receiverCtx.timer) {
+        LE_StopTimer(LE_GetDefaultLoop(), connection->receiverCtx.timer);
+        connection->receiverCtx.timer = NULL;
+    }
     APPSPAWN_LOGI("OnClose connectionId: %{public}u socket %{public}d",
         connection->connectionId, LE_GetSocketFd(taskHandle));
     DeleteAppSpawnMsg(connection->receiverCtx.incompleteMsg);
     connection->receiverCtx.incompleteMsg = NULL;
     // connect close, to close spawning app
     AppSpawningCtxTraversal(AppSpawningCtxOnClose, connection);
+}
+
+static void OnDisConnect(const TaskHandle taskHandle)
+{
+    AppSpawnConnection *connection = (AppSpawnConnection *)LE_GetUserData(taskHandle);
+    APPSPAWN_CHECK(connection != NULL, return, "Invalid connection");
+    APPSPAWN_LOGI("OnDisConnect connectionId: %{public}u socket %{public}d",
+        connection->connectionId, LE_GetSocketFd(taskHandle));
+    OnClose(taskHandle);
 }
 
 static void SendMessageComplete(const TaskHandle taskHandle, BufferHandle handle)
@@ -233,7 +247,7 @@ static int OnConnection(const LoopHandle loopHandle, const TaskHandle server)
     info.baseInfo.flags = TASK_STREAM | TASK_PIPE | TASK_CONNECT;
     info.baseInfo.close = OnClose;
     info.baseInfo.userDataSize = sizeof(AppSpawnConnection);
-    info.disConnectComplete = NULL;
+    info.disConnectComplete = OnDisConnect;
     info.sendMessageComplete = SendMessageComplete;
     info.recvMessage = OnReceiveRequest;
     LE_STATUS ret = LE_AcceptStreamClient(loopHandle, server, &stream, &info);
@@ -316,13 +330,13 @@ static void OnReceiveRequest(const TaskHandle taskHandle, const uint8_t *buffer,
     return;
 }
 
-static char *GetMapMem(AppSpawnMgr *content, uint32_t clientId, const char *processName, uint32_t size, bool readOnly)
+static char *GetMapMem(uint32_t clientId, const char *processName, uint32_t size, bool readOnly, bool isNweb)
 {
     char path[PATH_MAX] = {};
     int len = sprintf_s(path, sizeof(path), APPSPAWN_MSG_DIR "%s/%s_%d",
-        IsNWebSpawnMode(content) ? "nwebspawn" : "appspawn", processName, clientId);
+        isNweb ? "nwebspawn" : "appspawn", processName, clientId);
     APPSPAWN_CHECK(len > 0, return NULL, "Failed to format path %{public}s", processName);
-
+    APPSPAWN_LOGV("GetMapMem for child %{public}s memSize %{public}u", path, size);
     int prot = PROT_READ;
     int mode = O_RDONLY;
     if (!readOnly) {
@@ -341,13 +355,12 @@ static char *GetMapMem(AppSpawnMgr *content, uint32_t clientId, const char *proc
     return (char *)areaAddr;
 }
 
-APPSPAWN_STATIC int WriteMsgToChild(AppSpawningCtx *property)
+APPSPAWN_STATIC int WriteMsgToChild(AppSpawningCtx *property, bool isNweb)
 {
-    const uint32_t memSize = (property->message->msgHeader.msgLen % 4096 + 1) * 4096; // 4096 4K
-    char *buffer = GetMapMem(GetAppSpawnMgr(), property->client.id, GetProcessName(property), memSize, false);
+    const uint32_t memSize = (property->message->msgHeader.msgLen / 4096 + 1) * 4096; // 4096 4K
+    char *buffer = GetMapMem(property->client.id, GetProcessName(property), memSize, false, isNweb);
     APPSPAWN_CHECK(buffer != NULL, return APPSPAWN_SYSTEM_ERROR,
         "Failed to map memory error %{public}d fileName %{public}s ", errno, GetProcessName(property));
-
     // copy msg header
     int ret = memcpy_s(buffer, memSize, &property->message->msgHeader, sizeof(AppSpawnMsg));
     if (ret == 0) {
@@ -361,6 +374,7 @@ APPSPAWN_STATIC int WriteMsgToChild(AppSpawningCtx *property)
     }
     property->forkCtx.msgSize = memSize;
     property->forkCtx.childMsg = buffer;
+    APPSPAWN_LOGV("Write msg to child: %{public}u success", property->client.id);
     return 0;
 }
 
@@ -374,16 +388,12 @@ static int InitForkContext(AppSpawningCtx *property)
     if (option > 0) {
         (void)fcntl(property->forkCtx.fd[0], F_SETFD, option | O_NONBLOCK);
     }
-
-    if (property->client.flags & APP_COLD_START) { // for cold run, use shared memory to exchange message
-        APPSPAWN_LOGV("Write msg to child %{public}s", GetProcessName(property));
-        return WriteMsgToChild(property);
-    }
     return 0;
 }
 
 static int AddChildWatcher(AppSpawningCtx *property)
 {
+    uint32_t timeout = WAIT_CHILD_RESPONSE_TIMEOUT;
     LE_WatchInfo watchInfo = {};
     watchInfo.fd = property->forkCtx.fd[0];
     watchInfo.flags = WATCHER_ONCE;
@@ -394,7 +404,7 @@ static int AddChildWatcher(AppSpawningCtx *property)
         return APPSPAWN_SYSTEM_ERROR, "Failed to watch child %{public}d", property->pid);
     status = LE_CreateTimer(LE_GetDefaultLoop(), &property->forkCtx.timer, WaitChildTimeout, property);
     if (status == LE_SUCCESS) {
-        status = LE_StartTimer(LE_GetDefaultLoop(), property->forkCtx.timer, WAIT_CHILD_RESPONSE_TIMEOUT, 0);
+        status = LE_StartTimer(LE_GetDefaultLoop(), property->forkCtx.timer, timeout * 1000, 0); // 1000 1s
     }
     if (status != LE_SUCCESS) {
         if (property->forkCtx.timer != NULL) {
@@ -576,6 +586,11 @@ static int AppSpawnColdStartApp(struct AppSpawnContent *content, AppSpawnClient 
     char *path = property->forkCtx.coldRunPath != NULL ? property->forkCtx.coldRunPath : "/system/bin/appspawn";
     APPSPAWN_LOGI("ColdStartApp::processName: %{public}s path: %{public}s", GetProcessName(property), path);
 
+    // for cold run, use shared memory to exchange message
+    APPSPAWN_LOGV("Write msg to child %{public}s", GetProcessName(property));
+    int ret = WriteMsgToChild(property, IsNWebSpawnMode((AppSpawnMgr *)content));
+    APPSPAWN_CHECK(ret == 0, return APPSPAWN_SYSTEM_ERROR, "Failed to write msg to child");
+
     char buffer[4][32] = {0};  // 4 32 buffer for fd
     char *mode = IsNWebSpawnMode((AppSpawnMgr *)content) ? "nweb_cold" : "app_cold";
     int len = sprintf_s(buffer[0], sizeof(buffer[0]), " %d ", property->forkCtx.fd[1]);
@@ -593,7 +608,7 @@ static int AppSpawnColdStartApp(struct AppSpawnContent *content, AppSpawnClient 
         "-param", GetProcessName(property), buffer[3], NULL
     };
 
-    int ret = execv(path, (char **)formatCmds);
+    ret = execv(path, (char **)formatCmds);
     if (ret != 0) {
         APPSPAWN_LOGE("Failed to execv, errno: %{public}d", errno);
     }
@@ -611,7 +626,8 @@ static AppSpawningCtx *GetAppSpawningCtxFromArg(AppSpawnMgr *content, int argc, 
 
     uint32_t size = atoi(argv[SHM_SIZE_INDEX]);
     property->client.id = atoi(argv[CLIENT_ID_INDEX]);
-    uint8_t *buffer = (uint8_t *)GetMapMem(content, property->client.id, argv[PARAM_VALUE_INDEX], size, true);
+    uint8_t *buffer = (uint8_t *)GetMapMem(property->client.id,
+        argv[PARAM_VALUE_INDEX], size, true, IsNWebSpawnMode(content));
     if (buffer == NULL) {
         APPSPAWN_LOGE("Failed to map errno %{public}d %{public}s", property->client.id, argv[PARAM_VALUE_INDEX]);
         NotifyResToParent(&content->content, &property->client, APPSPAWN_SYSTEM_ERROR);
@@ -693,7 +709,7 @@ static void AppSpawnRun(AppSpawnContent *content, int argc, char *const argv[])
     AppSpawnDestroyContent(content);
 }
 
-static int AppSpawnClearEnv(AppSpawnMgr *content, AppSpawningCtx *property)
+APPSPAWN_STATIC int AppSpawnClearEnv(AppSpawnMgr *content, AppSpawningCtx *property)
 {
     APPSPAWN_CHECK(content != NULL, return 0, "Invalid appspawn content");
     bool isNweb = IsNWebSpawnMode(content);
@@ -762,7 +778,7 @@ AppSpawnContent *StartSpawnService(const AppSpawnStartArg *startArg, uint32_t ar
 
     // load module appspawn/common
     AppSpawnLoadAutoRunModules(MODULE_COMMON);
-    AppSpawnModuleMgrInstall("libappspawn_asan");
+    AppSpawnModuleMgrInstall(ASAN_MODULE_PATH);
 
     APPSPAWN_CHECK(LE_GetDefaultLoop() != NULL, return NULL, "Invalid default loop");
     AppSpawnContent *content = AppSpawnCreateContent(arg->socketName, argv[0], argvSize, arg->mode);

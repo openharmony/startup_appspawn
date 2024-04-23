@@ -18,6 +18,7 @@
 #include <cerrno>
 #include <cstdlib>
 #include <cstring>
+#include <fcntl.h>
 #include <memory>
 #include <thread>
 #include <string>
@@ -123,6 +124,7 @@ HWTEST(AppSpawnClientTest, App_Client_Communication_003, TestSize.Level0)
         ASSERT_EQ(ret, 0);
         ASSERT_EQ(result.result, 0);
         ASSERT_NE(result.pid, 0);
+        APPSPAWN_LOGV("App_Client_Communication_003 kill pid %{public}d", result.pid);
         if (result.pid > 0) {
             kill(result.pid, SIGKILL);
         }
@@ -259,10 +261,11 @@ HWTEST(AppSpawnClientTest, App_Client_Msg_003, TestSize.Level0)
     AppSpawnReqMsgHandle reqHandle = 0;
     AppSpawningCtx *property = nullptr;
     do {
-        g_testHelper.SetProcessName("test222222222222222234512345678test222222222222222234512345678"
+        std::string processName = "test222222222222222234512345678test222222222222222234512345678"
             "test222222222222222234512345678test222222222222222234512345678"
             "test222222222222222234512345678test222222222222222234512345678"
-            "test222222222222222234512345678test2222222222222222345123456781234567");
+            "test222222222222222234512345678test2222222222222222345123456781234567";
+        g_testHelper.SetProcessName(processName.c_str());
         ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
         APPSPAWN_CHECK(ret == 0, break, "Failed to create reqMgr %{public}s", APPSPAWN_SERVER_NAME);
         reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 1);
@@ -277,7 +280,7 @@ HWTEST(AppSpawnClientTest, App_Client_Msg_003, TestSize.Level0)
         APPSPAWN_CHECK(info->bundleIndex == g_testHelper.GetTestBundleIndex(),
             break, "Invalid bundleIndex %{public}d", info->bundleIndex);
         APPSPAWN_LOGV("info->bundleName %{public}s", info->bundleName);
-        APPSPAWN_CHECK(strcmp(info->bundleName, g_testHelper.GetDefaultTestAppBundleName()) == 0,
+        APPSPAWN_CHECK(strcmp(info->bundleName, processName.c_str()) == 0,
             break, "Invalid bundleName %{public}s", info->bundleName);
         ret = 0;
     } while (0);
@@ -641,9 +644,9 @@ HWTEST(AppSpawnClientTest, App_Client_Msg_012, TestSize.Level0)
         APPSPAWN_CHECK(ret == 0, break, "Failed to create req %{public}s", APPSPAWN_SERVER_NAME);
 
         // flags test
-        int max = GetMaxPermissionIndex();
+        int max = GetMaxPermissionIndex(clientHandle);
         for (int i = 0; i < max; i++) {
-            ret = AppSpawnReqMsgAddPermission(reqHandle, GetPermissionByIndex(i));
+            ret = AppSpawnReqMsgAddPermission(reqHandle, GetPermissionByIndex(clientHandle, i));
             ASSERT_EQ(ret, 0);
         }
         ret = APPSPAWN_ARG_INVALID;
@@ -653,7 +656,8 @@ HWTEST(AppSpawnClientTest, App_Client_Msg_012, TestSize.Level0)
         ret = 0;
         for (size_t i = 0; i < max; i++) {
             if (!CheckAppPermissionFlagSet(property, (uint32_t)i)) {
-                APPSPAWN_LOGE("Invalid permission not set %{public}d  %{public}s", i, GetPermissionByIndex(i));
+                APPSPAWN_LOGE("Invalid permission not set %{public}d  %{public}s",
+                    i, GetPermissionByIndex(clientHandle, i));
                 ret = APPSPAWN_ARG_INVALID;
                 break;
             }
@@ -686,6 +690,487 @@ HWTEST(AppSpawnClientTest, App_Client_Msg_013, TestSize.Level0)
         ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
         ASSERT_NE(result.result, 0);
     } while (0);
+    AppSpawnClientDestroy(clientHandle);
+}
+
+/**
+ * @brief 消息打包覆盖
+ *
+ */
+HWTEST(AppSpawnClientTest, App_Client_Msg_014, TestSize.Level0)
+{
+    int ret = 0;
+    AppSpawnClientHandle clientHandle;
+    AppSpawnReqMsgHandle reqHandle = 0;
+    ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+    EXPECT_EQ(ret, 0);
+
+    ret = AppSpawnReqMsgCreate(MSG_APP_SPAWN, "com.ohos.medialibrary.medialibrarydata", &reqHandle);
+    EXPECT_EQ(ret, 0);
+    AppDacInfo  dacInfo = {};
+    dacInfo.uid = 20010029; // 20010029 test uid
+    dacInfo.gid = 20010029; // 20010029 test gid
+    dacInfo.gidCount = 2; // 2 count
+    dacInfo.gidTable[0] = 20010029; // 20010029 test gid
+    dacInfo.gidTable[1] = 20010030; // 20010030 test gid
+    ret = AppSpawnReqMsgSetAppDacInfo(reqHandle, &dacInfo);
+    EXPECT_EQ(ret, 0);
+
+    AppSpawnReqMsgFree(reqHandle);
+    AppSpawnClientDestroy(clientHandle);
+}
+
+HWTEST(AppSpawnClientTest, App_Client_Msg_015, TestSize.Level0)
+{
+    int ret = 0;
+    AppSpawnClientHandle clientHandle;
+    AppSpawnReqMsgHandle reqHandle = 0;
+    ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+    EXPECT_EQ(ret, 0);
+
+    ret = AppSpawnReqMsgCreate(MSG_APP_SPAWN, "com.ohos.medialibrary.medialibrarydata:backup", &reqHandle);
+    EXPECT_EQ(ret, 0);
+    AppDacInfo  dacInfo = {};
+    dacInfo.uid = 20010029; // 20010029 test uid
+    dacInfo.gid = 20010029; // 20010029 test gid
+    dacInfo.gidCount = 2; // 2 count
+    dacInfo.gidTable[0] = 20010029; // 20010029 test gid
+    dacInfo.gidTable[1] = 20010030; // 20010030 test gid
+    ret = AppSpawnReqMsgSetAppDacInfo(reqHandle, &dacInfo);
+    EXPECT_EQ(ret, 0);
+
+    AppSpawnReqMsgFree(reqHandle);
+    AppSpawnClientDestroy(clientHandle);
+}
+
+HWTEST(AppSpawnClientTest, App_Client_Msg_016, TestSize.Level0)
+{
+    int ret = 0;
+    AppSpawnClientHandle clientHandle;
+    AppSpawnReqMsgHandle reqHandle = 0;
+    ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+    EXPECT_EQ(ret, 0);
+
+    ret = AppSpawnReqMsgCreate(MSG_APP_SPAWN, "com.ohos.medialibrary.medialibrarydata:backup", &reqHandle);
+    EXPECT_EQ(ret, 0);
+
+    std::vector<char> testData(4000, '1'); // 4000 test data len
+    testData.push_back('1');
+    testData.push_back('2');
+    testData.push_back('3');
+    testData.push_back('4');
+    testData.push_back('5');
+    testData.push_back('6');
+    testData.push_back('7');
+    testData.push_back('8');
+    testData.push_back('9');
+    testData.push_back('\0');
+    ret = AppSpawnReqMsgAddStringInfo(reqHandle, "test-tlv-0001", testData.data());
+    EXPECT_EQ(ret, 0);
+    AppDacInfo  dacInfo = {};
+    dacInfo.uid = 20010029; // 20010029 test uid
+    dacInfo.gid = 20010029; // 20010029 test gid
+    dacInfo.gidCount = 2; // 2 count
+    dacInfo.gidTable[0] = 20010029; // 20010029 test gid
+    dacInfo.gidTable[1] = 20010030; // 20010030 test gid
+    for (int i = 0; i < 50; i++) {
+        dacInfo.uid += i;
+        ret = AppSpawnReqMsgSetAppDacInfo(reqHandle, &dacInfo);
+        EXPECT_EQ(ret, 0);
+    }
+    AppSpawnReqMsgFree(reqHandle);
+    AppSpawnClientDestroy(clientHandle);
+}
+
+HWTEST(AppSpawnClientTest, App_Client_Msg_017, TestSize.Level0)
+{
+    int ret = 0;
+    AppSpawnClientHandle clientHandle;
+    AppSpawnReqMsgHandle reqHandle = 0;
+    ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+    EXPECT_EQ(ret, 0);
+
+    const uint32_t maxCount = 321;
+    ret = AppSpawnReqMsgCreate(MSG_APP_SPAWN, "com.ohos.medialibrary.medialibrarydata:backup", &reqHandle);
+    EXPECT_EQ(ret, 0);
+    std::vector<char> testData;
+    for (int i = 1; i < maxCount; i++) {
+        testData.assign(i, '1');
+        testData.push_back('\0');
+        std::string tlvName = "test-tlv-00";
+        tlvName += std::to_string(i);
+        ret = AppSpawnReqMsgAddStringInfo(reqHandle, tlvName.c_str(), testData.data());
+        EXPECT_EQ(ret, 0);
+        testData.clear();
+    }
+    testData.assign(maxCount, '1');
+    testData.push_back('\0');
+    std::string tlvName = "test-tlv-00";
+    tlvName += std::to_string(maxCount);
+    ret = AppSpawnReqMsgAddStringInfo(reqHandle, tlvName.c_str(), testData.data());
+    EXPECT_EQ(ret, APPSPAWN_MSG_INVALID);
+    testData.clear();
+
+    AppSpawningCtx *property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
+    EXPECT_EQ(property != nullptr, 1);
+    DeleteAppSpawningCtx(property);
+    AppSpawnClientDestroy(clientHandle);
+}
+
+static uint32_t GenRandom(void)
+{
+    uint32_t random = 0;
+    int fd = open("/dev/random", O_RDONLY);
+    if (fd >= 0) {
+        read(fd, &random, sizeof(random));
+        close(fd);
+    }
+    return random;
+}
+
+HWTEST(AppSpawnClientTest, App_Client_Msg_018, TestSize.Level0)
+{
+    int ret = 0;
+    AppSpawnClientHandle clientHandle;
+    AppSpawnReqMsgHandle reqHandle = 0;
+    ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+    EXPECT_EQ(ret, 0);
+
+    ret = AppSpawnReqMsgCreate(MSG_APP_SPAWN, "com.ohos.medialibrary.medialibrarydata:backup", &reqHandle);
+    EXPECT_EQ(ret, 0);
+    std::vector<char> testData;
+    for (int i = 0; i < 4096; i++) { // 4096
+        uint32_t count = GenRandom() % 4096; // 4096
+        count = count == 0 ? 13 : count; // 13
+        testData.assign(count, '1');
+        testData.push_back('\0');
+        std::string tlvName = "test-tlv-00";
+        tlvName += std::to_string(i);
+        ret = AppSpawnReqMsgAddStringInfo(reqHandle, tlvName.c_str(), testData.data());
+        testData.clear();
+        EXPECT_EQ(ret == 0 || ret == APPSPAWN_MSG_INVALID, 1);
+        if (ret == APPSPAWN_MSG_INVALID) {
+            break;
+        }
+    }
+
+    AppSpawningCtx *property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
+    EXPECT_EQ(property != nullptr, 1);
+    DeleteAppSpawningCtx(property);
+    AppSpawnClientDestroy(clientHandle);
+}
+
+HWTEST(AppSpawnClientTest, App_Client_Msg_019, TestSize.Level0)
+{
+    int ret = 0;
+    AppSpawnClientHandle clientHandle;
+    AppSpawnReqMsgHandle reqHandle = 0;
+    ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+    EXPECT_EQ(ret, 0);
+
+    ret = AppSpawnReqMsgCreate(MSG_APP_SPAWN, "com.ohos.medialibrary.medialibrarydata:backup", &reqHandle);
+    EXPECT_EQ(ret, 0);
+    std::vector<char> testData;
+    testData.assign(3728 + 4072, '1'); // 3728 data size 4072 block size
+    testData.push_back('\0');
+    std::string tlvName = "App_Client_Msg_019";
+    ret = AppSpawnReqMsgAddStringInfo(reqHandle, tlvName.c_str(), testData.data());
+    testData.clear();
+    EXPECT_EQ(ret == 0, 1);
+
+    AppSpawningCtx *property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
+    EXPECT_EQ(property != nullptr, 1);
+    DeleteAppSpawningCtx(property);
+    AppSpawnClientDestroy(clientHandle);
+}
+
+HWTEST(AppSpawnClientTest, App_Client_Msg_020, TestSize.Level0)
+{
+    int ret = 0;
+    AppSpawnClientHandle clientHandle;
+    AppSpawnReqMsgHandle reqHandle = 0;
+    ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+    EXPECT_EQ(ret, 0);
+
+    ret = AppSpawnReqMsgCreate(MSG_APP_SPAWN, "com.ohos.medialibrary.medialibrarydata:backup", &reqHandle);
+    EXPECT_EQ(ret, 0);
+    std::vector<char> testData;
+    testData.assign(3727 + 4072, '1'); // 3729 data size 4072 block size
+    testData.push_back('\0');
+    std::string tlvName = "App_Client_Msg_020";
+    ret = AppSpawnReqMsgAddStringInfo(reqHandle, tlvName.c_str(), testData.data());
+    testData.clear();
+    EXPECT_EQ(ret == 0, 1);
+
+    AppSpawningCtx *property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
+    EXPECT_EQ(property != nullptr, 1);
+    DeleteAppSpawningCtx(property);
+    AppSpawnClientDestroy(clientHandle);
+}
+HWTEST(AppSpawnClientTest, App_Client_Msg_021, TestSize.Level0)
+{
+    int ret = 0;
+    AppSpawnClientHandle clientHandle;
+    AppSpawnReqMsgHandle reqHandle = 0;
+    ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+    EXPECT_EQ(ret, 0);
+
+    ret = AppSpawnReqMsgCreate(MSG_APP_SPAWN, "com.ohos.medialibrary.medialibrarydata:backup", &reqHandle);
+    EXPECT_EQ(ret, 0);
+    std::vector<char> testData;
+    testData.assign(3729 + 4072, '1'); // 3729 data size 4072 block size
+    testData.push_back('\0');
+    std::string tlvName = "App_Client_Msg_021";
+    ret = AppSpawnReqMsgAddStringInfo(reqHandle, tlvName.c_str(), testData.data());
+    testData.clear();
+    EXPECT_EQ(ret == 0, 1);
+
+    AppSpawningCtx *property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
+    EXPECT_EQ(property != nullptr, 1);
+    DeleteAppSpawningCtx(property);
+    AppSpawnClientDestroy(clientHandle);
+}
+
+HWTEST(AppSpawnClientTest, App_Client_Msg_022, TestSize.Level0)
+{
+    int ret = 0;
+    AppSpawnClientHandle clientHandle;
+    AppSpawnReqMsgHandle reqHandle = 0;
+    ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+    EXPECT_EQ(ret, 0);
+
+    ret = AppSpawnReqMsgCreate(MSG_APP_SPAWN, "com.ohos.medialibrary.medialibrarydata:backup", &reqHandle);
+    EXPECT_EQ(ret, 0);
+    std::vector<uint8_t> testData;
+    testData.assign(3727 + 4072, static_cast<uint8_t>('1')); // 3727 data size 4072 block size
+    std::string tlvName = "App_Client_Msg_022";
+    ret = AppSpawnReqMsgAddExtInfo(reqHandle, tlvName.c_str(), testData.data(), testData.size());
+    testData.clear();
+    EXPECT_EQ(ret == 0, 1);
+
+    AppSpawningCtx *property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
+    EXPECT_EQ(property != nullptr, 1);
+    DeleteAppSpawningCtx(property);
+    AppSpawnClientDestroy(clientHandle);
+}
+
+HWTEST(AppSpawnClientTest, App_Client_Msg_023, TestSize.Level0)
+{
+    int ret = 0;
+    AppSpawnClientHandle clientHandle;
+    AppSpawnReqMsgHandle reqHandle = 0;
+    ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+    EXPECT_EQ(ret, 0);
+
+    ret = AppSpawnReqMsgCreate(MSG_APP_SPAWN, "com.ohos.medialibrary.medialibrarydata:backup", &reqHandle);
+    EXPECT_EQ(ret, 0);
+    std::vector<uint8_t> testData;
+    testData.assign(3728 + 4072, static_cast<uint8_t>('1')); // 3728 data size 4072 block size
+    std::string tlvName = "App_Client_Msg_023";
+    ret = AppSpawnReqMsgAddExtInfo(reqHandle, tlvName.c_str(), testData.data(), testData.size());
+    testData.clear();
+    EXPECT_EQ(ret == 0, 1);
+
+    AppSpawningCtx *property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
+    EXPECT_EQ(property != nullptr, 1);
+    DeleteAppSpawningCtx(property);
+    AppSpawnClientDestroy(clientHandle);
+}
+
+HWTEST(AppSpawnClientTest, App_Client_Msg_024, TestSize.Level0)
+{
+    int ret = 0;
+    AppSpawnClientHandle clientHandle;
+    AppSpawnReqMsgHandle reqHandle = 0;
+    ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+    EXPECT_EQ(ret, 0);
+
+    ret = AppSpawnReqMsgCreate(MSG_APP_SPAWN, "com.ohos.medialibrary.medialibrarydata:backup", &reqHandle);
+    EXPECT_EQ(ret, 0);
+    std::vector<uint8_t> testData;
+    testData.assign(3729 + 4072, static_cast<uint8_t>('1')); // 3729 data size 4072 block size
+    std::string tlvName = "App_Client_Msg_024";
+    ret = AppSpawnReqMsgAddExtInfo(reqHandle, tlvName.c_str(), testData.data(), testData.size());
+    testData.clear();
+    EXPECT_EQ(ret == 0, 1);
+
+    AppSpawningCtx *property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
+    EXPECT_EQ(property != nullptr, 1);
+    DeleteAppSpawningCtx(property);
+    AppSpawnClientDestroy(clientHandle);
+}
+
+/**
+ * @brief permission test
+ *
+ */
+HWTEST(AppSpawnClientTest, App_Spawn_Permission_001, TestSize.Level0)
+{
+    int ret = LoadPermission(CLIENT_FOR_APPSPAWN);
+    EXPECT_EQ(ret, 0);
+    ret = LoadPermission(CLIENT_FOR_NWEBSPAWN);
+    EXPECT_EQ(ret, 0);
+    ret = LoadPermission(CLIENT_MAX);
+    EXPECT_EQ(ret, APPSPAWN_ARG_INVALID);
+
+    int32_t max = GetPermissionMaxCount();
+    EXPECT_EQ(max >= 0, 1);
+
+    DeletePermission(CLIENT_FOR_APPSPAWN);
+    DeletePermission(CLIENT_FOR_NWEBSPAWN);
+    DeletePermission(CLIENT_MAX);
+    DeletePermission(CLIENT_FOR_APPSPAWN);
+    DeletePermission(CLIENT_FOR_NWEBSPAWN);
+}
+
+/**
+ * @brief test appspawn
+ *
+ */
+HWTEST(AppSpawnClientTest, App_Spawn_Permission_002, TestSize.Level0)
+{
+    int ret = LoadPermission(CLIENT_FOR_APPSPAWN);
+    EXPECT_EQ(ret, 0);
+    ret = LoadPermission(CLIENT_FOR_NWEBSPAWN);
+    EXPECT_EQ(ret, 0);
+
+    int32_t max = GetPermissionMaxCount();
+    EXPECT_EQ(max >= 0, 1);
+
+    AppSpawnClientHandle clientHandle;
+    ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+    EXPECT_EQ(ret, 0);
+
+    max = GetMaxPermissionIndex(clientHandle);
+    int32_t index = GetPermissionIndex(clientHandle, "ohos.permission.ACCESS_BUNDLE_DIR");
+    EXPECT_EQ(index >= 0, 1);
+    EXPECT_EQ(index < max, 1);
+
+    const char *permission = GetPermissionByIndex(clientHandle, index);
+    EXPECT_EQ(permission != nullptr, 1);
+    EXPECT_EQ(strcmp(permission, "ohos.permission.ACCESS_BUNDLE_DIR") == 0, 1);
+    AppSpawnClientDestroy(clientHandle);
+}
+
+HWTEST(AppSpawnClientTest, App_Spawn_Permission_003, TestSize.Level0)
+{
+    int ret = LoadPermission(CLIENT_FOR_APPSPAWN);
+    EXPECT_EQ(ret, 0);
+    ret = LoadPermission(CLIENT_FOR_NWEBSPAWN);
+    EXPECT_EQ(ret, 0);
+    ret = LoadPermission(CLIENT_MAX);
+    EXPECT_EQ(ret, APPSPAWN_ARG_INVALID);
+
+    int32_t max = GetPermissionMaxCount();
+    EXPECT_EQ(max >= 0, 1);
+
+    max = GetMaxPermissionIndex(nullptr);
+    int32_t index = GetPermissionIndex(nullptr, "ohos.permission.ACCESS_BUNDLE_DIR");
+    EXPECT_EQ(index >= 0, 1);
+    EXPECT_EQ(max >= index, 1);
+
+    const char *permission = GetPermissionByIndex(nullptr, index);
+    EXPECT_EQ(permission != nullptr, 1);
+    EXPECT_EQ(strcmp(permission, "ohos.permission.ACCESS_BUNDLE_DIR") == 0, 1);
+}
+
+/**
+ * @brief no load permission for appspawn
+ *
+ */
+HWTEST(AppSpawnClientTest, App_Spawn_Permission_004, TestSize.Level0)
+{
+    DeletePermission(CLIENT_FOR_APPSPAWN);
+    DeletePermission(CLIENT_FOR_NWEBSPAWN);
+
+    int32_t max = GetPermissionMaxCount();
+    EXPECT_EQ(max, 0);
+
+    AppSpawnClientHandle clientHandle;
+    int ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+    EXPECT_EQ(ret, 0);
+
+    max = GetMaxPermissionIndex(clientHandle);
+    EXPECT_EQ(max, INVALID_PERMISSION_INDEX);
+
+    int32_t index = GetPermissionIndex(clientHandle, nullptr);
+    EXPECT_EQ(index, INVALID_PERMISSION_INDEX);
+
+    index = GetPermissionIndex(clientHandle, "ohos.permission.ACCESS_BUNDLE_DIR");
+    EXPECT_EQ(index, INVALID_PERMISSION_INDEX);
+    index = GetPermissionIndex(clientHandle, nullptr);
+    EXPECT_EQ(index, INVALID_PERMISSION_INDEX);
+    index = GetPermissionIndex(clientHandle, "");
+    EXPECT_EQ(index, INVALID_PERMISSION_INDEX);
+    const char *permission = GetPermissionByIndex(clientHandle, INVALID_PERMISSION_INDEX);
+    EXPECT_EQ(permission == nullptr, 1);
+
+    AppSpawnClientDestroy(clientHandle);
+}
+
+/**
+ * @brief for nwebspawn, no load permission
+ *
+ */
+HWTEST(AppSpawnClientTest, App_Spawn_Permission_005, TestSize.Level0)
+{
+    DeletePermission(CLIENT_FOR_APPSPAWN);
+    DeletePermission(CLIENT_FOR_NWEBSPAWN);
+
+    int32_t max = GetPermissionMaxCount();
+    EXPECT_EQ(max >= 0, 1);
+
+    AppSpawnClientHandle clientHandle;
+    int ret = AppSpawnClientInit(NWEBSPAWN_SERVER_NAME, &clientHandle);
+    EXPECT_EQ(ret, 0);
+
+    max = GetMaxPermissionIndex(clientHandle);
+    EXPECT_EQ(max, INVALID_PERMISSION_INDEX);
+
+    int32_t index = GetPermissionIndex(clientHandle, nullptr);
+    EXPECT_EQ(index, INVALID_PERMISSION_INDEX);
+    index = GetPermissionIndex(clientHandle, "ohos.permission.ACCESS_BUNDLE_DIR");
+    EXPECT_EQ(index, INVALID_PERMISSION_INDEX);
+    const char *permission = GetPermissionByIndex(clientHandle, 1);
+    EXPECT_EQ(permission == nullptr, 1);
+
+    // reload permission
+    ret = LoadPermission(CLIENT_FOR_APPSPAWN);
+    EXPECT_EQ(ret, 0);
+    ret = LoadPermission(CLIENT_FOR_NWEBSPAWN);
+    EXPECT_EQ(ret, 0);
+
+    AppSpawnClientDestroy(clientHandle);
+}
+
+/**
+ * @brief load permission for nwebspawn, but no permssion
+ *
+ */
+HWTEST(AppSpawnClientTest, App_Spawn_Permission_006, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle;
+    int ret = AppSpawnClientInit(NWEBSPAWN_SERVER_NAME, &clientHandle);
+    EXPECT_EQ(ret, 0);
+
+    ret = LoadPermission(CLIENT_FOR_APPSPAWN);
+    EXPECT_EQ(ret, 0);
+    ret = LoadPermission(CLIENT_FOR_NWEBSPAWN);
+    EXPECT_EQ(ret, 0);
+
+    // for old sandbox, only one config
+#ifdef APPSPAWN_SANDBOX_NEW
+    int max = GetMaxPermissionIndex(clientHandle);
+    EXPECT_EQ(max, 0);
+
+    int index = GetPermissionIndex(clientHandle, nullptr);
+    EXPECT_EQ(index, INVALID_PERMISSION_INDEX);
+
+    index = GetPermissionIndex(clientHandle, "ohos.permission.ACCESS_BUNDLE_DIR");
+    EXPECT_EQ(index, INVALID_PERMISSION_INDEX);
+    const char *permission = GetPermissionByIndex(clientHandle, 1);
+    EXPECT_EQ(permission == nullptr, 1);
+#endif
     AppSpawnClientDestroy(clientHandle);
 }
 }  // namespace OHOS

@@ -18,9 +18,12 @@ ohos_unittest("AppSpawn_client_ut") {
   module_out_path = "${module_output_path}"
   deps = []
   defines = [
+    "APPSPAWN_BASE_DIR=\"/data/appspawn_ut\"",
     "APPSPAWN_TEST",
     "APPSPAWN_CLIENT",
     "OHOS_DEBUG",
+    "USER_TIMER_TO_CHECK",
+    "APPSPAWN_LABEL=\"APPSPAWN_CLENT_UT\"",
   ]
 
   include_dirs = [
@@ -60,9 +63,14 @@ ohos_unittest("AppSpawn_client_ut") {
   ]
 
   sources += [
+    "${appspawn_path}/test/unittest/app_spawn_client_test/app_spawn_client_test.cpp",
     "${appspawn_path}/test/unittest/app_spawn_client_test/app_spawn_interface_test.cpp",
     "${appspawn_path}/test/unittest/app_spawn_test_helper.cpp",
   ]
+
+  if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
+    defines += [ "APPSPAWN_SANDBOX_NEW" ]
+  }
 
   if (asan_detector || is_asan) {
     defines += [ "ASAN_DETECTOR" ]

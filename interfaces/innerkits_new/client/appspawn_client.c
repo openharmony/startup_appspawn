@@ -147,7 +147,7 @@ static int WriteMessage(int socketFd, const uint8_t *buf, ssize_t len)
     const uint8_t *offset = buf;
     for (ssize_t wLen = 0; remain > 0; offset += wLen, remain -= wLen, written += wLen) {
         wLen = send(socketFd, offset, remain, MSG_NOSIGNAL);
-        APPSPAWN_LOGV("Write msg errno: %{public}d %{public}d", errno, wLen);
+        APPSPAWN_LOGV("Write msg errno: %{public}d %{public}zd", errno, wLen);
         APPSPAWN_CHECK((wLen > 0) || (errno == EINTR), return -errno,
             "Failed to write message to fd %{public}d, wLen %{public}zd errno: %{public}d", socketFd, wLen, errno);
     }
@@ -237,9 +237,7 @@ int AppSpawnClientInit(const char *serviceName, AppSpawnClientHandle *handle)
     if (strcmp(serviceName, NWEBSPAWN_SERVER_NAME) == 0 || strstr(serviceName, NWEBSPAWN_SOCKET_NAME) != NULL) {
         type = CLIENT_FOR_NWEBSPAWN;
     }
-    int ret = LoadPermission(type);
-    APPSPAWN_CHECK(ret == 0, return APPSPAWN_SYSTEM_ERROR, "Failed to load permission");
-    ret = InitClientInstance(type);
+    int ret = InitClientInstance(type);
     APPSPAWN_CHECK(ret == 0, return APPSPAWN_SYSTEM_ERROR, "Failed to create reqMgr");
     *handle = (AppSpawnClientHandle)g_clientInstance[type];
     return 0;
@@ -249,8 +247,6 @@ int AppSpawnClientDestroy(AppSpawnClientHandle handle)
 {
     AppSpawnReqMsgMgr *reqMgr = (AppSpawnReqMsgMgr *)handle;
     APPSPAWN_CHECK(reqMgr != NULL, return APPSPAWN_SYSTEM_ERROR, "Invalid reqMgr");
-    // delete permission
-    DeletePermission(reqMgr->type);
     pthread_mutex_lock(&g_mutex);
     if (reqMgr->type < sizeof(g_clientInstance) / sizeof(g_clientInstance[0])) {
         g_clientInstance[reqMgr->type] = NULL;
