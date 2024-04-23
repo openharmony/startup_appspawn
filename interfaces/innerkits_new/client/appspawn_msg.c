@@ -307,8 +307,8 @@ static AppSpawnReqMsgNode *CreateAppSpawnReqMsg(uint32_t msgType, const char *pr
     reqNode->msgFlags = NULL;
     reqNode->permissionFlags = NULL;
     int ret = CreateBaseMsg(reqNode, msgType, processName);
-    APPSPAWN_CHECK(ret == 0, return NULL;
-        DeleteAppSpawnReqMsg(reqNode), "Failed to create base msg for %{public}s", processName);
+    APPSPAWN_CHECK(ret == 0, DeleteAppSpawnReqMsg(reqNode);
+         return NULL, "Failed to create base msg for %{public}s", processName);
     APPSPAWN_LOGV("CreateAppSpawnReqMsg reqId: %{public}d msg type: %{public}u processName: %{public}s",
         reqNode->reqId, msgType, processName);
     return reqNode;

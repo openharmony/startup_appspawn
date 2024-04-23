@@ -274,7 +274,9 @@ static void DumpSandboxSection(const SandboxSection *section)
 
 SandboxSection *CreateSandboxSection(const char *name, uint32_t dataLen, uint32_t type)
 {
-    APPSPAWN_CHECK(name != NULL, return NULL, "Invalid name %{public}u", type);
+    APPSPAWN_CHECK(type < SANDBOX_TAG_INVALID && type >= SANDBOX_TAG_PERMISSION,
+        return NULL, "Invalid type %{public}u", type);
+    APPSPAWN_CHECK(name != NULL && strlen(name) > 0, return NULL, "Invalid name %{public}u", type);
     APPSPAWN_CHECK(dataLen >= sizeof(SandboxSection), return NULL, "Invalid dataLen %{public}u", dataLen);
     APPSPAWN_CHECK(dataLen <= sizeof(SandboxNameGroupNode), return NULL, "Invalid dataLen %{public}u", dataLen);
     SandboxSection *section = (SandboxSection *)calloc(1, dataLen);
@@ -526,8 +528,9 @@ int SpawnBuildSandboxEnv(AppSpawnMgr *content, AppSpawningCtx *property)
     }
     int ret = MountSandboxConfigs(appSandbox, property, IsNWebSpawnMode(content));
     appSandbox->mounted = 1;
-    // for module test do not create sandbox
-    if (strncmp(GetBundleName(property), MODULE_TEST_BUNDLE_NAME, strlen(MODULE_TEST_BUNDLE_NAME)) == 0) {
+    // for module test do not create sandbox, use APP_FLAGS_IGNORE_SANDBOX to ignore sandbox result
+    if (CheckAppMsgFlagsSet(property, APP_FLAGS_IGNORE_SANDBOX)) {
+        APPSPAWN_LOGW("Do not care sandbox result %{public}d", ret);
         return 0;
     }
     return ret == 0 ? 0 : APPSPAWN_SANDBOX_MOUNT_FAIL;

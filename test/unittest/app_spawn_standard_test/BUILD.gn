@@ -45,6 +45,7 @@ ohos_unittest("AppSpawn_ut") {
     "setuid=SetuidStub",
     "setgid=SetgidStub",
     "execvp=ExecvpStub",
+    "ioctl=IoctlStub",
   ]
 
   include_dirs = [
@@ -108,11 +109,13 @@ ohos_unittest("AppSpawn_ut") {
   # add test
   include_dirs += [ "${appspawn_path}/test/unittest" ]
   sources += [
+    "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_appmgr_test.cpp",
     "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_cgroup_test.cpp",
     "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_child_test.cpp",
     "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_cold_run_test.cpp",
     "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_command_lexer_test.cpp",
     "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_module_interface_test.cpp",
+    "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_sandboxmgr_test.cpp",
     "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_service_test.cpp",
     "${appspawn_path}/test/unittest/app_spawn_standard_test/nweb_spawn_service_test.cpp",
     "${appspawn_path}/test/unittest/app_spawn_test_helper.cpp",
@@ -120,6 +123,7 @@ ohos_unittest("AppSpawn_ut") {
 
   if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
     sources += [ "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_sandbox_new_test.cpp" ]
+    defines += [ "APPSPAWN_SANDBOX_NEW" ]
   } else {
     sources += [
       "${appspawn_path}/modules/sandbox/sandbox_utils.cpp",

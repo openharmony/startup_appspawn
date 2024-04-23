@@ -306,7 +306,7 @@ bool StopAppspawn()
 
 static const std::string defaultAppInfo1 = "{ \
     \"msg-type\": \"MSG_APP_SPAWN\", \
-    \"msg-flags\": [ 7 ], \
+    \"msg-flags\": [ 13 ], \
     \"process-name\" : \"com.example.myapplication\", \
     \"dac-info\" : { \
             \"uid\" : 20010041, \
@@ -343,7 +343,7 @@ static const std::string defaultAppInfo1 = "{ \
 
 static const std::string defaultAppInfo2 = "{ \
     \"msg-type\": \"MSG_SPAWN_NATIVE_PROCESS\", \
-    \"msg-flags\": [ 7 ], \
+    \"msg-flags\": [ 13 ], \
     \"process-name\" : \"com.example.myapplication\", \
     \"dac-info\" : { \
             \"uid\" : 20010043, \
@@ -380,7 +380,7 @@ static const std::string defaultAppInfo2 = "{ \
 
 static const std::string defaultAppInfo3 = "{ \
     \"msg-type\": \"MSG_SPAWN_NATIVE_PROCESS\", \
-    \"msg-flags\": [ 7 ], \
+    \"msg-flags\": [ 13 ], \
     \"process-name\" : \"com.example.myapplication\", \
     \"dac-info\" : { \
             \"uid\" : 20010045, \
@@ -417,7 +417,7 @@ static const std::string defaultAppInfo3 = "{ \
 
 static const std::string defaultAppInfoNoInternetPermission = "{ \
     \"msg-type\": \"MSG_APP_SPAWN\", \
-    \"msg-flags\": [ 7 ], \
+    \"msg-flags\": [ 13 ], \
     \"process-name\" : \"com.example.myapplication\", \
     \"dac-info\" : { \
             \"uid\" : 20010045, \
@@ -450,7 +450,7 @@ static const std::string defaultAppInfoNoInternetPermission = "{ \
 
 static const std::string defaultAppInfoNoDac = "{ \
     \"msg-type\": \"MSG_APP_SPAWN\", \
-    \"msg-flags\": [ 7 ], \
+    \"msg-flags\": [ 13 ], \
     \"process-name\" : \"com.example.myapplication\", \
     \"access-token\" : {\
             \"accessTokenIdEx\" : 537854093\
@@ -481,7 +481,7 @@ static const std::string defaultAppInfoNoDac = "{ \
 
 static const std::string defaultAppInfoNoToken = "{ \
     \"msg-type\": \"MSG_APP_SPAWN\", \
-    \"msg-flags\": [ 7 ], \
+    \"msg-flags\": [ 13 ], \
     \"process-name\" : \"com.example.myapplication\", \
     \"dac-info\" : { \
             \"uid\" : 20010043, \
@@ -515,7 +515,7 @@ static const std::string defaultAppInfoNoToken = "{ \
 
 static const std::string defaultAppInfoNoBundleInfo = "{ \
     \"msg-type\": \"MSG_APP_SPAWN\", \
-    \"msg-flags\": [ 7 ], \
+    \"msg-flags\": [ 13 ], \
     \"process-name\" : \"com.example.myapplication\", \
     \"dac-info\" : { \
             \"uid\" : 20010043, \
@@ -548,7 +548,7 @@ static const std::string defaultAppInfoNoBundleInfo = "{ \
 
 static const std::string defaultWebInfo1 = "{ \
     \"msg-type\": \"MSG_APP_SPAWN\", \
-    \"msg-flags\": [ 7 ], \
+    \"msg-flags\": [ 13 ], \
     \"process-name\" : \"com.example.myapplication\", \
     \"dac-info\" : { \
             \"uid\" : 1000001, \
@@ -1712,7 +1712,7 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_Msg_001, TestSize.Level0)
 
     static const std::string dumpInfo = "{ \
         \"msg-type\": \"MSG_DUMP\", \
-        \"msg-flags\": [ 7 ], \
+        \"msg-flags\": [ 13 ], \
         \"process-name\" : \"com.example.myapplication\" \
     }";
 
@@ -1730,7 +1730,7 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_Msg_002, TestSize.Level0)
     HILOG_INFO(LOG_CORE, "AppSpawn_Msg_002 start");
     static const std::string appInfo = "{ \
         \"msg-type\": \"MSG_GET_RENDER_TERMINATION_STATUS\", \
-        \"msg-flags\": [ 7 ], \
+        \"msg-flags\": [ 13 ], \
         \"process-name\" : \"com.example.myapplication\" \
     }";
 
@@ -1757,7 +1757,7 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_Msg_003, TestSize.Level0)
     HILOG_INFO(LOG_CORE, "AppSpawn_Msg_003 start");
     static const std::string appInfo = "{ \
         \"msg-type\": \"MSG_GET_RENDER_TERMINATION_STATUS\", \
-        \"msg-flags\": [ 7 ], \
+        \"msg-flags\": [ 13 ], \
         \"process-name\" : \"com.example.myapplication\" \
     }";
 
@@ -1784,7 +1784,7 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_Msg_004, TestSize.Level0)
     HILOG_INFO(LOG_CORE, "AppSpawn_Msg_004 start");
     static const std::string appInfo = "{ \
         \"msg-type\": \"MSG_GET_RENDER_TERMINATION_STATUS\", \
-        \"msg-flags\": [ 7 ], \
+        \"msg-flags\": [ 13 ], \
         \"process-name\" : \"com.example.myapplication\" \
     }";
 

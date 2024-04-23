@@ -1539,11 +1539,8 @@ int32_t SetAppSandboxProperty(AppSpawnMgr *content, AppSpawningCtx *property)
     } else {
         ret = OHOS::AppSpawn::SandboxUtils::SetAppSandboxProperty(property);
     }
-
-    // for module test do not create sandbox
-    if (strncmp(GetBundleName(property),
-        OHOS::AppSpawn::MODULE_TEST_BUNDLE_NAME.c_str(),
-        OHOS::AppSpawn::MODULE_TEST_BUNDLE_NAME.size()) == 0) {
+    // for module test do not create sandbox, use APP_FLAGS_IGNORE_SANDBOX to ignore sandbox result
+    if (CheckAppMsgFlagsSet(property, APP_FLAGS_IGNORE_SANDBOX)) {
         APPSPAWN_LOGW("Do not care sandbox result %{public}d", ret);
         return 0;
     }
