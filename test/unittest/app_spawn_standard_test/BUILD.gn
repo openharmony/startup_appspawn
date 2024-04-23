@@ -88,7 +88,6 @@ ohos_unittest("AppSpawn_ut") {
     "${appspawn_path}/modules/common/appspawn_cgroup.c",
     "${appspawn_path}/modules/common/appspawn_common.c",
     "${appspawn_path}/modules/common/appspawn_namespace.c",
-    "${appspawn_path}/modules/common/appspawn_silk.cpp",
     "${appspawn_path}/modules/nweb_adapter/nwebspawn_adapter.cpp",
     "${appspawn_path}/modules/sandbox/appspawn_mount_template.c",
     "${appspawn_path}/modules/sandbox/appspawn_permission.c",
