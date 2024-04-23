@@ -137,7 +137,7 @@ void AppSpawningCtxTraversal(ProcessTraversal traversal, void *data);
 AppSpawningCtx *GetAppSpawningCtxByPid(pid_t pid);
 AppSpawningCtx *CreateAppSpawningCtx();
 void DeleteAppSpawningCtx(AppSpawningCtx *property);
-int KillAndWaitStatus(pid_t pid, int sig);
+int KillAndWaitStatus(pid_t pid, int sig, int *exitStatus);
 
 /**
  * @brief 消息解析、处理

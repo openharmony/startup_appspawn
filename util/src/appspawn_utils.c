@@ -34,6 +34,9 @@
 
 uint64_t DiffTime(const struct timespec *startTime, const struct timespec *endTime)
 {
+    APPSPAWN_CHECK_ONLY_EXPER(startTime != NULL, return 0);
+    APPSPAWN_CHECK_ONLY_EXPER(endTime != NULL, return 0);
+
     uint64_t diff = (uint64_t)((endTime->tv_sec - startTime->tv_sec) * 1000000);  // 1000000 s-us
     if (endTime->tv_nsec > startTime->tv_nsec) {
         diff += (endTime->tv_nsec - startTime->tv_nsec) / 1000;  // 1000 ns - us
@@ -132,6 +135,9 @@ int32_t StringSplit(const char *str, const char *separator, void *context, Split
 
 char *GetLastStr(const char *str, const char *dst)
 {
+    APPSPAWN_CHECK_ONLY_EXPER(str != NULL , return NULL);
+    APPSPAWN_CHECK_ONLY_EXPER(dst != NULL , return NULL);
+
     char *end = (char *)str + strlen(str);
     size_t len = strlen(dst);
     while (end != str) {
@@ -194,6 +200,10 @@ cJSON *GetJsonObjFromFile(const char *jsonPath)
 
 int ParseJsonConfig(const char *basePath, const char *fileName, ParseConfig parseConfig, ParseJsonContext *context)
 {
+    APPSPAWN_CHECK_ONLY_EXPER(basePath != NULL , return APPSPAWN_ARG_INVALID);
+    APPSPAWN_CHECK_ONLY_EXPER(fileName != NULL , return APPSPAWN_ARG_INVALID);
+    APPSPAWN_CHECK_ONLY_EXPER(parseConfig != NULL , return APPSPAWN_ARG_INVALID);
+
     // load sandbox config
     char path[PATH_MAX] = {};
     CfgFiles *files = GetCfgFiles(basePath);
@@ -223,6 +233,10 @@ int ParseJsonConfig(const char *basePath, const char *fileName, ParseConfig pars
 
 void DumpCurrentDir(char *buffer, uint32_t bufferLen, const char *dirPath)
 {
+    APPSPAWN_CHECK_ONLY_EXPER(buffer != NULL , return);
+    APPSPAWN_CHECK_ONLY_EXPER(dirPath != NULL , return);
+    APPSPAWN_CHECK_ONLY_EXPER(bufferLen > 0 , return);
+
     char tmp[32] = {0};  // 32 max
     int ret = GetParameter("startup.appspawn.cold.boot", "", tmp, sizeof(tmp));
     if (ret <= 0 || strcmp(tmp, "1") != 0) {
@@ -308,3 +322,16 @@ void AppSpawnDump(const char *fmt, ...)
 #elif defined(_MSC_VER)
 #    pragma warning(pop)
 #endif
+
+uint32_t GetSpawnTimeout(uint32_t def)
+{
+    uint32_t value = def;
+    char data[32] = {};  // 32 length
+    int ret = GetParameter("persist.appspawn.reqMgr.timeout", "0", data, sizeof(data));
+    if (ret > 0 && strcmp(data, "0") != 0) {
+        errno = 0;
+        value = atoi(data);
+        return (errno != 0) ? def : ((value < def) ? def : value);
+    }
+    return value;
+}

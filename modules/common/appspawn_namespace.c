@@ -12,15 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #include <dirent.h>
+#include <fcntl.h>
 #include <sched.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 
-#include <fcntl.h>
-
-#include "appspawn_adapter.h"
 #include "appspawn_hook.h"
 #include "appspawn_manager.h"
 #include "appspawn_utils.h"
@@ -38,6 +38,7 @@ typedef struct {
     int nsInitPidFd;  // ns pid fd of pid_ns_init
 } AppSpawnNamespace;
 
+static pid_t GetPidByName(const char *name);
 static int AppSpawnExtDataCompareDataId(ListNode *node, void *data)
 {
     AppSpawnExtData *extData = (AppSpawnExtData *)ListEntry(node, AppSpawnExtData, node);
@@ -171,13 +172,13 @@ static int GetNsPidFd(pid_t pid)
     return nsFd;
 }
 
-static int PreLoadEnablePidNs(AppSpawnMgr *content)
+APPSPAWN_STATIC int PreLoadEnablePidNs(AppSpawnMgr *content)
 {
     APPSPAWN_LOGI("Enable pid namespace flags: 0x%{public}x", content->content.sandboxNsFlags);
     if (IsColdRunMode(content)) {
         return 0;
     }
-    if (IsNWebSpawnMode(content)) { // only for appspawn
+    if (IsNWebSpawnMode(content)) {  // only for appspawn
         return 0;
     }
     if (!(content->content.sandboxNsFlags & CLONE_NEWPID)) {
@@ -186,15 +187,11 @@ static int PreLoadEnablePidNs(AppSpawnMgr *content)
     AppSpawnNamespace *namespace = CreateAppSpawnNamespace();
     APPSPAWN_CHECK(namespace != NULL, return -1, "Failed to create namespace");
 
-#ifndef APPSPAWN_TEST
-    int ret = 0;
-#else
-    int ret = 0;
-#endif
+    int ret = -1;
     // check if process pid_ns_init exists, this is the init process for pid namespace
     pid_t pid = GetPidByName("pid_ns_init");
     if (pid == -1) {
-        APPSPAWN_LOGI("Start Create pid_ns_init");
+        APPSPAWN_LOGI("Start Create pid_ns_init %{public}d", pid);
         pid = clone(NsInitFunc, NULL, CLONE_NEWPID, NULL);
         if (pid < 0) {
             APPSPAWN_LOGE("clone pid ns init failed");
@@ -218,7 +215,7 @@ static int PreLoadEnablePidNs(AppSpawnMgr *content)
         DeleteAppSpawnNamespace(namespace);
         return ret;
     }
-    OH_ListAddTail(&namespace->extData.node, &content->extData);
+    OH_ListAddTail(&content->extData, &namespace->extData.node);
     APPSPAWN_LOGI("Enable pid namespace success.");
     return 0;
 }
@@ -227,10 +224,12 @@ static int PreLoadEnablePidNs(AppSpawnMgr *content)
 static int SetPidNamespace(int nsPidFd, int nsType)
 {
     APPSPAWN_LOGI("SetPidNamespace 0x%{public}x", nsType);
+#ifndef APPSPAWN_TEST
     if (setns(nsPidFd, nsType) < 0) {
         APPSPAWN_LOGE("set pid namespace nsType:%{public}d failed", nsType);
         return -1;
     }
+#endif
     return 0;
 }
 

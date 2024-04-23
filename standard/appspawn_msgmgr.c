@@ -62,14 +62,33 @@ void *GetAppSpawnMsgExtInfo(const AppSpawnMsgNode *message, const char *name, ui
 
 int CheckAppSpawnMsgFlag(const AppSpawnMsgNode *message, uint32_t type, uint32_t index)
 {
+    APPSPAWN_CHECK(type == TLV_MSG_FLAGS || type == TLV_PERMISSION, return 0, "Invalid tlv %{public}u ", type);
     AppSpawnMsgFlags *msgFlags = (AppSpawnMsgFlags *)GetAppSpawnMsgInfo(message, type);
-    APPSPAWN_CHECK(msgFlags != NULL,
-        return 0, "No tlv %{public}u in msg %{public}s", type, message->msgHeader.processName);
+    APPSPAWN_CHECK(msgFlags != NULL, return 0, "No tlv %{public}u in msg", type);
     uint32_t blockIndex = index / 32;  // 32 max bit in int
     uint32_t bitIndex = index % 32;    // 32 max bit in int
     APPSPAWN_CHECK(blockIndex < msgFlags->count, return 0,
         "Invalid index %{public}d max: %{public}d", index, msgFlags->count);
     return CHECK_FLAGS_BY_INDEX(msgFlags->flags[blockIndex], bitIndex);
+}
+
+static inline int SetSpawnMsgFlags(AppSpawnMsgFlags *msgFlags, uint32_t index)
+{
+    uint32_t blockIndex = index / 32;  // 32 max bit in int
+    uint32_t bitIndex = index % 32;    // 32 max bit in int
+    APPSPAWN_CHECK(blockIndex < msgFlags->count, return APPSPAWN_ARG_INVALID,
+        "Invalid index %{public}u blockIndex %{public}u %{public}u ", index, blockIndex, msgFlags->count);
+    msgFlags->flags[blockIndex] |= (1 << bitIndex);
+    return 0;
+}
+
+int SetAppSpawnMsgFlag(const AppSpawnMsgNode *message, uint32_t type, uint32_t index)
+{
+    APPSPAWN_CHECK(type == TLV_MSG_FLAGS || type == TLV_PERMISSION,
+        return APPSPAWN_ARG_INVALID, "Invalid tlv %{public}u ", type);
+    AppSpawnMsgFlags *msgFlags = (AppSpawnMsgFlags *)GetAppSpawnMsgInfo(message, type);
+    APPSPAWN_CHECK(msgFlags != NULL, return APPSPAWN_ARG_INVALID, "No tlv %{public}d in msg", type);
+    return SetSpawnMsgFlags(msgFlags, index);
 }
 
 AppSpawnMsgNode *CreateAppSpawnMsg(void)
@@ -167,7 +186,7 @@ static int CheckExtTlvInfo(const AppSpawnTlv *tlv, uint32_t remainLen)
     APPSPAWN_LOGV("Recv type [%{public}s %{public}u] real len: %{public}u",
         tlvExt->tlvName, tlvExt->tlvLen, tlvExt->dataLen);
     if (tlvExt->dataLen > tlvExt->tlvLen - sizeof(AppSpawnTlvExt)) {
-        APPSPAWN_LOGE("Invalid tlv [%{public}s %{public}u] real len: %{public}u %{public}u",
+        APPSPAWN_LOGE("Invalid tlv [%{public}s %{public}u] real len: %{public}u %{public}zu",
             tlvExt->tlvName, tlvExt->tlvLen, tlvExt->dataLen, sizeof(AppSpawnTlvExt));
         return APPSPAWN_MSG_INVALID;
     }
@@ -219,10 +238,10 @@ int DecodeAppSpawnMsg(AppSpawnMsgNode *message)
     while (currLen < bufferLen) {
         AppSpawnTlv *tlv = (AppSpawnTlv *)(message->buffer + currLen);
         APPSPAWN_CHECK(tlv->tlvLen <= (bufferLen - currLen), break,
-            "Invalid tlv [%{public}d %{public}d] curr: %{public}u",
+            "Invalid tlv [%{public}d %{public}d] curr: %{public}zu",
             tlv->tlvType, tlv->tlvLen, currLen + sizeof(AppSpawnMsg));
 
-        APPSPAWN_LOGV("DecodeAppSpawnMsg tlv %{public}u %{public}u start: %{public}u ",
+        APPSPAWN_LOGV("DecodeAppSpawnMsg tlv %{public}u %{public}u start: %{public}zu ",
             tlv->tlvType, tlv->tlvLen, currLen + sizeof(AppSpawnMsg)); // show in msg offset
         ret = CheckMsgTlv(tlv, bufferLen - currLen);
         APPSPAWN_CHECK_ONLY_EXPER(ret == 0, break);

@@ -105,7 +105,7 @@ public:
     AppSpawnReqMsgHandle CreateMsg(AppSpawnClientHandle handle, uint32_t msgType = MSG_APP_SPAWN, int base = 0);
     AppSpawningCtx *GetAppProperty(AppSpawnClientHandle handle, AppSpawnReqMsgHandle reqHandle);
 
-    int CreateSocket(void);
+    int CreateSocket(int type = 0);
     int CreateSendMsg(std::vector<uint8_t> &buffer, uint32_t msgType, uint32_t &msgLen,
         const std::vector<AddTlvFunction> &addTlvFuncs);
     const std::vector<const char *> &GetPermissions()
@@ -170,6 +170,7 @@ public:
     void Start(void);
     void Start(RecvMsgProcess process, uint32_t time = defaultProtectTime);
     void Stop();
+    void ServiceThread();
     void KillNWebSpawnServer();
 
     static const uint32_t defaultProtectTime;
@@ -179,7 +180,6 @@ private:
     void StopSpawnService(void);
 
     static uint32_t serverId;
-    static void *ServiceThread(void *arg);
 #ifdef USER_TIMER_TO_CHECK
     static void ProcessIdle(const TimerHandle taskHandle, void *context);
 #else
@@ -189,6 +189,7 @@ private:
     AppSpawnContent *content_ = nullptr;
     std::atomic<long> appPid_{-1};
     std::string serviceCmd_{};
+    bool running_{false};
 #ifdef USER_TIMER_TO_CHECK
     TimerHandle timer_;
 #else

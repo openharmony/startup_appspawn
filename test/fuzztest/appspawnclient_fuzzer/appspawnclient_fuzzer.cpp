@@ -272,18 +272,18 @@ namespace OHOS {
     int FuzzGetPermissionIndex(const uint8_t *data, size_t size)
     {
         std::string permission(reinterpret_cast<const char*>(data), size);
-        return GetPermissionIndex(permission.c_str());
+        return GetPermissionIndex(nullptr, permission.c_str());
     }
 
     int FuzzGetMaxPermissionIndex(const uint8_t *data, size_t size)
     {
-        return GetMaxPermissionIndex();
+        return GetMaxPermissionIndex(nullptr);
     }
 
     int FuzzGetPermissionByIndex(const uint8_t *data, size_t size)
     {
         int32_t index = static_cast<int32_t>(size);
-        if (GetPermissionByIndex(index) == nullptr) {
+        if (GetPermissionByIndex(nullptr, index) == nullptr) {
             return -1;
         }
         return 0;

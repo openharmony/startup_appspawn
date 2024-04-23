@@ -29,6 +29,11 @@ extern "C" {
 #endif
 
 #define HOOK_STOP_WHEN_ERROR 0x2
+#if defined(__aarch64__) || defined(__x86_64__)
+#define ASAN_MODULE_PATH "/system/lib64/appspawn/libappspawn_asan"
+#else
+#define ASAN_MODULE_PATH "/system/lib/appspawn/libappspawn_asan"
+#endif
 
 typedef enum {
     MODULE_DEFAULT,

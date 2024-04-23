@@ -29,10 +29,9 @@ static inline int SetAppSpawnMsgFlags(AppSpawnMsgFlags *msgFlags, uint32_t index
 {
     uint32_t blockIndex = index / 32;  // 32 max bit in int
     uint32_t bitIndex = index % 32;    // 32 max bit in int
-    if (blockIndex >= msgFlags->count) {
-        return -1;
+    if (blockIndex < msgFlags->count) {
+        msgFlags->flags[blockIndex] |= (1 << bitIndex);
     }
-    msgFlags->flags[blockIndex] |= (1 << bitIndex);
     return 0;
 }
 
@@ -62,11 +61,10 @@ static inline int CheckInputString(const char *info, const char *value, uint32_t
 
 static AppSpawnMsgBlock *CreateAppSpawnMsgBlock(AppSpawnReqMsgNode *reqNode)
 {
-    uint32_t realLen = sizeof(AppSpawnMsgBlock) + MAX_MSG_BLOCK_LEN;
-    AppSpawnMsgBlock *block = (AppSpawnMsgBlock *)calloc(1, realLen);
+    AppSpawnMsgBlock *block = (AppSpawnMsgBlock *)calloc(1, MAX_MSG_BLOCK_LEN);
     APPSPAWN_CHECK(block != NULL, return NULL, "Failed to create block");
     OH_ListInit(&block->node);
-    block->blockSize = MAX_MSG_BLOCK_LEN;
+    block->blockSize = MAX_MSG_BLOCK_LEN - sizeof(AppSpawnMsgBlock);
     block->currentIndex = 0;
     OH_ListAddTail(&reqNode->msgBlocks, &block->node);
     return block;
@@ -89,12 +87,11 @@ static AppSpawnMsgBlock *GetValidMsgBlock(const AppSpawnReqMsgNode *reqNode, uin
 static AppSpawnMsgBlock *GetTailMsgBlock(const AppSpawnReqMsgNode *reqNode)
 {
     AppSpawnMsgBlock *block = NULL;
-    struct ListNode *node = reqNode->msgBlocks.next;
+    struct ListNode *node = reqNode->msgBlocks.prev;
     if (node != &reqNode->msgBlocks) {
         block = ListEntry(node, AppSpawnMsgBlock, node);
-        return block;
     }
-    return NULL;
+    return block;
 }
 
 static void FreeMsgBlock(ListNode *node)
@@ -114,22 +111,22 @@ static int AddAppDataToBlock(AppSpawnMsgBlock *block, const uint8_t *data, uint3
     APPSPAWN_CHECK(reminderLen >= realDataLen, return APPSPAWN_BUFFER_NOT_ENOUGH, "Not enough buffer for data");
     int ret = memcpy_s(block->buffer + block->currentIndex, reminderLen, data, dataLen);
     APPSPAWN_CHECK(ret == EOK, return APPSPAWN_SYSTEM_ERROR, "Failed to copy data");
-    block->currentIndex += realDataLen;
     if (dataType == DATA_TYPE_STRING) {
         *((char *)block->buffer + block->currentIndex + dataLen) = '\0';
     }
+    block->currentIndex += realDataLen;
     return 0;
 }
 
 static int AddAppDataToTail(AppSpawnReqMsgNode *reqNode, const uint8_t *data, uint32_t dataLen, int32_t dataType)
 {
-    // 最后一个block有有效空间, 则保存部分数据，剩余的申请新的block保存
     uint32_t currLen = 0;
     AppSpawnMsgBlock *block = GetTailMsgBlock(reqNode);
     APPSPAWN_CHECK(block != NULL, return APPSPAWN_BUFFER_NOT_ENOUGH, "Not block info reqNode");
+    uint32_t realDataLen = (dataType == DATA_TYPE_STRING) ? dataLen + 1 : dataLen;
     do {
         uint32_t reminderBufferLen = block->blockSize - block->currentIndex;
-        uint32_t reminderDataLen = (dataType == DATA_TYPE_STRING) ? dataLen + 1 - currLen : dataLen - currLen;
+        uint32_t reminderDataLen = realDataLen - currLen;
         uint32_t realLen = APPSPAWN_ALIGN(reminderDataLen);
         uint32_t realCopy = 0;
         if (reminderBufferLen >= realLen) {  // 足够存储，直接保存
@@ -137,7 +134,7 @@ static int AddAppDataToTail(AppSpawnReqMsgNode *reqNode, const uint8_t *data, ui
             APPSPAWN_CHECK(ret == EOK, return APPSPAWN_SYSTEM_ERROR, "Failed to copy data");
             block->currentIndex += realLen;
             break;
-        } else if (reminderBufferLen > 0) {  // 按实际大小保存
+        } else if (reminderBufferLen > 0) {
             realCopy = reminderDataLen > reminderBufferLen ? reminderBufferLen : reminderDataLen;
             int ret = memcpy_s(block->buffer + block->currentIndex, reminderBufferLen, data + currLen, realCopy);
             APPSPAWN_CHECK(ret == EOK, return APPSPAWN_SYSTEM_ERROR, "Failed to copy data");
@@ -146,10 +143,7 @@ static int AddAppDataToTail(AppSpawnReqMsgNode *reqNode, const uint8_t *data, ui
         }
         block = CreateAppSpawnMsgBlock(reqNode);
         APPSPAWN_CHECK(block != NULL, return APPSPAWN_SYSTEM_ERROR, "Not enough buffer for data");
-        if (currLen == dataLen) {  // 实际数据已经完成，但是需要补齐对齐造成的扩展
-            block->currentIndex += realLen - realCopy;
-        }
-    } while (currLen < dataLen);
+    } while (currLen < realDataLen);
     return 0;
 }
 
@@ -334,10 +328,11 @@ static void GetSpecialGid(const char *bundleName, gid_t gidTable[], uint32_t *gi
 
 int AppSpawnReqMsgCreate(AppSpawnMsgType msgType, const char *processName, AppSpawnReqMsgHandle *reqHandle)
 {
-    APPSPAWN_CHECK(processName != NULL, return APPSPAWN_ARG_INVALID, "Invalid process name");
     APPSPAWN_CHECK(reqHandle != NULL, return APPSPAWN_ARG_INVALID, "Invalid request handle");
     APPSPAWN_CHECK(msgType < MAX_TYPE_INVALID,
         return APPSPAWN_MSG_INVALID, "Invalid message type %{public}u %{public}s", msgType, processName);
+    int ret = CheckInputString("processName", processName, APP_LEN_PROC_NAME);
+    APPSPAWN_CHECK_ONLY_EXPER(ret == 0, return ret);
     AppSpawnReqMsgNode *reqNode = CreateAppSpawnReqMsg(msgType, processName);
     APPSPAWN_CHECK(reqNode != NULL, return APPSPAWN_SYSTEM_ERROR,
         "Failed to create msg node for %{public}s", processName);
@@ -400,9 +395,9 @@ int AppSpawnReqMsgAddExtInfo(AppSpawnReqMsgHandle reqHandle, const char *name, c
 {
     AppSpawnReqMsgNode *reqNode = (AppSpawnReqMsgNode *)reqHandle;
     APPSPAWN_CHECK_ONLY_EXPER(reqNode != NULL, return APPSPAWN_ARG_INVALID);
-    APPSPAWN_CHECK(name != NULL && strlen(name) < APPSPAWN_TLV_NAME_LEN,
-        return APPSPAWN_ARG_INVALID, "Invalid ext name ");
-    APPSPAWN_CHECK(value != NULL && valueLen <= EXTRAINFO_TOTAL_LENGTH_MAX,
+    int ret = CheckInputString("check name", name, APPSPAWN_TLV_NAME_LEN);
+    APPSPAWN_CHECK_ONLY_EXPER(ret == 0, return ret);
+    APPSPAWN_CHECK(value != NULL && valueLen <= EXTRAINFO_TOTAL_LENGTH_MAX && valueLen > 0,
         return APPSPAWN_ARG_INVALID, "Invalid ext value ");
 
     APPSPAWN_LOGV("AppSpawnReqMsgAddExtInfo name %{public}s", name);
@@ -416,9 +411,9 @@ int AppSpawnReqMsgAddStringInfo(AppSpawnReqMsgHandle reqHandle, const char *name
 {
     AppSpawnReqMsgNode *reqNode = (AppSpawnReqMsgNode *)reqHandle;
     APPSPAWN_CHECK_ONLY_EXPER(reqNode != NULL, return APPSPAWN_ARG_INVALID);
-    APPSPAWN_CHECK(name != NULL && strlen(name) < APPSPAWN_TLV_NAME_LEN,
-        return APPSPAWN_ARG_INVALID, "Invalid tlv name ");
-    int ret = CheckInputString(name, value, EXTRAINFO_TOTAL_LENGTH_MAX);
+    int ret = CheckInputString("check name", name, APPSPAWN_TLV_NAME_LEN);
+    APPSPAWN_CHECK_ONLY_EXPER(ret == 0, return ret);
+    ret = CheckInputString(name, value, EXTRAINFO_TOTAL_LENGTH_MAX);
     APPSPAWN_CHECK_ONLY_EXPER(ret == 0, return ret);
 
     APPSPAWN_LOGV("AppSpawnReqMsgAddStringInfo name %{public}s", name);
@@ -532,7 +527,7 @@ int AppSpawnClientAddPermission(AppSpawnClientHandle handle, AppSpawnReqMsgHandl
     int index = GetPermissionIndex(handle, permission);
     APPSPAWN_CHECK(index >= 0 && index < maxIndex,
         return APPSPAWN_PERMISSION_NOT_SUPPORT, "Invalid permission %{public}s", permission);
-    APPSPAWN_LOGV("AetPermission index %{public}d name %{public}s", index, permission);
+    APPSPAWN_LOGV("add permission index %{public}d name %{public}s", index, permission);
     int ret = SetAppSpawnMsgFlags(reqNode->permissionFlags, index);
     APPSPAWN_CHECK(ret == 0, return ret, "Invalid permission %{public}s", permission);
     return 0;

@@ -24,6 +24,7 @@
 #include <sys/wait.h>
 
 #include "cJSON.h"
+#include "appspawn_client.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -42,6 +43,7 @@ typedef struct TagSandboxContext SandboxContext;
 typedef struct TagAppSpawnedProcess AppSpawnedProcess;
 typedef struct TagAppSpawnForkArg AppSpawnForkArg;
 typedef struct TagAppSpawnMsgNode AppSpawnMsgNode;
+typedef struct TagAppSpawnMgr AppSpawnMgr;
 
 void SetHapDomainSetcontextResult(int result);
 
@@ -54,13 +56,17 @@ int ParseAppSandboxConfig(const cJSON *appSandboxConfig, AppSpawnSandboxCfg *san
 AppSpawnSandboxCfg *CreateAppSpawnSandbox(void);
 void AddDefaultVariable(void);
 
+int AppSpawnClearEnv(AppSpawnMgr *content, AppSpawningCtx *property);
 int AppSpawnChild(AppSpawnContent *content, AppSpawnClient *client);
-int WriteMsgToChild(AppSpawningCtx *property);
+int WriteMsgToChild(AppSpawningCtx *property, bool isNweb);
 
 int WriteToFile(const char *path, int truncated, pid_t pids[], uint32_t count);
 int GetCgroupPath(const AppSpawnedProcess *appInfo, char *buffer, uint32_t buffLen);
 
 void SetDeveloperMode(bool mode);
+
+int LoadPermission(AppSpawnClientType type);
+void DeletePermission(AppSpawnClientType type);
 
 #define STUB_NEED_CHECK 0x01
 typedef int (*ExecvFunc)(const char *pathname, char *const argv[]);

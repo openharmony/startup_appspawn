@@ -98,11 +98,18 @@ static inline bool GetBoolParameter(const char *param, bool value)
     char tmp[32] = {0};  // 32 max
     int ret = GetParameter(param, "", tmp, sizeof(tmp));
     APPSPAWN_LOGV("GetBoolParameter key %{public}s ret %{public}d result: %{public}s", param, ret, tmp);
-    return (ret > 0 && (strcmp(tmp, "true") == 0 || strcmp(tmp, "on") == 0 || strcmp(tmp, "1") == 0));
+    if (ret > 0 && strcmp(tmp, "false") == 0) {
+        return false;
+    }
+    if (ret > 0 && strcmp(tmp, "true") == 0) {
+        return true;
+    }
+    return value;
 }
 
 static inline bool AppSandboxPidNsIsSupport(void)
 {
+    // only set false, return false
     return GetBoolParameter("const.sandbox.pidns.support", true);
 }
 
@@ -651,7 +658,10 @@ int LoadAppSandboxConfig(AppSpawnSandboxCfg *sandbox, int nwebSpawn)
 {
     APPSPAWN_CHECK_ONLY_EXPER(sandbox != NULL, return APPSPAWN_ARG_INVALID);
     const char *sandboxName = nwebSpawn ? WEB_SANDBOX_FILE_NAME : APP_SANDBOX_FILE_NAME;
-
+    if (sandbox->depGroupNodes != NULL) {
+        APPSPAWN_LOGW("Sandbox has been load");
+        return 0;
+    }
     ParseJsonContext context = {};
     context.sandboxCfg = sandbox;
     int ret = ParseJsonConfig("etc/sandbox", sandboxName, ParseAppSandboxConfig, &context);

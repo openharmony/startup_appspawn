@@ -41,6 +41,13 @@ typedef struct TagPermissionNode {
     char name[0];
 } SandboxPermissionNode;
 #endif
+
+#ifdef APPSPAWN_CLIENT
+#define PERMISSION_NAME(node) (node) == NULL ? NULL : (node)->name;
+#else
+#define PERMISSION_NAME(node) (node) == NULL ? NULL : (node)->section.name;
+#endif
+
 #ifdef __cplusplus
 }
 #endif

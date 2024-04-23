@@ -32,8 +32,13 @@
 extern "C" {
 #endif
 
+#ifdef APPSPAWN_TEST
+#define MAX_WAIT_MSG_COMPLETE (5 * 100)  // 500ms
+#define WAIT_CHILD_RESPONSE_TIMEOUT 3  //3s
+#else
 #define MAX_WAIT_MSG_COMPLETE (5 * 1000)  // 5s
-#define WAIT_CHILD_RESPONSE_TIMEOUT 3000  //3s
+#define WAIT_CHILD_RESPONSE_TIMEOUT 3  //3s
+#endif
 
 typedef struct TagAppSpawnMsgNode AppSpawnMsgNode;
 typedef struct TagAppSpawnMsgReceiverCtx {

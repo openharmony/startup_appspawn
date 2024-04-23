@@ -25,6 +25,7 @@
 #include <sys/eventfd.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <inttypes.h>
 
 #include "appspawn.h"
 #include "appspawn_client.h"
@@ -97,48 +98,48 @@ void AppSpawnTestServer::StartCheckHandler(void)
 #endif
 }
 
-void *AppSpawnTestServer::ServiceThread(void *arg)
+void AppSpawnTestServer::ServiceThread()
 {
     CmdArgs *args = nullptr;
     pid_t pid = getpid();
-    AppSpawnTestServer *server = reinterpret_cast<AppSpawnTestServer *>(arg);
-    APPSPAWN_LOGV("serviceCmd_ %{public}s", server->serviceCmd_.c_str());
+    APPSPAWN_LOGV("AppSpawnTestServer::ServiceThread %{public}s", serviceCmd_.c_str());
 
+    running_ = true;
     // 测试server时，使用appspawn的server
-    if (server->testServer_) {
-        server->content_ = AppSpawnTestHelper::StartSpawnServer(server->serviceCmd_, args);
-        if (server->content_ == nullptr) {
-            return nullptr;
+    if (testServer_) {
+        content_ = AppSpawnTestHelper::StartSpawnServer(serviceCmd_, args);
+        if (content_ == nullptr) {
+            return;
         }
         if (pid == getpid()) {  // 主进程进行处理
-            APPSPAWN_LOGV("Service start timer %{public}s ", server->serviceCmd_.c_str());
-            server->StartCheckHandler();
-            AppSpawnMgr *content = reinterpret_cast<AppSpawnMgr *>(server->content_);
-            APPSPAWN_CHECK_ONLY_EXPER(content != NULL, return nullptr);
+            APPSPAWN_LOGV("Service start timer %{public}s ", serviceCmd_.c_str());
+            StartCheckHandler();
+            AppSpawnMgr *content = reinterpret_cast<AppSpawnMgr *>(content_);
+            APPSPAWN_CHECK_ONLY_EXPER(content != NULL, return);
             AppSpawnedProcess *info = GetSpawnedProcessByName(NWEBSPAWN_SERVER_NAME);
             if (info != NULL) {
-                APPSPAWN_LOGV("Save nwebspawn pid: %{public}d %{public}d", info->pid, server->serverId_);
-                server->appPid_.store(info->pid);
+                APPSPAWN_LOGV("Save nwebspawn pid: %{public}d %{public}d", info->pid, serverId_);
+                appPid_.store(info->pid);
             }
             // register
             RegChildLooper(&content->content, TestChildLoopRun);
         }
-        server->content_->runAppSpawn(server->content_, args->argc, args->argv);
+        content_->runAppSpawn(content_, args->argc, args->argv);
         if (pid != getpid()) {  // 子进程退出
             exit(0);
         } else {
-            server->content_ = nullptr;
+            content_ = nullptr;
         }
     } else {
-        server->StartCheckHandler();
-        server->localServer_ = new LocalTestServer();
-        server->localServer_->Run(APPSPAWN_SOCKET_NAME, server->recvMsgProcess_);
+        StartCheckHandler();
+        localServer_ = new LocalTestServer();
+        localServer_->Run(APPSPAWN_SOCKET_NAME, recvMsgProcess_);
     }
-    APPSPAWN_LOGV("Service thread finish %{public}s ", server->serviceCmd_.c_str());
+    APPSPAWN_LOGV("AppSpawnTestServer::ServiceThread finish %{public}s ", serviceCmd_.c_str());
     if (args) {
         free(args);
     }
-    return nullptr;
+    return;
 }
 
 void AppSpawnTestServer::Start(void)
@@ -146,22 +147,49 @@ void AppSpawnTestServer::Start(void)
     Start(nullptr);
 }
 
+static void *ServiceHelperThread(void *arg)
+{
+    AppSpawnTestServer *server = reinterpret_cast<AppSpawnTestServer *>(arg);
+    APPSPAWN_LOGV("AppSpawnTestServer::thread ");
+    server->ServiceThread();
+    return nullptr;
+}
+
 void AppSpawnTestServer::Start(RecvMsgProcess process, uint32_t time)
 {
+    APPSPAWN_LOGV("AppSpawnTestServer::Start serverId %{public}u", AppSpawnTestServer::serverId);
     protectTime_ = time;
-    if (threadId_ == 0) {
-        clock_gettime(CLOCK_MONOTONIC, &startTime_);
-        recvMsgProcess_ = process;
-        int ret = pthread_create(&threadId_, nullptr, ServiceThread, static_cast<void *>(this));
-        if (ret != 0) {
-            return;
-        }
+    uint32_t retry = 0;
+    if (threadId_ != 0) {
+        return;
     }
+    clock_gettime(CLOCK_MONOTONIC, &startTime_);
+    recvMsgProcess_ = process;
+    errno = 0;
+    int ret = 0;
+    do {
+        threadId_ = 0;
+        ret = pthread_create(&threadId_, nullptr, ServiceHelperThread, static_cast<void *>(this));
+        if (ret == 0) {
+            break;
+        }
+        APPSPAWN_LOGE("AppSpawnTestServer::Start create thread fail %{public}d %{public}d", ret, errno);
+        usleep(20000); // 20000 20ms
+        retry++;
+    } while (ret == EAGAIN && retry < 10); // 10 max retry
+
+    // wait server thread run
+    retry = 0;
+    while (!running_ && (retry < 10)) { // 10 max retry
+        usleep(20000); // 20000 20ms
+        retry++;
+    }
+    APPSPAWN_LOGV("AppSpawnTestServer::Start retry %{public}u", retry);
 }
 
 void AppSpawnTestServer::Stop()
 {
-    APPSPAWN_LOGV("AppSpawnTestServer::Stop");
+    APPSPAWN_LOGV("AppSpawnTestServer::Stop serverId %{public}u", AppSpawnTestServer::serverId);
     if (threadId_ != 0) {
         stop_ = true;
         pthread_join(threadId_, nullptr);
@@ -212,7 +240,7 @@ void AppSpawnTestServer::ProcessIdle(const IdleHandle taskHandle, void *context)
     clock_gettime(CLOCK_MONOTONIC, &end);
     uint64_t diff = DiffTime(&server->startTime_, &end);
     if (diff >= (server->protectTime_ * 1000)) {  // 1000 ms -> us
-        APPSPAWN_LOGV("AppSpawnTestServer:: timeout %{public}u %{public}llu", server->protectTime_, diff);
+        APPSPAWN_LOGV("AppSpawnTestServer:: timeout %{public}u %{public}" PRIu64 "", server->protectTime_, diff);
         server->StopSpawnService();
         return;
     }
@@ -507,14 +535,14 @@ void AppSpawnTestHelper::SetDefaultTestData()
     defaultMsgFlags_ = 0;
 }
 
-int AppSpawnTestHelper::CreateSocket(void)
+int AppSpawnTestHelper::CreateSocket(int type)
 {
     const uint32_t maxCount = 10;
     uint32_t count = 0;
     int socketId = -1;
     while ((socketId < 0) && (count < maxCount)) {
         usleep(20000);                        // 20000 20ms
-        socketId = CreateClientSocket(0, 2);  // 2s
+        socketId = CreateClientSocket(type, 2);  // 2s
         if (socketId > 0) {
             return socketId;
         }
@@ -580,7 +608,7 @@ int AppSpawnTestHelper::AddBaseTlv(uint8_t *buffer, uint32_t bufferLen, uint32_t
 {
     // add app flage
     uint32_t currLen = 0;
-    uint32_t flags[2] = {1, 0};
+    uint32_t flags[2] = {1, 0b1010};
     AppSpawnTlv tlv = {};
     tlv.tlvType = TLV_MSG_FLAGS;
     tlv.tlvLen = sizeof(AppSpawnTlv) + sizeof(flags);
@@ -660,11 +688,10 @@ AppSpawnContent *AppSpawnTestHelper::StartSpawnServer(std::string &cmd, CmdArgs 
     }
     return content;
 }
+}  // namespace OHOS
 
 MODULE_CONSTRUCTOR(void)
 {
     MakeDirRec(APPSPAWN_MSG_DIR "appspawn", 0771, 1);
     MakeDirRec(APPSPAWN_MSG_DIR "nwebspawn", 0771, 1);
 }
-}  // namespace OHOS
-
