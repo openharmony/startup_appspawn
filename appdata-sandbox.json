@@ -805,6 +805,17 @@
                     "sandbox-flags": [ "bind", "rec" ]
                 }
             ]
+        }],
+        "ohos.permission.ACCESS_LOCAL_BACKUP":[{
+            "sandbox-switch": "ON",
+            "gids": [1023],
+            "mount-paths": [{
+                    "src-path": "/data/hwbackup",
+                    "sandbox-path": "/data/hwbackup",
+                    "sandbox-flags": [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }
+            ]
         }]
     }]
 }
