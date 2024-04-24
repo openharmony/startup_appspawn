@@ -74,9 +74,8 @@ private:
     static int DoAllMntPointsMount(const AppSpawningCtx *appProperty,
         nlohmann::json &appConfig, const std::string &section = "app-base");
     static int DoAllSymlinkPointslink(const AppSpawningCtx *appProperty, nlohmann::json &appConfig);
-    static std::string ConvertToRealPath(const AppSpawningCtx *appProperty, std::string sandboxRoot);
-    static std::string ConvertToRealPathWithPermission(const AppSpawningCtx *appProperty,
-                                                       std::string sandboxRoot);
+    static std::string ConvertToRealPath(const AppSpawningCtx *appProperty, std::string path);
+    static std::string ConvertToRealPathWithPermission(const AppSpawningCtx *appProperty, std::string path);
     static std::string GetSbxPathByConfig(const AppSpawningCtx *appProperty, nlohmann::json &config);
     static bool CheckTotalSandboxSwitchStatus(const AppSpawningCtx *appProperty);
     static bool CheckAppSandboxSwitchStatus(const AppSpawningCtx *appProperty);
