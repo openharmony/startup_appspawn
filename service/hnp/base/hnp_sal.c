@@ -53,9 +53,46 @@ int HnpProcessRunCheck(const char *runPath)
     return 0;
 }
 
+static void HnpRelPath(const char *fromPath, const char *toPath, char *relPath)
+{
+    char *from = strdup(fromPath);
+    char *to = strdup(toPath);
+    int count = 0;
+    int numDirs = 0;
+
+    while ((*from) && (*to) && (*from == *to)) {
+        from++;
+        to++;
+        count++;
+    }
+
+    char *p = from;
+    while (*p) {
+        if (*p == DIR_SPLIT_SYMBOL) {
+            numDirs++;
+        }
+        p++;
+    }
+
+    for (int i = 0; i < numDirs; i++) {
+        strcat(relPath, "../");
+    }
+    strcat(relPath, to);
+
+    for (int i = 0; i < count; i++) {
+        from--;
+        to--;
+    }
+    free(from);
+    free(to);
+
+    return;
+}
+
 int HnpSymlink(const char *srcFile, const char *dstFile)
 {
     int ret;
+    char relpath[MAX_FILE_PATH_LEN];
 
     /* 将源二进制文件权限设置为750 */
     ret = chmod(srcFile, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH);
@@ -68,7 +105,8 @@ int HnpSymlink(const char *srcFile, const char *dstFile)
         unlink(dstFile);
     }
 
-    ret = symlink(srcFile, dstFile);
+    HnpRelPath(dstFile, srcFile, relpath);
+    ret = symlink(relpath, dstFile);
     if (ret < 0) {
         HNP_LOGE("hnp install generate soft link unsuccess, src:%s, dst:%s, errno:%d", srcFile, dstFile, errno);
         return HNP_ERRNO_GENERATE_SOFT_LINK_FAILED;
