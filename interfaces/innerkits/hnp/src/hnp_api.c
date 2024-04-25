@@ -82,7 +82,7 @@ static int StartHnpProcess(char *const argv[], char *const apcEnv[])
     return exitVal;
 }
 
-int NativeInstallHnp(const char *userId, const char *packages[], int count, const char *installPath, int installOptions)
+int NativeInstallHnpEx(const char *userId, const char *packages[], int count, const char *installPath, int installOptions)
 {
     char *argv[MAX_ARGV_NUM] = {0};
     char *apcEnv[MAX_ENV_NUM] = {0};
@@ -117,7 +117,7 @@ int NativeInstallHnp(const char *userId, const char *packages[], int count, cons
     return StartHnpProcess(argv, apcEnv);
 }
 
-int NativeUnInstallHnp(const char *userId, const char *hnpName, const char *hnpVersion, const char *installPath)
+int NativeUnInstallHnpEx(const char *userId, const char *hnpName, const char *hnpVersion, const char *installPath)
 {
     char *argv[MAX_ARGV_NUM] = {0};
     char *apcEnv[MAX_ENV_NUM] = {0};
@@ -145,6 +145,24 @@ int NativeUnInstallHnp(const char *userId, const char *hnpName, const char *hnpV
     }
 
     return StartHnpProcess(argv, apcEnv);
+}
+
+int NativeInstallHnp(const char *userId, const char *hnpRootPath, const char *packageName, int installOptions)
+{
+    (void)userId;
+    (void)hnpRootPath;
+    (void)packageName;
+    (void)installOptions;
+
+    return 0;
+}
+
+int NativeUnInstallHnp(const char *userId, const char *packageName)
+{
+    (void)userId;
+    (void)packageName;
+
+    return 0;
 }
 
 #ifdef __cplusplus
