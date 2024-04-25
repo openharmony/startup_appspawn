@@ -227,10 +227,7 @@ static int HnpUnZipForFile(const char *fileName, const char *outputDir, unzFile 
     return 0;
 #else
     int ret;
-    FILE *outFile;
     char filePath[MAX_FILE_PATH_LEN];
-    char buffer[BUFFER_SIZE];
-    int readSize = 0;
 
     ret = sprintf_s(filePath, MAX_FILE_PATH_LEN, "%s/%s", outputDir, fileName);
     if (ret < 0) {
@@ -242,13 +239,15 @@ static int HnpUnZipForFile(const char *fileName, const char *outputDir, unzFile 
     if (filePath[strlen(filePath) - 1] == '/') {
         mkdir(filePath, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     } else {
-        outFile = fopen(filePath, "wb");
+        FILE *outFile = fopen(filePath, "wb");
         if (outFile == NULL) {
             HNP_LOGE("unzip open file:%s unsuccess!", filePath);
             return HNP_ERRNO_BASE_FILE_OPEN_FAILED;
         }
         unzOpenCurrentFile(zipFile);
+        int readSize = 0;
         do {
+            char buffer[BUFFER_SIZE];
             readSize = unzReadCurrentFile(zipFile, buffer, sizeof(buffer));
             if (readSize < 0) {
                 HNP_LOGE("unzip read zip:%s file unsuccess", zipFile);
@@ -273,7 +272,6 @@ int HnpUnZip(const char *inputFile, const char *outputDir)
     int result;
     char fileName[MAX_FILE_PATH_LEN];
     unz_file_info fileInfo;
-    char *slash;
 
     HNP_LOGI("HnpUnZip zip=%s, output=%s", inputFile, outputDir);
 
@@ -291,7 +289,7 @@ int HnpUnZip(const char *inputFile, const char *outputDir)
             unzClose(zipFile);
             return HNP_ERRNO_BASE_UNZIP_GET_INFO_FAILED;
         }
-        slash = strchr(fileName, '/');
+        char *slash = strchr(fileName, '/');
         if (slash != NULL) {
             slash++;
         } else {

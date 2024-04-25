@@ -29,7 +29,6 @@ extern "C" {
 int main(int argc, char *argv[])
 {
     int sectime = 0;
-    int ch;
 
     printf("\nstart hnp sample");
 
@@ -44,6 +43,7 @@ int main(int argc, char *argv[])
     FILE *file = fopen("../cfg/hnpsample.cfg", "r");
     if (file != NULL) {
         printf("\ncfg file content:\n");
+        int ch;
         while ((ch = fgetc(file)) != EOF) {
             putchar(ch);
         }

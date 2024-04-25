@@ -110,6 +110,7 @@ int ReadFileToStreamBySize(const char *filePath, char **stream, int readSize)
     }
 
     if (readSize <= 0) {
+        (void)fclose(file);
         HNP_LOGE("read size(%d) is invalid.", readSize);
         return HNP_ERRNO_BASE_PARAMS_INVALID;
     }
@@ -213,6 +214,7 @@ int HnpDeleteFolder(const char *path)
             /* 如果是文件夹，递归删除 */
             ret = HnpDeleteFolder(filePath);
             if (ret != 0) {
+                closedir(dir);
                 return ret;
             }
         } else {
