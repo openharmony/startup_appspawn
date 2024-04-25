@@ -93,6 +93,15 @@
                         ]
                     },
                     "name": "//base/startup/appspawn/interfaces/innerkits:appspawn_socket_client"
+                },
+                {
+                    "header": {
+                        "header_base": "//base/startup/appspawn/interfaces/innerkits/hnp/include/",
+                        "header_files": [
+                            "hnp_api.h"
+                        ]
+                    },
+                    "name": "//base/startup/appspawn/interfaces/innerkits/hnp:hnpapi"
                 }
             ],
             "test": [
