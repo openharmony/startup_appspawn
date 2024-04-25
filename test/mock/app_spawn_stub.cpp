@@ -134,7 +134,7 @@ int GetParameter(const char *key, const char *def, char *value, uint32_t len)
         const char *tmp = def;
         if ((count % 3) == 0) { // 3 test
             return -1;
-        } else if ((count % 3) == 1) { //
+        } else if ((count % 3) == 1) { // 3 test
             tmp = "a";
         } else {
             tmp = "5";

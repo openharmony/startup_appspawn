@@ -43,9 +43,9 @@ typedef struct TagPermissionNode {
 #endif
 
 #ifdef APPSPAWN_CLIENT
-#define PERMISSION_NAME(node) (node) == NULL ? NULL : (node)->name;
+#define PERMISSION_NAME(node) (node) == NULL ? NULL : (node)->name
 #else
-#define PERMISSION_NAME(node) (node) == NULL ? NULL : (node)->section.name;
+#define PERMISSION_NAME(node) (node) == NULL ? NULL : (node)->section.name
 #endif
 
 #ifdef __cplusplus

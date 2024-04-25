@@ -161,18 +161,21 @@ HWTEST(AppSpawnInterfaceTest, App_Spawn_Interface_Msg_Create_001, TestSize.Level
         name1.data(), name2.data(), name3.data(), nullptr, ""};
 
     AppSpawnReqMsgHandle reqHandle = nullptr;
-    AppSpawnReqMsgHandle *inputHandle[] = {&reqHandle, nullptr};
 
     for (size_t i = 0; i < ARRAY_LENGTH(msgType); i++) {
         for (size_t j = 0; j < ARRAY_LENGTH(processName); j++) {
-            for (size_t k = 0; k < ARRAY_LENGTH(inputHandle); k++) {
-                int ret = AppSpawnReqMsgCreate(msgType[i], processName[j], inputHandle[k]);
-                printf("App_Spawn_Interface_Msg_Create_001 %zu %zu %zu \n", i, j, k);
-                EXPECT_EQ(((i != 4) && (j < 3) && (k == 0) && ret == 0) || (ret != 0), 1); // 4 3 valid index
-                if (ret == 0) {
-                    AppSpawnReqMsgFree(reqHandle);
-                }
+            int ret = AppSpawnReqMsgCreate(msgType[i], processName[j], &reqHandle);
+            printf("App_Spawn_Interface_Msg_Create_001 %zu %zu \n", i, j);
+            EXPECT_EQ(((i != 4) && (j < 3) && ret == 0) || (ret != 0), 1); // 4 3 valid index
+            if (ret == 0) {
+                AppSpawnReqMsgFree(reqHandle);
             }
+        }
+    }
+    for (size_t i = 0; i < ARRAY_LENGTH(msgType); i++) {
+        for (size_t j = 0; j < ARRAY_LENGTH(processName); j++) {
+            int ret = AppSpawnReqMsgCreate(msgType[i], processName[j], nullptr);
+            EXPECT_EQ(ret != 0, 1);
         }
     }
 }
