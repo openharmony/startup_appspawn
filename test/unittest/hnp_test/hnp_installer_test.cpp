@@ -691,11 +691,11 @@ HWTEST(HnpInstallerTest, Hnp_Install_API_001, TestSize.Level0)
     HnpPackWithCfg();
 
     { //param is invalid
-        ret = NativeInstallHnp(NULL, packages, 1, HNP_BASE_PATH"/test", 1);
+        ret = NativeInstallHnpEx(NULL, packages, 1, HNP_BASE_PATH"/test", 1);
         EXPECT_EQ(ret, HNP_API_ERRNO_PARAM_INVALID);
     }
     { //ok
-        ret = NativeInstallHnp("10000", packages, 1, HNP_BASE_PATH"/test", 1);
+        ret = NativeInstallHnpEx("10000", packages, 1, HNP_BASE_PATH"/test", 1);
         EXPECT_EQ(ret, 0);
         EXPECT_EQ(access(HNP_BASE_PATH"/test/bin/outt", F_OK), 0);
         EXPECT_EQ(access(HNP_BASE_PATH"/test/bin/out2", F_OK), 0);
@@ -729,7 +729,7 @@ HWTEST(HnpInstallerTest, Hnp_Install_API_002, TestSize.Level0)
     HnpPackWithCfg();
 
     { //st dir path is invalid
-        ret = NativeInstallHnp("10001", packages, 1, NULL, 1);
+        ret = NativeInstallHnpEx("10001", packages, 1, NULL, 1);
         EXPECT_NE(ret, 0);
     }
 
@@ -762,7 +762,7 @@ HWTEST(HnpInstallerTest, Hnp_Install_API_003, TestSize.Level0)
     HnpPackWithSimple2Bin();
 
     { //ok
-        ret = NativeInstallHnp("10000", packages, 2, HNP_BASE_PATH"/test", 1);
+        ret = NativeInstallHnpEx("10000", packages, 2, HNP_BASE_PATH"/test", 1);
         EXPECT_EQ(ret, 0);
         EXPECT_EQ(access(HNP_BASE_PATH"/test/bin/outt", F_OK), 0);
         EXPECT_EQ(access(HNP_BASE_PATH"/test/bin/out2", F_OK), 0);
@@ -972,11 +972,11 @@ HWTEST(HnpInstallerTest, Hnp_UnInstall_API_001, TestSize.Level0)
     HnpInstallPrivate();
 
     { // param is invalid
-        ret = NativeUnInstallHnp(NULL, "sample", "1.1", "/test");
+        ret = NativeUnInstallHnpEx(NULL, "sample", "1.1", "/test");
         EXPECT_EQ(ret, HNP_API_ERRNO_PARAM_INVALID);
     }
     { // ok
-        ret = NativeUnInstallHnp("10000", "sample", "1.1", HNP_BASE_PATH"/test");
+        ret = NativeUnInstallHnpEx("10000", "sample", "1.1", HNP_BASE_PATH"/test");
         EXPECT_EQ(ret, 0);
     }
 
@@ -1007,7 +1007,7 @@ HWTEST(HnpInstallerTest, Hnp_UnInstall_API_002, TestSize.Level0)
     HnpInstallPrivate();
 
     { // param uninstall path is invalid
-        ret = NativeUnInstallHnp("10000", "sample", "1.1", "/test");
+        ret = NativeUnInstallHnpEx("10000", "sample", "1.1", "/test");
         EXPECT_NE(ret, 0);
     }
 

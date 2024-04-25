@@ -52,7 +52,7 @@ typedef enum {
  *
  * @return 0:success;other means failure.
  */
-int NativeInstallHnp(const char *userId, const char *packages[], int count, const char *installPath,
+int NativeInstallHnpEx(const char *userId, const char *packages[], int count, const char *installPath,
     int installOptions);
 
 /**
@@ -65,7 +65,29 @@ int NativeInstallHnp(const char *userId, const char *packages[], int count, cons
  *
  * @return 0:success;other means failure.
  */
-int NativeUnInstallHnp(const char *userId, const char *hnpName, const char *hnpVersion, const char *installPath);
+int NativeUnInstallHnpEx(const char *userId, const char *hnpName, const char *hnpVersion, const char *installPath);
+
+/**
+ * Install native software package.
+ *
+ * @param userId Indicates id of user.
+ * @param hnpRootPath  Indicates the root path of hnp packages
+ * @param packageName Indicates the packageName of HAP.
+ * @param installOptions Indicates install options.
+ *
+ * @return 0:success;other means failure.
+ */
+int NativeInstallHnp(const char *userId, const char *hnpRootPath, const char *packageName, int installOptions);
+
+/**
+ * Uninstall native software package.
+ *
+ * @param userId Indicates id of user.
+ * @param packageName Indicates the packageName of HAP.
+ *
+ * @return 0:success;other means failure.
+ */
+int NativeUnInstallHnp(const char *userId, const char *packageName);
 
 #ifdef __cplusplus
 }
