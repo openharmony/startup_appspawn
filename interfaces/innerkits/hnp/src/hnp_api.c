@@ -19,6 +19,7 @@
 #include <sys/wait.h>
 
 #include "hilog/log.h"
+#include "appspawn_utils.h"
 
 #include "hnp_api.h"
 
@@ -88,6 +89,11 @@ int NativeInstallHnpEx(const char *userId, const char *packages[], int count, co
     char *apcEnv[MAX_ENV_NUM] = {0};
     int index = 0;
 
+    if (!IsDeveloperModeOpen()) {
+        HNPAPI_LOG("\r\n [HNP API] native package install not in developer mode");
+        return HNP_API_NOT_IN_DEVELOPER_MODE;
+    }
+
     if ((userId == NULL) || (packages == NULL) || (count == 0)) {
         return HNP_API_ERRNO_PARAM_INVALID;
     }
@@ -122,6 +128,11 @@ int NativeUnInstallHnpEx(const char *userId, const char *hnpName, const char *hn
     char *argv[MAX_ARGV_NUM] = {0};
     char *apcEnv[MAX_ENV_NUM] = {0};
     int index = 0;
+
+    if (!IsDeveloperModeOpen()) {
+        HNPAPI_LOG("\r\n [HNP API] native package uninstall not in developer mode");
+        return HNP_API_NOT_IN_DEVELOPER_MODE;
+    }
 
     if ((userId == NULL) || (hnpName == NULL) || (hnpVersion == NULL)) {
         return HNP_API_ERRNO_PARAM_INVALID;

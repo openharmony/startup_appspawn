@@ -15,7 +15,10 @@ import("//build/ohos.gni")
 
 if (!defined(ohos_lite)) {
   ohos_shared_library("hnpapi") {
-    include_dirs = [ "${appspawn_path}/interfaces/innerkits/hnp/include" ]
+    include_dirs = [
+      "${appspawn_path}/interfaces/innerkits/hnp/include",
+      "${appspawn_path}/util/include",
+    ]
 
     sources = [ "${appspawn_path}/interfaces/innerkits/hnp/src/hnp_api.c" ]
     configs = []
