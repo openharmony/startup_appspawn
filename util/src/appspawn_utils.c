@@ -315,6 +315,15 @@ void AppSpawnDump(const char *fmt, ...)
     (void)fflush(g_dumpToStream);
 }
 
+int IsDeveloperModeOpen()
+{
+    char tmp[32] = {0};  // 32 max
+    int ret = GetParameter("const.security.developermode.state", "", tmp, sizeof(tmp));
+    APPSPAWN_LOGV("IsDeveloperModeOpen ret %{public}d result: %{public}s", ret, tmp);
+    int enabled = (ret > 0 && strcmp(tmp, "true") == 0);
+    return enabled;
+}
+
 #if defined(__clang__)
 #    pragma clang diagnostic pop
 #elif defined(__GNUC__)

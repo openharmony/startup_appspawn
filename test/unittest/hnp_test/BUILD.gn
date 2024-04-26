@@ -33,6 +33,7 @@ if (!defined(ohos_lite)) {
       "${appspawn_path}/service/hnp/pack/include",
       "${appspawn_path}/service/hnp/installer/include",
       "${appspawn_path}/interfaces/innerkits/hnp/include",
+      "${appspawn_path}/util/include",
     ]
 
     sources = [
@@ -49,6 +50,8 @@ if (!defined(ohos_lite)) {
     ]
 
     defines = [ "APPSPAWN_TEST" ]
+
+    deps = [ "${appspawn_path}/util:libappspawn_util" ]
 
     external_deps = [
       "bounds_checking_function:libsec_shared",
