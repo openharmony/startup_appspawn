@@ -57,6 +57,14 @@ typedef struct HnpCfgInfoStru {
     NativeBinLink *links;
 } HnpCfgInfo;
 
+typedef struct NativeHnpPathStru {
+    char hnpPackageName[MAX_FILE_PATH_LEN];
+    char hnpSoftwareName[MAX_FILE_PATH_LEN];
+    char hnpBasePath[MAX_FILE_PATH_LEN];
+    char hnpSoftwarePath[MAX_FILE_PATH_LEN];
+    char hnpVersionPath[MAX_FILE_PATH_LEN];
+} NativeHnpPath;
+
 /* 日志级别 */
 typedef enum  {
     HNP_LOG_INFO    = 0,
@@ -219,6 +227,8 @@ int ParseHnpCfgFile(const char *hnpCfgPath, HnpCfgInfo *hnpCfg);
 int GetHnpJsonBuff(HnpCfgInfo *hnpCfg, char **buff);
 
 int HnpCfgGetFromSteam(char *cfgStream, HnpCfgInfo *hnpCfg);
+
+int HnpInstallInfoJsonWrite(NativeHnpPath *hnpDstPath, HnpCfgInfo *hnpCfg);
 
 #define HNP_LOGI(args...) \
     HnpLogPrintf(HNP_LOG_INFO, "HNP", ##args)

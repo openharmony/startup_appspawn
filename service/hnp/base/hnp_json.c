@@ -179,6 +179,60 @@ int GetHnpJsonBuff(HnpCfgInfo *hnpCfg, char **buff)
     return 0;
 }
 
+int HnpInstallInfoJsonWrite(NativeHnpPath *hnpDstPath, HnpCfgInfo *hnpCfg)
+{
+    bool hapExist = false;
+    FILE *fp;
+    int ret;
+    char *infoStream;
+    int size;
+    cJSON *json;
+
+    if ((fp = fopen(HNP_PACKAGE_INFO_JSON_FILE_PATH, "rb")) == NULL) {
+        InfoFileExist = false;
+    }
+
+    ret = ReadFileToStream(HNP_PACKAGE_INFO_JSON_FILE_PATH, &infoStream, &size);
+    if (ret != 0) {
+        HNP_LOGE("read hnp info file unsuccess");
+        return HNP_ERRNO_BASE_READ_FILE_STREAM_FAILED;
+    }
+    json = cJSON_Parse(infoStream);
+    free(infoStream);
+
+    cJSON *hapItem = NULL;
+    cJSON *hnpItem = NULL;
+    for (int i = 0; i < cJSON_GetArraySize(json); i++) {
+        hapItem = cJSON_GetArrayItem(json, i);
+        if (strcmp(cJSON_GetObjectItem(hapItem, "hap")->valuestring, hnpDstPath->hnpPackageName) == 0) {
+            hapExist = true;
+            break;
+        }
+    }
+
+    if (hapExist) {
+        hnpItemArr = cJSON_GetObjectItem(hapItem, "hnp");
+    } else {
+        hapItem = cJSON_CreateObject();
+        cJSON_AddStringToObject(hapItem, "hap", hnpDstPath->hnpPackageName);
+        cJSON *hnpItemArr = cJSON_CreateArray();
+        cJSON_AddItemToObject(hapItem, "hnp", hnpItemArr);
+        cJSON_AddItemToArray(json, hapItem);
+    }
+    cJSON *hnpItem = cJSON_CreateObject();
+    cJSON_AddItemToObject(hnpItem, "name", cJSON_CreateString(hnpCfg->name));
+    cJSON_AddItemToObject(hnpItem, "version", cJSON_CreateString(hnpCfg->version));
+    cJSON_AddItemToArray(hnpItemArr, hnpItem);
+
+    fp = fopen(HNP_PACKAGE_INFO_JSON_FILE_PATH, "wb");
+    char *jsonStr = cJSON_Print(json);
+    fwrite(jsonStr, strlen(jsonStr), sizeof(char), fp);
+    fclose(fp);
+
+    cJSON_Delete(json);
+    return 0;
+}
+
 #ifdef __cplusplus
 }
 #endif

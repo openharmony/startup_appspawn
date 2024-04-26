@@ -298,7 +298,7 @@ static int HnpInstallPathGet(const char *fileName, bool isForce, char* hnpVersio
     return ret;
 }
 
-static int HnpReadAndInstall(char *srcFile, NativeHnpPath *hnpDstPath, bool isForce)
+static int HnpReadAndInstall(char *srcFile, NativeHnpPath *hnpDstPath, bool isForce, bool isPublic)
 {
     int ret;
     char *fileName;
@@ -340,73 +340,138 @@ static int HnpReadAndInstall(char *srcFile, NativeHnpPath *hnpDstPath, bool isFo
         return ret;
     }
 
+    if (isPublic) {
+        HnpInstallInfoJsonWrite(hnpDstPath, hnpCfg);
+    }
+
     return 0;
 }
 
-static int HnpInsatllPre(int uid, char *softwarePath[], int count, char *installPath, bool isForce)
+static bool HnpFileCheck(const char *file)
 {
-    char srcFile[count][MAX_FILE_PATH_LEN];
-    char dstPath[MAX_FILE_PATH_LEN];
-    NativeHnpPath hnpDstPath = {0};
+    char suffix[] = ".hnp";
+    int len = strlen(file);
+    int suffixLen = strlen(suffix);
+
+    if ((len >= suffixLen) && (strcmp(file + len - suffixLen, suffix) == 0)) {
+        return true;
+    }
+
+    return false;
+}
+
+static int HnpPackageGetAndInstall(const char *dirPath, NativeHnpPath *hnpDstPath, bool isForce, bool isPublic)
+{
+    DIR *dir;
+    struct dirent *entry;
+    char path[MAX_FILE_PATH_LEN];
     int ret;
-    int i;
 
-    /* 验证native软件包路径是否存在 */
-    for (i = 0; i < count; i++) {
-        if (GetRealPath(softwarePath[i], srcFile[i]) != 0) {
-            HNP_LOGE("hnp install path invalid! src path=%s", softwarePath[i]);
-            return HNP_ERRNO_INSTALLER_GET_REALPATH_FAILED;
-        }
+    if ((dir = opendir(dirPath)) == NULL) {
+        HNP_LOGE("hnp install opendir:%s unsuccess, errno=%d", dirPath, errno);
+        return HNP_ERRNO_BASE_DIR_OPEN_FAILED;
     }
 
-    if (installPath == NULL) {
-        /* 拼接安装路径 */
-        if (sprintf_s(dstPath, MAX_FILE_PATH_LEN, HNP_DEFAULT_INSTALL_ROOT_PATH"/%d", uid) < 0) {
-            HNP_LOGE("hnp install sprintf unsuccess, uid:%d", uid);
-            return HNP_ERRNO_INSTALLER_GET_HNP_PATH_FAILED;
+    while ((entry = readdir(dir)) != NULL) {
+        if ((strcmp(entry->d_name, ".")) || (strcmp(entry->d_name, ".."))) {
+            continue;
         }
 
-        /* 验证安装路径是否存在 */
-        if (access(dstPath, F_OK) != 0) {
-            HNP_LOGE("hnp install uid path[%s] is not exist", dstPath);
-            return HNP_ERRNO_INSTALLER_GET_REALPATH_FAILED;
+        if (sprintf_s(path, MAX_FILE_PATH_LEN, "%s/%s", dirPath, entry->d_name) < 0) {
+            HNP_LOGE("hnp install sprintf unsuccess, dir[%s], path[%s]", dirPath, entry->d_name);
+            close(dir);
+            return HNP_ERRNO_BASE_SPRINTF_FAILED;
         }
 
-        ret = sprintf_s(hnpDstPath.hnpBasePath, MAX_FILE_PATH_LEN, "%s/hnp/hnppublic", dstPath);
+        if (entry->d_type == DT_DIR) {
+            ret = HnpPackageGetAndInstall(path, hnpDstPath, isForce, isPublic);
+            if (ret != 0) {
+                close(dir);
+                return HNP_ERRNO_BASE_SPRINTF_FAILED;
+            }
+        } else {
+            if (HnpFileCheck(path) == false) {
+                continue;
+            }
+            HNP_LOGI("hnp install start now! src file=%s, dst path=%s, is force=%d", path, hnpDstPath->hnpBasePath,
+                isForce);
+            ret = HnpReadAndInstall(path, hnpDstPath, isForce, isPublic);
+            HNP_LOGI("hnp install end, ret=%d", ret);
+            if (ret != 0) {
+                close(dir);
+                return ret;
+            }
+        }
+    }
+    close(dir);
+    return 0;
+}
+
+static int HnpInsatllPre(int uid, char *srcPath, char *packageName, bool isForce)
+{
+    char dstPath[MAX_FILE_PATH_LEN];
+    NativeHnpPath hnpDstPath = {packageName, 0, 0, 0, 0};
+    struct dirent *entry;
+    char hnpPath[MAX_FILE_PATH_LEN];
+    int ret;
+    bool isPublic = true;
+
+    /* 拼接安装路径 */
+    if (sprintf_s(dstPath, MAX_FILE_PATH_LEN, HNP_DEFAULT_INSTALL_ROOT_PATH"/%d", uid) < 0) {
+        HNP_LOGE("hnp install sprintf unsuccess, uid:%d", uid);
+        return HNP_ERRNO_INSTALLER_GET_HNP_PATH_FAILED;
+    }
+
+    /* 验证安装路径是否存在 */
+    if (access(dstPath, F_OK) != 0) {
+        HNP_LOGE("hnp install uid path[%s] is not exist", dstPath);
+        return HNP_ERRNO_INSTALLER_GET_REALPATH_FAILED;
+    }
+
+    DIR *dir = opendir(srcPath);
+    if (dir == NULL) {
+        HNP_LOGE("hnp install opendir:%s unsuccess, errno=%d", srcPath, errno);
+        return HNP_ERRNO_BASE_DIR_OPEN_FAILED;
+    }
+
+    /* 遍历src目录 */
+    while ((entry = readdir(dir)) != NULL) {
+        if (strcmp(entry->d_name, "public") == 0) {
+            if ((sprintf_s(hnpDstPath.hnpBasePath, MAX_FILE_PATH_LEN, "%s/hnppublic", dstPath) < 0) ||
+            (sprintf_s(hnpPath, MAX_FILE_PATH_LEN, "%s/public", srcPath) < 0)) {
+                close(dir);
+                HNP_LOGE("hnp install public base path sprintf unsuccess.");
+                return HNP_ERRNO_BASE_SPRINTF_FAILED;
+            }
+        } else if (strcmp(entry->d_name, "private") == 0) {
+            isPublic = false;
+            if ((sprintf_s(hnpDstPath.hnpBasePath, MAX_FILE_PATH_LEN, "%s/%s", dstPath, packageName) < 0) ||
+            (sprintf_s(hnpPath, MAX_FILE_PATH_LEN, "%s/private", srcPath) < 0)) {
+                close(dir);
+                HNP_LOGE("hnp install private base path sprintf unsuccess.");
+                return HNP_ERRNO_BASE_SPRINTF_FAILED;
+            }
+        }
+
+        ret = HnpPackageGetAndInstall(hnpPath, &hnpDstPath, isForce, isPublic);
         if (ret < 0) {
-            HNP_LOGE("hnp install public base path sprintf unsuccess.");
-            return HNP_ERRNO_INSTALLER_GET_HNP_PATH_FAILED;
-        }
-    } else {
-        if (GetRealPath(installPath, hnpDstPath.hnpBasePath) != 0) {
-            HNP_LOGE("hnp install path[%s] is not exist", installPath);
-            return HNP_ERRNO_INSTALLER_GET_REALPATH_FAILED;
-        }
-    }
-
-    for (i = 0; i < count; i++) {
-        HNP_LOGI("hnp install start now! src file=%s, dst path=%s, is force=%d", srcFile[i],
-            hnpDstPath.hnpBasePath, isForce);
-        ret = HnpReadAndInstall(srcFile[i], &hnpDstPath, isForce);
-        HNP_LOGI("hnp install src file=%s end, ret=%d", srcFile[i], ret);
-        if (ret != 0) {
+            close(dir);
             return ret;
         }
-    }
 
+    }
+    close(dir);
     return 0;
 }
 
 int HnpCmdInstall(int argc, char *argv[])
 {
-    char *installPath = NULL;
-    char *softwarePath[MAX_SOFTWARE_NUM] = {0};
-    int count = 0;
+    char *srcPath[MAX_FILE_PATH_LEN];
     int uid = 0;
     char *uidArg = NULL;
     bool isForce = false;
+    char *packageName;
     int ch;
-    char *ptr;
 
     optind = 1;  // 从头开始遍历参数
     while ((ch = getopt_long(argc, argv, "hu:p:i:f", NULL, NULL)) != -1) {
@@ -421,20 +486,11 @@ int HnpCmdInstall(int argc, char *argv[])
                     return ret;
                 }
                 break;
-            case 'p': //hnp software path
-                ptr = strstr(optarg, ".hnp");
-                if ((ptr == NULL) || (strcmp(ptr, ".hnp") != 0)) {
-                    HNP_LOGE("package name[%s] invalid", optarg);
-                    return HNP_ERRNO_INSTALLER_GET_HNP_NAME_FAILED;
-                }
-                if ((count + 1) >= MAX_SOFTWARE_NUM) {
-                    HNP_LOGE("hnp install software must less than %d", MAX_SOFTWARE_NUM);
-                    return HNP_ERRNO_INSTALLER_SOFTWARE_NUM_OVERSIZE;
-                }
-                softwarePath[count++] = (char *)optarg;
+            case 'p': //hnp package name
+                packageName = (char *)optarg;
                 break;
-            case 'i': //private package name
-                installPath = (char *)optarg;
+            case 'i': //hnp source path
+                srcPath = (char *)optarg;
                 break;
             case 'f': //is force
                 isForce = true;
@@ -444,15 +500,15 @@ int HnpCmdInstall(int argc, char *argv[])
             }
     }
 
-    if ((uidArg == NULL) || (count == 0)) {
-        HNP_LOGE("hnp install params invalid, uid[%s] hnp software num[%d]", uidArg, count);
+    if ((uidArg == NULL) || (srcPath == NULL) || (packageName == NULL)) {
+        HNP_LOGE("hnp install params invalid,uid[%s],hnp src path[%s], package name[%s]", uidArg, srcPath, packageName);
         return HNP_ERRNO_OPERATOR_ARGV_MISS;
     }
 
-    return HnpInsatllPre(uid, softwarePath, count, installPath, isForce);
+    return HnpInsatllPre(uid, srcPath, packageName, isForce);
 }
 
-static int HnpUnInstallPre(int uid, const char *hnpName, const char *version, char *uninstallPath)
+static int HnpUnInstallPre(int uid, const char *packageName)
 {
     NativeHnpPath hnpDstPath = {0};
 
@@ -498,11 +554,9 @@ static int HnpUnInstallPre(int uid, const char *hnpName, const char *version, ch
 
 int HnpCmdUnInstall(int argc, char *argv[])
 {
-    char *uninstallPath = NULL;
     int uid;
     char *uidArg = NULL;
-    char *hnpName = NULL;
-    char *version = NULL;
+    char *packageName = NULL;
     int ret;
     int ch;
 
@@ -519,27 +573,20 @@ int HnpCmdUnInstall(int argc, char *argv[])
                     return ret;
                 }
                 break;
-            case 'n': //hnp software name
-                hnpName = optarg;
+            case 'p': //hnp package name
+                packageName = (char *)optarg;
                 break;
-            case 'v': //version
-                version = optarg;
-                break;
-            case 'i': //package name
-                uninstallPath = (char *)optarg;
-                break;
-
             default:
                 break;
             }
     }
 
-    if ((uidArg == NULL) || (hnpName == NULL) || (version == NULL)) {
-        HNP_LOGE("hnp uninstall params invalid uid[%s], hnp software[%s], version[%s]", uidArg, hnpName, version);
+    if ((uidArg == NULL) || (packageName == NULL)) {
+        HNP_LOGE("hnp uninstall params invalid uid[%s], package name[%s]", uidArg, packageName);
         return HNP_ERRNO_OPERATOR_ARGV_MISS;
     }
 
-    return HnpUnInstallPre(uid, hnpName, version, uninstallPath);
+    return HnpUnInstallPre(uid, packageName);
 }
 
 #ifdef __cplusplus

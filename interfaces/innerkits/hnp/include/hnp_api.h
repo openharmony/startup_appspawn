@@ -45,32 +45,6 @@ typedef enum {
  * Install native software package.
  *
  * @param userId Indicates id of user.
- * @param packages  Indicates the path of hnp file.
- * @param count  Indicates num of hnp file.
- * @param installPath  Indicates the path for private hnp file.
- * @param installOptions Indicates install options.
- *
- * @return 0:success;other means failure.
- */
-int NativeInstallHnpEx(const char *userId, const char *packages[], int count, const char *installPath,
-    int installOptions);
-
-/**
- * Uninstall native software package.
- *
- * @param userId Indicates id of user.
- * @param hnpName  Indicates the name of native software.
- * @param hnpVersion Indicates the version of native software.
- * @param installPath  Indicates the path for private hnp file.
- *
- * @return 0:success;other means failure.
- */
-int NativeUnInstallHnpEx(const char *userId, const char *hnpName, const char *hnpVersion, const char *installPath);
-
-/**
- * Install native software package.
- *
- * @param userId Indicates id of user.
  * @param hnpRootPath  Indicates the root path of hnp packages
  * @param packageName Indicates the packageName of HAP.
  * @param installOptions Indicates install options.
