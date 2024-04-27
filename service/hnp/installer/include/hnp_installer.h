@@ -48,8 +48,6 @@ extern "C" {
 
 #define HNP_DEFAULT_INSTALL_ROOT_PATH "/data/app/el1/bundle"
 
-#define HNP_PACKAGE_INFO_JSON_FILE_PATH "/data/service/el1/startup/hnp_info.json"
-
 int HnpCmdInstall(int argc, char *argv[]);
 
 int HnpCmdUnInstall(int argc, char *argv[]);
