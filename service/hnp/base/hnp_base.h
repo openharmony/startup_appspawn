@@ -65,7 +65,6 @@ typedef struct HnpPackageInfoStru {
 
 typedef struct NativeHnpPathStru {
     char *hnpPackageName;
-    char hnpSoftwareName[MAX_FILE_PATH_LEN];
     char hnpBasePath[MAX_FILE_PATH_LEN];
     char hnpSoftwarePath[MAX_FILE_PATH_LEN];
     char hnpVersionPath[MAX_FILE_PATH_LEN];

@@ -284,28 +284,14 @@ static int HnpGetUninstallPath(const char *softwarePath, char *uninstallPath)
     return HNP_ERRNO_INSTALLER_VERSION_FILE_GET_FAILED;
 }
 
-static int HnpInstallPathGet(const char *fileName, bool isForce, char* hnpVersion, NativeHnpPath *hnpDstPath)
+static int HnpInstallPathGet(bool isForce, HnpCfgInfo *hnpCfgInfo, NativeHnpPath *hnpDstPath)
 {
     int ret;
-    char *hnpNameTmp;
     char uninstallPath[MAX_FILE_PATH_LEN];
-
-    /* 裁剪获取文件名使用 */
-    ret = strcpy_s(hnpDstPath->hnpSoftwareName, MAX_FILE_PATH_LEN, fileName);
-    if (ret != EOK) {
-        HNP_LOGE("hnp install program path strcpy unsuccess.");
-        return HNP_ERRNO_BASE_COPY_FAILED;
-    }
-    hnpNameTmp = strrchr(hnpDstPath->hnpSoftwareName, '.');
-    if (hnpNameTmp) {
-        *hnpNameTmp = '\0';
-    } else {
-        return HNP_ERRNO_INSTALLER_GET_HNP_NAME_FAILED;
-    }
 
     /* 拼接安装路径 */
     ret = sprintf_s(hnpDstPath->hnpSoftwarePath, MAX_FILE_PATH_LEN, "%s/%s.org", hnpDstPath->hnpBasePath,
-        hnpDstPath->hnpSoftwareName);
+        hnpCfgInfo->name);
     if (ret < 0) {
         HNP_LOGE("hnp install sprintf hnp base path unsuccess.");
         return HNP_ERRNO_BASE_SPRINTF_FAILED;
@@ -313,7 +299,7 @@ static int HnpInstallPathGet(const char *fileName, bool isForce, char* hnpVersio
 
     /* 拼接安装路径 */
     ret = sprintf_s(hnpDstPath->hnpVersionPath, MAX_FILE_PATH_LEN, "%s/%s_%s", hnpDstPath->hnpSoftwarePath,
-        hnpDstPath->hnpSoftwareName, hnpVersion);
+        hnpCfgInfo->name, hnpCfgInfo->version);
     if (ret < 0) {
         HNP_LOGE("hnp install sprintf install path unsuccess.");
         return HNP_ERRNO_BASE_SPRINTF_FAILED;
@@ -346,7 +332,6 @@ static int HnpInstallPathGet(const char *fileName, bool isForce, char* hnpVersio
 static int HnpReadAndInstall(char *srcFile, NativeHnpPath *hnpDstPath, bool isForce, bool isPublic)
 {
     int ret;
-    char *fileName;
     HnpCfgInfo hnpCfg = {0};
 
     /* 从hnp zip获取cfg信息 */
@@ -355,14 +340,7 @@ static int HnpReadAndInstall(char *srcFile, NativeHnpPath *hnpDstPath, bool isFo
         return ret; /* 内部已打印日志 */
     }
 
-    /* 获取文件名称 */
-    fileName = strrchr(srcFile, DIR_SPLIT_SYMBOL);
-    if (fileName == NULL) {
-        fileName = srcFile;
-    } else {
-        fileName++;
-    }
-    ret = HnpInstallPathGet(fileName, isForce, hnpCfg.version, hnpDstPath);
+    ret = HnpInstallPathGet(isForce, &hnpCfg, hnpDstPath);
     if (ret != 0) {
         // 释放软链接占用的内存
         if (hnpCfg.links != NULL) {
