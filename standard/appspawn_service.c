@@ -428,6 +428,10 @@ static void ProcessSpawnReqMsg(AppSpawnConnection *connection, AppSpawnMsgNode *
         return;
     }
 
+    if (IsDeveloperModeOpen()) {
+        SetAppSpawnMsgFlag(message, TLV_MSG_FLAGS, APP_FLAGS_DEVELOPER_MODE);
+    }
+
     AppSpawningCtx *property = CreateAppSpawningCtx();
     if (property == NULL) {
         SendResponse(connection, &message->msgHeader, APPSPAWN_SYSTEM_ERROR, 0);
