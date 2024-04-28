@@ -561,4 +561,83 @@ HWTEST(AppSpawnServiceTest, App_Spawn_NWebSpawn_001, TestSize.Level0)
     g_testServer->Stop();
     delete g_testServer;
 }
+
+/**
+ * @brief 测试环境变量设置是否正确
+ *
+ */
+HWTEST(AppSpawnServiceTest, App_Spawn_InitCommonEnv_001, TestSize.Level0)
+{
+    char *env;
+
+    InitCommonEnv();
+
+    if (IsDeveloperModeOpen() == true) {
+        env = getenv("HNP_PRIVATE_HOME");
+        EXPECT_NE(env, NULL);
+        if (env != nullptr) {
+            EXPECT_EQ(strcmp(env, "/data/app"), 0);
+        }
+        env = getenv("HNP_PUBLIC_HOME");
+        EXPECT_NE(env, NULL);
+        if (env != nullptr) {
+            EXPECT_EQ(strcmp(env, "/data/service/hnp"), 0);
+        }
+        env = getenv("PATH");
+        EXPECT_NE(env, NULL);
+        if (env != nullptr) {
+            EXPECT_NE((uint64_t)strstr(env, "/data/app/bin:/data/service/hnp/bin"), 0);
+        }
+    }
+    env = getenv("HOME");
+    EXPECT_NE(env, NULL);
+    if (env != nullptr) {
+        EXPECT_EQ(strcmp(env, "/storage/Users/currentUser"), 0);
+    }
+    env = getenv("TMPDIR");
+    EXPECT_NE(env, NULL);
+    if (env != nullptr) {
+        EXPECT_EQ(strcmp(env, "/data/storage/el2/base/cache"), 0);
+    }
+    env = getenv("SHELL");
+    EXPECT_NE(env, NULL);
+    if (env != nullptr) {
+        EXPECT_EQ(strcmp(env, "/bin/sh"), 0);
+    }
+    env = getenv("PWD");
+    EXPECT_NE(env, NULL);
+    if (env != nullptr) {
+        EXPECT_EQ(strcmp(env, "/storage/Users/currentUser"), 0);
+    }
+}
+
+/**
+ * @brief 测试环境变量转换功能是否正常
+ *
+ */
+HWTEST(AppSpawnServiceTest, App_Spawn_ConvertEnvValue_001, TestSize.Level0)
+{
+    char outEnv[MAX_ENV_VALUE_LEN];
+
+    outEnv[0] = 0;
+    EXPECT_EQ(ConvertEnvValue("/path/to/lib", outEnv, MAX_ENV_VALUE_LEN), 0);
+    EXPECT_EQ(strcmp(outEnv, "/path/to/lib"), 0);
+
+    EXPECT_EQ(ConvertEnvValue("/path/to/lib/$ENV_TEST_VALUE", outEnv, MAX_ENV_VALUE_LEN), 0);
+    EXPECT_EQ(strcmp(outEnv, "/path/to/lib/$ENV_TEST_VALUE"), 0);
+
+    EXPECT_EQ(ConvertEnvValue("/path/to/lib/${ENV_TEST_VALUE", outEnv, MAX_ENV_VALUE_LEN), 0);
+    EXPECT_EQ(strcmp(outEnv, "/path/to/lib/${ENV_TEST_VALUE"), 0);
+
+    EXPECT_EQ(ConvertEnvValue("/path/to/lib/${", outEnv, MAX_ENV_VALUE_LEN), 0);
+    EXPECT_EQ(strcmp(outEnv, "/path/to/lib/${"), 0);
+    
+    EXPECT_EQ(ConvertEnvValue("/path/to/lib/${ENV_TEST_VALUE}", outEnv, MAX_ENV_VALUE_LEN), 0);
+    EXPECT_EQ(strcmp(outEnv, "/path/to/lib/"), 0);
+
+    EXPECT_EQ(setenv("ENV_TEST_VALUE", "envtest", 1), 0);
+    EXPECT_EQ(ConvertEnvValue("/path/to/lib/${ENV_TEST_VALUE}", outEnv, MAX_ENV_VALUE_LEN), 0);
+    EXPECT_EQ(strcmp(outEnv, "/path/to/lib/envtest"), 0);
+    EXPECT_EQ(unsetenv("ENV_TEST_VALUE"), 0);
+}
 }  // namespace OHOS

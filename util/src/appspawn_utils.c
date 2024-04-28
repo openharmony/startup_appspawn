@@ -32,6 +32,73 @@
 #include "parameter.h"
 #include "securec.h"
 
+static const AppSpawnCommonEnv COMMON_ENV[] = {
+    {"HNP_PRIVATE_HOME", "/data/app", true},
+    {"HNP_PUBLIC_HOME", "/data/service/hnp", true},
+    {"PATH", "${HNP_PRIVATE_HOME}/bin:${HNP_PUBLIC_HOME}/bin:${PATH}", true},
+    {"HOME", "/storage/Users/currentUser", false},
+    {"TMPDIR", "/data/storage/el2/base/cache", false},
+    {"SHELL", "/bin/sh", false},
+    {"PWD", "/storage/Users/currentUser", false}
+};
+
+APPSPAWN_STATIC int ConvertEnvValue(const char *srcEnv, char *dstEnv, int len)
+{
+    char *tmpEnv = NULL;
+    char *ptr;
+    char *tmpPtr1;
+    char *tmpPtr2;
+    char *envGet;
+
+    int srcLen = strlen(srcEnv) + 1;
+    tmpEnv = malloc(srcLen);
+    APPSPAWN_CHECK(tmpEnv != NULL, return -1, "malloc size=%{public}d fail", srcLen);
+
+    int ret = memcpy_s(tmpEnv, srcLen, srcEnv, srcLen);
+    APPSPAWN_CHECK(ret == EOK, {free(tmpEnv); return -1;}, "Failed to copy env value");
+
+    ptr = tmpEnv;
+    dstEnv[0] = 0;
+    while (((tmpPtr1 = strchr(ptr, '$')) != NULL) && (*(tmpPtr1 + 1) == '{') &&
+        ((tmpPtr2 = strchr(tmpPtr1, '}')) != NULL)) {
+        *tmpPtr1 = 0;
+        ret = strcat_s(dstEnv, len, ptr);
+        APPSPAWN_CHECK(ret == 0, {free(tmpEnv); return -1;}, "Failed to strcat env value");
+        *tmpPtr2 = 0;
+        tmpPtr1++;
+        envGet = getenv(tmpPtr1 + 1);
+        if (envGet != NULL) {
+            ret = strcat_s(dstEnv, len, envGet);
+            APPSPAWN_CHECK(ret == 0, {free(tmpEnv); return -1;}, "Failed to strcat env value");
+        }
+        ptr = tmpPtr2 + 1;
+    }
+    ret = strcat_s(dstEnv, len, ptr);
+    APPSPAWN_CHECK(ret == 0, {free(tmpEnv); return -1;}, "Failed to strcat env value");
+    free(tmpEnv);
+    return 0;
+}
+
+void InitCommonEnv(void)
+{
+    uint32_t count = ARRAY_LENGTH(COMMON_ENV);
+    int32_t ret;
+    char envValue[MAX_ENV_VALUE_LEN];
+    int developerMode = IsDeveloperModeOpen();
+
+    for (uint32_t i = 0; i < count; i++) {
+        if ((COMMON_ENV[i].developerModeEnable == true && developerMode == false)) {
+            continue;
+        }
+        ret = ConvertEnvValue(COMMON_ENV[i].envValue, envValue, MAX_ENV_VALUE_LEN);
+        APPSPAWN_CHECK(ret == 0, return, "Convert env value fail name=%{public}s, value=%{public}s",
+            COMMON_ENV[i].envName, COMMON_ENV[i].envValue);
+        ret = setenv(COMMON_ENV[i].envName, envValue, true);
+        APPSPAWN_CHECK(ret == 0, return, "Set env fail name=%{public}s, value=%{public}s",
+            COMMON_ENV[i].envName, envValue);
+    }
+}
+
 uint64_t DiffTime(const struct timespec *startTime, const struct timespec *endTime)
 {
     APPSPAWN_CHECK_ONLY_EXPER(startTime != NULL, return 0);

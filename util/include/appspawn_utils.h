@@ -76,6 +76,14 @@ extern "C" {
 
 #define INVALID_PERMISSION_INDEX (-1)
 
+#define MAX_ENV_VALUE_LEN 1024
+
+typedef struct TagAppSpawnCommonEnv {
+    const char *envName;
+    const char *envValue;
+    int developerModeEnable;
+} AppSpawnCommonEnv;
+
 typedef enum {
     APPSPAWN_OK = 0,
     APPSPAWN_SYSTEM_ERROR = 0xD000000,
@@ -107,8 +115,8 @@ int32_t StringSplit(const char *str, const char *separator, void *context, Split
 char *GetLastStr(const char *str, const char *dst);
 uint32_t GetSpawnTimeout(uint32_t def);
 void DumpCurrentDir(char *buffer, uint32_t bufferLen, const char *dirPath);
-
 int IsDeveloperModeOpen();
+void InitCommonEnv(void);
 
 #ifndef APP_FILE_NAME
 #define APP_FILE_NAME   (strrchr((__FILE__), '/') ? strrchr((__FILE__), '/') + 1 : (__FILE__))

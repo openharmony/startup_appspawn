@@ -58,6 +58,7 @@ int main(int argc, char *const argv[])
     if (end == 0) {
         return 0;
     }
+    InitCommonEnv();
     CheckPreload(argv);
     (void)signal(SIGPIPE, SIG_IGN);
     uint32_t argvSize = end - start;

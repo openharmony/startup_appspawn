@@ -18,7 +18,7 @@ ohos_executable("hnpsample") {
   sources = [ "src/hnpsample/hnpsample.c" ]
 
   ldflags = [
-    "-Wl,-rpath=../lib",
+    "-Wl,-rpath=\$ORIGIN/../lib",
     "-Wl,--disable-new-dtags",
   ]
 
