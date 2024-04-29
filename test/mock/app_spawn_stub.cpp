@@ -125,11 +125,21 @@ void SetDeveloperMode(bool mode)
 
 int GetParameter(const char *key, const char *def, char *value, uint32_t len)
 {
+    static uint32_t count = 0;
+    count++;
     if (strcmp(key, "startup.appspawn.cold.boot") == 0) {
         return strcpy_s(value, len, "true") == 0 ? strlen("true") : -1;
     }
     if (strcmp(key, "persist.appspawn.reqMgr.timeout") == 0) {
-        return strcpy_s(value, len, "5") == 0 ? 1 : -1;
+        const char *tmp = def;
+        if ((count % 3) == 0) { // 3 test
+            return -1;
+        } else if ((count % 3) == 1) { // 3 test
+            tmp = "a";
+        } else {
+            tmp = "5";
+        }
+        return strcpy_s(value, len, tmp) == 0 ? strlen(tmp) : -1;
     }
     if (strcmp(key, "const.security.developermode.state") == 0) {
         return g_developerMode ? (strcpy_s(value, len, "true") == 0 ? strlen("true") : -1) : -1;

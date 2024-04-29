@@ -45,7 +45,7 @@ struct TagAppSpawnReqMsgNode;
 typedef enum {
     CLIENT_FOR_APPSPAWN,
     CLIENT_FOR_NWEBSPAWN,
-    CLIENT_NAX
+    CLIENT_MAX
 } AppSpawnClientType;
 
 typedef struct {
@@ -80,6 +80,8 @@ typedef struct {
     uint16_t dataLen;
     uint16_t dataType;
 } AppSpawnAppData;
+
+int32_t GetPermissionMaxCount();
 
 #ifdef __cplusplus
 }
