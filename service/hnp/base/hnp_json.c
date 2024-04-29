@@ -188,9 +188,13 @@ int HnpInstallInfoJsonWrite(NativeHnpPath *hnpDstPath, HnpCfgInfo *hnpCfg)
     cJSON *json = NULL;
 
     int ret = ReadFileToStream(HNP_PACKAGE_INFO_JSON_FILE_PATH, &infoStream, &size);
-    if ((ret != 0) && (ret != HNP_ERRNO_BASE_FILE_OPEN_FAILED) && (ret != HNP_ERRNO_BASE_GET_FILE_LEN_NULL)) {
-        HNP_LOGE("hnp json write read hnp info file unsuccess");
-        return HNP_ERRNO_BASE_READ_FILE_STREAM_FAILED;
+    if (ret != 0) {
+        if ((ret == HNP_ERRNO_BASE_FILE_OPEN_FAILED) || (ret == HNP_ERRNO_BASE_GET_FILE_LEN_NULL)) {
+            json = cJSON_CreateArray();
+        } else {
+            HNP_LOGE("hnp json write read hnp info file unsuccess");
+            return HNP_ERRNO_BASE_READ_FILE_STREAM_FAILED;
+        }
     }
 
     if (ret == 0) {
@@ -209,7 +213,6 @@ int HnpInstallInfoJsonWrite(NativeHnpPath *hnpDstPath, HnpCfgInfo *hnpCfg)
     if (hapExist) {
        hnpItemArr = cJSON_GetObjectItem(hapItem, "hnp");
     } else {
-        json = cJSON_CreateArray();
         hapItem = cJSON_CreateObject();
         cJSON_AddStringToObject(hapItem, "hap", hnpDstPath->hnpPackageName);
         hnpItemArr = cJSON_CreateArray();
