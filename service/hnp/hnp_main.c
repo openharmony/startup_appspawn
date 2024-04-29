@@ -61,8 +61,8 @@ int HnpShowHelp(int argc, char *argv[])
         "\r\n           -p    : [required]    hnp package name"
             " install from the default public hnp path\r\n"
         "\r\nfor example:\r\n"
-        "\r\n    hnp install -u 1000 -p huawei -i /data/huawei/ -f"
-        "\r\n    hnp uninstall -u 1000 -p huawei\r\n");
+        "\r\n    hnp install -u 1000 -p app_sample -i /data/app_sample/ -f"
+        "\r\n    hnp uninstall -u 1000 -p app_sample\r\n");
 
     return 0;
 }
