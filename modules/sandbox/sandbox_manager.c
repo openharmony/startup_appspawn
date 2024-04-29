@@ -489,7 +489,7 @@ APPSPAWN_STATIC int PreLoadSandboxCfg(AppSpawnMgr *content)
 
     sandbox = CreateAppSpawnSandbox();
     APPSPAWN_CHECK_ONLY_EXPER(sandbox != NULL, return APPSPAWN_SYSTEM_ERROR);
-    OH_ListAddTail(&sandbox->extData.node, &content->extData);
+    OH_ListAddTail(&content->extData, &sandbox->extData.node);
 
     // load app sandbox config
     LoadAppSandboxConfig(sandbox, IsNWebSpawnMode(content));

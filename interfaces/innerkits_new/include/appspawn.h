@@ -222,6 +222,16 @@ int AppSpawnReqMsgSetAppOwnerId(AppSpawnReqMsgHandle reqHandle, const char *owne
 int AppSpawnReqMsgAddPermission(AppSpawnReqMsgHandle reqHandle, const char *permission);
 
 /**
+ * @brief add permission to message
+ *
+ * @param handle handle for client
+ * @param reqHandle handle for request message
+ * @param permission permission name
+ * @return if succeed return 0,else return other value
+ */
+int AppSpawnClientAddPermission(AppSpawnClientHandle handle, AppSpawnReqMsgHandle reqHandle, const char *permission);
+
+/**
  * @brief add extend info to message
  *
  * @param reqHandle handle for request message
@@ -251,25 +261,28 @@ int AppSpawnReqMsgAddStringInfo(AppSpawnReqMsgHandle reqHandle, const char *name
 /**
  * @brief Get the permission index by permission name
  *
+ * @param handle handle for client
  * @param permission permission name
  * @return int32_t permission index, if not exit, return INVALID_PERMISSION_INDEX
  */
-int32_t GetPermissionIndex(const char *permission);
+int32_t GetPermissionIndex(AppSpawnClientHandle handle, const char *permission);
 
 /**
  * @brief Get the max permission Index
  *
+ * @param handle handle for client
  * @return int32_t max permission Index
  */
-int32_t GetMaxPermissionIndex(void);
+int32_t GetMaxPermissionIndex(AppSpawnClientHandle handle);
 
 /**
  * @brief Get the permission name by index
  *
+ * @param handle handle for client
  * @param index permission index
  * @return const char* permission name
  */
-const char *GetPermissionByIndex(int32_t index);
+const char *GetPermissionByIndex(AppSpawnClientHandle handle, int32_t index);
 
 #ifdef __cplusplus
 }
