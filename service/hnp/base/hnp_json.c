@@ -188,8 +188,8 @@ int HnpInstallInfoJsonWrite(NativeHnpPath *hnpDstPath, HnpCfgInfo *hnpCfg)
     cJSON *json = NULL;
 
     int ret = ReadFileToStream(HNP_PACKAGE_INFO_JSON_FILE_PATH, &infoStream, &size);
-    if ((ret != 0) && (ret != HNP_ERRNO_BASE_FILE_OPEN_FAILED)) {
-        HNP_LOGE("read hnp info file unsuccess");
+    if ((ret != 0) && (ret != HNP_ERRNO_BASE_FILE_OPEN_FAILED) && (ret != HNP_ERRNO_BASE_GET_FILE_LEN_NULL)) {
+        HNP_LOGE("hnp json write read hnp info file unsuccess");
         return HNP_ERRNO_BASE_READ_FILE_STREAM_FAILED;
     }
 
@@ -225,6 +225,7 @@ int HnpInstallInfoJsonWrite(NativeHnpPath *hnpDstPath, HnpCfgInfo *hnpCfg)
     char *jsonStr = cJSON_Print(json);
     fwrite(jsonStr, strlen(jsonStr), sizeof(char), fp);
     fclose(fp);
+    free(jsonStr);
 
     cJSON_Delete(json);
 
@@ -251,7 +252,7 @@ static bool HnpOtherPackageInstallCheck(const char *name, const char *version, i
     return false;
 }
 
-int HnpUnInstallByPackage(const char *packageName, HnpPackageInfo **packageInfoOut, int *count)
+int HnpPackageInfoGet(const char *packageName, HnpPackageInfo **packageInfoOut, int *count)
 {
     char *infoStream;
     int size;
@@ -264,7 +265,7 @@ int HnpUnInstallByPackage(const char *packageName, HnpPackageInfo **packageInfoO
 
     int ret = ReadFileToStream(HNP_PACKAGE_INFO_JSON_FILE_PATH, &infoStream, &size);
     if (ret != 0) {
-        HNP_LOGE("read hnp info file unsuccess");
+        HNP_LOGE("package info get read hnp info file unsuccess");
         return HNP_ERRNO_BASE_READ_FILE_STREAM_FAILED;
     }
 
@@ -282,7 +283,7 @@ int HnpUnInstallByPackage(const char *packageName, HnpPackageInfo **packageInfoO
 
     if (!hapExist) {
         cJSON_Delete(json);
-        return HNP_ERRNO_PACKAGE_NOT_EXIST;
+        return 0;
     }
 
     cJSON *hnpItemArr = cJSON_GetObjectItem(hapItem, "hnp");
@@ -304,7 +305,7 @@ int HnpUnInstallByPackage(const char *packageName, HnpPackageInfo **packageInfoO
     cJSON_Delete(json);
 
     if (sum == 0) {
-        return HNP_ERRNO_PACKAGE_NOT_EXIST;
+        return 0;
     }
 
     ptr = malloc(sizeof(HnpPackageInfo) * sum);
@@ -321,6 +322,76 @@ int HnpUnInstallByPackage(const char *packageName, HnpPackageInfo **packageInfoO
 
     *packageInfoOut = ptr;
     *count = sum;
+    return 0;
+}
+
+int HnpPackageInfoHnpDelete(const char *name, const char *version)
+{
+    char *infoStream;
+    int size;
+    cJSON *hapItem;
+
+    int ret = ReadFileToStream(HNP_PACKAGE_INFO_JSON_FILE_PATH, &infoStream, &size);
+    if (ret != 0) {
+        HNP_LOGE("hnp delete read hnp info file unsuccess");
+        return HNP_ERRNO_BASE_READ_FILE_STREAM_FAILED;
+    }
+
+    cJSON *json = cJSON_Parse(infoStream);
+    free(infoStream);
+
+    for (int i = 0; i < cJSON_GetArraySize(json); i++) {
+        hapItem = cJSON_GetArrayItem(json, i);
+        cJSON *hnpItemArr = cJSON_GetObjectItem(hapItem, "hnp");
+        for (int j = 0; j < cJSON_GetArraySize(hnpItemArr); j++) {
+            cJSON *hnpItem = cJSON_GetArrayItem(hnpItemArr, j);
+            if ((strcmp(name, cJSON_GetObjectItem(hnpItem, "name")->valuestring) == 0) &&
+                (strcmp(version, cJSON_GetObjectItem(hnpItem, "version")->valuestring) == 0)) {
+                cJSON_DeleteItemFromArray(hnpItemArr, j);
+                break;
+            }
+        }
+    }
+
+    FILE *fp = fopen(HNP_PACKAGE_INFO_JSON_FILE_PATH, "wb");
+    char *jsonStr = cJSON_Print(json);
+    fwrite(jsonStr, strlen(jsonStr), sizeof(char), fp);
+
+    fclose(fp);
+    free(jsonStr);
+    cJSON_Delete(json);
+    return 0;
+}
+
+int HnpPackageInfoDelete(const char *packageName)
+{
+    char *infoStream;
+    int size;
+
+    int ret = ReadFileToStream(HNP_PACKAGE_INFO_JSON_FILE_PATH, &infoStream, &size);
+    if (ret != 0) {
+        HNP_LOGE("package info delete read hnp info file unsuccess");
+        return HNP_ERRNO_BASE_READ_FILE_STREAM_FAILED;
+    }
+
+    cJSON *json = cJSON_Parse(infoStream);
+    free(infoStream);
+
+    for (int i = 0; i < cJSON_GetArraySize(json); i++) {
+        cJSON *hapItem = cJSON_GetArrayItem(json, i);
+        if (strcmp(cJSON_GetObjectItem(hapItem, "hap")->valuestring, packageName) == 0) {
+            cJSON_DeleteItemFromArray(json, i);
+            break;
+        }
+    }
+
+    FILE *fp = fopen(HNP_PACKAGE_INFO_JSON_FILE_PATH, "wb");
+    char *jsonStr = cJSON_Print(json);
+    fwrite(jsonStr, strlen(jsonStr), sizeof(char), fp);
+    fclose(fp);
+    free(jsonStr);
+
+    cJSON_Delete(json);
     return 0;
 }
 

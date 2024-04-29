@@ -244,7 +244,11 @@ int HnpCfgGetFromSteam(char *cfgStream, HnpCfgInfo *hnpCfg);
 
 int HnpInstallInfoJsonWrite(NativeHnpPath *hnpDstPath, HnpCfgInfo *hnpCfg);
 
-int HnpUnInstallByPackage(const char *packageName, HnpPackageInfo **packageInfoOut, int *count);
+int HnpPackageInfoGet(const char *packageName, HnpPackageInfo **packageInfoOut, int *count);
+
+int HnpPackageInfoHnpDelete(const char *name, const char *version);
+
+int HnpPackageInfoDelete(const char *packageName);
 
 #define HNP_LOGI(args...) \
     HnpLogPrintf(HNP_LOG_INFO, "HNP", ##args)
