@@ -68,6 +68,7 @@ if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
       ".",
       "${appspawn_path}/common",
       "${appspawn_path}/standard",
+      "${appspawn_innerkits_path}/client",
       "${appspawn_innerkits_path}/permission",
       "//third_party/json/include",
     ]

@@ -36,7 +36,7 @@
 #include "securec.h"
 
 static pthread_mutex_t g_mutex = PTHREAD_MUTEX_INITIALIZER;
-static AppSpawnReqMsgMgr *g_clientInstance[CLIENT_NAX] = {NULL};
+static AppSpawnReqMsgMgr *g_clientInstance[CLIENT_MAX] = {NULL};
 
 static uint32_t GetDefaultTimeout(uint32_t def)
 {

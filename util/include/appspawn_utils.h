@@ -108,6 +108,8 @@ char *GetLastStr(const char *str, const char *dst);
 uint32_t GetSpawnTimeout(uint32_t def);
 void DumpCurrentDir(char *buffer, uint32_t bufferLen, const char *dirPath);
 
+int IsDeveloperModeOpen();
+
 #ifndef APP_FILE_NAME
 #define APP_FILE_NAME   (strrchr((__FILE__), '/') ? strrchr((__FILE__), '/') + 1 : (__FILE__))
 #endif

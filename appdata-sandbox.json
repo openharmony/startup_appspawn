@@ -114,8 +114,8 @@
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
-                    "src-path" : "/system/resources",
-                    "sandbox-path" : "/system/resources",
+                    "src-path" : "/system/resource",
+                    "sandbox-path" : "/system/resource",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
