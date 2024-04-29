@@ -705,7 +705,9 @@ static bool IsSandboxMounted(const AppSpawnSandboxCfg *sandbox, const char *name
     FILE *f = fopen(path, "rb");
     if (f != NULL) {
         fclose(f);
+#ifndef APPSPAWN_TEST
         return true;
+#endif
     }
     return false;
 }

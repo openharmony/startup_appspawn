@@ -31,6 +31,7 @@
     AppSpawnReqMsgSetFlags;
     AppSpawnReqMsgAddStringInfo;
     AppSpawnTerminateMsgCreate;
+    AppSpawnClientAddPermission;
     GetPermissionIndex;
     GetMaxPermissionIndex;
     GetPermissionByIndex;

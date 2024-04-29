@@ -649,4 +649,112 @@ HWTEST(AppSpawnSandboxMgrTest, App_Spawn_RegisterExpandSandboxCfgHandler_001, Te
     ret = RegisterExpandSandboxCfgHandler("test-001", -1, TestProcessExpandSandboxCfg);
     EXPECT_EQ(ret, APPSPAWN_NODE_EXIST);
 }
+
+/**
+ * @brief permission test
+ *
+ */
+HWTEST(AppSpawnSandboxMgrTest, App_Spawn_Permission_001, TestSize.Level0)
+{
+    int ret = LoadPermission(CLIENT_FOR_APPSPAWN);
+    EXPECT_EQ(ret, 0);
+    ret = LoadPermission(CLIENT_FOR_NWEBSPAWN);
+    EXPECT_EQ(ret, 0);
+    ret = LoadPermission(CLIENT_MAX);
+    EXPECT_EQ(ret, APPSPAWN_ARG_INVALID);
+
+    int32_t max = GetPermissionMaxCount();
+    EXPECT_EQ(max >= 0, 1);
+
+    DeletePermission(CLIENT_FOR_APPSPAWN);
+    DeletePermission(CLIENT_FOR_NWEBSPAWN);
+    DeletePermission(CLIENT_MAX);
+}
+
+HWTEST(AppSpawnSandboxMgrTest, App_Spawn_Permission_002, TestSize.Level0)
+{
+    int ret = LoadPermission(CLIENT_FOR_APPSPAWN);
+    EXPECT_EQ(ret, 0);
+    ret = LoadPermission(CLIENT_FOR_NWEBSPAWN);
+    EXPECT_EQ(ret, 0);
+
+    int32_t max = GetPermissionMaxCount();
+    EXPECT_EQ(max >= 0, 1);
+
+    AppSpawnClientHandle clientHandle;
+    ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+    EXPECT_EQ(ret, 0);
+
+    max = GetMaxPermissionIndex(clientHandle);
+    int32_t index = GetPermissionIndex(clientHandle, "ohos.permission.ACCESS_BUNDLE_DIR");
+    EXPECT_EQ(index >= 0, 1);
+    EXPECT_EQ(index < max, 1);
+
+    const char *permission = GetPermissionByIndex(clientHandle, index);
+    EXPECT_EQ(permission != nullptr, 1);
+    EXPECT_EQ(strcmp(permission, "ohos.permission.ACCESS_BUNDLE_DIR") == 0, 1);
+    AppSpawnClientDestroy(clientHandle);
+}
+
+HWTEST(AppSpawnSandboxMgrTest, App_Spawn_Permission_003, TestSize.Level0)
+{
+    int ret = LoadPermission(CLIENT_FOR_APPSPAWN);
+    EXPECT_EQ(ret, 0);
+    ret = LoadPermission(CLIENT_FOR_NWEBSPAWN);
+    EXPECT_EQ(ret, 0);
+    ret = LoadPermission(CLIENT_MAX);
+    EXPECT_EQ(ret, APPSPAWN_ARG_INVALID);
+
+    int32_t max = GetPermissionMaxCount();
+    EXPECT_EQ(max >= 0, 1);
+
+    AppSpawnClientHandle clientHandle;
+    ret = AppSpawnClientInit(NWEBSPAWN_SERVER_NAME, &clientHandle);
+    EXPECT_EQ(ret, 0);
+
+#ifndef APPSPAWN_SANDBOX_NEW
+    max = GetMaxPermissionIndex(clientHandle);
+    int32_t index = GetPermissionIndex(clientHandle, "ohos.permission.ACCESS_BUNDLE_DIR");
+    EXPECT_EQ(index >= 0, 1);
+    EXPECT_EQ(max >= index, 1);
+
+    const char *permission = GetPermissionByIndex(clientHandle, index);
+    EXPECT_EQ(permission != nullptr, 1);
+    EXPECT_EQ(strcmp(permission, "ohos.permission.ACCESS_BUNDLE_DIR") == 0, 1);
+#else
+    // nweb no permission, so max = 0
+    max = GetMaxPermissionIndex(clientHandle);
+    EXPECT_EQ(max, 0);
+#endif
+    AppSpawnClientDestroy(clientHandle);
+}
+
+HWTEST(AppSpawnSandboxMgrTest, App_Spawn_Permission_004, TestSize.Level0)
+{
+    int ret = LoadPermission(CLIENT_FOR_APPSPAWN);
+    EXPECT_EQ(ret, 0);
+    ret = LoadPermission(CLIENT_FOR_NWEBSPAWN);
+    EXPECT_EQ(ret, 0);
+    ret = LoadPermission(CLIENT_MAX);
+    EXPECT_EQ(ret, APPSPAWN_ARG_INVALID);
+
+    int32_t max = GetPermissionMaxCount();
+    EXPECT_EQ(max >= 0, 1);
+
+    AppSpawnClientHandle clientHandle;
+    ret = AppSpawnClientInit(NWEBSPAWN_SERVER_NAME, &clientHandle);
+    EXPECT_EQ(ret, 0);
+
+    max = GetMaxPermissionIndex(nullptr);
+    EXPECT_EQ(max >= 0, 1);
+
+    int32_t index = GetPermissionIndex(clientHandle, nullptr);
+    EXPECT_EQ(index, INVALID_PERMISSION_INDEX);
+    index = GetPermissionIndex(nullptr, "ohos.permission.ACCESS_BUNDLE_DIR");
+    EXPECT_EQ(max >= index, 1);
+    const char *permission = GetPermissionByIndex(clientHandle, INVALID_PERMISSION_INDEX);
+    EXPECT_EQ(permission == nullptr, 1);
+
+    AppSpawnClientDestroy(clientHandle);
+}
 }  // namespace OHOS

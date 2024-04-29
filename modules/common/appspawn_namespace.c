@@ -215,7 +215,7 @@ APPSPAWN_STATIC int PreLoadEnablePidNs(AppSpawnMgr *content)
         DeleteAppSpawnNamespace(namespace);
         return ret;
     }
-    OH_ListAddTail(&namespace->extData.node, &content->extData);
+    OH_ListAddTail(&content->extData, &namespace->extData.node);
     APPSPAWN_LOGI("Enable pid namespace success.");
     return 0;
 }

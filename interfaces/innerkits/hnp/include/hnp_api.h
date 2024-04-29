@@ -41,6 +41,9 @@ typedef enum {
 // 0x2003 等待子进程退出失败
 #define HNP_API_WAIT_PID_FAILED                 (HNP_API_ERRNO_BASE + 0x3)
 
+// 0x2004 非开发者模式
+#define HNP_API_NOT_IN_DEVELOPER_MODE           (HNP_API_ERRNO_BASE + 0x4)
+
 /**
  * Install native software package.
  *

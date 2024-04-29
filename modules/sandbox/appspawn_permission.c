@@ -78,6 +78,25 @@ int AddSandboxPermissionNode(const char *name, SandboxQueue *queue)
     return 0;
 }
 
+int32_t DeleteSandboxPermissions(SandboxQueue *queue)
+{
+    APPSPAWN_CHECK_ONLY_EXPER(queue != NULL, return APPSPAWN_ARG_INVALID);
+    ListNode *node = queue->front.next;
+    while (node != &queue->front) {
+        SandboxMountNode *sandboxNode = (SandboxMountNode *)ListEntry(node, SandboxMountNode, node);
+        OH_ListRemove(&sandboxNode->node);
+        OH_ListInit(&sandboxNode->node);
+#ifndef APPSPAWN_CLIENT
+        DeleteSandboxSection((SandboxSection *)sandboxNode);
+#else
+        free(sandboxNode);
+#endif
+        // get first
+        node = queue->front.next;
+    }
+    return 0;
+}
+
 int32_t PermissionRenumber(SandboxQueue *queue)
 {
     APPSPAWN_CHECK_ONLY_EXPER(queue != NULL, return -1);
