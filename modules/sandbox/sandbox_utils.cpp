@@ -60,6 +60,7 @@ namespace {
     const std::string g_userId = "<currentUserId>";
     const std::string g_packageName = "<PackageName>";
     const std::string g_packageNameIndex = "<PackageName_index>";
+    const std::string g_variablePackageName = "<variablePackageName>";
     const std::string g_sandBoxDir = "/mnt/sandbox/";
     const std::string g_statusCheck = "true";
     const std::string g_sbxSwitchCheck = "ON";
@@ -184,11 +185,11 @@ static void MakeDirRecursive(const std::string &path, mode_t mode)
     } while (index < size);
 }
 
-static void CheckDirRecursive(const std::string &path)
+static bool CheckDirRecursive(const std::string &path)
 {
     size_t size = path.size();
     if (size == 0) {
-        return;
+        return false;
     }
     size_t index = 0;
     do {
@@ -197,10 +198,10 @@ static void CheckDirRecursive(const std::string &path)
         std::string dir = path.substr(0, index);
 #ifndef APPSPAWN_TEST
         APPSPAWN_CHECK(access(dir.c_str(), F_OK) == 0,
-            return, "check dir %{public}s failed, strerror: %{public}s", dir.c_str(), strerror(errno));
+            return false, "check dir %{public}s failed, strerror: %{public}s", dir.c_str(), strerror(errno));
 #endif
     } while (index < size);
-    return;
+    return true;
 }
 
 static void CheckAndCreatFile(const char *file)
@@ -358,6 +359,24 @@ string SandboxUtils::ConvertToRealPath(const AppSpawningCtx *appProperty, std::s
 
     if (path.find(g_userId) != std::string::npos) {
         path = replace_all(path, g_userId, std::to_string(dacInfo->uid / UID_BASE));
+    }
+
+    if (path.find(g_variablePackageName) != std::string::npos) {
+        std::string variablePackageName = info->bundleName;
+        std::string oldPath = path;
+        oldPath = replace_all(oldPath, g_variablePackageName, variablePackageName);
+        if (!CheckAppSpawnMsgFlag(appProperty->message, TLV_MSG_FLAGS, APP_FLAGS_ATOMIC_SERVICE) ||
+            !CheckDirRecursive(oldPath)) {
+            return oldPath;
+        }
+        std::string accountId = GetExtraInfoByType(appProperty, MSG_EXT_NAME_ACCOUNT_ID);
+        if (accountId.length() != 0) {
+            variablePackageName += "/" + accountId;
+            path = replace_all(path, g_variablePackageName, variablePackageName);
+            MakeDirRecursive(path, FILE_MODE);
+            int ret = chown(path.c_str(), dacInfo->uid, dacInfo->gid);
+            APPSPAWN_CHECK_ONLY_LOG(ret == 0, "chown failed, path %{public}s, errno %{public}d", path.c_str(), errno);
+        }
     }
 
     return path;
