@@ -1052,4 +1052,39 @@ HWTEST(AppSpawnAppMgrTest, App_Spawn_AppSpawningCtx_Msg_005, TestSize.Level0)
     DeleteAppSpawningCtx(appCtx);
     DeleteAppSpawnMgr(mgr);
 }
+
+HWTEST(AppSpawnAppMgrTest, App_Spawn_AppSpawningCtx_Msg_006, TestSize.Level0)
+{
+    AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
+    EXPECT_EQ(mgr != nullptr, 1);
+
+    // get from buffer
+    AppSpawnTestHelper testHelper;
+    std::vector<uint8_t> buffer(1024);  // 1024  max buffer
+    uint32_t msgLen = 0;
+    int ret = testHelper.CreateSendMsg(buffer, MSG_APP_SPAWN, msgLen, {AppSpawnTestHelper::AddBaseTlv});
+    EXPECT_EQ(0, ret);
+
+    AppSpawnMsgNode *outMsg = nullptr;
+    uint32_t msgRecvLen = 0;
+    uint32_t reminder = 0;
+    ret = GetAppSpawnMsgFromBuffer(buffer.data(), msgLen, &outMsg, &msgRecvLen, &reminder);
+    EXPECT_EQ(0, ret);
+    EXPECT_EQ(msgLen, msgRecvLen);
+    EXPECT_EQ(memcmp(buffer.data() + sizeof(AppSpawnMsg), outMsg->buffer, msgLen - sizeof(AppSpawnMsg)), 0);
+    EXPECT_EQ(0, reminder);
+    ret = DecodeAppSpawnMsg(outMsg);
+    EXPECT_EQ(0, ret);
+
+    AppSpawningCtx *appCtx = CreateAppSpawningCtx();
+    EXPECT_EQ(appCtx != nullptr, 1);
+    appCtx->message = outMsg;
+
+    EXPECT_EQ(CheckAppSpawnMsgFlag(outMsg, TLV_MSG_FLAGS, APP_FLAGS_DEVELOPER_MODE), 0);
+    EXPECT_EQ(SetAppSpawnMsgFlag(outMsg, TLV_MSG_FLAGS, APP_FLAGS_DEVELOPER_MODE), 0);
+    EXPECT_EQ(CheckAppSpawnMsgFlag(outMsg, TLV_MSG_FLAGS, APP_FLAGS_DEVELOPER_MODE), 1);
+
+    DeleteAppSpawningCtx(appCtx);
+    DeleteAppSpawnMgr(mgr);
+}
 }  // namespace OHOS
