@@ -338,6 +338,19 @@
                             "sandbox-flags" : [ "bind", "rec" ],
                             "check-action-status": "false"
                         }
+                    ]}, {
+                        "flags": "DEVELOPER_MODE",
+                        "mount-paths": [{
+                            "src-path": "/data/app/el1/bundle/<currentUserId>/hnppublic",
+                            "sandbox-path": "/data/service/hnp",
+                            "sandbox-flags": [ "bind", "rec" ],
+                            "check-action-status": "false"
+                        }, {
+                            "src-path" : "/data/app/el1/bundle/<currentUserId>/hnp/<PackageName>",
+                            "sandbox-path" : "/data/app",
+                            "sandbox-flags" : [ "bind", "rec" ],
+                            "check-action-status": "false"
+                        }
                     ]}
             ],
             "symbol-links" : [
