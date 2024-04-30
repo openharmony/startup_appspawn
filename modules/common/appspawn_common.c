@@ -503,6 +503,11 @@ static int SpawnGetSpawningFlag(AppSpawnMgr *content, AppSpawningCtx *property)
         // check cold start
         property->client.flags |= CheckEnabled("startup.appspawn.cold.boot", "true") ? APP_COLD_START : 0;
     }
+    if (CheckAppMsgFlagsSet(property, APP_FLAGS_BEGETCTL_BOOT)) {
+       // Start app from begetctl for debugging.
+        property->client.flags |=  APP_BEGETCTL_BOOT;
+        APPSPAWN_LOGI("Spawning: prepare app %{public}s, start from begetctl", GetProcessName(property));
+     }
     // check developer mode
     property->client.flags |= CheckEnabled("const.security.developermode.state", "true") ? APP_DEVELOPER_MODE : 0;
 #ifndef APPSPAWN_SANDBOX_NEW

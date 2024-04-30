@@ -17,6 +17,7 @@ import("//build/ohos.gni")
 ohos_shared_library("appspawn_common") {
   sources = [
     "appspawn_adapter.cpp",
+    "appspawn_begetctl.c",
     "appspawn_cgroup.c",
     "appspawn_common.c",
     "appspawn_namespace.c",

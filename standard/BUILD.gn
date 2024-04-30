@@ -56,6 +56,9 @@ ohos_executable("appspawn") {
   if (asan_detector || is_asan) {
     defines += [ "ASAN_DETECTOR" ]
   }
+  if (is_debug || build_variant == "root") {
+    defines += [ "DEBUG_BEGETCTL_BOOT" ]
+  }
 
   external_deps = [
     "c_utils:utils",
