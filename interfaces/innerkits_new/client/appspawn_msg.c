@@ -435,7 +435,7 @@ int AppSpawnReqMsgAddPermission(AppSpawnReqMsgHandle reqHandle, const char *perm
     int index = GetPermissionIndex(NULL, permission);
     APPSPAWN_CHECK(index >= 0 && index < maxIndex,
         return APPSPAWN_PERMISSION_NOT_SUPPORT, "Invalid permission %{public}s", permission);
-    APPSPAWN_LOGV("AetPermission index %{public}d name %{public}s", index, permission);
+    APPSPAWN_LOGV("AddPermission index %{public}d name %{public}s", index, permission);
     int ret = SetAppSpawnMsgFlags(reqNode->permissionFlags, index);
     APPSPAWN_CHECK(ret == 0, return ret, "Invalid permission %{public}s", permission);
     return 0;
