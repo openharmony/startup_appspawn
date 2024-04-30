@@ -248,6 +248,11 @@
                     "sandbox-path" : "/data/storage/el4/database",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
+                }, {
+                    "src-path": "/storage/media/<currentUserId>/local/files/Docs/Downloads/<PackageName>",
+                    "sandbox-path": "/storage/Users/<currentUserId>/Downloads",
+                    "sandbox-flags": [ "bind", "rec" ],
+                    "check-action-status": "false"
                 }
             ],
             "symbol-links" : [{
