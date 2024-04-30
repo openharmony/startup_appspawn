@@ -246,7 +246,7 @@ int HnpInstallInfoJsonWrite(NativeHnpPath *hnpDstPath, HnpCfgInfo *hnpCfg);
 
 int HnpPackageInfoGet(const char *packageName, HnpPackageInfo **packageInfoOut, int *count);
 
-int HnpPackageInfoHnpDelete(const char *name, const char *version);
+int HnpPackageInfoHnpDelete(const char *packageName, const char *name, const char *version);
 
 int HnpPackageInfoDelete(const char *packageName);
 

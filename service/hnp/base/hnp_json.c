@@ -229,7 +229,6 @@ int HnpInstallInfoJsonWrite(NativeHnpPath *hnpDstPath, HnpCfgInfo *hnpCfg)
     fwrite(jsonStr, strlen(jsonStr), sizeof(char), fp);
     fclose(fp);
     free(jsonStr);
-
     cJSON_Delete(json);
 
     return 0;
@@ -328,11 +327,12 @@ int HnpPackageInfoGet(const char *packageName, HnpPackageInfo **packageInfoOut, 
     return 0;
 }
 
-int HnpPackageInfoHnpDelete(const char *name, const char *version)
+int HnpPackageInfoHnpDelete(const char *packageName, const char *name, const char *version)
 {
     char *infoStream;
     int size;
     cJSON *hapItem;
+    bool hapExist = false;
 
     int ret = ReadFileToStream(HNP_PACKAGE_INFO_JSON_FILE_PATH, &infoStream, &size);
     if (ret != 0) {
@@ -345,24 +345,34 @@ int HnpPackageInfoHnpDelete(const char *name, const char *version)
 
     for (int i = 0; i < cJSON_GetArraySize(json); i++) {
         hapItem = cJSON_GetArrayItem(json, i);
-        cJSON *hnpItemArr = cJSON_GetObjectItem(hapItem, "hnp");
-        for (int j = 0; j < cJSON_GetArraySize(hnpItemArr); j++) {
-            cJSON *hnpItem = cJSON_GetArrayItem(hnpItemArr, j);
-            if ((strcmp(name, cJSON_GetObjectItem(hnpItem, "name")->valuestring) == 0) &&
-                (strcmp(version, cJSON_GetObjectItem(hnpItem, "version")->valuestring) == 0)) {
-                cJSON_DeleteItemFromArray(hnpItemArr, j);
-                break;
-            }
+        if (strcmp(cJSON_GetObjectItem(hapItem, "hap")->valuestring, packageName) == 0) {
+            hapExist = true;
+            break;
+        }
+    }
+
+    if (!hapExist) {
+        cJSON_Delete(json);
+        return 0;
+    }
+
+    cJSON *hnpItemArr = cJSON_GetObjectItem(hapItem, "hnp");
+    for (int j = 0; j < cJSON_GetArraySize(hnpItemArr); j++) {
+        cJSON *hnpItem = cJSON_GetArrayItem(hnpItemArr, j);
+        if ((strcmp(name, cJSON_GetObjectItem(hnpItem, "name")->valuestring) == 0) &&
+            (strcmp(version, cJSON_GetObjectItem(hnpItem, "version")->valuestring) == 0)) {
+            cJSON_DeleteItemFromArray(hnpItemArr, j);
+            break;
         }
     }
 
     FILE *fp = fopen(HNP_PACKAGE_INFO_JSON_FILE_PATH, "wb");
     char *jsonStr = cJSON_Print(json);
     fwrite(jsonStr, strlen(jsonStr), sizeof(char), fp);
-
     fclose(fp);
     free(jsonStr);
     cJSON_Delete(json);
+
     return 0;
 }
 
@@ -393,8 +403,8 @@ int HnpPackageInfoDelete(const char *packageName)
     fwrite(jsonStr, strlen(jsonStr), sizeof(char), fp);
     fclose(fp);
     free(jsonStr);
-
     cJSON_Delete(json);
+
     return 0;
 }
 
