@@ -22,6 +22,7 @@
 #include "cJSON.h"
 #include "token_setproc.h"
 #include "tokenid_kit.h"
+#include "securec.h"
 
 #ifdef WITH_SELINUX
 #include "hap_restorecon.h"
@@ -34,6 +35,7 @@ const char *RENDERER_NAME = "renderer";
 #endif
 
 #define NWEBSPAWN_SERVER_NAME "nwebspawn"
+#define MAX_USERID_LEN  32
 using namespace OHOS::Security::AccessToken;
 
 int SetAppAccessToken(const AppSpawnMgr *content, const AppSpawningCtx *property)
@@ -146,8 +148,24 @@ int SetInternetPermission(const AppSpawningCtx *property)
     return 0;
 }
 
+void InitAppCommonEnv(const AppSpawningCtx *property)
+{
+    AppDacInfo *appInfo = (AppDacInfo *)GetAppProperty(property, TLV_DAC_INFO);
+    if (appInfo == NULL) {
+        return;
+    }
+    const int userId = appInfo->uid / UID_BASE;
+    char user[MAX_USERID_LEN] = {0};
+    int len = sprintf_s(user, MAX_USERID_LEN, "%d", userId);
+    APPSPAWN_CHECK(len > 0, return, "Failed to format userid: %{public}d", userId);
+    int ret = setenv("USER", user, 1);
+    APPSPAWN_CHECK(ret == 0, return, "setenv failed, userid:%{public}d, errno: %{public}d", userId, errno);
+}
+
 int32_t SetEnvInfo(const AppSpawnMgr *content, const AppSpawningCtx *property)
 {
+    InitAppCommonEnv(property);
+
     uint32_t size = 0;
     char *envStr = reinterpret_cast<char *>(GetAppPropertyExt(property, "AppEnv", &size));
     if (size == 0 || envStr == NULL) {
