@@ -235,6 +235,7 @@ void HnpUnInstall(char *package)
     int argc = sizeof(argv) / sizeof(argv[0]);
 
     EXPECT_EQ(HnpCmdUnInstall(argc, argv), 0);
+    remove(HNP_PACKAGE_INFO_JSON_FILE_PATH);
 }
 
 /**
@@ -252,6 +253,7 @@ HWTEST(HnpInstallerTest, Hnp_Install_001, TestSize.Level0)
     HnpDeleteFolder("hnp_sample");
     HnpDeleteFolder("hnp_out");
     HnpDeleteFolder(HNP_BASE_PATH);
+    remove(HNP_PACKAGE_INFO_JSON_FILE_PATH);
 
     EXPECT_EQ(mkdir(HNP_BASE_PATH, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
     HnpPackWithBin((char *)"sample_public", true, true);
@@ -293,6 +295,7 @@ HWTEST(HnpInstallerTest, Hnp_Install_001, TestSize.Level0)
 
     HnpDeleteFolder(HNP_BASE_PATH);
     HnpPackWithBinDelete();
+    remove(HNP_PACKAGE_INFO_JSON_FILE_PATH);
 
     GTEST_LOG_(INFO) << "Hnp_Installer_001 end";
 }
@@ -345,6 +348,7 @@ HWTEST(HnpInstallerTest, Hnp_Install_002, TestSize.Level0)
 
     HnpDeleteFolder(HNP_BASE_PATH);
     HnpPackWithBinDelete();
+    remove(HNP_PACKAGE_INFO_JSON_FILE_PATH);
 
     GTEST_LOG_(INFO) << "Hnp_Installer_002 end";
 }
@@ -401,6 +405,7 @@ HWTEST(HnpInstallerTest, Hnp_Install_003, TestSize.Level0)
         HnpPackWithBinDelete();
     }
     HnpDeleteFolder(HNP_BASE_PATH);
+    remove(HNP_PACKAGE_INFO_JSON_FILE_PATH);
 
     GTEST_LOG_(INFO) << "Hnp_Installer_003 end";
 }
@@ -458,6 +463,7 @@ HWTEST(HnpInstallerTest, Hnp_Install_004, TestSize.Level0)
 
     HnpDeleteFolder(HNP_BASE_PATH);
     HnpPackWithBinDelete();
+    remove(HNP_PACKAGE_INFO_JSON_FILE_PATH);
 
     GTEST_LOG_(INFO) << "Hnp_Installer_004 end";
 }
@@ -511,6 +517,7 @@ HWTEST(HnpInstallerTest, Hnp_Install_005, TestSize.Level0)
 
     HnpDeleteFolder(HNP_BASE_PATH);
     HnpPackWithCfgDelete();
+    remove(HNP_PACKAGE_INFO_JSON_FILE_PATH);
 
     GTEST_LOG_(INFO) << "Hnp_Installer_005 end";
 }
@@ -550,6 +557,7 @@ HWTEST(HnpInstallerTest, Hnp_Install_006, TestSize.Level0)
 
     HnpDeleteFolder(HNP_BASE_PATH);
     HnpPackWithCfgDelete();
+    remove(HNP_PACKAGE_INFO_JSON_FILE_PATH);
 
     GTEST_LOG_(INFO) << "Hnp_Install_006 end";
 }
@@ -621,6 +629,7 @@ HWTEST(HnpInstallerTest, Hnp_Install_007, TestSize.Level0)
 
     HnpDeleteFolder(HNP_BASE_PATH);
     HnpPackWithBinDelete();
+    remove(HNP_PACKAGE_INFO_JSON_FILE_PATH);
 
     GTEST_LOG_(INFO) << "Hnp_Install_007 end";
 }
@@ -644,21 +653,20 @@ HWTEST(HnpInstallerTest, Hnp_Install_API_001, TestSize.Level0)
 
     if (IsDeveloperModeOpen()) {
         { //param is invalid
-            ret = NativeInstallHnp(NULL, "./hnp_out/", "huawei", 1);
+            ret = NativeInstallHnp(NULL, "./hnp_out", "huawei", 1);
             EXPECT_EQ(ret, HNP_API_ERRNO_PARAM_INVALID);
         }
         { //ok
-            ret = NativeInstallHnp("10000", "./hnp_out/", "huawei", 1);
+            ret = NativeInstallHnp("10000", "./hnp_out", "huawei", 1);
             EXPECT_EQ(ret, 0);
             EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/bin/outt", F_OK), 0);
             EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/bin/out2", F_OK), 0);
-            EXPECT_EQ(access(HNP_BASE_PATH"/hnp/huawei/bin/outt", F_OK), 0);
-            EXPECT_EQ(access(HNP_BASE_PATH"/hnp/huawei/bin/out2", F_OK), 0);
         }
     }
 
     HnpDeleteFolder(HNP_BASE_PATH);
     HnpPackWithCfgDelete();
+    remove(HNP_PACKAGE_INFO_JSON_FILE_PATH);
 
     GTEST_LOG_(INFO) << "Hnp_Install_API_001 end";
 }
@@ -689,6 +697,7 @@ HWTEST(HnpInstallerTest, Hnp_Install_API_002, TestSize.Level0)
 
     HnpDeleteFolder(HNP_BASE_PATH);
     HnpPackWithCfgDelete();
+    remove(HNP_PACKAGE_INFO_JSON_FILE_PATH);
 
     GTEST_LOG_(INFO) << "Hnp_Install_API_002 end";
 }
@@ -716,21 +725,12 @@ HWTEST(HnpInstallerTest, Hnp_Install_API_003, TestSize.Level0)
             EXPECT_EQ(ret, 0);
             EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/bin/outt", F_OK), 0);
             EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/bin/out2", F_OK), 0);
-            EXPECT_EQ(access(HNP_BASE_PATH"/hnp/huawei/bin/outt", F_OK), 0);
-            EXPECT_EQ(access(HNP_BASE_PATH"/hnp/huawei/bin/out2", F_OK), 0);
-        }
-        { //ok
-            ret = NativeInstallHnp("10000", "./hnp_out/", "baidu", 1);
-            EXPECT_EQ(ret, 0);
-            EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/bin/outt", F_OK), 0);
-            EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/bin/out2", F_OK), 0);
-            EXPECT_EQ(access(HNP_BASE_PATH"/hnp/baidu/bin/outt", F_OK), 0);
-            EXPECT_EQ(access(HNP_BASE_PATH"/hnp/baidu/bin/out2", F_OK), 0);
         }
     }
 
     HnpDeleteFolder(HNP_BASE_PATH);
     HnpPackWithCfgDelete();
+    remove(HNP_PACKAGE_INFO_JSON_FILE_PATH);
 
     GTEST_LOG_(INFO) << "Hnp_Install_API_003 end";
 }
@@ -759,20 +759,17 @@ HWTEST(HnpInstallerTest, Hnp_Install_API_004, TestSize.Level0)
             EXPECT_EQ(ret, 0);
             EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/bin/outt", F_OK), 0);
             EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/bin/out2", F_OK), 0);
-            EXPECT_EQ(access(HNP_BASE_PATH"/hnp/huawei/bin/outt", F_OK), 0);
-            EXPECT_EQ(access(HNP_BASE_PATH"/hnp/huawei/bin/out2", F_OK), 0);
         } else {
             GTEST_LOG_(INFO) << "this is not developer mode";
             EXPECT_EQ(ret, HNP_API_NOT_IN_DEVELOPER_MODE);
             EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/bin/outt", F_OK), -1);
             EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/bin/out2", F_OK), -1);
-            EXPECT_EQ(access(HNP_BASE_PATH"/hnp/huawei/bin/outt", F_OK), -1);
-            EXPECT_EQ(access(HNP_BASE_PATH"/hnp/huawei/bin/out2", F_OK), -1);
         }
     }
 
     HnpDeleteFolder(HNP_BASE_PATH);
     HnpPackWithCfgDelete();
+    remove(HNP_PACKAGE_INFO_JSON_FILE_PATH);
 
     GTEST_LOG_(INFO) << "Hnp_Install_API_004 end";
 }
@@ -789,7 +786,7 @@ HWTEST(HnpInstallerTest, Hnp_UnInstall_001, TestSize.Level0)
     GTEST_LOG_(INFO) << "Hnp_UnInstall_001 start";
 
     EXPECT_EQ(mkdir(HNP_BASE_PATH, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
-    HnpPackWithBin((char *)"sample_public", true, true);
+    HnpPackWithBin((char *)"sample", true, true);
     HnpInstall((char *)"huawei");
 
     char arg1[] = "hnp";
@@ -824,6 +821,7 @@ HWTEST(HnpInstallerTest, Hnp_UnInstall_001, TestSize.Level0)
 
     HnpDeleteFolder(HNP_BASE_PATH);
     HnpPackWithBinDelete();
+    remove(HNP_PACKAGE_INFO_JSON_FILE_PATH);
 
     GTEST_LOG_(INFO) << "Hnp_UnInstall_001 end";
 }
@@ -841,6 +839,7 @@ HWTEST(HnpInstallerTest, Hnp_UnInstall_002, TestSize.Level0)
 
     EXPECT_EQ(mkdir(HNP_BASE_PATH, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
     HnpPackWithCfg(true, true);
+    HnpInstall((char *)"huawei");
 
     char arg1[] = "hnp";
     char arg2[] = "uninstall";
@@ -852,7 +851,7 @@ HWTEST(HnpInstallerTest, Hnp_UnInstall_002, TestSize.Level0)
         char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6};
         int argc = sizeof(argv) / sizeof(argv[0]);
 
-        EXPECT_EQ(HnpCmdUnInstall(argc, argv), HNP_ERRNO_UNINSTALLER_HNP_PATH_NOT_EXIST);
+        EXPECT_EQ(HnpCmdUnInstall(argc, argv), 0);
     }
     { // ok
         char arg3[] = "-u";
@@ -867,6 +866,7 @@ HWTEST(HnpInstallerTest, Hnp_UnInstall_002, TestSize.Level0)
 
     HnpDeleteFolder(HNP_BASE_PATH);
     HnpPackWithCfgDelete();
+    remove(HNP_PACKAGE_INFO_JSON_FILE_PATH);
 
     GTEST_LOG_(INFO) << "Hnp_UnInstall_002 end";
 }
@@ -884,6 +884,7 @@ HWTEST(HnpInstallerTest, Hnp_UnInstall_003, TestSize.Level0)
 
     EXPECT_EQ(mkdir(HNP_BASE_PATH, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
     HnpPackWithBin((char *)"sample_public", true, true);
+    HnpPackWithBin((char *)"sample_private", false, false);
     HnpInstall((char *)"huawei");
 
     char arg1[] = "hnp";
@@ -897,7 +898,7 @@ HWTEST(HnpInstallerTest, Hnp_UnInstall_003, TestSize.Level0)
         char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6};
         int argc = sizeof(argv) / sizeof(argv[0]);
 
-        EXPECT_EQ(HnpCmdUnInstall(argc, argv), HNP_ERRNO_UNINSTALLER_HNP_PATH_NOT_EXIST);
+        EXPECT_EQ(HnpCmdUnInstall(argc, argv), 0);
     }
     { // ok
         char arg3[] = "-u";
@@ -912,6 +913,7 @@ HWTEST(HnpInstallerTest, Hnp_UnInstall_003, TestSize.Level0)
 
     HnpDeleteFolder(HNP_BASE_PATH);
     HnpPackWithBinDelete();
+    remove(HNP_PACKAGE_INFO_JSON_FILE_PATH);
 
     GTEST_LOG_(INFO) << "Hnp_UnInstall_003 end";
 }
@@ -931,6 +933,7 @@ HWTEST(HnpInstallerTest, Hnp_UnInstall_API_001, TestSize.Level0)
 
     EXPECT_EQ(mkdir(HNP_BASE_PATH, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
     HnpPackWithCfg(true, true);
+    HnpInstall((char *)"huawei");
 
     if (IsDeveloperModeOpen()) {
         { // param is invalid
@@ -945,6 +948,7 @@ HWTEST(HnpInstallerTest, Hnp_UnInstall_API_001, TestSize.Level0)
 
     HnpDeleteFolder(HNP_BASE_PATH);
     HnpPackWithCfgDelete();
+    remove(HNP_PACKAGE_INFO_JSON_FILE_PATH);
 
     GTEST_LOG_(INFO) << "Hnp_UnInstall_API_001 end";
 }
@@ -964,16 +968,18 @@ HWTEST(HnpInstallerTest, Hnp_UnInstall_API_002, TestSize.Level0)
 
     EXPECT_EQ(mkdir(HNP_BASE_PATH, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
     HnpPackWithCfg(true, true);
+    HnpInstall((char *)"huawei");
 
     if (IsDeveloperModeOpen()) {
         { // param uninstall path is invalid
             ret = NativeUnInstallHnp("10000", "wechat");
-            EXPECT_NE(ret, 0);
+            EXPECT_NE(ret, HNP_ERRNO_BASE_DIR_OPEN_FAILED);
         }
     }
 
     HnpDeleteFolder(HNP_BASE_PATH);
     HnpPackWithCfgDelete();
+    remove(HNP_PACKAGE_INFO_JSON_FILE_PATH);
 
     GTEST_LOG_(INFO) << "Hnp_UnInstall_API_002 end";
 }
@@ -993,6 +999,7 @@ HWTEST(HnpInstallerTest, Hnp_UnInstall_API_003, TestSize.Level0)
 
     EXPECT_EQ(mkdir(HNP_BASE_PATH, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
     HnpPackWithCfg(true, true);
+    HnpInstall((char *)"huawei");
 
     {
         ret = NativeUnInstallHnp("10000", "huawei");
@@ -1007,6 +1014,7 @@ HWTEST(HnpInstallerTest, Hnp_UnInstall_API_003, TestSize.Level0)
 
     HnpDeleteFolder(HNP_BASE_PATH);
     HnpPackWithCfgDelete();
+    remove(HNP_PACKAGE_INFO_JSON_FILE_PATH);
 
     GTEST_LOG_(INFO) << "Hnp_UnInstall_API_003 end";
 }

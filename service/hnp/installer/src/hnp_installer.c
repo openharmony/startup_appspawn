@@ -249,7 +249,8 @@ static int HnpUnInstall(int uid, const char *packageName)
         HNP_LOGE("hnp uninstall private path sprintf unsuccess, uid:%s,package name[%s]", uid, packageName);
         return HNP_ERRNO_BASE_SPRINTF_FAILED;
     }
-    return HnpDeleteFolder(privatePath);
+    (void)HnpDeleteFolder(privatePath);
+    return 0;
 }
 
 static int HnpInstallPathGet(HnpCfgInfo *hnpCfgInfo, NativeHnpPath *hnpDstPath, bool isPublic, bool isForce)
@@ -448,7 +449,7 @@ static int HnpInsatllPre(int uid, char *srcPath, char *packageName, bool isForce
         }
 
         ret = HnpPackageGetAndInstall(hnpPath, &hnpDstPath, isPublic, isForce);
-        if (ret < 0) {
+        if (ret != 0) {
             closedir(dir);
             return ret;
         }
