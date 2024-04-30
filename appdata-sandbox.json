@@ -253,6 +253,11 @@
                     "sandbox-path": "/storage/Users/<currentUserId>/Downloads",
                     "sandbox-flags": [ "bind", "rec" ],
                     "check-action-status": "false"
+                }, {
+                    "src-path" : "/mnt/hmdfs/<currentUserId>/cloud/data/<PackageName>",
+                    "sandbox-path" : "/data/storage/el2/cloud",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
                 }
             ],
             "symbol-links" : [{
@@ -686,16 +691,6 @@
                     "src-path": "/storage/media/<currentUserId>/local/files/.Recent",
                     "sandbox-path": "/storage/Users/<currentUserId>/.Recent",
                     "sandbox-flags": [ "bind", "rec" ]
-                }
-            ]
-        }],
-        "ohos.permission.CLOUDFILE_SYNC":[{
-            "sandbox-switch": "ON",
-            "mount-paths": [{
-                    "src-path" : "/mnt/hmdfs/<currentUserId>/cloud/data/<PackageName>",
-                    "sandbox-path" : "/data/storage/el2/cloud",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
                 }
             ]
         }],
