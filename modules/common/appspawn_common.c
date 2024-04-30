@@ -59,79 +59,6 @@
 #define BITLEN32 32
 #define PID_NS_INIT_UID 100000  // reserved for pid_ns_init process, avoid app, render proc, etc.
 #define PID_NS_INIT_GID 100000
-#define USER_ID_SIZE 16
-#define DIR_MODE 0711
-
-#ifndef APPSPAWN_SANDBOX_NEW
-static bool IsUnlockStatus(uint32_t uid)
-{
-    const int userIdBase = 200000;
-    uid = uid / userIdBase;
-    if (uid == 0) {
-        return true;
-    }
-
-    const char rootPath[] = "/data/app/el2/";
-    const char basePath[] = "/base";
-    size_t allPathSize = strlen(rootPath) + strlen(basePath) + 1 + USER_ID_SIZE;
-    char *path = malloc(sizeof(char) * allPathSize);
-    APPSPAWN_CHECK(path != NULL, return true, "Failed to malloc path");
-    int len = sprintf_s(path, allPathSize, "%s%u%s", rootPath, uid, basePath);
-    APPSPAWN_CHECK(len > 0 && ((size_t)len < allPathSize), return true, "Failed to get base path");
-
-    if (access(path, F_OK) == 0) {
-        APPSPAWN_LOGI("this is unlock status");
-        free(path);
-        return true;
-    }
-    free(path);
-    APPSPAWN_LOGI("this is lock status");
-    return false;
-}
-
-static void MountAppEl2Dir(const AppSpawningCtx *property)
-{
-    const int userIdBase = 200000;
-    const char rootPath[] = "/mnt/sandbox/";
-    const char el2Path[] = "/data/storage/el2";
-    AppDacInfo *info = (AppDacInfo *)GetAppProperty(property, TLV_DAC_INFO);
-    const char *bundleName = GetBundleName(property);
-    if (info == NULL || bundleName == NULL) {
-        return;
-    }
-    if (IsUnlockStatus(info->uid)) {
-        return;
-    }
-
-    size_t allPathSize = strlen(rootPath) + strlen(el2Path) + strlen(bundleName) + 2;
-    allPathSize += USER_ID_SIZE;
-    char *path = malloc(sizeof(char) * (allPathSize));
-    APPSPAWN_CHECK(path != NULL, return, "Failed to malloc path");
-    int len = sprintf_s(path, allPathSize, "%s%u/%s%s", rootPath, info->uid / userIdBase, bundleName, el2Path);
-    APPSPAWN_CHECK(len > 0 && ((size_t)len < allPathSize), free(path);
-        return, "Failed to get el2 path");
-
-    if (access(path, F_OK) == 0) {
-        free(path);
-        return;
-    }
-
-    MakeDirRec(path, DIR_MODE, 1);
-    if (mount(path, path, NULL, MS_BIND | MS_REC, NULL) != 0) {
-        APPSPAWN_LOGI("mount el2 path failed! error: %{public}d %{public}s", errno, path);
-        free(path);
-        return;
-    }
-    if (mount(NULL, path, NULL, MS_SHARED, NULL) != 0) {
-        free(path);
-        APPSPAWN_LOGI("mount el2 path to shared failed!");
-        return;
-    }
-    APPSPAWN_LOGI("mount el2 path to shared success!");
-    free(path);
-    return;
-}
-#endif
 
 static int SetProcessName(const AppSpawnMgr *content, const AppSpawningCtx *property)
 {
@@ -505,10 +432,6 @@ static int SpawnGetSpawningFlag(AppSpawnMgr *content, AppSpawningCtx *property)
     }
     // check developer mode
     property->client.flags |= CheckEnabled("const.security.developermode.state", "true") ? APP_DEVELOPER_MODE : 0;
-#ifndef APPSPAWN_SANDBOX_NEW
-    // mount el2 dir
-    MountAppEl2Dir(property);
-#endif
     return 0;
 }
 
