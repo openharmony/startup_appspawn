@@ -373,7 +373,7 @@ static int HnpPackageGetAndInstall(const char *dirPath, NativeHnpPath *hnpDstPat
             ret = HnpPackageGetAndInstall(path, hnpDstPath, isPublic, isForce);
             if (ret != 0) {
                 closedir(dir);
-                return HNP_ERRNO_BASE_SPRINTF_FAILED;
+                return ret;
             }
         } else {
             if (HnpFileCheck(path) == false) {
