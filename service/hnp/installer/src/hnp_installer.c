@@ -191,7 +191,6 @@ static int HnpSingleUnInstall(const char *name, const char *version, int uid)
 {
     int ret;
     char hnpNamePath[MAX_FILE_PATH_LEN];
-    char hnpVersionPath[MAX_FILE_PATH_LEN];
     char sandboxPath[MAX_FILE_PATH_LEN];
 
     if (sprintf_s(hnpNamePath, MAX_FILE_PATH_LEN, HNP_DEFAULT_INSTALL_ROOT_PATH"/%d/hnppublic/%s.org", uid, name) < 0) {
@@ -199,37 +198,17 @@ static int HnpSingleUnInstall(const char *name, const char *version, int uid)
         return HNP_ERRNO_BASE_SPRINTF_FAILED;
     }
 
-    if (sprintf_s(hnpVersionPath, MAX_FILE_PATH_LEN, "%s/%s_%s", hnpNamePath, name, version) < 0) {
-        HNP_LOGE("hnp uninstall version path sprintf unsuccess,name path:%s,version[%s]", hnpNamePath, version);
-        return HNP_ERRNO_BASE_SPRINTF_FAILED;
-    }
-
-    /* 校验目标目录是否存在判断是否安装 */
-    if (access(hnpVersionPath, F_OK) != 0) {
-        HNP_LOGE("hnp uninstall path:%s is not exist", hnpVersionPath);
-        return HNP_ERRNO_UNINSTALLER_HNP_PATH_NOT_EXIST;
-    }
-
     if (sprintf_s(sandboxPath, MAX_FILE_PATH_LEN, HNP_SANDBOX_BASE_PATH"/%s.org/%s_%s", name, name, version) < 0) {
         HNP_LOGE("sprintf unstall base path unsuccess.");
         return HNP_ERRNO_BASE_SPRINTF_FAILED;
     }
-
-    HNP_LOGI("hnp uninstall start now! path=%s", hnpNamePath);
 
     ret = HnpProcessRunCheck(sandboxPath);
     if (ret != 0) {
         return ret;
     }
 
-    ret = HnpDeleteFolder(hnpNamePath);
-    if (ret != 0) {
-        return ret;
-    }
-
-    ret = HnpPackageInfoHnpDelete(name, version);
-    HNP_LOGI("hnp uninstall end! ret=%d", ret);
-    return ret;
+    return HnpDeleteFolder(hnpNamePath);
 }
 
 static int HnpUnInstall(int uid, const char *packageName)
@@ -245,7 +224,15 @@ static int HnpUnInstall(int uid, const char *packageName)
 
     /* 卸载公有native */
     for (int i = 0; i < count; i++) {
+        HNP_LOGI("hnp uninstall start now! name=%s,version=%s,uid=%d,package=%s", packageInfo[i].name,
+            packageInfo[i].version, uid, packageName);
         ret = HnpSingleUnInstall(packageInfo[i].name, packageInfo[i].version, uid);
+        HNP_LOGI("hnp uninstall end! ret=%d", ret);
+        if (ret != 0) {
+            free(packageInfo);
+            return ret;
+        }
+        ret = HnpPackageInfoHnpDelete(packageName, packageInfo[i].name, packageInfo[i].version);
         if (ret != 0) {
             free(packageInfo);
             return ret;
