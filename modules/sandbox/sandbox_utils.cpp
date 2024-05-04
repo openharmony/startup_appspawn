@@ -1566,9 +1566,109 @@ int32_t SetAppSandboxProperty(AppSpawnMgr *content, AppSpawningCtx *property)
     return ret;
 }
 
+#define USER_ID_SIZE 16
+#define DIR_MODE 0711
+
+#ifndef APPSPAWN_SANDBOX_NEW
+static bool IsUnlockStatus(uint32_t uid)
+{
+    const int userIdBase = 200000;
+    uid = uid / userIdBase;
+    if (uid == 0) {
+        return true;
+    }
+
+    const char rootPath[] = "/data/app/el2/";
+    const char basePath[] = "/base";
+    size_t allPathSize = strlen(rootPath) + strlen(basePath) + 1 + USER_ID_SIZE;
+    char *path = reinterpret_cast<char *>(malloc(sizeof(char) * allPathSize));
+    APPSPAWN_CHECK(path != NULL, return true, "Failed to malloc path");
+    int len = sprintf_s(path, allPathSize, "%s%u%s", rootPath, uid, basePath);
+    APPSPAWN_CHECK(len > 0 && ((size_t)len < allPathSize), return true, "Failed to get base path");
+
+    if (access(path, F_OK) == 0) {
+        APPSPAWN_LOGI("this is unlock status");
+        free(path);
+        return true;
+    }
+    free(path);
+    APPSPAWN_LOGI("this is lock status");
+    return false;
+}
+
+static void MountDir(const AppSpawningCtx *property, const char *rootPath, const char *targetPath)
+{
+    const int userIdBase = 200000;
+    AppDacInfo *info = reinterpret_cast<AppDacInfo *>(GetAppProperty(property, TLV_DAC_INFO));
+    const char *bundleName = GetBundleName(property);
+    if (info == NULL || bundleName == NULL) {
+        return;
+    }
+
+    size_t allPathSize = strlen(rootPath) + strlen(targetPath) + strlen(bundleName) + 2;
+    allPathSize += USER_ID_SIZE;
+    char *path = reinterpret_cast<char *>(malloc(sizeof(char) * (allPathSize)));
+    APPSPAWN_CHECK(path != NULL, return, "Failed to malloc path");
+    int len = sprintf_s(path, allPathSize, "%s%u/%s%s", rootPath, info->uid / userIdBase, bundleName, targetPath);
+    APPSPAWN_CHECK(len > 0 && ((size_t)len < allPathSize), free(path);
+        return, "Failed to get el2 path");
+
+    if (access(path, F_OK) == 0) {
+        free(path);
+        return;
+    }
+
+    MakeDirRec(path, DIR_MODE, 1);
+    if (mount(path, path, nullptr, MS_BIND | MS_REC, nullptr) != 0) {
+        APPSPAWN_LOGI("mount el2 path failed! error: %{public}d %{public}s", errno, path);
+        free(path);
+        return;
+    }
+    if (mount(nullptr, path, nullptr, MS_SHARED, nullptr) != 0) {
+        free(path);
+        APPSPAWN_LOGI("mount el2 path to shared failed!");
+        return;
+    }
+    APPSPAWN_LOGI("mount el2 path to shared success!");
+    free(path);
+    return;
+}
+
+static void MountDirOnLock(const AppSpawningCtx *property)
+{
+    const char rootPath[] = "/mnt/sandbox/";
+    const char el2Path[] = "/data/storage/el2";
+    const char userPath[] = "/storage/Users";
+    AppDacInfo *info = (AppDacInfo *)GetAppProperty(property, TLV_DAC_INFO);
+    const char *bundleName = GetBundleName(property);
+    if (info == NULL || bundleName == NULL) {
+        return;
+    }
+    if (IsUnlockStatus(info->uid)) {
+        return;
+    }
+    int index = GetPermissionIndex(nullptr, "ohos.permission.FILE_ACCESS_MANAGER");
+    APPSPAWN_LOGV("mount dir on lock mountPermissionFlags %{public}d", index);
+    if (CheckAppPermissionFlagSet(property, (uint32_t)index)) {
+        MountDir(property, rootPath, userPath);
+    }
+    MountDir(property, rootPath, el2Path);
+}
+#endif
+
+static int SpawnMountDirOnLock(AppSpawnMgr *content, AppSpawningCtx *property)
+{
+#ifndef APPSPAWN_SANDBOX_NEW
+    // mount dynamic directory
+    MountDirOnLock(property);
+#endif
+    return 0;
+}
+
 MODULE_CONSTRUCTOR(void)
 {
     APPSPAWN_LOGV("Load sandbox module ...");
     (void)AddServerStageHook(STAGE_SERVER_PRELOAD, HOOK_PRIO_SANDBOX, LoadAppSandboxConfig);
+    (void)AddAppSpawnHook(STAGE_PARENT_PRE_FORK, HOOK_PRIO_COMMON, SpawnMountDirOnLock);
     (void)AddAppSpawnHook(STAGE_CHILD_EXECUTE, HOOK_PRIO_SANDBOX, SetAppSandboxProperty);
 }
