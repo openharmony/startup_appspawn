@@ -37,6 +37,8 @@
 #include "parameter.h"
 #include "securec.h"
 
+#define MAX_MOUNT_TIME 500  // 500us
+
 using namespace std;
 using namespace OHOS;
 
@@ -237,7 +239,13 @@ int32_t SandboxUtils::DoAppSandboxMountOnce(const char *originPath, const char *
 
     int ret = 0;
     // to mount fs and bind mount files or directory
+    struct timespec mountStart = {0};
+    clock_gettime(CLOCK_MONOTONIC, &mountStart);
     ret = mount(originPath, destinationPath, fsType, mountFlags, options);
+    struct timespec mountEnd = {0};
+    clock_gettime(CLOCK_MONOTONIC, &mountEnd);
+    uint64_t diff = DiffTime(&mountStart, &mountEnd);
+    APPSPAWN_CHECK_ONLY_LOG(diff < MAX_MOUNT_TIME, "mount %{public}s time %{public}" PRId64 " us", originPath, diff);
     if (ret != 0) {
         std::string originPathStr = originPath == nullptr ? "" : originPath;
         size_t index = originPathStr.find("data/app/el2/");
