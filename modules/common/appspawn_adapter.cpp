@@ -42,7 +42,8 @@ int SetAppAccessToken(const AppSpawnMgr *content, const AppSpawningCtx *property
 {
     int32_t ret = 0;
     uint64_t tokenId = 0;
-    AppSpawnMsgAccessToken *tokenInfo = (AppSpawnMsgAccessToken *)GetAppProperty(property, TLV_ACCESS_TOKEN_INFO);
+    AppSpawnMsgAccessToken *tokenInfo =
+        reinterpret_cast<AppSpawnMsgAccessToken *>(GetAppProperty(property, TLV_ACCESS_TOKEN_INFO));
     APPSPAWN_CHECK(tokenInfo != NULL, return APPSPAWN_MSG_INVALID,
         "No access token in msg %{public}s", GetProcessName(property));
     APPSPAWN_LOGV("AppSpawnServer::set access token %{public}" PRId64 " %{public}d",
@@ -76,7 +77,8 @@ int SetSelinuxCon(const AppSpawnMgr *content, const AppSpawningCtx *property)
         setcon("u:r:isolated_render:s0");
         return 0;
     }
-    AppSpawnMsgDomainInfo *msgDomainInfo = (AppSpawnMsgDomainInfo *)GetAppProperty(property, TLV_DOMAIN_INFO);
+    AppSpawnMsgDomainInfo *msgDomainInfo =
+        reinterpret_cast<AppSpawnMsgDomainInfo *>(GetAppProperty(property, TLV_DOMAIN_INFO));
     APPSPAWN_CHECK(msgDomainInfo != NULL, return APPSPAWN_TLV_NONE,
         "No domain info in req form %{public}s", GetProcessName(property))
     HapContext hapContext;
@@ -138,7 +140,8 @@ int SetSeccompFilter(const AppSpawnMgr *content, const AppSpawningCtx *property)
 
 int SetInternetPermission(const AppSpawningCtx *property)
 {
-    AppSpawnMsgInternetInfo *info = (AppSpawnMsgInternetInfo *)GetAppProperty(property, TLV_INTERNET_INFO);
+    AppSpawnMsgInternetInfo *info =
+        reinterpret_cast<AppSpawnMsgInternetInfo *>(GetAppProperty(property, TLV_INTERNET_INFO));
     APPSPAWN_CHECK(info != NULL, return 0,
         "No tlv internet permission info in req form %{public}s", GetProcessName(property));
     APPSPAWN_LOGV("Set internet permission %{public}d %{public}d", info->setAllowInternet, info->allowInternet);
@@ -150,7 +153,7 @@ int SetInternetPermission(const AppSpawningCtx *property)
 
 void InitAppCommonEnv(const AppSpawningCtx *property)
 {
-    AppDacInfo *appInfo = (AppDacInfo *)GetAppProperty(property, TLV_DAC_INFO);
+    AppDacInfo *appInfo = reinterpret_cast<AppDacInfo *>(GetAppProperty(property, TLV_DAC_INFO));
     if (appInfo == NULL) {
         return;
     }

@@ -50,7 +50,7 @@ typedef struct {
     struct timespec tmEnd;
 } AppSpawnHookArg;
 
-int AppSpawnModuleMgrInstall(const char *mgrName);
+int AppSpawnModuleMgrInstall(const char *moduleName);
 int AppSpawnLoadAutoRunModules(int type);
 void AppSpawnModuleMgrUnInstall(int type);
 void DeleteAppSpawnHookMgr(void);
