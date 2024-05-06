@@ -336,8 +336,12 @@ int HnpPackageInfoHnpDelete(const char *packageName, const char *name, const cha
 
     int ret = ReadFileToStream(HNP_PACKAGE_INFO_JSON_FILE_PATH, &infoStream, &size);
     if (ret != 0) {
-        HNP_LOGE("hnp delete read hnp info file unsuccess");
-        return HNP_ERRNO_BASE_READ_FILE_STREAM_FAILED;
+        if (ret == HNP_ERRNO_BASE_FILE_OPEN_FAILED || ret == HNP_ERRNO_BASE_GET_FILE_LEN_NULL) {
+            return 0;
+        } else {
+            HNP_LOGE("hnp delete read hnp info file unsuccess");
+            return HNP_ERRNO_BASE_READ_FILE_STREAM_FAILED;
+        }
     }
 
     cJSON *json = cJSON_Parse(infoStream);
