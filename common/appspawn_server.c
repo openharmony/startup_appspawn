@@ -23,6 +23,8 @@
 
 #include "appspawn_utils.h"
 
+#define MAX_FORK_TIME (30 * 1000)   // 30ms
+
 static void NotifyResToParent(struct AppSpawnContent *content, AppSpawnClient *client, int result)
 {
     APPSPAWN_LOGI("NotifyResToParent: %{public}d", result);
@@ -128,8 +130,14 @@ int AppSpawnProcessMsg(AppSpawnContent *content, AppSpawnClient *client, pid_t *
 #else
     {
 #endif
+        struct timespec forkStart = {0};
+        clock_gettime(CLOCK_MONOTONIC, &forkStart);
         pid = fork();
         if (pid == 0) {
+            struct timespec forkEnd = {0};
+            clock_gettime(CLOCK_MONOTONIC, &forkEnd);
+            uint64_t diff = DiffTime(&forkStart, &forkEnd);
+            APPSPAWN_CHECK_ONLY_LOG(diff < MAX_FORK_TIME, "fork time %{public}" PRId64 " us", diff);
             ProcessExit(AppSpawnChild(content, client));
         }
     }
