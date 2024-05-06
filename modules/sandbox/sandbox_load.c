@@ -496,7 +496,6 @@ static int ParsePermissionConfig(AppSpawnSandboxCfg *sandbox, const char *name, 
 
 static SandboxNameGroupNode *ParseNameGroup(AppSpawnSandboxCfg *sandbox, const cJSON *groupConfig)
 {
-    int ret = 0;
     char *name = GetStringFromJsonObj(groupConfig, "name");
     APPSPAWN_CHECK(name != NULL, return NULL, "No name in name group config");
     APPSPAWN_LOGV("Parse name-group config %{public}s", name);
@@ -520,7 +519,7 @@ static SandboxNameGroupNode *ParseNameGroup(AppSpawnSandboxCfg *sandbox, const c
         node->depMode = GetMountModeFromConfig(groupConfig, "deps-mode", MOUNT_MODE_ALWAYS);
     }
 
-    ret = ParseBaseConfig(sandbox, &node->section, groupConfig);
+    int ret = ParseBaseConfig(sandbox, &node->section, groupConfig);
     if (ret != 0) {
         DeleteSandboxSection((SandboxSection *)node);
         return NULL;
@@ -626,7 +625,7 @@ APPSPAWN_STATIC int ParseAppSandboxConfig(const cJSON *root, ParseJsonContext *c
             }
             APPSPAWN_CHECK_ONLY_EXPER(section != NULL, return -1);
 
-            int ret = ParseBaseConfig(sandbox, section, config);
+            ret = ParseBaseConfig(sandbox, section, config);
             if (ret != 0) {
                 DeleteSandboxSection(section);
                 return ret;

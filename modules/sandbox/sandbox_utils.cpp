@@ -1639,7 +1639,7 @@ static void MountDirOnLock(const AppSpawningCtx *property)
     const char rootPath[] = "/mnt/sandbox/";
     const char el2Path[] = "/data/storage/el2";
     const char userPath[] = "/storage/Users";
-    AppDacInfo *info = (AppDacInfo *)GetAppProperty(property, TLV_DAC_INFO);
+    AppDacInfo *info = reinterpret_cast<AppDacInfo *>(GetAppProperty(property, TLV_DAC_INFO));
     const char *bundleName = GetBundleName(property);
     if (info == NULL || bundleName == NULL) {
         return;
