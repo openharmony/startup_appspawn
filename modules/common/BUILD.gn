@@ -17,18 +17,24 @@ import("//build/ohos.gni")
 ohos_shared_library("appspawn_common") {
   sources = [
     "appspawn_adapter.cpp",
-    "appspawn_begetctl.c",
     "appspawn_cgroup.c",
     "appspawn_common.c",
     "appspawn_namespace.c",
   ]
+  if (is_debug || build_variant == "root") {
+    sources += [ "appspawn_begetctl.c" ]
+  }
+
   include_dirs = [
     ".",
     "${appspawn_path}/common",
     "${appspawn_path}/standard",
   ]
   cflags = []
-  deps = [ "${appspawn_path}/modules/module_engine:libappspawn_module_engine" ]
+  deps = [
+    "${appspawn_path}/modules/module_engine:libappspawn_module_engine",
+    "${appspawn_path}/util:libappspawn_util",
+  ]
   defines = [ "GRAPHIC_PERMISSION_CHECK" ]
   external_deps = [
     "access_token:libtoken_setproc",
