@@ -119,6 +119,7 @@ uint32_t GetSpawnTimeout(uint32_t def);
 void DumpCurrentDir(char *buffer, uint32_t bufferLen, const char *dirPath);
 int IsDeveloperModeOpen();
 void InitCommonEnv(void);
+int ConvertEnvValue(const char *srcEnv, char *dstEnv, int len);
 
 #ifndef APP_FILE_NAME
 #define APP_FILE_NAME   (strrchr((__FILE__), '/') ? strrchr((__FILE__), '/') + 1 : (__FILE__))

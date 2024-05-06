@@ -818,15 +818,14 @@ static AppSpawnMsgNode *ProcessSpawnBegetctlMsg(AppSpawnConnection *connection, 
 {
     uint32_t len = 0;
     const char *cmdMsg = (const char *)GetAppSpawnMsgExtInfo(message, MSG_EXT_NAME_BEGET_PID, &len);
-    APPSPAWN_CHECK(cmdMsg != NULL, DeleteAppSpawnMsg(message); return NULL, "Failed to get extInfo");
+    APPSPAWN_CHECK(cmdMsg != NULL, return NULL, "Failed to get extInfo");
     AppSpawnedProcess *appInfo = GetSpawnedProcess(atoi(cmdMsg));
-    APPSPAWN_CHECK(appInfo != NULL, DeleteAppSpawnMsg(message); return NULL, "Failed to get app info");
+    APPSPAWN_CHECK(appInfo != NULL, return NULL, "Failed to get app info");
     AppSpawnMsgNode *msgNode = RebuildAppSpawnMsgNode(message, appInfo);
-    APPSPAWN_CHECK(msgNode != NULL, DeleteAppSpawnMsg(message); return NULL, "Failed to rebuild app message node");
+    APPSPAWN_CHECK(msgNode != NULL, return NULL, "Failed to rebuild app message node");
     int ret = DecodeAppSpawnMsg(msgNode);
     if (ret != 0) {
         DeleteAppSpawnMsg(msgNode);
-        DeleteAppSpawnMsg(message);
         return NULL;
     }
     return msgNode;
@@ -866,8 +865,11 @@ static void ProcessRecvMsg(AppSpawnConnection *connection, AppSpawnMsgNode *mess
                 break;
             }
             AppSpawnMsgNode *msgNode = ProcessSpawnBegetctlMsg(connection, message);
-            APPSPAWN_CHECK(msgNode != NULL, SendResponse(connection, msg, APPSPAWN_DEBUG_MODE_NOT_SUPPORT, 0);
-                break, "Failed to ProcessSpawnBegetctlMsg");
+            if (msgNode == NULL) {
+                SendResponse(connection, msg, APPSPAWN_DEBUG_MODE_NOT_SUPPORT, 0);
+                DeleteAppSpawnMsg(message);
+                break;
+            }
             ProcessSpawnReqMsg(connection, msgNode);
             DeleteAppSpawnMsg(message);
             DeleteAppSpawnMsg(msgNode);

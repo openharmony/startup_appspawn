@@ -60,6 +60,7 @@ namespace {
     const std::string g_userId = "<currentUserId>";
     const std::string g_packageName = "<PackageName>";
     const std::string g_packageNameIndex = "<PackageName_index>";
+    const std::string g_variablePackageName = "<variablePackageName>";
     const std::string g_sandBoxDir = "/mnt/sandbox/";
     const std::string g_statusCheck = "true";
     const std::string g_sbxSwitchCheck = "ON";
@@ -184,11 +185,11 @@ static void MakeDirRecursive(const std::string &path, mode_t mode)
     } while (index < size);
 }
 
-static void CheckDirRecursive(const std::string &path)
+static bool CheckDirRecursive(const std::string &path)
 {
     size_t size = path.size();
     if (size == 0) {
-        return;
+        return false;
     }
     size_t index = 0;
     do {
@@ -197,10 +198,10 @@ static void CheckDirRecursive(const std::string &path)
         std::string dir = path.substr(0, index);
 #ifndef APPSPAWN_TEST
         APPSPAWN_CHECK(access(dir.c_str(), F_OK) == 0,
-            return, "check dir %{public}s failed, strerror: %{public}s", dir.c_str(), strerror(errno));
+            return false, "check dir %{public}s failed, strerror: %{public}s", dir.c_str(), strerror(errno));
 #endif
     } while (index < size);
-    return;
+    return true;
 }
 
 static void CheckAndCreatFile(const char *file)
@@ -358,6 +359,24 @@ string SandboxUtils::ConvertToRealPath(const AppSpawningCtx *appProperty, std::s
 
     if (path.find(g_userId) != std::string::npos) {
         path = replace_all(path, g_userId, std::to_string(dacInfo->uid / UID_BASE));
+    }
+
+    if (path.find(g_variablePackageName) != std::string::npos) {
+        std::string variablePackageName = info->bundleName;
+        std::string oldPath = path;
+        oldPath = replace_all(oldPath, g_variablePackageName, variablePackageName);
+        if (!CheckAppSpawnMsgFlag(appProperty->message, TLV_MSG_FLAGS, APP_FLAGS_ATOMIC_SERVICE) ||
+            !CheckDirRecursive(oldPath)) {
+            return oldPath;
+        }
+        std::string accountId = GetExtraInfoByType(appProperty, MSG_EXT_NAME_ACCOUNT_ID);
+        if (accountId.length() != 0) {
+            variablePackageName += "/" + accountId;
+            path = replace_all(path, g_variablePackageName, variablePackageName);
+            MakeDirRecursive(path, FILE_MODE);
+            int ret = chown(path.c_str(), dacInfo->uid, dacInfo->gid);
+            APPSPAWN_CHECK_ONLY_LOG(ret == 0, "chown failed, path %{public}s, errno %{public}d", path.c_str(), errno);
+        }
     }
 
     return path;
@@ -1547,9 +1566,109 @@ int32_t SetAppSandboxProperty(AppSpawnMgr *content, AppSpawningCtx *property)
     return ret;
 }
 
+#define USER_ID_SIZE 16
+#define DIR_MODE 0711
+
+#ifndef APPSPAWN_SANDBOX_NEW
+static bool IsUnlockStatus(uint32_t uid)
+{
+    const int userIdBase = 200000;
+    uid = uid / userIdBase;
+    if (uid == 0) {
+        return true;
+    }
+
+    const char rootPath[] = "/data/app/el2/";
+    const char basePath[] = "/base";
+    size_t allPathSize = strlen(rootPath) + strlen(basePath) + 1 + USER_ID_SIZE;
+    char *path = reinterpret_cast<char *>(malloc(sizeof(char) * allPathSize));
+    APPSPAWN_CHECK(path != NULL, return true, "Failed to malloc path");
+    int len = sprintf_s(path, allPathSize, "%s%u%s", rootPath, uid, basePath);
+    APPSPAWN_CHECK(len > 0 && ((size_t)len < allPathSize), return true, "Failed to get base path");
+
+    if (access(path, F_OK) == 0) {
+        APPSPAWN_LOGI("this is unlock status");
+        free(path);
+        return true;
+    }
+    free(path);
+    APPSPAWN_LOGI("this is lock status");
+    return false;
+}
+
+static void MountDir(const AppSpawningCtx *property, const char *rootPath, const char *targetPath)
+{
+    const int userIdBase = 200000;
+    AppDacInfo *info = reinterpret_cast<AppDacInfo *>(GetAppProperty(property, TLV_DAC_INFO));
+    const char *bundleName = GetBundleName(property);
+    if (info == NULL || bundleName == NULL) {
+        return;
+    }
+
+    size_t allPathSize = strlen(rootPath) + strlen(targetPath) + strlen(bundleName) + 2;
+    allPathSize += USER_ID_SIZE;
+    char *path = reinterpret_cast<char *>(malloc(sizeof(char) * (allPathSize)));
+    APPSPAWN_CHECK(path != NULL, return, "Failed to malloc path");
+    int len = sprintf_s(path, allPathSize, "%s%u/%s%s", rootPath, info->uid / userIdBase, bundleName, targetPath);
+    APPSPAWN_CHECK(len > 0 && ((size_t)len < allPathSize), free(path);
+        return, "Failed to get el2 path");
+
+    if (access(path, F_OK) == 0) {
+        free(path);
+        return;
+    }
+
+    MakeDirRec(path, DIR_MODE, 1);
+    if (mount(path, path, nullptr, MS_BIND | MS_REC, nullptr) != 0) {
+        APPSPAWN_LOGI("mount el2 path failed! error: %{public}d %{public}s", errno, path);
+        free(path);
+        return;
+    }
+    if (mount(nullptr, path, nullptr, MS_SHARED, nullptr) != 0) {
+        free(path);
+        APPSPAWN_LOGI("mount el2 path to shared failed!");
+        return;
+    }
+    APPSPAWN_LOGI("mount el2 path to shared success!");
+    free(path);
+    return;
+}
+
+static void MountDirOnLock(const AppSpawningCtx *property)
+{
+    const char rootPath[] = "/mnt/sandbox/";
+    const char el2Path[] = "/data/storage/el2";
+    const char userPath[] = "/storage/Users";
+    AppDacInfo *info = (AppDacInfo *)GetAppProperty(property, TLV_DAC_INFO);
+    const char *bundleName = GetBundleName(property);
+    if (info == NULL || bundleName == NULL) {
+        return;
+    }
+    if (IsUnlockStatus(info->uid)) {
+        return;
+    }
+    int index = GetPermissionIndex(nullptr, "ohos.permission.FILE_ACCESS_MANAGER");
+    APPSPAWN_LOGV("mount dir on lock mountPermissionFlags %{public}d", index);
+    if (CheckAppPermissionFlagSet(property, (uint32_t)index)) {
+        MountDir(property, rootPath, userPath);
+    }
+    MountDir(property, rootPath, el2Path);
+}
+#endif
+
+static int SpawnMountDirOnLock(AppSpawnMgr *content, AppSpawningCtx *property)
+{
+#ifndef APPSPAWN_SANDBOX_NEW
+    // mount dynamic directory
+    MountDirOnLock(property);
+#endif
+    return 0;
+}
+
 MODULE_CONSTRUCTOR(void)
 {
     APPSPAWN_LOGV("Load sandbox module ...");
     (void)AddServerStageHook(STAGE_SERVER_PRELOAD, HOOK_PRIO_SANDBOX, LoadAppSandboxConfig);
+    (void)AddAppSpawnHook(STAGE_PARENT_PRE_FORK, HOOK_PRIO_COMMON, SpawnMountDirOnLock);
     (void)AddAppSpawnHook(STAGE_CHILD_EXECUTE, HOOK_PRIO_SANDBOX, SetAppSandboxProperty);
 }

@@ -20,7 +20,18 @@
 #include "securec.h"
 
 #include "appspawn_hook.h"
+#include "appspawn_utils.h"
 #include "init_utils.h"
+
+APPSPAWN_STATIC void SetSystemEnv(void)
+{
+    int32_t ret;
+    char envValue[MAX_ENV_VALUE_LEN];
+    ret = ConvertEnvValue("/bin:/system/bin:${PATH}", envValue, MAX_ENV_VALUE_LEN);
+    APPSPAWN_CHECK(ret == 0, return, "Convert env value failed");
+    ret = setenv("PATH", envValue, true);
+    APPSPAWN_CHECK(ret == 0, return, "Set env fail value=%{public}s", envValue);
+}
 
 APPSPAWN_STATIC void RunAppSandbox(const char *ptyName)
 {
@@ -28,6 +39,7 @@ APPSPAWN_STATIC void RunAppSandbox(const char *ptyName)
         return;
     }
 #ifndef APPSPAWN_TEST
+    SetSystemEnv();
     OpenConsole();
     char *realPath = realpath(ptyName, NULL);
     if (realPath == NULL) {

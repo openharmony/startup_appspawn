@@ -163,6 +163,7 @@ typedef enum {
     APP_FLAGS_CLONE_ENABLE,
     APP_FLAGS_DEVELOPER_MODE = 17,
     APP_FLAGS_BEGETCTL_BOOT, // Start an app from begetctl.
+    APP_FLAGS_ATOMIC_SERVICE,
     MAX_FLAGS_INDEX = 63,
 } AppFlagsIndex;
 
@@ -250,6 +251,7 @@ int AppSpawnClientAddPermission(AppSpawnClientHandle handle, AppSpawnReqMsgHandl
 #define MSG_EXT_NAME_APP_ENV "AppEnv"
 #define MSG_EXT_NAME_BEGET_PID "AppPid"
 #define MSG_EXT_NAME_BEGET_PTY_NAME "ptyName"
+#define MSG_EXT_NAME_ACCOUNT_ID "AccountId"
 
 int AppSpawnReqMsgAddExtInfo(AppSpawnReqMsgHandle reqHandle, const char *name, const uint8_t *value, uint32_t valueLen);
 

@@ -144,27 +144,27 @@
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
-                    "src-path" : "/data/app/el2/<currentUserId>/base/<PackageName>",
+                    "src-path" : "/data/app/el2/<currentUserId>/base/<variablePackageName>",
                     "sandbox-path" : "/data/storage/el2/base",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
-                    "src-path" : "/data/app/el2/<currentUserId>/log/<PackageName>",
+                    "src-path" : "/data/app/el2/<currentUserId>/log/<variablePackageName>",
                     "sandbox-path" : "/data/storage/el2/log",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
-                    "src-path" : "/data/app/el1/<currentUserId>/database/<PackageName>",
+                    "src-path" : "/data/app/el1/<currentUserId>/database/<variablePackageName>",
                     "sandbox-path" : "/data/storage/el1/database",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "true"
                 }, {
-                    "src-path" : "/data/app/el2/<currentUserId>/database/<PackageName>",
+                    "src-path" : "/data/app/el2/<currentUserId>/database/<variablePackageName>",
                     "sandbox-path" : "/data/storage/el2/database",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
-                    "src-path" : "/data/app/el1/<currentUserId>/base/<PackageName>",
+                    "src-path" : "/data/app/el1/<currentUserId>/base/<variablePackageName>",
                     "sandbox-path" : "/data/storage/el1/base",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "true"
@@ -229,22 +229,22 @@
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
-                    "src-path" : "/data/app/el3/<currentUserId>/base/<PackageName>",
+                    "src-path" : "/data/app/el3/<currentUserId>/base/<variablePackageName>",
                     "sandbox-path" : "/data/storage/el3/base",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
-                    "src-path" : "/data/app/el3/<currentUserId>/database/<PackageName>",
+                    "src-path" : "/data/app/el3/<currentUserId>/database/<variablePackageName>",
                     "sandbox-path" : "/data/storage/el3/database",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
-                    "src-path" : "/data/app/el4/<currentUserId>/base/<PackageName>",
+                    "src-path" : "/data/app/el4/<currentUserId>/base/<variablePackageName>",
                     "sandbox-path" : "/data/storage/el4/base",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
-                    "src-path" : "/data/app/el4/<currentUserId>/database/<PackageName>",
+                    "src-path" : "/data/app/el4/<currentUserId>/database/<variablePackageName>",
                     "sandbox-path" : "/data/storage/el4/database",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
@@ -252,6 +252,11 @@
                     "src-path": "/storage/media/<currentUserId>/local/files/Docs/Downloads/<PackageName>",
                     "sandbox-path": "/storage/Users/<currentUserId>/Downloads",
                     "sandbox-flags": [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/mnt/hmdfs/<currentUserId>/cloud/data/<PackageName>",
+                    "sandbox-path" : "/data/storage/el2/cloud",
+                    "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }
             ],
@@ -686,16 +691,6 @@
                     "src-path": "/storage/media/<currentUserId>/local/files/.Recent",
                     "sandbox-path": "/storage/Users/<currentUserId>/.Recent",
                     "sandbox-flags": [ "bind", "rec" ]
-                }
-            ]
-        }],
-        "ohos.permission.CLOUDFILE_SYNC":[{
-            "sandbox-switch": "ON",
-            "mount-paths": [{
-                    "src-path" : "/mnt/hmdfs/<currentUserId>/cloud/data/<PackageName>",
-                    "sandbox-path" : "/data/storage/el2/cloud",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
                 }
             ]
         }],
