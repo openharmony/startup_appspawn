@@ -198,7 +198,7 @@ static int HnpSingleUnInstall(const char* packageName, const char *name, const c
         return HNP_ERRNO_BASE_SPRINTF_FAILED;
     }
 
-    if (sprintf_s(sandboxPath, MAX_FILE_PATH_LEN, HNP_SANDBOX_BASE_PATH"/%s.org/%s_%s", name, name, version) < 0) {
+    if (sprintf_s(sandboxPath, MAX_FILE_PATH_LEN, HNP_SANDBOX_BASE_PATH"/%s.org", name) < 0) {
         HNP_LOGE("sprintf unstall base path unsuccess.");
         return HNP_ERRNO_BASE_SPRINTF_FAILED;
     }
@@ -329,10 +329,7 @@ static int HnpReadAndInstall(char *srcFile, NativeHnpPath *hnpDstPath, bool isPu
         return ret;
     }
     if (isPublic) {
-        ret = HnpInstallInfoJsonWrite(hnpDstPath, &hnpCfg);
-        if (ret != 0) {
-            return ret;
-        }
+        return HnpInstallInfoJsonWrite(hnpDstPath, &hnpCfg);
     }
 
     return 0;
