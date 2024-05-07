@@ -248,6 +248,7 @@ int AppSpawnClientAddPermission(AppSpawnClientHandle handle, AppSpawnReqMsgHandl
 #define MSG_EXT_NAME_DATA_GROUP "DataGroup"
 #define MSG_EXT_NAME_APP_ENV "AppEnv"
 #define MSG_EXT_NAME_ACCOUNT_ID "AccountId"
+#define MSG_EXT_NAME_PROVISION_TYPE "ProvisionType"
 
 int AppSpawnReqMsgAddExtInfo(AppSpawnReqMsgHandle reqHandle, const char *name, const uint8_t *value, uint32_t valueLen);
 
