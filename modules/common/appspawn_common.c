@@ -196,7 +196,14 @@ static int SetXpmConfig(const AppSpawnMgr *content, const AppSpawningCtx *proper
     int ret = InitXpmRegion();
     APPSPAWN_CHECK(ret == 0, return ret, "init xpm region failed: %{public}d", ret);
 
-    if (CheckAppMsgFlagsSet(property, APP_FLAGS_DEBUGGABLE)) {
+    uint32_t len = 0;
+    char *provisionType = GetAppPropertyExt(property, MSG_EXT_NAME_PROVISION_TYPE, &len);
+    if (provisionType == NULL || len == 0) {
+        APPSPAWN_LOGE("get provision type failed");
+        return APPSPAWN_ARG_INVALID;
+    }
+
+    if (strcmp(provisionType, "debug") == 0) {
         ret = SetXpmOwnerId(PROCESS_OWNERID_DEBUG, NULL);
     } else if (ownerInfo == NULL) {
         ret = SetXpmOwnerId(PROCESS_OWNERID_COMPAT, NULL);
