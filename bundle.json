@@ -33,7 +33,6 @@
                 "ipc",
                 "selinux_adapter",
                 "selinux",
-                "libuv",
                 "hilog",
                 "init",
                 "ability_runtime",
