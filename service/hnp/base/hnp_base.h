@@ -36,6 +36,7 @@ extern "C" {
 #define MAX_PACKAGE_HNP_NUM 256
 
 #define HNP_CFG_FILE_NAME "hnp.json"
+#define HNP_PACKAGE_INFO_JSON_FILE_PATH "/data/service/el1/startup/hnp_info.json"
 
 #ifdef _WIN32
 #define DIR_SPLIT_SYMBOL '\\'
@@ -100,8 +101,6 @@ enum {
 
 #define HNP_ERRNO_PARAM_INVALID     0x22
 #define HNP_ERRNO_NOMEM             0x23
-
-#define HNP_PACKAGE_INFO_JSON_FILE_PATH "/data/service/el1/startup/hnp_info.json"
 
 enum {
     HNP_MID_MAIN        = 0x10,
@@ -249,6 +248,8 @@ int HnpPackageInfoGet(const char *packageName, HnpPackageInfo **packageInfoOut, 
 int HnpPackageInfoHnpDelete(const char *packageName, const char *name, const char *version);
 
 int HnpPackageInfoDelete(const char *packageName);
+
+char *HnpPackgeHnpVersionGet(const char *packageName, const char *name);
 
 #define HNP_LOGI(args...) \
     HnpLogPrintf(HNP_LOG_INFO, "HNP", ##args)
