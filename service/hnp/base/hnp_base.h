@@ -66,9 +66,9 @@ typedef struct HnpPackageInfoStru {
 
 typedef struct NativeHnpPathStru {
     char *hnpPackageName;
-    char hnpBasePath[MAX_FILE_PATH_LEN];
-    char hnpSoftwarePath[MAX_FILE_PATH_LEN];
-    char hnpVersionPath[MAX_FILE_PATH_LEN];
+    char hnpBasePath[MAX_FILE_PATH_LEN]; // hnp安装基础路径,public为 xxx/{uid}/hnppublic,private为xxx/{uid}/hnp/{hap}
+    char hnpSoftwarePath[MAX_FILE_PATH_LEN]; // 软件安装路径，为hnpBasePath/{name}.org/
+    char hnpVersionPath[MAX_FILE_PATH_LEN]; // 软件安装版本路径，为hnpBasePath/{name}.org/{name}_{version}
     int uid;
 } NativeHnpPath;
 

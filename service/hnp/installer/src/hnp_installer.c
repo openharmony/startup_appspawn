@@ -187,7 +187,7 @@ static int HnpInstall(const char *hnpFile, NativeHnpPath *hnpDstPath, HnpCfgInfo
     return HnpGenerateSoftLink(hnpDstPath->hnpVersionPath, hnpDstPath->hnpBasePath, hnpCfg);
 }
 
-static int HnpSingleUnInstall(const char* packageName, const char *name, const char *version, int uid)
+static int HnpUnInstallPublicHnp(const char* packageName, const char *name, const char *version, int uid)
 {
     int ret;
     char hnpNamePath[MAX_FILE_PATH_LEN];
@@ -231,7 +231,7 @@ static int HnpUnInstall(int uid, const char *packageName)
     for (int i = 0; i < count; i++) {
         HNP_LOGI("hnp uninstall start now! name=%s,version=%s,uid=%d,package=%s", packageInfo[i].name,
             packageInfo[i].version, uid, packageName);
-        ret = HnpSingleUnInstall(packageName, packageInfo[i].name, packageInfo[i].version, uid);
+        ret = HnpUnInstallPublicHnp(packageName, packageInfo[i].name, packageInfo[i].version, uid);
         HNP_LOGI("hnp uninstall end! ret=%d", ret);
         if (ret != 0) {
             free(packageInfo);
@@ -270,7 +270,7 @@ static int HnpInstallForceCheck(HnpCfgInfo *hnpCfgInfo, NativeHnpPath *hnpDstPat
         if (isPublic) {
             version = HnpPackgeHnpVersionGet(hnpDstPath->hnpPackageName, hnpCfgInfo->name);
             if (version != NULL) {
-                ret = HnpSingleUnInstall(hnpDstPath->hnpPackageName, hnpCfgInfo->name, version, hnpDstPath->uid);
+                ret = HnpUnInstallPublicHnp(hnpDstPath->hnpPackageName, hnpCfgInfo->name, version, hnpDstPath->uid);
             }
         } else {
             ret = HnpDeleteFolder(hnpDstPath->hnpSoftwarePath);
@@ -355,13 +355,13 @@ static int HnpReadAndInstall(char *srcFile, NativeHnpPath *hnpDstPath, bool isPu
         free(hnpCfg.links);
     }
     if (ret != 0) {
-        HnpSingleUnInstall(hnpDstPath->hnpPackageName, hnpCfg.name, hnpCfg.version, hnpDstPath->uid);
+        HnpUnInstallPublicHnp(hnpDstPath->hnpPackageName, hnpCfg.name, hnpCfg.version, hnpDstPath->uid);
         return ret;
     }
     if (isPublic) {
         ret = HnpInstallInfoJsonWrite(hnpDstPath, &hnpCfg);
         if (ret != 0) {
-            HnpSingleUnInstall(hnpDstPath->hnpPackageName, hnpCfg.name, hnpCfg.version, hnpDstPath->uid);
+            HnpUnInstallPublicHnp(hnpDstPath->hnpPackageName, hnpCfg.name, hnpCfg.version, hnpDstPath->uid);
         }
     }
 
@@ -370,7 +370,7 @@ static int HnpReadAndInstall(char *srcFile, NativeHnpPath *hnpDstPath, bool isPu
 
 static bool HnpFileCheck(const char *file)
 {
-    char suffix[] = ".hnp";
+    const char suffix[] = ".hnp";
     int len = strlen(file);
     int suffixLen = strlen(suffix);
 
@@ -495,12 +495,12 @@ int HnpCmdInstall(int argc, char *argv[])
     char *packageName;
     int ch;
 
-    optind = 1;  // 从头开始遍历参数
+    optind = 1; // 从头开始遍历参数
     while ((ch = getopt_long(argc, argv, "hu:p:i:f", NULL, NULL)) != -1) {
         switch (ch) {
             case 'h' :
                 return HNP_ERRNO_OPERATOR_ARGV_MISS;
-            case 'u': //uid
+            case 'u': // uid
                 uidArg = optarg;
                 int ret = HnpInstallerUidGet(uidArg, &uid);
                 if (ret != 0) {
@@ -508,13 +508,13 @@ int HnpCmdInstall(int argc, char *argv[])
                     return ret;
                 }
                 break;
-            case 'p': //hnp package name
+            case 'p': // hnp package name
                 packageName = (char *)optarg;
                 break;
-            case 'i': //hnp source path
+            case 'i': // hnp source path
                 srcPath = (char *)optarg;
                 break;
-            case 'f': //is force
+            case 'f': // is force
                 isForce = true;
                 break;
             default:
@@ -538,12 +538,12 @@ int HnpCmdUnInstall(int argc, char *argv[])
     int ret;
     int ch;
 
-    optind = 1;  // 从头开始遍历参数
+    optind = 1; // 从头开始遍历参数
     while ((ch = getopt_long(argc, argv, "hu:p:", NULL, NULL)) != -1) {
         switch (ch) {
             case 'h' :
                 return HNP_ERRNO_OPERATOR_ARGV_MISS;
-            case 'u': //uid
+            case 'u': // uid
                 uidArg = optarg;
                 ret = HnpInstallerUidGet(uidArg, &uid);
                 if (ret != 0) {
@@ -551,7 +551,7 @@ int HnpCmdUnInstall(int argc, char *argv[])
                     return ret;
                 }
                 break;
-            case 'p': //hnp package name
+            case 'p': // hnp package name
                 packageName = (char *)optarg;
                 break;
             default:
