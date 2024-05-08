@@ -49,7 +49,7 @@ static int ParseAppSandboxConfig(const cJSON *root, PermissionManager *mgr)
 
     uint32_t configSize = cJSON_GetArraySize(config);
     for (uint32_t i = 0; i < configSize; i++) {
-        cJSON *json = cJSON_GetArrayItem(config, i);
+        json = cJSON_GetArrayItem(config, i);
         char *name = GetStringFromJsonObj(json, "name");
         APPSPAWN_CHECK(name != NULL, break, "No found name in config");
 
