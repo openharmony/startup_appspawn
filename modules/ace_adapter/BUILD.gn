@@ -49,7 +49,6 @@ ohos_shared_library("appspawn_ace") {
     "hitrace:hitrace_meter",
     "init:libbegetutil",
     "ipc:ipc_single",
-    "libuv:uv",
     "napi:ace_napi",
     "os_account:os_account_innerkits",
     "resource_management:global_resmgr",
