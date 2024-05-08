@@ -73,8 +73,10 @@ int SetSelinuxCon(const AppSpawnMgr *content, const AppSpawningCtx *property)
         }
         return 0;
     }
+    int32_t ret;
     if (IsNWebSpawnMode(content)) {
-        setcon("u:r:isolated_render:s0");
+        ret = setcon("u:r:isolated_render:s0");
+        APPSPAWN_CHECK_ONLY_LOG(ret == 0, "Setcon failed, errno: %{public}d", errno);
         return 0;
     }
     AppSpawnMsgDomainInfo *msgDomainInfo =
@@ -89,7 +91,7 @@ int SetSelinuxCon(const AppSpawnMgr *content, const AppSpawningCtx *property)
     if (CheckAppMsgFlagsSet(property, APP_FLAGS_DEBUGGABLE)) {
         hapDomainInfo.hapFlags |= SELINUX_HAP_DEBUGGABLE;
     }
-    int32_t ret = hapContext.HapDomainSetcontext(hapDomainInfo);
+    ret = hapContext.HapDomainSetcontext(hapDomainInfo);
     if (CheckAppMsgFlagsSet(property, APP_FLAGS_ASANENABLED)) {
         ret = 0;
     }

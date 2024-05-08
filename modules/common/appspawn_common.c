@@ -347,8 +347,13 @@ static int SpawnInitSpawningEnv(AppSpawnMgr *content, AppSpawningCtx *property)
 
     ret = SetAppAccessToken(content, property);
     APPSPAWN_CHECK_ONLY_EXPER(ret == 0, return ret);
+    return 0;
+}
 
-    ret = SetEnvInfo(content, property);
+static int SpawnSetAppEnv(AppSpawnMgr *content, AppSpawningCtx *property)
+{
+    APPSPAWN_LOGV("Spawning: set appEnv");
+    int ret = SetEnvInfo(content, property);
     APPSPAWN_CHECK_ONLY_EXPER(ret == 0, return ret);
     return 0;
 }
@@ -442,6 +447,7 @@ MODULE_CONSTRUCTOR(void)
 
     AddAppSpawnHook(STAGE_PARENT_PRE_FORK, HOOK_PRIO_HIGHEST, SpawnGetSpawningFlag);
     AddAppSpawnHook(STAGE_CHILD_PRE_COLDBOOT, HOOK_PRIO_HIGHEST, SpawnInitSpawningEnv);
+    AddAppSpawnHook(STAGE_CHILD_PRE_COLDBOOT, HOOK_PRIO_COMMON + 1, SpawnSetAppEnv);
     AddAppSpawnHook(STAGE_CHILD_EXECUTE, HOOK_PRIO_HIGHEST, SpawnEnableCache);
     AddAppSpawnHook(STAGE_CHILD_EXECUTE, HOOK_PRIO_PROPERTY, SpawnSetProperties);
     AddAppSpawnHook(STAGE_CHILD_POST_RELY, HOOK_PRIO_HIGHEST, SpawnComplete);
