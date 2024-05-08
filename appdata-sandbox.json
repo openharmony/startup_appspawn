@@ -691,6 +691,11 @@
                     "src-path": "/storage/media/<currentUserId>/local/files/.Recent",
                     "sandbox-path": "/storage/Users/<currentUserId>/.Recent",
                     "sandbox-flags": [ "bind", "rec" ]
+                },
+                {
+                    "src-path": "/mnt/data/<currentUserId>/hmdfs",
+                    "sandbox-path": "/storage/hmdfs",
+                    "sandbox-flags": [ "bind", "rec" ]
                 }
             ]
         }],
