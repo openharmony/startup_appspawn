@@ -20,6 +20,7 @@ ohos_shared_library("appspawn_common") {
     "appspawn_cgroup.c",
     "appspawn_common.c",
     "appspawn_namespace.c",
+    "appspawn_silk.c",
   ]
   include_dirs = [
     ".",
@@ -27,13 +28,17 @@ ohos_shared_library("appspawn_common") {
     "${appspawn_path}/standard",
   ]
   cflags = []
-  deps = [ "${appspawn_path}/modules/module_engine:libappspawn_module_engine" ]
+  deps = [
+    "${appspawn_path}/modules/module_engine:libappspawn_module_engine",
+    "${appspawn_path}/util:libappspawn_util",
+  ]
   defines = [ "GRAPHIC_PERMISSION_CHECK" ]
   external_deps = [
     "access_token:libtoken_setproc",
     "access_token:libtokenid_sdk",
     "cJSON:cjson",
     "c_utils:utils",
+    "config_policy:configpolicy_util",
     "hilog:libhilog",
     "init:libbegetutil",
     "netmanager_base:netsys_client",
