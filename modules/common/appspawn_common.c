@@ -255,11 +255,7 @@ static int SetUidGid(const AppSpawnMgr *content, const AppSpawningCtx *property)
 static int32_t SetFileDescriptors(const AppSpawnMgr *content, const AppSpawningCtx *property)
 {
 #ifndef APPSPAWN_TEST
-    // close stdin stdout stderr
-    close(STDIN_FILENO);
-    close(STDOUT_FILENO);
-    close(STDERR_FILENO);
-    // redirect to /dev/null
+    // redirect stdin stdout stderr to /dev/null
     int devNullFd = open(DEVICE_NULL_STR, O_RDWR);
     if (devNullFd == -1) {
         APPSPAWN_LOGE("open dev_null error: %{public}d", errno);
@@ -270,18 +266,21 @@ static int32_t SetFileDescriptors(const AppSpawnMgr *content, const AppSpawningC
     if (dup2(devNullFd, STDIN_FILENO) == -1) {
         APPSPAWN_LOGE("dup2 STDIN error: %{public}d", errno);
         return (-errno);
-    };
-
+    }
     // stdout
     if (dup2(devNullFd, STDOUT_FILENO) == -1) {
         APPSPAWN_LOGE("dup2 STDOUT error: %{public}d", errno);
         return (-errno);
-    };
+    }
     // stderr
     if (dup2(devNullFd, STDERR_FILENO) == -1) {
         APPSPAWN_LOGE("dup2 STDERR error: %{public}d", errno);
         return (-errno);
-    };
+    }
+
+    if (devNullFd > STDERR_FILENO) {
+        close(devNullFd);
+    }
 #endif
     return 0;
 }
