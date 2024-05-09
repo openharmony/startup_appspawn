@@ -83,7 +83,8 @@ static int StartHnpProcess(char *const argv[], char *const apcEnv[])
     return exitVal;
 }
 
-int NativeInstallHnp(const char *userId, const char *hnpRootPath, const char *packageName, int installOptions)
+int NativeInstallHnp(const char *userId, const char *hapPath, const char *hnpRootPath, const char *packageName,
+    int installOptions)
 {
     char *argv[MAX_ARGV_NUM] = {0};
     char *apcEnv[MAX_ENV_NUM] = {0};
@@ -94,12 +95,12 @@ int NativeInstallHnp(const char *userId, const char *hnpRootPath, const char *pa
         return HNP_API_NOT_IN_DEVELOPER_MODE;
     }
 
-    if ((userId == NULL) || (hnpRootPath == NULL) || (packageName == NULL)) {
+    if ((userId == NULL) || (hapPath == NULL)|| (hnpRootPath == NULL) || (packageName == NULL)) {
         return HNP_API_ERRNO_PARAM_INVALID;
     }
 
-    HNPAPI_LOG("\r\n [HNP API] native package install! userId=%s, hnp root path=%s, package name=%s "
-        "install options=%d\r\n", userId, hnpRootPath, packageName, installOptions);
+    HNPAPI_LOG("\r\n [HNP API] native package install! userId=%s, hap path=%s, hnp root path=%s, package name=%s "
+        "install options=%d\r\n", userId, hapPath, hnpRootPath, packageName, installOptions);
 
     argv[index++] = "hnp";
     argv[index++] = "install";
