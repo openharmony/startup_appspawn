@@ -221,6 +221,19 @@ static int HnpUnInstall(int uid, const char *packageName)
     HnpPackageInfo *packageInfo = NULL;
     int count = 0;
     char privatePath[MAX_FILE_PATH_LEN];
+    char dstPath[MAX_FILE_PATH_LEN];
+
+    /* 拼接卸载路径 */
+    if (sprintf_s(dstPath, MAX_FILE_PATH_LEN, HNP_DEFAULT_INSTALL_ROOT_PATH"/%d", uid) < 0) {
+        HNP_LOGE("hnp install sprintf unsuccess, uid:%d", uid);
+        return HNP_ERRNO_BASE_SPRINTF_FAILED;
+    }
+
+    /* 验证卸载路径是否存在 */
+    if (access(dstPath, F_OK) != 0) {
+        HNP_LOGE("hnp uninstall uid path[%s] is not exist", dstPath);
+        return HNP_ERRNO_UNINSTALLER_HNP_PATH_NOT_EXIST;
+    }
 
     int ret = HnpPackageInfoGet(packageName, &packageInfo, &count);
     if (ret != 0) {
@@ -250,9 +263,8 @@ static int HnpUnInstall(int uid, const char *packageName)
         return HNP_ERRNO_BASE_SPRINTF_FAILED;
     }
 
-    if (access(privatePath, F_OK) == 0) {
-        (void)HnpDeleteFolder(privatePath);
-    }
+    (void)HnpDeleteFolder(privatePath);
+
     return 0;
 }
 

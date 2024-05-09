@@ -184,11 +184,14 @@ int HnpDeleteFolder(const char *path)
 #ifdef _WIN32
     return ret;
 #else
-    DIR *dir = opendir(path);
     struct dirent *entry;
     struct stat statbuf;
     char filePath[MAX_FILE_PATH_LEN];
 
+    if (access(path, F_OK) != 0) {
+        return 0;
+    }
+    DIR *dir = opendir(path);
     if (dir == NULL) {
         HNP_LOGE("delete folder open dir=%s unsuccess ", path);
         return HNP_ERRNO_BASE_DIR_OPEN_FAILED;
