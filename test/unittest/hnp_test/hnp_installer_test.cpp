@@ -639,11 +639,11 @@ HWTEST(HnpInstallerTest, Hnp_Install_API_001, TestSize.Level0)
 
     if (IsDeveloperModeOpen()) {
         { //param is invalid
-            ret = NativeInstallHnp(NULL, "./hnp_out", "sample", 1);
+            ret = NativeInstallHnp(NULL, NULL, "./hnp_out", "sample", 1);
             EXPECT_EQ(ret, HNP_API_ERRNO_PARAM_INVALID);
         }
         { //ok
-            ret = NativeInstallHnp("10000", "./hnp_out", "sample", 1);
+            ret = NativeInstallHnp("10000", "test", "./hnp_out", "sample", 1);
             EXPECT_EQ(ret, 0);
             EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/bin/outt", F_OK), 0);
             EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/bin/out2", F_OK), 0);
@@ -676,7 +676,7 @@ HWTEST(HnpInstallerTest, Hnp_Install_API_002, TestSize.Level0)
 
     if (IsDeveloperModeOpen()) {
         { //st dir path is invalid
-            ret = NativeInstallHnp("10001", "./hnp_out/", "sample", 1);
+            ret = NativeInstallHnp("10001", "test", "./hnp_out/", "sample", 1);
             EXPECT_NE(ret, 0);
         }
     }
@@ -707,7 +707,7 @@ HWTEST(HnpInstallerTest, Hnp_Install_API_003, TestSize.Level0)
 
     if (IsDeveloperModeOpen()) {
         { //ok
-            ret = NativeInstallHnp("10000", "./hnp_out/", "sample", 1);
+            ret = NativeInstallHnp("10000", "test", "./hnp_out/", "sample", 1);
             EXPECT_EQ(ret, 0);
             EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/bin/outt", F_OK), 0);
             EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/bin/out2", F_OK), 0);
@@ -739,7 +739,7 @@ HWTEST(HnpInstallerTest, Hnp_Install_API_004, TestSize.Level0)
     HnpPackWithCfg(true, true);
 
     { //ok
-        ret = NativeInstallHnp("10000", "./hnp_out/", "sample", 1);
+        ret = NativeInstallHnp("10000", "test", "./hnp_out/", "sample", 1);
         if (IsDeveloperModeOpen()) {
             GTEST_LOG_(INFO) << "this is developer mode";
             EXPECT_EQ(ret, 0);
