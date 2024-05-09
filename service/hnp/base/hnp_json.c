@@ -418,6 +418,9 @@ int HnpPackageInfoGet(const char *packageName, HnpPackageInfo **packageInfoOut, 
 
     int ret = ReadFileToStream(HNP_PACKAGE_INFO_JSON_FILE_PATH, &infoStream, &size);
     if (ret != 0) {
+        if (ret == HNP_ERRNO_BASE_FILE_OPEN_FAILED || ret == HNP_ERRNO_BASE_GET_FILE_LEN_NULL) {
+            return 0;
+        }
         HNP_LOGE("package info get read hnp info file unsuccess");
         return HNP_ERRNO_BASE_READ_FILE_STREAM_FAILED;
     }
@@ -519,6 +522,9 @@ int HnpPackageInfoDelete(const char *packageName)
 
     int ret = ReadFileToStream(HNP_PACKAGE_INFO_JSON_FILE_PATH, &infoStream, &size);
     if (ret != 0) {
+        if (ret == HNP_ERRNO_BASE_FILE_OPEN_FAILED || ret == HNP_ERRNO_BASE_GET_FILE_LEN_NULL) {
+            return 0;
+        }
         HNP_LOGE("package info delete read hnp info file unsuccess");
         return HNP_ERRNO_BASE_READ_FILE_STREAM_FAILED;
     }
