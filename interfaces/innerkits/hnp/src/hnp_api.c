@@ -95,7 +95,7 @@ int NativeInstallHnp(const char *userId, const char *hapPath, const char *hnpRoo
         return HNP_API_NOT_IN_DEVELOPER_MODE;
     }
 
-    if ((userId == NULL) || (hapPath == NULL)|| (hnpRootPath == NULL) || (packageName == NULL)) {
+    if ((userId == NULL) || (hapPath == NULL) || (hnpRootPath == NULL) || (packageName == NULL)) {
         return HNP_API_ERRNO_PARAM_INVALID;
     }
 
