@@ -202,8 +202,8 @@ int32_t StringSplit(const char *str, const char *separator, void *context, Split
 
 char *GetLastStr(const char *str, const char *dst)
 {
-    APPSPAWN_CHECK_ONLY_EXPER(str != NULL , return NULL);
-    APPSPAWN_CHECK_ONLY_EXPER(dst != NULL , return NULL);
+    APPSPAWN_CHECK_ONLY_EXPER(str != NULL, return NULL);
+    APPSPAWN_CHECK_ONLY_EXPER(dst != NULL, return NULL);
 
     char *end = (char *)str + strlen(str);
     size_t len = strlen(dst);
@@ -267,9 +267,9 @@ cJSON *GetJsonObjFromFile(const char *jsonPath)
 
 int ParseJsonConfig(const char *basePath, const char *fileName, ParseConfig parseConfig, ParseJsonContext *context)
 {
-    APPSPAWN_CHECK_ONLY_EXPER(basePath != NULL , return APPSPAWN_ARG_INVALID);
-    APPSPAWN_CHECK_ONLY_EXPER(fileName != NULL , return APPSPAWN_ARG_INVALID);
-    APPSPAWN_CHECK_ONLY_EXPER(parseConfig != NULL , return APPSPAWN_ARG_INVALID);
+    APPSPAWN_CHECK_ONLY_EXPER(basePath != NULL, return APPSPAWN_ARG_INVALID);
+    APPSPAWN_CHECK_ONLY_EXPER(fileName != NULL, return APPSPAWN_ARG_INVALID);
+    APPSPAWN_CHECK_ONLY_EXPER(parseConfig != NULL, return APPSPAWN_ARG_INVALID);
 
     // load sandbox config
     char path[PATH_MAX] = {};
@@ -300,8 +300,8 @@ int ParseJsonConfig(const char *basePath, const char *fileName, ParseConfig pars
 
 void DumpCurrentDir(char *buffer, uint32_t bufferLen, const char *dirPath)
 {
-    APPSPAWN_CHECK_ONLY_EXPER(buffer != NULL , return);
-    APPSPAWN_CHECK_ONLY_EXPER(dirPath != NULL , return);
+    APPSPAWN_CHECK_ONLY_EXPER(buffer != NULL, return);
+    APPSPAWN_CHECK_ONLY_EXPER(dirPath != NULL, return);
     APPSPAWN_CHECK_ONLY_EXPER(bufferLen > 0 , return);
 
     char tmp[32] = {0};  // 32 max
