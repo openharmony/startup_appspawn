@@ -407,6 +407,7 @@ static int SpawnSetProperties(AppSpawnMgr *content, AppSpawningCtx *property)
     ret = WaitForDebugger(property);
     APPSPAWN_CHECK_ONLY_EXPER(ret == 0, return ret);
 
+    APPSPAWN_ONLY_EXPER(GetAppSpawnMsgType(property) == MSG_SPAWN_NATIVE_PROCESS, return 0);
 #ifdef SECURITY_COMPONENT_ENABLE
     InitSecCompClientEnhance();
 #endif
