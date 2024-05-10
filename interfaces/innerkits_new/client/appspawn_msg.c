@@ -264,10 +264,9 @@ static int CreateBaseMsg(AppSpawnReqMsgNode *reqNode, uint32_t msgType, const ch
     int ret = strcpy_s(reqNode->msg->processName, sizeof(reqNode->msg->processName), processName);
     APPSPAWN_CHECK(ret == 0, return APPSPAWN_SYSTEM_ERROR, "Failed to create block for %{public}s", processName);
     block->currentIndex = sizeof(AppSpawnMsg);
-    // only span msg
-    APPSPAWN_CHECK_ONLY_EXPER(msgType == MSG_APP_SPAWN || msgType == MSG_SPAWN_NATIVE_PROCESS, return 0);
     ret = SetFlagsTlv(reqNode, block, &reqNode->msgFlags, TLV_MSG_FLAGS, MAX_FLAGS_INDEX);
     APPSPAWN_CHECK_ONLY_EXPER(ret == 0, return ret);
+    APPSPAWN_CHECK_ONLY_EXPER(msgType == MSG_APP_SPAWN || msgType == MSG_SPAWN_NATIVE_PROCESS, return 0);
     int maxCount = GetPermissionMaxCount();
     APPSPAWN_CHECK(maxCount > 0, return APPSPAWN_SYSTEM_ERROR, "Invalid max for permission %{public}s", processName);
     ret = SetFlagsTlv(reqNode, block, &reqNode->permissionFlags, TLV_PERMISSION, maxCount);

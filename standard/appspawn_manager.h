@@ -91,6 +91,9 @@ typedef struct TagAppSpawnedProcess {
     int exitStatus;
     struct timespec spawnStart;
     struct timespec spawnEnd;
+#ifdef DEBUG_BEGETCTL_BOOT
+    AppSpawnMsgNode *message;
+#endif
     char name[0];
 } AppSpawnedProcess;
 
@@ -152,6 +155,7 @@ int CheckAppSpawnMsg(const AppSpawnMsgNode *message);
 int DecodeAppSpawnMsg(AppSpawnMsgNode *message);
 int GetAppSpawnMsgFromBuffer(const uint8_t *buffer, uint32_t bufferLen,
     AppSpawnMsgNode **outMsg, uint32_t *msgRecvLen, uint32_t *reminder);
+AppSpawnMsgNode *RebuildAppSpawnMsgNode(AppSpawnMsgNode *message, AppSpawnedProcess *appInfo);
 
 /**
  * @brief 消息内容操作接口

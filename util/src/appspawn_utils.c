@@ -42,7 +42,7 @@ static const AppSpawnCommonEnv COMMON_ENV[] = {
     {"PWD", "/storage/Users/currentUser", false}
 };
 
-APPSPAWN_STATIC int ConvertEnvValue(const char *srcEnv, char *dstEnv, int len)
+int ConvertEnvValue(const char *srcEnv, char *dstEnv, int len)
 {
     char *tmpEnv = NULL;
     char *ptr;

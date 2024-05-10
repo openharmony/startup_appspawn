@@ -22,6 +22,10 @@ ohos_shared_library("appspawn_common") {
     "appspawn_namespace.c",
     "appspawn_silk.c",
   ]
+  if (is_debug || build_variant == "root") {
+    sources += [ "appspawn_begetctl.c" ]
+  }
+
   include_dirs = [
     ".",
     "${appspawn_path}/common",
