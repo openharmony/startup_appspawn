@@ -57,6 +57,7 @@ extern "C" {
 #define APP_COLD_START 0x01
 #define APP_ASAN_DETECTOR 0x02
 #define APP_DEVELOPER_MODE 0x04
+#define APP_BEGETCTL_BOOT 0x400
 
 #define MAX_LEN_SHORT_NAME 16
 #define DEFAULT_UMASK 0002
@@ -104,6 +105,7 @@ typedef enum {
     APPSPAWN_BUFFER_NOT_ENOUGH,
     APPSPAWN_TIMEOUT,
     APPSPAWN_FORK_FAIL,
+    APPSPAWN_DEBUG_MODE_NOT_SUPPORT,
     APPSPAWN_NODE_EXIST,
 } AppSpawnErrorCode;
 
@@ -117,6 +119,7 @@ uint32_t GetSpawnTimeout(uint32_t def);
 void DumpCurrentDir(char *buffer, uint32_t bufferLen, const char *dirPath);
 int IsDeveloperModeOpen();
 void InitCommonEnv(void);
+int ConvertEnvValue(const char *srcEnv, char *dstEnv, int len);
 
 #ifndef APP_FILE_NAME
 #define APP_FILE_NAME   (strrchr((__FILE__), '/') ? strrchr((__FILE__), '/') + 1 : (__FILE__))

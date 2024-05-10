@@ -45,7 +45,6 @@ typedef struct TagAppSpawnForkArg AppSpawnForkArg;
 typedef struct TagAppSpawnMsgNode AppSpawnMsgNode;
 typedef struct TagAppSpawnMgr AppSpawnMgr;
 
-int ConvertEnvValue(const char *srcEnv, char *dstEnv, int len);
 void SetHapDomainSetcontextResult(int result);
 
 void ProcessSignal(const struct signalfd_siginfo *siginfo);
