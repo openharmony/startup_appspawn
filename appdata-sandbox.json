@@ -249,11 +249,6 @@
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
-                    "src-path": "/storage/media/<currentUserId>/local/files/Docs/Downloads/<PackageName>",
-                    "sandbox-path": "/storage/Users/currentUser/Downloads",
-                    "sandbox-flags": [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
                     "src-path" : "/mnt/hmdfs/<currentUserId>/cloud/data/<PackageName>",
                     "sandbox-path" : "/data/storage/el2/cloud",
                     "sandbox-flags" : [ "bind", "rec" ],
@@ -743,6 +738,18 @@
                     "src-path": "/mnt/data/external",
                     "sandbox-path": "/storage/External",
                     "sandbox-flags": [ "bind", "rec" ]
+                }
+            ]
+        }],
+        "ohos.permission.FILE_ACCESS_COMMON_DIR":[{
+            "sandbox-switch": "ON",
+            "mount-paths": [{
+                    "src-path": "/storage/media/<currentUserId>/local/files/Docs",
+                    "sandbox-path": "/storage/Users/currentUser",
+                    "sandbox-flags": [ "bind", "rec" ],
+                    "dac-override-sensitive": "true",
+                    "fs-type": "sharefs",
+                    "options": "override"
                 }
             ]
         }],

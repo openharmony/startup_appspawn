@@ -113,6 +113,7 @@ namespace {
     const std::string g_ohosRender = "__internal__.com.ohos.render";
     const std::string g_sandBoxRootDirNweb = "/mnt/sandbox/com.ohos.render/";
     const std::string FILE_CROSS_APP_MODE = "ohos.permission.FILE_CROSS_APP";
+    const std::string FILE_ACCESS_COMMON_DIR_MODE = "ohos.permission.FILE_ACCESS_COMMON_DIR";
 }
 
 static uint32_t GetAppMsgFlags(const AppSpawningCtx *property)
@@ -583,8 +584,7 @@ static uint32_t ConvertFlagStr(const std::string &flagStr)
 unsigned long SandboxUtils::GetSandboxMountFlags(nlohmann::json &config)
 {
     unsigned long mountFlags = BASIC_MOUNT_FLAGS;
-    if (GetSandboxDacOverrideEnable(config) && (deviceTypeEnable_ == true) &&
-        (config.find(g_sandBoxFlagsCustomized) != config.end())) {
+    if (GetSandboxDacOverrideEnable(config) && (config.find(g_sandBoxFlagsCustomized) != config.end())) {
         mountFlags = GetMountFlagsFromConfig(config[g_sandBoxFlagsCustomized].get<std::vector<std::string>>());
     } else if (config.find(g_sandBoxFlags) != config.end()) {
         mountFlags = GetMountFlagsFromConfig(config[g_sandBoxFlags].get<std::vector<std::string>>());
@@ -595,8 +595,7 @@ unsigned long SandboxUtils::GetSandboxMountFlags(nlohmann::json &config)
 std::string SandboxUtils::GetSandboxFsType(nlohmann::json &config)
 {
     std::string fsType;
-    if (GetSandboxDacOverrideEnable(config) && (deviceTypeEnable_ == true)
-        && (config.find(g_fsType) != config.end())) {
+    if (GetSandboxDacOverrideEnable(config) && (config.find(g_fsType) != config.end())) {
         fsType = config[g_fsType].get<std::string>();
     } else {
         fsType = "";
@@ -607,8 +606,7 @@ std::string SandboxUtils::GetSandboxFsType(nlohmann::json &config)
 std::string SandboxUtils::GetSandboxOptions(nlohmann::json &config)
 {
     std::string options;
-    if (GetSandboxDacOverrideEnable(config) && (deviceTypeEnable_ == true) &&
-        (config.find(g_sandBoxOptions) != config.end())) {
+    if (GetSandboxDacOverrideEnable(config) && (config.find(g_sandBoxOptions) != config.end())) {
         options = config[g_sandBoxOptions].get<std::string>();
     } else {
         options = "";
@@ -1416,11 +1414,16 @@ int32_t SandboxUtils::SetAppSandboxProperty(AppSpawningCtx *appProperty)
     int rc = unshare(CLONE_NEWNS);
     APPSPAWN_CHECK(rc == 0, return rc, "unshare failed, packagename is %{public}s", bundleName.c_str());
 
+    int index = 0;
     if (CheckAppFullMountEnable()) {
-        int index = GetPermissionIndex(nullptr, FILE_CROSS_APP_MODE.c_str());
-        if (index > 0) {
-            SetAppPermissionFlags(appProperty, index);
-        }
+        index = GetPermissionIndex(nullptr, FILE_CROSS_APP_MODE.c_str());
+    } else {
+        index = GetPermissionIndex(nullptr, FILE_ACCESS_COMMON_DIR_MODE.c_str());
+    }
+    if (index > 0) {
+        SetAppPermissionFlags(appProperty, index);
+    } else {
+        APPSPAWN_LOGW("Set app permission flag fail.");
     }
 
     // check app sandbox switch
