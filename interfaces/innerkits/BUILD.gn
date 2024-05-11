@@ -43,7 +43,7 @@ ohos_static_library("appspawn_socket_client") {
       "config_policy:configpolicy_util",
       "hilog:libhilog",
       "init:libbegetutil",
-      "json:nlohman_json_static"
+      "json:nlohmann_json_static"
     ]
   }
 

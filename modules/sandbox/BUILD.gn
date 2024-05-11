@@ -85,7 +85,7 @@ if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
       "config_policy:configpolicy_util",
       "hilog:libhilog",
       "init:libbegetutil",
-      "json:nlohman_json_static"
+      "json:nlohmann_json_static"
     ]
 
     subsystem_name = "${subsystem_name}"
