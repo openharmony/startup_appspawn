@@ -250,7 +250,7 @@
                     "check-action-status": "false"
                 }, {
                     "src-path": "/storage/media/<currentUserId>/local/files/Docs/Downloads/<PackageName>",
-                    "sandbox-path": "/storage/Users/<currentUserId>/Downloads",
+                    "sandbox-path": "/storage/Users/currentUser/Downloads",
                     "sandbox-flags": [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
