@@ -49,7 +49,7 @@ void NWebSpawnInit(void)
     APPSPAWN_LOGI("NWebSpawnInit");
 #ifdef CODE_SIGNATURE_ENABLE
     // ownerId must been set before setcon & setuid
-    (void)SetXpmOwnerId(PROCESS_OWNERID_EXTEND, NULL);
+    (void)SetXpmOwnerId(PROCESS_OWNERID_NWEB, NULL);
 #endif
 #ifdef WITH_SELINUX
     setcon("u:r:nwebspawn:s0");
