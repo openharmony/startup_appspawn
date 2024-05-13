@@ -198,7 +198,8 @@ static bool HnpInstallHapExistCheck(const char *hnpPackageName, cJSON *json, cJS
     return hapExist;
 }
 
-static bool HnpInstallHnpExistCheck(cJSON *hnpItemArr, const char *name, cJSON **hnpItemOut, int *hnpIndex)
+static bool HnpInstallHnpExistCheck(cJSON *hnpItemArr, const char *name, cJSON **hnpItemOut, int *hnpIndex,
+    const char *version)
 {
     if (hnpItemArr == NULL) {
         return false;
@@ -206,18 +207,25 @@ static bool HnpInstallHnpExistCheck(cJSON *hnpItemArr, const char *name, cJSON *
 
     for (int i = 0; i < cJSON_GetArraySize(hnpItemArr); i++) {
         cJSON *hnpItem = cJSON_GetArrayItem(hnpItemArr, i);
-        if ((cJSON_GetObjectItem(hnpItem, "name") != NULL) &&
-            (strcmp(cJSON_GetObjectItem(hnpItem, "name")->valuestring, name) == 0)) {
+        cJSON *nameJson = cJSON_GetObjectItem(hnpItem, "name");
+        cJSON *versionJson = cJSON_GetObjectItem(hnpItem, "version");
+        if ((nameJson != NULL) && (strcmp(nameJson->valuestring, name) == 0)) {
             *hnpItemOut = hnpItem;
             *hnpIndex = i;
-            return true;
+            if (version == NULL) {
+                return true;
+            }
+            if ((versionJson != NULL) && (strcmp(versionJson->valuestring, version) == 0)) {
+                return true;
+            }
+
         }
     }
 
     return false;
 }
 
-static void HnpPackageVersionUpdateAll(cJSON *json, HnpCfgInfo *hnpCfg)
+static void HnpPackageVersionUpdateAll(cJSON *json, const HnpCfgInfo *hnpCfg)
 {
     for (int i = 0; i < cJSON_GetArraySize(json); i++) {
         cJSON *hapItem = cJSON_GetArrayItem(json, i);
@@ -258,7 +266,8 @@ static int HnpHapJsonWrite(cJSON *json)
     return 0;
 }
 
-static int HnpHapJsonHnpAdd(bool hapExist, cJSON *json, cJSON *hapItem, const char *hnpPackageName, HnpCfgInfo *hnpCfg)
+static int HnpHapJsonHnpAdd(bool hapExist, cJSON *json, cJSON *hapItem, const char *hnpPackageName,
+    const HnpCfgInfo *hnpCfg)
 {
     cJSON *hnpItemArr = NULL;
     int ret;
@@ -299,7 +308,7 @@ static int HnpHapJsonHnpAdd(bool hapExist, cJSON *json, cJSON *hapItem, const ch
     return ret;
 }
 
-int HnpInstallInfoJsonWrite(NativeHnpPath *hnpDstPath, HnpCfgInfo *hnpCfg)
+int HnpInstallInfoJsonWrite(const NativeHnpPath *hnpDstPath, const HnpCfgInfo *hnpCfg)
 {
     bool hapExist = false;
     bool hnpExist = false;
@@ -339,7 +348,7 @@ int HnpInstallInfoJsonWrite(NativeHnpPath *hnpDstPath, HnpCfgInfo *hnpCfg)
 
     if (hapExist) {
         cJSON *hnpItemArr = cJSON_GetObjectItem(hapItem, "hnp");
-        hnpExist = HnpInstallHnpExistCheck(hnpItemArr, hnpCfg->name, &hnpItem, &hnpIndex);
+        hnpExist = HnpInstallHnpExistCheck(hnpItemArr, hnpCfg->name, &hnpItem, &hnpIndex, NULL);
         if (hnpExist) {
             cJSON *versionJson = cJSON_GetObjectItem(hnpItem, "version");
             if (versionJson != NULL) {
@@ -369,12 +378,9 @@ static bool HnpOtherPackageInstallCheck(const char *name, const char *version, i
         cJSON *hapItem = cJSON_GetArrayItem(json, i);
         cJSON *hnpItemArr = cJSON_GetObjectItem(hapItem, "hnp");
         cJSON *hnpItem = NULL;
-        hnpExist = HnpInstallHnpExistCheck(hnpItemArr, name, &hnpItem, &hnpIndex);
+        hnpExist = HnpInstallHnpExistCheck(hnpItemArr, name, &hnpItem, &hnpIndex, version);
         if (hnpExist) {
-            cJSON *versionJson = cJSON_GetObjectItem(hnpItem, "version");
-            if (versionJson != NULL && strcmp(versionJson->valuestring, version) == 0) {
-                return hnpExist;
-            }
+            return true;
         }
     }
 
@@ -499,12 +505,9 @@ int HnpPackageInfoHnpDelete(const char *packageName, const char *name, const cha
     }
 
     cJSON *hnpItemArr = cJSON_GetObjectItem(hapItem, "hnp");
-    hnpExist = HnpInstallHnpExistCheck(hnpItemArr, name, &hnpItem, &hnpIndex);
+    hnpExist = HnpInstallHnpExistCheck(hnpItemArr, name, &hnpItem, &hnpIndex, version);
     if (hnpExist) {
-        cJSON *versionJson = cJSON_GetObjectItem(hnpItem, "version");
-        if (versionJson != NULL && strcmp(versionJson->valuestring, version) == 0) {
-            cJSON_DeleteItemFromArray(hnpItemArr, hnpIndex);
-        }
+        cJSON_DeleteItemFromArray(hnpItemArr, hnpIndex);
     }
 
     ret = HnpHapJsonWrite(json);

@@ -241,7 +241,7 @@ int GetHnpJsonBuff(HnpCfgInfo *hnpCfg, char **buff);
 
 int HnpCfgGetFromSteam(char *cfgStream, HnpCfgInfo *hnpCfg);
 
-int HnpInstallInfoJsonWrite(NativeHnpPath *hnpDstPath, HnpCfgInfo *hnpCfg);
+int HnpInstallInfoJsonWrite(const NativeHnpPath *hnpDstPath, const HnpCfgInfo *hnpCfg);
 
 int HnpPackageInfoGet(const char *packageName, HnpPackageInfo **packageInfoOut, int *count);
 
