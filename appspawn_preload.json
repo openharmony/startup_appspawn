@@ -150,7 +150,6 @@
         "bluetooth.map",
         "core.iap",
         "backgroundtaskmanager",
-        "multimedia.avcastpicker",
         "resourceschedule.usageStatistics",
         "bundle.installer",
         "bundle.appcontrol",
