@@ -30,7 +30,7 @@ pid_t NwebSpawnLanch()
     if (ret == 0) {
 #ifdef CODE_SIGNATURE_ENABLE
         // ownerId must been set before setcon & setuid
-        (void)SetXpmOwnerId(PROCESS_OWNERID_EXTEND, NULL);
+        (void)SetXpmOwnerId(PROCESS_OWNERID_NWEB, NULL);
 #endif
         setcon("u:r:nwebspawn:s0");
         pid_t pid = getpid();
