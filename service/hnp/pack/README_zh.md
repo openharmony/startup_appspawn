@@ -39,11 +39,11 @@ Native包管理功能模块提供了对Native软件的打包、安装、卸载�
   ```
   注：
   1. 用户在配置文件中指定了软链接关系则安装时根据用户配置进行软链接设置。如果用户不使用配置文件或者配置文件中没有设置软链接，则安装时默认将软件包内bin目录下的可执行二进制都进行软链接。
-  2. 为了保证bin目录里面的二进制执行过程中能自动加载lib下的库文件，则需要在编译二进制时增加以下rpath链接选项。HNP_PRIVATE_HOME表示私有安装路径，HNP_PUBLIC_HOME表示公有安装路径
+  2. 为了保证bin目录里面的二进制执行过程中能自动加载lib下的库文件，则需要在编译二进制时增加以下rpath链接选项，指明库文件和二进制的相对位置关系（${ORIGIN}为当前二进制位置）。
 
   ```
     ldflags = [
-        "-Wl,-rpath=${HNP_PRIVATE_HOME}:${HNP_PUBLIC_HOME}",
+        "-Wl,-rpath=${ORIGIN}/../lib",
         "-Wl,--disable-new-dtags",
     ]
   ```
@@ -129,3 +129,22 @@ Native包管理功能模块提供了对Native软件的打包、安装、卸载�
 
   Native软件包通过HAP包上架应用市场发布，具体应用软件上架流程请参考[上架指南](https://developer.huawei.com/consumer/cn/fa/)
 
+HAP包支持hnp包的扩展。
+存放方式：
+```
+HAP包
+|__hnp              #HAP包中新增hnp根目录
+|____arm64          #（ABI）
+|______python.hnp
+|______sub_dir       #支持子目录
+|________test.hnp
+```
+HAP包中hnp信息配置：
+module.json配置文件增加以下字段：
+
+```
+hnp_package:[{
+    "python.hnp":"public",
+    "sub_dir/test.hnp":"private"
+}]
+```
