@@ -101,9 +101,7 @@ int HnpSymlink(const char *srcFile, const char *dstFile)
         return HNP_ERRNO_BASE_CHMOD_FAILED;
     }
 
-    if (access(dstFile, F_OK) == 0) {
-        unlink(dstFile);
-    }
+    (void)unlink(dstFile);
 
     HnpRelPath(dstFile, srcFile, relpath);
     ret = symlink(relpath, dstFile);

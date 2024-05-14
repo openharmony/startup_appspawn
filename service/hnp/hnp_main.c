@@ -44,28 +44,22 @@ int HnpShowHelp(int argc, char *argv[])
     (void)argc;
     (void)argv;
 
-    HNP_LOGI("\r\nusage:hnp <command> <args> [-u <user id>][-p <software package path>]"
-        "[-i <private path>][-f]\r\n"
+    HNP_LOGI("\r\nusage:hnp <command> <args> [-u <user id>][-p <hap package name>][-i <hap install path>][-f]\r\n"
         "\r\nThese are common hnp commands used in various situations:\r\n"
-        "\r\ninstall: install one or more native hnp packages"
-        "\r\n           hnp install <-u [user id]> <-p [hnp package path]> <-i [hnp install path]> <-f>"
+        "\r\ninstall: install one hap package"
+        "\r\n           hnp install <-u [user id]> <-p [hap package name]> <-i [hap install path]> <-f>"
         "\r\n           -u    : [required]    user id"
-        "\r\n           -p    : [required]    path of hnp package to be installed, multiple packages are supported"
-        "\r\n           -i    : [optional]    hnp install path; if not provided, it will be installed to"
-            " public hnp path"
+        "\r\n           -p    : [required]    hap package name"
+        "\r\n           -i    : [required]    hap install path"
         "\r\n           -f    : [optional]    if provided, the hnp package will be installed forcely, ignoring old"
             " versions of the hnp package\r\n"
-        "\r\nuninstall: uninstall one hnp package"
-        "\r\n           hnp uninstall <-u [user id]> <-n [hnp package name]> <-v [hnp package version]>"
-            " <-i [hnp package uninstall path]>"
+        "\r\nuninstall: uninstall one hap package"
+        "\r\n           hnp uninstall <-u [user id]> <-p [hap package name]>"
         "\r\n           -u    : [required]    user id"
-        "\r\n           -n    : [required]    hnp package name"
-        "\r\n           -v    : [required]    hnp package version"
-        "\r\n           -i    : [optional]    the path for uninstalling the hnp package; if not provided, it will"
-            " install from the default public hnp path\r\n"
+        "\r\n           -p    : [required]    hap package name"
         "\r\nfor example:\r\n"
-        "\r\n    hnp install -u 1000 -p /usr1/hnp/sample.hnp -p /usr1/hnp/sample2.hnp -i /data/app/el1/bundle/ -f"
-        "\r\n    hnp uninstall -u 1000 -n native_sample -v 1.1 -i /data/app/el1/bundle/\r\n");
+        "\r\n    hnp install -u 1000 -p app_sample -i /data/app_sample/ -f"
+        "\r\n    hnp uninstall -u 1000 -p app_sample\r\n");
 
     return 0;
 }

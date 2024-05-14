@@ -22,93 +22,146 @@
 
   1） hnp帮助命令 hnp -h
   ```
-    usage:hnp <command> <args> [-u <user id>][-p <software package path>][-i <private path>][-f]
-
+    usage:hnp <command> <args> [-u <user id>][-p <hap package name>][-i <hap install path>][-f]
+    
     These are common hnp commands used in various situations:
-
-    install:   install one or more native hnp packages
-               hnp install <-u [user id]> <-p [hnp package path]> <-i [hnp install path]> <-f>
-               -u    : [required]    user id
-               -p    : [required]    path of hnp package to be installed, multiple packages are supported
-               -i    : [optional]    hnp install path; if not provided, it will be installed to public hnp path
-               -f    : [optional]    if provided, the hnp package will be installed forcely, ignoring old versions of the hnp package
-
-    uninstall: uninstall one hnp package
-               hnp uninstall <-u [user id]> <-n [hnp package name]> <-v [hnp package version]> <-i [hnp package uninstall path]>
-               -u    : [required]    user id
-               -n    : [required]    hnp package name
-               -v    : [required]    hnp package version
-               -i    : [optional]    the path for uninstalling the hnp package; if not provided, it will install from the default public hnp path
-
+    
+    install: install one hap package
+        hnp install <-u [user id]> <-p [hap package name]> <-i [hap install path]> <-f>
+        -u    : [required]    user id
+        -p    : [required]    hap package name
+        -i    : [required]    hap install path
+        -f    : [optional]    if provided, the hnp package will be installed forcely, ignoring old versions of the hnp package
+    
+    uninstall: uninstall one hap package
+        hnp uninstall <-u [user id]> <-p [hap package name]>
+        -u    : [required]    user id
+        -p    : [required]    hap package name
     for example:
-
-        hnp install -u 1000 -p /usr1/hnp/sample.hnp -p /usr1/hnp/sample2.hnp -i /data/app/el1/bundle/ -f
-        hnp uninstall -u 1000 -n native_sample -v 1.1 -i /data/app/el1/bundle/
+    
+        hnp install -u 1000 -p app_sample -i /data/app_sample/ -f
+        hnp uninstall -u 1000 -p app_sample
   ```
 2） hnp命令行安装：
   ```
-    hnp install -u [系统用户ID] -p [hnp包所在路径] <-i [安装路径]> <-f>
+    hnp install -u [系统用户ID] -p [hap包名] <-i [hnp安装包所在路径]> <-f>
   ```
-  该命令执行时会将对用户传入的多个hnp包进行安装。
+  -u [必选] 用户ID
 
-  -p [必选] 指定待安装的hnp包存放路径，支持重复设置，则表示安装多个包。
+  -p [必选] 指定hap应用软件名。
 
-  -i [可选] 表示指定安装路径，如果没有指定则安装到公有路径。
+  -i [必选] 表示hnp安装包所在路径。
 
   -f [可选] 选项表示是否开启强制安装，强制安装下如果发现软件已安装则会将已安装软件先卸载再安装新的。
+  
+  注：-i指向的路径需要满足以下目录格式。Native公私有软件需要通过所在目录名public和private进行区分。
+  ```
+  hnp安装包路径
+  |__public             #公有安装包存放目录
+  |____xxx.hnp
+  |__private            #私有安装包存放目录
+  |____xxx.hnp
+  |____subdir           #支持子目录存放
+  |______yyy.hnp
 
-  安装路径根据用户是否-i传入路径进行区分，没有传入-i则表示公有软件路径，否则是安装到用户指定的路径。设备上安装后的软件路径如下：
+  ```
+  该命令执行时会遍历-i传入的路径下public和private目录，将所有.hnp文件进行依次安装。
+
+  public目录下的hnp包作为公有软件安装在公有路径。private目录下的hnp包作为应用的私有软件安装在应用的私有路径下面，具体路径如下：
   ```
     公有软件：/data/app/el1/bundle/[userId]/hnppublic/
-    私有软件：用户指定的软件路径
+    私有软件：/data/app/el1/bundle/[userId]/hnp/[packageName]
   ```
+  如果公有软件安装成功，则会在hnp_info.json管理文件中记录对应的安装信息。该文件所在路径：
+  ```
+    公有软件安装信息管理文件：
+    /data/service/el1/startup/hnp_info.json
+  ```
+  hnp_info.json文件记录格式：
+  ```
+  [
+    {
+        "hap":"baidu",              #应用软件hap包名
+        "hnp":[                     #hnp安装信息
+            {
+                "name":"python",    #hnp软件名
+                "version":"2.7"     #hnp软件版本号
+            }
+        ]
+    },
+    ...
+]
+  ```
+  
   样例：
   ```
-    # 安装hnpsample.hnp公有软件：
-    所在目录./hnp_path/下。安装在系统用户ID 100 下面。
-    执行命令：hnp install -u 100 -p ./hnp_path/hnpsample.hnp -f
+    # baidu应用软件的hnp安装包所在目录
+    baidu_hnp_path
+    |__public
+    |____hnpsample.hnp
+    |__private
+    |____hnpsample.hnp
+
+    # 安装baidu应用下的hnp软件：
+    强制安装baidu应用下的hnp软件，安装包所在目录baidu_hnp_path，安装在系统用户ID 100 下面。
+    执行命令：hnp install -u 100 -p baidu -i ./baidu_hnp_path -f
     
-    执行成功后会在以下路径下生成输出件
+    执行成功后会在以下路径下生成输出件：
+    hnpsample公有软件：
     /data/app/el1/bundle/100/hnppublic/hnpsample.org/hnpsample_1.1
     生成的软链接配置关系：
     软链接文件：/data/app/el1/bundle/100/hnppublic/bin/hnpsample 指向 /data/app/el1/bundle/100/hnppublic/hnpsample.org/hnpsample_1.1/bin/hnpsample
 
-    # 安装hnpsample.hnp私有有软件（应用软件为baidu）：
-    所在目录./hnp_path/下。安装在系统用户ID 100 下面。
-    执行命令：hnp install -u 100 -p ./hnp_path/hnpsample.hnp -i /data/app/el1/bundle/100/hnp/baidu -f
-    
-    执行成功后会在以下路径下生成输出件
+    hnpsample私有软件：
     /data/app/el1/bundle/100/hnp/baidu/hnpsample.org/hnpsample_1.1
     生成的软链接配置关系：
     软链接文件：/data/app/el1/bundle/100/hnp/baidu/bin/hnpsample 指向 /data/app/el1/bundle/100/hnp/baidu/hnpsample.org/hnpsample_1.1/bin/hnpsample
+
+    hnp_info.json安装管理信息增加以下记录：
+    {
+        "hap":"baidu",
+        "hnp":[
+            {
+                "name":"hnpsample",
+                "version":"1.1"
+            }
+        ]
+    }
   ```
+注：
+
+a. 安装时发现已经有同款软件相同版本则跳过安装，返回安装成功。
+
+b. 非强制安装模式下，安装时发现已经有同款软件不同版本会安装失败.
+
+b. 强制安装会将已安装的软件先卸载掉之后再安装当前新的软件。
+
+c. 批量安装应用的hnp软件时如果中间安装出错，则直接退出安装流程返回，之前已安装的软件继续保留。
+
 
 3） 接口调用安装
 
   安装接口原型：
   ```
     /**
-    * Install native software package.
-    *
-    * @param userId Indicates id of user.
-    * @param packages  Indicates the path of hnp file.
-    * @param count  Indicates num of hnp file.
-    * @param installPath  Indicates the path for private hnp file.
-    * @param installOptions Indicates install options.
-    *
-    * @return 0:success;other means failure.
-    */
-    int NativeInstallHnp(const char *userId, const char *packages[], int count, const char *installPath, int installOptions);
+     * Install native software package.
+     *
+     * @param userId Indicates id of user.
+     * @param hapPath Indicates path of hap.
+     * @param hnpRootPath  Indicates the root path of hnp packages
+     * @param packageName Indicates the packageName of HAP.
+     * @param installOptions Indicates install options.
+     *
+     * @return 0:success;other means failure.
+     */
+    int NativeInstallHnp(const char *userId, const char *hapPath, const char *hnpRootPath, const char *packageName, int installOptions);
   ```
 样例：
   ```
     #include "hnp_api.h"
     ...
-    /* 安装公有软件 */
-    int ret = NativeInstallHnp(100, "./hnp_path/hnpsample.hnp", 0, 0x1);
-    ...
-    /* 安装私有软件 */
-    int ret = NativeInstallHnp(100, "./hnp_path", "/data/app/el1/bundle/100/hnp/baidu", 0x1);
+    /* 强制安装baidu应用软件下的hnp软件 */
+    int ret = NativeInstallHnp(100, "./sample.hap", "./baidu_hnp_path", "baidu", 0x1);
     ...
 
     执行成功后输出件和上面命令行的一样
@@ -119,58 +172,55 @@
 
   1） hnp命令行卸载：
   ```
-    hnp uninstall -u [系统用户ID] -n [Native软件名] -v [软件版本号] <-i [安装路径]>
+    hnp uninstall -u [系统用户ID] -p [hap包名]
   ```
-  该命令根据用户传入的信息对已安装的native软件进行卸载。
+  该命令根据用户传入的信息对已安装的属于对应hap应用下的所有hnp软件进行卸载。
 
   -u [必选] 系统用户ID，用于拼接软件的安装路径
 
-  -n [必选] 要卸载的native软件名
-
-  -v [必选] native软件版本号
-
-  -i [可选] 软件的安装路径。如果用户没有设置则默认为native软件公有安装路径
+  -p [必选] 要卸载hnp包所属的hap包名（应用软件名）
 
   样例：
   ```
-    公有软件卸载：
-    hnp uninstall -u 100 -n hnpsample -v 1.1
+    baidu应用下hnp软件卸载：
+    hnp uninstall -u 100 -p baidu
 
-    私有软件卸载：
-    hnp uninstall -u 100 -n hnpsample -v 1.1 -i /data/app/el1/bundle/100/hnp/baidu
-
-    卸载之前已经安装的hnpsample 1.1版本的软件。100为安装所在的系统用户ID。
-    执行成功观察点：观察以下之前安装的软件目录“hnpsample.org”是否已删除。
+    卸载之前已经安装的baidu应用下所有hnp软件。100为安装所在的系统用户ID。
+    执行成功观察点：
+    观察点1：之前baidu应用安装的时候分别安装了公有和私有的hnpsample软件，所以本次卸载需要观察以下之前安装的软件目录“hnpsample.org”是否已删除。
     公有软件：
     /data/app/el1/bundle/100/hnppublic/hnpsample.org
     私有软件：
     /data/app/el1/bundle/100/hnp/baidu/hnpsample.org
+
+    观察点2：查看/data/service/el1/startup/hnp_info.json安装管理文件中对应baidu这一hap节点信息是否删除。
   ```
+注：
+
+a. 如果公有hnp软件被其它应用所共有，则卸载本应用不会删除hnp公有软件，需等其所属的所有应用都删除了才会删除公有hnp软件。公有hnp软件被哪些应用所共有由hnp_info.json文件管理。
+
+b. 公有hnp软件卸载前会判断该软件是否正在运行，如果正在运行则会卸载失败。私有hnp软件因为其所属应用已经卸载，不存在正在使用的情况，因此私有软件不用校验是否正在运行。
+
 2） 接口调用卸载
 
   卸载接口原型：
   ```
     /**
-    * Uninstall native software package.
-    *
-    * @param userId Indicates id of user.
-    * @param hnpName  Indicates the name of native software.
-    * @param hnpVersion Indicates the version of native software.
-    * @param installPath  Indicates the path for private hnp file.
-    *
-    * @return 0:success;other means failure.
-    */
-    int NativeUnInstallHnp(const char *userId, const char *hnpName, const char *hnpVersion, const char *installPath);
+     * Uninstall native software package.
+     *
+     * @param userId Indicates id of user.
+     * @param packageName Indicates the packageName of HAP.
+     *
+     * @return 0:success;other means failure.
+     */
+    int NativeUnInstallHnp(const char *userId, const char *packageName);
   ```
   样例：
   ```
     #include "hnp_api.h"
     ...
-    /* 卸载公有软件 */
-    int ret = NativeUnInstallHnp(100, "hnpsample", "1.1"， 0);
-    ...
-    /* 卸载私有软件 */
-    int ret = NativeUnInstallHnp(100, "hnpsample", "1.1"， "/data/app/el1/bundle/100/hnp/baidu");
+    /* 卸载baidu应用软件下的所有hnp软件 */
+    int ret = NativeUnInstallHnp(100, "baidu");
     ...
 
     执行成功后观察点和上面命令行执行一致。
@@ -180,5 +230,6 @@
 
   native包管理功能运行控制，需要在用户开启“开发者模式”场景下才能使用native包管理的安装卸载软件功能，否则命令会执行失败。在PC设备上打开“开发者模式”的方法如下：
   ```
-    点击“设置”按钮——》选择“系统和更新”界面——》选择“开发者选项”——》打开“USB调试”
+    点击“设置”按钮——》选择“系统和更新”界面——》选择“开发者选项”——》打开“开发者选项”
+  ```
 
