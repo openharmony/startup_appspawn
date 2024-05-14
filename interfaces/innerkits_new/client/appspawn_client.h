@@ -45,6 +45,7 @@ struct TagAppSpawnReqMsgNode;
 typedef enum {
     CLIENT_FOR_APPSPAWN,
     CLIENT_FOR_NWEBSPAWN,
+    CLIENT_FOR_CJAPPSPAWN,
     CLIENT_MAX
 } AppSpawnClientType;
 

@@ -47,6 +47,7 @@ typedef void *AppSpawnClientHandle;
 #define INVALID_REQ_HANDLE NULL
 #define NWEBSPAWN_SERVER_NAME "nwebspawn"
 #define APPSPAWN_SERVER_NAME "appspawn"
+#define CJAPPSPAWN_SERVER_NAME "cjappspawn"
 
 #pragma pack(4)
 #define APP_MAX_GIDS 64

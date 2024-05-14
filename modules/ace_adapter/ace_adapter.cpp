@@ -194,6 +194,9 @@ static int PreLoadAppSpawn(AppSpawnMgr *content)
     }
     // register
     RegChildLooper(&content->content, RunChildProcessor);
+    if (strcmp(content->content.longProcName, CJAPPSPAWN_SERVER_NAME) == 0) {
+        return 0;
+    }
     LoadExtendLib();
     return 0;
 }

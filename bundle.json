@@ -19,7 +19,8 @@
             "standard"
         ],
         "features": [
-            "appspawn_support_nweb"
+            "appspawn_support_nweb",
+            "appspawn_support_cj"
         ],
         "rom": "296KB",
         "ram": "13125KB",
