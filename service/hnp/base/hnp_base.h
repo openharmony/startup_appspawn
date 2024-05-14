@@ -33,9 +33,10 @@ extern "C" {
 #define BUFFER_SIZE 1024
 #define HNP_COMMAND_LEN 128
 #define MAX_PROCESSES 32
-#define MAX_SOFTWARE_NUM 32
+#define MAX_PACKAGE_HNP_NUM 256
 
 #define HNP_CFG_FILE_NAME "hnp.json"
+#define HNP_PACKAGE_INFO_JSON_FILE_PATH "/data/service/el1/startup/hnp_info.json"
 
 #ifdef _WIN32
 #define DIR_SPLIT_SYMBOL '\\'
@@ -56,6 +57,20 @@ typedef struct HnpCfgInfoStru {
     unsigned int linkNum;   // 软链接配置个数
     NativeBinLink *links;
 } HnpCfgInfo;
+
+/* hnp package文件信息 */
+typedef struct HnpPackageInfoStru {
+    char name[MAX_FILE_PATH_LEN];
+    char version[HNP_VERSION_LEN];    // Native软件包版本号
+} HnpPackageInfo;
+
+typedef struct NativeHnpPathStru {
+    char *hnpPackageName;
+    char hnpBasePath[MAX_FILE_PATH_LEN]; // hnp安装基础路径,public为 xxx/{uid}/hnppublic,private为xxx/{uid}/hnp/{hap}
+    char hnpSoftwarePath[MAX_FILE_PATH_LEN]; // 软件安装路径，为hnpBasePath/{name}.org/
+    char hnpVersionPath[MAX_FILE_PATH_LEN]; // 软件安装版本路径，为hnpBasePath/{name}.org/{name}_{version}
+    int uid;
+} NativeHnpPath;
 
 /* 日志级别 */
 typedef enum  {
@@ -186,6 +201,12 @@ enum {
 // 0x80111c 解析json数组失败
 #define HNP_ERRNO_BASE_GET_ARRAY_ITRM_FAILED    HNP_ERRNO_COMMON(HNP_MID_BASE, 0x1c)
 
+// 0x80111d 内存拷贝失败
+#define HNP_ERRNO_BASE_MEMCPY_FAILED            HNP_ERRNO_COMMON(HNP_MID_BASE, 0x1d)
+
+// 0x80111e 创建json数组失败
+#define HNP_ERRNO_BASE_JSON_ARRAY_CREATE_FAILED HNP_ERRNO_COMMON(HNP_MID_BASE, 0x1e)
+
 int GetFileSizeByHandle(FILE *file, int *size);
 
 int ReadFileToStream(const char *filePath, char **stream, int *streamLen);
@@ -219,6 +240,16 @@ int ParseHnpCfgFile(const char *hnpCfgPath, HnpCfgInfo *hnpCfg);
 int GetHnpJsonBuff(HnpCfgInfo *hnpCfg, char **buff);
 
 int HnpCfgGetFromSteam(char *cfgStream, HnpCfgInfo *hnpCfg);
+
+int HnpInstallInfoJsonWrite(const NativeHnpPath *hnpDstPath, const HnpCfgInfo *hnpCfg);
+
+int HnpPackageInfoGet(const char *packageName, HnpPackageInfo **packageInfoOut, int *count);
+
+int HnpPackageInfoHnpDelete(const char *packageName, const char *name, const char *version);
+
+int HnpPackageInfoDelete(const char *packageName);
+
+char *HnpPackgeHnpVersionGet(const char *packageName, const char *name);
 
 #define HNP_LOGI(args...) \
     HnpLogPrintf(HNP_LOG_INFO, "HNP", ##args)

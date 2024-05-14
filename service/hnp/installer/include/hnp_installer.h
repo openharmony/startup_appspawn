@@ -22,13 +22,6 @@
 extern "C" {
 #endif
 
-typedef struct NativeHnpPathStru {
-    char hnpSoftwareName[MAX_FILE_PATH_LEN];
-    char hnpBasePath[MAX_FILE_PATH_LEN];
-    char hnpSoftwarePath[MAX_FILE_PATH_LEN];
-    char hnpVersionPath[MAX_FILE_PATH_LEN];
-} NativeHnpPath;
-
 // 0x801301 组装安装路径失败
 #define HNP_ERRNO_INSTALLER_GET_HNP_PATH_FAILED            HNP_ERRNO_COMMON(HNP_MID_INSTALLER, 0x1)
 
@@ -54,6 +47,7 @@ typedef struct NativeHnpPathStru {
 #define HNP_ERRNO_INSTALLER_SOFTWARE_NUM_OVERSIZE          HNP_ERRNO_COMMON(HNP_MID_INSTALLER, 0x8)
 
 #define HNP_DEFAULT_INSTALL_ROOT_PATH "/data/app/el1/bundle"
+#define HNP_SANDBOX_BASE_PATH "/data/service/hnp"
 
 int HnpCmdInstall(int argc, char *argv[]);
 
