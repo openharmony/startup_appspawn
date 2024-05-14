@@ -30,7 +30,7 @@ NA
 ### NativeInstallHnp
 
 ```
-int NativeInstallHnp(int userId, const char *packages[], int count, const char *installPath, int installOptions);
+int NativeInstallHnp(const char *userId, const char *hapPath, const char *hnpRootPath, const char *packageName, int installOptions);
 ```
 
 **描述**
@@ -41,11 +41,11 @@ int NativeInstallHnp(int userId, const char *packages[], int count, const char *
   
   userId：用户ID；
 
-  packages：字符串数组，待安装hnp文件所在路径；
+  hapPath：hap包所在路径。用于签名校验
 
-  count：待安装hnp文件个数；
+  hnpRootPath：hnp安装包存放路径；
 
-  installPath：安装路径。为0或为NULL则表示安装到公有路径。
+  packageName：hap应用软件包名；
 
   installOptions：安装选项。其中每一位对应的选项信息枚举如下。
   ```
@@ -62,7 +62,7 @@ int NativeInstallHnp(int userId, const char *packages[], int count, const char *
 ### NativeUnInstallHnp
 
 ```
-int NativeUnInstallHnp(int userId, const char *hnpName, const char *hnpVersion, const char *installPath);
+int NativeUnInstallHnp(const char *userId, const char *packageName);
 ```
 
 **描述**
@@ -73,11 +73,8 @@ int NativeUnInstallHnp(int userId, const char *hnpName, const char *hnpVersion, 
 
   userId：用户ID；
 
-  hnpName：软件名；
+  packageName：hap应用软件包名；
 
-  hnpVersion：版本号；
-
-  installPath：安装路径，为0或为NULL则表示公有路径。
 
 **返回：**
 
