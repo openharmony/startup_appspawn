@@ -39,6 +39,13 @@ if (!defined(ohos_lite)) {
     subsystem_name = "${subsystem_name}"
     part_name = "${part_name}"
   }
+
+  ohos_prebuilt_etc("cjappspawn.rc") {
+    source = "cjappspawn.cfg"
+    relative_install_dir = "init"
+    subsystem_name = "${subsystem_name}"
+    part_name = "${part_name}"
+  }
 }
 
 group("appspawn_all") {
@@ -61,6 +68,12 @@ group("appspawn_all") {
       "${appspawn_path}/modules/module_engine:libappspawn_stub_empty",
     ]
     deps += [ "service/hnp:hnp" ]
+    if (appspawn_support_cj) {  # for support cj appspawn
+      deps += [
+        "standard:cjappspawn",
+        ":cjappspawn.rc",
+      ]
+    }
   } else {
     deps += [ "lite:appspawn_lite" ]
   }
