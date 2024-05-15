@@ -21,11 +21,6 @@ extern "C" {
 #endif
 
 typedef enum {
-    FALSE,
-    TRUE
-} Bool;
-
-typedef enum {
     OPTION_INDEX_FORCE = 0,     /* installed forcely */
     OPTION_INDEX_BUTT
 } HnpInstallOptionIndex;
