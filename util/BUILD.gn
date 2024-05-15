@@ -21,6 +21,7 @@ ohos_static_library("libappspawn_util") {
     "config_policy:configpolicy_util",
     "hilog:libhilog",
     "init:libbegetutil",
+    "c_utils:utils",
   ]
 
   public_configs = [ "${appspawn_path}:appspawn_config" ]
