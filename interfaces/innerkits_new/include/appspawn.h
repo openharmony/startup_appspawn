@@ -97,6 +97,7 @@ typedef enum {
     MSG_SPAWN_NATIVE_PROCESS,
     MSG_DUMP,
     MSG_BEGET_CMD,
+    MSG_BEGET_SPAWNTIME,
     MAX_TYPE_INVALID
 } AppSpawnMsgType;
 

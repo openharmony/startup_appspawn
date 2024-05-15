@@ -101,6 +101,18 @@ void DeleteAppSpawnHookMgr(void)
     g_appspawnHookMgr = NULL;
 }
 
+static void UpdateAppSpawnTime(int used)
+{
+    if (used < GetAppSpawnMgr()->spawnTime.minAppspawnTime) {
+        GetAppSpawnMgr()->spawnTime.minAppspawnTime = used;
+        APPSPAWN_LOGI("spawn min time: %{public}d", GetAppSpawnMgr()->spawnTime.minAppspawnTime);
+    }
+    if (used > GetAppSpawnMgr()->spawnTime.maxAppspawnTime) {
+        GetAppSpawnMgr()->spawnTime.maxAppspawnTime = used;
+        APPSPAWN_LOGI("spawn max time: %{public}d", GetAppSpawnMgr()->spawnTime.maxAppspawnTime);
+    }
+}
+
 static int ServerStageHookRun(const HOOK_INFO *hookInfo, void *executionContext)
 {
     AppSpawnHookArg *arg = (AppSpawnHookArg *)executionContext;
@@ -124,6 +136,7 @@ static void PostHookExec(const HOOK_INFO *hookInfo, void *executionContext, int 
     uint64_t diff = DiffTime(&spawnMgr->perLoadStart, &spawnMgr->perLoadEnd);
     APPSPAWN_LOGI("Hook stage: %{public}d prio: %{public}d end time %{public}" PRId64 " ns result: %{public}d",
         hookInfo->stage, hookInfo->prio, diff, executionRetVal);
+    UpdateAppSpawnTime(diff);
 }
 
 int ServerStageHookExecute(AppSpawnHookStage stage, AppSpawnContent *content)
