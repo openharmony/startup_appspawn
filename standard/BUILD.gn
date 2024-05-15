@@ -163,9 +163,8 @@ ohos_executable("cjappspawn") {
 
   if (build_selinux) {
     defines += [ "WITH_SELINUX" ]
-    deps += [ "//third_party/selinux:libselinux" ]
     external_deps += [
-      # "selinux:libselinux",
+      "selinux:libselinux",
       "selinux_adapter:libhap_restorecon",
     ]
   }
