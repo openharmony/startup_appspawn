@@ -55,6 +55,8 @@ AppSpawnMgr *CreateAppSpawnMgr(int mode)
     appMgr->diedAppCount = 0;
     OH_ListInit(&appMgr->extData);
     g_appSpawnMgr = appMgr;
+    g_appSpawnMgr->spawnTime.minAppspawnTime = APPSPAWN_MAX_TIME;
+    g_appSpawnMgr->spawnTime.maxAppspawnTime = 0;
     return appMgr;
 }
 
