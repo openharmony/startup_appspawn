@@ -70,8 +70,8 @@ group("appspawn_all") {
     deps += [ "service/hnp:hnp" ]
     if (appspawn_support_cj) {  # for support cj appspawn
       deps += [
-        "standard:cjappspawn",
         ":cjappspawn.rc",
+        "standard:cjappspawn",
       ]
     }
   } else {
