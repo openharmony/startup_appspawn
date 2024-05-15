@@ -9,7 +9,7 @@
 
 | 名称 | 描述 |
 | -------- | -------- |
-| hnp_api.h | 提供支持Native软件的安装和卸载的函数。<br/>**引用文件**：&lt;hnp/include/hnp_api.h&gt;<br/>**库**：libhnpapi.z.so |
+| hnp_api.h | 提供支持Native软件的安装和卸载的函数。<br/>**引用文件**：&lt;hnp_api.h&gt;<br/>**库**：libhnpapi.z.so |
 
 
 ### 结构体定义
