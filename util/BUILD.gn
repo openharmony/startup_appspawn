@@ -18,11 +18,14 @@ ohos_static_library("libappspawn_util") {
   sources = [ "src/appspawn_utils.c" ]
   external_deps = [
     "cJSON:cjson",
-    "c_utils:utils",
     "config_policy:configpolicy_util",
     "hilog:libhilog",
     "init:libbegetutil",
   ]
+
+  if (!defined(ohos_lite)) {
+    external_deps += [ "c_utils:utils" ]
+  }
 
   public_configs = [ "${appspawn_path}:appspawn_config" ]
   subsystem_name = "${subsystem_name}"
