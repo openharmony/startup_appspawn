@@ -70,7 +70,6 @@ if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
       "${appspawn_path}/standard",
       "${appspawn_innerkits_path}/client",
       "${appspawn_innerkits_path}/permission",
-      "//third_party/json/include",
     ]
 
     configs = [ "${appspawn_path}:appspawn_config" ]
@@ -86,6 +85,7 @@ if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
       "config_policy:configpolicy_util",
       "hilog:libhilog",
       "init:libbegetutil",
+      "json:nlohmann_json_static",
     ]
 
     subsystem_name = "${subsystem_name}"
