@@ -16,13 +16,12 @@ import("//build/ohos.gni")
 if (!defined(ohos_lite)) {
   config("exported_header_files") {
     visibility = [ ":*" ]
-    include_dirs = [ "//base/startup/appspawn/interfaces/innerkits/hnp/include" ]
+    include_dirs =
+        [ "//base/startup/appspawn/interfaces/innerkits/hnp/include" ]
   }
 
   ohos_shared_library("hnpapi") {
-    include_dirs = [
-      "${appspawn_path}/interfaces/innerkits/hnp/include",
-    ]
+    include_dirs = [ "${appspawn_path}/interfaces/innerkits/hnp/include" ]
     sources = [ "${appspawn_path}/interfaces/innerkits/hnp/src/hnp_api.c" ]
 
     public_configs = [ ":exported_header_files" ]
