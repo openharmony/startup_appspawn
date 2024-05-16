@@ -54,7 +54,7 @@ typedef struct HapInfo {
  *
  * @param userId Indicates id of user.
  * @param hnpRootPath  Indicates the root path of hnp packages
- * @param hapInfo Indicates the message of HAP.
+ * @param hapInfo Indicates the information of HAP.
  * @param installOptions Indicates install options.
  *
  * @return 0:success;other means failure.

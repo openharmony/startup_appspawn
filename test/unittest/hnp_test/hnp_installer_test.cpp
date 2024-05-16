@@ -637,7 +637,7 @@ HWTEST(HnpInstallerTest, Hnp_Install_API_001, TestSize.Level0)
 
     HnpPackWithCfg(true, true);
     struct HapInfo hapInfo;
-    (void)memset(&hapInfo, sizeof(HapInfo), 0, sizeof(HapInfo));
+    (void)memset_s(&hapInfo, sizeof(HapInfo), 0, sizeof(HapInfo));
     EXPECT_EQ(sprintf_s(hapInfo.packageName, sizeof(hapInfo.packageName), "%s", "sample") > 0, true); 
     
     if (IsDeveloperModeOpen()) {
@@ -681,7 +681,7 @@ HWTEST(HnpInstallerTest, Hnp_Install_API_002, TestSize.Level0)
     if (IsDeveloperModeOpen()) {
         { //st dir path is invalid
             struct HapInfo hapInfo;
-            (void)memset(&hapInfo, sizeof(HapInfo), 0, sizeof(HapInfo));
+            (void)memset_s(&hapInfo, sizeof(HapInfo), 0, sizeof(HapInfo));
             EXPECT_EQ(sprintf_s(hapInfo.packageName, sizeof(hapInfo.packageName), "%s", "sample") > 0, true);
             EXPECT_EQ(sprintf_s(hapInfo.hapPath, sizeof(hapInfo.hapPath), "%s", "test") > 0, true);
             ret = NativeInstallHnp("10000", "./hnp_out/", &hapInfo, 1);
@@ -716,7 +716,7 @@ HWTEST(HnpInstallerTest, Hnp_Install_API_003, TestSize.Level0)
     if (IsDeveloperModeOpen()) {
         { //ok
             struct HapInfo hapInfo;
-            (void)memset(&hapInfo, sizeof(HapInfo), 0, sizeof(HapInfo));
+            (void)memset_s(&hapInfo, sizeof(HapInfo), 0, sizeof(HapInfo));
             EXPECT_EQ(sprintf_s(hapInfo.packageName, sizeof(hapInfo.packageName), "%s", "sample") > 0, true);
             EXPECT_EQ(sprintf_s(hapInfo.hapPath, sizeof(hapInfo.hapPath), "%s", "test") > 0, true);
             ret = NativeInstallHnp("10000", "./hnp_out/", &hapInfo, 1);
@@ -752,7 +752,7 @@ HWTEST(HnpInstallerTest, Hnp_Install_API_004, TestSize.Level0)
 
     { //ok
         struct HapInfo hapInfo;
-        (void)memset(&hapInfo, sizeof(HapInfo), 0, sizeof(HapInfo));
+        (void)memset_s(&hapInfo, sizeof(HapInfo), 0, sizeof(HapInfo));
         EXPECT_EQ(sprintf_s(hapInfo.packageName, sizeof(hapInfo.packageName), "%s", "sample") > 0, true);
         EXPECT_EQ(sprintf_s(hapInfo.hapPath, sizeof(hapInfo.hapPath), "%s", "test") > 0, true);
         ret = NativeInstallHnp("10000", "./hnp_out/", &hapInfo, 1);
