@@ -28,6 +28,7 @@ extern "C" {
 
 #define NWEBSPAWN_SOCKET_NAME "NWebSpawn"
 #define APPSPAWN_SOCKET_NAME "AppSpawn"
+#define CJAPPSPAWN_SOCKET_NAME "CJAppSpawn"
 #define KEEPALIVE_NAME "keepalive"
 
 #define APPSPAWN_ALIGN(len) (((len) + 0x03) & (~0x03))

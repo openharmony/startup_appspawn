@@ -63,6 +63,7 @@ int main(int argc, char *const argv[])
     (void)signal(SIGPIPE, SIG_IGN);
     uint32_t argvSize = end - start;
     AppSpawnStartArg arg = {};
+#ifndef CJAPP_SPAWN
     arg.mode = MODE_FOR_APP_SPAWN;
     arg.socketName = APPSPAWN_SOCKET_NAME;
     arg.serviceName = APPSPAWN_SERVER_NAME;
@@ -92,6 +93,14 @@ int main(int argc, char *const argv[])
             return 0, "Invalid arg size for service %{public}s", arg.serviceName);
     }
     AppSpawnContent *content = StartSpawnService(&arg, argvSize, argc, argv);
+#else
+    arg.mode = MODE_FOR_APP_SPAWN;
+    arg.socketName = CJAPPSPAWN_SOCKET_NAME;
+    arg.serviceName = CJAPPSPAWN_SERVER_NAME;
+    arg.moduleType = MODULE_APPSPAWN;
+    arg.initArg = 1;
+    AppSpawnContent *content = StartCJSpawnService(&arg, argvSize, argc, argv);
+#endif
     if (content != NULL) {
         content->runAppSpawn(content, argc, argv);
     }

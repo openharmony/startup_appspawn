@@ -38,6 +38,8 @@ extern "C" {
 #define NWEBSPAWN_SERVER_NAME "nwebspawn"
 #define APPSPAWN_SOCKET_NAME "AppSpawn"
 #define APPSPAWN_SERVER_NAME "appspawn"
+#define CJAPPSPAWN_SOCKET_NAME "CJAppSpawn"
+#define CJAPPSPAWN_SERVER_NAME "cjappspawn"
 
 
 enum AppType {

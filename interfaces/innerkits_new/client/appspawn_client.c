@@ -91,7 +91,9 @@ APPSPAWN_STATIC void CloseClientSocket(int socketId)
 
 APPSPAWN_STATIC int CreateClientSocket(uint32_t type, uint32_t timeout)
 {
-    const char *socketName = type == CLIENT_FOR_APPSPAWN ? APPSPAWN_SOCKET_NAME : NWEBSPAWN_SOCKET_NAME;
+    const char *socketName = type == CLIENT_FOR_APPSPAWN ? APPSPAWN_SOCKET_NAME :
+                             (type == CLIENT_FOR_CJAPPSPAWN ? CJAPPSPAWN_SOCKET_NAME : NWEBSPAWN_SOCKET_NAME);
+
     int socketFd = socket(AF_UNIX, SOCK_STREAM, 0);  // SOCK_SEQPACKET
     APPSPAWN_CHECK(socketFd >= 0, return -1,
         "Socket socket fd: %{public}s error: %{public}d", socketName, errno);
@@ -234,7 +236,9 @@ int AppSpawnClientInit(const char *serviceName, AppSpawnClientHandle *handle)
     APPSPAWN_CHECK(handle != NULL, return APPSPAWN_ARG_INVALID, "Invalid handle for %{public}s", serviceName);
     APPSPAWN_LOGV("AppSpawnClientInit serviceName %{public}s", serviceName);
     AppSpawnClientType type = CLIENT_FOR_APPSPAWN;
-    if (strcmp(serviceName, NWEBSPAWN_SERVER_NAME) == 0 || strstr(serviceName, NWEBSPAWN_SOCKET_NAME) != NULL) {
+    if (strcmp(serviceName, CJAPPSPAWN_SERVER_NAME) == 0) {
+        type = CLIENT_FOR_CJAPPSPAWN;
+    } else if (strcmp(serviceName, NWEBSPAWN_SERVER_NAME) == 0 || strstr(serviceName, NWEBSPAWN_SOCKET_NAME) != NULL) {
         type = CLIENT_FOR_NWEBSPAWN;
     }
     int ret = InitClientInstance(type);
