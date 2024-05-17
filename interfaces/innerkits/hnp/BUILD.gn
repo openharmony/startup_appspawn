@@ -14,21 +14,19 @@ import("//base/startup/appspawn/appspawn.gni")
 import("//build/ohos.gni")
 
 if (!defined(ohos_lite)) {
+  config("exported_header_files") {
+    visibility = [ ":*" ]
+    include_dirs =
+        [ "//base/startup/appspawn/interfaces/innerkits/hnp/include" ]
+  }
+
   ohos_shared_library("hnpapi") {
-    include_dirs = [
-      "${appspawn_path}/interfaces/innerkits/hnp/include",
-      "${appspawn_path}/util/include",
-    ]
-
+    include_dirs = [ "${appspawn_path}/interfaces/innerkits/hnp/include" ]
     sources = [ "${appspawn_path}/interfaces/innerkits/hnp/src/hnp_api.c" ]
-    configs = []
-    defines = []
-    cflags = [
-      "-fvisibility=hidden",
-      "-fstack-protector-all",
-    ]
-    external_deps = [ "hilog:libhilog" ]
 
+    public_configs = [ ":exported_header_files" ]
+    external_deps = [ "hilog:libhilog" ]
+    deps = [ "${appspawn_path}/util:libappspawn_util" ]
     install_enable = true
     subsystem_name = "${subsystem_name}"
     part_name = "${part_name}"

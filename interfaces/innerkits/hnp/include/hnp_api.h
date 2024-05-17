@@ -39,19 +39,27 @@ typedef enum {
 // 0x2004 非开发者模式
 #define HNP_API_NOT_IN_DEVELOPER_MODE           (HNP_API_ERRNO_BASE + 0x4)
 
+#define PACK_NAME_LENTH 256
+#define HAP_PATH_LENTH 256
+#define ABI_LENTH 128
+
+typedef struct HapInfo {
+    char packageName[PACK_NAME_LENTH]; // package name
+    char hapPath[HAP_PATH_LENTH];      // hap file path
+    char abi[ABI_LENTH];               // system abi
+} HapInfo;
+
 /**
  * Install native software package.
  *
  * @param userId Indicates id of user.
- * @param hapPath Indicates path of hap.
  * @param hnpRootPath  Indicates the root path of hnp packages
- * @param packageName Indicates the packageName of HAP.
+ * @param hapInfo Indicates the information of HAP.
  * @param installOptions Indicates install options.
  *
  * @return 0:success;other means failure.
  */
-int NativeInstallHnp(const char *userId, const char *hapPath, const char *hnpRootPath, const char *packageName,
-    int installOptions);
+int NativeInstallHnp(const char *userId, const char *hnpRootPath, const HapInfo *hapInfo, int installOptions);
 
 /**
  * Uninstall native software package.
