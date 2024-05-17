@@ -385,7 +385,6 @@ static bool HnpFileCheck(const char *file)
     const char suffix[] = ".hnp";
     int len = strlen(file);
     int suffixLen = strlen(suffix);
-
     if ((len >= suffixLen) && (strcmp(file + len - suffixLen, suffix) == 0)) {
         return true;
     }
@@ -492,7 +491,6 @@ static int HnpInsatllPre(int uid, char *srcPath, char *packageName, bool isForce
             closedir(dir);
             return ret;
         }
-
     }
     closedir(dir);
     return 0;
