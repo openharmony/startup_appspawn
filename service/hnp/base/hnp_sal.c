@@ -94,13 +94,6 @@ int HnpSymlink(const char *srcFile, const char *dstFile)
     int ret;
     char relpath[MAX_FILE_PATH_LEN];
 
-    /* 将源二进制文件权限设置为750 */
-    ret = chmod(srcFile, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH);
-    if (ret < 0) {
-        HNP_LOGE("hnp install generate soft link chmod unsuccess, src:%s, errno:%d", srcFile, errno);
-        return HNP_ERRNO_BASE_CHMOD_FAILED;
-    }
-
     (void)unlink(dstFile);
 
     HnpRelPath(dstFile, srcFile, relpath);

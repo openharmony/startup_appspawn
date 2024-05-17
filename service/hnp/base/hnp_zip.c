@@ -45,8 +45,15 @@ static int ZipAddFile(const char* file, int offset, zipFile zf)
     char buf[1024];
     int len;
     FILE *f;
+    struct stat buffer = {0};
+    zip_fileinfo fileInfo = {0};
 
-    err = zipOpenNewFileInZip3(zf, file + offset, NULL, NULL, 0, NULL, 0, NULL, Z_DEFLATED, Z_BEST_COMPRESSION,
+    if (stat(file, &buffer) != 0) {
+        return HNP_ERRNO_BASE_STAT_FAILED;
+    }
+
+    fileInfo.internal_fa = buffer.st_mode << 16;
+    err = zipOpenNewFileInZip3(zf, file + offset, fileInfo, NULL, 0, NULL, 0, NULL, Z_DEFLATED, Z_BEST_COMPRESSION,
         0, -MAX_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY, NULL, 0);
     if (err != ZIP_OK) {
         HNP_LOGE("open new file[%s] in zip unsuccess ", file);
@@ -221,13 +228,14 @@ int HnpAddFileToZip(char *zipfile, char *filename, char *buff, int size)
     return 0;
 }
 
-static int HnpUnZipForFile(const char *fileName, const char *outputDir, unzFile zipFile)
+static int HnpUnZipForFile(const char *fileName, const char *outputDir, unzFile zipFile, unz_file_info fileInfo)
 {
 #ifdef _WIN32
     return 0;
 #else
     int ret;
     char filePath[MAX_FILE_PATH_LEN];
+    mode_t mode = fileInfo.internal_fa >> 16;
 
     ret = sprintf_s(filePath, MAX_FILE_PATH_LEN, "%s/%s", outputDir, fileName);
     if (ret < 0) {
@@ -261,6 +269,15 @@ static int HnpUnZipForFile(const char *fileName, const char *outputDir, unzFile 
 
         fclose(outFile);
         unzCloseCurrentFile(zipFile);
+        if ((mode & S_IXOTH) != 0) {
+            ret = chmod(filePath, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
+        } else {
+            ret = chmod(filePath, S_IRWXU | S_IRGRP | S_IROTH);
+        }
+        if (ret != 0) {
+            HNP_LOGE("hnp install chmod unsuccess, src:%s, errno:%d", filePath, errno);
+            return HNP_ERRNO_BASE_CHMOD_FAILED;
+        }
     }
     return 0;
 #endif
@@ -296,7 +313,7 @@ int HnpUnZip(const char *inputFile, const char *outputDir)
             slash = fileName;
         }
 
-        result = HnpUnZipForFile(slash, outputDir, zipFile);
+        result = HnpUnZipForFile(slash, outputDir, zipFile, fileInfo);
         if (result != 0) {
             HNP_LOGE("unzip for file:%s unsuccess", slash);
             unzClose(zipFile);

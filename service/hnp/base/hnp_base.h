@@ -207,6 +207,9 @@ enum {
 // 0x80111e 创建json数组失败
 #define HNP_ERRNO_BASE_JSON_ARRAY_CREATE_FAILED HNP_ERRNO_COMMON(HNP_MID_BASE, 0x1e)
 
+// 0x80111f 获取文件属性失败
+#define HNP_ERRNO_BASE_STAT_FAILED              HNP_ERRNO_COMMON(HNP_MID_BASE, 0x1f)
+
 int GetFileSizeByHandle(FILE *file, int *size);
 
 int ReadFileToStream(const char *filePath, char **stream, int *streamLen);
