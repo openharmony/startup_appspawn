@@ -251,6 +251,7 @@ int AppSpawnClientAddPermission(AppSpawnClientHandle handle, AppSpawnReqMsgHandl
 #define MSG_EXT_NAME_OVERLAY "Overlay"
 #define MSG_EXT_NAME_DATA_GROUP "DataGroup"
 #define MSG_EXT_NAME_APP_ENV "AppEnv"
+#define MSG_EXT_NAME_APP_EXTENSION "AppExtension"
 #define MSG_EXT_NAME_BEGET_PID "AppPid"
 #define MSG_EXT_NAME_BEGET_PTY_NAME "ptyName"
 #define MSG_EXT_NAME_ACCOUNT_ID "AccountId"
