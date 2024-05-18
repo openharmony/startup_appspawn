@@ -22,6 +22,9 @@
 #include <time.h>
 
 #include "appspawn_utils.h"
+#ifndef OHOS_LITE
+#include "appspawn_manager.h"
+#endif
 
 #define MAX_FORK_TIME (30 * 1000)   // 30ms
 
@@ -122,10 +125,17 @@ int AppSpawnProcessMsg(AppSpawnContent *content, AppSpawnClient *client, pid_t *
     pid_t pid = 0;
 #ifndef OHOS_LITE
     if (content->mode == MODE_FOR_NWEB_SPAWN) {
-        AppSpawnForkArg arg;
-        arg.client = client;
-        arg.content = content;
+    AppSpawningCtx *property = (AppSpawningCtx *)client;
+    uint32_t len = 0;
+    char *processType = (char *)(GetAppSpawnMsgExtInfo(property->message, MSG_EXT_NAME_PROCESS_TYPE, &len));
+    AppSpawnForkArg arg;
+    arg.client = client;
+    arg.content = content;
+    if (strcmp(processType, "gpu") == 0) {
+        pid = clone(CloneAppSpawn, NULL, CLONE_NEWNET | SIGCHLD, (void *)&arg);
+    } else {
         pid = clone(CloneAppSpawn, NULL, content->sandboxNsFlags | SIGCHLD, (void *)&arg);
+    }
     } else {
 #else
     {
