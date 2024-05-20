@@ -53,7 +53,7 @@ static int ZipAddFile(const char* file, int offset, zipFile zf)
     }
 
     fileInfo.internal_fa = buffer.st_mode << 16;
-    err = zipOpenNewFileInZip3(zf, file + offset, fileInfo, NULL, 0, NULL, 0, NULL, Z_DEFLATED, Z_BEST_COMPRESSION,
+    err = zipOpenNewFileInZip3(zf, file + offset, &fileInfo, NULL, 0, NULL, 0, NULL, Z_DEFLATED, Z_BEST_COMPRESSION,
         0, -MAX_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY, NULL, 0);
     if (err != ZIP_OK) {
         HNP_LOGE("open new file[%s] in zip unsuccess ", file);
