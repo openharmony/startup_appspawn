@@ -308,7 +308,7 @@ static int HnpHapJsonHnpAdd(bool hapExist, cJSON *json, cJSON *hapItem, const ch
     return ret;
 }
 
-int HnpInstallInfoJsonWrite(const NativeHnpPath *hnpDstPath, const HnpCfgInfo *hnpCfg)
+int HnpInstallInfoJsonWrite(const char *hapPackageName, const HnpCfgInfo *hnpCfg)
 {
     bool hapExist = false;
     int hapIndex = 0;
@@ -319,7 +319,7 @@ int HnpInstallInfoJsonWrite(const NativeHnpPath *hnpDstPath, const HnpCfgInfo *h
     cJSON *hnpItem = NULL;
     cJSON *json = NULL;
 
-    if ((hnpDstPath == NULL) || (hnpCfg == NULL)) {
+    if ((hapPackageName == NULL) || (hnpCfg == NULL)) {
         return HNP_ERRNO_BASE_PARAMS_INVALID;
     }
 
@@ -341,7 +341,7 @@ int HnpInstallInfoJsonWrite(const NativeHnpPath *hnpDstPath, const HnpCfgInfo *h
             HNP_LOGE("hnp json write parse json file unsuccess.");
             return HNP_ERRNO_BASE_PARSE_JSON_FAILED;
         }
-        hapExist = HnpInstallHapExistCheck(hnpDstPath->hnpPackageName, json, &hapItem, &hapIndex);
+        hapExist = HnpInstallHapExistCheck(hapPackageName, json, &hapItem, &hapIndex);
     }
 
     if (hapExist) {
@@ -359,7 +359,7 @@ int HnpInstallInfoJsonWrite(const NativeHnpPath *hnpDstPath, const HnpCfgInfo *h
         }
     }
 
-    ret = HnpHapJsonHnpAdd(hapExist, json, hapItem, hnpDstPath->hnpPackageName, hnpCfg);
+    ret = HnpHapJsonHnpAdd(hapExist, json, hapItem, hapPackageName, hnpCfg);
     cJSON_Delete(json);
     return ret;
 }

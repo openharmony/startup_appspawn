@@ -168,7 +168,7 @@ int GetRealPath(char *srcPath, char *realPath)
         return HNP_ERRNO_BASE_REALPATHL_FAILED;
     }
     if (strlen(dstTmpPath) >= MAX_FILE_PATH_LEN) {
-        HNP_LOGE("realpath over max path len. len=%d", strlen(dstTmpPath));
+        HNP_LOGE("realpath over max path len. len=%d", (int)strlen(dstTmpPath));
         return HNP_ERRNO_BASE_STRING_LEN_OVER_LIMIT;
     }
     if (strcpy_s(realPath, MAX_FILE_PATH_LEN, dstTmpPath) != EOK) {
