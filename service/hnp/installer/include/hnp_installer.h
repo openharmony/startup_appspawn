@@ -28,9 +28,6 @@ extern "C" {
 // 0x801302 获取安装绝对路径失败
 #define HNP_ERRNO_INSTALLER_GET_REALPATH_FAILED            HNP_ERRNO_COMMON(HNP_MID_INSTALLER, 0x2)
 
-// 0x801303 获取Hnp安装包名称失败
-#define HNP_ERRNO_INSTALLER_GET_HNP_NAME_FAILED            HNP_ERRNO_COMMON(HNP_MID_INSTALLER, 0x3)
-
 // 0x801304 安装的包已存在
 #define HNP_ERRNO_INSTALLER_PATH_IS_EXIST                  HNP_ERRNO_COMMON(HNP_MID_INSTALLER, 0x4)
 
@@ -40,14 +37,40 @@ extern "C" {
 // 0x801306 安装命令参数uid错误
 #define HNP_ERRNO_INSTALLER_ARGV_UID_INVALID               HNP_ERRNO_COMMON(HNP_MID_INSTALLER, 0x6)
 
-// 0x801307 获取版本目录失败
-#define HNP_ERRNO_INSTALLER_VERSION_FILE_GET_FAILED        HNP_ERRNO_COMMON(HNP_MID_INSTALLER, 0x7)
-
-// 0x801308 安装包超过最大值
-#define HNP_ERRNO_INSTALLER_SOFTWARE_NUM_OVERSIZE          HNP_ERRNO_COMMON(HNP_MID_INSTALLER, 0x8)
-
 #define HNP_DEFAULT_INSTALL_ROOT_PATH "/data/app/el1/bundle"
 #define HNP_SANDBOX_BASE_PATH "/data/service/hnp"
+
+/* hap安装参数 */
+typedef struct HapInstallArgvStru {
+    char *uid;              // 用户id
+    char *hapPackageName;   // app名称
+    char *hnpRootPath;      // hnp安装目录
+    char *hapPath;          // hap目录
+    char *abi;              // 系统abi路径
+} HapInstallArgv;
+
+/* hap安装信息 */
+typedef struct HapInstallInfoStru {
+    int uid;                // 用户id
+    char *hapPackageName;   // app名称
+    char *hnpRootPath;      // hnp安装目录
+    char *hapPath;          // hap目录
+    char *abi;              // 系统abi路径
+    bool isForce;           // 是否强制安装
+} HapInstallInfo;
+
+/* hnp安装信息 */
+typedef struct HnpInstallInfoStru {
+    int uid;                                 // 用户id
+    char *hapPackageName;                    // app名称
+    char *hapPath;                           // hap目录
+    char *abi;                               // 系统abi路径
+    bool isForce;                            // 是否强制安装
+    bool isPublic;                           // 是否公有
+    char hnpBasePath[MAX_FILE_PATH_LEN];     // hnp安装基础路径,public为 xxx/{uid}/hnppublic,private为xxx/{uid}/hnp/{hap}
+    char hnpSoftwarePath[MAX_FILE_PATH_LEN]; // 软件安装路径，为hnpBasePath/{name}.org/
+    char hnpVersionPath[MAX_FILE_PATH_LEN];  // 软件安装版本路径，为hnpBasePath/{name}.org/{name}_{version}
+} HnpInstallInfo;
 
 int HnpCmdInstall(int argc, char *argv[]);
 

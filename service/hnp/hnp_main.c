@@ -44,13 +44,16 @@ int HnpShowHelp(int argc, char *argv[])
     (void)argc;
     (void)argv;
 
-    HNP_LOGI("\r\nusage:hnp <command> <args> [-u <user id>][-p <hap package name>][-i <hap install path>][-f]\r\n"
+    HNP_LOGI("\r\nusage:hnp <command> <args> [-u <user id>][-p <hap package name>][-i <hap install path>][-f]"
+            "[-h <hap source path>][-a <system abi>]\r\n"
         "\r\nThese are common hnp commands used in various situations:\r\n"
         "\r\ninstall: install one hap package"
         "\r\n           hnp install <-u [user id]> <-p [hap package name]> <-i [hap install path]> <-f>"
         "\r\n           -u    : [required]    user id"
         "\r\n           -p    : [required]    hap package name"
         "\r\n           -i    : [required]    hap install path"
+        "\r\n           -s    : [required]    hap source path"
+        "\r\n           -a    : [required]    system abi"
         "\r\n           -f    : [optional]    if provided, the hnp package will be installed forcely, ignoring old"
             " versions of the hnp package\r\n"
         "\r\nuninstall: uninstall one hap package"
@@ -58,7 +61,7 @@ int HnpShowHelp(int argc, char *argv[])
         "\r\n           -u    : [required]    user id"
         "\r\n           -p    : [required]    hap package name"
         "\r\nfor example:\r\n"
-        "\r\n    hnp install -u 1000 -p app_sample -i /data/app_sample/ -f"
+        "\r\n    hnp install -u 1000 -p app_sample -i /data/app_sample/ -s /data/app_hap/ -a bin64 -f"
         "\r\n    hnp uninstall -u 1000 -p app_sample\r\n");
 
     return 0;

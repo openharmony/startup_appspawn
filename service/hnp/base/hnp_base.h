@@ -24,7 +24,6 @@
 #include "securec.h"
 
 #include "hilog/log.h"
-#include "appspawn_utils.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,8 +33,6 @@ extern "C" {
 
 #define HNP_VERSION_LEN 32
 #define BUFFER_SIZE 1024
-#define HNP_COMMAND_LEN 128
-#define MAX_PROCESSES 32
 #define MAX_PACKAGE_HNP_NUM 256
 
 #define HNP_CFG_FILE_NAME "hnp.json"
@@ -66,14 +63,6 @@ typedef struct HnpPackageInfoStru {
     char name[MAX_FILE_PATH_LEN];
     char version[HNP_VERSION_LEN];    // Native软件包版本号
 } HnpPackageInfo;
-
-typedef struct NativeHnpPathStru {
-    char *hnpPackageName;
-    char hnpBasePath[MAX_FILE_PATH_LEN]; // hnp安装基础路径,public为 xxx/{uid}/hnppublic,private为xxx/{uid}/hnp/{hap}
-    char hnpSoftwarePath[MAX_FILE_PATH_LEN]; // 软件安装路径，为hnpBasePath/{name}.org/
-    char hnpVersionPath[MAX_FILE_PATH_LEN]; // 软件安装版本路径，为hnpBasePath/{name}.org/{name}_{version}
-    int uid;
-} NativeHnpPath;
 
 /* 日志级别 */
 typedef enum  {
@@ -247,7 +236,7 @@ int GetHnpJsonBuff(HnpCfgInfo *hnpCfg, char **buff);
 
 int HnpCfgGetFromSteam(char *cfgStream, HnpCfgInfo *hnpCfg);
 
-int HnpInstallInfoJsonWrite(const NativeHnpPath *hnpDstPath, const HnpCfgInfo *hnpCfg);
+int HnpInstallInfoJsonWrite(const char *hapPackageName, const HnpCfgInfo *hnpCfg);
 
 int HnpPackageInfoGet(const char *packageName, HnpPackageInfo **packageInfoOut, int *count);
 
@@ -258,10 +247,10 @@ int HnpPackageInfoDelete(const char *packageName);
 char *HnpPackgeHnpVersionGet(const char *packageName, const char *name);
 
 #define HNP_LOGI(args, ...) \
-    HILOG_INFO(LOG_CORE, "[%{public}s:%{public}d]" args, (APP_FILE_NAME), (__LINE__), ##__VA_ARGS__)
+    HILOG_INFO(LOG_CORE, "[%{public}s:%{public}d]" args, (__FILE_NAME__), (__LINE__), ##__VA_ARGS__)
 
 #define HNP_LOGE(args, ...) \
-    HILOG_ERROR(LOG_CORE, "[%{public}s:%{public}d]" args, (APP_FILE_NAME), (__LINE__), ##__VA_ARGS__)
+    HILOG_ERROR(LOG_CORE, "[%{public}s:%{public}d]" args, (__FILE_NAME__), (__LINE__), ##__VA_ARGS__)
 
 #ifdef __cplusplus
 }
