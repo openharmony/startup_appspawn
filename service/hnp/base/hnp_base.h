@@ -23,6 +23,9 @@
 
 #include "securec.h"
 
+#include "hilog/log.h"
+#include "appspawn_utils.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -254,11 +257,11 @@ int HnpPackageInfoDelete(const char *packageName);
 
 char *HnpPackgeHnpVersionGet(const char *packageName, const char *name);
 
-#define HNP_LOGI(args...) \
-    HnpLogPrintf(HNP_LOG_INFO, "HNP", ##args)
+#define HNP_LOGI(args, ...) \
+    HILOG_INFO(LOG_CORE, "[%{public}s:%{public}d]" args, (APP_FILE_NAME), (__LINE__), ##__VA_ARGS__)
 
-#define HNP_LOGE(args...) \
-    HnpLogPrintf(HNP_LOG_ERROR, "HNP", ##args)
+#define HNP_LOGE(args, ...) \
+    HILOG_ERROR(LOG_CORE, "[%{public}s:%{public}d]" args, (APP_FILE_NAME), (__LINE__), ##__VA_ARGS__)
 
 #ifdef __cplusplus
 }
