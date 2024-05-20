@@ -899,6 +899,7 @@ static bool GetSandboxPrivateSharedStatus(const string &bundleName)
                 privateAppConfig[bundleName][0][g_sandBoxShared].get<std::string>();
             if (sandboxSharedStatus == g_statusCheck) {
                 result = true;
+                break;
             }
         }
     }
