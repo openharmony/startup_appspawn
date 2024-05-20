@@ -71,7 +71,7 @@ APPSPAWN_STATIC int RunBegetctlBootApp(AppSpawnMgr *content, AppSpawningCtx *pro
     UNUSED(content);
     if ((property->client.flags & APP_BEGETCTL_BOOT) != APP_BEGETCTL_BOOT) {
         APPSPAWN_LOGW("Enter begetctl boot without BEGETCTL_BOOT flag set");
-        return -1;
+        return 0;
     }
     uint32_t len = 0;
     const char *cmdMsg = (const char *)GetAppSpawnMsgExtInfo(property->message, MSG_EXT_NAME_BEGET_PTY_NAME, &len);
