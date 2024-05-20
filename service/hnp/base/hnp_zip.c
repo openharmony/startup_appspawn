@@ -258,7 +258,7 @@ static int HnpUnZipForFile(const char *fileName, const char *outputDir, unzFile 
             char buffer[BUFFER_SIZE];
             readSize = unzReadCurrentFile(zipFile, buffer, sizeof(buffer));
             if (readSize < 0) {
-                HNP_LOGE("unzip read zip:%s file unsuccess", zipFile);
+                HNP_LOGE("unzip read zip:%s file unsuccess", (char *)zipFile);
                 fclose(outFile);
                 unzCloseCurrentFile(zipFile);
                 return HNP_ERRNO_BASE_UNZIP_READ_FAILED;
@@ -360,7 +360,7 @@ int HnpCfgGetFromZip(const char *inputFile, HnpCfgInfo *hnpCfg)
         unzOpenCurrentFile(zipFile);
         cfgStream = malloc(fileInfo.uncompressed_size);
         if (cfgStream == NULL) {
-            HNP_LOGE("malloc unsuccess. size=%d, errno=%d", fileInfo.uncompressed_size, errno);
+            HNP_LOGE("malloc unsuccess. size=%lu, errno=%d", fileInfo.uncompressed_size, errno);
             unzClose(zipFile);
             return HNP_ERRNO_NOMEM;
         }
