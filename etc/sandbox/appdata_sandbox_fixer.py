@@ -117,7 +117,7 @@ def _merge_scope_app(origin, new):
         "symbol-links": ["target-name"]
     }
     # normal filed
-    for k in ["sandbox-root", "sandbox-switch", "gids", "sandbox-ns-flags"]:
+    for k in ["sandbox-root", "sandbox-switch", "gids"]:
         if new[0].get(k) is not None:
             origin[0][k] = new[0].get(k)
 
@@ -125,12 +125,6 @@ def _merge_scope_app(origin, new):
     flags_points = new[0].get("flags-point")
     if flags_points:
         _merge_scope_flags_point(origin[0]["flags-point"], flags_points)
-
-    # by list merger
-    for field in ["sandbox-ns-flags"]:
-        item = origin[0].get(field)
-        if item is not None and len(item) > 0:
-            _merge_list(new[0][field], item)
 
     # for array
     for name, keys in field_infos.items():
