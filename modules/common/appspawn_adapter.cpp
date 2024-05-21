@@ -98,6 +98,9 @@ int SetSelinuxCon(const AppSpawnMgr *content, const AppSpawningCtx *property)
     if (CheckAppMsgFlagsSet(property, APP_FLAGS_DEBUGGABLE)) {
         hapDomainInfo.hapFlags |= SELINUX_HAP_DEBUGGABLE;
     }
+    if (CheckAppMsgFlagsSet(property, APP_FLAGS_DLP_MANAGER)) {
+        hapDomainInfo.hapFlags |= SELINUX_HAP_DLP;
+    }
     ret = hapContext.HapDomainSetcontext(hapDomainInfo);
     if (CheckAppMsgFlagsSet(property, APP_FLAGS_ASANENABLED)) {
         ret = 0;
