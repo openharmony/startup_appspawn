@@ -180,6 +180,10 @@ int GetRealPath(char *srcPath, char *realPath)
 
 static int HnpDeleteAllFileInPath(const char *path, DIR *dir)
 {
+    int ret = 0;
+#ifdef _WIN32
+    return ret;
+#else
     struct dirent *entry;
     struct stat statbuf;
     char filePath[MAX_FILE_PATH_LEN];
@@ -189,7 +193,7 @@ static int HnpDeleteAllFileInPath(const char *path, DIR *dir)
             continue;
         }
 
-        int ret = sprintf_s(filePath, MAX_FILE_PATH_LEN, "%s/%s", path, entry->d_name);
+        ret = sprintf_s(filePath, MAX_FILE_PATH_LEN, "%s/%s", path, entry->d_name);
         if (ret < 0) {
             HNP_LOGE("delete folder sprintf path[%s], file[%s] unsuccess.", path, entry->d_name);
             return HNP_ERRNO_BASE_SPRINTF_FAILED;
@@ -215,15 +219,11 @@ static int HnpDeleteAllFileInPath(const char *path, DIR *dir)
     }
 
     return 0;
+#endif
 }
 
 int HnpDeleteFolder(const char *path)
 {
-    int ret = 0;
-#ifdef _WIN32
-    return ret;
-#else
-
     if (access(path, F_OK) != 0) {
         return 0;
     }
@@ -233,7 +233,7 @@ int HnpDeleteFolder(const char *path)
         return HNP_ERRNO_BASE_DIR_OPEN_FAILED;
     }
 
-    ret = HnpDeleteAllFileInPath(path, dir);
+    int ret = HnpDeleteAllFileInPath(path, dir);
     closedir(dir);
     if (ret != 0) {
         return ret;
@@ -244,7 +244,6 @@ int HnpDeleteFolder(const char *path)
         HNP_LOGE("rmdir path unsuccess.ret=%d, path=%s, errno=%d", ret, path, errno);
     }
     return ret;
-#endif
 }
 
 int HnpCreateFolder(const char* path)

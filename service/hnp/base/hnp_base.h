@@ -22,7 +22,6 @@
 #include <stdbool.h>
 
 #include "securec.h"
-
 #include "hilog/log.h"
 
 #ifdef __cplusplus
@@ -37,6 +36,7 @@ extern "C" {
 
 #define HNP_CFG_FILE_NAME "hnp.json"
 #define HNP_PACKAGE_INFO_JSON_FILE_PATH "/data/service/el1/startup/hnp_info.json"
+#define HNP_ELF_FILE_CHECK_HEAD_LEN 4
 
 #ifdef _WIN32
 #define DIR_SPLIT_SYMBOL '\\'
@@ -72,6 +72,12 @@ typedef enum  {
     HNP_LOG_DEBUG   = 3,
     HNP_LOG_BUTT
 } HNP_LOG_LEVEL_E;
+
+/* 安装验签 */
+typedef struct HnpSignMapInfoStru {
+    char key[MAX_FILE_PATH_LEN];
+    char value[MAX_FILE_PATH_LEN];
+} HnpSignMapInfo;
 
 /* 数字索引 */
 enum {
@@ -212,7 +218,8 @@ int GetRealPath(char *srcPath, char *realPath);
 
 int HnpZip(const char *inputDir, const char *outputFile);
 
-int HnpUnZip(const char *inputFile, const char *outputDir);
+int HnpUnZip(const char *inputFile, const char *outputDir, const char *hnpSignKeyPrefix,
+    HnpSignMapInfo **hnpSignMapInfos, int *count);
 
 int HnpAddFileToZip(char *zipfile, char *filename, char *buff, int size);
 

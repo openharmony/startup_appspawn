@@ -23,6 +23,8 @@
 #include <errno.h>
 #include <getopt.h>
 
+#include "code_sign_utils.h"
+
 #include "hnp_installer.h"
 
 #ifdef __cplusplus
@@ -173,12 +175,13 @@ static int HnpGenerateSoftLink(const char *installPath, const char *hnpBasePath,
     return ret;
 }
 
-static int HnpInstall(const char *hnpFile, HnpInstallInfo *hnpInfo, HnpCfgInfo *hnpCfg)
+static int HnpInstall(const char *hnpFile, HnpInstallInfo *hnpInfo, HnpCfgInfo *hnpCfg,
+    HnpSignMapInfo **hnpSignMapInfos, int *count)
 {
     int ret;
 
     /* 解压hnp文件 */
-    ret = HnpUnZip(hnpFile, hnpInfo->hnpVersionPath);
+    ret = HnpUnZip(hnpFile, hnpInfo->hnpVersionPath, hnpInfo->hnpSignKeyPrefix, hnpSignMapInfos, count);
     if (ret != 0) {
         return ret; /* 内部已打印日志 */
     }
@@ -322,7 +325,7 @@ static int HnpInstallPathGet(HnpCfgInfo *hnpCfgInfo, HnpInstallInfo *hnpInfo)
     return 0;
 }
 
-static int HnpReadAndInstall(char *srcFile, HnpInstallInfo *hnpInfo)
+static int HnpReadAndInstall(char *srcFile, HnpInstallInfo *hnpInfo, HnpSignMapInfo **hnpSignMapInfos, int *count)
 {
     int ret;
     HnpCfgInfo hnpCfg = {0};
@@ -361,7 +364,7 @@ static int HnpReadAndInstall(char *srcFile, HnpInstallInfo *hnpInfo)
     }
 
     /* hnp安装 */
-    ret = HnpInstall(srcFile, hnpInfo, &hnpCfg);
+    ret = HnpInstall(srcFile, hnpInfo, &hnpCfg, hnpSignMapInfos, count);
     // 释放软链接占用的内存
     if (hnpCfg.links != NULL) {
         free(hnpCfg.links);
@@ -392,7 +395,8 @@ static bool HnpFileCheck(const char *file)
     return false;
 }
 
-static int HnpPackageGetAndInstall(const char *dirPath, HnpInstallInfo *hnpInfo)
+static int HnpPackageGetAndInstall(const char *dirPath, HnpInstallInfo *hnpInfo, HnpSignMapInfo **hnpSignMapInfos,
+    int *count)
 {
     DIR *dir;
     struct dirent *entry;
@@ -415,7 +419,7 @@ static int HnpPackageGetAndInstall(const char *dirPath, HnpInstallInfo *hnpInfo)
         }
 
         if (entry->d_type == DT_DIR) {
-            ret = HnpPackageGetAndInstall(path, hnpInfo);
+            ret = HnpPackageGetAndInstall(path, hnpInfo, hnpSignMapInfos, count);
             if (ret != 0) {
                 closedir(dir);
                 return ret;
@@ -424,8 +428,13 @@ static int HnpPackageGetAndInstall(const char *dirPath, HnpInstallInfo *hnpInfo)
             if (HnpFileCheck(path) == false) {
                 continue;
             }
+            if (sprintf_s(hnpInfo->hnpSignKeyPrefix, MAX_FILE_PATH_LEN, "hnp/%s/%s", hnpInfo->abi, entry->d_name) < 0) {
+                HNP_LOGE("hnp install sprintf unsuccess, abi[%s], path[%s]", hnpInfo->abi, entry->d_name);
+                closedir(dir);
+                return HNP_ERRNO_BASE_SPRINTF_FAILED;
+            }
             HNP_LOGI("hnp install start now! src file=%s, dst path=%s", path, hnpInfo->hnpBasePath);
-            ret = HnpReadAndInstall(path, hnpInfo);
+            ret = HnpReadAndInstall(path, hnpInfo, hnpSignMapInfos, count);
             HNP_LOGI("hnp install end, ret=%d", ret);
             if (ret != 0) {
                 closedir(dir);
@@ -437,13 +446,51 @@ static int HnpPackageGetAndInstall(const char *dirPath, HnpInstallInfo *hnpInfo)
     return 0;
 }
 
+static int HapReadAndInstall(DIR *dir, const char *dstPath, HapInstallInfo *installInfo,
+    HnpSignMapInfo **hnpSignMapInfos, int *count)
+{
+    struct dirent *entry;
+    char hnpPath[MAX_FILE_PATH_LEN];
+    HnpInstallInfo hnpInfo = {installInfo->uid, installInfo->hapPackageName, installInfo->hapPath, installInfo->abi,
+        installInfo->isForce, false, {0}, {0}, {0}};
+    int ret;
+
+    /* 遍历src目录 */
+    while ((entry = readdir(dir)) != NULL) {
+        if (strcmp(entry->d_name, "public") == 0) {
+            hnpInfo.isPublic = true;
+            if ((sprintf_s(hnpInfo.hnpBasePath, MAX_FILE_PATH_LEN, "%s/hnppublic", dstPath) < 0) ||
+                (sprintf_s(hnpPath, MAX_FILE_PATH_LEN, "%s/public", installInfo->hnpRootPath) < 0)) {
+                HNP_LOGE("hnp install public base path sprintf unsuccess.");
+                return HNP_ERRNO_BASE_SPRINTF_FAILED;
+            }
+        } else if (strcmp(entry->d_name, "private") == 0) {
+            hnpInfo.isPublic = false;
+            if ((sprintf_s(hnpInfo.hnpBasePath, MAX_FILE_PATH_LEN, "%s/hnp/%s", dstPath,
+                installInfo->hapPackageName) < 0) || (sprintf_s(hnpPath, MAX_FILE_PATH_LEN, "%s/private",
+                installInfo->hnpRootPath) < 0)) {
+                HNP_LOGE("hnp install private base path sprintf unsuccess.");
+                return HNP_ERRNO_BASE_SPRINTF_FAILED;
+            }
+        } else {
+            continue;
+        }
+
+        ret = HnpPackageGetAndInstall(hnpPath, &hnpInfo, hnpSignMapInfos, count);
+        if (ret != 0) {
+            return ret;
+        }
+    }
+
+    return 0;
+}
+
+
 static int HnpInsatllPre(HapInstallInfo *installInfo)
 {
     char dstPath[MAX_FILE_PATH_LEN];
-    HnpInstallInfo hnpInfo = {installInfo->uid, installInfo->hapPackageName, installInfo->hapPath, installInfo->abi,
-        installInfo->isForce, false, {0}, {0}, {0}};
-    struct dirent *entry;
-    char hnpPath[MAX_FILE_PATH_LEN];
+    int count = 0;
+    HnpSignMapInfo *hnpSignMapInfos = NULL;
 
     /* 拼接安装路径 */
     if (sprintf_s(dstPath, MAX_FILE_PATH_LEN, HNP_DEFAULT_INSTALL_ROOT_PATH"/%d", installInfo->uid) < 0) {
@@ -463,37 +510,22 @@ static int HnpInsatllPre(HapInstallInfo *installInfo)
         return HNP_ERRNO_BASE_DIR_OPEN_FAILED;
     }
 
-    /* 遍历src目录 */
-    while ((entry = readdir(dir)) != NULL) {
-        if (strcmp(entry->d_name, "public") == 0) {
-            hnpInfo.isPublic = true;
-            if ((sprintf_s(hnpInfo.hnpBasePath, MAX_FILE_PATH_LEN, "%s/hnppublic", dstPath) < 0) ||
-                (sprintf_s(hnpPath, MAX_FILE_PATH_LEN, "%s/public", installInfo->hnpRootPath) < 0)) {
-                closedir(dir);
-                HNP_LOGE("hnp install public base path sprintf unsuccess.");
-                return HNP_ERRNO_BASE_SPRINTF_FAILED;
-            }
-        } else if (strcmp(entry->d_name, "private") == 0) {
-            hnpInfo.isPublic = false;
-            if ((sprintf_s(hnpInfo.hnpBasePath, MAX_FILE_PATH_LEN, "%s/hnp/%s", dstPath,
-                installInfo->hapPackageName) < 0) || (sprintf_s(hnpPath, MAX_FILE_PATH_LEN, "%s/private",
-                installInfo->hnpRootPath) < 0)) {
-                closedir(dir);
-                HNP_LOGE("hnp install private base path sprintf unsuccess.");
-                return HNP_ERRNO_BASE_SPRINTF_FAILED;
-            }
-        } else {
-            continue;
-        }
-
-        int ret = HnpPackageGetAndInstall(hnpPath, &hnpInfo);
+    int ret = HapReadAndInstall(dir, dstPath, installInfo, &hnpSignMapInfos, &count);
+    if ((ret == 0) && (count > 0)) {
+        ret = EnforceCodeSignForApp(installInfo->hapPath, hnpSignMapInfos, FILE_ENTRY_ONLY);
         if (ret != 0) {
-            closedir(dir);
-            return ret;
+            HNP_LOGE("hnp install sign unsuccess, ret=%u, hap path[%s], abi[%s]", ret, installInfo->hapPath,
+                installInfo->abi);
+            ret = HNP_ERRNO_INSTALLER_CODE_SIGN_APP_FAILED;
         }
     }
+    // 释放内存
+    for (int i = 0; i < count; i++) {
+        free(hnpSignMapInfos);
+        hnpSignMapInfos++;
+    }
     closedir(dir);
-    return 0;
+    return ret;
 }
 
 static int ParseInstallArgs(HapInstallArgv *installArgv, HapInstallInfo *installInfo)
