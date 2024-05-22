@@ -100,7 +100,9 @@ static int RunChildProcessor(AppSpawnContent *content, AppSpawnClient *client)
         return -1;
     }
 
-    if (!SetSeccompPolicyForRenderer(nwebRenderHandle)) {
+    std::string processType = reinterpret_cast<char *>(GetAppPropertyExt(
+        reinterpret_cast<AppSpawningCtx *>(client), MSG_EXT_NAME_PROCESS_TYPE, &len));
+    if (processType == "render" && !SetSeccompPolicyForRenderer(nwebRenderHandle)) {
         return -1;
     }
     using FuncType = void (*)(const char *cmd);
