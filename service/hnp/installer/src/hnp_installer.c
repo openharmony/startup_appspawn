@@ -395,12 +395,13 @@ static bool HnpFileCheck(const char *file)
     return false;
 }
 
-static int HnpPackageGetAndInstall(const char *dirPath, HnpInstallInfo *hnpInfo, HnpSignMapInfo **hnpSignMapInfos,
-    int *count)
+static int HnpPackageGetAndInstall(const char *dirPath, HnpInstallInfo *hnpInfo, char *sunDir,
+    HnpSignMapInfo **hnpSignMapInfos, int *count)
 {
     DIR *dir;
     struct dirent *entry;
     char path[MAX_FILE_PATH_LEN];
+    char sunDirNew[MAX_FILE_PATH_LEN];
     int ret;
 
     if ((dir = opendir(dirPath)) == NULL) {
@@ -419,7 +420,12 @@ static int HnpPackageGetAndInstall(const char *dirPath, HnpInstallInfo *hnpInfo,
         }
 
         if (entry->d_type == DT_DIR) {
-            ret = HnpPackageGetAndInstall(path, hnpInfo, hnpSignMapInfos, count);
+            if (sprintf_s(sunDirNew, MAX_FILE_PATH_LEN, "%s%s/", sunDir, entry->d_name) < 0) {
+                HNP_LOGE("hnp install sprintf sub dir unsuccess");
+                closedir(dir);
+                return HNP_ERRNO_BASE_SPRINTF_FAILED;
+            }
+            ret = HnpPackageGetAndInstall(path, hnpInfo, sunDirNew, hnpSignMapInfos, count);
             if (ret != 0) {
                 closedir(dir);
                 return ret;
@@ -428,7 +434,8 @@ static int HnpPackageGetAndInstall(const char *dirPath, HnpInstallInfo *hnpInfo,
             if (HnpFileCheck(path) == false) {
                 continue;
             }
-            if (sprintf_s(hnpInfo->hnpSignKeyPrefix, MAX_FILE_PATH_LEN, "hnp/%s/%s", hnpInfo->abi, entry->d_name) < 0) {
+            if (sprintf_s(hnpInfo->hnpSignKeyPrefix, MAX_FILE_PATH_LEN, "hnp/%s/%s%s", hnpInfo->abi, sunDir,
+                entry->d_name) < 0) {
                 HNP_LOGE("hnp install sprintf unsuccess, abi[%s], path[%s]", hnpInfo->abi, entry->d_name);
                 closedir(dir);
                 return HNP_ERRNO_BASE_SPRINTF_FAILED;
@@ -476,7 +483,7 @@ static int HapReadAndInstall(DIR *dir, const char *dstPath, HapInstallInfo *inst
             continue;
         }
 
-        ret = HnpPackageGetAndInstall(hnpPath, &hnpInfo, hnpSignMapInfos, count);
+        ret = HnpPackageGetAndInstall(hnpPath, &hnpInfo, "", hnpSignMapInfos, count);
         if (ret != 0) {
             return ret;
         }
@@ -518,11 +525,7 @@ static int HnpInsatllPre(HapInstallInfo *installInfo)
                 installInfo->abi);
             ret = HNP_ERRNO_INSTALLER_CODE_SIGN_APP_FAILED;
         }
-    }
-    // 释放内存
-    for (int i = 0; i < count; i++) {
         free(hnpSignMapInfos);
-        hnpSignMapInfos++;
     }
     closedir(dir);
     return ret;
@@ -564,9 +567,10 @@ static int ParseInstallArgs(HapInstallArgv *installArgv, HapInstallInfo *install
         HNP_LOGE("install argv abi path is null.");
         return HNP_ERRNO_OPERATOR_ARGV_MISS;
     }
-    if (GetRealPath(installArgv->abi, installInfo->abi) != 0) {
-        HNP_LOGE("hnp install argv abi path=%s is invalid.", installArgv->abi);
-        return HNP_ERRNO_INSTALLER_GET_REALPATH_FAILED;
+
+    if (strcpy_s(installInfo->abi, MAX_FILE_PATH_LEN, installArgv->abi) != EOK) {
+        HNP_LOGE("strcpy hnp info abi[%s] unsuccess.", installArgv->abi);
+        return HNP_ERRNO_BASE_COPY_FAILED;
     }
 
     if (installArgv->hapPackageName == NULL) {
