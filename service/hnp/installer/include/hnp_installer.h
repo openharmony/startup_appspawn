@@ -54,12 +54,12 @@ typedef struct HapInstallArgvStru {
 
 /* hap安装信息 */
 typedef struct HapInstallInfoStru {
-    int uid;                // 用户id
-    char *hapPackageName;   // app名称
-    char *hnpRootPath;      // hnp安装目录
-    char *hapPath;          // hap目录
-    char *abi;              // 系统abi路径
-    bool isForce;           // 是否强制安装
+    int uid;                                  // 用户id
+    char hapPackageName[MAX_FILE_PATH_LEN];   // app名称
+    char hnpRootPath[MAX_FILE_PATH_LEN];      // hnp安装目录
+    char hapPath[MAX_FILE_PATH_LEN];          // hap目录
+    char abi[MAX_FILE_PATH_LEN];              // 系统abi路径
+    bool isForce;                             // 是否强制安装
 } HapInstallInfo;
 
 /* hnp安装信息 */

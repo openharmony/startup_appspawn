@@ -52,7 +52,7 @@ static int ZipAddFile(const char* file, int offset, zipFile zf)
         return HNP_ERRNO_BASE_STAT_FAILED;
     }
 
-    fileInfo.internal_fa = buffer.st_mode << 16;
+    fileInfo.external_fa = (buffer.st_mode & 0xFFFF) << 16;
     err = zipOpenNewFileInZip3(zf, file + offset, &fileInfo, NULL, 0, NULL, 0, NULL, Z_DEFLATED, Z_BEST_COMPRESSION,
         0, -MAX_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY, NULL, 0);
     if (err != ZIP_OK) {
@@ -234,7 +234,7 @@ static int HnpUnZipForFile(const char *filePath, unzFile zipFile, unz_file_info 
     return 0;
 #else
     int ret;
-    mode_t mode = fileInfo.internal_fa >> 16;
+    mode_t mode = (fileInfo.external_fa >> 16) & 0xFFFF;
 
     /* 如果解压缩的是目录 */
     if (filePath[strlen(filePath) - 1] == '/') {
