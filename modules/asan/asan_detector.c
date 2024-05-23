@@ -23,6 +23,7 @@
 extern bool may_init_gwp_asan(bool forceInit);
 
 // ide-asan
+#ifndef ASAN_DETECTOR
 static int SetAsanEnabledEnv(const AppSpawnMgr *content, const AppSpawningCtx *property)
 {
     const char *bundleName = GetBundleName(property);
@@ -54,6 +55,7 @@ static int SetAsanEnabledEnv(const AppSpawnMgr *content, const AppSpawningCtx *p
     }
     return -1;
 }
+#endif
 
 static void SetGwpAsanEnabled(const AppSpawnMgr *content, const AppSpawningCtx *property)
 {
@@ -110,11 +112,13 @@ static int AsanSpawnInitSpawningEnv(AppSpawnMgr *content, AppSpawningCtx *proper
     if (GetAppSpawnMsgType(property) == MSG_SPAWN_NATIVE_PROCESS) {
         return 0;
     }
+#ifndef ASAN_DETECTOR
     int ret = SetAsanEnabledEnv(content, property);
     if (ret == 0) {
         APPSPAWN_LOGI("SetAsanEnabledEnv cold start app %{public}s", GetProcessName(property));
         property->client.flags |= APP_COLD_START;
     }
+#endif
     (void)SetGwpAsanEnabled(content, property);
     return 0;
 }
