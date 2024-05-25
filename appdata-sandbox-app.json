@@ -261,6 +261,15 @@
                 "sandbox-path": "/data/log/UserView",
                 "src-path": "/data/log/UserView"
             }]
+        }, {
+            "name": "ohos.permission.PROTECT_SCREEN_LOCK_DATA",
+            "mount-paths": [{
+                "sandbox-path": "/data/storage/el5/base",
+                "src-path": "/data/app/el5/<currentUserId>/base/<PackageName>"
+            }, {
+                "sandbox-path": "/data/storage/el5/database",
+                "src-path": "/data/app/el5/<currentUserId>/database/<PackageName>"
+            }]
         }],
         "spawn-flag": [{
             "name": "START_FLAGS_BACKUP",
