@@ -841,6 +841,15 @@
                     "check-action-status": "false"
                 }
             ]
+        }],
+        "ohos.permission.ACCESS_HIVIEWX":[{
+            "sandbox-switch": "ON",
+            "mount-paths": [{
+                    "src-path": "/data/log/UserView",
+                    "sandbox-path": "/data/log/UserView",
+                    "sandbox-flags": [ "bind", "rec" ]
+                }
+            ]
         }]
     }]
 }

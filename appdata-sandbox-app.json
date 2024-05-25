@@ -255,6 +255,12 @@
                 "sandbox-path": "/data/storage/shader_caches",
                 "src-path": "/data/local/shader_cache"
             }]
+        }, {
+            "name": "ohos.permission.ACCESS_HIVIEWX",
+            "mount-paths": [{
+                "sandbox-path": "/data/log/UserView",
+                "src-path": "/data/log/UserView"
+            }]
         }],
         "spawn-flag": [{
             "name": "START_FLAGS_BACKUP",
