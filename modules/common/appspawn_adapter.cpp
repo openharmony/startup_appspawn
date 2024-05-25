@@ -135,8 +135,14 @@ int SetSeccompFilter(const AppSpawnMgr *content, const AppSpawningCtx *property)
 #ifdef WITH_SECCOMP
     const char *appName = APP_NAME;
     SeccompFilterType type = APP;
+    
     if (IsNWebSpawnMode(content)) {
-        return 0;
+        uint32_t len = 0;
+        std::string processType =
+            reinterpret_cast<char *>(GetAppPropertyExt(property, MSG_EXT_NAME_PROCESS_TYPE, &len));
+        if (processType == "render") {
+            return 0;
+        }
     }
     if (!SetSeccompPolicyWithName(type, appName)) {
         APPSPAWN_LOGE("Failed to set %{public}s seccomp filter and exit %{public}d", appName, errno);
