@@ -30,6 +30,8 @@
 #include "appspawn_manager.h"
 #include "appspawn_utils.h"
 #include "securec.h"
+#include "cJSON.h"
+#include <sys/ioctl.h>
 
 APPSPAWN_STATIC int GetCgroupPath(const AppSpawnedProcessInfo *appInfo, char *buffer, uint32_t buffLen)
 {
@@ -44,6 +46,7 @@ APPSPAWN_STATIC int GetCgroupPath(const AppSpawnedProcessInfo *appInfo, char *bu
     APPSPAWN_LOGV("Cgroup path %{public}s ", buffer);
     return 0;
 }
+
 
 APPSPAWN_STATIC int WriteToFile(const char *path, int truncated, pid_t pids[], uint32_t count)
 {
@@ -65,8 +68,39 @@ APPSPAWN_STATIC int WriteToFile(const char *path, int truncated, pid_t pids[], u
     return ret;
 }
 
+#define APP_PIDS_MAX_ENCAPS "encaps"
+#define APP_PIDS_MAX_OHOS_ENCAPS_COUNT_KEY "ohos.encaps.count"
+#define APP_PIDS_MAX_OHOS_ENCAPS_FORK_KEV "ohos.encaps.fork"
+#define APP_PIDS_MAX_OHOS_ENCAPS_FORK_DFX_KEY "ohos.encaps.fork.dfx"
+#define APP_PIDS_MAX_OHOS_ENCAPS_FORK_WEBDFX_KEY "ohos.encaps.fork.webdfx"
+#define APP_PIDS_MAX_OHOS_ENCAPS_COUNT_VALUE 3
+#define APP_PIDS_MAX_OHOS_ENCAPS_FORK_DFX_AND_WEBDFX_VALUE 5
+#define APP_ENABLE_ENCAPS 1
+#define ASSICN_ENCAPS_CMD _lOW('E', 0x1A, char *)
 static int WritePidMax(const char *path, uint32_t max)
 {
+#if APP_ENABLE_ENCAPS == 0
+    cJSON *encaps = cJSON_CreateObject();
+    cJSON_AddNumberToObject(encaps, APP_PIDS_MAX_OHOS_ENCAPS_COUNT_KEY,
+        APP_PIDS_MAX_OHOS_ENCAPS_COUNT_VALUE);
+    cJSON_AddNumberToObject(encaps, APP_PIDS_MAX_OHOS_ENCAPS_FORK_KEV, max);
+    cJSON_AddNumberToObject(encaps, APP_PIDS_MAX_OHOS_ENCAPS_FORK_DFX_KEY,
+        APP_PIDS_MAX_OHOS_ENCAPS_FORK_DFX_AND_WEBDFX_VALUE);
+    cJSON_AddNumberToObject(encaps, APP_PIDS_MAX_OHOS_ENCAPS_FORK_WEBDFX_KEY,
+        APP_PIDS_MAX_OHOS_ENCAPS_FORK_DFX_AND_WEBDFX_VALUE);
+    cJSON *addGinseng = cJSON_CreateObject();
+    cJSON_AddItemToObject(addGinseng, APP_PIDS_MAX_ENCAPS, encaps);
+    char *maxPid = cJSON_PrintUnformatted(addGinseng);
+    int ret = 0;
+    int fd = 0;
+    fd = open("dev/encaps", O_RDWR);
+    ret = ioctl(fd, ASSICN_ENCAPS_CMD, maxPid);
+    close(fd);
+    free(maxPid);
+    cJSON_Delete(addGinseng);
+    cJSON_Delete(encaps);
+    return ret;
+#else
     char value[32] = {0}; // 32 max len
     int fd = open(path, O_RDWR | O_TRUNC);
     APPSPAWN_CHECK(fd >= 0, return -1,
@@ -82,6 +116,7 @@ static int WritePidMax(const char *path, uint32_t max)
     } while (0);
     close(fd);
     return ret;
+#endif
 }
 
 static void KillProcessesByCGroup(const char *path, AppSpawnMgr *content, const AppSpawnedProcessInfo *appInfo)
