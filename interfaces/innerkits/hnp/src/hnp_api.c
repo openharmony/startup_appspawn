@@ -109,7 +109,7 @@ int NativeInstallHnp(const char *userId, const char *hnpRootPath,  const HapInfo
     argv[index++] = (char *)hnpRootPath;
     argv[index++] = "-p";
     argv[index++] = (char *)hapInfo->packageName;
-    argv[index++] = "-h";
+    argv[index++] = "-s";
     argv[index++] = (char *)hapInfo->hapPath;
     argv[index++] = "-a";
     argv[index++] = (char *)hapInfo->abi;

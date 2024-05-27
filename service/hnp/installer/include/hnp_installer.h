@@ -28,7 +28,7 @@ extern "C" {
 // 0x801302 获取安装绝对路径失败
 #define HNP_ERRNO_INSTALLER_GET_REALPATH_FAILED            HNP_ERRNO_COMMON(HNP_MID_INSTALLER, 0x2)
 
-// 0x801303 so验签失败
+// 0x801303 ELF文件验签失败
 #define HNP_ERRNO_INSTALLER_CODE_SIGN_APP_FAILED           HNP_ERRNO_COMMON(HNP_MID_INSTALLER, 0x3)
 
 // 0x801304 安装的包已存在
@@ -43,32 +43,19 @@ extern "C" {
 #define HNP_DEFAULT_INSTALL_ROOT_PATH "/data/app/el1/bundle"
 #define HNP_SANDBOX_BASE_PATH "/data/service/hnp"
 
-/* hap安装参数 */
-typedef struct HapInstallArgvStru {
-    char *uid;              // 用户id
-    char *hapPackageName;   // app名称
-    char *hnpRootPath;      // hnp安装目录
-    char *hapPath;          // hap目录
-    char *abi;              // 系统abi路径
-} HapInstallArgv;
-
 /* hap安装信息 */
 typedef struct HapInstallInfoStru {
     int uid;                                  // 用户id
-    char hapPackageName[MAX_FILE_PATH_LEN];   // app名称
-    char hnpRootPath[MAX_FILE_PATH_LEN];      // hnp安装目录
-    char hapPath[MAX_FILE_PATH_LEN];          // hap目录
-    char abi[MAX_FILE_PATH_LEN];              // 系统abi路径
+    char *hapPackageName;                     // app名称
+    char *hnpRootPath;                        // hnp安装目录
+    char *hapPath;                            // hap目录
+    char *abi;                                // 系统abi路径
     bool isForce;                             // 是否强制安装
 } HapInstallInfo;
 
 /* hnp安装信息 */
 typedef struct HnpInstallInfoStru {
-    int uid;                                  // 用户id
-    char *hapPackageName;                     // app名称
-    char *hapPath;                            // hap目录
-    char *abi;                                // 系统abi路径
-    bool isForce;                             // 是否强制安装
+    HapInstallInfo *hapInstallInfo;           // hap安装信息
     bool isPublic;                            // 是否公有
     char hnpBasePath[MAX_FILE_PATH_LEN];      // hnp安装基础路径,public为 xxx/{uid}/hnppublic,private为xxx/{uid}/hnp/{hap}
     char hnpSoftwarePath[MAX_FILE_PATH_LEN];  // 软件安装路径，为hnpBasePath/{name}.org/
