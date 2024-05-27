@@ -500,11 +500,11 @@ static int HnpInsatllPre(int uid, char *srcPath, char *packageName, bool isForce
 
 int HnpCmdInstall(int argc, char *argv[])
 {
-    char *srcPath;
+    char *srcPath = NULL;
     int uid = 0;
     char *uidArg = NULL;
     bool isForce = false;
-    char *packageName;
+    char *packageName = NULL;
     int ch;
 
     optind = 1; // 从头开始遍历参数
