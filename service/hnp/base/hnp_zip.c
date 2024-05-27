@@ -298,58 +298,61 @@ static bool HnpELFFileCheck(const char *path)
 }
 
 static int HnpInstallAddSignMap(const char* hnpSignKeyPrefix, const char *key, const char *value,
-    HnpSignMapInfo **hnpSignMapInfos, int *count)
+    HnpSignMapInfo *hnpSignMapInfos, int *count)
 {
     int ret;
-    HnpSignMapInfo *hnpSignMapInfoNew;
     int sum = *count;
 
     if (HnpELFFileCheck(value) == false) {
         return 0;
     }
 
-    hnpSignMapInfoNew = (HnpSignMapInfo *)malloc(sizeof(HnpSignMapInfo) * (sum + 1));
-    if (hnpSignMapInfoNew == NULL) {
-        free(*hnpSignMapInfos);
-        HNP_LOGE("add sign map malloc unsuccess. size=%d, errno=%d", (int)sizeof(HnpSignMapInfo) * (sum + 1), errno);
-        return HNP_ERRNO_NOMEM;
-    }
-
-    if (sum > 0) {
-        if (memcpy_s(hnpSignMapInfoNew, sizeof(HnpSignMapInfo) * sum, *hnpSignMapInfos, sizeof(HnpSignMapInfo) * sum) != 0) {
-            free(hnpSignMapInfoNew);
-            free(*hnpSignMapInfos);
-            HNP_LOGE("add sign map memcpy hnp info unsuccess");
-            return HNP_ERRNO_BASE_MEMCPY_FAILED;
-        }
-    }
-
-    hnpSignMapInfoNew += sum;
-    ret = sprintf_s(hnpSignMapInfoNew->key, MAX_FILE_PATH_LEN, "%s!/%s", hnpSignKeyPrefix, key);
+    ret = sprintf_s(hnpSignMapInfos[sum].key, MAX_FILE_PATH_LEN, "%s!/%s", hnpSignKeyPrefix, key);
     if (ret < 0) {
-        free(hnpSignMapInfoNew);
-        free(*hnpSignMapInfos);
         HNP_LOGE("add sign map sprintf unsuccess.");
         return HNP_ERRNO_BASE_SPRINTF_FAILED;
     }
 
-    ret = strcpy_s(hnpSignMapInfoNew->value, MAX_FILE_PATH_LEN, value);
+    ret = strcpy_s(hnpSignMapInfos[sum].value, MAX_FILE_PATH_LEN, value);
     if (ret != EOK) {
-        free(hnpSignMapInfoNew);
-        free(*hnpSignMapInfos);
         HNP_LOGE("add sign map strcpy[%s] unsuccess.", value);
         return HNP_ERRNO_BASE_COPY_FAILED;
     }
-    hnpSignMapInfoNew -= sum;
 
-    free(*hnpSignMapInfos);
-    *hnpSignMapInfos = hnpSignMapInfoNew;
-    *count = sum + 1;
+    *count  = sum + 1;
+    return 0;
+}
+
+int HnpFileCountGet(const char *path, int *count)
+{
+    int sum = 0;
+
+    unzFile zipFile = unzOpen(path);
+    if (zipFile == NULL) {
+        HNP_LOGE("unzip open hnp:%s unsuccess!", path);
+        return HNP_ERRNO_BASE_UNZIP_OPEN_FAILED;
+    }
+
+    int ret = unzGoToFirstFile(zipFile);
+    while (ret == UNZ_OK) {
+        sum++;
+        ret = unzGetCurrentFileInfo(zipFile, NULL, NULL, 0, NULL, 0, NULL, 0);
+        if (ret != UNZ_OK) {
+            HNP_LOGE("unzip get zip:%s info unsuccess!", path);
+            unzClose(zipFile);
+            return HNP_ERRNO_BASE_UNZIP_GET_INFO_FAILED;
+        }
+
+        ret = unzGoToNextFile(zipFile);
+    }
+
+    unzClose(zipFile);
+    *count += sum;
     return 0;
 }
 
 int HnpUnZip(const char *inputFile, const char *outputDir, const char *hnpSignKeyPrefix,
-    HnpSignMapInfo **hnpSignMapInfos, int *count)
+    HnpSignMapInfo *hnpSignMapInfos, int *count)
 {
     unzFile zipFile;
     int result;
