@@ -219,7 +219,7 @@ int GetRealPath(char *srcPath, char *realPath);
 int HnpZip(const char *inputDir, const char *outputFile);
 
 int HnpUnZip(const char *inputFile, const char *outputDir, const char *hnpSignKeyPrefix,
-    HnpSignMapInfo **hnpSignMapInfos, int *count);
+    HnpSignMapInfo *hnpSignMapInfos, int *count);
 
 int HnpAddFileToZip(char *zipfile, char *filename, char *buff, int size);
 
@@ -252,6 +252,8 @@ int HnpPackageInfoHnpDelete(const char *packageName, const char *name, const cha
 int HnpPackageInfoDelete(const char *packageName);
 
 char *HnpPackgeHnpVersionGet(const char *packageName, const char *name);
+
+int HnpFileCountGet(const char *path, int *count);
 
 #define HNP_LOGI(args, ...) \
     HILOG_INFO(LOG_CORE, "[%{public}s:%{public}d]" args, (__FILE_NAME__), (__LINE__), ##__VA_ARGS__)
