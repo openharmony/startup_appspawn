@@ -2,7 +2,7 @@
     "common" : [{
         "top-sandbox-switch": "ON",
         "app-base" : [{
-            "sandbox-ns-flags" : [ "pid" ],
+            "sandbox-ns-flags" : [],
             "mount-paths" : [{
                     "src-path" : "/config",
                     "sandbox-path" : "/config",
