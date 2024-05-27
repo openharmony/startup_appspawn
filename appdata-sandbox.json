@@ -850,6 +850,20 @@
                     "sandbox-flags": [ "bind", "rec" ]
                 }
             ]
-        }]
+        }],
+        "ohos.permission.PROTECT_SCREEN_LOCK_DATA":[{
+            "sandbox-switch": "ON",
+            "mount-paths": [{
+                    "src-path": "/data/app/el5/<currentUserId>/base/<PackageName>",
+                    "sandbox-path": "/data/storage/el5/base",
+                    "sandbox-flags": [ "bind", "rec" ]
+                },
+                {
+                    "src-path": "/data/app/el5/<currentUserId>/database/<PackageName>",
+                    "sandbox-path": "/data/storage/el5/database",
+                    "sandbox-flags": [ "bind", "rec" ]
+                }
+            ]
+	}]
     }]
 }
