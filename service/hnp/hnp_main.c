@@ -45,7 +45,7 @@ int HnpShowHelp(int argc, char *argv[])
     (void)argv;
 
     HNP_LOGI("\r\nusage:hnp <command> <args> [-u <user id>][-p <hap package name>][-i <hap install path>][-f]"
-            "[-h <hap source path>][-a <system abi>]\r\n"
+            "[-s <hap source path>][-a <system abi>]\r\n"
         "\r\nThese are common hnp commands used in various situations:\r\n"
         "\r\ninstall: install one hap package"
         "\r\n           hnp install <-u [user id]> <-p [hap package name]> <-i [hap install path]> <-f>"

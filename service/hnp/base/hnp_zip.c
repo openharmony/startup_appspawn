@@ -262,6 +262,7 @@ static int HnpUnZipForFile(const char *filePath, unzFile zipFile, unz_file_info 
 
         fclose(outFile);
         unzCloseCurrentFile(zipFile);
+        /* 如果自身有可执行权限，那么将解压后的权限设置成755，否则为744 */
         if ((mode & S_IXOTH) != 0) {
             ret = chmod(filePath, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
         } else {
@@ -288,9 +289,11 @@ static bool HnpELFFileCheck(const char *path)
 
     fread(buff, sizeof(char), HNP_ELF_FILE_CHECK_HEAD_LEN, fp);
     if (buff[HNP_INDEX_0] == 0x7F && buff[HNP_INDEX_1] == 'E' && buff[HNP_INDEX_2] == 'L' && buff[HNP_INDEX_3] == 'F') {
+        (void)fclose(fp);
         return true;
     }
 
+    (void)fclose(fp);
     return false;
 }
 

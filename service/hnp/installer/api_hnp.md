@@ -30,7 +30,7 @@ NA
 ### NativeInstallHnp
 
 ```
-int NativeInstallHnp(const char *userId, const char *hapPath, const char *hnpRootPath, const char *packageName, int installOptions);
+int NativeInstallHnp(const char *userId, const char *hnpRootPath, const HapInfo *hapInfo, int installOptions);
 ```
 
 **描述**
@@ -38,14 +38,25 @@ int NativeInstallHnp(const char *userId, const char *hapPath, const char *hnpRoo
   安装Native软件到设备中。
 
   参数：
-  
+
   userId：用户ID；
 
   hapPath：hap包所在路径。用于签名校验
 
   hnpRootPath：hnp安装包存放路径；
 
-  packageName：hap应用软件包名；
+  hapInfo：hap应用软件信息，结构如下。
+  ```
+    #define PACK_NAME_LENTH 256
+    #define HAP_PATH_LENTH 256
+    #define ABI_LENTH 128
+
+    typedef struct HapInfo {
+        char packageName[PACK_NAME_LENTH]; // 包名
+        char hapPath[HAP_PATH_LENTH];      // hap文件路径
+        char abi[ABI_LENTH];               // abi路径
+    } HapInfo;
+  ```
 
   installOptions：安装选项。其中每一位对应的选项信息枚举如下。
   ```

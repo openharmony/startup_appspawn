@@ -278,14 +278,15 @@ static int HnpInstallForceCheck(HnpCfgInfo *hnpCfgInfo, HnpInstallInfo *hnpInfo)
 
     /* 判断安装目录是否存在，存在判断是否是强制安装，如果是则走卸载流程，否则返回错误 */
     if (access(hnpInfo->hnpSoftwarePath, F_OK) == 0) {
-        if (hnpInfo->isForce == false) {
+        if (hnpInfo->hapInstallInfo->isForce == false) {
             HNP_LOGE("hnp install path[%s] exist, but force is false", hnpInfo->hnpSoftwarePath);
             return HNP_ERRNO_INSTALLER_PATH_IS_EXIST;
         }
         if (hnpInfo->isPublic) {
-            version = HnpPackgeHnpVersionGet(hnpInfo->hapPackageName, hnpCfgInfo->name);
+            version = HnpPackgeHnpVersionGet(hnpInfo->hapInstallInfo->hapPackageName, hnpCfgInfo->name);
             if (version != NULL) {
-                ret = HnpUnInstallPublicHnp(hnpInfo->hapPackageName, hnpCfgInfo->name, version, hnpInfo->uid);
+                ret = HnpUnInstallPublicHnp(hnpInfo->hapInstallInfo->hapPackageName, hnpCfgInfo->name, version,
+                    hnpInfo->hapInstallInfo->uid);
             }
         } else {
             ret = HnpDeleteFolder(hnpInfo->hnpSoftwarePath);
@@ -351,7 +352,7 @@ static int HnpReadAndInstall(char *srcFile, HnpInstallInfo *hnpInfo, HnpSignMapI
         if (hnpCfg.links != NULL) {
             free(hnpCfg.links);
         }
-        return HnpInstallInfoJsonWrite(hnpInfo->hapPackageName, &hnpCfg);
+        return HnpInstallInfoJsonWrite(hnpInfo->hapInstallInfo->hapPackageName, &hnpCfg);
     }
 
     ret = HnpInstallForceCheck(&hnpCfg, hnpInfo);
@@ -370,13 +371,15 @@ static int HnpReadAndInstall(char *srcFile, HnpInstallInfo *hnpInfo, HnpSignMapI
         free(hnpCfg.links);
     }
     if (ret != 0) {
-        HnpUnInstallPublicHnp(hnpInfo->hapPackageName, hnpCfg.name, hnpCfg.version, hnpInfo->uid);
+        HnpUnInstallPublicHnp(hnpInfo->hapInstallInfo->hapPackageName, hnpCfg.name, hnpCfg.version,
+            hnpInfo->hapInstallInfo->uid);
         return ret;
     }
     if (hnpInfo->isPublic) {
-        ret = HnpInstallInfoJsonWrite(hnpInfo->hapPackageName, &hnpCfg);
+        ret = HnpInstallInfoJsonWrite(hnpInfo->hapInstallInfo->hapPackageName, &hnpCfg);
         if (ret != 0) {
-            HnpUnInstallPublicHnp(hnpInfo->hapPackageName, hnpCfg.name, hnpCfg.version, hnpInfo->uid);
+            HnpUnInstallPublicHnp(hnpInfo->hapInstallInfo->hapPackageName, hnpCfg.name, hnpCfg.version,
+                hnpInfo->hapInstallInfo->uid);
         }
     }
 
@@ -434,9 +437,9 @@ static int HnpPackageGetAndInstall(const char *dirPath, HnpInstallInfo *hnpInfo,
             if (HnpFileCheck(path) == false) {
                 continue;
             }
-            if (sprintf_s(hnpInfo->hnpSignKeyPrefix, MAX_FILE_PATH_LEN, "hnp/%s/%s%s", hnpInfo->abi, sunDir,
-                entry->d_name) < 0) {
-                HNP_LOGE("hnp install sprintf unsuccess, abi[%s], path[%s]", hnpInfo->abi, entry->d_name);
+            if (sprintf_s(hnpInfo->hnpSignKeyPrefix, MAX_FILE_PATH_LEN, "hnp/%s/%s%s", hnpInfo->hapInstallInfo->abi,
+                sunDir, entry->d_name) < 0) {
+                HNP_LOGE("hnp install sprintf unsuccess,abi[%s],path[%s]", hnpInfo->hapInstallInfo->abi, entry->d_name);
                 closedir(dir);
                 return HNP_ERRNO_BASE_SPRINTF_FAILED;
             }
@@ -458,10 +461,10 @@ static int HapReadAndInstall(DIR *dir, const char *dstPath, HapInstallInfo *inst
 {
     struct dirent *entry;
     char hnpPath[MAX_FILE_PATH_LEN];
-    HnpInstallInfo hnpInfo = {installInfo->uid, installInfo->hapPackageName, installInfo->hapPath, installInfo->abi,
-        installInfo->isForce, false, {0}, {0}, {0}};
+    HnpInstallInfo hnpInfo = {0};
     int ret;
 
+    hnpInfo.hapInstallInfo = installInfo;
     /* 遍历src目录 */
     while ((entry = readdir(dir)) != NULL) {
         if (strcmp(entry->d_name, "public") == 0) {
@@ -531,63 +534,9 @@ static int HnpInsatllPre(HapInstallInfo *installInfo)
     return ret;
 }
 
-static int ParseInstallArgs(HapInstallArgv *installArgv, HapInstallInfo *installInfo)
+static int ParseInstallArgs(int argc, char *argv[], HapInstallInfo *installInfo)
 {
     int ret;
-
-    if (installArgv->uid == NULL) {
-        HNP_LOGE("install argv uid is null.");
-        return HNP_ERRNO_OPERATOR_ARGV_MISS;
-    }
-    ret = HnpInstallerUidGet(installArgv->uid, &installInfo->uid);
-    if (ret != 0) {
-        HNP_LOGE("hnp install argv uid[%s] invalid", installArgv->uid);
-        return ret;
-    }
-
-    if (installArgv->hnpRootPath == NULL) {
-        HNP_LOGE("install argv hnp root path is null.");
-        return HNP_ERRNO_OPERATOR_ARGV_MISS;
-    }
-    if (GetRealPath(installArgv->hnpRootPath, installInfo->hnpRootPath) != 0) {
-        HNP_LOGE("hnp install argv hnp root path=%s is invalid.", installArgv->hnpRootPath);
-        return HNP_ERRNO_INSTALLER_GET_REALPATH_FAILED;
-    }
-
-    if (installArgv->hapPath == NULL) {
-        HNP_LOGE("install argv hap path is null.");
-        return HNP_ERRNO_OPERATOR_ARGV_MISS;
-    }
-    if (GetRealPath(installArgv->hapPath, installInfo->hapPath) != 0) {
-        HNP_LOGE("hnp install argv hap path=%s is invalid.", installArgv->hapPath);
-        return HNP_ERRNO_INSTALLER_GET_REALPATH_FAILED;
-    }
-
-    if (installArgv->abi == NULL) {
-        HNP_LOGE("install argv abi path is null.");
-        return HNP_ERRNO_OPERATOR_ARGV_MISS;
-    }
-
-    if (strcpy_s(installInfo->abi, MAX_FILE_PATH_LEN, installArgv->abi) != EOK) {
-        HNP_LOGE("strcpy hnp info abi[%s] unsuccess.", installArgv->abi);
-        return HNP_ERRNO_BASE_COPY_FAILED;
-    }
-
-    if (installArgv->hapPackageName == NULL) {
-        HNP_LOGE("install argv hap package name is null.");
-    }
-    if (strcpy_s(installInfo->hapPackageName, MAX_FILE_PATH_LEN, installArgv->hapPackageName) != EOK) {
-        HNP_LOGE("strcpy name argv unsuccess.");
-        return HNP_ERRNO_BASE_COPY_FAILED;
-    }
-
-    return 0;
-}
-
-int HnpCmdInstall(int argc, char *argv[])
-{
-    HapInstallArgv installArgv = {0};
-    HapInstallInfo installInfo = {0};
     int ch;
 
     optind = 1; // 从头开始遍历参数
@@ -596,30 +545,54 @@ int HnpCmdInstall(int argc, char *argv[])
             case 'h' :
                 return HNP_ERRNO_OPERATOR_ARGV_MISS;
             case 'u': // 用户id
-                installArgv.uid = optarg;
+                ret = HnpInstallerUidGet(optarg, &installInfo->uid);
+                if (ret != 0) {
+                    HNP_LOGE("hnp install argv uid[%s] invalid", optarg);
+                    return ret;
+                }
                 break;
             case 'p': // app名称
-                installArgv.hapPackageName = (char *)optarg;
+                installInfo->hapPackageName = (char *)optarg;
                 break;
             case 'i': // hnp安装目录
-                installArgv.hnpRootPath = (char *)optarg;
+                if (GetRealPath(optarg, installInfo->hnpRootPath) != 0) {
+                    HNP_LOGE("hnp install argv hnp root path=%s is invalid.", optarg);
+                    return HNP_ERRNO_INSTALLER_GET_REALPATH_FAILED;
+                }
                 break;
             case 's': // hap目录
-                installArgv.hapPath = (char *)optarg;
+                if (GetRealPath(optarg, installInfo->hapPath) != 0) {
+                    HNP_LOGE("hnp install argv hap path=%s is invalid.", optarg);
+                    return HNP_ERRNO_INSTALLER_GET_REALPATH_FAILED;
+                }
                 break;
             case 'a': // 系统abi路径
-                installArgv.abi = (char *)optarg;
+                installInfo->abi = (char *)optarg;
                 break;
             case 'f': // is force
-                installInfo.isForce = true;
+                installInfo->isForce = true;
                 break;
             default:
                 break;
         }
     }
 
+    if ((installInfo->uid == -1) || (installInfo->hnpRootPath == NULL) || (installInfo->hapPath == NULL) ||
+        (installInfo->abi == NULL) || (installInfo->hapPackageName == NULL)) {
+        HNP_LOGE("argv params is missing.");
+        return HNP_ERRNO_OPERATOR_ARGV_MISS;
+    }
+
+    return 0;
+}
+
+int HnpCmdInstall(int argc, char *argv[])
+{
+    HapInstallInfo installInfo = {0};
+
+    installInfo.uid = -1; // 预设值，判断简单
     // 解析参数并生成安装信息
-    int ret = ParseInstallArgs(&installArgv, &installInfo);
+    int ret = ParseInstallArgs(argc, argv, &installInfo);
     if (ret != 0) {
         return ret;
     }
