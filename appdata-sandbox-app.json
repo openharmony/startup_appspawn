@@ -270,6 +270,14 @@
                 "sandbox-path": "/data/storage/el5/database",
                 "src-path": "/data/app/el5/<currentUserId>/database/<PackageName>"
             }]
+        },  {
+            "name": "ohos.permission.ACCESS_FILE_CONTENT_SHARE",
+            "sandbox-switch": "ON",
+            "gids": ["file_manager", "user_data_rw"],
+            "mount-paths": [{
+              "src-path": "/data/service/el2/public/file_monitor_service/content_share",
+              "sandbox-path": "/storage/ContentShare",
+            }]
         }],
         "spawn-flag": [{
             "name": "START_FLAGS_BACKUP",
