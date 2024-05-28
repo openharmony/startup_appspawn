@@ -18,7 +18,6 @@
 
 #include "command_lexer.h"
 
-
 #define SPACE_STR               " "
 #define SINGLE_QUOTE_STR        "'"
 #define DOUBLE_QUOTE_STR        "\""
