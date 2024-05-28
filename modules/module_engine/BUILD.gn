@@ -26,6 +26,9 @@ config("appspawn_module_engine_exported_config") {
     "${appspawn_path}/modules/module_engine/include",
     "${appspawn_path}/util/include",
   ]
+  if (is_debug || build_variant == "root") {
+    defines = [ "DEBUG_BEGETCTL_BOOT" ]
+  }
 }
 
 #

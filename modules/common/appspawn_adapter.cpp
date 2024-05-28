@@ -33,7 +33,7 @@
 #include <sys/prctl.h>
 const char *RENDERER_NAME = "renderer";
 #endif
-
+#define MSG_EXT_NAME_PROCESS_TYPE "ProcessType"
 #define NWEBSPAWN_SERVER_NAME "nwebspawn"
 #define MAX_USERID_LEN  32
 using namespace OHOS::Security::AccessToken;
@@ -75,7 +75,14 @@ int SetSelinuxCon(const AppSpawnMgr *content, const AppSpawningCtx *property)
     }
     int32_t ret;
     if (IsNWebSpawnMode(content)) {
-        ret = setcon("u:r:isolated_render:s0");
+        uint32_t len = 0;
+        std::string processType =
+            reinterpret_cast<char *>(GetAppPropertyExt(property, MSG_EXT_NAME_PROCESS_TYPE, &len));
+        if (processType == "render") {
+            ret = setcon("u:r:isolated_render:s0");
+        } else {
+            ret = setcon("u:r:isolated_gpu:s0");
+        }
         APPSPAWN_CHECK_ONLY_LOG(ret == 0, "Setcon failed, errno: %{public}d", errno);
         return 0;
     }
@@ -128,8 +135,14 @@ int SetSeccompFilter(const AppSpawnMgr *content, const AppSpawningCtx *property)
 #ifdef WITH_SECCOMP
     const char *appName = APP_NAME;
     SeccompFilterType type = APP;
+    
     if (IsNWebSpawnMode(content)) {
-        return 0;
+        uint32_t len = 0;
+        std::string processType =
+            reinterpret_cast<char *>(GetAppPropertyExt(property, MSG_EXT_NAME_PROCESS_TYPE, &len));
+        if (processType == "render") {
+            return 0;
+        }
     }
     if (!SetSeccompPolicyWithName(type, appName)) {
         APPSPAWN_LOGE("Failed to set %{public}s seccomp filter and exit %{public}d", appName, errno);
