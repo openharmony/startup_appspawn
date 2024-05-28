@@ -114,6 +114,7 @@ namespace {
     const std::string g_sandBoxRootDirNweb = "/mnt/sandbox/com.ohos.render/";
     const std::string FILE_CROSS_APP_MODE = "ohos.permission.FILE_CROSS_APP";
     const std::string FILE_ACCESS_COMMON_DIR_MODE = "ohos.permission.FILE_ACCESS_COMMON_DIR";
+    const std::string ACCESS_DLP_FILE_MODE = "ohos.permission.ACCESS_DLP_FILE";
 }
 
 static uint32_t GetAppMsgFlags(const AppSpawningCtx *property)
@@ -1406,7 +1407,8 @@ int32_t SandboxUtils::SetAppSandboxProperty(AppSpawningCtx *appProperty)
 
     std::string sandboxPackagePath = g_sandBoxRootDir + to_string(dacInfo->uid / UID_BASE) + "/";
     const std::string bundleName = GetBundleName(appProperty);
-    bool sandboxSharedStatus = GetSandboxPrivateSharedStatus(bundleName);
+    bool sandboxSharedStatus = GetSandboxPrivateSharedStatus(bundleName) || (CheckAppPermissionFlagSet(appProperty,
+        static_cast<uint32_t>(GetPermissionIndex(nullptr, ACCESS_DLP_FILE_MODE.c_str()))) != 0);
     sandboxPackagePath += bundleName;
     MakeDirRecursive(sandboxPackagePath.c_str(), FILE_MODE);
 

@@ -34,10 +34,10 @@ cJSON *GetJsonObjFromFile(const char *jsonPath);
 __attribute__((always_inline)) inline char *GetStringFromJsonObj(const cJSON *json, const char *key)
 {
     APPSPAWN_CHECK_ONLY_EXPER(key != NULL && json != NULL, NULL);
-    APPSPAWN_CHECK(cJSON_IsObject(json), return NULL, "json is not object %{public}s %s", key, cJSON_Print(json));
+    APPSPAWN_CHECK(cJSON_IsObject(json), return NULL, "json is not object %{public}s", key);
     cJSON *obj = cJSON_GetObjectItemCaseSensitive(json, key);
     APPSPAWN_CHECK_ONLY_EXPER(obj != NULL, return NULL);
-    APPSPAWN_CHECK(cJSON_IsString(obj), return NULL, "json is not string %{public}s %s", key, cJSON_Print(obj));
+    APPSPAWN_CHECK(cJSON_IsString(obj), return NULL, "json is not string %{public}s", key);
     return cJSON_GetStringValue(obj);
 }
 

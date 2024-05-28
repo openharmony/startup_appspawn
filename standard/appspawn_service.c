@@ -499,6 +499,8 @@ static void WaitChildTimeout(const TimerHandle taskHandle, void *context)
     DeleteAppSpawningCtx(property);
 }
 
+#define MSG_EXT_NAME_MAX_DECIMAL 10
+#define MSG_EXT_NAME 1
 static void ProcessChildResponse(const WatcherHandle taskHandle, int fd, uint32_t *events, const void *context)
 {
     AppSpawningCtx *property = (AppSpawningCtx *)context;
@@ -518,9 +520,20 @@ static void ProcessChildResponse(const WatcherHandle taskHandle, int fd, uint32_
     }
     // success
     AppSpawnedProcess *appInfo = AddSpawnedProcess(property->pid, GetBundleName(property));
+    uint32_t len = 0;
+    char *pidMaxStr = NULL;
+    pidMaxStr = GetAppPropertyExt(property, MSG_EXT_NAME_MAX_CHILD_PROCCESS_MAX, &len);
+    uint32_t pidMax = 0;
+    if (pidMaxStr != NULL && len != 0) {
+        pidMax = strtoul(pidMaxStr, NULL, MSG_EXT_NAME_MAX_DECIMAL);
+    }
+#if MSG_EXT_NAME != 0
+    pidMax = 0;
+#endif
     if (appInfo) {
         AppSpawnMsgDacInfo *dacInfo = GetAppProperty(property, TLV_DAC_INFO);
         appInfo->uid = dacInfo != NULL ? dacInfo->uid : 0;
+        appInfo->max = pidMax;
         appInfo->spawnStart.tv_sec = property->spawnStart.tv_sec;
         appInfo->spawnStart.tv_nsec = property->spawnStart.tv_nsec;
 #ifdef DEBUG_BEGETCTL_BOOT

@@ -3,7 +3,7 @@
         "top-sandbox-switch": "ON",
         "app-base" : [{
             "sandbox-root" : "/mnt/sandbox/<PackageName>",
-            "sandbox-ns-flags" : ["pid"],
+            "sandbox-ns-flags" : [],
             "mount-paths" : [ {
                     "src-path" : "/system/asan/lib",
                     "sandbox-path" : "/system/asan/lib",
