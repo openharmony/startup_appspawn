@@ -610,26 +610,30 @@ static int HnpInsatllPre(HapInstallInfo *installInfo)
     if (ret != 0) {
         return ret;
     }
-    hnpSignMapInfos = (HnpSignMapInfo *)malloc(sizeof(HnpSignMapInfo) * count);
-    if (hnpSignMapInfos == NULL) {
-        return HNP_ERRNO_NOMEM;
+    if (count > 0) {
+        hnpSignMapInfos = (HnpSignMapInfo *)malloc(sizeof(HnpSignMapInfo) * count);
+        if (hnpSignMapInfos == NULL) {
+            return HNP_ERRNO_NOMEM;
+        }
     }
 
     count = 0;
     ret = HapReadAndInstall(dstPath, installInfo, hnpSignMapInfos, &count);
-    HNP_LOGI("hnp install sign, count=%u, first key[%s], value[%s]", count, hnpSignMapInfos[0].key,
-        hnpSignMapInfos[0].value);
     if ((ret == 0) && (count > 0)) {
+        data.entry = malloc(sizeof(struct EntryMapEntry) * count);
+        if (data.entry == NULL) {
+            return HNP_ERRNO_NOMEM;
+        }
         for (int i = 0; i < count; i++) {
-            data.entry[i] = (struct EntryMapEntry *)hnpSignMapInfos;
-            hnpSignMapInfos++;
+            data.entry[i]->key = hnpSignMapInfos[i].key;
+            data.entry[i]->value = hnpSignMapInfos[i].value;
         }
         data.count = count;
         ret = EnforceCodeSignForApp(installInfo->hapPath, &data, FILE_ENTRY_ONLY);
-        hnpSignMapInfos -= count;
+        HNP_LOGI("hnp install sign hap path[%s],abi[%s],ret=%d,count=%d,last key[%s],value[%s]", installInfo->hapPath,
+            installInfo->abi, ret, count, hnpSignMapInfos->key, hnpSignMapInfos->value);
+        free(data.entry);
         if (ret != 0) {
-            HNP_LOGE("hnp install sign unsuccess, ret=%u, hap path[%s], abi[%s]", ret, installInfo->hapPath,
-                installInfo->abi);
             ret = HNP_ERRNO_INSTALLER_CODE_SIGN_APP_FAILED;
         }
     }
