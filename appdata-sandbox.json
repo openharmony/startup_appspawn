@@ -864,6 +864,16 @@
                     "sandbox-flags": [ "bind", "rec" ]
                 }
             ]
-	}]
+	    }],
+        "ohos.permission.ACCESS_FILE_CONTENT_SHARE":[{
+            "sandbox-switch": "ON",
+            "gids": [1006, 1008],
+            "mount-paths": [{
+                    "src-path": "/data/service/el2/public/file_monitor_service/content_share",
+                    "sandbox-path": "/storage/ContentShare",
+                    "sandbox-flags": [ "bind", "rec" ]
+                }
+            ]
+        }]
     }]
 }
