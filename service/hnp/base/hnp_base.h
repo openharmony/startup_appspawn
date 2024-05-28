@@ -28,7 +28,9 @@
 extern "C" {
 #endif
 
+#ifndef MAX_FILE_PATH_LEN
 #define MAX_FILE_PATH_LEN PATH_MAX
+#endif
 
 #define HNP_VERSION_LEN 32
 #define BUFFER_SIZE 1024
