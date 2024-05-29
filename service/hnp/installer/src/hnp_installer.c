@@ -259,7 +259,7 @@ static int HnpUnInstall(int uid, const char *packageName)
     }
 
     if (sprintf_s(privatePath, MAX_FILE_PATH_LEN, HNP_DEFAULT_INSTALL_ROOT_PATH"/%d/hnp/%s", uid, packageName) < 0) {
-        HNP_LOGE("hnp uninstall private path sprintf unsuccess, uid:%s,package name[%s]", uid, packageName);
+        HNP_LOGE("hnp uninstall private path sprintf unsuccess, uid:%d,package name[%s]", uid, packageName);
         return HNP_ERRNO_BASE_SPRINTF_FAILED;
     }
 

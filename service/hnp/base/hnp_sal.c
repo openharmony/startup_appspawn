@@ -57,13 +57,15 @@ static void HnpRelPath(const char *fromPath, const char *toPath, char *relPath)
 {
     char *from = strdup(fromPath);
     char *to = strdup(toPath);
-    int count = 0;
     int numDirs = 0;
+    int ret;
+
+    char *fromHead = from;
+    char *toHead = to;
 
     while ((*from) && (*to) && (*from == *to)) {
         from++;
         to++;
-        count++;
     }
 
     char *p = from;
@@ -75,16 +77,24 @@ static void HnpRelPath(const char *fromPath, const char *toPath, char *relPath)
     }
 
     for (int i = 0; i < numDirs; i++) {
-        strcat(relPath, "../");
+        ret = strcat_s(relPath, MAX_FILE_PATH_LEN, "../");
+        if (ret != 0) {
+            HNP_LOGE("Failed to strcat rel path");
+            free(fromHead);
+            free(toHead);
+            return;
+        }
     }
-    strcat(relPath, to);
+    ret = strcat_s(relPath, MAX_FILE_PATH_LEN, to);
+    if (ret != 0) {
+        HNP_LOGE("Failed to strcat rel path");
+        free(fromHead);
+        free(toHead);
+        return;
+    }
 
-    for (int i = 0; i < count; i++) {
-        from--;
-        to--;
-    }
-    free(from);
-    free(to);
+    free(fromHead);
+    free(toHead);
 
     return;
 }

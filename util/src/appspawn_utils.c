@@ -55,7 +55,11 @@ int ConvertEnvValue(const char *srcEnv, char *dstEnv, int len)
     APPSPAWN_CHECK(tmpEnv != NULL, return -1, "malloc size=%{public}d fail", srcLen);
 
     int ret = memcpy_s(tmpEnv, srcLen, srcEnv, srcLen);
-    APPSPAWN_CHECK(ret == EOK, {free(tmpEnv); return -1;}, "Failed to copy env value");
+    if (ret != EOK) {
+        APPSPAWN_LOGE("Failed to copy env value");
+        free(tmpEnv);
+        return -1;
+    }
 
     ptr = tmpEnv;
     dstEnv[0] = 0;
@@ -63,18 +67,31 @@ int ConvertEnvValue(const char *srcEnv, char *dstEnv, int len)
         ((tmpPtr2 = strchr(tmpPtr1, '}')) != NULL)) {
         *tmpPtr1 = 0;
         ret = strcat_s(dstEnv, len, ptr);
-        APPSPAWN_CHECK(ret == 0, {free(tmpEnv); return -1;}, "Failed to strcat env value");
+        if (ret != 0) {
+            APPSPAWN_LOGE("Failed to strcat env value");
+            free(tmpEnv);
+            return -1;
+        }
         *tmpPtr2 = 0;
         tmpPtr1++;
-        envGet = getenv(tmpPtr1 + 1);
-        if (envGet != NULL) {
-            ret = strcat_s(dstEnv, len, envGet);
-            APPSPAWN_CHECK(ret == 0, {free(tmpEnv); return -1;}, "Failed to strcat env value");
-        }
         ptr = tmpPtr2 + 1;
+        envGet = getenv(tmpPtr1 + 1);
+        if (envGet == NULL) {
+            continue;
+        }
+        ret = strcat_s(dstEnv, len, envGet);
+        if (ret != 0) {
+            APPSPAWN_LOGE("Failed to strcat env value");
+            free(tmpEnv);
+            return -1;
+        }
     }
     ret = strcat_s(dstEnv, len, ptr);
-    APPSPAWN_CHECK(ret == 0, {free(tmpEnv); return -1;}, "Failed to strcat env value");
+    if (ret != 0) {
+        APPSPAWN_LOGE("Failed to strcat env value");
+        free(tmpEnv);
+        return -1;
+    }
     free(tmpEnv);
     return 0;
 }
