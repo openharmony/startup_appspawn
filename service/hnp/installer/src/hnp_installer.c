@@ -567,7 +567,7 @@ static int HnpInstallHapFileCountGet(const char *root, int *count)
     }
 
     while ((entry = readdir(dir)) != NULL) {
-        if ((strcmp(entry->d_name, "public") != 0) || (strcmp(entry->d_name, "private") == 0)) {
+        if ((strcmp(entry->d_name, "public") != 0) && (strcmp(entry->d_name, "private") != 0)) {
             continue;
         }
         if (sprintf_s(hnpPath, MAX_FILE_PATH_LEN, "%s/%s", root, entry->d_name) < 0) {
