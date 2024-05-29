@@ -396,7 +396,7 @@ int HnpUnZip(const char *inputFile, const char *outputDir, const char *hnpSignKe
             unzClose(zipFile);
             return result;
         }
-        result = HnpInstallAddSignMap(hnpSignKeyPrefix, slash, filePath, hnpSignMapInfos, count);
+        result = HnpInstallAddSignMap(hnpSignKeyPrefix, fileName, filePath, hnpSignMapInfos, count);
         if (result != 0) {
             unzClose(zipFile);
             return result;
