@@ -363,28 +363,6 @@
         }]
     }],
     "individual" : [{
-        "com.huawei.ohos.hiviewx" : [{
-            "sandbox-switch": "ON",
-            "mount-paths" : [{
-                    "src-path" : "/data/log/",
-                    "sandbox-path" : "/data/log/",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "true"
-                }
-            ],
-            "symbol-links" : []
-        }],
-        "com.huawei.ohos.betaclub" : [{
-            "sandbox-switch": "ON",
-            "mount-paths" : [{
-                    "src-path" : "/data/log/",
-                    "sandbox-path" : "/data/log/",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "true"
-                }
-            ],
-            "symbol-links" : []
-        }],
         "com.ohos.medialibrary.medialibrarydata" : [{
             "sandbox-switch": "ON",
             "mount-paths" : [{
@@ -413,28 +391,6 @@
                     "sandbox-path" : "/mnt/data/<currentUserId>",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
-                }
-            ],
-            "symbol-links" : []
-        }],
-        "com.ohos.launcher" : [{
-            "sandbox-switch": "ON",
-            "mount-paths" : [{
-                    "src-path" : "/data/app/el1/bundle/public/",
-                    "sandbox-path" : "/data/bundles/",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "true"
-                }
-            ],
-            "symbol-links" : []
-        }],
-        "com.ohos.systemui" : [{
-            "sandbox-switch": "ON",
-            "mount-paths" : [{
-                    "src-path" : "/data/app/el1/bundle/public/",
-                    "sandbox-path" : "/data/app/el1/bundle/public/",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "true"
                 }
             ],
             "symbol-links" : []
@@ -469,29 +425,6 @@
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "true"
                 }
-            ],
-            "symbol-links" : []
-        }],
-        "ohos.samples.ecg" : [{
-            "sandbox-switch": "ON",
-            "mount-paths" : [],
-            "flags-point" : [{
-                    "flags": "NOT_SUPPORTED",
-                    "mount-paths" : [{
-                        "src-path" : "/data/app/el1/bundle/public/",
-                        "sandbox-path" : "/data/bundles/",
-                        "sandbox-flags" : [ "bind", "rec" ],
-                        "check-action-status": "true"
-                        }
-                    ]}, {
-                    "flags": "START_FLAGS_BACKUP",
-                    "mount-paths" : [{
-                        "src-path" : "/data/app/el1/bundle/public/",
-                        "sandbox-path" : "/data/bundles/",
-                        "sandbox-flags" : [ "bind", "rec" ],
-                        "check-action-status": "true"
-                        }
-                    ]}
             ],
             "symbol-links" : []
         }],
