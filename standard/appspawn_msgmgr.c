@@ -155,7 +155,7 @@ AppSpawnMsgNode *RebuildAppSpawnMsgNode(AppSpawnMsgNode *message, AppSpawnedProc
     APPSPAWN_CHECK(message != NULL && appInfo != NULL, return NULL, "params is null");
     uint32_t bufferLen = 0;
     AppSpawnMsgNode *node = CreateAppSpawnMsg();
-    APPSPAWN_CHECK(message != NULL, return NULL, "Failed to create AppSpawnMsgNode");
+    APPSPAWN_CHECK(node != NULL, return NULL, "Failed to create AppSpawnMsgNode");
     int ret = memcpy_s(&node->msgHeader, sizeof(AppSpawnMsg), &message->msgHeader, sizeof(AppSpawnMsg));
     APPSPAWN_CHECK(ret == 0, return NULL, "Failed to memcpy_s node->msgHeader");
     bufferLen = message->msgHeader.msgLen + appInfo->message->msgHeader.msgLen - sizeof(AppSpawnMsg);
