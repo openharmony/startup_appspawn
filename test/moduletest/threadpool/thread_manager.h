@@ -32,14 +32,15 @@ typedef struct TagThreadContext ThreadContext;
 typedef void (*TaskFinishProcessor)(ThreadTaskHandle handle, const ThreadContext *context);
 typedef void (*TaskExecutor)(ThreadTaskHandle handle, const ThreadContext *context);
 
-int CreateThreadMgr(uint32_t maxThreadCount, ThreadMgr *mgr);
+int CreateThreadMgr(uint32_t maxThreadCount, ThreadMgr *instance);
 int DestroyThreadMgr(ThreadMgr instance);
-int ThreadMgrAddTask(ThreadMgr mgr, ThreadTaskHandle *taskHandle);
-int ThreadMgrAddExecutor(ThreadMgr mgr,
+int ThreadMgrAddTask(ThreadMgr instance, ThreadTaskHandle *taskHandle);
+int ThreadMgrAddExecutor(ThreadMgr instance,
     ThreadTaskHandle taskHandle, TaskExecutor executor, const ThreadContext *context);
-int ThreadMgrCancelTask(ThreadMgr mgr, ThreadTaskHandle taskHandle);
-int TaskSyncExecute(ThreadMgr mgr, ThreadTaskHandle taskHandle);  // 同步执行
-int TaskExecute(ThreadMgr mgr, ThreadTaskHandle taskHandle, TaskFinishProcessor process, const ThreadContext *context);
+int ThreadMgrCancelTask(ThreadMgr instance, ThreadTaskHandle taskHandle);
+int TaskSyncExecute(ThreadMgr instance, ThreadTaskHandle taskHandle);  // 同步执行
+int TaskExecute(ThreadMgr instance,
+    ThreadTaskHandle taskHandle, TaskFinishProcessor process, const ThreadContext *context);
 
 #ifdef __cplusplus
 }

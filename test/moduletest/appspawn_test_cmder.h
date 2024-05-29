@@ -42,13 +42,15 @@ public:
         appSpawn_ = 1;
         dumpFlags = 0;
         msgType_ = MAX_TYPE_INVALID;
+        terminatePid_ = 0;
     }
-    AppSpawnTestCommander(int serverType)
+    explicit AppSpawnTestCommander(int serverType)
     {
         exit_ = 0;
         appSpawn_ = serverType;
         dumpFlags = 0;
         msgType_ = MAX_TYPE_INVALID;
+        terminatePid_ = 0;
     }
     ~AppSpawnTestCommander()
     {
