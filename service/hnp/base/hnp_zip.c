@@ -262,7 +262,7 @@ static int HnpUnZipForFile(const char *filePath, unzFile zipFile, unz_file_info 
 
         fclose(outFile);
         unzCloseCurrentFile(zipFile);
-        /* 如果自身有可执行权限，那么将解压后的权限设置成755，否则为744 */
+        /* 如果其他人有可执行权限，那么将解压后的权限设置成755，否则为744 */
         if ((mode & S_IXOTH) != 0) {
             ret = chmod(filePath, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
         } else {
