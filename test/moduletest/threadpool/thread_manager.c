@@ -491,7 +491,6 @@ static void *ManagerThreadProc(void *args)
     ThreadManager *mgr = g_threadManager;
     ThreadNode *threadNode = (ThreadNode *)args;
     struct timespec abstime;
-    int ret = 0;
     while (!threadNode->threadExit) {
         pthread_mutex_lock(&mgr->mutex);
         do {
@@ -503,7 +502,7 @@ static void *ManagerThreadProc(void *args)
                 timeout = 500; // 500ms
             }
             ConvertToTimespec(timeout, &abstime);
-            ret = pthread_cond_timedwait(&mgr->cond, &mgr->mutex, &abstime);
+            int ret = pthread_cond_timedwait(&mgr->cond, &mgr->mutex, &abstime);
             if (!ListEmpty(mgr->executingTaskQueue) || ret == ETIMEDOUT) {
                 break;
             }
@@ -529,12 +528,11 @@ static void *ThreadExecute(void *args)
     ThreadManager *mgr = g_threadManager;
     ThreadNode *threadNode = (ThreadNode *)args;
     struct timespec abstime;
-    int ret = 0;
     while (!threadNode->threadExit) {
         pthread_mutex_lock(&mgr->mutex);
         while (ListEmpty(mgr->executorQueue) && !threadNode->threadExit) {
             ConvertToTimespec(60 * 1000, &abstime); // 60 * 1000 60s
-            ret = pthread_cond_timedwait(&mgr->cond, &mgr->mutex, &abstime);
+            pthread_cond_timedwait(&mgr->cond, &mgr->mutex, &abstime);
         }
         pthread_mutex_unlock(&mgr->mutex);
         APPSPAWN_LOGV("bbbb threadNode->threadExit %{public}d", threadNode->threadExit);
