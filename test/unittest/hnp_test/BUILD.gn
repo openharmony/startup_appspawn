@@ -58,6 +58,7 @@ if (!defined(ohos_lite)) {
       "cJSON:cjson",
       "hilog:libhilog",
       "zlib:shared_libz",
+      "code_signature:libcode_sign_utils",
     ]
   }
 }
