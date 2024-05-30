@@ -32,8 +32,8 @@ class SandboxUtils {
 public:
     static void StoreJsonConfig(nlohmann::json &appSandboxConfig);
     static std::vector<nlohmann::json> &GetJsonConfig();
-    static int32_t SetAppSandboxProperty(AppSpawningCtx *client);
-    static int32_t SetAppSandboxPropertyNweb(AppSpawningCtx *client);
+    static int32_t SetAppSandboxProperty(AppSpawningCtx *client, uint32_t sandboxNsFlags = CLONE_NEWNS);
+    static int32_t SetAppSandboxPropertyNweb(AppSpawningCtx *client, uint32_t sandboxNsFlags = CLONE_NEWNS);
     static uint32_t GetSandboxNsFlags(bool isNweb);
     static std::set<std::string> GetMountPermissionNames();
     static std::string GetExtraInfoByType(const AppSpawningCtx *appProperty, const std::string &type);

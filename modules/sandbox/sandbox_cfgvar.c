@@ -100,7 +100,7 @@ static int ReplaceVariableByParameter(const char *varData, SandboxBuffer *sandbo
 static int ReplaceVariableForDepSandboxPath(const SandboxContext *context,
     const char *buffer, uint32_t bufferLen, uint32_t *realLen, const VarExtraData *extraData)
 {
-    APPSPAWN_CHECK(extraData != NULL, return -1, "Invalid extra data ");
+    APPSPAWN_CHECK(extraData != NULL && extraData->data.depNode != NULL, return -1, "Invalid extra data ");
     uint32_t len = strlen(extraData->data.depNode->target);
     int ret = memcpy_s((char *)buffer, bufferLen, extraData->data.depNode->target, len);
     APPSPAWN_CHECK(ret == 0, return -1, "Failed to copy real data");
@@ -111,7 +111,7 @@ static int ReplaceVariableForDepSandboxPath(const SandboxContext *context,
 static int ReplaceVariableForDepSrcPath(const SandboxContext *context,
     const char *buffer, uint32_t bufferLen, uint32_t *realLen, const VarExtraData *extraData)
 {
-    APPSPAWN_CHECK(extraData != NULL, return -1, "Invalid extra data ");
+    APPSPAWN_CHECK(extraData != NULL && extraData->data.depNode != NULL, return -1, "Invalid extra data ");
     uint32_t len = strlen(extraData->data.depNode->source);
     int ret = memcpy_s((char *)buffer, bufferLen, extraData->data.depNode->source, len);
     APPSPAWN_CHECK(ret == 0, return -1, "Failed to copy real data");
@@ -122,7 +122,7 @@ static int ReplaceVariableForDepSrcPath(const SandboxContext *context,
 static int ReplaceVariableForDepPath(const SandboxContext *context,
     const char *buffer, uint32_t bufferLen, uint32_t *realLen, const VarExtraData *extraData)
 {
-    APPSPAWN_CHECK(extraData != NULL, return -1, "Invalid extra data ");
+    APPSPAWN_CHECK(extraData != NULL && extraData->data.depNode != NULL, return -1, "Invalid extra data ");
     char *path = extraData->data.depNode->source;
     if (CHECK_FLAGS_BY_INDEX(extraData->operation, MOUNT_PATH_OP_REPLACE_BY_SANDBOX)) {
         path = extraData->data.depNode->target;
@@ -134,6 +134,52 @@ static int ReplaceVariableForDepPath(const SandboxContext *context,
     int ret = memcpy_s((char *)buffer, bufferLen, path, len);
     APPSPAWN_CHECK(ret == 0, return -1, "Failed to copy real data");
     *realLen = len;
+    return 0;
+}
+
+static int ReplaceVariableForpackageName(const SandboxContext *context,
+    const char *buffer, uint32_t bufferLen, uint32_t *realLen, const VarExtraData *extraData)
+{
+    APPSPAWN_CHECK(context != NULL, return -1, "Invalid extra data ");
+    if (extraData != NULL && extraData->variablePackageName != NULL) {
+        int len = sprintf_s((char *)buffer, bufferLen, "%s", extraData->variablePackageName);
+        APPSPAWN_CHECK(len > 0 && ((uint32_t)len < bufferLen),
+            return -1, "Failed to format path app: %{public}s", context->bundleName);
+        *realLen = (uint32_t)len;
+        return 0;
+    }
+
+    AppSpawnMsgBundleInfo *bundleInfo = (AppSpawnMsgBundleInfo *)GetSpawningMsgInfo(context, TLV_BUNDLE_INFO);
+    APPSPAWN_CHECK(bundleInfo != NULL, return APPSPAWN_TLV_NONE,
+        "No bundle info in msg %{public}s", context->bundleName);
+    uint32_t flags = CheckAppSpawnMsgFlag(context->message, TLV_MSG_FLAGS, APP_FLAGS_CLONE_ENABLE) ? 1 : 0;
+    flags |= CheckAppSpawnMsgFlag(context->message, TLV_MSG_FLAGS, APP_FLAGS_EXTENSION_SANDBOX) ? 0x2 : 0;
+    char *extension = GetAppSpawnMsgExtInfo(context->message, MSG_EXT_NAME_APP_EXTENSION, NULL);
+    int32_t len = 0;
+    switch (flags) {
+        case 0:  // default,
+            len = sprintf_s((char *)buffer, bufferLen, "%s", bundleInfo->bundleName);
+            break;
+        case 1:  // 1 +clone-bundleIndex+packageName
+            len = sprintf_s((char *)buffer, bufferLen, "+clone-%u+%s", bundleInfo->bundleIndex, bundleInfo->bundleName);
+            break;
+        case 2: {  // 2 +extension-<extensionType>+packageName
+            APPSPAWN_CHECK(extension != NULL, return -1, "Invalid extension data ");
+            len = sprintf_s((char *)buffer, bufferLen, "+extension-%s+%s", extension, bundleInfo->bundleName);
+            break;
+        }
+        case 3: {  // 3 +clone-bundleIndex+extension-<extensionType>+packageName
+            APPSPAWN_CHECK(extension != NULL, return -1, "Invalid extension data ");
+            len = sprintf_s((char *)buffer, bufferLen, "+clone-%u+extension-%s+%s",
+                bundleInfo->bundleIndex, extension, bundleInfo->bundleName);
+            break;
+        }
+        default:
+            break;
+    }
+    APPSPAWN_CHECK(len > 0 && ((uint32_t)len < bufferLen),
+        return -1, "Failed to format path app: %{public}s flags %{public}u", context->bundleName, flags);
+    *realLen = (uint32_t)len;
     return 0;
 }
 
@@ -289,6 +335,7 @@ void AddDefaultVariable(void)
     AddVariableReplaceHandler("<deps-sandbox-path>", ReplaceVariableForDepSandboxPath);
     AddVariableReplaceHandler("<deps-src-path>", ReplaceVariableForDepSrcPath);
     AddVariableReplaceHandler("<deps-path>", ReplaceVariableForDepPath);
+    AddVariableReplaceHandler("<variablePackageName>", ReplaceVariableForpackageName);
 }
 
 void ClearVariable(void)

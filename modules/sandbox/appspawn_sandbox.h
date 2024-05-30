@@ -204,6 +204,7 @@ typedef struct TagSandboxContext {
     uint32_t dlpUiExtType : 1;
     uint32_t appFullMountEnable : 1;
     uint32_t nwebspawn : 1;
+    uint32_t sandboxNsFlags;
     char *rootPath;
 } SandboxContext;
 
@@ -267,6 +268,7 @@ typedef struct {
 typedef struct TagVarExtraData {
     uint32_t sandboxTag;
     uint32_t operation;
+    char *variablePackageName;
     union {
         PathMountNode *depNode;
     } data;
