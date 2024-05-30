@@ -84,6 +84,10 @@ static inline char *GetLastPath(const char *libPhysicalPath)
 static int MountAllGroup(const SandboxContext *context, const cJSON *groups)
 {
     APPSPAWN_CHECK(context != NULL && groups != NULL, return -1, "Invalid context or group");
+    unsigned long mountFlags = MS_REC | MS_BIND;
+    if (!CheckAppSpawnMsgFlag(context->message, TLV_MSG_FLAGS, APP_FLAGS_ISOLATED_SANDBOX)) {
+        mountFlags = MS_NODEV | MS_RDONLY;
+    }
     int ret = 0;
     cJSON *dataGroupIds = cJSON_GetObjectItemCaseSensitive(groups, "dataGroupId");
     cJSON *gids = cJSON_GetObjectItemCaseSensitive(groups, "gid");
@@ -110,7 +114,7 @@ static int MountAllGroup(const SandboxContext *context, const cJSON *groups)
         APPSPAWN_LOGV("MountAllGroup src: '%{public}s' =>'%{public}s'", libPhysicalPath, context->buffer[0].buffer);
 
         CreateSandboxDir(context->buffer[0].buffer, FILE_MODE);
-        MountArg mountArg = {libPhysicalPath, context->buffer[0].buffer, NULL, MS_REC | MS_BIND, NULL, MS_SLAVE};
+        MountArg mountArg = {libPhysicalPath, context->buffer[0].buffer, NULL, mountFlags, NULL, MS_SLAVE};
         ret = SandboxMountPath(&mountArg);
         APPSPAWN_CHECK(ret == 0, return ret, "mount library failed %{public}d", ret);
     }

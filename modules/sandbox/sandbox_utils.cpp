@@ -347,6 +347,44 @@ unsigned long SandboxUtils::GetMountFlagsFromConfig(const std::vector<std::strin
     return mountFlags;
 }
 
+static std::string ReplaceVariablePackageName(const AppSpawningCtx *appProperty, const std::string &path)
+{
+    std::string tmpSandboxPath = path;
+    AppSpawnMsgBundleInfo *bundleInfo =
+        reinterpret_cast<AppSpawnMsgBundleInfo *>(GetAppProperty(appProperty, TLV_BUNDLE_INFO));
+    APPSPAWN_CHECK(bundleInfo != NULL, return "", "No bundle info in msg %{public}s", GetBundleName(appProperty));
+
+    uint32_t flags = CheckAppSpawnMsgFlag(appProperty->message, TLV_MSG_FLAGS, APP_FLAGS_CLONE_ENABLE) ? 1 : 0;
+    char *extension = reinterpret_cast<char *>(
+        GetAppSpawnMsgExtInfo(appProperty->message, MSG_EXT_NAME_APP_EXTENSION, NULL));
+    std::ostringstream variablePackageName;
+    switch (flags) {
+        case 0:  // default,
+            variablePackageName << bundleInfo->bundleName;
+            break;
+        case 1:  // 1 +clone-bundleIndex+packageName
+            variablePackageName << "+clone-" << bundleInfo->bundleIndex << "+" << bundleInfo->bundleName;
+            break;
+        case 2: {  // 2 +extension-<extensionType>+packageName
+            APPSPAWN_CHECK(extension != NULL, return "", "Invalid extension data ");
+            variablePackageName << "+extension-" << extension << "+" << bundleInfo->bundleName;
+            break;
+        }
+        case 3: {  // 3 +clone-bundleIndex+extension-<extensionType>+packageName
+            APPSPAWN_CHECK(extension != NULL, return "", "Invalid extension data ");
+            variablePackageName << "+clone-" << bundleInfo->bundleIndex << "+extension" << "-" <<
+                extension << "+" << bundleInfo->bundleName;
+            break;
+        }
+        default:
+            variablePackageName << bundleInfo->bundleName;
+            break;
+    }
+    tmpSandboxPath = replace_all(tmpSandboxPath, g_variablePackageName, variablePackageName.str());
+    APPSPAWN_LOGV("tmpSandboxPath %{public}s", tmpSandboxPath.c_str());
+    return tmpSandboxPath;
+}
+
 string SandboxUtils::ConvertToRealPath(const AppSpawningCtx *appProperty, std::string path)
 {
     AppSpawnMsgBundleInfo *info =
@@ -377,7 +415,7 @@ string SandboxUtils::ConvertToRealPath(const AppSpawningCtx *appProperty, std::s
         oldPath = replace_all(oldPath, g_variablePackageName, variablePackageName);
         if (!CheckAppSpawnMsgFlag(appProperty->message, TLV_MSG_FLAGS, APP_FLAGS_ATOMIC_SERVICE) ||
             !CheckDirRecursive(oldPath)) {
-            return oldPath;
+            return ReplaceVariablePackageName(appProperty, path);
         }
         std::string accountId = GetExtraInfoByType(appProperty, MSG_EXT_NAME_ACCOUNT_ID);
         if (accountId.length() != 0) {
@@ -386,7 +424,9 @@ string SandboxUtils::ConvertToRealPath(const AppSpawningCtx *appProperty, std::s
             MakeDirRecursive(path, FILE_MODE);
             int ret = chown(path.c_str(), dacInfo->uid, dacInfo->gid);
             APPSPAWN_CHECK_ONLY_LOG(ret == 0, "chown failed, path %{public}s, errno %{public}d", path.c_str(), errno);
+            return path;
         }
+        return ReplaceVariablePackageName(appProperty, path);
     }
 
     return path;
@@ -632,11 +672,11 @@ std::string SandboxUtils::GetSandboxPath(const AppSpawningCtx *appProperty, nloh
     const std::string &section, std::string sandboxRoot)
 {
     std::string sandboxPath = "";
+    std::string tmpSandboxPath = mntPoint[g_sandBoxPath].get<std::string>();
     if (section.compare(g_permissionPrefix) == 0) {
-        sandboxPath = sandboxRoot + ConvertToRealPathWithPermission(appProperty,
-                                                                    mntPoint[g_sandBoxPath].get<std::string>());
+        sandboxPath = sandboxRoot + ConvertToRealPathWithPermission(appProperty, tmpSandboxPath);
     } else {
-        sandboxPath = sandboxRoot + ConvertToRealPath(appProperty, mntPoint[g_sandBoxPath].get<std::string>());
+        sandboxPath = sandboxRoot + ConvertToRealPath(appProperty, tmpSandboxPath);
     }
     return sandboxPath;
 }
@@ -1135,6 +1175,11 @@ int32_t SandboxUtils::MountAllGroup(const AppSpawningCtx *appProperty, std::stri
         return ret;
     }
 
+    mode_t mountFlags = MS_REC | MS_BIND;
+    if (CheckAppMsgFlagsSet(appProperty, APP_FLAGS_ISOLATED_SANDBOX)) {
+        mountFlags = MS_NODEV | MS_RDONLY;
+    }
+
     nlohmann::json groups = nlohmann::json::parse(dataGroupInfo.c_str(), nullptr, false);
     APPSPAWN_CHECK(!groups.is_discarded() && groups.contains(g_groupList_key_dataGroupId)
         && groups.contains(g_groupList_key_gid) && groups.contains(g_groupList_key_dir), return -1,
@@ -1160,7 +1205,7 @@ int32_t SandboxUtils::MountAllGroup(const AppSpawningCtx *appProperty, std::stri
 
         std::string dataGroupUuid = libPhysicalPath.substr(lastPathSplitPos + 1);
         std::string mntPath = sandboxPackagePath + g_sandboxGroupPath + dataGroupUuid;
-        ret = DoAppSandboxMountOnce(libPhysicalPath.c_str(), mntPath.c_str(), "", BASIC_MOUNT_FLAGS, nullptr);
+        ret = DoAppSandboxMountOnce(libPhysicalPath.c_str(), mntPath.c_str(), "", mountFlags, nullptr);
         APPSPAWN_CHECK(ret == 0, return ret, "mount library failed %d", ret);
     }
     return ret;
@@ -1394,7 +1439,19 @@ int32_t SandboxUtils::ChangeCurrentDir(std::string &sandboxPackagePath, const st
     return ret;
 }
 
-int32_t SandboxUtils::SetAppSandboxProperty(AppSpawningCtx *appProperty)
+static inline int EnableSandboxNamespace(AppSpawningCtx *appProperty, uint32_t sandboxNsFlags)
+{
+    int rc = unshare(sandboxNsFlags);
+    APPSPAWN_CHECK(rc == 0, return rc, "unshare failed, packagename is %{public}s", GetBundleName(appProperty));
+
+    if ((sandboxNsFlags & CLONE_NEWNET) == CLONE_NEWNET) {
+        rc = EnableNewNetNamespace();
+        APPSPAWN_CHECK(rc == 0, return rc, "Set new netnamespace failed %{public}s", GetBundleName(appProperty));
+    }
+    return 0;
+}
+
+int32_t SandboxUtils::SetAppSandboxProperty(AppSpawningCtx *appProperty, uint32_t sandboxNsFlags)
 {
     APPSPAWN_CHECK(appProperty != nullptr, return -1, "Invalid appspwn client");
     if (CheckBundleName(GetBundleName(appProperty)) != 0) {
@@ -1413,7 +1470,7 @@ int32_t SandboxUtils::SetAppSandboxProperty(AppSpawningCtx *appProperty)
     MakeDirRecursive(sandboxPackagePath.c_str(), FILE_MODE);
 
     // add pid to a new mnt namespace
-    int rc = unshare(CLONE_NEWNS);
+    int rc = EnableSandboxNamespace(appProperty, sandboxNsFlags);
     APPSPAWN_CHECK(rc == 0, return rc, "unshare failed, packagename is %{public}s", bundleName.c_str());
 
     int index = 0;
@@ -1447,7 +1504,7 @@ int32_t SandboxUtils::SetAppSandboxProperty(AppSpawningCtx *appProperty)
     return 0;
 }
 
-int32_t SandboxUtils::SetAppSandboxPropertyNweb(AppSpawningCtx *appProperty)
+int32_t SandboxUtils::SetAppSandboxPropertyNweb(AppSpawningCtx *appProperty, uint32_t sandboxNsFlags)
 {
     APPSPAWN_CHECK(appProperty != nullptr, return -1, "Invalid appspwn client");
     if (CheckBundleName(GetBundleName(appProperty)) != 0) {
@@ -1460,7 +1517,7 @@ int32_t SandboxUtils::SetAppSandboxPropertyNweb(AppSpawningCtx *appProperty)
     MakeDirRecursive(sandboxPackagePath.c_str(), FILE_MODE);
 
     // add pid to a new mnt namespace
-    int rc = unshare(CLONE_NEWNS);
+    int rc = EnableSandboxNamespace(appProperty, sandboxNsFlags);
     APPSPAWN_CHECK(rc == 0, return rc, "unshare failed, packagename is %{public}s", bundleName.c_str());
 
     // check app sandbox switch
@@ -1566,10 +1623,16 @@ int32_t SetAppSandboxProperty(AppSpawnMgr *content, AppSpawningCtx *property)
             return ret;
         }
     }
+    uint32_t sandboxNsFlags = CLONE_NEWNS;
+    if (CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX)) {
+        sandboxNsFlags |= content->content.sandboxNsFlags & CLONE_NEWNET ? CLONE_NEWNET : 0;
+    }
+    APPSPAWN_LOGV("SetAppSandboxProperty sandboxNsFlags 0x%{public}x", sandboxNsFlags);
+
     if (IsNWebSpawnMode(content)) {
-        ret = OHOS::AppSpawn::SandboxUtils::SetAppSandboxPropertyNweb(property);
+        ret = OHOS::AppSpawn::SandboxUtils::SetAppSandboxPropertyNweb(property, sandboxNsFlags);
     } else {
-        ret = OHOS::AppSpawn::SandboxUtils::SetAppSandboxProperty(property);
+        ret = OHOS::AppSpawn::SandboxUtils::SetAppSandboxProperty(property, sandboxNsFlags);
     }
     // for module test do not create sandbox, use APP_FLAGS_IGNORE_SANDBOX to ignore sandbox result
     if (CheckAppMsgFlagsSet(property, APP_FLAGS_IGNORE_SANDBOX)) {
@@ -1678,6 +1741,7 @@ static int SpawnMountDirOnLock(AppSpawnMgr *content, AppSpawningCtx *property)
     return 0;
 }
 
+#ifndef APPSPAWN_SANDBOX_NEW
 MODULE_CONSTRUCTOR(void)
 {
     APPSPAWN_LOGV("Load sandbox module ...");
@@ -1685,3 +1749,4 @@ MODULE_CONSTRUCTOR(void)
     (void)AddAppSpawnHook(STAGE_PARENT_PRE_FORK, HOOK_PRIO_COMMON, SpawnMountDirOnLock);
     (void)AddAppSpawnHook(STAGE_CHILD_EXECUTE, HOOK_PRIO_SANDBOX, SetAppSandboxProperty);
 }
+#endif
