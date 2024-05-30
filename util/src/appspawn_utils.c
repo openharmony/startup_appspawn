@@ -17,11 +17,16 @@
 
 #include <ctype.h>
 #include <dirent.h>
+#include <fcntl.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include <linux/if.h>
+#include <sys/ioctl.h>
 #include <sys/mount.h>
+#include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 
@@ -115,9 +120,6 @@ uint64_t DiffTime(const struct timespec *startTime, const struct timespec *endTi
 
 int MakeDirRec(const char *path, mode_t mode, int lastPath)
 {
-    if (path == NULL || *path == '\0') {
-        return -1;
-    }
     APPSPAWN_CHECK(path != NULL && *path != '\0', return -1, "Invalid path to create");
     char buffer[PATH_MAX] = {0};
     const char slash = '/';
@@ -208,11 +210,6 @@ char *GetLastStr(const char *str, const char *dst)
     char *end = (char *)str + strlen(str);
     size_t len = strlen(dst);
     while (end != str) {
-        if (isspace(*end)) {  // clear space
-            *end = '\0';
-            end--;
-            continue;
-        }
         if (strncmp(end, dst, len) == 0) {
             return end;
         }
@@ -221,8 +218,9 @@ char *GetLastStr(const char *str, const char *dst)
     return NULL;
 }
 
-static char *ReadFile(const char *fileName)
+char *ReadFile(const char *fileName)
 {
+    APPSPAWN_CHECK_ONLY_EXPER(fileName != NULL, return NULL);
     char *buffer = NULL;
     FILE *fd = NULL;
     do {
@@ -231,7 +229,6 @@ static char *ReadFile(const char *fileName)
             fileStat.st_size <= 0 || fileStat.st_size > MAX_JSON_FILE_LEN) {
             return NULL;
         }
-        APPSPAWN_LOGI("LoadAppSandboxConfig %{public}s size %{public}u", fileName, (uint32_t)fileStat.st_size);
         fd = fopen(fileName, "r");
         APPSPAWN_CHECK(fd != NULL, break, "Failed to open file  %{public}s", fileName);
 
@@ -302,22 +299,7 @@ void DumpCurrentDir(char *buffer, uint32_t bufferLen, const char *dirPath)
 {
     APPSPAWN_CHECK_ONLY_EXPER(buffer != NULL, return);
     APPSPAWN_CHECK_ONLY_EXPER(dirPath != NULL, return);
-    APPSPAWN_CHECK_ONLY_EXPER(bufferLen > 0 , return);
-
-    char tmp[32] = {0};  // 32 max
-    int ret = GetParameter("startup.appspawn.cold.boot", "", tmp, sizeof(tmp));
-    if (ret <= 0 || strcmp(tmp, "1") != 0) {
-        return;
-    }
-
-    struct stat st = {};
-    if (stat(dirPath, &st) == 0 && S_ISREG(st.st_mode)) {
-        APPSPAWN_LOGW("file %{public}s", dirPath);
-        if (access(dirPath, F_OK) != 0) {
-            APPSPAWN_LOGW("file %{public}s not exist", dirPath);
-        }
-        return;
-    }
+    APPSPAWN_CHECK_ONLY_EXPER(bufferLen > 0, return);
 
     DIR *pDir = opendir(dirPath);
     APPSPAWN_CHECK(pDir != NULL, return, "Read dir :%{public}s failed.%{public}d", dirPath, errno);
@@ -329,7 +311,7 @@ void DumpCurrentDir(char *buffer, uint32_t bufferLen, const char *dirPath)
         }
         if (dp->d_type == DT_DIR) {
             APPSPAWN_LOGW(" Current path %{public}s/%{public}s ", dirPath, dp->d_name);
-            ret = snprintf_s(buffer, bufferLen, bufferLen - 1, "%s/%s", dirPath, dp->d_name);
+            int ret = snprintf_s(buffer, bufferLen, bufferLen - 1, "%s/%s", dirPath, dp->d_name);
             APPSPAWN_CHECK(ret > 0, break, "Failed to snprintf_s errno: %{public}d", errno);
             char *path = strdup(buffer);
             DumpCurrentDir(buffer, bufferLen, path);
@@ -361,19 +343,28 @@ void AppSpawnDump(const char *fmt, ...)
     if (g_dumpToStream == NULL) {
         return;
     }
+    APPSPAWN_CHECK_ONLY_EXPER(fmt != NULL, return);
     char format[128] = {0};  // 128 max buffer for format
     uint32_t size = strlen(fmt);
     int curr = 0;
     for (uint32_t index = 0; index < size; index++) {
-        if (curr >= (int)sizeof(format)) {
-            format[curr - 1] = '\0';
+        if (curr >= (int)sizeof(format)) {  // invalid format
+            return;
         }
-        if (fmt[index] == '%' && (strncmp(&fmt[index + 1], "{public}", strlen("{public}")) == 0)) {
+        if (fmt[index] != '%') {
+            format[curr++] = fmt[index];
+            continue;
+        }
+        if (strncmp(&fmt[index + 1], "{public}", strlen("{public}")) == 0) {
             format[curr++] = fmt[index];
             index += strlen("{public}");
             continue;
         }
-        format[curr++] = fmt[index];
+        if (strncmp(&fmt[index + 1], "{private}", strlen("{private}")) == 0) {
+            format[curr++] = fmt[index];
+            index += strlen("{private}");
+            continue;
+        }
     }
     va_list vargs;
     va_start(vargs, format);
@@ -410,4 +401,28 @@ uint32_t GetSpawnTimeout(uint32_t def)
         return (errno != 0) ? def : ((value < def) ? def : value);
     }
     return value;
+}
+
+int EnableNewNetNamespace(void)
+{
+    int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+    APPSPAWN_CHECK(sockfd >= 0, return APPSPAWN_SYSTEM_ERROR, "Failed to create socket errno %{public}d", errno);
+
+    // enable loop
+    int ret = 0;
+    do {
+        struct ifreq ifr = {};
+        ret = strcpy_s(ifr.ifr_name, sizeof(ifr.ifr_name), "lo");
+        APPSPAWN_CHECK(ret == 0, break, "Failed to copy if name");
+
+        ret = ioctl(sockfd, SIOCGIFFLAGS, &ifr);
+        APPSPAWN_CHECK(ret >= 0, break, "ioctl SIOCGIFFLAGS errno %{public}d", errno);
+
+        ifr.ifr_flags |= IFF_UP | IFF_LOOPBACK;
+        ret = ioctl(sockfd, SIOCSIFFLAGS, &ifr);
+        APPSPAWN_CHECK(ret >= 0, break, "ioctl SIOCSIFFLAGS errno %{public}d", errno);
+    } while (0);
+    close(sockfd);
+    APPSPAWN_LOGV("Enable network namespace result %{public}d", ret);
+    return ret;
 }
