@@ -101,6 +101,9 @@ int SetSelinuxCon(const AppSpawnMgr *content, const AppSpawningCtx *property)
     if (CheckAppMsgFlagsSet(property, APP_FLAGS_DLP_MANAGER)) {
         hapDomainInfo.hapFlags |= SELINUX_HAP_DLP;
     }
+    if (CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX)) {
+        hapDomainInfo.hapFlags |= SELINUX_HAP_INPUT_ISOLATE;
+    }
     ret = hapContext.HapDomainSetcontext(hapDomainInfo);
     if (CheckAppMsgFlagsSet(property, APP_FLAGS_ASANENABLED)) {
         ret = 0;
