@@ -266,6 +266,7 @@ HWTEST(HnpInstallerTest, Hnp_Install_001, TestSize.Level0)
 
     char arg1[] = "hnp";
     char arg2[] = "install";
+    char arg3[] = "-u";
 
     { // param num not enough
         char* argv[] = {arg1, arg2};
@@ -274,7 +275,6 @@ HWTEST(HnpInstallerTest, Hnp_Install_001, TestSize.Level0)
         EXPECT_EQ(HnpCmdInstall(argc, argv), HNP_ERRNO_OPERATOR_ARGV_MISS);
     }
     { // param uid is invalid
-        char arg3[] = "-u";
         char arg4[] = "asd1231";
         char arg5[] = "-p";
         char arg6[] = "sample";
@@ -288,7 +288,6 @@ HWTEST(HnpInstallerTest, Hnp_Install_001, TestSize.Level0)
         EXPECT_EQ(HnpCmdInstall(argc, argv), HNP_ERRNO_INSTALLER_ARGV_UID_INVALID);
     }
     { // ok
-        char arg3[] = "-u";
         char arg4[] = "10000";
         char arg5[] = "-i";
         char arg6[] = "./hnp_out";
@@ -387,23 +386,23 @@ HWTEST(HnpInstallerTest, Hnp_Install_003, TestSize.Level0)
 
     char arg1[] = "hnp";
     char arg2[] = "install";
+    char arg3[] = "-u";
+    char arg4[] = "10000";
+    char arg5[] = "-p";
+    char arg6[] = "sample";
+    char arg7[] = "-i";
+    char arg8[] = "./hnp_out";
+    char arg9[] = "-s";
+    char arg10[] = "./hnp_out";
+    char arg11[] = "-a";
+    char arg12[] = "system64";
+    char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12};
+    int argc = sizeof(argv) / sizeof(argv[0]);
 
     { // scr path bin not exist
         EXPECT_EQ(mkdir(HNP_BASE_PATH, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
         HnpPackWithoutBin(const_cast<char *>("sample_public"), true, true);
         HnpPackWithoutBin(const_cast<char *>("sample_private"), false, false);
-        char arg3[] = "-u";
-        char arg4[] = "10000";
-        char arg5[] = "-p";
-        char arg6[] = "sample";
-        char arg7[] = "-i";
-        char arg8[] = "./hnp_out";
-        char arg9[] = "-s";
-        char arg10[] = "./hnp_out";
-        char arg11[] = "-a";
-        char arg12[] = "system64";
-        char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12};
-        int argc = sizeof(argv) / sizeof(argv[0]);
 
         EXPECT_EQ(HnpCmdInstall(argc, argv), 0);
         EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/bin/out", F_OK), -1);
@@ -415,18 +414,6 @@ HWTEST(HnpInstallerTest, Hnp_Install_003, TestSize.Level0)
         EXPECT_EQ(mkdir(HNP_BASE_PATH, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
         HnpPackWithBin(const_cast<char *>("sample_public"), true, true, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH);
         HnpPackWithBin(const_cast<char *>("sample_private"), false, false, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH);
-        char arg3[] = "-u";
-        char arg4[] = "10000";
-        char arg5[] = "-p";
-        char arg6[] = "sample";
-        char arg7[] = "-i";
-        char arg8[] = "./hnp_out";
-        char arg9[] = "-s";
-        char arg10[] = "./hnp_out";
-        char arg11[] = "-a";
-        char arg12[] = "system64";
-        char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12};
-        int argc = sizeof(argv) / sizeof(argv[0]);
 
         EXPECT_EQ(HnpCmdInstall(argc, argv), 0);
         EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/bin/out", F_OK), 0);
@@ -456,6 +443,20 @@ HWTEST(HnpInstallerTest, Hnp_Install_004, TestSize.Level0)
 
     char arg1[] = "hnp";
     char arg2[] = "install";
+    char arg3[] = "-u";
+    char arg4[] = "10000";
+    char arg5[] = "-p";
+    char arg6[] = "sample";
+    char arg7[] = "-i";
+    char arg8[] = "./hnp_out";
+    char arg9[] = "-f";
+    char arg10[] = "-s";
+    char arg11[] = "./hnp_out";
+    char arg12[] = "-a";
+    char arg13[] = "system64";
+
+    char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13};
+    int argc = sizeof(argv) / sizeof(argv[0]);
 
     { //src path file is not hnp
         FILE *fp = fopen("./hnp_out/public/example.zip", "wb");
@@ -463,36 +464,11 @@ HWTEST(HnpInstallerTest, Hnp_Install_004, TestSize.Level0)
         EXPECT_NE(fp, NULL);
         fwrite(data, sizeof(int), 15, fp);
         (void)fclose(fp);
-        char arg3[] = "-u";
-        char arg4[] = "10000";
-        char arg5[] = "-p";
-        char arg6[] = "sample";
-        char arg7[] = "-i";
-        char arg8[] = "./hnp_out";
-        char arg9[] = "-f";
-        char arg10[] = "-s";
-        char arg11[] = "./hnp_out";
-        char arg12[] = "-a";
-        char arg13[] = "system64";
-        char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13};
-        int argc = sizeof(argv) / sizeof(argv[0]);
+
         EXPECT_EQ(HnpCmdInstall(argc, argv), 0);
         remove("./hnp_out/public/example.zip");
     }
     { //ok
-        char arg3[] = "-u";
-        char arg4[] = "10000";
-        char arg5[] = "-p";
-        char arg6[] = "sample";
-        char arg7[] = "-i";
-        char arg8[] = "./hnp_out";
-        char arg9[] = "-f";
-        char arg10[] = "-s";
-        char arg11[] = "./hnp_out";
-        char arg12[] = "-a";
-        char arg13[] = "system64";
-        char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13};
-        int argc = sizeof(argv) / sizeof(argv[0]);
         EXPECT_EQ(HnpCmdInstall(argc, argv), 0);
         EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/bin/out", F_OK), 0);
         EXPECT_EQ(access(HNP_BASE_PATH"/hnp/sample/bin/out", F_OK), 0);

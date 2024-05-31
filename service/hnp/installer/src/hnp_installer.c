@@ -331,6 +331,7 @@ static int HnpReadAndInstall(char *srcFile, HnpInstallInfo *hnpInfo, HnpSignMapI
     int ret;
     HnpCfgInfo hnpCfg = {0};
 
+    HNP_LOGI("hnp install start now! src file=%s, dst path=%s", srcFile, hnpInfo->hnpBasePath);
     /* 从hnp zip获取cfg信息 */
     ret = HnpCfgGetFromZip(srcFile, &hnpCfg);
     if (ret != 0) {
@@ -405,7 +406,6 @@ static int HnpPackageGetAndInstall(const char *dirPath, HnpInstallInfo *hnpInfo,
     struct dirent *entry;
     char path[MAX_FILE_PATH_LEN];
     char sunDirNew[MAX_FILE_PATH_LEN];
-    int ret;
 
     if ((dir = opendir(dirPath)) == NULL) {
         HNP_LOGE("hnp install opendir:%s unsuccess, errno=%d", dirPath, errno);
@@ -428,7 +428,7 @@ static int HnpPackageGetAndInstall(const char *dirPath, HnpInstallInfo *hnpInfo,
                 closedir(dir);
                 return HNP_ERRNO_BASE_SPRINTF_FAILED;
             }
-            ret = HnpPackageGetAndInstall(path, hnpInfo, sunDirNew, hnpSignMapInfos, count);
+            int ret = HnpPackageGetAndInstall(path, hnpInfo, sunDirNew, hnpSignMapInfos, count);
             if (ret != 0) {
                 closedir(dir);
                 return ret;
@@ -443,8 +443,7 @@ static int HnpPackageGetAndInstall(const char *dirPath, HnpInstallInfo *hnpInfo,
                 closedir(dir);
                 return HNP_ERRNO_BASE_SPRINTF_FAILED;
             }
-            HNP_LOGI("hnp install start now! src file=%s, dst path=%s", path, hnpInfo->hnpBasePath);
-            ret = HnpReadAndInstall(path, hnpInfo, hnpSignMapInfos, count);
+            int ret = HnpReadAndInstall(path, hnpInfo, hnpSignMapInfos, count);
             HNP_LOGI("hnp install end, ret=%d", ret);
             if (ret != 0) {
                 closedir(dir);

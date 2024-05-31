@@ -38,6 +38,8 @@
 extern "C" {
 #endif
 
+#define ZIP_EXTERNAL_FA_OFFSET 16
+
 // 向zip压缩包中添加文件
 static int ZipAddFile(const char* file, int offset, zipFile zf)
 {
@@ -52,7 +54,7 @@ static int ZipAddFile(const char* file, int offset, zipFile zf)
         return HNP_ERRNO_BASE_STAT_FAILED;
     }
 
-    fileInfo.external_fa = (buffer.st_mode & 0xFFFF) << 16;
+    fileInfo.external_fa = (buffer.st_mode & 0xFFFF) << ZIP_EXTERNAL_FA_OFFSET;
     err = zipOpenNewFileInZip3(zf, file + offset, &fileInfo, NULL, 0, NULL, 0, NULL, Z_DEFLATED, Z_BEST_COMPRESSION,
         0, -MAX_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY, NULL, 0);
     if (err != ZIP_OK) {
@@ -234,7 +236,7 @@ static int HnpUnZipForFile(const char *filePath, unzFile zipFile, unz_file_info 
     return 0;
 #else
     int ret;
-    mode_t mode = (fileInfo.external_fa >> 16) & 0xFFFF;
+    mode_t mode = (fileInfo.external_fa >> ZIP_EXTERNAL_FA_OFFSET) & 0xFFFF;
 
     /* 如果解压缩的是目录 */
     if (filePath[strlen(filePath) - 1] == '/') {
@@ -287,7 +289,13 @@ static bool HnpELFFileCheck(const char *path)
         return false;
     }
 
-    fread(buff, sizeof(char), HNP_ELF_FILE_CHECK_HEAD_LEN, fp);
+    int ret = fread(buff, sizeof(char), HNP_ELF_FILE_CHECK_HEAD_LEN, fp);
+    if (ret != HNP_ELF_FILE_CHECK_HEAD_LEN) {
+        HNP_LOGE("fread unsuccess. ret=%d, size=%d", ret, HNP_ELF_FILE_CHECK_HEAD_LEN);
+        (void)fclose(fp);
+        return false;
+    }
+
     if (buff[HNP_INDEX_0] == 0x7F && buff[HNP_INDEX_1] == 'E' && buff[HNP_INDEX_2] == 'L' && buff[HNP_INDEX_3] == 'F') {
         (void)fclose(fp);
         return true;
