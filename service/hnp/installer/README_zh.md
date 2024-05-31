@@ -22,7 +22,7 @@
 
   1） hnp帮助命令 hnp -h
   ```
-    usage:hnp <command> <args> [-u <user id>][-p <hap package name>][-i <hap install path>][-f][-h <hap source path>][-a <system abi>]
+    usage:hnp <command> <args> [-u <user id>][-p <hap package name>][-i <hap install path>][-f][-s <hap source path>][-a <system abi>]
 
     These are common hnp commands used in various situations:
 
@@ -41,7 +41,7 @@
         -p    : [required]    hap package name
     for example:
 
-        hnp install -u 1000 -p app_sample -i /data/app_sample/ -s /data/app_hap/ -a bin64 -f
+        hnp install -u 1000 -p app_sample -i /data/app_sample/ -s /data/app_hap/demo.hap -a arm64 -f
         hnp uninstall -u 1000 -p app_sample
   ```
 2） hnp命令行安装：

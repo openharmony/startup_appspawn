@@ -258,10 +258,12 @@ char *HnpPackgeHnpVersionGet(const char *packageName, const char *name);
 int HnpFileCountGet(const char *path, int *count);
 
 #define HNP_LOGI(args, ...) \
-    HILOG_INFO(LOG_CORE, "[%{public}s:%{public}d]" args, (__FILE_NAME__), (__LINE__), ##__VA_ARGS__)
+    HILOG_INFO(LOG_CORE, "[%{public}s:%{public}d]" args, (__FILE_NAME__), (__LINE__), ##__VA_ARGS__); \
+    HnpLogPrintf(HNP_LOG_INFO, "HNP", args, ##__VA_ARGS__)
 
 #define HNP_LOGE(args, ...) \
-    HILOG_ERROR(LOG_CORE, "[%{public}s:%{public}d]" args, (__FILE_NAME__), (__LINE__), ##__VA_ARGS__)
+    HILOG_ERROR(LOG_CORE, "[%{public}s:%{public}d]" args, (__FILE_NAME__), (__LINE__), ##__VA_ARGS__); \
+    HnpLogPrintf(HNP_LOG_ERROR, "HNP", args, ##__VA_ARGS__)
 
 #ifdef __cplusplus
 }
