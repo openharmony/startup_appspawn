@@ -55,6 +55,7 @@ ohos_unittest("AppSpawn_client_ut") {
   # server
   sources += [
     "${appspawn_path}/common/appspawn_server.c",
+    "${appspawn_path}/common/appspawn_trace.cpp",
     "${appspawn_path}/modules/common/appspawn_dfx_dump.cpp",
     "${appspawn_path}/modules/modulemgr/appspawn_modulemgr.c",
     "${appspawn_path}/standard/appspawn_appmgr.c",
@@ -82,6 +83,7 @@ ohos_unittest("AppSpawn_client_ut") {
     "c_utils:utils",
     "config_policy:configpolicy_util",
     "hilog:libhilog",
+    "hitrace:hitrace_meter",
     "init:libbegetutil",
   ]
   if (enable_appspawn_dump_catcher) {
