@@ -168,7 +168,7 @@ int GetRealPath(char *srcPath, char *realPath)
         return HNP_ERRNO_BASE_REALPATHL_FAILED;
     }
     if (strlen(dstTmpPath) >= MAX_FILE_PATH_LEN) {
-        HNP_LOGE("realpath over max path len. len=%d", strlen(dstTmpPath));
+        HNP_LOGE("realpath over max path len. len=%d", (int)strlen(dstTmpPath));
         return HNP_ERRNO_BASE_STRING_LEN_OVER_LIMIT;
     }
     if (strcpy_s(realPath, MAX_FILE_PATH_LEN, dstTmpPath) != EOK) {
@@ -178,7 +178,7 @@ int GetRealPath(char *srcPath, char *realPath)
     return 0;
 }
 
-int HnpDeleteFolder(const char *path)
+static int HnpDeleteAllFileInPath(const char *path, DIR *dir)
 {
     int ret = 0;
 #ifdef _WIN32
@@ -188,15 +188,6 @@ int HnpDeleteFolder(const char *path)
     struct stat statbuf;
     char filePath[MAX_FILE_PATH_LEN];
 
-    if (access(path, F_OK) != 0) {
-        return 0;
-    }
-    DIR *dir = opendir(path);
-    if (dir == NULL) {
-        HNP_LOGE("delete folder open dir=%s unsuccess ", path);
-        return HNP_ERRNO_BASE_DIR_OPEN_FAILED;
-    }
-
     while ((entry = readdir(dir)) != NULL) {
         if ((strcmp(entry->d_name, ".") == 0) || (strcmp(entry->d_name, "..") == 0)) {
             continue;
@@ -205,7 +196,6 @@ int HnpDeleteFolder(const char *path)
         ret = sprintf_s(filePath, MAX_FILE_PATH_LEN, "%s/%s", path, entry->d_name);
         if (ret < 0) {
             HNP_LOGE("delete folder sprintf path[%s], file[%s] unsuccess.", path, entry->d_name);
-            closedir(dir);
             return HNP_ERRNO_BASE_SPRINTF_FAILED;
         }
 
@@ -217,26 +207,43 @@ int HnpDeleteFolder(const char *path)
             /* 如果是文件夹，递归删除 */
             ret = HnpDeleteFolder(filePath);
             if (ret != 0) {
-                closedir(dir);
                 return ret;
             }
         } else {
             ret = unlink(filePath);
             if (ret != 0) {
-                closedir(dir);
                 HNP_LOGE("delete file unsuccess.ret=%d, path=%s, errno=%d", ret, filePath, errno);
                 return HNP_ERRNO_BASE_UNLINK_FAILED;
             }
         }
     }
 
+    return 0;
+#endif
+}
+
+int HnpDeleteFolder(const char *path)
+{
+    if (access(path, F_OK) != 0) {
+        return 0;
+    }
+    DIR *dir = opendir(path);
+    if (dir == NULL) {
+        HNP_LOGE("delete folder open dir=%s unsuccess ", path);
+        return HNP_ERRNO_BASE_DIR_OPEN_FAILED;
+    }
+
+    int ret = HnpDeleteAllFileInPath(path, dir);
     closedir(dir);
+    if (ret != 0) {
+        return ret;
+    }
+
     ret = rmdir(path);
     if (ret != 0) {
         HNP_LOGE("rmdir path unsuccess.ret=%d, path=%s, errno=%d", ret, path, errno);
     }
     return ret;
-#endif
 }
 
 int HnpCreateFolder(const char* path)
