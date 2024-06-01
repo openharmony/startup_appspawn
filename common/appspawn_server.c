@@ -67,7 +67,11 @@ APPSPAWN_STATIC int AppSpawnChild(AppSpawnContent *content, AppSpawnClient *clie
 {
     APPSPAWN_CHECK(content != NULL && client != NULL, return -1, "Invalid arg for appspawn child");
     APPSPAWN_LOGI("AppSpawnChild id %{public}u flags: 0x%{public}x", client->id, client->flags);
-
+#ifndef OHOS_LITE
+    if ((content->sandboxNsFlags & CLONE_NEWNET) == CLONE_NEWNET) {
+        APPSPAWN_CHECK_ONLY_LOG(EnableNewNetNamespace() == 0, "AppSpawnChild enable newNetNamespace failed");
+    }
+#endif
     int ret = AppSpawnExecuteClearEnvHook(content, client);
     APPSPAWN_CHECK_ONLY_EXPER(ret == 0,
         NotifyResToParent(content, client, ret);
