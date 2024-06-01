@@ -38,6 +38,8 @@
 extern "C" {
 #endif
 
+#define ZIP_EXTERNAL_FA_OFFSET 16
+
 // 向zip压缩包中添加文件
 static int ZipAddFile(const char* file, int offset, zipFile zf)
 {
@@ -45,8 +47,15 @@ static int ZipAddFile(const char* file, int offset, zipFile zf)
     char buf[1024];
     int len;
     FILE *f;
+    struct stat buffer = {0};
+    zip_fileinfo fileInfo = {0};
 
-    err = zipOpenNewFileInZip3(zf, file + offset, NULL, NULL, 0, NULL, 0, NULL, Z_DEFLATED, Z_BEST_COMPRESSION,
+    if (stat(file, &buffer) != 0) {
+        return HNP_ERRNO_BASE_STAT_FAILED;
+    }
+
+    fileInfo.external_fa = (buffer.st_mode & 0xFFFF) << ZIP_EXTERNAL_FA_OFFSET;
+    err = zipOpenNewFileInZip3(zf, file + offset, &fileInfo, NULL, 0, NULL, 0, NULL, Z_DEFLATED, Z_BEST_COMPRESSION,
         0, -MAX_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY, NULL, 0);
     if (err != ZIP_OK) {
         HNP_LOGE("open new file[%s] in zip unsuccess ", file);
@@ -221,19 +230,13 @@ int HnpAddFileToZip(char *zipfile, char *filename, char *buff, int size)
     return 0;
 }
 
-static int HnpUnZipForFile(const char *fileName, const char *outputDir, unzFile zipFile)
+static int HnpUnZipForFile(const char *filePath, unzFile zipFile, unz_file_info fileInfo)
 {
 #ifdef _WIN32
     return 0;
 #else
     int ret;
-    char filePath[MAX_FILE_PATH_LEN];
-
-    ret = sprintf_s(filePath, MAX_FILE_PATH_LEN, "%s/%s", outputDir, fileName);
-    if (ret < 0) {
-        HNP_LOGE("sprintf unsuccess.");
-        return HNP_ERRNO_BASE_SPRINTF_FAILED;
-    }
+    mode_t mode = (fileInfo.external_fa >> ZIP_EXTERNAL_FA_OFFSET) & 0xFFFF;
 
     /* 如果解压缩的是目录 */
     if (filePath[strlen(filePath) - 1] == '/') {
@@ -250,7 +253,7 @@ static int HnpUnZipForFile(const char *fileName, const char *outputDir, unzFile 
             char buffer[BUFFER_SIZE];
             readSize = unzReadCurrentFile(zipFile, buffer, sizeof(buffer));
             if (readSize < 0) {
-                HNP_LOGE("unzip read zip:%s file unsuccess", zipFile);
+                HNP_LOGE("unzip read zip:%s file unsuccess", (char *)zipFile);
                 fclose(outFile);
                 unzCloseCurrentFile(zipFile);
                 return HNP_ERRNO_BASE_UNZIP_READ_FAILED;
@@ -261,17 +264,109 @@ static int HnpUnZipForFile(const char *fileName, const char *outputDir, unzFile 
 
         fclose(outFile);
         unzCloseCurrentFile(zipFile);
+        /* 如果其他人有可执行权限，那么将解压后的权限设置成755，否则为744 */
+        if ((mode & S_IXOTH) != 0) {
+            ret = chmod(filePath, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
+        } else {
+            ret = chmod(filePath, S_IRWXU | S_IRGRP | S_IROTH);
+        }
+        if (ret != 0) {
+            HNP_LOGE("hnp install chmod unsuccess, src:%s, errno:%d", filePath, errno);
+            return HNP_ERRNO_BASE_CHMOD_FAILED;
+        }
     }
     return 0;
 #endif
 }
 
-int HnpUnZip(const char *inputFile, const char *outputDir)
+static bool HnpELFFileCheck(const char *path)
+{
+    FILE *fp;
+    char buff[HNP_ELF_FILE_CHECK_HEAD_LEN];
+
+    fp = fopen(path, "rb");
+    if (fp == NULL) {
+        return false;
+    }
+
+    int ret = fread(buff, sizeof(char), HNP_ELF_FILE_CHECK_HEAD_LEN, fp);
+    if (ret != HNP_ELF_FILE_CHECK_HEAD_LEN) {
+        HNP_LOGE("fread unsuccess. ret=%d, size=%d", ret, HNP_ELF_FILE_CHECK_HEAD_LEN);
+        (void)fclose(fp);
+        return false;
+    }
+
+    if (buff[HNP_INDEX_0] == 0x7F && buff[HNP_INDEX_1] == 'E' && buff[HNP_INDEX_2] == 'L' && buff[HNP_INDEX_3] == 'F') {
+        (void)fclose(fp);
+        return true;
+    }
+
+    (void)fclose(fp);
+    return false;
+}
+
+static int HnpInstallAddSignMap(const char* hnpSignKeyPrefix, const char *key, const char *value,
+    HnpSignMapInfo *hnpSignMapInfos, int *count)
+{
+    int ret;
+    int sum = *count;
+
+    if (HnpELFFileCheck(value) == false) {
+        return 0;
+    }
+
+    ret = sprintf_s(hnpSignMapInfos[sum].key, MAX_FILE_PATH_LEN, "%s!/%s", hnpSignKeyPrefix, key);
+    if (ret < 0) {
+        HNP_LOGE("add sign map sprintf unsuccess.");
+        return HNP_ERRNO_BASE_SPRINTF_FAILED;
+    }
+
+    ret = strcpy_s(hnpSignMapInfos[sum].value, MAX_FILE_PATH_LEN, value);
+    if (ret != EOK) {
+        HNP_LOGE("add sign map strcpy[%s] unsuccess.", value);
+        return HNP_ERRNO_BASE_COPY_FAILED;
+    }
+
+    *count  = sum + 1;
+    return 0;
+}
+
+int HnpFileCountGet(const char *path, int *count)
+{
+    int sum = 0;
+
+    unzFile zipFile = unzOpen(path);
+    if (zipFile == NULL) {
+        HNP_LOGE("unzip open hnp:%s unsuccess!", path);
+        return HNP_ERRNO_BASE_UNZIP_OPEN_FAILED;
+    }
+
+    int ret = unzGoToFirstFile(zipFile);
+    while (ret == UNZ_OK) {
+        sum++;
+        ret = unzGetCurrentFileInfo(zipFile, NULL, NULL, 0, NULL, 0, NULL, 0);
+        if (ret != UNZ_OK) {
+            HNP_LOGE("unzip get zip:%s info unsuccess!", path);
+            unzClose(zipFile);
+            return HNP_ERRNO_BASE_UNZIP_GET_INFO_FAILED;
+        }
+
+        ret = unzGoToNextFile(zipFile);
+    }
+
+    unzClose(zipFile);
+    *count += sum;
+    return 0;
+}
+
+int HnpUnZip(const char *inputFile, const char *outputDir, const char *hnpSignKeyPrefix,
+    HnpSignMapInfo *hnpSignMapInfos, int *count)
 {
     unzFile zipFile;
     int result;
     char fileName[MAX_FILE_PATH_LEN];
     unz_file_info fileInfo;
+    char filePath[MAX_FILE_PATH_LEN];
 
     HNP_LOGI("HnpUnZip zip=%s, output=%s", inputFile, outputDir);
 
@@ -296,11 +391,23 @@ int HnpUnZip(const char *inputFile, const char *outputDir)
             slash = fileName;
         }
 
-        result = HnpUnZipForFile(slash, outputDir, zipFile);
-        if (result != 0) {
-            HNP_LOGE("unzip for file:%s unsuccess", slash);
+        result = sprintf_s(filePath, MAX_FILE_PATH_LEN, "%s/%s", outputDir, slash);
+        if (result < 0) {
+            HNP_LOGE("sprintf unsuccess.");
             unzClose(zipFile);
             return HNP_ERRNO_BASE_SPRINTF_FAILED;
+        }
+
+        result = HnpUnZipForFile(filePath, zipFile, fileInfo);
+        if (result != 0) {
+            HNP_LOGE("unzip for file:%s unsuccess", filePath);
+            unzClose(zipFile);
+            return result;
+        }
+        result = HnpInstallAddSignMap(hnpSignKeyPrefix, fileName, filePath, hnpSignMapInfos, count);
+        if (result != 0) {
+            unzClose(zipFile);
+            return result;
         }
         result = unzGoToNextFile(zipFile);
     }
@@ -343,7 +450,7 @@ int HnpCfgGetFromZip(const char *inputFile, HnpCfgInfo *hnpCfg)
         unzOpenCurrentFile(zipFile);
         cfgStream = malloc(fileInfo.uncompressed_size);
         if (cfgStream == NULL) {
-            HNP_LOGE("malloc unsuccess. size=%d, errno=%d", fileInfo.uncompressed_size, errno);
+            HNP_LOGE("malloc unsuccess. size=%lu, errno=%d", fileInfo.uncompressed_size, errno);
             unzClose(zipFile);
             return HNP_ERRNO_NOMEM;
         }

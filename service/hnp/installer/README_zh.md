@@ -22,24 +22,26 @@
 
   1） hnp帮助命令 hnp -h
   ```
-    usage:hnp <command> <args> [-u <user id>][-p <hap package name>][-i <hap install path>][-f]
-    
+    usage:hnp <command> <args> [-u <user id>][-p <hap package name>][-i <hap install path>][-f][-s <hap source path>][-a <system abi>]
+
     These are common hnp commands used in various situations:
-    
+
     install: install one hap package
         hnp install <-u [user id]> <-p [hap package name]> <-i [hap install path]> <-f>
         -u    : [required]    user id
         -p    : [required]    hap package name
         -i    : [required]    hap install path
+        -s    : [required]    hap source path
+        -a    : [required]    system abi
         -f    : [optional]    if provided, the hnp package will be installed forcely, ignoring old versions of the hnp package
-    
+
     uninstall: uninstall one hap package
         hnp uninstall <-u [user id]> <-p [hap package name]>
         -u    : [required]    user id
         -p    : [required]    hap package name
     for example:
-    
-        hnp install -u 1000 -p app_sample -i /data/app_sample/ -f
+
+        hnp install -u 1000 -p app_sample -i /data/app_sample/ -s /data/app_hap/demo.hap -a arm64 -f
         hnp uninstall -u 1000 -p app_sample
   ```
 2） hnp命令行安装：
@@ -53,7 +55,7 @@
   -i [必选] 表示hnp安装包所在路径。
 
   -f [可选] 选项表示是否开启强制安装，强制安装下如果发现软件已安装则会将已安装软件先卸载再安装新的。
-  
+
   注：-i指向的路径需要满足以下目录格式。Native公私有软件需要通过所在目录名public和private进行区分。
   ```
   hnp安装包路径
@@ -92,7 +94,7 @@
     ...
 ]
   ```
-  
+
   样例：
   ```
     # baidu应用软件的hnp安装包所在目录
@@ -105,7 +107,7 @@
     # 安装baidu应用下的hnp软件：
     强制安装baidu应用下的hnp软件，安装包所在目录baidu_hnp_path，安装在系统用户ID 100 下面。
     执行命令：hnp install -u 100 -p baidu -i ./baidu_hnp_path -f
-    
+
     执行成功后会在以下路径下生成输出件：
     hnpsample公有软件：
     /data/app/el1/bundle/100/hnppublic/hnpsample.org/hnpsample_1.1
@@ -225,11 +227,10 @@ b. 公有hnp软件卸载前会判断该软件是否正在运行，如果正在�
 
     执行成功后观察点和上面命令行执行一致。
   ```
-  
+
   **3. 运行管控**
 
   native包管理功能运行控制，需要在用户开启“开发者模式”场景下才能使用native包管理的安装卸载软件功能，否则命令会执行失败。在PC设备上打开“开发者模式”的方法如下：
   ```
     点击“设置”按钮——》选择“系统和更新”界面——》选择“开发者选项”——》打开“开发者选项”
   ```
-

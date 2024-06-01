@@ -218,7 +218,6 @@ static bool HnpInstallHnpExistCheck(cJSON *hnpItemArr, const char *name, cJSON *
             if ((versionJson != NULL) && (strcmp(versionJson->valuestring, version) == 0)) {
                 return true;
             }
-
         }
     }
 
@@ -232,15 +231,16 @@ static void HnpPackageVersionUpdateAll(cJSON *json, const HnpCfgInfo *hnpCfg)
         cJSON *hnpItemArr = cJSON_GetObjectItem(hapItem, "hnp");
         for (int j = 0; j < cJSON_GetArraySize(hnpItemArr); j++) {
             cJSON *hnpItem = cJSON_GetArrayItem(hnpItemArr, j);
-            if ((cJSON_GetObjectItem(hnpItem, "name") != NULL) &&
-                (strcmp(cJSON_GetObjectItem(hnpItem, "name")->valuestring, hnpCfg->name) == 0)) {
-                cJSON *version = cJSON_GetObjectItem(hnpItem, "version");
-                if (version == NULL) {
-                    break;
-                }
-                cJSON_SetValuestring(version, hnpCfg->version);
+            if ((cJSON_GetObjectItem(hnpItem, "name") == NULL) ||
+                (strcmp(cJSON_GetObjectItem(hnpItem, "name")->valuestring, hnpCfg->name) != 0)) {
+                continue;
+            }
+            cJSON *version = cJSON_GetObjectItem(hnpItem, "version");
+            if (version == NULL) {
                 break;
             }
+            cJSON_SetValuestring(version, hnpCfg->version);
+            break;
         }
     }
 
@@ -308,10 +308,9 @@ static int HnpHapJsonHnpAdd(bool hapExist, cJSON *json, cJSON *hapItem, const ch
     return ret;
 }
 
-int HnpInstallInfoJsonWrite(const NativeHnpPath *hnpDstPath, const HnpCfgInfo *hnpCfg)
+int HnpInstallInfoJsonWrite(const char *hapPackageName, const HnpCfgInfo *hnpCfg)
 {
     bool hapExist = false;
-    bool hnpExist = false;
     int hapIndex = 0;
     int hnpIndex = 0;
     char *infoStream;
@@ -320,15 +319,14 @@ int HnpInstallInfoJsonWrite(const NativeHnpPath *hnpDstPath, const HnpCfgInfo *h
     cJSON *hnpItem = NULL;
     cJSON *json = NULL;
 
-    if ((hnpDstPath == NULL) || (hnpCfg == NULL)) {
+    if ((hapPackageName == NULL) || (hnpCfg == NULL)) {
         return HNP_ERRNO_BASE_PARAMS_INVALID;
     }
 
     int ret = ReadFileToStream(HNP_PACKAGE_INFO_JSON_FILE_PATH, &infoStream, &size);
     if (ret != 0) {
         if ((ret == HNP_ERRNO_BASE_FILE_OPEN_FAILED) || (ret == HNP_ERRNO_BASE_GET_FILE_LEN_NULL)) {
-            json = cJSON_CreateArray();
-            if (json == NULL) {
+            if ((json = cJSON_CreateArray()) == NULL) {
                 HNP_LOGE("hnp json write array create unsuccess");
                 return HNP_ERRNO_BASE_JSON_ARRAY_CREATE_FAILED;
             }
@@ -343,12 +341,12 @@ int HnpInstallInfoJsonWrite(const NativeHnpPath *hnpDstPath, const HnpCfgInfo *h
             HNP_LOGE("hnp json write parse json file unsuccess.");
             return HNP_ERRNO_BASE_PARSE_JSON_FAILED;
         }
-        hapExist = HnpInstallHapExistCheck(hnpDstPath->hnpPackageName, json, &hapItem, &hapIndex);
+        hapExist = HnpInstallHapExistCheck(hapPackageName, json, &hapItem, &hapIndex);
     }
 
     if (hapExist) {
         cJSON *hnpItemArr = cJSON_GetObjectItem(hapItem, "hnp");
-        hnpExist = HnpInstallHnpExistCheck(hnpItemArr, hnpCfg->name, &hnpItem, &hnpIndex, NULL);
+        bool hnpExist = HnpInstallHnpExistCheck(hnpItemArr, hnpCfg->name, &hnpItem, &hnpIndex, NULL);
         if (hnpExist) {
             cJSON *versionJson = cJSON_GetObjectItem(hnpItem, "version");
             if (versionJson != NULL) {
@@ -361,7 +359,7 @@ int HnpInstallInfoJsonWrite(const NativeHnpPath *hnpDstPath, const HnpCfgInfo *h
         }
     }
 
-    ret = HnpHapJsonHnpAdd(hapExist, json, hapItem, hnpDstPath->hnpPackageName, hnpCfg);
+    ret = HnpHapJsonHnpAdd(hapExist, json, hapItem, hapPackageName, hnpCfg);
     cJSON_Delete(json);
     return ret;
 }
@@ -440,7 +438,6 @@ int HnpPackageInfoGet(const char *packageName, HnpPackageInfo **packageInfoOut, 
 
     cJSON *hapItem = NULL;
     hapExist = HnpInstallHapExistCheck(packageName, json, &hapItem, &hapIndex);
-
     if (!hapExist) {
         cJSON_Delete(json);
         return 0;
@@ -559,7 +556,7 @@ static char *HnpInstallHnpVersionGet(cJSON *hnpItemArr, const char *name)
         cJSON *hnpItem = cJSON_GetArrayItem(hnpItemArr, i);
         if ((cJSON_GetObjectItem(hnpItem, "name") != NULL) &&
             (cJSON_GetObjectItem(hnpItem, "version") != NULL) &&
-            (strcmp(cJSON_GetObjectItem(hnpItem, "name")->valuestring, name) == 0) ) {
+            (strcmp(cJSON_GetObjectItem(hnpItem, "name")->valuestring, name) == 0)) {
             return cJSON_GetObjectItem(hnpItem, "version")->valuestring;
         }
     }

@@ -22,21 +22,23 @@
 #include <stdbool.h>
 
 #include "securec.h"
+#include "hilog/log.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#ifndef MAX_FILE_PATH_LEN
 #define MAX_FILE_PATH_LEN PATH_MAX
+#endif
 
 #define HNP_VERSION_LEN 32
 #define BUFFER_SIZE 1024
-#define HNP_COMMAND_LEN 128
-#define MAX_PROCESSES 32
 #define MAX_PACKAGE_HNP_NUM 256
 
 #define HNP_CFG_FILE_NAME "hnp.json"
 #define HNP_PACKAGE_INFO_JSON_FILE_PATH "/data/service/el1/startup/hnp_info.json"
+#define HNP_ELF_FILE_CHECK_HEAD_LEN 4
 
 #ifdef _WIN32
 #define DIR_SPLIT_SYMBOL '\\'
@@ -64,14 +66,6 @@ typedef struct HnpPackageInfoStru {
     char version[HNP_VERSION_LEN];    // Native软件包版本号
 } HnpPackageInfo;
 
-typedef struct NativeHnpPathStru {
-    char *hnpPackageName;
-    char hnpBasePath[MAX_FILE_PATH_LEN]; // hnp安装基础路径,public为 xxx/{uid}/hnppublic,private为xxx/{uid}/hnp/{hap}
-    char hnpSoftwarePath[MAX_FILE_PATH_LEN]; // 软件安装路径，为hnpBasePath/{name}.org/
-    char hnpVersionPath[MAX_FILE_PATH_LEN]; // 软件安装版本路径，为hnpBasePath/{name}.org/{name}_{version}
-    int uid;
-} NativeHnpPath;
-
 /* 日志级别 */
 typedef enum  {
     HNP_LOG_INFO    = 0,
@@ -80,6 +74,12 @@ typedef enum  {
     HNP_LOG_DEBUG   = 3,
     HNP_LOG_BUTT
 } HNP_LOG_LEVEL_E;
+
+/* 安装验签 */
+typedef struct HnpSignMapInfoStru {
+    char key[MAX_FILE_PATH_LEN];
+    char value[MAX_FILE_PATH_LEN];
+} HnpSignMapInfo;
 
 /* 数字索引 */
 enum {
@@ -207,6 +207,9 @@ enum {
 // 0x80111e 创建json数组失败
 #define HNP_ERRNO_BASE_JSON_ARRAY_CREATE_FAILED HNP_ERRNO_COMMON(HNP_MID_BASE, 0x1e)
 
+// 0x80111f 获取文件属性失败
+#define HNP_ERRNO_BASE_STAT_FAILED              HNP_ERRNO_COMMON(HNP_MID_BASE, 0x1f)
+
 int GetFileSizeByHandle(FILE *file, int *size);
 
 int ReadFileToStream(const char *filePath, char **stream, int *streamLen);
@@ -217,7 +220,8 @@ int GetRealPath(char *srcPath, char *realPath);
 
 int HnpZip(const char *inputDir, const char *outputFile);
 
-int HnpUnZip(const char *inputFile, const char *outputDir);
+int HnpUnZip(const char *inputFile, const char *outputDir, const char *hnpSignKeyPrefix,
+    HnpSignMapInfo *hnpSignMapInfos, int *count);
 
 int HnpAddFileToZip(char *zipfile, char *filename, char *buff, int size);
 
@@ -241,7 +245,7 @@ int GetHnpJsonBuff(HnpCfgInfo *hnpCfg, char **buff);
 
 int HnpCfgGetFromSteam(char *cfgStream, HnpCfgInfo *hnpCfg);
 
-int HnpInstallInfoJsonWrite(const NativeHnpPath *hnpDstPath, const HnpCfgInfo *hnpCfg);
+int HnpInstallInfoJsonWrite(const char *hapPackageName, const HnpCfgInfo *hnpCfg);
 
 int HnpPackageInfoGet(const char *packageName, HnpPackageInfo **packageInfoOut, int *count);
 
@@ -251,11 +255,15 @@ int HnpPackageInfoDelete(const char *packageName);
 
 char *HnpPackgeHnpVersionGet(const char *packageName, const char *name);
 
-#define HNP_LOGI(args...) \
-    HnpLogPrintf(HNP_LOG_INFO, "HNP", ##args)
+int HnpFileCountGet(const char *path, int *count);
 
-#define HNP_LOGE(args...) \
-    HnpLogPrintf(HNP_LOG_ERROR, "HNP", ##args)
+#define HNP_LOGI(args, ...) \
+    HILOG_INFO(LOG_CORE, "[%{public}s:%{public}d]" args, (__FILE_NAME__), (__LINE__), ##__VA_ARGS__); \
+    HnpLogPrintf(HNP_LOG_INFO, "HNP", args, ##__VA_ARGS__)
+
+#define HNP_LOGE(args, ...) \
+    HILOG_ERROR(LOG_CORE, "[%{public}s:%{public}d]" args, (__FILE_NAME__), (__LINE__), ##__VA_ARGS__); \
+    HnpLogPrintf(HNP_LOG_ERROR, "HNP", args, ##__VA_ARGS__)
 
 #ifdef __cplusplus
 }
