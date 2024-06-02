@@ -807,6 +807,21 @@
                     "sandbox-flags": [ "bind", "rec" ]
                 }
             ]
+        }],
+        "ohos.permission.ACCESS_RINGTONE_RESOURCE":[{
+            "sandbox-switch": "ON",
+            "gids": [1008],
+            "mount-paths": [{
+                    "src-path": "/storage/media/<currentUserId>/local/files",
+                    "sandbox-path": "/storage/media/local/files",
+                    "sandbox-flags": [ "bind", "rec" ]
+                },
+                {
+                    "src-path": "/storage/media/<currentUserId>/local/files/Ringtone",
+                    "sandbox-path": "/storage/media/local/files/Ringtone",
+                    "sandbox-flags": [ "bind", "rec" ]
+                }
+            ]
         }]
     }]
 }
