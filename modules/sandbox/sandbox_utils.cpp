@@ -354,7 +354,9 @@ static std::string ReplaceVariablePackageName(const AppSpawningCtx *appProperty,
         reinterpret_cast<AppSpawnMsgBundleInfo *>(GetAppProperty(appProperty, TLV_BUNDLE_INFO));
     APPSPAWN_CHECK(bundleInfo != NULL, return "", "No bundle info in msg %{public}s", GetBundleName(appProperty));
 
-    uint32_t flags = CheckAppSpawnMsgFlag(appProperty->message, TLV_MSG_FLAGS, APP_FLAGS_CLONE_ENABLE) ? 1 : 0;
+    uint32_t flags = (CheckAppSpawnMsgFlag(appProperty->message, TLV_MSG_FLAGS, APP_FLAGS_CLONE_ENABLE) &&
+        bundleInfo->bundleIndex > 0) ? 1 : 0;
+    flags |= CheckAppSpawnMsgFlag(appProperty->message, TLV_MSG_FLAGS, APP_FLAGS_EXTENSION_SANDBOX) ? 0x2 : 0;
     char *extension = reinterpret_cast<char *>(
         GetAppSpawnMsgExtInfo(appProperty->message, MSG_EXT_NAME_APP_EXTENSION, NULL));
     std::ostringstream variablePackageName;
@@ -1175,11 +1177,6 @@ int32_t SandboxUtils::MountAllGroup(const AppSpawningCtx *appProperty, std::stri
         return ret;
     }
 
-    mode_t mountFlags = MS_REC | MS_BIND;
-    if (CheckAppMsgFlagsSet(appProperty, APP_FLAGS_ISOLATED_SANDBOX)) {
-        mountFlags = MS_NODEV | MS_RDONLY;
-    }
-
     nlohmann::json groups = nlohmann::json::parse(dataGroupInfo.c_str(), nullptr, false);
     APPSPAWN_CHECK(!groups.is_discarded() && groups.contains(g_groupList_key_dataGroupId)
         && groups.contains(g_groupList_key_gid) && groups.contains(g_groupList_key_dir), return -1,
@@ -1205,7 +1202,13 @@ int32_t SandboxUtils::MountAllGroup(const AppSpawningCtx *appProperty, std::stri
 
         std::string dataGroupUuid = libPhysicalPath.substr(lastPathSplitPos + 1);
         std::string mntPath = sandboxPackagePath + g_sandboxGroupPath + dataGroupUuid;
-        ret = DoAppSandboxMountOnce(libPhysicalPath.c_str(), mntPath.c_str(), "", mountFlags, nullptr);
+        mode_t mountFlags = MS_REC | MS_BIND;
+        mode_t mountSharedFlag = MS_SLAVE;
+        if (CheckAppMsgFlagsSet(appProperty, APP_FLAGS_ISOLATED_SANDBOX)) {
+            mountSharedFlag |= MS_REMOUNT | MS_NODEV | MS_RDONLY | MS_BIND;
+        }
+        ret = DoAppSandboxMountOnce(libPhysicalPath.c_str(), mntPath.c_str(), "", mountFlags, nullptr,
+            mountSharedFlag);
         APPSPAWN_CHECK(ret == 0, return ret, "mount library failed %d", ret);
     }
     return ret;
@@ -1446,7 +1449,7 @@ static inline int EnableSandboxNamespace(AppSpawningCtx *appProperty, uint32_t s
 
     if ((sandboxNsFlags & CLONE_NEWNET) == CLONE_NEWNET) {
         rc = EnableNewNetNamespace();
-        APPSPAWN_CHECK(rc == 0, return rc, "Set new netnamespace failed %{public}s", GetBundleName(appProperty));
+        APPSPAWN_CHECK(rc == 0, return 0, "Set new netnamespace failed %{public}s", GetBundleName(appProperty));
     }
     return 0;
 }
