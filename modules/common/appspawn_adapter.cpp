@@ -103,6 +103,7 @@ int SetSelinuxCon(const AppSpawnMgr *content, const AppSpawningCtx *property)
     }
     if (CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX)) {
         hapDomainInfo.hapFlags |= SELINUX_HAP_INPUT_ISOLATE;
+        APPSPAWN_LOGI("isolated sandbox hapDomainInfo.hapFlags %{public}d", hapDomainInfo.hapFlags);
     }
     ret = hapContext.HapDomainSetcontext(hapDomainInfo);
     if (CheckAppMsgFlagsSet(property, APP_FLAGS_ASANENABLED)) {
