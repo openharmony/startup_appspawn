@@ -1,6 +1,6 @@
 {
         "msg-type": 0,
-        "msg-flags": [1, 2 ],
+        "msg-flags": [1, 2, 14],
         "process-name" : "com.example.myapplication",
         "pid": 328018,
         "dac-info" : {
@@ -29,12 +29,16 @@
         "render-cmd": "1234567890",
         "domain-info": {
                 "hap-flags": 0,
-                "apl": "system_core"
+                "apl": "normal"
         },
         "ext-info": [
                 {
                         "name": "hiplist",
                         "value": "{ \"bundles\": [\"test.bundle1\", \"test.bundle2\"],\"modules\":[\"module1\", \"module2\"],\"versions\":[\"v10001\", \"v10002\"] }"
+                },
+                {
+                        "name": "ProvisionType",
+                        "value": "debug"
                 }
         ]
 }
