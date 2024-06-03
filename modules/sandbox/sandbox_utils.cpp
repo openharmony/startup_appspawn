@@ -30,12 +30,17 @@
 
 #include "appspawn_hook.h"
 #include "appspawn_mount_permission.h"
+#include "appspawn_msg.h"
 #include "appspawn_server.h"
 #include "appspawn_service.h"
 #include "config_policy_utils.h"
 #include "init_param.h"
 #include "parameter.h"
 #include "securec.h"
+
+#ifdef WITH_SELINUX
+#include "hap_restorecon.h"
+#endif
 
 #define MAX_MOUNT_TIME 500  // 500us
 
@@ -47,6 +52,8 @@ namespace AppSpawn {
 namespace {
     constexpr int32_t FUSE_OPTIONS_MAX_LEN = 256;
     constexpr int32_t DLP_FUSE_FD = 1000;
+    constexpr int32_t APP_LOG_DIR_GID = 1007;
+    constexpr int32_t APP_DATABASE_DIR_GID = 3012;
     constexpr static mode_t FILE_MODE = 0711;
     constexpr static mode_t BASIC_MOUNT_FLAGS = MS_REC | MS_BIND;
     constexpr std::string_view APL_SYSTEM_CORE("system_core");
@@ -347,6 +354,53 @@ unsigned long SandboxUtils::GetMountFlagsFromConfig(const std::vector<std::strin
     return mountFlags;
 }
 
+static void MakeAtomicServiceDir(const AppSpawningCtx *appProperty, std::string path)
+{
+    struct stat st = {};
+    if (stat(path.c_str(), &st) == 0 && S_ISDIR(st.st_mode)) {
+        return;
+    }
+    int ret = mkdir(path.c_str(), S_IRWXU);
+    APPSPAWN_CHECK(ret == 0, return, "mkdir %{public}s failed, errno %{public}d", path.c_str(), errno);
+
+    if (path.find("/database") != std::string::npos) {
+        ret = chmod(path.c_str(), S_IRWXU | S_IRWXG | S_ISGID);
+    } else if (path.find("/log") != std::string::npos) {
+        ret = chmod(path.c_str(), S_IRWXU | S_IRWXG);
+    }
+    APPSPAWN_CHECK(ret == 0, return, "chmod %{public}s failed, errno %{public}d", path.c_str(), errno);
+
+#ifdef WITH_SELINUX
+    AppSpawnMsgDomainInfo *msgDomainInfo =
+        reinterpret_cast<AppSpawnMsgDomainInfo *>(GetAppProperty(appProperty, TLV_DOMAIN_INFO));
+    APPSPAWN_CHECK(msgDomainInfo != NULL, return, "No domain info for %{public}s", GetProcessName(appProperty));
+    HapContext hapContext;
+    HapFileInfo hapFileInfo;
+    hapFileInfo.pathNameOrig.push_back(path);
+    hapFileInfo.apl = msgDomainInfo->apl;
+    hapFileInfo.packageName = GetProcessName(appProperty);
+    hapFileInfo.hapFlags = msgDomainInfo->hapFlags;
+    if (CheckAppMsgFlagsSet(appProperty, APP_FLAGS_DEBUGGABLE)) {
+        hapFileInfo.hapFlags |= SELINUX_HAP_DEBUGGABLE;
+    }
+    if ((path.find("/base") != std::string::npos) || (path.find("/database") != std::string::npos)) {
+        ret = hapContext.HapFileRestorecon(hapFileInfo);
+        APPSPAWN_CHECK(ret == 0, return, "set dir %{public}s selinuxLabel failed, apl %{public}s, ret %{public}d",
+            path.c_str(), hapFileInfo.apl.c_str(), ret);
+    }
+#endif
+    AppSpawnMsgDacInfo *dacInfo = reinterpret_cast<AppSpawnMsgDacInfo *>(GetAppProperty(appProperty, TLV_DAC_INFO));
+    if (path.find("/base") != std::string::npos) {
+        ret = chown(path.c_str(), dacInfo->uid, dacInfo->gid);
+    } else if (path.find("/database") != std::string::npos) {
+        ret = chown(path.c_str(), dacInfo->uid, APP_DATABASE_DIR_GID);
+    } else if (path.find("/log") != std::string::npos) {
+        ret = chown(path.c_str(), dacInfo->uid, APP_LOG_DIR_GID);
+    }
+    APPSPAWN_CHECK(ret == 0, return, "chown %{public}s failed, errno %{public}d", path.c_str(), errno);
+    return;
+}
+
 static std::string ReplaceVariablePackageName(const AppSpawningCtx *appProperty, const std::string &path)
 {
     std::string tmpSandboxPath = path;
@@ -354,17 +408,21 @@ static std::string ReplaceVariablePackageName(const AppSpawningCtx *appProperty,
         reinterpret_cast<AppSpawnMsgBundleInfo *>(GetAppProperty(appProperty, TLV_BUNDLE_INFO));
     APPSPAWN_CHECK(bundleInfo != NULL, return "", "No bundle info in msg %{public}s", GetBundleName(appProperty));
 
-    uint32_t flags = (CheckAppSpawnMsgFlag(appProperty->message, TLV_MSG_FLAGS, APP_FLAGS_CLONE_ENABLE) &&
-        bundleInfo->bundleIndex > 0) ? 1 : 0;
-    flags |= CheckAppSpawnMsgFlag(appProperty->message, TLV_MSG_FLAGS, APP_FLAGS_EXTENSION_SANDBOX) ? 0x2 : 0;
-    char *extension = reinterpret_cast<char *>(
-        GetAppSpawnMsgExtInfo(appProperty->message, MSG_EXT_NAME_APP_EXTENSION, NULL));
+    char *extension;
+    uint32_t flags = CheckAppSpawnMsgFlag(appProperty->message, TLV_MSG_FLAGS, APP_FLAGS_ATOMIC_SERVICE) ? 0x4 : 0;
+    if (flags == 0) {
+        flags = (CheckAppSpawnMsgFlag(appProperty->message, TLV_MSG_FLAGS, APP_FLAGS_CLONE_ENABLE) &&
+            bundleInfo->bundleIndex > 0) ? 0x1 : 0;
+        flags |= CheckAppSpawnMsgFlag(appProperty->message, TLV_MSG_FLAGS, APP_FLAGS_EXTENSION_SANDBOX) ? 0x2 : 0;
+        extension = reinterpret_cast<char *>(
+            GetAppSpawnMsgExtInfo(appProperty->message, MSG_EXT_NAME_APP_EXTENSION, NULL));
+    }
     std::ostringstream variablePackageName;
     switch (flags) {
-        case 0:  // default,
+        case 0:    // 0 default
             variablePackageName << bundleInfo->bundleName;
             break;
-        case 1:  // 1 +clone-bundleIndex+packageName
+        case 1:    // 1 +clone-bundleIndex+packageName
             variablePackageName << "+clone-" << bundleInfo->bundleIndex << "+" << bundleInfo->bundleName;
             break;
         case 2: {  // 2 +extension-<extensionType>+packageName
@@ -376,6 +434,14 @@ static std::string ReplaceVariablePackageName(const AppSpawningCtx *appProperty,
             APPSPAWN_CHECK(extension != NULL, return "", "Invalid extension data ");
             variablePackageName << "+clone-" << bundleInfo->bundleIndex << "+extension" << "-" <<
                 extension << "+" << bundleInfo->bundleName;
+            break;
+        }
+        case 4: {  // 4 +auid-<accountId>+packageName
+            std::string accountId = SandboxUtils::GetExtraInfoByType(appProperty, MSG_EXT_NAME_ACCOUNT_ID);
+            variablePackageName << "+auid-" << accountId << "+" << bundleInfo->bundleName;
+            std::string atomicServicePath = path;
+            atomicServicePath = replace_all(atomicServicePath, g_variablePackageName, variablePackageName.str());
+            MakeAtomicServiceDir(appProperty, atomicServicePath);
             break;
         }
         default:
@@ -412,23 +478,7 @@ string SandboxUtils::ConvertToRealPath(const AppSpawningCtx *appProperty, std::s
     }
 
     if (path.find(g_variablePackageName) != std::string::npos) {
-        std::string variablePackageName = info->bundleName;
-        std::string oldPath = path;
-        oldPath = replace_all(oldPath, g_variablePackageName, variablePackageName);
-        if (!CheckAppSpawnMsgFlag(appProperty->message, TLV_MSG_FLAGS, APP_FLAGS_ATOMIC_SERVICE) ||
-            !CheckDirRecursive(oldPath)) {
-            return ReplaceVariablePackageName(appProperty, path);
-        }
-        std::string accountId = GetExtraInfoByType(appProperty, MSG_EXT_NAME_ACCOUNT_ID);
-        if (accountId.length() != 0) {
-            variablePackageName += "/" + accountId;
-            path = replace_all(path, g_variablePackageName, variablePackageName);
-            MakeDirRecursive(path, FILE_MODE);
-            int ret = chown(path.c_str(), dacInfo->uid, dacInfo->gid);
-            APPSPAWN_CHECK_ONLY_LOG(ret == 0, "chown failed, path %{public}s, errno %{public}d", path.c_str(), errno);
-            return path;
-        }
-        return ReplaceVariablePackageName(appProperty, path);
+        path = ReplaceVariablePackageName(appProperty, path);
     }
 
     return path;
