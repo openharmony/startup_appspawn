@@ -62,6 +62,23 @@ int SetAppAccessToken(const AppSpawnMgr *content, const AppSpawningCtx *property
     return 0;
 }
 
+int SetSelinuxConNweb(const AppSpawnMgr *content, const AppSpawningCtx *property)
+{
+#ifdef WITH_SELINUX
+    uint32_t len = 0;
+    std::string processType =
+        reinterpret_cast<char *>(GetAppPropertyExt(property, MSG_EXT_NAME_PROCESS_TYPE, &len));
+    int32_t ret;
+    if (processType == "render") {
+        ret = setcon("u:r:isolated_render:s0");
+    } else {
+        ret = setcon("u:r:isolated_gpu:s0");
+    }
+    APPSPAWN_CHECK_ONLY_LOG(ret == 0, "Setcon failed, errno: %{public}d", errno);
+#endif
+    return 0;
+}
+
 int SetSelinuxCon(const AppSpawnMgr *content, const AppSpawningCtx *property)
 {
 #ifdef WITH_SELINUX
@@ -73,23 +90,13 @@ int SetSelinuxCon(const AppSpawnMgr *content, const AppSpawningCtx *property)
         }
         return 0;
     }
-    int32_t ret;
     if (IsNWebSpawnMode(content)) {
-        uint32_t len = 0;
-        std::string processType =
-            reinterpret_cast<char *>(GetAppPropertyExt(property, MSG_EXT_NAME_PROCESS_TYPE, &len));
-        if (processType == "render") {
-            ret = setcon("u:r:isolated_render:s0");
-        } else {
-            ret = setcon("u:r:isolated_gpu:s0");
-        }
-        APPSPAWN_CHECK_ONLY_LOG(ret == 0, "Setcon failed, errno: %{public}d", errno);
-        return 0;
+        return SetSelinuxConNweb(content, property);
     }
     AppSpawnMsgDomainInfo *msgDomainInfo =
         reinterpret_cast<AppSpawnMsgDomainInfo *>(GetAppProperty(property, TLV_DOMAIN_INFO));
     APPSPAWN_CHECK(msgDomainInfo != NULL, return APPSPAWN_TLV_NONE,
-        "No domain info in req form %{public}s", GetProcessName(property))
+        "No domain info in req form %{public}s", GetProcessName(property));
     HapContext hapContext;
     HapDomainInfo hapDomainInfo;
     hapDomainInfo.apl = msgDomainInfo->apl;
@@ -103,9 +110,8 @@ int SetSelinuxCon(const AppSpawnMgr *content, const AppSpawningCtx *property)
     }
     if (CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX)) {
         hapDomainInfo.hapFlags |= SELINUX_HAP_INPUT_ISOLATE;
-        APPSPAWN_LOGI("isolated sandbox hapDomainInfo.hapFlags %{public}d", hapDomainInfo.hapFlags);
     }
-    ret = hapContext.HapDomainSetcontext(hapDomainInfo);
+    int32_t ret = hapContext.HapDomainSetcontext(hapDomainInfo);
     if (CheckAppMsgFlagsSet(property, APP_FLAGS_ASANENABLED)) {
         ret = 0;
     }
