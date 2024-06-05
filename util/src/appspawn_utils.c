@@ -422,24 +422,16 @@ uint32_t GetSpawnTimeout(uint32_t def)
 
 int EnableNewNetNamespace(void)
 {
-    int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-    APPSPAWN_CHECK(sockfd >= 0, return APPSPAWN_SYSTEM_ERROR, "Failed to create socket errno %{public}d", errno);
+    int fd = open(DEVICE_VIRTUAL_NET_IO_FLAGS, O_WRONLY);
+    APPSPAWN_CHECK(fd >= 0, return APPSPAWN_SYSTEM_ERROR, "Failed to open file errno %{public}d", errno);
 
-    // enable loop
-    int ret = 0;
-    do {
-        struct ifreq ifr = {};
-        ret = strcpy_s(ifr.ifr_name, sizeof(ifr.ifr_name), "lo");
-        APPSPAWN_CHECK(ret == 0, break, "Failed to copy if name");
+    int ret = write(fd, IFF_LOOPBACK_VALUE, IFF_LOOPBACK_SIZE);
+    if (ret < 0) {
+        APPSPAWN_LOGE("Failed to write to file errno %{public}d", errno);
+    } else {
+        APPSPAWN_LOGI("Successfully enabled new net namespace");
+    }
 
-        ret = ioctl(sockfd, SIOCGIFFLAGS, &ifr);
-        APPSPAWN_CHECK(ret >= 0, break, "ioctl SIOCGIFFLAGS errno %{public}d", errno);
-
-        ifr.ifr_flags |= IFF_UP | IFF_LOOPBACK;
-        ret = ioctl(sockfd, SIOCSIFFLAGS, &ifr);
-        APPSPAWN_CHECK(ret >= 0, break, "ioctl SIOCSIFFLAGS errno %{public}d", errno);
-    } while (0);
-    close(sockfd);
-    APPSPAWN_LOGV("Enable network namespace result %{public}d", ret);
-    return ret;
+    close(fd);
+    return (ret >= 0) ? 0 : APPSPAWN_SYSTEM_ERROR;
 }
