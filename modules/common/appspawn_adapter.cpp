@@ -31,7 +31,6 @@
 #ifdef WITH_SECCOMP
 #include "seccomp_policy.h"
 #include <sys/prctl.h>
-const char *RENDERER_NAME = "renderer";
 #endif
 #define MSG_EXT_NAME_PROCESS_TYPE "ProcessType"
 #define NWEBSPAWN_SERVER_NAME "nwebspawn"
@@ -147,6 +146,11 @@ int SetSeccompFilter(const AppSpawnMgr *content, const AppSpawningCtx *property)
             return 0;
         }
     }
+
+    if (CheckAppSpawnMsgFlag(property->message, TLV_MSG_FLAGS, APP_FLAGS_ISOLATED_SANDBOX) != 0) {
+        appName = IMF_EXTENTOIN_NAME;
+    }
+
     if (!SetSeccompPolicyWithName(type, appName)) {
         APPSPAWN_LOGE("Failed to set %{public}s seccomp filter and exit %{public}d", appName, errno);
         return -EINVAL;
