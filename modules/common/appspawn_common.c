@@ -256,6 +256,8 @@ static int SetUidGid(const AppSpawnMgr *content, const AppSpawningCtx *property)
         if (prctl(PR_SET_DUMPABLE, 1, 0, 0, 0) == -1) {
             APPSPAWN_LOGE("Failed to set app dumpable: %{public}s", strerror(errno));
         }
+    } else {
+        setenv("HAP_DEBUGGABLE", "false", 1);
     }
     return 0;
 }
