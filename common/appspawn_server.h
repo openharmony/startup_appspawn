@@ -41,6 +41,9 @@ typedef struct AppSpawnContent {
     char *longProcName;
     uint32_t longProcNameLen;
     uint32_t sandboxNsFlags;
+#ifdef USE_ENCAPS
+    int fdEncaps;
+#endif
     RunMode mode;
 
     // system
