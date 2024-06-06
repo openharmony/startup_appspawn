@@ -69,6 +69,9 @@ Note: If the text contains special characters, please escape them according to t
 	    <filefilter name="defaultPolicyFilter" desc="Files not to compatibility, license header policies">
                 <filteritem type="filename" name="asan.options" desc="file type not support comment"/>
             </filefilter>
+        <filefilter name="binaryFileTypePolicyFilter" desc="Filters for binary file policies">
+            <filteritem type="filename" name="*.jpg|*.png|*.gif|*.pdf" desc="already checked"/>
+        </filefilter>
         </filefilterlist>
     </oatconfig>
 </configuration>
