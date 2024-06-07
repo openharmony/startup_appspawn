@@ -56,7 +56,7 @@ static const std::string g_defaultAppInfo = "{ \
     },\
     \"permission\" : [\
             \"ohos.permission.READ_IMAGEVIDEO\",\
-            \"ohos.permission.FILE_CROSS_APP\",\
+            \"ohos.permission.ENABLE_FILE_CROSS_APP\",\
             \"ohos.permission.ACTIVATE_THEME_PACKAGE\"\
     ],\
     \"internet-permission\" : {\
