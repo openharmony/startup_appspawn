@@ -1244,11 +1244,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_42, TestSize.Level0)
 
     std::string fsType = OHOS::AppSpawn::SandboxUtils::GetSandboxFsType(j_secondConfig);
     int ret = strcmp(fsType.c_str(), "sharefs");
-    if (SandboxUtils::deviceTypeEnable_ == true) {
-        EXPECT_EQ(ret, 0);
-    } else {
-        EXPECT_NE(ret, 0);
-    }
+    EXPECT_EQ(ret, 0);
 
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_42 end";
 }
@@ -1315,11 +1311,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_44, TestSize.Level0)
     std::string section = "permission";
     OHOS::AppSpawn::SandboxUtils::GetSandboxMountConfig(section, j_secondConfig, mountConfig);
     int ret = strcmp(mountConfig.fsType.c_str(), "sharefs");
-    if (SandboxUtils::deviceTypeEnable_ == true) {
-        EXPECT_EQ(ret, 0);
-    } else {
-        EXPECT_NE(ret, 0);
-    }
+    EXPECT_EQ(ret, 0);
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_44 end";
 }
 
