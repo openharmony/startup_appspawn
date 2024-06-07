@@ -112,7 +112,7 @@ namespace {
     const std::string g_sandBoxRootDir = "/mnt/sandbox/";
     const std::string g_ohosRender = "__internal__.com.ohos.render";
     const std::string g_sandBoxRootDirNweb = "/mnt/sandbox/com.ohos.render/";
-    const std::string FILE_CROSS_APP_MODE = "ohos.permission.FILE_CROSS_APP";
+    const std::string ENABLE_FILE_CROSS_APP_MODE = "ohos.permission.ENABLE_FILE_CROSS_APP";
     const std::string FILE_ACCESS_COMMON_DIR_MODE = "ohos.permission.FILE_ACCESS_COMMON_DIR";
     const std::string ACCESS_DLP_FILE_MODE = "ohos.permission.ACCESS_DLP_FILE";
 }
@@ -1478,7 +1478,7 @@ int32_t SandboxUtils::SetAppSandboxProperty(AppSpawningCtx *appProperty, uint32_
 
     int index = 0;
     if (CheckAppFullMountEnable()) {
-        index = GetPermissionIndex(nullptr, FILE_CROSS_APP_MODE.c_str());
+        index = GetPermissionIndex(nullptr, ENABLE_FILE_CROSS_APP_MODE.c_str());
     } else {
         index = GetPermissionIndex(nullptr, FILE_ACCESS_COMMON_DIR_MODE.c_str());
     }
