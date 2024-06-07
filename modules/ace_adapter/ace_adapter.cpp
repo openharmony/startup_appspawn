@@ -128,6 +128,15 @@ static void LoadExtendLib(void)
     APPSPAWN_LOGI("LoadExtendLib: End preload JS VM");
 }
 
+static void LoadExtendCJLib(void)
+{
+    const char *acelibdir = OHOS::Ace::AceForwardCompatibility::GetAceLibName();
+    APPSPAWN_LOGI("LoadExtendLib: Start calling dlopen acelibdir.");
+    void *aceAbilityLib = dlopen(acelibdir, RTLD_NOW | RTLD_LOCAL);
+    APPSPAWN_CHECK(aceAbilityLib != nullptr, return, "Fail to dlopen %{public}s, [%{public}s]", acelibdir, dlerror());
+    APPSPAWN_LOGI("LoadExtendLib: Success to dlopen %{public}s", acelibdir);
+}
+
 static int RunChildThread(const AppSpawnMgr *content, const AppSpawningCtx *property)
 {
     AppSpawnEnvClear((AppSpawnContent *)&content->content, (AppSpawnClient *)&property->client);
@@ -195,6 +204,7 @@ static int PreLoadAppSpawn(AppSpawnMgr *content)
     // register
     RegChildLooper(&content->content, RunChildProcessor);
     if (strcmp(content->content.longProcName, CJAPPSPAWN_SERVER_NAME) == 0) {
+        LoadExtendCJLib();
         return 0;
     }
     LoadExtendLib();
