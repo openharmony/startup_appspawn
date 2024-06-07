@@ -45,6 +45,11 @@ if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
       "hilog:libhilog",
       "init:libbegetutil",
     ]
+    if (build_selinux) {
+      defines += [ "WITH_SELINUX" ]
+      external_deps += [ "selinux_adapter:libhap_restorecon" ]
+    }
+
     subsystem_name = "${subsystem_name}"
     part_name = "${part_name}"
     install_enable = true
@@ -87,6 +92,10 @@ if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
       "init:libbegetutil",
       "json:nlohmann_json_static",
     ]
+    if (build_selinux) {
+      defines += [ "WITH_SELINUX" ]
+      external_deps += [ "selinux_adapter:libhap_restorecon" ]
+    }
 
     subsystem_name = "${subsystem_name}"
     part_name = "${part_name}"
