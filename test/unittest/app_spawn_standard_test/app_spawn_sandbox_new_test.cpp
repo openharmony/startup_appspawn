@@ -342,7 +342,7 @@ static int TestParseAppSandboxConfig(AppSpawnSandboxCfg *sandbox, const char *bu
 {
     cJSON *config = cJSON_Parse(buffer);
     if (config == nullptr) {
-        APPSPAWN_LOGE("TestParseAppSandboxConfig config %s", buffer);
+        APPSPAWN_LOGE("TestParseAppSandboxConfig config %{public}s", buffer);
         return -1;
     }
     int ret = 0;
@@ -1285,7 +1285,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_mount_003, TestSize.Level0)
 
         PathMountNode *pathNode = reinterpret_cast<PathMountNode *>(GetFirstSandboxMountPathNode(section));
         pathNode->checkErrorFlag = 1;  // 设置错误检查
-        APPSPAWN_LOGV("pathNode %s => %s \n", pathNode->source, pathNode->target);
+        APPSPAWN_LOGV("pathNode %{public}s => %{public}s \n", pathNode->source, pathNode->target);
         // set check point
         MountArg args = {};
         args.originPath = "/config";
