@@ -1259,7 +1259,7 @@ int32_t SandboxUtils::MountAllGroup(const AppSpawningCtx *appProperty, std::stri
         }
         ret = DoAppSandboxMountOnce(libPhysicalPath.c_str(), mntPath.c_str(), "", mountFlags, nullptr,
             mountSharedFlag);
-        APPSPAWN_CHECK(ret == 0, return ret, "mount library failed %d", ret);
+        APPSPAWN_CHECK(ret == 0, return ret, "mount library failed %{public}d", ret);
     }
     return ret;
 }
@@ -1408,7 +1408,7 @@ int32_t SandboxUtils::SetOverlayAppSandboxProperty(const AppSpawningCtx *appProp
         int32_t retMount = DoAppSandboxMountOnce(srcPath.c_str(), destPath.c_str(),
                                                  nullptr, BASIC_MOUNT_FLAGS, nullptr);
         if (retMount != 0) {
-            APPSPAWN_LOGE("fail to mount overlay path, src is %s.", hapPath.c_str());
+            APPSPAWN_LOGE("fail to mount overlay path, src is %{public}s.", hapPath.c_str());
             ret = retMount;
         }
 
@@ -1458,11 +1458,11 @@ int32_t SandboxUtils::SetSandboxProperty(AppSpawningCtx *appProperty, std::strin
                    bundleName.c_str());
 
     ret = SetOverlayAppSandboxProperty(appProperty, sandboxPackagePath);
-    APPSPAWN_CHECK(ret == 0, return ret, "SetOverlayAppSandboxProperty failed, packagename is %s",
+    APPSPAWN_CHECK(ret == 0, return ret, "SetOverlayAppSandboxProperty failed, packagename is %{public}s",
                    bundleName.c_str());
 
     ret = SetBundleResourceAppSandboxProperty(appProperty, sandboxPackagePath);
-    APPSPAWN_CHECK(ret == 0, return ret, "SetBundleResourceAppSandboxProperty failed, packagename is %s",
+    APPSPAWN_CHECK(ret == 0, return ret, "SetBundleResourceAppSandboxProperty failed, packagename is %{public}s",
                    bundleName.c_str());
     APPSPAWN_LOGI("Set appsandbox property success");
     return ret;
@@ -1590,11 +1590,11 @@ int32_t SandboxUtils::SetAppSandboxPropertyNweb(AppSpawningCtx *appProperty, uin
         sandboxPackagePath.c_str());
 
     rc = SetOverlayAppSandboxProperty(appProperty, sandboxPackagePath);
-    APPSPAWN_CHECK(rc == 0, return rc, "SetOverlayAppSandboxProperty failed, packagename is %s",
+    APPSPAWN_CHECK(rc == 0, return rc, "SetOverlayAppSandboxProperty failed, packagename is %{public}s",
         bundleName.c_str());
 
     rc = SetBundleResourceAppSandboxProperty(appProperty, sandboxPackagePath);
-    APPSPAWN_CHECK(rc == 0, return rc, "SetBundleResourceAppSandboxProperty failed, packagename is %s",
+    APPSPAWN_CHECK(rc == 0, return rc, "SetBundleResourceAppSandboxProperty failed, packagename is %{public}s",
         bundleName.c_str());
 
 #ifndef APPSPAWN_TEST

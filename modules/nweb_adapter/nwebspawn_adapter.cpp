@@ -113,8 +113,8 @@ static int RunChildProcessor(AppSpawnContent *content, AppSpawnClient *client)
         return -1;
     }
     AppSpawnEnvClear(content, client);
-    funcNWebRenderMain(renderStr.c_str());
     APPSPAWN_LOGI("RunChildProcessorNweb %{public}s", renderStr.c_str());
+    funcNWebRenderMain(renderStr.c_str());
     return 0;
 }
 

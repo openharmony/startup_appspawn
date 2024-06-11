@@ -89,7 +89,7 @@ HWTEST(AppSpawnCGroupTest, App_Spawn_CGroup_001, TestSize.Level0)
         APPSPAWN_CHECK(appInfo != nullptr, break, "Failed to create appInfo");
         char path[PATH_MAX] = {};
         ret = GetCgroupPath(appInfo, path, sizeof(path));
-        APPSPAWN_CHECK(ret == 0, break, "Failed to get real path errno: %d", errno);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to get real path errno: %{public}d", errno);
         APPSPAWN_CHECK(strstr(path, "200") != nullptr && strstr(path, "33") != nullptr && strstr(path, name) != nullptr,
             break, "Invalid path: %s", path);
         ret = 0;
@@ -133,7 +133,7 @@ HWTEST(AppSpawnCGroupTest, App_Spawn_CGroup_002, TestSize.Level0)
         pid_t pid = 0;
         ret = -1;
         while (fscanf_s(file, "%d\n", &pid) == 1 && pid > 0) {
-            APPSPAWN_LOGV("pid %d %d", pid, appInfo->pid);
+            APPSPAWN_LOGV("pid %{public}d %{public}d", pid, appInfo->pid);
             if (pid == appInfo->pid) {
                 ret = 0;
                 break;
@@ -319,7 +319,7 @@ HWTEST(AppSpawnCGroupTest, App_Spawn_CGroup_007, TestSize.Level0)
         uint32_t max = 0;
         ret = -1;
         while (fscanf_s(file, "%d\n", &max) == 1 && max > 0) {
-            APPSPAWN_LOGV("max %d %d", max, appInfo->max);
+            APPSPAWN_LOGV("max %{public}d %{public}d", max, appInfo->max);
             if (max == appInfo->max) {
                 ret = 0;
                 break;
