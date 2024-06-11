@@ -36,7 +36,9 @@
 #include "init_utils.h"
 #include "parameter.h"
 #include "securec.h"
-
+#ifdef APPSPAWN_HISYSEVENT
+#include "appspawn_hisysevent.h"
+#endif
 #ifdef USE_ENCAPS
 #include <sys/ioctl.h>
 #endif
@@ -105,6 +107,9 @@ static void StopAppSpawn(void)
     }
     TraversalSpawnedProcess(AppQueueDestroyProc, NULL);
     APPSPAWN_LOGI("StopAppSpawn ");
+#ifdef APPSPAWN_HISYSEVENT
+    AppSpawnHiSysEventWrite();
+#endif
     LE_StopLoop(LE_GetDefaultLoop());
 }
 

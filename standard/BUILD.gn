@@ -20,6 +20,7 @@ config("appspawn_server_config") {
     "${appspawn_path}/common",
     "${appspawn_path}/standard",
     "${appspawn_path}/modules/modulemgr",
+    "${appspawn_path}/modules/sysevent",
   ]
 
   cflags = []
@@ -70,7 +71,11 @@ ohos_executable("appspawn") {
   if (appspawn_use_encaps) {
     defines += [ "USE_ENCAPS" ]
   }
-
+  if (appspawn_report_event) {
+    defines += [ "APPSPAWN_HISYSEVENT" ]
+    external_deps += [ "hisysevent:libhisysevent" ]
+    sources += [ "${appspawn_path}/modules/sysevent/appspawn_hisysevent.cpp" ]
+  }
   if (build_selinux) {
     defines += [ "WITH_SELINUX" ]
     external_deps += [
@@ -164,7 +169,11 @@ ohos_executable("cjappspawn") {
     "hilog:libhilog",
     "init:libbegetutil",
   ]
-
+  if (appspawn_report_event) {
+    defines += [ "APPSPAWN_HISYSEVENT" ]
+    external_deps += [ "hisysevent:libhisysevent" ]
+    sources += [ "${appspawn_path}/modules/sysevent/appspawn_hisysevent.cpp" ]
+  }
   if (build_selinux) {
     defines += [ "WITH_SELINUX" ]
     external_deps += [
