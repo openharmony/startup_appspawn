@@ -1342,11 +1342,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_45, TestSize.Level0)
     OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config);
     std::string options = OHOS::AppSpawn::SandboxUtils::GetSandboxOptions(j_secondConfig);
     int ret = strcmp(options.c_str(), "support_overwrite=1");
-    if (SandboxUtils::deviceTypeEnable_ == true) {
-        EXPECT_EQ(ret, 0);
-    } else {
-        EXPECT_NE(ret, 0);
-    }
+    EXPECT_EQ(ret, 0);
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_45 end";
 }
 }  // namespace OHOS
