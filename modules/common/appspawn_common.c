@@ -56,6 +56,7 @@
 #include "selinux/selinux.h"
 #endif
 
+#define PROVISION_TYPE_DEBUG "debug"
 #define DEVICE_NULL_STR "/dev/null"
 #define BITLEN32 32
 #define PID_NS_INIT_UID 100000  // reserved for pid_ns_init process, avoid app, render proc, etc.
@@ -200,11 +201,11 @@ static int SetXpmConfig(const AppSpawnMgr *content, const AppSpawningCtx *proper
     uint32_t len = 0;
     char *provisionType = GetAppPropertyExt(property, MSG_EXT_NAME_PROVISION_TYPE, &len);
     if (provisionType == NULL || len == 0) {
-        APPSPAWN_LOGE("get provision type failed");
-        return APPSPAWN_ARG_INVALID;
+        APPSPAWN_LOGE("get provision type failed, defaut is %{public}s", PROVISION_TYPE_DEBUG);
+        provisionType = PROVISION_TYPE_DEBUG;
     }
 
-    if (strcmp(provisionType, "debug") == 0) {
+    if (strcmp(provisionType, PROVISION_TYPE_DEBUG) == 0) {
         ret = SetXpmOwnerId(PROCESS_OWNERID_DEBUG, NULL);
     } else if (ownerInfo == NULL) {
         ret = SetXpmOwnerId(PROCESS_OWNERID_COMPAT, NULL);
