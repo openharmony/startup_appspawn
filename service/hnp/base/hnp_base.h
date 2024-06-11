@@ -22,7 +22,10 @@
 #include <stdbool.h>
 
 #include "securec.h"
+
+#ifndef HNP_CLI
 #include "hilog/log.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -257,13 +260,23 @@ char *HnpPackgeHnpVersionGet(const char *packageName, const char *name);
 
 int HnpFileCountGet(const char *path, int *count);
 
+#ifdef HNP_CLI
+#define HNP_LOGI(args, ...) \
+    HnpLogPrintf(HNP_LOG_INFO, "HNP", args, ##__VA_ARGS__)
+#else
 #define HNP_LOGI(args, ...) \
     HILOG_INFO(LOG_CORE, "[%{public}s:%{public}d]" args, (__FILE_NAME__), (__LINE__), ##__VA_ARGS__); \
     HnpLogPrintf(HNP_LOG_INFO, "HNP", args, ##__VA_ARGS__)
+#endif
 
+#ifdef HNP_CLI
+#define HNP_LOGE(args, ...) \
+    HnpLogPrintf(HNP_LOG_ERROR, "HNP", args, ##__VA_ARGS__)
+#else
 #define HNP_LOGE(args, ...) \
     HILOG_ERROR(LOG_CORE, "[%{public}s:%{public}d]" args, (__FILE_NAME__), (__LINE__), ##__VA_ARGS__); \
     HnpLogPrintf(HNP_LOG_ERROR, "HNP", args, ##__VA_ARGS__)
+#endif
 
 #ifdef __cplusplus
 }
