@@ -90,7 +90,11 @@ int SetSelinuxCon(const AppSpawnMgr *content, const AppSpawningCtx *property)
         return 0;
     }
     if (IsNWebSpawnMode(content)) {
+#ifndef APPSPAWN_TEST
         return SetSelinuxConNweb(content, property);
+#else
+        return 0;
+#endif
     }
     AppSpawnMsgDomainInfo *msgDomainInfo =
         reinterpret_cast<AppSpawnMsgDomainInfo *>(GetAppProperty(property, TLV_DOMAIN_INFO));
