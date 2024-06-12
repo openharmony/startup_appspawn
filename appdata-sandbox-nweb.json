@@ -21,6 +21,9 @@
                 "src-path" : "/system/etc",
                 "sandbox-path" : "/system/etc"
             }, {
+                "src-path" : "/system/etc/hosts",
+                "sandbox-path" : "/data/service/el1/network/hosts_user/hosts"
+            }, {
                 "src-path" : "/system/bin",
                 "sandbox-path" : "/system/bin"
             }, {
