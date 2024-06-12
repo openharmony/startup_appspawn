@@ -306,7 +306,7 @@ bool StopAppspawn()
 
 static const std::string defaultAppInfo1 = "{ \
     \"msg-type\": \"MSG_APP_SPAWN\", \
-    \"msg-flags\": [ 13 ], \
+    \"msg-flags\": [ 13, 14 ], \
     \"process-name\" : \"com.example.myapplication\", \
     \"dac-info\" : { \
             \"uid\" : 20010041, \
@@ -337,13 +337,21 @@ static const std::string defaultAppInfo1 = "{ \
             {\
                     \"name\" : \"test\",\
                     \"value\" : \"4444444444444444444\" \
-            } \
+            }, \
+            {\
+                \"name\" : \"ProvisionType\",\
+                \"value\" : \"debug\"\
+            }, \
+            {\
+                \"name\" : \"ProcessType\",\
+                \"value\" : \"render\"\
+            }\
     ]\
 }";
 
 static const std::string defaultAppInfo2 = "{ \
     \"msg-type\": \"MSG_SPAWN_NATIVE_PROCESS\", \
-    \"msg-flags\": [ 13 ], \
+    \"msg-flags\": [ 13, 14 ], \
     \"process-name\" : \"com.example.myapplication\", \
     \"dac-info\" : { \
             \"uid\" : 20010043, \
@@ -374,13 +382,21 @@ static const std::string defaultAppInfo2 = "{ \
             {\
                     \"name\" : \"test\",\
                     \"value\" : \"4444444444444444444\" \
-            } \
+            }, \
+            {\
+                \"name\" : \"ProvisionType\",\
+                \"value\" : \"debug\"\
+            }, \
+            {\
+                \"name\" : \"ProcessType\",\
+                \"value\" : \"render\"\
+            }\
     ]\
 }";
 
 static const std::string defaultAppInfo3 = "{ \
     \"msg-type\": \"MSG_SPAWN_NATIVE_PROCESS\", \
-    \"msg-flags\": [ 13 ], \
+    \"msg-flags\": [ 13, 14 ], \
     \"process-name\" : \"com.example.myapplication\", \
     \"dac-info\" : { \
             \"uid\" : 20010045, \
@@ -411,13 +427,21 @@ static const std::string defaultAppInfo3 = "{ \
             {\
                     \"name\" : \"test\",\
                     \"value\" : \"4444444444444444444\" \
-            } \
+            }, \
+            {\
+                \"name\" : \"ProvisionType\",\
+                \"value\" : \"debug\"\
+            }, \
+            {\
+                \"name\" : \"ProcessType\",\
+                \"value\" : \"render\"\
+            }\
     ]\
 }";
 
 static const std::string defaultAppInfoNoInternetPermission = "{ \
     \"msg-type\": \"MSG_APP_SPAWN\", \
-    \"msg-flags\": [ 13 ], \
+    \"msg-flags\": [ 13, 14 ], \
     \"process-name\" : \"com.example.myapplication\", \
     \"dac-info\" : { \
             \"uid\" : 20010045, \
@@ -444,13 +468,21 @@ static const std::string defaultAppInfoNoInternetPermission = "{ \
             {\
                     \"name\" : \"test\",\
                     \"value\" : \"4444444444444444444\" \
-            } \
+            }, \
+            {\
+                \"name\" : \"ProvisionType\",\
+                \"value\" : \"debug\"\
+            }, \
+            {\
+                \"name\" : \"ProcessType\",\
+                \"value\" : \"render\"\
+            }\
     ]\
 }";
 
 static const std::string defaultAppInfoNoDac = "{ \
     \"msg-type\": \"MSG_APP_SPAWN\", \
-    \"msg-flags\": [ 13 ], \
+    \"msg-flags\": [ 13, 14 ], \
     \"process-name\" : \"com.example.myapplication\", \
     \"access-token\" : {\
             \"accessTokenIdEx\" : 537854093\
@@ -475,13 +507,21 @@ static const std::string defaultAppInfoNoDac = "{ \
             {\
                     \"name\" : \"test\",\
                     \"value\" : \"4444444444444444444\" \
-            } \
+            }, \
+            {\
+                \"name\" : \"ProvisionType\",\
+                \"value\" : \"debug\"\
+            }, \
+            {\
+                \"name\" : \"ProcessType\",\
+                \"value\" : \"render\"\
+            }\
     ]\
 }";
 
 static const std::string defaultAppInfoNoToken = "{ \
     \"msg-type\": \"MSG_APP_SPAWN\", \
-    \"msg-flags\": [ 13 ], \
+    \"msg-flags\": [ 13, 14 ], \
     \"process-name\" : \"com.example.myapplication\", \
     \"dac-info\" : { \
             \"uid\" : 20010043, \
@@ -509,13 +549,21 @@ static const std::string defaultAppInfoNoToken = "{ \
             {\
                     \"name\" : \"test\",\
                     \"value\" : \"4444444444444444444\" \
-            } \
+            }, \
+            {\
+                \"name\" : \"ProvisionType\",\
+                \"value\" : \"debug\"\
+            }, \
+            {\
+                \"name\" : \"ProcessType\",\
+                \"value\" : \"render\"\
+            }\
     ]\
 }";
 
 static const std::string defaultAppInfoNoBundleInfo = "{ \
     \"msg-type\": \"MSG_APP_SPAWN\", \
-    \"msg-flags\": [ 13 ], \
+    \"msg-flags\": [ 13, 14 ], \
     \"process-name\" : \"com.example.myapplication\", \
     \"dac-info\" : { \
             \"uid\" : 20010043, \
@@ -542,13 +590,21 @@ static const std::string defaultAppInfoNoBundleInfo = "{ \
             {\
                     \"name\" : \"test\",\
                     \"value\" : \"4444444444444444444\" \
-            } \
+            }, \
+            {\
+                \"name\" : \"ProvisionType\",\
+                \"value\" : \"debug\"\
+            }, \
+            {\
+                \"name\" : \"ProcessType\",\
+                \"value\" : \"render\"\
+            }\
     ]\
 }";
 
 static const std::string defaultWebInfo1 = "{ \
     \"msg-type\": \"MSG_APP_SPAWN\", \
-    \"msg-flags\": [ 13 ], \
+    \"msg-flags\": [ 13, 14 ], \
     \"process-name\" : \"com.example.myapplication\", \
     \"dac-info\" : { \
             \"uid\" : 1000001, \
@@ -579,7 +635,15 @@ static const std::string defaultWebInfo1 = "{ \
             {\
                     \"name\" : \"test\",\
                     \"value\" : \"4444444444444444444\" \
-            } \
+            }, \
+            {\
+                \"name\" : \"ProvisionType\",\
+                \"value\" : \"debug\"\
+            }, \
+            {\
+                \"name\" : \"ProcessType\",\
+                \"value\" : \"render\"\
+            }\
     ]\
 }";
 
