@@ -57,6 +57,7 @@ ohos_unittest("AppSpawn_ut") {
     "${appspawn_path}/modules/ace_adapter",
     "${appspawn_path}/modules/common",
     "${appspawn_path}/modules/sandbox",
+    "${appspawn_path}/modules/sysevent",
     "${appspawn_innerkits_path}/client",
     "${appspawn_innerkits_path}/include",
     "${appspawn_innerkits_path}/permission",
@@ -174,8 +175,11 @@ ohos_unittest("AppSpawn_ut") {
 
   if (appspawn_report_event) {
     defines += [ "REPORT_EVENT" ]
-    sources += [ "${appspawn_path}/modules/sysevent/event_reporter.cpp" ]
     external_deps += [ "hisysevent:libhisysevent" ]
+    sources += [
+      "${appspawn_path}/modules/sysevent/appspawn_hisysevent.cpp",
+      "${appspawn_path}/modules/sysevent/event_reporter.cpp",
+    ]
   }
 
   if (target_cpu == "arm64" || target_cpu == "x86_64" ||
