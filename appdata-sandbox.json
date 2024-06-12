@@ -114,6 +114,11 @@
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
+                    "src-path" : "/system/etc/hosts",
+                    "sandbox-path" : "/data/service/el1/network/hosts_user/hosts",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
                     "src-path" : "/system/resource",
                     "sandbox-path" : "/system/resource",
                     "sandbox-flags" : [ "bind", "rec" ],
@@ -471,6 +476,11 @@
                 }, {
                     "src-path" : "/system/etc",
                     "sandbox-path" : "/system/etc",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/system/etc/hosts",
+                    "sandbox-path" : "/data/service/el1/network/hosts_user/hosts",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
