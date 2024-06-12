@@ -35,6 +35,7 @@ ohos_unittest("AppSpawn_client_ut") {
     "${appspawn_path}/modules/common",
     "${appspawn_path}/modules/sandbox",
     "${appspawn_path}/modules/module_engine/include",
+    "${appspawn_path}/modules/sysevent",
     "${appspawn_innerkits_path}/client",
     "${appspawn_innerkits_path}/include",
     "${appspawn_innerkits_path}/permission",
@@ -83,6 +84,10 @@ ohos_unittest("AppSpawn_client_ut") {
     "init:libbegetutil",
   ]
 
+  if (appspawn_report_event) {
+    external_deps += [ "hisysevent:libhisysevent" ]
+    sources += [ "${appspawn_path}/modules/sysevent/appspawn_hisysevent.cpp" ]
+  }
   if (build_selinux) {
     defines += [ "WITH_SELINUX" ]
     external_deps += [
