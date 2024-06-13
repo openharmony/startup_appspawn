@@ -72,7 +72,7 @@ private:
                                              std::string &sandboxPackagePath);
     static void DoSandboxChmod(nlohmann::json jsonConfig, std::string &sandboxRoot);
     static int DoAllMntPointsMount(const AppSpawningCtx *appProperty,
-        nlohmann::json &appConfig, const std::string &section = "app-base");
+        nlohmann::json &appConfig, const char *typeName, const std::string &section = "app-base");
     static int DoAllSymlinkPointslink(const AppSpawningCtx *appProperty, nlohmann::json &appConfig);
     static std::string ConvertToRealPath(const AppSpawningCtx *appProperty, std::string path);
     static std::string ConvertToRealPathWithPermission(const AppSpawningCtx *appProperty, std::string path);
@@ -109,11 +109,11 @@ private:
     static bool GetSandboxDacOverrideEnable(nlohmann::json &config);
     static unsigned long GetSandboxMountFlags(nlohmann::json &config);
     static std::string GetSandboxFsType(nlohmann::json &config);
-    static std::string GetSandboxOptions(nlohmann::json &config);
+    static std::string GetSandboxOptions(const AppSpawningCtx *appProperty, nlohmann::json &config);
     static std::string GetSandboxPath(const AppSpawningCtx *appProperty, nlohmann::json &mntPoint,
                                       const std::string &section, std::string sandboxRoot);
-    static void GetSandboxMountConfig(const std::string &section, nlohmann::json &mntPoint,
-                                         SandboxMountConfig &mountConfig);
+    static void GetSandboxMountConfig(const AppSpawningCtx *appProperty, const std::string &section,
+                                      nlohmann::json &mntPoint,SandboxMountConfig &mountConfig);
     static std::vector<nlohmann::json> appSandboxConfig_;
     static bool deviceTypeEnable_;
 };
