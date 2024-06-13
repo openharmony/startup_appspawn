@@ -618,7 +618,7 @@
                 }
             ]
         }],
-        "ohos.permission.ENABLE_FILE_CROSS_APP":[{
+        "ohos.permission.FILE_CROSS_APP":[{
             "sandbox-switch": "ON",
             "gids": [1006],
             "mount-paths": [{

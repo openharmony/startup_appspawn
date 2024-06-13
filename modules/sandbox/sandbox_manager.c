@@ -586,7 +586,7 @@ int SpawnPrepareSandboxCfg(AppSpawnMgr *content, AppSpawningCtx *property)
     APPSPAWN_CHECK(sandbox != NULL, return -1, "Failed to get sandbox for %{public}s", GetProcessName(property));
 
     if (sandbox->appFullMountEnable) {
-        int index = GetPermissionIndexInQueue(&sandbox->permissionQueue, ENABLE_FILE_CROSS_APP_MODE);
+        int index = GetPermissionIndexInQueue(&sandbox->permissionQueue, FILE_CROSS_APP_MODE);
         if (index > 0) {
             SetAppPermissionFlags(property, index);
         }

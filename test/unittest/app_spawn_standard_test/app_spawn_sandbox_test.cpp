@@ -764,7 +764,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_30, TestSize.Level0)
         }] \
     }";
     nlohmann::json j_config3 = nlohmann::json::parse(mJsconfig3.c_str());
-    int ret = OHOS::AppSpawn::SandboxUtils::DoAllMntPointsMount(appProperty, j_config3);
+    int ret = OHOS::AppSpawn::SandboxUtils::DoAllMntPointsMount(appProperty, j_config3, nullptr);
     EXPECT_EQ(ret, 0);
 
     std::string mJsconfig4 = "{ \
@@ -778,7 +778,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_30, TestSize.Level0)
         }] \
     }";
     nlohmann::json j_config4 = nlohmann::json::parse(mJsconfig4.c_str());
-    ret = OHOS::AppSpawn::SandboxUtils::DoAllMntPointsMount(appProperty, j_config4);
+    ret = OHOS::AppSpawn::SandboxUtils::DoAllMntPointsMount(appProperty, j_config4, nullptr);
     DeleteAppSpawningCtx(appProperty);
     EXPECT_EQ(ret, 0);
 }
@@ -803,7 +803,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_31, TestSize.Level0)
         }] \
     }";
     nlohmann::json j_config1 = nlohmann::json::parse(mJsconfig1.c_str());
-    int ret = OHOS::AppSpawn::SandboxUtils::DoAllMntPointsMount(appProperty, j_config1);
+    int ret = OHOS::AppSpawn::SandboxUtils::DoAllMntPointsMount(appProperty, j_config1, nullptr);
     EXPECT_EQ(ret, 0);
 
     std::string mJsconfig2 = "{ \
@@ -826,7 +826,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_31, TestSize.Level0)
     }";
 
     nlohmann::json j_config2 = nlohmann::json::parse(mJsconfig2.c_str());
-    ret = OHOS::AppSpawn::SandboxUtils::DoAllMntPointsMount(appProperty, j_config2);
+    ret = OHOS::AppSpawn::SandboxUtils::DoAllMntPointsMount(appProperty, j_config2, nullptr);
     DeleteAppSpawningCtx(appProperty);
     EXPECT_TRUE(ret != 0);
 }
@@ -1276,7 +1276,8 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_43, TestSize.Level0)
     OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config);
     OHOS::AppSpawn::SandboxUtils::SandboxMountConfig mountConfig;
     std::string section = "common";
-    OHOS::AppSpawn::SandboxUtils::GetSandboxMountConfig(section, j_secondConfig, mountConfig);
+    AppSpawningCtx *appProperty = GetTestAppProperty();
+    OHOS::AppSpawn::SandboxUtils::GetSandboxMountConfig(appProperty, section, j_secondConfig, mountConfig);
     int ret = strcmp(mountConfig.fsType.c_str(), "sharefs");
     EXPECT_EQ(ret, 0);
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_43 end";
@@ -1309,7 +1310,8 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_44, TestSize.Level0)
     OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config);
     OHOS::AppSpawn::SandboxUtils::SandboxMountConfig mountConfig;
     std::string section = "permission";
-    OHOS::AppSpawn::SandboxUtils::GetSandboxMountConfig(section, j_secondConfig, mountConfig);
+    AppSpawningCtx *appProperty = GetTestAppProperty();
+    OHOS::AppSpawn::SandboxUtils::GetSandboxMountConfig(appProperty, section, j_secondConfig, mountConfig);
     int ret = strcmp(mountConfig.fsType.c_str(), "sharefs");
     EXPECT_EQ(ret, 0);
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_44 end";
@@ -1340,8 +1342,9 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_45, TestSize.Level0)
     nlohmann::json j_secondConfig = j_config[mountPath][0];
 
     OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config);
-    std::string options = OHOS::AppSpawn::SandboxUtils::GetSandboxOptions(j_secondConfig);
-    int ret = strcmp(options.c_str(), "support_overwrite=1");
+    AppSpawningCtx *appProperty = GetTestAppProperty();
+    std::string options = OHOS::AppSpawn::SandboxUtils::GetSandboxOptions(appProperty, j_secondConfig);
+    int ret = strcmp(options.c_str(), "support_overwrite=1,user_id=100");
     EXPECT_EQ(ret, 0);
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_45 end";
 }
