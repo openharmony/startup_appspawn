@@ -189,7 +189,7 @@
                 "src-path": "/storage/cloud/<currentUserId>/files/.thumbs/Photo"
             }]
         }, {
-            "name": "ohos.permission.ENABLE_FILE_CROSS_APP",
+            "name": "ohos.permission.FILE_CROSS_APP",
             "gids": ["file_manager"],
             "mount-paths": [{
                 "src-path": "/storage/media/<currentUserId>/local/files/Docs",
