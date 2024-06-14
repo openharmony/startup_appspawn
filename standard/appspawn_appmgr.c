@@ -158,6 +158,7 @@ void TerminateSpawnedProcess(AppSpawnedProcess *node)
     APPSPAWN_CHECK_ONLY_EXPER(g_appSpawnMgr != NULL && node != NULL, return);
     // delete node
     OH_ListRemove(&node->node);
+    OH_ListInit(&node->node);
     if (!IsNWebSpawnMode(g_appSpawnMgr)) {
         free(node);
         return;
@@ -165,11 +166,11 @@ void TerminateSpawnedProcess(AppSpawnedProcess *node)
     if (g_appSpawnMgr->diedAppCount >= MAX_DIED_PROCESS_COUNT) {
         AppSpawnedProcess *oldApp = ListEntry(g_appSpawnMgr->diedQueue.next, AppSpawnedProcess, node);
         OH_ListRemove(&oldApp->node);
+        OH_ListInit(&oldApp->node);
         free(oldApp);
         g_appSpawnMgr->diedAppCount--;
     }
     APPSPAWN_LOGI("ProcessAppDied %{public}s, pid=%{public}d", node->name, node->pid);
-    OH_ListInit(&node->node);
     OH_ListAddTail(&g_appSpawnMgr->diedQueue, &node->node);
     g_appSpawnMgr->diedAppCount++;
 }
@@ -226,7 +227,11 @@ static int GetProcessTerminationStatus(pid_t pid)
         AppSpawnedProcess *info = ListEntry(node, AppSpawnedProcess, node);
         exitStatus = info->exitStatus;
         OH_ListRemove(node);
+        OH_ListInit(node);
         free(info);
+        if (g_appSpawnMgr->diedAppCount > 0) {
+            g_appSpawnMgr->diedAppCount--;
+        }
         return exitStatus;
     }
     AppSpawnedProcess *app = GetSpawnedProcess(pid);
@@ -237,6 +242,7 @@ static int GetProcessTerminationStatus(pid_t pid)
 
     if (KillAndWaitStatus(pid, SIGKILL, &exitStatus) == 0) { // kill success, delete app
         OH_ListRemove(&app->node);
+        OH_ListInit(&app->node);
         free(app);
     }
     return exitStatus;
