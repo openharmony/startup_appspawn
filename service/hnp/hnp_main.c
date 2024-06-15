@@ -105,6 +105,7 @@ int main(int argc, char *argv[])
         HnpShowHelp(argc, argv);
     }
 
+    /* 返回值依赖此条log打印，切勿随意修改 */
     HNP_LOGI("native manager process exit. ret=%d \r\n", ret);
     return ret;
 }

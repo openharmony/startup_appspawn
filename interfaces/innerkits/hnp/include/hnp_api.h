@@ -39,6 +39,18 @@ typedef enum {
 // 0x2004 非开发者模式
 #define HNP_API_NOT_IN_DEVELOPER_MODE           (HNP_API_ERRNO_BASE + 0x4)
 
+// 0x2005 创建管道失败
+#define HNP_API_ERRNO_PIPE_CREATED_FAILED       (HNP_API_ERRNO_BASE + 0x5)
+
+// 0x2006 读取管道失败
+#define HNP_API_ERRNO_PIPE_READ_FAILED          (HNP_API_ERRNO_BASE + 0x6)
+
+// 0x2007 获取返回码失败
+#define HNP_API_ERRNO_RETURN_VALUE_GET_FAILED   (HNP_API_ERRNO_BASE + 0x7)
+
+// 0x2008 移动内存失败
+#define HNP_API_ERRNO_MEMMOVE_FAILED            (HNP_API_ERRNO_BASE + 0x8)
+
 #define PACK_NAME_LENTH 256
 #define HAP_PATH_LENTH 256
 #define ABI_LENTH 128
