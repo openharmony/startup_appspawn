@@ -75,6 +75,11 @@ namespace Ace {
         {
             return "";
         }
+
+        static void ReclaimFileCache(int32_t pid)
+        {
+            return;
+        }
     };
 }  // namespace Ace
 
