@@ -20,6 +20,7 @@
 
 #include "hilog/log.h"
 #include "appspawn_utils.h"
+#include "securec.h"
 
 #include "hnp_api.h"
 
@@ -32,6 +33,8 @@ extern "C" {
 #define MAX_ARGV_NUM 256
 #define MAX_ENV_NUM (128 + 2)
 #define IS_OPTION_SET(x, option) ((x) & (1 << (option)))
+#define BUFFER_SIZE 1024
+#define CMD_API_TEXT_LEN 50
 
 /* 数字索引 */
 enum {
@@ -45,19 +48,77 @@ enum {
     HNP_INDEX_7
 };
 
+static int HnpCmdApiReturnGet(int readFd, int *ret)
+{
+    char buffer[BUFFER_SIZE] = {0}; // 初始化缓冲区为0
+    ssize_t bytesRead;
+    int bufferEnd = 0; // 跟踪缓冲区中有效数据的末尾
+    const char *prefix = "native manager process exit. ret=";
+
+    // 循环读取子进程的输出，直到结束
+    while ((bytesRead = read(readFd, buffer + bufferEnd, BUFFER_SIZE - bufferEnd - 1)) > 0) {
+        // 更新有效数据的末尾
+        bufferEnd += bytesRead;
+
+        // 如果缓冲区中的数据超过或等于50个字节，移动数据以保留最后50个字节
+        if (bufferEnd >= CMD_API_TEXT_LEN) {
+            if (memmove_s(buffer, BUFFER_SIZE, buffer + bufferEnd - CMD_API_TEXT_LEN, CMD_API_TEXT_LEN) != EOK) {
+                HNPAPI_LOG("\r\n [HNP API] mem move unsuccess!\r\n");
+                return HNP_API_ERRNO_MEMMOVE_FAILED;
+            }
+            bufferEnd = CMD_API_TEXT_LEN;
+        }
+
+        // 确保字符串以null结尾（尽管在这种情况下我们可能不需要它）
+        buffer[bufferEnd] = '\0';
+    }
+
+    if (bytesRead == -1) {
+        HNPAPI_LOG("\r\n [HNP API] read stream unsuccess!\r\n");
+        return HNP_API_ERRNO_PIPE_READ_FAILED;
+    }
+
+    char *retStr = strstr(buffer, prefix);
+
+    if (retStr != NULL) {
+        // 获取后续的数字字符串
+        retStr += strlen(prefix);
+        *ret = atoi(retStr);
+
+        return 0;
+    }
+
+    return HNP_API_ERRNO_RETURN_VALUE_GET_FAILED;
+}
+
 static int StartHnpProcess(char *const argv[], char *const apcEnv[])
 {
+    int fd[2];
     pid_t pid;
+    int exitVal = -1;
     int ret;
     int status;
-    int exitVal = -1;
 
+    // 创建管道
+    if (pipe(fd) < 0) {
+        HNPAPI_LOG("\r\n [HNP API] pipe fd unsuccess!\r\n");
+        return HNP_API_ERRNO_PIPE_CREATED_FAILED;
+    }
+
+    // 创建子进程
     pid = vfork();
     if (pid < 0) {
         HNPAPI_LOG("\r\n [HNP API] fork unsuccess!\r\n");
-        return HNP_API_ERRNO_FORK_FAILED;
-    } else if (pid == 0) {
-        HNPAPI_LOG("\r\n [HNP API] this is fork children!\r\n");
+        return HNP_API_ERRNO_PIPE_CREATED_FAILED;
+    } else if (pid == 0) { // 子进程
+        // 关闭管道的读端
+        close(fd[0]);
+
+        // 将子进程的stdout重定向到管道的写端
+        dup2(fd[1], STDOUT_FILENO);
+        close(fd[1]);
+
+        // 执行子程序
         ret = execve("/system/bin/hnp", argv, apcEnv);
         if (ret < 0) {
             HNPAPI_LOG("\r\n [HNP API] execve unsuccess!\r\n");
@@ -66,17 +127,21 @@ static int StartHnpProcess(char *const argv[], char *const apcEnv[])
         _exit(0);
     }
 
+    // 父进程
     HNPAPI_LOG("\r\n [HNP API] this is fork father! chid=%d\r\n", pid);
+    // 关闭管道的写端
+    close(fd[1]);
     if (waitpid(pid, &status, 0) == -1) {
+        close(fd[0]);
         HNPAPI_LOG("\r\n [HNP API] wait pid unsuccess!\r\n");
         return HNP_API_WAIT_PID_FAILED;
     }
-    if (WIFEXITED(status)) {
-        exitVal = WEXITSTATUS(status);
-    }
-
-    if (WIFSIGNALED(status)) {
-        exitVal = WTERMSIG(status);
+    ret = HnpCmdApiReturnGet(fd[0], &exitVal);
+    // 关闭管道的读端
+    close(fd[0]);
+    if (ret != 0) {
+        HNPAPI_LOG("\r\n [HNP API] get api return value unsuccess!\r\n");
+        return ret;
     }
     HNPAPI_LOG("\r\n [HNP API] Child process exited with exitval=%d\r\n", exitVal);
 

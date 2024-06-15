@@ -291,7 +291,6 @@ static bool HnpELFFileCheck(const char *path)
 
     int ret = fread(buff, sizeof(char), HNP_ELF_FILE_CHECK_HEAD_LEN, fp);
     if (ret != HNP_ELF_FILE_CHECK_HEAD_LEN) {
-        HNP_LOGE("fread unsuccess. ret=%d, size=%d", ret, HNP_ELF_FILE_CHECK_HEAD_LEN);
         (void)fclose(fp);
         return false;
     }

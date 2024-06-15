@@ -25,7 +25,10 @@ if (!defined(ohos_lite)) {
     sources = [ "${appspawn_path}/interfaces/innerkits/hnp/src/hnp_api.c" ]
 
     public_configs = [ ":exported_header_files" ]
-    external_deps = [ "hilog:libhilog" ]
+    external_deps = [
+      "bounds_checking_function:libsec_shared",
+      "hilog:libhilog",
+    ]
     deps = [ "${appspawn_path}/util:libappspawn_util" ]
     install_enable = true
     subsystem_name = "${subsystem_name}"
