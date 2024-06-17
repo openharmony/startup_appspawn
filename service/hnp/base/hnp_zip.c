@@ -58,12 +58,12 @@ static int ZipAddFile(const char* file, int offset, zipFile zf)
     err = zipOpenNewFileInZip3(zf, file + offset, &fileInfo, NULL, 0, NULL, 0, NULL, Z_DEFLATED, Z_BEST_COMPRESSION,
         0, -MAX_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY, NULL, 0);
     if (err != ZIP_OK) {
-        HNP_LOGE("open new file[%s] in zip unsuccess ", file);
+        HNP_LOGE("open new file[%{public}s] in zip unsuccess ", file);
         return HNP_ERRNO_BASE_CREATE_ZIP_FAILED;
     }
     f = fopen(file, "rb");
     if (f == NULL) {
-        HNP_LOGE("open file[%s] unsuccess ", file);
+        HNP_LOGE("open file[%{public}s] unsuccess ", file);
         return HNP_ERRNO_BASE_FILE_OPEN_FAILED;
     }
 
@@ -81,7 +81,7 @@ static int IsDirPath(struct dirent *entry, char *fullPath, int *isDir)
 #ifdef _WIN32
     DWORD fileAttr = GetFileAttributes(fullPath);
     if (fileAttr == INVALID_FILE_ATTRIBUTES) {
-        HNP_LOGE("get file[%s] attr unsuccess.", fullPath);
+        HNP_LOGE("get file[%{public}s] attr unsuccess.", fullPath);
         return HNP_ERRNO_GET_FILE_ATTR_FAILED;
     }
     *isDir = (int)(fileAttr & FILE_ATTRIBUTE_DIRECTORY);
@@ -101,7 +101,7 @@ static int ZipAddDir(const char *sourcePath, int offset, zipFile zf)
 
     DIR *dir = opendir(sourcePath);
     if (dir == NULL) {
-        HNP_LOGE("open dir=%s unsuccess ", sourcePath);
+        HNP_LOGE("open dir=%{public}s unsuccess ", sourcePath);
         return HNP_ERRNO_BASE_DIR_OPEN_FAILED;
     }
 
@@ -126,19 +126,19 @@ static int ZipAddDir(const char *sourcePath, int offset, zipFile zf)
 
             if (zipOpenNewFileInZip3(zf, fullPath + offset, NULL, NULL, 0, NULL, 0, NULL, Z_DEFLATED,
                 Z_BEST_COMPRESSION, 0, -MAX_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY, NULL, 0) != ZIP_OK) {
-                HNP_LOGE("open new file[%s] in zip unsuccess ", fullPath);
+                HNP_LOGE("open new file[%{public}s] in zip unsuccess ", fullPath);
                 closedir(dir);
                 return HNP_ERRNO_BASE_CREATE_ZIP_FAILED;
             }
             zipCloseFileInZip(zf);
             if ((ret = ZipAddDir(fullPath, offset, zf)) != 0) {
-                HNP_LOGE("zip add dir[%s] unsuccess ", fullPath);
+                HNP_LOGE("zip add dir[%{public}s] unsuccess ", fullPath);
                 closedir(dir);
                 return ret;
             }
         } else {
             if ((ret = ZipAddFile(fullPath, offset, zf)) != 0) {
-                HNP_LOGE("zip add file[%s] unsuccess ", fullPath);
+                HNP_LOGE("zip add file[%{public}s] unsuccess ", fullPath);
                 closedir(dir);
                 return ret;
             }
@@ -155,7 +155,7 @@ static int ZipDir(const char *sourcePath, int offset, const char *zipPath)
 
     zipFile zf = zipOpen(zipPath, APPEND_STATUS_CREATE);
     if (zf == NULL) {
-        HNP_LOGE("open zip=%s unsuccess ", zipPath);
+        HNP_LOGE("open zip=%{public}s unsuccess ", zipPath);
         return HNP_ERRNO_BASE_CREATE_ZIP_FAILED;
     }
 
@@ -163,7 +163,7 @@ static int ZipDir(const char *sourcePath, int offset, const char *zipPath)
     ret = zipOpenNewFileInZip3(zf, sourcePath + offset, NULL, NULL, 0, NULL, 0, NULL, Z_DEFLATED, Z_BEST_COMPRESSION,
         0, -MAX_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY, NULL, 0);
     if (ret != ZIP_OK) {
-        HNP_LOGE("open new file[%s] in zip unsuccess ", sourcePath + offset);
+        HNP_LOGE("open new file[%{public}s] in zip unsuccess ", sourcePath + offset);
         zipClose(zf, NULL);
         return HNP_ERRNO_BASE_CREATE_ZIP_FAILED;
     }
@@ -182,7 +182,7 @@ int HnpZip(const char *inputDir, const char *outputFile)
     int offset;
     char sourcePath[MAX_FILE_PATH_LEN];
 
-    HNP_LOGI("HnpZip dir=%s, output=%s ", inputDir, outputFile);
+    HNP_LOGI("HnpZip dir=%{public}s, output=%{public}s ", inputDir, outputFile);
 
     // zip压缩文件内只保存相对路径，不保存绝对路径信息，偏移到压缩文件夹位置
     strPtr = strrchr(inputDir, DIR_SPLIT_SYMBOL);
@@ -211,7 +211,7 @@ int HnpAddFileToZip(char *zipfile, char *filename, char *buff, int size)
 
     zf = zipOpen(zipfile, APPEND_STATUS_ADDINZIP);
     if (zf == NULL) {
-        HNP_LOGE("open zip=%s unsuccess ", zipfile);
+        HNP_LOGE("open zip=%{public}s unsuccess ", zipfile);
         return HNP_ERRNO_BASE_CREATE_ZIP_FAILED;
     }
 
@@ -219,7 +219,7 @@ int HnpAddFileToZip(char *zipfile, char *filename, char *buff, int size)
     ret = zipOpenNewFileInZip3(zf, filename, NULL, NULL, 0, NULL, 0, NULL, Z_DEFLATED, Z_BEST_COMPRESSION,
         0, -MAX_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY, NULL, 0);
     if (ret != ZIP_OK) {
-        HNP_LOGE("open new file[%s] in zip unsuccess ", filename);
+        HNP_LOGE("open new file[%{public}s] in zip unsuccess ", filename);
         zipClose(zf, NULL);
         return HNP_ERRNO_BASE_CREATE_ZIP_FAILED;
     }
@@ -244,7 +244,7 @@ static int HnpUnZipForFile(const char *filePath, unzFile zipFile, unz_file_info 
     } else {
         FILE *outFile = fopen(filePath, "wb");
         if (outFile == NULL) {
-            HNP_LOGE("unzip open file:%s unsuccess!", filePath);
+            HNP_LOGE("unzip open file:%{public}s unsuccess!", filePath);
             return HNP_ERRNO_BASE_FILE_OPEN_FAILED;
         }
         unzOpenCurrentFile(zipFile);
@@ -253,7 +253,7 @@ static int HnpUnZipForFile(const char *filePath, unzFile zipFile, unz_file_info 
             char buffer[BUFFER_SIZE];
             readSize = unzReadCurrentFile(zipFile, buffer, sizeof(buffer));
             if (readSize < 0) {
-                HNP_LOGE("unzip read zip:%s file unsuccess", (char *)zipFile);
+                HNP_LOGE("unzip read zip:%{public}s file unsuccess", (char *)zipFile);
                 fclose(outFile);
                 unzCloseCurrentFile(zipFile);
                 return HNP_ERRNO_BASE_UNZIP_READ_FAILED;
@@ -271,7 +271,7 @@ static int HnpUnZipForFile(const char *filePath, unzFile zipFile, unz_file_info 
             ret = chmod(filePath, S_IRWXU | S_IRGRP | S_IROTH);
         }
         if (ret != 0) {
-            HNP_LOGE("hnp install chmod unsuccess, src:%s, errno:%d", filePath, errno);
+            HNP_LOGE("hnp install chmod unsuccess, src:%{public}s, errno:%{public}d", filePath, errno);
             return HNP_ERRNO_BASE_CHMOD_FAILED;
         }
     }
@@ -322,7 +322,7 @@ static int HnpInstallAddSignMap(const char* hnpSignKeyPrefix, const char *key, c
 
     ret = strcpy_s(hnpSignMapInfos[sum].value, MAX_FILE_PATH_LEN, value);
     if (ret != EOK) {
-        HNP_LOGE("add sign map strcpy[%s] unsuccess.", value);
+        HNP_LOGE("add sign map strcpy[%{public}s] unsuccess.", value);
         return HNP_ERRNO_BASE_COPY_FAILED;
     }
 
@@ -336,7 +336,7 @@ int HnpFileCountGet(const char *path, int *count)
 
     unzFile zipFile = unzOpen(path);
     if (zipFile == NULL) {
-        HNP_LOGE("unzip open hnp:%s unsuccess!", path);
+        HNP_LOGE("unzip open hnp:%{public}s unsuccess!", path);
         return HNP_ERRNO_BASE_UNZIP_OPEN_FAILED;
     }
 
@@ -345,7 +345,7 @@ int HnpFileCountGet(const char *path, int *count)
         sum++;
         ret = unzGetCurrentFileInfo(zipFile, NULL, NULL, 0, NULL, 0, NULL, 0);
         if (ret != UNZ_OK) {
-            HNP_LOGE("unzip get zip:%s info unsuccess!", path);
+            HNP_LOGE("unzip get zip:%{public}s info unsuccess!", path);
             unzClose(zipFile);
             return HNP_ERRNO_BASE_UNZIP_GET_INFO_FAILED;
         }
@@ -367,11 +367,11 @@ int HnpUnZip(const char *inputFile, const char *outputDir, const char *hnpSignKe
     unz_file_info fileInfo;
     char filePath[MAX_FILE_PATH_LEN];
 
-    HNP_LOGI("HnpUnZip zip=%s, output=%s", inputFile, outputDir);
+    HNP_LOGI("HnpUnZip zip=%{public}s, output=%{public}s", inputFile, outputDir);
 
     zipFile = unzOpen(inputFile);
     if (zipFile == NULL) {
-        HNP_LOGE("unzip open hnp:%s unsuccess!", inputFile);
+        HNP_LOGE("unzip open hnp:%{public}s unsuccess!", inputFile);
         return HNP_ERRNO_BASE_UNZIP_OPEN_FAILED;
     }
 
@@ -379,7 +379,7 @@ int HnpUnZip(const char *inputFile, const char *outputDir, const char *hnpSignKe
     while (result == UNZ_OK) {
         result = unzGetCurrentFileInfo(zipFile, &fileInfo, fileName, sizeof(fileName), NULL, 0, NULL, 0);
         if (result != UNZ_OK) {
-            HNP_LOGE("unzip get zip:%s info unsuccess!", inputFile);
+            HNP_LOGE("unzip get zip:%{public}s info unsuccess!", inputFile);
             unzClose(zipFile);
             return HNP_ERRNO_BASE_UNZIP_GET_INFO_FAILED;
         }
@@ -399,7 +399,7 @@ int HnpUnZip(const char *inputFile, const char *outputDir, const char *hnpSignKe
 
         result = HnpUnZipForFile(filePath, zipFile, fileInfo);
         if (result != 0) {
-            HNP_LOGE("unzip for file:%s unsuccess", filePath);
+            HNP_LOGE("unzip for file:%{public}s unsuccess", filePath);
             unzClose(zipFile);
             return result;
         }
@@ -423,7 +423,7 @@ int HnpCfgGetFromZip(const char *inputFile, HnpCfgInfo *hnpCfg)
 
     unzFile zipFile = unzOpen(inputFile);
     if (zipFile == NULL) {
-        HNP_LOGE("unzip open hnp:%s unsuccess!", inputFile);
+        HNP_LOGE("unzip open hnp:%{public}s unsuccess!", inputFile);
         return HNP_ERRNO_BASE_UNZIP_OPEN_FAILED;
     }
 
@@ -431,7 +431,7 @@ int HnpCfgGetFromZip(const char *inputFile, HnpCfgInfo *hnpCfg)
     while (ret == UNZ_OK) {
         ret = unzGetCurrentFileInfo(zipFile, &fileInfo, fileName, sizeof(fileName), NULL, 0, NULL, 0);
         if (ret != UNZ_OK) {
-            HNP_LOGE("unzip get zip:%s info unsuccess!", inputFile);
+            HNP_LOGE("unzip get zip:%{public}s info unsuccess!", inputFile);
             unzClose(zipFile);
             return HNP_ERRNO_BASE_UNZIP_GET_INFO_FAILED;
         }
@@ -449,7 +449,7 @@ int HnpCfgGetFromZip(const char *inputFile, HnpCfgInfo *hnpCfg)
         unzOpenCurrentFile(zipFile);
         cfgStream = malloc(fileInfo.uncompressed_size);
         if (cfgStream == NULL) {
-            HNP_LOGE("malloc unsuccess. size=%lu, errno=%d", fileInfo.uncompressed_size, errno);
+            HNP_LOGE("malloc unsuccess. size=%{public}lu, errno=%{public}d", fileInfo.uncompressed_size, errno);
             unzClose(zipFile);
             return HNP_ERRNO_NOMEM;
         }
@@ -457,7 +457,8 @@ int HnpCfgGetFromZip(const char *inputFile, HnpCfgInfo *hnpCfg)
         if (readSize != fileInfo.uncompressed_size) {
             free(cfgStream);
             unzClose(zipFile);
-            HNP_LOGE("unzip read zip:%s info size[%lu]=>[%lu] error!", inputFile, fileInfo.uncompressed_size, readSize);
+            HNP_LOGE("unzip read zip:%{public}s info size[%{public}lu]=>[%{public}lu] error!", inputFile,
+                fileInfo.uncompressed_size, readSize);
             return HNP_ERRNO_BASE_FILE_READ_FAILED;
         }
         break;
