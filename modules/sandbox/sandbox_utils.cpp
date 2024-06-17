@@ -1535,7 +1535,7 @@ static inline int EnableSandboxNamespace(AppSpawningCtx *appProperty, uint32_t s
 
     if ((sandboxNsFlags & CLONE_NEWNET) == CLONE_NEWNET) {
         rc = EnableNewNetNamespace();
-        APPSPAWN_CHECK(rc == 0, return 0, "Set new netnamespace failed %{public}s", GetBundleName(appProperty));
+        APPSPAWN_CHECK(rc == 0, return rc, "Set new netnamespace failed %{public}s", GetBundleName(appProperty));
     }
     return 0;
 }
