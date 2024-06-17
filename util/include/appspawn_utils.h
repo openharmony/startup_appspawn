@@ -51,6 +51,10 @@ extern "C" {
 #define APPSPAWN_MSG_DIR APPSPAWN_BASE_DIR "/mnt/startup/"
 #endif
 
+#define DEVICE_VIRTUAL_NET_IO_FLAGS "/sys/devices/virtual/net/lo/flags"
+#define IFF_LOOPBACK_VALUE "9\n"
+#define IFF_LOOPBACK_SIZE 2
+
 #define APPSPAWN_CHECK_EXIT "AppSpawnCheckUnexpectedExitCall"
 #define UNUSED(x) (void)(x)
 
