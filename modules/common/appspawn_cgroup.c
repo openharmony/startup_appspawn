@@ -119,8 +119,30 @@ static int WritePidMax(const char *path, uint32_t max)
 #endif
 }
 
+static void SetForkDenied(const AppSpawnedProcessInfo *appInfo)
+{
+    char pathForkDenied[PATH_MAX] = {};
+    int ret = GetCgroupPath(appInfo, pathForkDenied, sizeof(pathForkDenied));
+    APPSPAWN_CHECK(ret == 0, return, "Failed to get cgroup path errno: %d", errno);
+    ret = strcat_s(pathForkDenied, sizeof(pathForkDenied), "pids.fork_denied");
+    APPSPAWN_CHECK(ret == 0, return, "Failed to strcat_s fork_denied path errno: %{public}d", errno);
+    int fd = open(pathForkDenied, O_RDWR);
+    if (fd < 0) {
+        APPSPAWN_LOGW("SetForkDenied %{public}d open failed ", appInfo->pid);
+        return;
+    }
+    do {
+        ret = write(fd, "1", 1);
+        APPSPAWN_CHECK(ret >= 0, break,
+        "Failed to write file errno: %{public}d path: %{public}s %{public}d", errno, pathForkDenied, ret);
+        fsync(fd);
+    } while (0);
+    close(fd);
+}
+
 static void KillProcessesByCGroup(const char *path, AppSpawnMgr *content, const AppSpawnedProcessInfo *appInfo)
 {
+    SetForkDenied(appInfo);
     FILE *file = fopen(path, "r");
     APPSPAWN_CHECK(file != NULL, return, "Open file fail %{public}s errno: %{public}d", path, errno);
     pid_t pid = 0;
