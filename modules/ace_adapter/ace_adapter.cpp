@@ -123,6 +123,7 @@ static void LoadExtendLib(void)
     PreloadModule();
     SetTraceDisabled(false);
 
+    OHOS::Ace::AceForwardCompatibility::ReclaimFileCache(getpid());
     Resource::ResourceManager *systemResMgr = Resource::GetSystemResourceManagerNoSandBox();
     APPSPAWN_CHECK(systemResMgr != nullptr, return, "Fail to get system resource manager");
     APPSPAWN_LOGI("LoadExtendLib: End preload JS VM");
