@@ -585,7 +585,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_25, TestSize.Level0)
                     \"app-apl-name\": \"test123\", \
                     \"fs-type\": \"ext4\" \
                 }, { \
-                    \"src\" : \"/data/app/el1/<currentUserId>/database/<PackageName_index>\", \
+                    \"src-path\" : \"/data/app/el1/<currentUserId>/database/<PackageName_index>\", \
                     \"sandbox-path\" : \"/data/storage/el1/database\", \
                     \"sandbox-flags\" : [ \"bind\", \"rec\" ], \
                     \"check-action-status\": \"false\" \
