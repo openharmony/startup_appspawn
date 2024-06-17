@@ -32,6 +32,10 @@ int32_t SetEnvInfo(const AppSpawnMgr *content, const AppSpawningCtx *property);
 
 // stub for extend func
 void DisallowInternet(void);
+#ifndef CJAPP_SPAWN
+void DumpSpawnStack(pid_t pid);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

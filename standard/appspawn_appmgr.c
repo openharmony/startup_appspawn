@@ -27,10 +27,13 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 
+#include "appspawn_adapter.h"
 #include "appspawn_hook.h"
 #include "appspawn_msg.h"
 #include "appspawn_manager.h"
 #include "securec.h"
+
+#define EXIT_APP_TIMES 10
 
 static AppSpawnMgr *g_appSpawnMgr = NULL;
 
@@ -195,6 +198,16 @@ AppSpawnedProcess *GetSpawnedProcessByName(const char *name)
     return ListEntry(node, AppSpawnedProcess, node);
 }
 
+static void DumpProcessSpawnStack(pid_t pid)
+{
+#ifndef CJAPP_SPAWN
+    DumpSpawnStack(pid);
+    DumpSpawnStack(getpid());
+#endif
+    kill(pid, SIGKILL);
+    APPSPAWN_LOGI("Dump stack finished");
+}
+
 int KillAndWaitStatus(pid_t pid, int sig, int *exitStatus)
 {
     APPSPAWN_CHECK_ONLY_EXPER(exitStatus != NULL, return 0);
@@ -208,8 +221,16 @@ int KillAndWaitStatus(pid_t pid, int sig, int *exitStatus)
         return -1;
     }
 
-    pid_t exitPid = waitpid(pid, exitStatus, 0);
+    int retry = 0;
+    pid_t exitPid = 0;
+    while (retry < EXIT_APP_TIMES) { // 10 * 100000us = 1s timeout
+        exitPid = waitpid(pid, exitStatus, WNOHANG);
+        usleep(100000); // 100000 is sleep for 100ms
+        retry++;
+    }
+
     if (exitPid != pid) {
+        DumpProcessSpawnStack(pid);
         APPSPAWN_LOGE("waitpid failed, pid: %{public}d %{public}d, status: %{public}d", exitPid, pid, *exitStatus);
         return -1;
     }
