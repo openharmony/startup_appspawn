@@ -32,7 +32,7 @@ int HnpProcessRunCheck(const char *runPath)
     char cmdBuffer[BUFFER_SIZE];
     FILE *cmdOutput;
 
-    HNP_LOGI("runPath[%s] running check", runPath);
+    HNP_LOGI("runPath[%{public}s] running check", runPath);
 
     /* 判断进程是否运行 */
     cmdOutput = popen("lsof", "rb");
@@ -43,7 +43,7 @@ int HnpProcessRunCheck(const char *runPath)
 
     while (fgets(cmdBuffer, sizeof(cmdBuffer), cmdOutput) != NULL) {
         if (strstr(cmdBuffer, runPath) != NULL) {
-            HNP_LOGE("hnp install path is running now, path[%s]", cmdBuffer);
+            HNP_LOGE("hnp install path is running now, path[%{public}s]", cmdBuffer);
             pclose(cmdOutput);
             return HNP_ERRNO_PROCESS_RUNNING;
         }
@@ -109,7 +109,8 @@ int HnpSymlink(const char *srcFile, const char *dstFile)
     HnpRelPath(dstFile, srcFile, relpath);
     ret = symlink(relpath, dstFile);
     if (ret < 0) {
-        HNP_LOGE("hnp install generate soft link unsuccess, src:%s, dst:%s, errno:%d", srcFile, dstFile, errno);
+        HNP_LOGE("hnp install generate soft link unsuccess, src:%{public}s, dst:%{public}s, errno:%{public}d", srcFile,
+            dstFile, errno);
         return HNP_ERRNO_GENERATE_SOFT_LINK_FAILED;
     }
 
