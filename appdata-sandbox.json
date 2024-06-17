@@ -602,6 +602,22 @@
                     "sandbox-flags": [ "bind", "rec" ]
                 },
                 {
+                    "src-path": "/data/app/el1/<currentUserId>/base",
+                    "sandbox-path": "/storage/Users/<currentUserId>/appdata/el1",
+                    "sandbox-flags-customized": ["MS_NODEV"],
+                    "dac-override-sensitive": "true",
+                    "fs-type": "sharefs",
+                    "options": "override"
+                },
+                {
+                    "src-path": "/data/app/el2/<currentUserId>/base",
+                    "sandbox-path": "/storage/Users/<currentUserId>/appdata/el2",
+                    "sandbox-flags-customized": ["MS_NODEV"],
+                    "dac-override-sensitive": "true",
+                    "fs-type": "sharefs",
+                    "options": "override"
+                },
+                {
                     "src-path": "/mnt/data/<currentUserId>/hmdfs",
                     "sandbox-path": "/storage/hmdfs",
                     "sandbox-flags": [ "bind", "rec" ]
@@ -634,7 +650,6 @@
                     "fs-type": "sharefs",
                     "options": "override"
                 },
-
                 {
                     "src-path": "/data/app/el2/<currentUserId>/base",
                     "sandbox-path": "/storage/Users/<currentUserId>/appdata/el2",
