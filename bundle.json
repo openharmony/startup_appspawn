@@ -63,7 +63,8 @@
                 "bounds_checking_function",
                 "zlib",
                 "cJSON",
-                "json"
+                "json",
+                "faultloggerd"
             ],
 	    "third_party": [
                 "bounds_checking_function",
