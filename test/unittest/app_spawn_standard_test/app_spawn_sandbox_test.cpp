@@ -21,6 +21,7 @@
 
 #include "appspawn_server.h"
 #include "appspawn_service.h"
+#include "appspawn_sandbox.h"
 #include "json_utils.h"
 #include "parameter.h"
 #include "sandbox_utils.h"
@@ -1347,5 +1348,122 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_45, TestSize.Level0)
     int ret = strcmp(options.c_str(), "support_overwrite=1,user_id=100");
     EXPECT_EQ(ret, 0);
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_45 end";
+}
+
+/**
+ * @brief 测试app extension
+ *
+ */
+HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_004, TestSize.Level0)
+{
+    AppSpawningCtx *spawningCtx = GetTestAppProperty();
+    std::string path = SandboxUtils::ConvertToRealPath(spawningCtx, "/system/<variablePackageName>/module");
+    APPSPAWN_LOGV("path %{public}s", path.c_str());
+    ASSERT_EQ(path.c_str() != nullptr, 1);
+    ASSERT_EQ(strcmp(path.c_str(), "/system/com.example.myapplication/module") == 0, 1);
+    DeleteAppSpawningCtx(spawningCtx);
+}
+
+HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_005, TestSize.Level0)
+{
+    AppSpawningCtx *spawningCtx = GetTestAppProperty();
+    ASSERT_EQ(spawningCtx != nullptr, 1);
+    int ret = SetAppSpawnMsgFlag(spawningCtx->message, TLV_MSG_FLAGS, APP_FLAGS_CLONE_ENABLE);
+    ASSERT_EQ(ret, 0);
+
+    std::string path = SandboxUtils::ConvertToRealPath(spawningCtx, "/system/<variablePackageName>/module");
+    APPSPAWN_LOGV("path %{public}s", path.c_str());
+    ASSERT_EQ(path.c_str() != nullptr, 1);  // +clone-bundleIndex+packageName
+    ASSERT_EQ(strcmp(path.c_str(), "/system/+clone-100+com.example.myapplication/module") == 0, 1);
+    DeleteAppSpawningCtx(spawningCtx);
+}
+
+HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_006, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = nullptr;
+    int ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+    ASSERT_EQ(ret, 0);
+    AppSpawnReqMsgHandle reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+    ASSERT_EQ(reqHandle != nullptr, 1);
+    ret = AppSpawnReqMsgAddStringInfo(reqHandle, MSG_EXT_NAME_APP_EXTENSION, "test001");
+    ASSERT_EQ(ret, 0);
+    ret = AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_EXTENSION_SANDBOX);
+    ASSERT_EQ(ret, 0);
+    AppSpawningCtx *spawningCtx = g_testHelper.GetAppProperty(clientHandle, reqHandle);
+    ASSERT_EQ(spawningCtx != nullptr, 1);
+
+    std::string path = SandboxUtils::ConvertToRealPath(spawningCtx, "/system/<variablePackageName>/module");
+    APPSPAWN_LOGV("path %{public}s", path.c_str());
+    ASSERT_EQ(path.c_str() != nullptr, 1);  // +extension-<extensionType>+packageName
+    ASSERT_EQ(strcmp(path.c_str(), "/system/+extension-test001+com.example.myapplication/module") == 0, 1);
+    DeleteAppSpawningCtx(spawningCtx);
+    AppSpawnClientDestroy(clientHandle);
+}
+
+HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_007, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = nullptr;
+    int ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+    ASSERT_EQ(ret, 0);
+    AppSpawnReqMsgHandle reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+    ASSERT_EQ(reqHandle != nullptr, 1);
+    ret = AppSpawnReqMsgAddStringInfo(reqHandle, MSG_EXT_NAME_APP_EXTENSION, "test001");
+    ASSERT_EQ(ret, 0);
+    ret = AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_EXTENSION_SANDBOX);
+    ASSERT_EQ(ret, 0);
+    ret = AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_CLONE_ENABLE);
+    ASSERT_EQ(ret, 0);
+    AppSpawningCtx *spawningCtx = g_testHelper.GetAppProperty(clientHandle, reqHandle);
+    ASSERT_EQ(spawningCtx != nullptr, 1);
+
+    std::string path = SandboxUtils::ConvertToRealPath(spawningCtx, "/system/<variablePackageName>/module");
+    APPSPAWN_LOGV("path %{public}s", path.c_str());
+    ASSERT_EQ(path.c_str() != nullptr, 1);  // +clone-bundleIndex+extension-<extensionType>+packageName
+
+    ASSERT_EQ(strcmp(path.c_str(), "/system/+clone-100+extension-test001+com.example.myapplication/module") == 0, 1);
+    DeleteAppSpawningCtx(spawningCtx);
+    AppSpawnClientDestroy(clientHandle);
+}
+
+HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_008, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = nullptr;
+    int ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+    ASSERT_EQ(ret, 0);
+    AppSpawnReqMsgHandle reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+    ASSERT_EQ(reqHandle != nullptr, 1);
+    ret = AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_EXTENSION_SANDBOX);
+    ASSERT_EQ(ret, 0);
+    ret = AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_CLONE_ENABLE);
+    ASSERT_EQ(ret, 0);
+    AppSpawningCtx *spawningCtx = g_testHelper.GetAppProperty(clientHandle, reqHandle);
+    ASSERT_EQ(spawningCtx != nullptr, 1);
+
+    std::string path = SandboxUtils::ConvertToRealPath(spawningCtx, "/system/<variablePackageName>/module");
+    APPSPAWN_LOGV("path %{public}s", path.c_str());
+    ASSERT_STREQ(path.c_str(), "");
+
+    DeleteAppSpawningCtx(spawningCtx);
+    AppSpawnClientDestroy(clientHandle);
+}
+
+HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_009, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = nullptr;
+    int ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+    ASSERT_EQ(ret, 0);
+    AppSpawnReqMsgHandle reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+    ASSERT_EQ(reqHandle != nullptr, 1);
+    ret = AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_EXTENSION_SANDBOX);
+    ASSERT_EQ(ret, 0);
+    AppSpawningCtx *spawningCtx = g_testHelper.GetAppProperty(clientHandle, reqHandle);
+    ASSERT_EQ(spawningCtx != nullptr, 1);
+
+    std::string path = SandboxUtils::ConvertToRealPath(spawningCtx, "/system/<variablePackageName>/module");
+    APPSPAWN_LOGV("path %{public}s", path.c_str());
+    ASSERT_STREQ(path.c_str(), "");
+
+    DeleteAppSpawningCtx(spawningCtx);
+    AppSpawnClientDestroy(clientHandle);
 }
 }  // namespace OHOS
