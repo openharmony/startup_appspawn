@@ -50,7 +50,7 @@ enum {
 
 static int HnpCmdApiReturnGet(int readFd, int *ret)
 {
-    char buffer[BUFFER_SIZE] = {0}; // 初始化缓冲区为0
+    char buffer[BUFFER_SIZE] = {0};
     ssize_t bytesRead;
     int bufferEnd = 0; // 跟踪缓冲区中有效数据的末尾
     const char *prefix = "native manager process exit. ret=";
@@ -69,7 +69,6 @@ static int HnpCmdApiReturnGet(int readFd, int *ret)
             bufferEnd = CMD_API_TEXT_LEN;
         }
 
-        // 确保字符串以null结尾（尽管在这种情况下我们可能不需要它）
         buffer[bufferEnd] = '\0';
     }
 
@@ -88,6 +87,7 @@ static int HnpCmdApiReturnGet(int readFd, int *ret)
         return 0;
     }
 
+    HNPAPI_LOG("\r\n [HNP API] get return unsuccess!, buffer is:%{public}s\r\n", buffer);
     return HNP_API_ERRNO_RETURN_VALUE_GET_FAILED;
 }
 
@@ -99,26 +99,21 @@ static int StartHnpProcess(char *const argv[], char *const apcEnv[])
     int ret;
     int status;
 
-    // 创建管道
     if (pipe(fd) < 0) {
         HNPAPI_LOG("\r\n [HNP API] pipe fd unsuccess!\r\n");
         return HNP_API_ERRNO_PIPE_CREATED_FAILED;
     }
 
-    // 创建子进程
     pid = vfork();
     if (pid < 0) {
         HNPAPI_LOG("\r\n [HNP API] fork unsuccess!\r\n");
-        return HNP_API_ERRNO_PIPE_CREATED_FAILED;
-    } else if (pid == 0) { // 子进程
-        // 关闭管道的读端
+        return HNP_API_ERRNO_FORK_FAILED;
+    } else if (pid == 0) {
         close(fd[0]);
-
         // 将子进程的stdout重定向到管道的写端
         dup2(fd[1], STDOUT_FILENO);
         close(fd[1]);
 
-        // 执行子程序
         ret = execve("/system/bin/hnp", argv, apcEnv);
         if (ret < 0) {
             HNPAPI_LOG("\r\n [HNP API] execve unsuccess!\r\n");
@@ -127,9 +122,7 @@ static int StartHnpProcess(char *const argv[], char *const apcEnv[])
         _exit(0);
     }
 
-    // 父进程
-    HNPAPI_LOG("\r\n [HNP API] this is fork father! chid=%d\r\n", pid);
-    // 关闭管道的写端
+    HNPAPI_LOG("\r\n [HNP API] this is fork father! chid=%{public}d\r\n", pid);
     close(fd[1]);
     if (waitpid(pid, &status, 0) == -1) {
         close(fd[0]);
@@ -137,13 +130,12 @@ static int StartHnpProcess(char *const argv[], char *const apcEnv[])
         return HNP_API_WAIT_PID_FAILED;
     }
     ret = HnpCmdApiReturnGet(fd[0], &exitVal);
-    // 关闭管道的读端
     close(fd[0]);
     if (ret != 0) {
         HNPAPI_LOG("\r\n [HNP API] get api return value unsuccess!\r\n");
         return ret;
     }
-    HNPAPI_LOG("\r\n [HNP API] Child process exited with exitval=%d\r\n", exitVal);
+    HNPAPI_LOG("\r\n [HNP API] Child process exited with exitval=%{public}d\r\n", exitVal);
 
     return exitVal;
 }
@@ -163,8 +155,9 @@ int NativeInstallHnp(const char *userId, const char *hnpRootPath,  const HapInfo
         return HNP_API_ERRNO_PARAM_INVALID;
     }
 
-    HNPAPI_LOG("\r\n [HNP API] native package install! userId=%s, hap path=%s, sys abi=%s, hnp root path=%s, package name=%s "
-        "install options=%d\r\n", userId, hapInfo->hapPath, hapInfo->abi, hnpRootPath, hapInfo->packageName, installOptions);
+    HNPAPI_LOG("\r\n [HNP API] native package install! userId=%{public}s, hap path=%{public}s, sys abi=%{public}s, "
+        "hnp root path=%{public}s, package name=%{public}s install options=%{public}d\r\n", userId, hapInfo->hapPath,
+        hapInfo->abi, hnpRootPath, hapInfo->packageName, installOptions);
 
     argv[index++] = "hnp";
     argv[index++] = "install";
@@ -201,7 +194,8 @@ int NativeUnInstallHnp(const char *userId, const char *packageName)
         return HNP_API_ERRNO_PARAM_INVALID;
     }
 
-    HNPAPI_LOG("\r\n [HNP API] native package uninstall! userId=%s, package name=%s\r\n", userId, packageName);
+    HNPAPI_LOG("\r\n [HNP API] native package uninstall! userId=%{public}s, package name=%{public}s\r\n", userId,
+        packageName);
 
     argv[index++] = "hnp";
     argv[index++] = "uninstall";
