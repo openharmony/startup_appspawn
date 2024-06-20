@@ -28,17 +28,28 @@
 
 static void CheckPreload(char *const argv[])
 {
+    char buf[256] = APPSPAWN_PRELOAD;  // 256 is enough in most cases
     char *preload = getenv("LD_PRELOAD");
-    if (preload && strstr(preload, APPSPAWN_PRELOAD)) {
+    char *pos = preload ? strstr(preload, APPSPAWN_PRELOAD) : NULL;
+    if (pos) {
+        int len = pos - preload;
+        len = sprintf_s(buf, sizeof(buf), "%.*s%s", len, preload, pos + strlen(APPSPAWN_PRELOAD));
+        APPSPAWN_CHECK(len >= 0, return, "preload too long?: %{public}s", preload);
+        if (len == 0) {
+            int ret = unsetenv("LD_PRELOAD");
+            APPSPAWN_CHECK(ret == 0, return, "unsetenv fail(%{public}d)", errno);
+        } else {
+            int ret = setenv("LD_PRELOAD", buf, true);
+            APPSPAWN_CHECK(ret == 0, return, "setenv fail(%{public}d): %{public}s", errno, buf);
+        }
         return;
     }
-    char buf[128] = APPSPAWN_PRELOAD;  // 128 is enough in most cases
     if (preload && preload[0]) {
         int len = sprintf_s(buf, sizeof(buf), "%s:" APPSPAWN_PRELOAD, preload);
         APPSPAWN_CHECK(len > 0, return, "preload too long: %{public}s", preload);
     }
     int ret = setenv("LD_PRELOAD", buf, true);
-    APPSPAWN_CHECK(ret == 0, return, "setenv fail: %{public}s", buf);
+    APPSPAWN_CHECK(ret == 0, return, "setenv fail(%{public}d): %{public}s", errno, buf);
     ssize_t nread = readlink("/proc/self/exe", buf, sizeof(buf) - 1);
     APPSPAWN_CHECK(nread != -1, return, "readlink fail: /proc/self/exe: %{public}d", errno);
     buf[nread] = 0;
