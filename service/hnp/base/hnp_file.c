@@ -43,7 +43,7 @@ int GetFileSizeByHandle(FILE *file, int *size)
     }
     len = ftell(file);
     if (len < 0) {
-        HNP_LOGE("ftell unsuccess. len=%d", len);
+        HNP_LOGE("ftell unsuccess. len=%{public}d", len);
         return HNP_ERRNO_BASE_FILE_TELL_FAILED;
     }
     ret = fseek(file, 0, SEEK_SET);
@@ -64,29 +64,29 @@ int ReadFileToStream(const char *filePath, char **stream, int *streamLen)
 
     file = fopen(filePath, "rb");
     if (file == NULL) {
-        HNP_LOGE("open file[%s] unsuccess. ", filePath);
+        HNP_LOGE("open file[%{public}s] unsuccess. ", filePath);
         return HNP_ERRNO_BASE_FILE_OPEN_FAILED;
     }
     ret = GetFileSizeByHandle(file, &size);
     if (ret != 0) {
-        HNP_LOGE("get file[%s] size unsuccess.", filePath);
+        HNP_LOGE("get file[%{public}s] size unsuccess.", filePath);
         (void)fclose(file);
         return ret;
     }
     if (size == 0) {
-        HNP_LOGE("get file[%s] size is null.", filePath);
+        HNP_LOGE("get file[%{public}s] size is null.", filePath);
         (void)fclose(file);
         return HNP_ERRNO_BASE_GET_FILE_LEN_NULL;
     }
     streamTmp = (char*)malloc(size);
     if (streamTmp == NULL) {
-        HNP_LOGE("malloc unsuccess. size=%d", size);
+        HNP_LOGE("malloc unsuccess. size%{public}d", size);
         (void)fclose(file);
         return HNP_ERRNO_NOMEM;
     }
     ret = fread(streamTmp, sizeof(char), size, file);
     if (ret != size) {
-        HNP_LOGE("fread unsuccess. ret=%d, size=%d", ret, size);
+        HNP_LOGE("fread unsuccess. ret=%{public}d, size=%{public}d", ret, size);
         (void)fclose(file);
         free(streamTmp);
         return HNP_ERRNO_BASE_FILE_READ_FAILED;
@@ -105,24 +105,24 @@ int ReadFileToStreamBySize(const char *filePath, char **stream, int readSize)
 
     file = fopen(filePath, "rb");
     if (file == NULL) {
-        HNP_LOGE("open file[%s] unsuccess. ", filePath);
+        HNP_LOGE("open file[%{public}s] unsuccess. ", filePath);
         return HNP_ERRNO_BASE_FILE_OPEN_FAILED;
     }
 
     if (readSize <= 0) {
         (void)fclose(file);
-        HNP_LOGE("read size(%d) is invalid.", readSize);
+        HNP_LOGE("read size(%{public}d) is invalid.", readSize);
         return HNP_ERRNO_BASE_PARAMS_INVALID;
     }
     streamTmp = (char*)malloc(readSize);
     if (streamTmp == NULL) {
-        HNP_LOGE("malloc unsuccess. size=%d", readSize);
+        HNP_LOGE("malloc unsuccess. size=%{public}d", readSize);
         (void)fclose(file);
         return HNP_ERRNO_NOMEM;
     }
     ret = fread(streamTmp, sizeof(char), readSize, file);
     if (ret != readSize) {
-        HNP_LOGE("fread unsuccess. ret=%d, size=%d", ret, readSize);
+        HNP_LOGE("fread unsuccess. ret=%{public}d, size=%{public}d", ret, readSize);
         (void)fclose(file);
         free(streamTmp);
         return HNP_ERRNO_BASE_FILE_READ_FAILED;
@@ -136,12 +136,12 @@ int HnpWriteInfoToFile(const char* filePath, char *buff, int len)
 {
     FILE *fp = fopen(filePath, "w");
     if (fp == NULL) {
-        HNP_LOGE("open file:%s unsuccess!", filePath);
+        HNP_LOGE("open file:%{public}s unsuccess!", filePath);
         return HNP_ERRNO_BASE_FILE_OPEN_FAILED;
     }
     int writeLen = fwrite(buff, sizeof(char), len, fp);
     if (writeLen != len) {
-        HNP_LOGE("write file:%s unsuccess! len=%d, write=%d", filePath, len, writeLen);
+        HNP_LOGE("write file:%{public}s unsuccess! len=%{public}d, write=%{public}d", filePath, len, writeLen);
         (void)fclose(fp);
         return HNP_ERRNO_BASE_FILE_WRITE_FAILED;
     }
@@ -164,11 +164,11 @@ int GetRealPath(char *srcPath, char *realPath)
     char *ret = realpath(srcPath, dstTmpPath);
 #endif
     if (ret == 0) {
-        HNP_LOGE("realpath unsuccess. path=%s", srcPath);
+        HNP_LOGE("realpath unsuccess. path=%{public}s", srcPath);
         return HNP_ERRNO_BASE_REALPATHL_FAILED;
     }
     if (strlen(dstTmpPath) >= MAX_FILE_PATH_LEN) {
-        HNP_LOGE("realpath over max path len. len=%d", (int)strlen(dstTmpPath));
+        HNP_LOGE("realpath over max path len. len=%{public}d", (int)strlen(dstTmpPath));
         return HNP_ERRNO_BASE_STRING_LEN_OVER_LIMIT;
     }
     if (strcpy_s(realPath, MAX_FILE_PATH_LEN, dstTmpPath) != EOK) {
@@ -195,7 +195,7 @@ static int HnpDeleteAllFileInPath(const char *path, DIR *dir)
 
         ret = sprintf_s(filePath, MAX_FILE_PATH_LEN, "%s/%s", path, entry->d_name);
         if (ret < 0) {
-            HNP_LOGE("delete folder sprintf path[%s], file[%s] unsuccess.", path, entry->d_name);
+            HNP_LOGE("delete folder sprintf path[%{public}s], file[%{public}s] unsuccess.", path, entry->d_name);
             return HNP_ERRNO_BASE_SPRINTF_FAILED;
         }
 
@@ -212,7 +212,8 @@ static int HnpDeleteAllFileInPath(const char *path, DIR *dir)
         } else {
             ret = unlink(filePath);
             if (ret != 0) {
-                HNP_LOGE("delete file unsuccess.ret=%d, path=%s, errno=%d", ret, filePath, errno);
+                HNP_LOGE("delete file unsuccess.ret=%{public}d, path=%{public}s, errno=%{public}d", ret, filePath,
+                    errno);
                 return HNP_ERRNO_BASE_UNLINK_FAILED;
             }
         }
@@ -229,7 +230,7 @@ int HnpDeleteFolder(const char *path)
     }
     DIR *dir = opendir(path);
     if (dir == NULL) {
-        HNP_LOGE("delete folder open dir=%s unsuccess ", path);
+        HNP_LOGE("delete folder open dir=%{public}s unsuccess ", path);
         return HNP_ERRNO_BASE_DIR_OPEN_FAILED;
     }
 
@@ -241,7 +242,7 @@ int HnpDeleteFolder(const char *path)
 
     ret = rmdir(path);
     if (ret != 0) {
-        HNP_LOGE("rmdir path unsuccess.ret=%d, path=%s, errno=%d", ret, path, errno);
+        HNP_LOGE("rmdir path unsuccess.ret=%{public}d, path=%{public}s, errno=%{public}d", ret, path, errno);
     }
     return ret;
 }
@@ -267,7 +268,7 @@ int HnpCreateFolder(const char* path)
 
     p = strdup(path);
     if (p == NULL) {
-        HNP_LOGE("delete folder strdup unsuccess, path=%s, errno=%d", path, errno);
+        HNP_LOGE("delete folder strdup unsuccess, path=%{public}s, errno=%{public}d", path, errno);
         return HNP_ERRNO_BASE_STRDUP_FAILED;
     }
 
@@ -279,7 +280,7 @@ int HnpCreateFolder(const char* path)
         if (stat(path, &buffer) != 0) {
             ret = mkdir(p, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
             if ((ret != 0) && (errno != EEXIST)) {
-                HNP_LOGE("delete folder unsuccess, ret=%d, p=%s, errno:%d", ret, p, errno);
+                HNP_LOGE("delete folder unsuccess, ret=%{public}d, p=%{public}s, errno:%{public}d", ret, p, errno);
             }
         }
         *q = '/';
@@ -288,7 +289,7 @@ int HnpCreateFolder(const char* path)
     if (path[strlen(path) - 1] != '/') {
         ret = mkdir(p, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
         if ((ret != 0) && (errno != EEXIST)) {
-            HNP_LOGE("delete folder unsuccess, ret=%d, path=%s, errno:%d", ret, path, errno);
+            HNP_LOGE("delete folder unsuccess, ret=%{public}d, path=%{public}s, errno:%{public}d", ret, path, errno);
         }
     }
     free(p);

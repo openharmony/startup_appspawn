@@ -827,7 +827,7 @@ HWTEST(HnpInstallerTest, Hnp_Install_API_002, TestSize.Level0)
             EXPECT_EQ(sprintf_s(hapInfo.abi, sizeof(hapInfo.abi), "%s", "system64") > 0, true);
             EXPECT_EQ(sprintf_s(hapInfo.hapPath, sizeof(hapInfo.hapPath), "%s", "test") > 0, true);
             ret = NativeInstallHnp("10001", "./hnp_out/", &hapInfo, 1);
-            EXPECT_NE(ret, 0);
+            EXPECT_EQ(ret, HNP_ERRNO_INSTALLER_GET_REALPATH_FAILED);
         }
     }
 
@@ -1118,8 +1118,8 @@ HWTEST(HnpInstallerTest, Hnp_UnInstall_API_002, TestSize.Level0)
 
     if (IsDeveloperModeOpen()) {
         { // param uninstall path is invalid
-            ret = NativeUnInstallHnp("10000", "wechat");
-            EXPECT_NE(ret, HNP_ERRNO_BASE_DIR_OPEN_FAILED);
+            ret = NativeUnInstallHnp("10001", "wechat");
+            EXPECT_EQ(ret, HNP_ERRNO_UNINSTALLER_HNP_PATH_NOT_EXIST);
         }
     }
 
