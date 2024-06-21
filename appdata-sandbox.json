@@ -626,7 +626,7 @@
         }],
         "ohos.permission.READ_IMAGEVIDEO":[{
             "sandbox-switch": "ON",
-            "gids": [1008],
+            "gids": [2008],
             "mount-paths": [{
                     "src-path": "/storage/cloud/<currentUserId>/files/.thumbs/Photo",
                     "sandbox-path": "/storage/Share/.thumbs/Photo",
