@@ -24,7 +24,13 @@
 #include "securec.h"
 
 #ifndef HNP_CLI
+
 #include "hilog/log.h"
+#undef LOG_TAG
+#define LOG_TAG "APPSPAWN_HNP"
+#undef LOG_DOMAIN
+#define LOG_DOMAIN (0xD002C00 + 0x11)
+
 #endif
 
 #ifdef __cplusplus

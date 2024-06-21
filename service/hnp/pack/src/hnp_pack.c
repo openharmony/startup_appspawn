@@ -58,7 +58,7 @@ static int AddHnpCfgFileToZip(char *zipPath, const char *hnpSrcPath, HnpCfgInfo 
     ret = HnpAddFileToZip(zipPath, hnpCfgFile, buff, strlen(buff) + 1);
     free(buff);
     if (ret != 0) {
-        HNP_LOGE("add file to zip failed.zip=%s, file=%s", zipPath, hnpCfgFile);
+        HNP_LOGE("add file to zip failed.zip=%{public}s, file=%{public}s", zipPath, hnpCfgFile);
         return ret;
     }
 
@@ -71,7 +71,7 @@ static int PackHnp(const char *hnpSrcPath, const char *hnpDstPath, HnpPackInfo *
     char hnp_file_path[MAX_FILE_PATH_LEN];
     HnpCfgInfo *hnpCfg = &hnpPack->cfgInfo;
 
-    HNP_LOGI("PackHnp start. srcPath=%s, hnpName=%s, hnpVer=%s, hnpDstPath=%s ",
+    HNP_LOGI("PackHnp start. srcPath=%{public}s, hnpName=%{public}s, hnpVer=%{public}s, hnpDstPath=%{public}s ",
         hnpSrcPath, hnpCfg->name, hnpCfg->version, hnpDstPath);
 
     /* 拼接hnp文件名 */
@@ -84,8 +84,8 @@ static int PackHnp(const char *hnpSrcPath, const char *hnpDstPath, HnpPackInfo *
     /* 将软件包压缩成独立的.hnp文件 */
     ret = HnpZip(hnpSrcPath, hnp_file_path);
     if (ret != 0) {
-        HNP_LOGE("zip dir unsuccess! srcPath=%s, hnpName=%s, hnpVer=%s, hnpDstPath=%s ret=%d",
-            hnpSrcPath, hnpCfg->name, hnpCfg->version, hnpDstPath, ret);
+        HNP_LOGE("zip dir unsuccess! srcPath=%{public}s, hnpName=%{public}s, hnpVer=%{public}s, hnpDstPath=%{public}s"
+            "ret=%{public}d", hnpSrcPath, hnpCfg->name, hnpCfg->version, hnpDstPath, ret);
         return HNP_ERRNO_PACK_ZIP_DIR_FAILED;
     }
 
@@ -99,8 +99,9 @@ static int PackHnp(const char *hnpSrcPath, const char *hnpDstPath, HnpPackInfo *
         }
     }
 
-    HNP_LOGI("PackHnp end. srcPath=%s, hnpName=%s, hnpVer=%s, hnpDstPath=%s, linkNum=%d, ret=%d",
-        hnpSrcPath, hnpCfg->name, hnpCfg->version, hnpDstPath, hnpCfg->linkNum, ret);
+    HNP_LOGI("PackHnp end. srcPath=%{public}s, hnpName=%{public}s, hnpVer=%{public}s, hnpDstPath=%{public}s,"
+        "linkNum=%{public}d, ret=%{public}d", hnpSrcPath, hnpCfg->name, hnpCfg->version, hnpDstPath, hnpCfg->linkNum,
+        ret);
 
     return ret;
 }
@@ -112,7 +113,7 @@ static int GetHnpCfgInfo(const char *hnpCfgPath, const char *sourcePath, HnpCfgI
 
     int ret = ParseHnpCfgFile(hnpCfgPath, hnpCfg);
     if (ret != 0) {
-        HNP_LOGE("parse hnp cfg[%s] unsuccess! ret=%d", hnpCfgPath, ret);
+        HNP_LOGE("parse hnp cfg[%{public}s] unsuccess! ret=%{public}d", hnpCfgPath, ret);
         return ret;
     }
     /* 校验软连接的source文件是否存在 */
@@ -128,7 +129,7 @@ static int GetHnpCfgInfo(const char *hnpCfgPath, const char *sourcePath, HnpCfgI
         if (access(linksource, F_OK) != 0) {
             free(hnpCfg->links);
             hnpCfg->links = NULL;
-            HNP_LOGE("links source[%s] not exist.", linksource);
+            HNP_LOGE("links source[%{public}s] not exist.", linksource);
             return HNP_ERRNO_PACK_GET_REALPATH_FAILED;
         }
     }
@@ -144,7 +145,7 @@ static int ParsePackArgs(HnpPackArgv *packArgv, HnpPackInfo *packInfo)
         return HNP_ERRNO_OPERATOR_ARGV_MISS;
     }
     if (GetRealPath(packArgv->source, packInfo->source) != 0) {
-        HNP_LOGE("source dir path=%s is invalid.", packArgv->source);
+        HNP_LOGE("source dir path=%{public}s is invalid.", packArgv->source);
         return HNP_ERRNO_PACK_GET_REALPATH_FAILED;
     }
     if (packArgv->output == NULL) {
@@ -152,7 +153,7 @@ static int ParsePackArgs(HnpPackArgv *packArgv, HnpPackInfo *packInfo)
     }
 
     if (GetRealPath(packArgv->output, packInfo->output) != 0) {
-        HNP_LOGE("output dir path=%s is invalid.", packArgv->output);
+        HNP_LOGE("output dir path=%{public}s is invalid.", packArgv->output);
         return HNP_ERRNO_PACK_GET_REALPATH_FAILED;
     }
     /* 确认hnp.json文件是否存在，存在则对hnp.json文件进行解析并校验内容是否正确 */

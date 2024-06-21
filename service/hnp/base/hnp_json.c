@@ -80,7 +80,7 @@ static int ParseJsonStreamToHnpCfgInfo(cJSON *json, HnpCfgInfo *hnpCfg)
         return HNP_ERRNO_BASE_PARSE_ITEM_NO_FOUND;
     }
     if (strcmp(typeItem->valuestring, "hnp-config") != 0) {
-        HNP_LOGE("type info not match.type=%s", typeItem->valuestring);
+        HNP_LOGE("type info not match.type=%{public}s", typeItem->valuestring);
         return HNP_ERRNO_BASE_PARSE_ITEM_NO_FOUND;
     }
     cJSON *nameItem = cJSON_GetObjectItem(json, "name");
@@ -129,13 +129,13 @@ int ParseHnpCfgFile(const char *hnpCfgPath, HnpCfgInfo *hnpCfg)
 
     ret = ReadFileToStream(hnpCfgPath, &cfgStream, &size);
     if (ret != 0) {
-        HNP_LOGE("read cfg file[%s] unsuccess.", hnpCfgPath);
+        HNP_LOGE("read cfg file[%{public}s] unsuccess.", hnpCfgPath);
         return HNP_ERRNO_BASE_READ_FILE_STREAM_FAILED;
     }
     json = cJSON_Parse(cfgStream);
     free(cfgStream);
     if (json == NULL) {
-        HNP_LOGE("parse json file[%s] unsuccess.", hnpCfgPath);
+        HNP_LOGE("parse json file[%{public}s] unsuccess.", hnpCfgPath);
         return HNP_ERRNO_BASE_PARSE_JSON_FAILED;
     }
     ret = ParseJsonStreamToHnpCfgInfo(json, hnpCfg);
@@ -251,7 +251,7 @@ static int HnpHapJsonWrite(cJSON *json)
 {
     FILE *fp = fopen(HNP_PACKAGE_INFO_JSON_FILE_PATH, "wb");
     if (fp == NULL) {
-        HNP_LOGE("open file:%s unsuccess!", HNP_PACKAGE_INFO_JSON_FILE_PATH);
+        HNP_LOGE("open file:%{public}s unsuccess!", HNP_PACKAGE_INFO_JSON_FILE_PATH);
         return HNP_ERRNO_BASE_FILE_OPEN_FAILED;
     }
     char *jsonStr = cJSON_Print(json);
@@ -259,7 +259,7 @@ static int HnpHapJsonWrite(cJSON *json)
     (void)fclose(fp);
     free(jsonStr);
     if (ret < 0) {
-        HNP_LOGE("package info write file:%s unsuccess!", HNP_PACKAGE_INFO_JSON_FILE_PATH);
+        HNP_LOGE("package info write file:%{public}s unsuccess!", HNP_PACKAGE_INFO_JSON_FILE_PATH);
         return HNP_ERRNO_BASE_FILE_WRITE_FAILED;
     }
 
@@ -414,7 +414,6 @@ int HnpPackageInfoGet(const char *packageName, HnpPackageInfo **packageInfoOut, 
 {
     char *infoStream;
     int size;
-    bool hapExist = false;
     bool hnpExist = false;
     int hapIndex = 0;
     HnpPackageInfo packageInfos[MAX_PACKAGE_HNP_NUM] = {0};
@@ -437,8 +436,7 @@ int HnpPackageInfoGet(const char *packageName, HnpPackageInfo **packageInfoOut, 
     }
 
     cJSON *hapItem = NULL;
-    hapExist = HnpInstallHapExistCheck(packageName, json, &hapItem, &hapIndex);
-    if (!hapExist) {
+    if (HnpInstallHapExistCheck(packageName, json, &hapItem, &hapIndex) == false) {
         cJSON_Delete(json);
         return 0;
     }
@@ -455,7 +453,8 @@ int HnpPackageInfoGet(const char *packageName, HnpPackageInfo **packageInfoOut, 
         if (!hnpExist) {
             if ((strcpy_s(packageInfos[sum].name, MAX_FILE_PATH_LEN, name->valuestring) != EOK) ||
                 (strcpy_s(packageInfos[sum].version, HNP_VERSION_LEN, version->valuestring) != EOK)) {
-                HNP_LOGE("strcpy hnp info name[%s] version[%s] unsuccess.", name->valuestring, version->valuestring);
+                HNP_LOGE("strcpy hnp info name[%{public}s] version[%{public}s] unsuccess.", name->valuestring,
+                    version->valuestring);
                 cJSON_Delete(json);
                 return HNP_ERRNO_BASE_COPY_FAILED;
             }

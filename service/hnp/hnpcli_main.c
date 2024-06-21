@@ -86,7 +86,7 @@ int main(int argc, char *argv[])
     /* 检验用户命令，获取对应的处理函数 */
     cmdInfo = HnpCmdCheck(argv[HNP_INDEX_1]);
     if (cmdInfo == NULL) {
-        HNP_LOGE("invalid cmd!. cmd:%s", argv[HNP_INDEX_1]);
+        HNP_LOGE("invalid cmd!. cmd:%{public}s", argv[HNP_INDEX_1]);
         return HNP_ERRNO_OPERATOR_TYPE_INVALID;
     }
 
@@ -96,7 +96,7 @@ int main(int argc, char *argv[])
         HnpCliShowHelp(argc, argv);
     }
 
-    HNP_LOGI("native manager process exit. ret=%d ", ret);
+    HNP_LOGI("native manager process exit. ret=%{public}d ", ret);
     return ret;
 }
 
