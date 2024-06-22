@@ -1,6 +1,5 @@
 # hnp_api.h
 
-
 ## 概述
 
 提供支持Native软件的安装和卸载功能。
@@ -22,10 +21,7 @@ NA
 | [NativeInstallHnp](#nativeinstallhnp) | 安装Native软件到设备中 |
 | [NativeUnInstallHnp](#nativeuninstallhnp)| 卸载设备中已安装的Native软件 |
 
-
-
 ## 函数说明
-
 
 ### NativeInstallHnp
 
@@ -85,7 +81,6 @@ int NativeUnInstallHnp(const char *userId, const char *packageName);
   userId：用户ID；
 
   packageName：hap应用软件包名；
-
 
 **返回：**
 

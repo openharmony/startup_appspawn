@@ -40,11 +40,26 @@ extern "C" {
 
 #define ZIP_EXTERNAL_FA_OFFSET 16
 
+// zipOpenNewFileInZip3只识别带‘/’的路径，需要将路径中‘\’转换成‘/’
+static void TransPath(const char *input, char *output)
+{
+    int len = strlen(input);
+    for (int i = 0; i < len; i++) {
+        if (input[i] == '\\') {
+            output[i] = '/';
+        } else {
+            output[i] = input[i];
+        }
+    }
+    output[len] = '\0';
+}
+
 // 向zip压缩包中添加文件
 static int ZipAddFile(const char* file, int offset, zipFile zf)
 {
     int err;
     char buf[1024];
+    char transPath[MAX_FILE_PATH_LEN];
     int len;
     FILE *f;
     struct stat buffer = {0};
@@ -53,10 +68,13 @@ static int ZipAddFile(const char* file, int offset, zipFile zf)
     if (stat(file, &buffer) != 0) {
         return HNP_ERRNO_BASE_STAT_FAILED;
     }
-
+#ifdef _WIN32
+    buffer.st_mode |= S_IXOTH;
+#endif
     fileInfo.external_fa = (buffer.st_mode & 0xFFFF) << ZIP_EXTERNAL_FA_OFFSET;
-    err = zipOpenNewFileInZip3(zf, file + offset, &fileInfo, NULL, 0, NULL, 0, NULL, Z_DEFLATED, Z_BEST_COMPRESSION,
-        0, -MAX_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY, NULL, 0);
+    TransPath(file, transPath);
+    err = zipOpenNewFileInZip3(zf, transPath + offset, &fileInfo, NULL, 0, NULL, 0, NULL, Z_DEFLATED,
+        Z_BEST_COMPRESSION, 0, -MAX_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY, NULL, 0);
     if (err != ZIP_OK) {
         HNP_LOGE("open new file[%{public}s] in zip unsuccess ", file);
         return HNP_ERRNO_BASE_CREATE_ZIP_FAILED;
@@ -92,6 +110,28 @@ static int IsDirPath(struct dirent *entry, char *fullPath, int *isDir)
     return 0;
 }
 
+static int ZipAddDir(const char *sourcePath, int offset, zipFile zf);
+
+static int ZipHandleDir(char *fullPath, int offset, zipFile zf)
+{
+    int ret;
+    char transPath[MAX_FILE_PATH_LEN];
+    TransPath(fullPath, transPath);
+    if (zipOpenNewFileInZip3(zf, transPath + offset, NULL, NULL, 0, NULL, 0, NULL, Z_DEFLATED,
+                             Z_BEST_COMPRESSION, 0, -MAX_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY,
+                             NULL, 0) != ZIP_OK) {
+        HNP_LOGE("open new file[%{public}s] in zip unsuccess ", fullPath);
+        return HNP_ERRNO_BASE_CREATE_ZIP_FAILED;
+    }
+    zipCloseFileInZip(zf);
+    ret = ZipAddDir(fullPath, offset, zf);
+    if (ret != 0) {
+        HNP_LOGE("zip add dir[%{public}s] unsuccess ", fullPath);
+        return ret;
+    }
+    return 0;
+}
+
 // sourcePath--文件夹路径  zf--压缩文件句柄
 static int ZipAddDir(const char *sourcePath, int offset, zipFile zf)
 {
@@ -123,25 +163,15 @@ static int ZipAddDir(const char *sourcePath, int offset, zipFile zf)
             int endPos = strlen(fullPath);
             fullPath[endPos] = DIR_SPLIT_SYMBOL;
             fullPath[endPos + 1] = '\0';
-
-            if (zipOpenNewFileInZip3(zf, fullPath + offset, NULL, NULL, 0, NULL, 0, NULL, Z_DEFLATED,
-                Z_BEST_COMPRESSION, 0, -MAX_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY, NULL, 0) != ZIP_OK) {
-                HNP_LOGE("open new file[%{public}s] in zip unsuccess ", fullPath);
-                closedir(dir);
-                return HNP_ERRNO_BASE_CREATE_ZIP_FAILED;
-            }
-            zipCloseFileInZip(zf);
-            if ((ret = ZipAddDir(fullPath, offset, zf)) != 0) {
-                HNP_LOGE("zip add dir[%{public}s] unsuccess ", fullPath);
+            ret = ZipHandleDir(fullPath, offset, zf);
+            if (ret != 0) {
                 closedir(dir);
                 return ret;
             }
-        } else {
-            if ((ret = ZipAddFile(fullPath, offset, zf)) != 0) {
-                HNP_LOGE("zip add file[%{public}s] unsuccess ", fullPath);
-                closedir(dir);
-                return ret;
-            }
+        } else if ((ret = ZipAddFile(fullPath, offset, zf)) != 0) {
+            HNP_LOGE("zip add file[%{public}s] unsuccess ", fullPath);
+            closedir(dir);
+            return ret;
         }
     }
     closedir(dir);
@@ -152,6 +182,7 @@ static int ZipAddDir(const char *sourcePath, int offset, zipFile zf)
 static int ZipDir(const char *sourcePath, int offset, const char *zipPath)
 {
     int ret;
+    char transPath[MAX_FILE_PATH_LEN];
 
     zipFile zf = zipOpen(zipPath, APPEND_STATUS_CREATE);
     if (zf == NULL) {
@@ -159,8 +190,10 @@ static int ZipDir(const char *sourcePath, int offset, const char *zipPath)
         return HNP_ERRNO_BASE_CREATE_ZIP_FAILED;
     }
 
+    TransPath(sourcePath, transPath);
+
     // 将外层文件夹信息保存到zip文件中
-    ret = zipOpenNewFileInZip3(zf, sourcePath + offset, NULL, NULL, 0, NULL, 0, NULL, Z_DEFLATED, Z_BEST_COMPRESSION,
+    ret = zipOpenNewFileInZip3(zf, transPath + offset, NULL, NULL, 0, NULL, 0, NULL, Z_DEFLATED, Z_BEST_COMPRESSION,
         0, -MAX_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY, NULL, 0);
     if (ret != ZIP_OK) {
         HNP_LOGE("open new file[%{public}s] in zip unsuccess ", sourcePath + offset);
@@ -208,6 +241,7 @@ int HnpAddFileToZip(char *zipfile, char *filename, char *buff, int size)
 {
     zipFile zf;
     int ret;
+    char transPath[MAX_FILE_PATH_LEN];
 
     zf = zipOpen(zipfile, APPEND_STATUS_ADDINZIP);
     if (zf == NULL) {
@@ -215,8 +249,10 @@ int HnpAddFileToZip(char *zipfile, char *filename, char *buff, int size)
         return HNP_ERRNO_BASE_CREATE_ZIP_FAILED;
     }
 
+    TransPath(filename, transPath);
+
     // 将外层文件夹信息保存到zip文件中
-    ret = zipOpenNewFileInZip3(zf, filename, NULL, NULL, 0, NULL, 0, NULL, Z_DEFLATED, Z_BEST_COMPRESSION,
+    ret = zipOpenNewFileInZip3(zf, transPath, NULL, NULL, 0, NULL, 0, NULL, Z_DEFLATED, Z_BEST_COMPRESSION,
         0, -MAX_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY, NULL, 0);
     if (ret != ZIP_OK) {
         HNP_LOGE("open new file[%{public}s] in zip unsuccess ", filename);
