@@ -151,7 +151,6 @@ ohos_unittest("AppSpawn_ut") {
     "c_utils:utils",
     "config_policy:configpolicy_util",
     "eventhandler:libeventhandler",
-    "faultloggerd:libdfx_dumpcatcher",
     "hilog:libhilog",
     "hitrace:hitrace_meter",
     "init:libbegetutil",
@@ -161,7 +160,9 @@ ohos_unittest("AppSpawn_ut") {
     "os_account:os_account_innerkits",
     "resource_management:global_resmgr",
   ]
-
+  if (enable_appspawn_dump_catcher) {
+    external_deps += [ "faultloggerd:libdfx_dumpcatcher" ]
+  }
   if (asan_detector || is_asan) {
     defines += [ "ASAN_DETECTOR" ]
     sources += [ "${appspawn_path}/modules/asan_detector/asan_detector.c" ]

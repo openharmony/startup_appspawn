@@ -81,11 +81,12 @@ ohos_unittest("AppSpawn_client_ut") {
     "cJSON:cjson",
     "c_utils:utils",
     "config_policy:configpolicy_util",
-    "faultloggerd:libdfx_dumpcatcher",
     "hilog:libhilog",
     "init:libbegetutil",
   ]
-
+  if (enable_appspawn_dump_catcher) {
+    external_deps += [ "faultloggerd:libdfx_dumpcatcher" ]
+  }
   if (appspawn_report_event) {
     external_deps += [ "hisysevent:libhisysevent" ]
     sources += [ "${appspawn_path}/modules/sysevent/appspawn_hisysevent.cpp" ]

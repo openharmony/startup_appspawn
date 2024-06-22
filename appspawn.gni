@@ -27,4 +27,5 @@ declare_args() {
   appspawn_test_cmd = false
   appspawn_sandbox_new = false
   appspawn_use_encaps = false
+  enable_appspawn_dump_catcher = true
 }
