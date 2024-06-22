@@ -55,6 +55,7 @@ ohos_unittest("AppSpawn_client_ut") {
   # server
   sources += [
     "${appspawn_path}/common/appspawn_server.c",
+    "${appspawn_path}/modules/common/appspawn_dfx_dump.cpp",
     "${appspawn_path}/modules/modulemgr/appspawn_modulemgr.c",
     "${appspawn_path}/standard/appspawn_appmgr.c",
     "${appspawn_path}/standard/appspawn_msgmgr.c",
@@ -83,7 +84,9 @@ ohos_unittest("AppSpawn_client_ut") {
     "hilog:libhilog",
     "init:libbegetutil",
   ]
-
+  if (enable_appspawn_dump_catcher) {
+    external_deps += [ "faultloggerd:libdfx_dumpcatcher" ]
+  }
   if (appspawn_report_event) {
     external_deps += [ "hisysevent:libhisysevent" ]
     sources += [ "${appspawn_path}/modules/sysevent/appspawn_hisysevent.cpp" ]

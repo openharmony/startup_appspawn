@@ -91,6 +91,7 @@ ohos_unittest("AppSpawn_ut") {
     "${appspawn_path}/modules/common/appspawn_begetctl.c",
     "${appspawn_path}/modules/common/appspawn_cgroup.c",
     "${appspawn_path}/modules/common/appspawn_common.c",
+    "${appspawn_path}/modules/common/appspawn_dfx_dump.cpp",
     "${appspawn_path}/modules/common/appspawn_namespace.c",
     "${appspawn_path}/modules/common/appspawn_silk.c",
     "${appspawn_path}/modules/nweb_adapter/nwebspawn_adapter.cpp",
@@ -159,7 +160,9 @@ ohos_unittest("AppSpawn_ut") {
     "os_account:os_account_innerkits",
     "resource_management:global_resmgr",
   ]
-
+  if (enable_appspawn_dump_catcher) {
+    external_deps += [ "faultloggerd:libdfx_dumpcatcher" ]
+  }
   if (asan_detector || is_asan) {
     defines += [ "ASAN_DETECTOR" ]
     sources += [ "${appspawn_path}/modules/asan_detector/asan_detector.c" ]

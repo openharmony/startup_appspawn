@@ -19,6 +19,7 @@ config("appspawn_server_config") {
   include_dirs = [
     "${appspawn_path}/common",
     "${appspawn_path}/standard",
+    "${appspawn_path}/modules/common",
     "${appspawn_path}/modules/modulemgr",
     "${appspawn_path}/modules/sysevent",
   ]
@@ -37,6 +38,7 @@ config("appspawn_server_config") {
 ohos_executable("appspawn") {
   sources = [
     "${appspawn_path}/common/appspawn_server.c",
+    "${appspawn_path}/modules/common/appspawn_dfx_dump.cpp",
     "${appspawn_path}/modules/modulemgr/appspawn_modulemgr.c",
     "${appspawn_path}/standard/appspawn_appmgr.c",
     "${appspawn_path}/standard/appspawn_main.c",
@@ -67,7 +69,9 @@ ohos_executable("appspawn") {
     "hilog:libhilog",
     "init:libbegetutil",
   ]
-
+  if (enable_appspawn_dump_catcher) {
+    external_deps += [ "faultloggerd:libdfx_dumpcatcher" ]
+  }
   if (appspawn_use_encaps) {
     defines += [ "USE_ENCAPS" ]
   }
