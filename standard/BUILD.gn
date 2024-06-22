@@ -66,11 +66,12 @@ ohos_executable("appspawn") {
   external_deps = [
     "c_utils:utils",
     "config_policy:configpolicy_util",
-    "faultloggerd:libdfx_dumpcatcher",
     "hilog:libhilog",
     "init:libbegetutil",
   ]
-
+  if (enable_appspawn_dump_catcher) {
+    external_deps += [ "faultloggerd:libdfx_dumpcatcher" ]
+  }
   if (appspawn_use_encaps) {
     defines += [ "USE_ENCAPS" ]
   }
