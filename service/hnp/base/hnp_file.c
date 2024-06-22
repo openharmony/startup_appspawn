@@ -97,41 +97,6 @@ int ReadFileToStream(const char *filePath, char **stream, int *streamLen)
     return 0;
 }
 
-int ReadFileToStreamBySize(const char *filePath, char **stream, int readSize)
-{
-    int ret;
-    FILE *file;
-    char *streamTmp;
-
-    file = fopen(filePath, "rb");
-    if (file == NULL) {
-        HNP_LOGE("open file[%{public}s] unsuccess. ", filePath);
-        return HNP_ERRNO_BASE_FILE_OPEN_FAILED;
-    }
-
-    if (readSize <= 0) {
-        (void)fclose(file);
-        HNP_LOGE("read size(%{public}d) is invalid.", readSize);
-        return HNP_ERRNO_BASE_PARAMS_INVALID;
-    }
-    streamTmp = (char*)malloc(readSize);
-    if (streamTmp == NULL) {
-        HNP_LOGE("malloc unsuccess. size=%{public}d", readSize);
-        (void)fclose(file);
-        return HNP_ERRNO_NOMEM;
-    }
-    ret = fread(streamTmp, sizeof(char), readSize, file);
-    if (ret != readSize) {
-        HNP_LOGE("fread unsuccess. ret=%{public}d, size=%{public}d", ret, readSize);
-        (void)fclose(file);
-        free(streamTmp);
-        return HNP_ERRNO_BASE_FILE_READ_FAILED;
-    }
-    *stream = streamTmp;
-    (void)fclose(file);
-    return 0;
-}
-
 int HnpWriteInfoToFile(const char* filePath, char *buff, int len)
 {
     FILE *fp = fopen(filePath, "w");

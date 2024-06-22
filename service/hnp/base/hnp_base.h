@@ -223,8 +223,6 @@ int GetFileSizeByHandle(FILE *file, int *size);
 
 int ReadFileToStream(const char *filePath, char **stream, int *streamLen);
 
-int ReadFileToStreamBySize(const char *filePath, char **stream, int readSize);
-
 int GetRealPath(char *srcPath, char *realPath);
 
 int HnpZip(const char *inputDir, const char *outputFile);
