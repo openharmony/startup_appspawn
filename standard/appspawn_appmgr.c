@@ -33,7 +33,7 @@
 #include "appspawn_manager.h"
 #include "securec.h"
 
-#define EXIT_APP_TIMES 10
+#define EXIT_APP_TIMES 100
 
 static AppSpawnMgr *g_appSpawnMgr = NULL;
 
@@ -223,18 +223,19 @@ int KillAndWaitStatus(pid_t pid, int sig, int *exitStatus)
 
     int retry = 0;
     pid_t exitPid = 0;
-    while (retry < EXIT_APP_TIMES) { // 10 * 100000us = 1s timeout
+    while (retry < EXIT_APP_TIMES) { // 100 * 10000us = 1s timeout
         exitPid = waitpid(pid, exitStatus, WNOHANG);
-        usleep(100000); // 100000 is sleep for 100ms
+        if (exitPid == pid) {
+            return 0;
+        }
+        usleep(10000); // 10000 is sleep for 10ms
         retry++;
     }
 
-    if (exitPid != pid) {
-        DumpProcessSpawnStack(pid);
-        APPSPAWN_LOGE("waitpid failed, pid: %{public}d %{public}d, status: %{public}d", exitPid, pid, *exitStatus);
-        return -1;
-    }
-    return 0;
+    DumpProcessSpawnStack(pid);
+    APPSPAWN_LOGE("waitpid failed, pid: %{public}d %{public}d, status: %{public}d", exitPid, pid, *exitStatus);
+
+    return -1;
 }
 
 static int GetProcessTerminationStatus(pid_t pid)
