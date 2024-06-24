@@ -54,6 +54,8 @@ namespace {
     constexpr int32_t DLP_FUSE_FD = 1000;
     constexpr int32_t APP_LOG_DIR_GID = 1007;
     constexpr int32_t APP_DATABASE_DIR_GID = 3012;
+    constexpr int32_t FILE_ACCESS_COMMON_DIR_STATUS = 0;
+    constexpr int32_t FILE_CROSS_APP_STATUS = 1;
     constexpr static mode_t FILE_MODE = 0711;
     constexpr static mode_t BASIC_MOUNT_FLAGS = MS_REC | MS_BIND;
     constexpr std::string_view APL_SYSTEM_CORE("system_core");
@@ -123,7 +125,6 @@ namespace {
     const std::string FILE_ACCESS_COMMON_DIR_MODE = "ohos.permission.FILE_ACCESS_COMMON_DIR";
     const std::string ACCESS_DLP_FILE_MODE = "ohos.permission.ACCESS_DLP_FILE";
     const std::string FILE_ACCESS_MANAGER_MODE = "ohos.permission.FILE_ACCESS_MANAGER";
-    const char *DOCS_FILE_NAME = "Docs";
 }
 
 static uint32_t GetAppMsgFlags(const AppSpawningCtx *property)
@@ -167,7 +168,7 @@ bool JsonUtils::GetStringFromJson(const nlohmann::json &json, const std::string 
 }
 
 std::vector<nlohmann::json> SandboxUtils::appSandboxConfig_ = {};
-bool SandboxUtils::deviceTypeEnable_ = false;
+int32_t SandboxUtils::deviceTypeEnable_ = -1;
 
 void SandboxUtils::StoreJsonConfig(nlohmann::json &appSandboxConfig)
 {
@@ -507,10 +508,12 @@ std::string SandboxUtils::ConvertToRealPathWithPermission(const AppSpawningCtx *
     }
 
     if (path.find(g_userId) != std::string::npos) {
-        if (deviceTypeEnable_) {
+        if (deviceTypeEnable_ == FILE_CROSS_APP_STATUS) {
+            path = replace_all(path, g_userId, "currentUser");
+        } else if (deviceTypeEnable_ == FILE_ACCESS_COMMON_DIR_STATUS) {
             path = replace_all(path, g_userId, "currentUser");
         } else {
-            path = replace_all(path, g_userId, "currentUser");
+            return "";
         }
     }
     return path;
@@ -579,6 +582,7 @@ static bool CheckMountConfig(nlohmann::json &mntPoint, const AppSpawningCtx *app
                     (mntPoint.find(g_sandBoxFlagsCustomized) == mntPoint.end()));
     APPSPAWN_CHECK(!istrue, return false,
         "read mount config failed, app name is %{public}s", GetBundleName(appProperty));
+
     AppSpawnMsgDomainInfo *info =
         reinterpret_cast<AppSpawnMsgDomainInfo *>(GetAppProperty(appProperty, TLV_DOMAIN_INFO));
     APPSPAWN_CHECK(info != nullptr, return false, "Filed to get domain info %{public}s", GetBundleName(appProperty));
@@ -743,25 +747,6 @@ std::string SandboxUtils::GetSandboxPath(const AppSpawningCtx *appProperty, nloh
     return sandboxPath;
 }
 
-static bool CheckFileMgrPermission(const AppSpawningCtx *appProperty, const char *typeName)
-{
-    int index = GetPermissionIndex(nullptr, FILE_ACCESS_MANAGER_MODE.c_str());
-    if (CheckAppPermissionFlagSet(appProperty, static_cast<uint32_t>(index)) && typeName != nullptr) {
-        return true;
-    }
-    return false;
-}
-
-static bool IsFileManagerMountType(const AppSpawningCtx *appProperty, std::string srcPath, const char *typeName)
-{
-    std::string permissionTypeName = typeName == nullptr ? "" : typeName;
-    if ((permissionTypeName.find(FILE_CROSS_APP_MODE) != std::string::npos) &&
-        (srcPath.find(DOCS_FILE_NAME) != std::string::npos)) {
-        return true;
-    }
-    return false;
-}
-
 static bool CheckMountFlag(const AppSpawningCtx *appProperty, const std::string bundleName, nlohmann::json &appConfig)
 {
     if (appConfig.find(g_flags) != appConfig.end()) {
@@ -785,20 +770,17 @@ int SandboxUtils::DoAllMntPointsMount(const AppSpawningCtx *appProperty,
 
     std::string sandboxRoot = GetSbxPathByConfig(appProperty, appConfig);
     bool checkFlag = CheckMountFlag(appProperty, bundleName, appConfig);
-    bool checkFileMgrPermission = CheckFileMgrPermission(appProperty, typeName);
 
     nlohmann::json mountPoints = appConfig[g_mountPrefix];
     unsigned int mountPointSize = mountPoints.size();
     for (unsigned int i = 0; i < mountPointSize; i++) {
         nlohmann::json mntPoint = mountPoints[i];
-        std::string srcPath = ConvertToRealPath(appProperty, mntPoint[g_srcPath].get<std::string>());
-        std::string sandboxPath = GetSandboxPath(appProperty, mntPoint, section, sandboxRoot);
-
-        if ((CheckMountConfig(mntPoint, appProperty, checkFlag) == false) ||
-            (checkFileMgrPermission == true && IsFileManagerMountType(appProperty, srcPath, typeName))) {
+        if ((CheckMountConfig(mntPoint, appProperty, checkFlag) == false)) {
             continue;
         }
 
+        std::string srcPath = ConvertToRealPath(appProperty, mntPoint[g_srcPath].get<std::string>());
+        std::string sandboxPath = GetSandboxPath(appProperty, mntPoint, section, sandboxRoot);
         SandboxMountConfig mountConfig = {0};
         GetSandboxMountConfig(appProperty, section, mntPoint, mountConfig);
         unsigned long mountFlags = GetSandboxMountFlags(mntPoint);
@@ -1468,13 +1450,23 @@ int32_t SandboxUtils::SetBundleResourceAppSandboxProperty(const AppSpawningCtx *
     return ret;
 }
 
-bool SandboxUtils::CheckAppFullMountEnable()
+int32_t SandboxUtils::CheckAppFullMountEnable()
 {
+    if (deviceTypeEnable_ != -1) {
+        return deviceTypeEnable_;
+    }
+
     char value[] = "false";
     int32_t ret = GetParameter("const.filemanager.full_mount.enable", "false", value, sizeof(value));
-    APPSPAWN_CHECK_ONLY_EXPER(ret > 0 && (strcmp(value, "true") == 0), return false);
-    deviceTypeEnable_ = true;
-    return true;
+    if (ret > 0 && (strcmp(value, "true")) == 0) {
+        deviceTypeEnable_ = FILE_CROSS_APP_STATUS;
+    } else if (ret > 0 && (strcmp(value, "false")) == 0) {
+        deviceTypeEnable_ = FILE_ACCESS_COMMON_DIR_STATUS;
+    } else {
+        deviceTypeEnable_ = -1;
+    }
+
+    return deviceTypeEnable_;
 }
 
 int32_t SandboxUtils::SetSandboxProperty(AppSpawningCtx *appProperty, std::string &sandboxPackagePath)
@@ -1540,6 +1532,23 @@ static inline int EnableSandboxNamespace(AppSpawningCtx *appProperty, uint32_t s
     return 0;
 }
 
+int32_t SandboxUtils::SetPermissionWithParam(AppSpawningCtx *appProperty)
+{
+    uint32_t index = 0;
+    int32_t appFullMountStatus = CheckAppFullMountEnable();
+    if (appFullMountStatus == FILE_CROSS_APP_STATUS) {
+        index = GetPermissionIndex(nullptr, FILE_CROSS_APP_MODE.c_str());
+    } else if (appFullMountStatus == FILE_ACCESS_COMMON_DIR_STATUS) {
+        index = GetPermissionIndex(nullptr, FILE_ACCESS_COMMON_DIR_MODE.c_str());
+    }
+
+    int32_t  fileMgrIndex = GetPermissionIndex(nullptr, FILE_ACCESS_MANAGER_MODE.c_str());
+    if (index > 0 && (CheckAppPermissionFlagSet(appProperty, static_cast<uint32_t>(fileMgrIndex)) == 0)) {
+        return SetAppPermissionFlags(appProperty, index);
+    }
+    return 0;
+}
+
 int32_t SandboxUtils::SetAppSandboxProperty(AppSpawningCtx *appProperty, uint32_t sandboxNsFlags)
 {
     APPSPAWN_CHECK(appProperty != nullptr, return -1, "Invalid appspwn client");
@@ -1562,15 +1571,7 @@ int32_t SandboxUtils::SetAppSandboxProperty(AppSpawningCtx *appProperty, uint32_
     int rc = EnableSandboxNamespace(appProperty, sandboxNsFlags);
     APPSPAWN_CHECK(rc == 0, return rc, "unshare failed, packagename is %{public}s", bundleName.c_str());
 
-    int index = 0;
-    if (CheckAppFullMountEnable()) {
-        index = GetPermissionIndex(nullptr, FILE_CROSS_APP_MODE.c_str());
-    } else {
-        index = GetPermissionIndex(nullptr, FILE_ACCESS_COMMON_DIR_MODE.c_str());
-    }
-    if (index > 0) {
-        SetAppPermissionFlags(appProperty, index);
-    } else {
+    if (SetPermissionWithParam(appProperty) != 0) {
         APPSPAWN_LOGW("Set app permission flag fail.");
     }
 

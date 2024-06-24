@@ -603,7 +603,7 @@
                 },
                 {
                     "src-path": "/data/app/el1/<currentUserId>/base",
-                    "sandbox-path": "/storage/Users/<currentUserId>/appdata/el1",
+                    "sandbox-path": "/storage/Users/<currentUserId>/appdata/el1/base",
                     "sandbox-flags-customized": ["MS_NODEV"],
                     "dac-override-sensitive": "true",
                     "fs-type": "sharefs",
@@ -611,11 +611,16 @@
                 },
                 {
                     "src-path": "/data/app/el2/<currentUserId>/base",
-                    "sandbox-path": "/storage/Users/<currentUserId>/appdata/el2",
+                    "sandbox-path": "/storage/Users/<currentUserId>/appdata/el2/base",
                     "sandbox-flags-customized": ["MS_NODEV"],
                     "dac-override-sensitive": "true",
                     "fs-type": "sharefs",
                     "options": "override"
+                },
+                {
+                    "src-path": "/mnt/hmdfs/<currentUserId>/account/merge_view/data",
+                    "sandbox-path": "/storage/Users/<currentUserId>/appdata/el2/distributedfiles",
+                    "sandbox-flags": [ "bind", "rec" ]
                 },
                 {
                     "src-path": "/mnt/data/<currentUserId>/hmdfs",
