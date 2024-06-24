@@ -23,6 +23,7 @@
 #include <errno.h>
 #include <getopt.h>
 
+#include "policycoreutils.h"
 #include "code_sign_utils_in_c.h"
 
 #include "hnp_installer.h"
@@ -588,6 +589,42 @@ static int HnpInstallHapFileCountGet(const char *root, int *count)
     return 0;
 }
 
+static int SetHnpRestorecon(char *path)
+{
+    int ret;
+    char publicPath[MAX_FILE_PATH_LEN] = {0};
+    char privatePath[MAX_FILE_PATH_LEN] = {0};
+    if (sprintf(publicPath, MAX_FILE_PATH_LEN, "%s/hnppublic", path) < 0 ||
+        sprintf(privatePath, MAX_FILE_PATH_LEN, "%s/hnp", path) < 0) {
+        HNP_LOGE("sprintf fail, get hnp restorecon path fail");
+        return HNP_ERRNO_INSTALLER_RESTORECON_HNP_PATH_FAIL;
+    }
+
+    if (access(publicPath, F_OK) != 0) {
+        ret = mkdir(publicPath, S_IRWXU, S_IRWXG | S_IROTH | S_IXOTH);
+        if ((ret != 0) && (errno != EEXIST)) {
+            HNP_LOGE("sprintf fail, get hnp restorecon path fail");
+            return HNP_ERRNO_BASE_MKDIR_PATH_FAILED;           
+        }
+    }
+
+    if (access(privatePath, F_OK) != 0) {
+        ret = mkdir(privatePath, S_IRWXU, S_IRWXG | S_IROTH | S_IXOTH);
+        if ((ret != 0) && (errno != EEXIST)) {
+            HNP_LOGE("sprintf fail, get hnp restorecon path fail");
+            return HNP_ERRNO_BASE_MKDIR_PATH_FAILED;           
+        }
+    }
+
+    if (RestoreconRecurse(publicPath) || RestoreconRecurse(privatePath)) {
+        HNP_LOGE("restorecon hnp path fail");
+        return HNP_ERRNO_INSTALLER_RESTORECON_HNP_PATH_FAIL;    
+    }
+
+    return 0;
+}
+
+
 static int HnpInsatllPre(HapInstallInfo *installInfo)
 {
     char dstPath[MAX_FILE_PATH_LEN];
@@ -595,6 +632,7 @@ static int HnpInsatllPre(HapInstallInfo *installInfo)
     HnpSignMapInfo *hnpSignMapInfos = NULL;
     struct EntryMapEntryData data = {0};
     int i;
+    int ret;
 
     /* 拼接安装路径 */
     if (sprintf_s(dstPath, MAX_FILE_PATH_LEN, HNP_DEFAULT_INSTALL_ROOT_PATH"/%d", installInfo->uid) < 0) {
@@ -608,10 +646,11 @@ static int HnpInsatllPre(HapInstallInfo *installInfo)
         return HNP_ERRNO_INSTALLER_GET_REALPATH_FAILED;
     }
 
-    int ret = HnpInstallHapFileCountGet(installInfo->hnpRootPath, &count);
-    if (ret != 0) {
+    if ( (ret = SetHnpRestorecon)) != 0 ||
+         (ret = HnpInstallHapFileCountGet(installInfo->hnpRootPath, &count)) != 0) {
         return ret;
     }
+
     if (count > 0) {
         hnpSignMapInfos = (HnpSignMapInfo *)malloc(sizeof(HnpSignMapInfo) * count);
         if (hnpSignMapInfos == NULL) {
