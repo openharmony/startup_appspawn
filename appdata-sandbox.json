@@ -333,12 +333,12 @@
                     ]}, {
                         "flags": "START_FLAGS_BACKUP",
                         "mount-paths": [{
-                            "src-path": "/data/service/el2/<currentUserId>/backup/bundles/<PackageName>",
+                            "src-path": "/data/app/el2/<currentUserId>/base/<PackageName>/.backup",
                             "sandbox-path": "/data/storage/el2/backup",
                             "sandbox-flags": [ "bind", "rec" ],
                             "check-action-status": "true"
                         }, {
-                            "src-path" : "/data/service/el1/<currentUserId>/backup/bundles/<PackageName>",
+                            "src-path" : "/data/app/el1/<currentUserId>/base/<PackageName>/.backup",
                             "sandbox-path" : "/data/storage/el1/backup",
                             "sandbox-flags" : [ "bind", "rec" ],
                             "check-action-status": "false"
