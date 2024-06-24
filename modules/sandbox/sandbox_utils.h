@@ -101,7 +101,8 @@ private:
     static int32_t SetPermissionAppSandboxProperty(AppSpawningCtx *appProperty);
     static int32_t DoAddGid(AppSpawningCtx *appProperty, nlohmann::json &appConfig,
                             const char* permissionName, const std::string &section);
-    static bool CheckAppFullMountEnable();
+    static int32_t CheckAppFullMountEnable();
+    static int32_t SetPermissionWithParam(AppSpawningCtx *appProperty);
     static int32_t SetSandboxProperty(AppSpawningCtx *appProperty, std::string &sandboxPackagePath);
     static int32_t ChangeCurrentDir(std::string &sandboxPackagePath, const std::string &bundleName,
                                     bool sandboxSharedStatus);
@@ -115,7 +116,7 @@ private:
     static void GetSandboxMountConfig(const AppSpawningCtx *appProperty, const std::string &section,
                                       nlohmann::json &mntPoint,SandboxMountConfig &mountConfig);
     static std::vector<nlohmann::json> appSandboxConfig_;
-    static bool deviceTypeEnable_;
+    static int32_t deviceTypeEnable_;
 };
 class JsonUtils {
 public:
