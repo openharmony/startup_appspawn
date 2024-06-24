@@ -646,8 +646,8 @@ static int HnpInsatllPre(HapInstallInfo *installInfo)
         return HNP_ERRNO_INSTALLER_GET_REALPATH_FAILED;
     }
 
-    if ( (ret = SetHnpRestorecon)) != 0 ||
-         (ret = HnpInstallHapFileCountGet(installInfo->hnpRootPath, &count)) != 0) {
+    if ((ret = SetHnpRestorecon(dstPath)) != 0 ||
+        (ret = HnpInstallHapFileCountGet(installInfo->hnpRootPath, &count)) != 0) {
         return ret;
     }
 
