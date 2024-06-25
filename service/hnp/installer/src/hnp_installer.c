@@ -601,17 +601,17 @@ static int SetHnpRestorecon(char *path)
     }
 
     if (access(publicPath, F_OK) != 0) {
-        ret = mkdir(publicPath, S_IRWXU, S_IRWXG | S_IROTH | S_IXOTH);
+        ret = mkdir(publicPath,S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
         if ((ret != 0) && (errno != EEXIST)) {
-            HNP_LOGE("sprintf fail, get hnp restorecon path fail");
+            HNP_LOGE("mkdir public path fail");
             return HNP_ERRNO_BASE_MKDIR_PATH_FAILED;
         }
     }
 
     if (access(privatePath, F_OK) != 0) {
-        ret = mkdir(privatePath, S_IRWXU, S_IRWXG | S_IROTH | S_IXOTH);
+        ret = mkdir(privatePath, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
         if ((ret != 0) && (errno != EEXIST)) {
-            HNP_LOGE("sprintf fail, get hnp restorecon path fail");
+            HNP_LOGE("mkdir private path fail");
             return HNP_ERRNO_BASE_MKDIR_PATH_FAILED;
         }
     }

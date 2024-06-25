@@ -35,8 +35,8 @@ if (!defined(ohos_lite)) {
       "cJSON:cjson",
       "code_signature:libcode_sign_utils",
       "hilog:libhilog",
+      "selinux_adapter:librestorecon",
       "zlib:shared_libz",
-      "selinux_adapter:librestorecon"
     ]
     install_enable = true
     subsystem_name = "${subsystem_name}"
