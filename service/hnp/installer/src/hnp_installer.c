@@ -593,9 +593,7 @@ static int SetHnpRestorecon(char *path)
 {
     int ret;
     char publicPath[MAX_FILE_PATH_LEN] = {0};
-    char privatePath[MAX_FILE_PATH_LEN] = {0};
-    if (sprintf_s(publicPath, MAX_FILE_PATH_LEN, "%s/hnppublic", path) < 0 ||
-        sprintf_s(privatePath, MAX_FILE_PATH_LEN, "%s/hnp", path) < 0) {
+    if (sprintf_s(publicPath, MAX_FILE_PATH_LEN, "%s/hnppublic", path) < 0) {
         HNP_LOGE("sprintf fail, get hnp restorecon path fail");
         return HNP_ERRNO_INSTALLER_RESTORECON_HNP_PATH_FAIL;
     }
@@ -608,15 +606,7 @@ static int SetHnpRestorecon(char *path)
         }
     }
 
-    if (access(privatePath, F_OK) != 0) {
-        ret = mkdir(privatePath, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-        if ((ret != 0) && (errno != EEXIST)) {
-            HNP_LOGE("mkdir private path fail");
-            return HNP_ERRNO_BASE_MKDIR_PATH_FAILED;
-        }
-    }
-
-    if (RestoreconRecurse(publicPath) || RestoreconRecurse(privatePath)) {
+    if (RestoreconRecurse(publicPath)) {
         HNP_LOGE("restorecon hnp path fail");
         return HNP_ERRNO_INSTALLER_RESTORECON_HNP_PATH_FAIL;
     }
