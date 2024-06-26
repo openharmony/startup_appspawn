@@ -58,8 +58,8 @@ if (!defined(ohos_lite)) {
       "cJSON:cjson",
       "code_signature:libcode_sign_utils",
       "hilog:libhilog",
-      "zlib:shared_libz",
       "selinux_adapter:librestorecon",
+      "zlib:shared_libz",
     ]
   }
 }
