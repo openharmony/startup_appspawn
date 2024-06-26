@@ -632,12 +632,13 @@ static int32_t DoDlpAppMountStrategy(const AppSpawningCtx *appProperty,
     int ret = 0;
 #ifndef APPSPAWN_TEST
     ret = mount(srcPath.c_str(), sandboxPath.c_str(), fsType.c_str(), mountFlags, options);
-    APPSPAWN_CHECK(ret == 0, return ret, "DoDlpAppMountStrategy failed, bind mount %{public}s to %{public}s"
-        "failed %{public}d", srcPath.c_str(), sandboxPath.c_str(), errno);
+    APPSPAWN_CHECK(ret == 0, close(fd);
+        return ret, "DoDlpAppMountStrategy failed, bind mount %{public}s to %{public}s failed %{public}d",
+        srcPath.c_str(), sandboxPath.c_str(), errno);
 
     ret = mount(nullptr, sandboxPath.c_str(), nullptr, MS_SHARED, nullptr);
-    APPSPAWN_CHECK(ret == 0, return ret,
-        "errno is: %{public}d, private mount to %{public}s failed", errno, sandboxPath.c_str());
+    APPSPAWN_CHECK(ret == 0, close(fd);
+        return ret, "errno is: %{public}d, private mount to %{public}s failed", errno, sandboxPath.c_str());
 #endif
     /* close DLP_FUSE_FD and dup FD to it */
     close(DLP_FUSE_FD);
