@@ -59,6 +59,7 @@ if (!defined(ohos_lite)) {
       "code_signature:libcode_sign_utils",
       "hilog:libhilog",
       "zlib:shared_libz",
+      "selinux_adapter:librestorecon",
     ]
   }
 }
