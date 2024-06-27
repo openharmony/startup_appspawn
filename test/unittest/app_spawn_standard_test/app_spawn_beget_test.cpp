@@ -54,15 +54,16 @@ public:
 static void InitPtyInterface()
 {
     int pfd = open("/dev/ptmx", O_RDWR | O_CLOEXEC | O_NOCTTY | O_NONBLOCK);
-    APPSPAWN_CHECK(pfd >= 0, return, "Failed open pty err=%d", errno);
+    APPSPAWN_CHECK(pfd >= 0, return, "Failed open pty err=%{public}d", errno);
     APPSPAWN_CHECK(grantpt(pfd) >= 0, close(pfd); return, "Failed to call grantpt");
     APPSPAWN_CHECK(unlockpt(pfd) >= 0, close(pfd); return, "Failed to call unlockpt");
     char ptsbuffer[128] = {0};
     int ret = ptsname_r(pfd, ptsbuffer, sizeof(ptsbuffer));
-    APPSPAWN_CHECK(ret >= 0, close(pfd); return, "Failed to get pts name err=%d", errno);
+    APPSPAWN_CHECK(ret >= 0, close(pfd);
+        return, "Failed to get pts name err=%{public}d", errno);
     APPSPAWN_LOGI("ptsbuffer is %{public}s", ptsbuffer);
     APPSPAWN_CHECK(chmod(ptsbuffer, S_IRWXU | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH) == 0, close(pfd);
-        return, "Failed to chmod %{public}s, err=%d", ptsbuffer, errno);
+        return, "Failed to chmod %{public}s, err=%{public}d", ptsbuffer, errno);
     g_ptyName = std::string(ptsbuffer);
 }
 

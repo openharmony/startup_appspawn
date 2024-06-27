@@ -51,7 +51,7 @@ APPSPAWN_STATIC void RunAppSandbox(const char *ptyName)
     APPSPAWN_CHECK(n == 0, free(realPath); _exit(1), "pts path %{public}s is invaild", realPath);
     int fd = open(realPath, O_RDWR);
     free(realPath);
-    APPSPAWN_CHECK(fd >= 0, _exit(1), "Failed open %s, err=%{public}d", ptyName, errno);
+    APPSPAWN_CHECK(fd >= 0, _exit(1), "Failed open %{public}s, err=%{public}d", ptyName, errno);
     (void)dup2(fd, STDIN_FILENO);
     (void)dup2(fd, STDOUT_FILENO);
     (void)dup2(fd, STDERR_FILENO); // Redirect fd to 0, 1, 2
