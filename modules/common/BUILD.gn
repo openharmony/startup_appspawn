@@ -38,8 +38,8 @@ ohos_shared_library("appspawn_common") {
   ]
   defines = [ "GRAPHIC_PERMISSION_CHECK" ]
   external_deps = [
-    "access_token:libtoken_setproc",
     "access_token:libtokenid_sdk",
+    "access_token:libtokensetproc_shared",
     "cJSON:cjson",
     "c_utils:utils",
     "config_policy:configpolicy_util",
