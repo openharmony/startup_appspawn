@@ -33,7 +33,8 @@
 #include "appspawn_manager.h"
 #include "securec.h"
 
-#define EXIT_APP_TIMES 100
+#define SLEEP_DURATION 3000 // us
+#define EXIT_APP_TIMEOUT 1000000 // us
 
 static AppSpawnMgr *g_appSpawnMgr = NULL;
 
@@ -223,12 +224,12 @@ int KillAndWaitStatus(pid_t pid, int sig, int *exitStatus)
 
     int retry = 0;
     pid_t exitPid = 0;
-    while (retry < EXIT_APP_TIMES) { // 100 * 10000us = 1s timeout
+    while (retry * SLEEP_DURATION < EXIT_APP_TIMEOUT) {
         exitPid = waitpid(pid, exitStatus, WNOHANG);
         if (exitPid == pid) {
             return 0;
         }
-        usleep(10000); // 10000 is sleep for 10ms
+        usleep(SLEEP_DURATION);
         retry++;
     }
 
