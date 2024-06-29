@@ -1197,7 +1197,7 @@ std::string SandboxUtils::GetExtraInfoByType(const AppSpawningCtx *appProperty, 
     if (info == nullptr) {
         return "";
     }
-    return std::string(info);
+    return std::string(info, len);
 }
 
 int32_t SandboxUtils::MountAllHsp(const AppSpawningCtx *appProperty, std::string &sandboxPackagePath)
