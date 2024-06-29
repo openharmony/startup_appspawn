@@ -40,6 +40,9 @@ extern "C" {
 // 0x801306 安装命令参数uid错误
 #define HNP_ERRNO_INSTALLER_ARGV_UID_INVALID               HNP_ERRNO_COMMON(HNP_MID_INSTALLER, 0x6)
 
+// 0x801307 restorecon 安装目录失败
+#define HNP_ERRNO_INSTALLER_RESTORECON_HNP_PATH_FAIL       HNP_ERRNO_COMMON(HNP_MID_INSTALLER, 0x7)
+
 #define HNP_DEFAULT_INSTALL_ROOT_PATH "/data/app/el1/bundle"
 #define HNP_SANDBOX_BASE_PATH "/data/service/hnp"
 
