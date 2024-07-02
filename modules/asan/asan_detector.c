@@ -93,7 +93,6 @@ static int AsanSpawnGetSpawningFlag(AppSpawnMgr *content, AppSpawningCtx *proper
     APPSPAWN_LOGV("Prepare spawn app %{public}s", GetProcessName(property));
 #ifdef ASAN_DETECTOR
     if (CheckSupportColdStart(GetBundleName(property)) == 0) {
-        setenv("LD_PRELOAD", "/system/asan/lib64/libclang_rt.asan.so", 1);
         property->client.flags |= APP_COLD_START;
         property->client.flags |= APP_ASAN_DETECTOR;
         if (property->forkCtx.coldRunPath) {
