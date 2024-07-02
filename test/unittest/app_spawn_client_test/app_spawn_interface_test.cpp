@@ -52,7 +52,7 @@ public:
  * @brief 测试接口：AppSpawnClientInit
  *
  */
-HWTEST(AppSpawnInterfaceTest, App_Spawn_Interface_Init_001, TestSize.Level0)
+HWTEST_F(AppSpawnInterfaceTest, App_Spawn_Interface_Init_001, TestSize.Level0)
 {
     AppSpawnClientHandle handle;
     const char *serviceName[] = {APPSPAWN_SERVER_NAME, APPSPAWN_SOCKET_NAME,
@@ -76,7 +76,7 @@ HWTEST(AppSpawnInterfaceTest, App_Spawn_Interface_Init_001, TestSize.Level0)
  * @brief 测试接口：AppSpawnClientDestroy
  *
  */
-HWTEST(AppSpawnInterfaceTest, App_Spawn_Interface_Destroy_001, TestSize.Level0)
+HWTEST_F(AppSpawnInterfaceTest, App_Spawn_Interface_Destroy_001, TestSize.Level0)
 {
     AppSpawnClientHandle handle;
     int ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &handle);
@@ -85,7 +85,7 @@ HWTEST(AppSpawnInterfaceTest, App_Spawn_Interface_Destroy_001, TestSize.Level0)
     EXPECT_EQ(0, ret);
 }
 
-HWTEST(AppSpawnInterfaceTest, App_Spawn_Interface_Destroy_002, TestSize.Level0)
+HWTEST_F(AppSpawnInterfaceTest, App_Spawn_Interface_Destroy_002, TestSize.Level0)
 {
     AppSpawnClientHandle handle;
     int ret = AppSpawnClientInit(NWEBSPAWN_SERVER_NAME, &handle);
@@ -94,7 +94,7 @@ HWTEST(AppSpawnInterfaceTest, App_Spawn_Interface_Destroy_002, TestSize.Level0)
     EXPECT_EQ(0, ret);
 }
 
-HWTEST(AppSpawnInterfaceTest, App_Spawn_Interface_Destroy_003, TestSize.Level0)
+HWTEST_F(AppSpawnInterfaceTest, App_Spawn_Interface_Destroy_003, TestSize.Level0)
 {
     int ret = AppSpawnClientDestroy(nullptr);
     EXPECT_EQ(APPSPAWN_SYSTEM_ERROR, ret);
@@ -104,7 +104,7 @@ HWTEST(AppSpawnInterfaceTest, App_Spawn_Interface_Destroy_003, TestSize.Level0)
  * @brief 测试接口：AppSpawnClientSendMsg
  *
  */
-HWTEST(AppSpawnInterfaceTest, App_Spawn_Interface_Send_Msg_001, TestSize.Level0)
+HWTEST_F(AppSpawnInterfaceTest, App_Spawn_Interface_Send_Msg_001, TestSize.Level0)
 {
     int ret = 0;
     AppSpawnClientHandle clientHandle = nullptr;
@@ -145,7 +145,7 @@ HWTEST(AppSpawnInterfaceTest, App_Spawn_Interface_Send_Msg_001, TestSize.Level0)
  * @brief 测试接口：AppSpawnReqMsgCreate
  *
  */
-HWTEST(AppSpawnInterfaceTest, App_Spawn_Interface_Msg_Create_001, TestSize.Level0)
+HWTEST_F(AppSpawnInterfaceTest, App_Spawn_Interface_Msg_Create_001, TestSize.Level0)
 {
     std::vector<char> name1(APP_LEN_PROC_NAME - 1, 'a');
     name1.push_back('\0');
@@ -184,7 +184,7 @@ HWTEST(AppSpawnInterfaceTest, App_Spawn_Interface_Msg_Create_001, TestSize.Level
  * @brief 测试接口：AppSpawnReqMsgFree
  *
  */
-HWTEST(AppSpawnInterfaceTest, App_Spawn_Interface_Msg_Free_001, TestSize.Level0)
+HWTEST_F(AppSpawnInterfaceTest, App_Spawn_Interface_Msg_Free_001, TestSize.Level0)
 {
     AppSpawnReqMsgFree(nullptr);
     AppSpawnReqMsgHandle reqHandle = nullptr;
@@ -197,7 +197,7 @@ HWTEST(AppSpawnInterfaceTest, App_Spawn_Interface_Msg_Free_001, TestSize.Level0)
  * @brief 测试接口：AppSpawnReqMsgSetBundleInfo
  *
  */
-HWTEST(AppSpawnInterfaceTest, App_Spawn_Interface_ReqMsgSetBundleInfo_001, TestSize.Level0)
+HWTEST_F(AppSpawnInterfaceTest, App_Spawn_Interface_ReqMsgSetBundleInfo_001, TestSize.Level0)
 {
     AppSpawnReqMsgHandle reqHandle = nullptr;
     int ret = AppSpawnReqMsgCreate(MSG_APP_SPAWN, "com.ohos.myapplication", &reqHandle);
@@ -229,7 +229,7 @@ HWTEST(AppSpawnInterfaceTest, App_Spawn_Interface_ReqMsgSetBundleInfo_001, TestS
  * @brief 测试接口：AppSpawnReqMsgSetAppDacInfo
  *
  */
-HWTEST(AppSpawnInterfaceTest, App_Spawn_Interface_Msg_App_Dac_001, TestSize.Level0)
+HWTEST_F(AppSpawnInterfaceTest, App_Spawn_Interface_Msg_App_Dac_001, TestSize.Level0)
 {
     AppDacInfo dacInfo;
     dacInfo.uid = 20010029;              // 20010029 test data
@@ -258,7 +258,7 @@ HWTEST(AppSpawnInterfaceTest, App_Spawn_Interface_Msg_App_Dac_001, TestSize.Leve
  * @brief 测试接口：AppSpawnReqMsgSetAppDomainInfo
  *
  */
-HWTEST(AppSpawnInterfaceTest, App_Spawn_Interface_Set_App_Domain_001, TestSize.Level0)
+HWTEST_F(AppSpawnInterfaceTest, App_Spawn_Interface_Set_App_Domain_001, TestSize.Level0)
 {
     AppSpawnReqMsgHandle reqHandle = nullptr;
     char buffer[33];
@@ -293,7 +293,7 @@ HWTEST(AppSpawnInterfaceTest, App_Spawn_Interface_Set_App_Domain_001, TestSize.L
  * @brief 测试接口：AppSpawnReqMsgSetAppInternetPermissionInfo
  *
  */
-HWTEST(AppSpawnInterfaceTest, App_Spawn_Interface_Set_App_Permission_Info_001, TestSize.Level0)
+HWTEST_F(AppSpawnInterfaceTest, App_Spawn_Interface_Set_App_Permission_Info_001, TestSize.Level0)
 {
     AppSpawnReqMsgHandle reqHandle = nullptr;
     int ret = AppSpawnReqMsgCreate(MSG_APP_SPAWN, "com.ohos.myapplication", &reqHandle);
@@ -303,7 +303,7 @@ HWTEST(AppSpawnInterfaceTest, App_Spawn_Interface_Set_App_Permission_Info_001, T
     AppSpawnReqMsgFree(reqHandle);
 }
 
-HWTEST(AppSpawnInterfaceTest, App_Spawn_Interface_Set_App_Permission_Info_002, TestSize.Level0)
+HWTEST_F(AppSpawnInterfaceTest, App_Spawn_Interface_Set_App_Permission_Info_002, TestSize.Level0)
 {
     int ret = AppSpawnReqMsgSetAppInternetPermissionInfo(nullptr, 102, 102);
     EXPECT_NE(0, ret);
@@ -313,7 +313,7 @@ HWTEST(AppSpawnInterfaceTest, App_Spawn_Interface_Set_App_Permission_Info_002, T
  * @brief 测试接口：AppSpawnReqMsgSetAppAccessToken
  *
  */
-HWTEST(AppSpawnInterfaceTest, App_Spawn_Interface_Set_App_Access_Token_001, TestSize.Level0)
+HWTEST_F(AppSpawnInterfaceTest, App_Spawn_Interface_Set_App_Access_Token_001, TestSize.Level0)
 {
     AppSpawnReqMsgHandle reqHandle = nullptr;
     int ret = AppSpawnReqMsgCreate(MSG_APP_SPAWN, "com.ohos.myapplication", &reqHandle);
@@ -323,7 +323,7 @@ HWTEST(AppSpawnInterfaceTest, App_Spawn_Interface_Set_App_Access_Token_001, Test
     AppSpawnReqMsgFree(reqHandle);
 }
 
-HWTEST(AppSpawnInterfaceTest, App_Spawn_Interface_Set_App_Access_Token_002, TestSize.Level0)
+HWTEST_F(AppSpawnInterfaceTest, App_Spawn_Interface_Set_App_Access_Token_002, TestSize.Level0)
 {
     int ret = AppSpawnReqMsgSetAppAccessToken(nullptr, 12345678);
     EXPECT_NE(0, ret);
@@ -333,7 +333,7 @@ HWTEST(AppSpawnInterfaceTest, App_Spawn_Interface_Set_App_Access_Token_002, Test
  * @brief 测试接口：AppSpawnReqMsgSetAppOwnerId
  *
  */
-HWTEST(AppSpawnInterfaceTest, App_Spawn_Interface_Set_App_Owner_001, TestSize.Level0)
+HWTEST_F(AppSpawnInterfaceTest, App_Spawn_Interface_Set_App_Owner_001, TestSize.Level0)
 {
     AppSpawnReqMsgHandle reqHandle = nullptr;
     int ret = AppSpawnReqMsgCreate(MSG_APP_SPAWN, "com.ohos.myapplication", &reqHandle);
@@ -362,7 +362,7 @@ HWTEST(AppSpawnInterfaceTest, App_Spawn_Interface_Set_App_Owner_001, TestSize.Le
  * @brief 测试接口：AppSpawnReqMsgAddPermission
  *
  */
-HWTEST(AppSpawnInterfaceTest, App_Spawn_Interface_Add_Permission_001, TestSize.Level0)
+HWTEST_F(AppSpawnInterfaceTest, App_Spawn_Interface_Add_Permission_001, TestSize.Level0)
 {
     AppSpawnReqMsgHandle reqHandle = nullptr;
     int ret = AppSpawnReqMsgCreate(MSG_APP_SPAWN, "com.ohos.myapplication", &reqHandle);
@@ -384,7 +384,7 @@ HWTEST(AppSpawnInterfaceTest, App_Spawn_Interface_Add_Permission_001, TestSize.L
  * @brief 测试接口：AppSpawnReqMsgAddExtInfo
  *
  */
-HWTEST(AppSpawnInterfaceTest, App_Spawn_Interface_Add_Ext_Info_001, TestSize.Level0)
+HWTEST_F(AppSpawnInterfaceTest, App_Spawn_Interface_Add_Ext_Info_001, TestSize.Level0)
 {
     AppSpawnReqMsgHandle reqHandle = nullptr;
     int ret = AppSpawnReqMsgCreate(MSG_APP_SPAWN, "com.ohos.myapplication", &reqHandle);
@@ -429,7 +429,7 @@ HWTEST(AppSpawnInterfaceTest, App_Spawn_Interface_Add_Ext_Info_001, TestSize.Lev
  * @brief 测试接口：AppSpawnReqMsgAddStringInfo
  *
  */
-HWTEST(AppSpawnInterfaceTest, App_Spawn_Interface_Add_String_Info_001, TestSize.Level0)
+HWTEST_F(AppSpawnInterfaceTest, App_Spawn_Interface_Add_String_Info_001, TestSize.Level0)
 {
     AppSpawnReqMsgHandle reqHandle = nullptr;
     int ret = AppSpawnReqMsgCreate(MSG_APP_SPAWN, "com.ohos.myapplication", &reqHandle);
@@ -472,7 +472,7 @@ HWTEST(AppSpawnInterfaceTest, App_Spawn_Interface_Add_String_Info_001, TestSize.
  * @brief 测试flags set
  *
  */
-HWTEST(AppSpawnInterfaceTest, App_Spawn_Set_Msg_Flags_001, TestSize.Level0)
+HWTEST_F(AppSpawnInterfaceTest, App_Spawn_Set_Msg_Flags_001, TestSize.Level0)
 {
     AppSpawnReqMsgHandle reqHandle = 0;
     int ret = AppSpawnReqMsgCreate(MSG_APP_SPAWN, "com.example.myapplication", &reqHandle);
@@ -486,7 +486,7 @@ HWTEST(AppSpawnInterfaceTest, App_Spawn_Set_Msg_Flags_001, TestSize.Level0)
     AppSpawnReqMsgFree(reqHandle);
 }
 
-HWTEST(AppSpawnInterfaceTest, App_Spawn_TerminateMsg_001, TestSize.Level0)
+HWTEST_F(AppSpawnInterfaceTest, App_Spawn_TerminateMsg_001, TestSize.Level0)
 {
     AppSpawnReqMsgHandle reqHandle = 0;
     int ret = AppSpawnTerminateMsgCreate(0, &reqHandle);
@@ -501,7 +501,7 @@ HWTEST(AppSpawnInterfaceTest, App_Spawn_TerminateMsg_001, TestSize.Level0)
  * @brief 测试add permission
  *
  */
-HWTEST(AppSpawnInterfaceTest, App_Spawn_Permission_001, TestSize.Level0)
+HWTEST_F(AppSpawnInterfaceTest, App_Spawn_Permission_001, TestSize.Level0)
 {
     AppSpawnClientHandle clientHandle;
     AppSpawnReqMsgHandle reqHandle = 0;
@@ -532,7 +532,7 @@ HWTEST(AppSpawnInterfaceTest, App_Spawn_Permission_001, TestSize.Level0)
  * @brief 测试接口：GetPermissionByIndex
  *
  */
-HWTEST(AppSpawnInterfaceTest, App_Spawn_Interface_GetPermissionByIndex_001, TestSize.Level0)
+HWTEST_F(AppSpawnInterfaceTest, App_Spawn_Interface_GetPermissionByIndex_001, TestSize.Level0)
 {
     int32_t maxIndex = GetMaxPermissionIndex(nullptr);
     for (int i = 0; i < maxIndex; i++) {
@@ -547,7 +547,7 @@ HWTEST(AppSpawnInterfaceTest, App_Spawn_Interface_GetPermissionByIndex_001, Test
     EXPECT_EQ(0, ret);
 }
 
-HWTEST(AppSpawnInterfaceTest, App_Spawn_Interface_ClientSocket_001, TestSize.Level0)
+HWTEST_F(AppSpawnInterfaceTest, App_Spawn_Interface_ClientSocket_001, TestSize.Level0)
 {
     int socketId = CreateClientSocket(CLIENT_FOR_APPSPAWN, 2);
     CloseClientSocket(socketId);
@@ -558,7 +558,7 @@ HWTEST(AppSpawnInterfaceTest, App_Spawn_Interface_ClientSocket_001, TestSize.Lev
     CloseClientSocket(-1);
 }
 
-HWTEST(AppSpawnInterfaceTest, App_Spawn_Interface_GetSpawnTimeout_001, TestSize.Level0)
+HWTEST_F(AppSpawnInterfaceTest, App_Spawn_Interface_GetSpawnTimeout_001, TestSize.Level0)
 {
     int timeout = GetSpawnTimeout(6);  // 6 test
     EXPECT_EQ(timeout >= 6, 1);        // 6 test

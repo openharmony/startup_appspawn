@@ -70,7 +70,7 @@ static AppSpawnContent *CreateTestAppSpawnContent(const char *name, uint32_t mod
  * @brief 测试appspanw spawn的后半部分，子进程的处理
  *
  */
-HWTEST(AppSpawnChildTest, App_Spawn_Child_001, TestSize.Level0)
+HWTEST_F(AppSpawnChildTest, App_Spawn_Child_001, TestSize.Level0)
 {
     AppSpawnClientHandle clientHandle = nullptr;
     AppSpawnReqMsgHandle reqHandle = 0;
@@ -107,7 +107,7 @@ HWTEST(AppSpawnChildTest, App_Spawn_Child_001, TestSize.Level0)
  * @brief 测试appspanw spawn的后半部分，子进程的处理
  *
  */
-HWTEST(AppSpawnChildTest, App_Spawn_Child_002, TestSize.Level0)
+HWTEST_F(AppSpawnChildTest, App_Spawn_Child_002, TestSize.Level0)
 {
     AppSpawnClientHandle clientHandle = nullptr;
     AppSpawnReqMsgHandle reqHandle = 0;
@@ -144,7 +144,7 @@ HWTEST(AppSpawnChildTest, App_Spawn_Child_002, TestSize.Level0)
     ASSERT_EQ(ret, 0);
 }
 
-HWTEST(AppSpawnChildTest, App_Spawn_Child_003, TestSize.Level0)
+HWTEST_F(AppSpawnChildTest, App_Spawn_Child_003, TestSize.Level0)
 {
     AppSpawnClientHandle clientHandle = nullptr;
     AppSpawnReqMsgHandle reqHandle = 0;
@@ -183,7 +183,7 @@ HWTEST(AppSpawnChildTest, App_Spawn_Child_003, TestSize.Level0)
     ASSERT_EQ(ret, 0);
 }
 
-HWTEST(AppSpawnChildTest, App_Spawn_Child_004, TestSize.Level0)
+HWTEST_F(AppSpawnChildTest, App_Spawn_Child_004, TestSize.Level0)
 {
     AppSpawnClientHandle clientHandle = nullptr;
     AppSpawnReqMsgHandle reqHandle = 0;
@@ -223,7 +223,7 @@ HWTEST(AppSpawnChildTest, App_Spawn_Child_004, TestSize.Level0)
     ASSERT_EQ(ret, 0);
 }
 
-HWTEST(AppSpawnChildTest, App_Spawn_Child_005, TestSize.Level0)
+HWTEST_F(AppSpawnChildTest, App_Spawn_Child_005, TestSize.Level0)
 {
     AppSpawnClientHandle clientHandle = nullptr;
     AppSpawnReqMsgHandle reqHandle = 0;
@@ -264,7 +264,7 @@ HWTEST(AppSpawnChildTest, App_Spawn_Child_005, TestSize.Level0)
     ASSERT_EQ(ret, 0);
 }
 
-HWTEST(AppSpawnChildTest, App_Spawn_Child_006, TestSize.Level0)
+HWTEST_F(AppSpawnChildTest, App_Spawn_Child_006, TestSize.Level0)
 {
     AppSpawnClientHandle clientHandle = nullptr;
     AppSpawnReqMsgHandle reqHandle = 0;
@@ -312,7 +312,7 @@ HWTEST(AppSpawnChildTest, App_Spawn_Child_006, TestSize.Level0)
  * @brief 子进程nweb后半部分处理
  *
  */
-HWTEST(AppSpawnChildTest, NWeb_Spawn_Child_001, TestSize.Level0)
+HWTEST_F(AppSpawnChildTest, NWeb_Spawn_Child_001, TestSize.Level0)
 {
     AppSpawnClientHandle clientHandle = nullptr;
     AppSpawnReqMsgHandle reqHandle = 0;
@@ -349,7 +349,7 @@ HWTEST(AppSpawnChildTest, NWeb_Spawn_Child_001, TestSize.Level0)
     ASSERT_EQ(ret, 0);
 }
 
-HWTEST(AppSpawnChildTest, NWeb_Spawn_Child_002, TestSize.Level0)
+HWTEST_F(AppSpawnChildTest, NWeb_Spawn_Child_002, TestSize.Level0)
 {
     AppSpawnClientHandle clientHandle = nullptr;
     AppSpawnReqMsgHandle reqHandle = 0;
@@ -390,7 +390,7 @@ HWTEST(AppSpawnChildTest, NWeb_Spawn_Child_002, TestSize.Level0)
     ASSERT_EQ(ret, 0);
 }
 
-HWTEST(AppSpawnChildTest, NWeb_Spawn_Child_004, TestSize.Level0)
+HWTEST_F(AppSpawnChildTest, NWeb_Spawn_Child_004, TestSize.Level0)
 {
     AppSpawnClientHandle clientHandle = nullptr;
     AppSpawnReqMsgHandle reqHandle = 0;
@@ -433,7 +433,7 @@ HWTEST(AppSpawnChildTest, NWeb_Spawn_Child_004, TestSize.Level0)
     ASSERT_EQ(ret, 0);
 }
 
-HWTEST(AppSpawnChildTest, NWeb_Spawn_Child_005, TestSize.Level0)
+HWTEST_F(AppSpawnChildTest, NWeb_Spawn_Child_005, TestSize.Level0)
 {
     AppSpawnClientHandle clientHandle = nullptr;
     AppSpawnReqMsgHandle reqHandle = 0;
@@ -497,7 +497,7 @@ static std::string GetColdRunArgs(AppSpawningCtx *property, bool isNweb, const c
  * @brief 测试冷启动后半部处理
  *
  */
-HWTEST(AppSpawnChildTest, App_Spawn_Cold_Run_001, TestSize.Level0)
+HWTEST_F(AppSpawnChildTest, App_Spawn_Cold_Run_001, TestSize.Level0)
 {
     AppSpawnClientHandle clientHandle = nullptr;
     AppSpawnReqMsgHandle reqHandle = 0;
@@ -538,7 +538,7 @@ HWTEST(AppSpawnChildTest, App_Spawn_Cold_Run_001, TestSize.Level0)
     ASSERT_EQ(ret, 0);
 }
 
-HWTEST(AppSpawnChildTest, App_Spawn_Cold_Run_002, TestSize.Level0)
+HWTEST_F(AppSpawnChildTest, App_Spawn_Cold_Run_002, TestSize.Level0)
 {
     AppSpawnClientHandle clientHandle = nullptr;
     AppSpawnReqMsgHandle reqHandle = 0;
@@ -581,7 +581,7 @@ HWTEST(AppSpawnChildTest, App_Spawn_Cold_Run_002, TestSize.Level0)
     ASSERT_EQ(ret, 0);
 }
 
-HWTEST(AppSpawnChildTest, App_Spawn_Cold_Run_003, TestSize.Level0)
+HWTEST_F(AppSpawnChildTest, App_Spawn_Cold_Run_003, TestSize.Level0)
 {
     AppSpawnClientHandle clientHandle = nullptr;
     AppSpawnReqMsgHandle reqHandle = 0;
@@ -630,7 +630,7 @@ HWTEST(AppSpawnChildTest, App_Spawn_Cold_Run_003, TestSize.Level0)
     ASSERT_EQ(ret, 0);
 }
 
-HWTEST(AppSpawnChildTest, App_Spawn_Cold_Run_004, TestSize.Level0)
+HWTEST_F(AppSpawnChildTest, App_Spawn_Cold_Run_004, TestSize.Level0)
 {
     AppSpawnClientHandle clientHandle = nullptr;
     AppSpawnReqMsgHandle reqHandle = 0;
