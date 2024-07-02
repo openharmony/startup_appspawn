@@ -52,7 +52,7 @@ public:
  * @brief AppSpawnMgr
  *
  */
-HWTEST(AppSpawnAppMgrTest, App_Spawn_AppSpawnMgr_001, TestSize.Level0)
+HWTEST_F(AppSpawnAppMgrTest, App_Spawn_AppSpawnMgr_001, TestSize.Level0)
 {
     int ret = 0;
     for (int i = 0; i < MODE_INVALID; i++) {
@@ -112,7 +112,7 @@ static void TestAppTraversal(const AppSpawnMgr *mgr, AppSpawnedProcess *appInfo,
 {
 }
 
-HWTEST(AppSpawnAppMgrTest, App_Spawn_AppSpawnedProcess_001, TestSize.Level0)
+HWTEST_F(AppSpawnAppMgrTest, App_Spawn_AppSpawnedProcess_001, TestSize.Level0)
 {
     AppSpawnMgr *mgr = CreateAppSpawnMgr(0);
     EXPECT_EQ(mgr != nullptr, 1);
@@ -155,7 +155,7 @@ HWTEST(AppSpawnAppMgrTest, App_Spawn_AppSpawnedProcess_001, TestSize.Level0)
     DeleteAppSpawnMgr(mgr);
 }
 
-HWTEST(AppSpawnAppMgrTest, App_Spawn_AppSpawnedProcess_002, TestSize.Level0)
+HWTEST_F(AppSpawnAppMgrTest, App_Spawn_AppSpawnedProcess_002, TestSize.Level0)
 {
     AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
     EXPECT_EQ(mgr != nullptr, 1);
@@ -197,7 +197,7 @@ HWTEST(AppSpawnAppMgrTest, App_Spawn_AppSpawnedProcess_002, TestSize.Level0)
     DeleteAppSpawnMgr(mgr);
 }
 
-HWTEST(AppSpawnAppMgrTest, App_Spawn_AppSpawnedProcess_003, TestSize.Level0)
+HWTEST_F(AppSpawnAppMgrTest, App_Spawn_AppSpawnedProcess_003, TestSize.Level0)
 {
     AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
     EXPECT_EQ(mgr != nullptr, 1);
@@ -226,7 +226,7 @@ static void TestProcessTraversal(const AppSpawnMgr *mgr, AppSpawningCtx *ctx, vo
 {
 }
 
-HWTEST(AppSpawnAppMgrTest, App_Spawn_AppSpawningCtx_001, TestSize.Level0)
+HWTEST_F(AppSpawnAppMgrTest, App_Spawn_AppSpawningCtx_001, TestSize.Level0)
 {
     AppSpawningCtx *appCtx = CreateAppSpawningCtx();
     EXPECT_EQ(appCtx != nullptr, 1);
@@ -261,7 +261,7 @@ HWTEST(AppSpawnAppMgrTest, App_Spawn_AppSpawningCtx_001, TestSize.Level0)
     DeleteAppSpawningCtx(nullptr);
 }
 
-HWTEST(AppSpawnAppMgrTest, App_Spawn_AppSpawningCtx_002, TestSize.Level0)
+HWTEST_F(AppSpawnAppMgrTest, App_Spawn_AppSpawningCtx_002, TestSize.Level0)
 {
     AppSpawningCtx *appCtx = CreateAppSpawningCtx();
     EXPECT_EQ(appCtx != nullptr, 1);
@@ -299,7 +299,7 @@ HWTEST(AppSpawnAppMgrTest, App_Spawn_AppSpawningCtx_002, TestSize.Level0)
  * @brief AppSpawnMsgNode
  *
  */
-HWTEST(AppSpawnAppMgrTest, App_Spawn_AppSpawnMsgNode_001, TestSize.Level0)
+HWTEST_F(AppSpawnAppMgrTest, App_Spawn_AppSpawnMsgNode_001, TestSize.Level0)
 {
     AppSpawnMsgNode *msgNode = CreateAppSpawnMsg();
     EXPECT_EQ(msgNode != nullptr, 1);
@@ -348,7 +348,7 @@ HWTEST(AppSpawnAppMgrTest, App_Spawn_AppSpawnMsgNode_001, TestSize.Level0)
     DeleteAppSpawnMsg(nullptr);
 }
 
-HWTEST(AppSpawnAppMgrTest, App_Spawn_AppSpawnMsgNode_002, TestSize.Level0)
+HWTEST_F(AppSpawnAppMgrTest, App_Spawn_AppSpawnMsgNode_002, TestSize.Level0)
 {
     // get from buffer
     AppSpawnTestHelper testHelper;
@@ -397,7 +397,7 @@ HWTEST(AppSpawnAppMgrTest, App_Spawn_AppSpawnMsgNode_002, TestSize.Level0)
     DeleteAppSpawnMsg(outMsg);
 }
 
-HWTEST(AppSpawnAppMgrTest, App_Spawn_AppSpawnMsgNode_003, TestSize.Level0)
+HWTEST_F(AppSpawnAppMgrTest, App_Spawn_AppSpawnMsgNode_003, TestSize.Level0)
 {
     // get from buffer
     AppSpawnTestHelper testHelper;
@@ -426,7 +426,7 @@ HWTEST(AppSpawnAppMgrTest, App_Spawn_AppSpawnMsgNode_003, TestSize.Level0)
     DeleteAppSpawnMsg(outMsg);
 }
 
-HWTEST(AppSpawnAppMgrTest, App_Spawn_AppSpawnMsgNode_004, TestSize.Level0)
+HWTEST_F(AppSpawnAppMgrTest, App_Spawn_AppSpawnMsgNode_004, TestSize.Level0)
 {
     // get from buffer
     AppSpawnTestHelper testHelper;
@@ -471,7 +471,7 @@ static int AddRenderTerminationTlv(uint8_t *buffer, uint32_t bufferLen, uint32_t
     return 0;
 }
 
-HWTEST(AppSpawnAppMgrTest, App_Spawn_AppSpawnMsgNode_005, TestSize.Level0)
+HWTEST_F(AppSpawnAppMgrTest, App_Spawn_AppSpawnMsgNode_005, TestSize.Level0)
 {
     AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
     EXPECT_EQ(mgr != nullptr, 1);
@@ -516,7 +516,7 @@ HWTEST(AppSpawnAppMgrTest, App_Spawn_AppSpawnMsgNode_005, TestSize.Level0)
     DeleteAppSpawnMgr(mgr);
 }
 
-HWTEST(AppSpawnAppMgrTest, App_Spawn_AppSpawnMsgNode_006, TestSize.Level0)
+HWTEST_F(AppSpawnAppMgrTest, App_Spawn_AppSpawnMsgNode_006, TestSize.Level0)
 {
     AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
     EXPECT_EQ(mgr != nullptr, 1);
@@ -551,7 +551,7 @@ HWTEST(AppSpawnAppMgrTest, App_Spawn_AppSpawnMsgNode_006, TestSize.Level0)
     DeleteAppSpawnMgr(mgr);
 }
 
-HWTEST(AppSpawnAppMgrTest, App_Spawn_AppSpawnMsgNode_007, TestSize.Level0)
+HWTEST_F(AppSpawnAppMgrTest, App_Spawn_AppSpawnMsgNode_007, TestSize.Level0)
 {
     AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
     EXPECT_EQ(mgr != nullptr, 1);
@@ -583,7 +583,7 @@ HWTEST(AppSpawnAppMgrTest, App_Spawn_AppSpawnMsgNode_007, TestSize.Level0)
     DeleteAppSpawnMgr(mgr);
 }
 
-HWTEST(AppSpawnAppMgrTest, App_Spawn_AppSpawnMsgNode_008, TestSize.Level0)
+HWTEST_F(AppSpawnAppMgrTest, App_Spawn_AppSpawnMsgNode_008, TestSize.Level0)
 {
     AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
     EXPECT_EQ(mgr != nullptr, 1);
@@ -618,7 +618,7 @@ HWTEST(AppSpawnAppMgrTest, App_Spawn_AppSpawnMsgNode_008, TestSize.Level0)
  * @brief 消息内容操作接口
  *
  */
-HWTEST(AppSpawnAppMgrTest, App_Spawn_AppSpawnMsg_001, TestSize.Level0)
+HWTEST_F(AppSpawnAppMgrTest, App_Spawn_AppSpawnMsg_001, TestSize.Level0)
 {
     AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
     EXPECT_EQ(mgr != nullptr, 1);
@@ -678,7 +678,7 @@ static int AddTest001ExtTlv(uint8_t *buffer, uint32_t bufferLen, uint32_t &realL
     return 0;
 }
 
-HWTEST(AppSpawnAppMgrTest, App_Spawn_AppSpawnMsg_002, TestSize.Level0)
+HWTEST_F(AppSpawnAppMgrTest, App_Spawn_AppSpawnMsg_002, TestSize.Level0)
 {
     AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
     EXPECT_EQ(mgr != nullptr, 1);
@@ -724,7 +724,7 @@ HWTEST(AppSpawnAppMgrTest, App_Spawn_AppSpawnMsg_002, TestSize.Level0)
     DeleteAppSpawnMgr(mgr);
 }
 
-HWTEST(AppSpawnAppMgrTest, App_Spawn_AppSpawnMsg_003, TestSize.Level0)
+HWTEST_F(AppSpawnAppMgrTest, App_Spawn_AppSpawnMsg_003, TestSize.Level0)
 {
     AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
     EXPECT_EQ(mgr != nullptr, 1);
@@ -779,7 +779,7 @@ HWTEST(AppSpawnAppMgrTest, App_Spawn_AppSpawnMsg_003, TestSize.Level0)
     DeleteAppSpawnMgr(mgr);
 }
 
-HWTEST(AppSpawnAppMgrTest, App_Spawn_AppSpawnMsg_004, TestSize.Level0)
+HWTEST_F(AppSpawnAppMgrTest, App_Spawn_AppSpawnMsg_004, TestSize.Level0)
 {
     AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
     EXPECT_EQ(mgr != nullptr, 1);
@@ -813,7 +813,7 @@ HWTEST(AppSpawnAppMgrTest, App_Spawn_AppSpawnMsg_004, TestSize.Level0)
  * @brief AppSpawningCtx AppSpawnMsg
  *
  */
-HWTEST(AppSpawnAppMgrTest, App_Spawn_AppSpawningCtx_Msg_001, TestSize.Level0)
+HWTEST_F(AppSpawnAppMgrTest, App_Spawn_AppSpawningCtx_Msg_001, TestSize.Level0)
 {
     AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
     EXPECT_EQ(mgr != nullptr, 1);
@@ -869,7 +869,7 @@ HWTEST(AppSpawnAppMgrTest, App_Spawn_AppSpawningCtx_Msg_001, TestSize.Level0)
     DeleteAppSpawnMgr(mgr);
 }
 
-HWTEST(AppSpawnAppMgrTest, App_Spawn_AppSpawningCtx_Msg_002, TestSize.Level0)
+HWTEST_F(AppSpawnAppMgrTest, App_Spawn_AppSpawningCtx_Msg_002, TestSize.Level0)
 {
     AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
     EXPECT_EQ(mgr != nullptr, 1);
@@ -906,7 +906,7 @@ HWTEST(AppSpawnAppMgrTest, App_Spawn_AppSpawningCtx_Msg_002, TestSize.Level0)
     DeleteAppSpawnMgr(mgr);
 }
 
-HWTEST(AppSpawnAppMgrTest, App_Spawn_AppSpawningCtx_Msg_003, TestSize.Level0)
+HWTEST_F(AppSpawnAppMgrTest, App_Spawn_AppSpawningCtx_Msg_003, TestSize.Level0)
 {
     AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
     EXPECT_EQ(mgr != nullptr, 1);
@@ -962,7 +962,7 @@ HWTEST(AppSpawnAppMgrTest, App_Spawn_AppSpawningCtx_Msg_003, TestSize.Level0)
     DeleteAppSpawnMgr(mgr);
 }
 
-HWTEST(AppSpawnAppMgrTest, App_Spawn_AppSpawningCtx_Msg_004, TestSize.Level0)
+HWTEST_F(AppSpawnAppMgrTest, App_Spawn_AppSpawningCtx_Msg_004, TestSize.Level0)
 {
     AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
     EXPECT_EQ(mgr != nullptr, 1);
@@ -1004,7 +1004,7 @@ HWTEST(AppSpawnAppMgrTest, App_Spawn_AppSpawningCtx_Msg_004, TestSize.Level0)
     DeleteAppSpawnMgr(mgr);
 }
 
-HWTEST(AppSpawnAppMgrTest, App_Spawn_AppSpawningCtx_Msg_005, TestSize.Level0)
+HWTEST_F(AppSpawnAppMgrTest, App_Spawn_AppSpawningCtx_Msg_005, TestSize.Level0)
 {
     AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
     EXPECT_EQ(mgr != nullptr, 1);
@@ -1053,7 +1053,7 @@ HWTEST(AppSpawnAppMgrTest, App_Spawn_AppSpawningCtx_Msg_005, TestSize.Level0)
     DeleteAppSpawnMgr(mgr);
 }
 
-HWTEST(AppSpawnAppMgrTest, App_Spawn_AppSpawningCtx_Msg_006, TestSize.Level0)
+HWTEST_F(AppSpawnAppMgrTest, App_Spawn_AppSpawningCtx_Msg_006, TestSize.Level0)
 {
     AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
     EXPECT_EQ(mgr != nullptr, 1);

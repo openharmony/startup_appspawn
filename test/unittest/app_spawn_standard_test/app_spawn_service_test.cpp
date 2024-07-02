@@ -39,32 +39,40 @@ using namespace testing::ext;
 using namespace OHOS;
 
 namespace OHOS {
-static OHOS::AppSpawnTestServer *g_testServer = nullptr;
 class AppSpawnServiceTest : public testing::Test {
 public:
     static void SetUpTestCase() {}
     static void TearDownTestCase() {}
-    void SetUp() {}
-    void TearDown() {}
+    void SetUp()
+    {
+        testServer = std::make_unique<OHOS::AppSpawnTestServer>("appspawn -mode appspawn");
+        if (testServer != nullptr) {
+            testServer->Start(nullptr);
+        }
+    }
+    void TearDown()
+    {
+        if (testServer != nullptr) {
+            testServer->Stop();
+        }
+    }
+public:
+    std::unique_ptr<OHOS::AppSpawnTestServer> testServer = nullptr;
 };
 
 /**
  * @brief 正常消息发送和接收，完整应用孵化过程
  *
  */
-HWTEST(AppSpawnServiceTest, App_Spawn_001, TestSize.Level0)
+HWTEST_F(AppSpawnServiceTest, App_Spawn_001, TestSize.Level0)
 {
-    g_testServer = new OHOS::AppSpawnTestServer("appspawn -mode appspawn");
-    ASSERT_EQ(g_testServer != nullptr, 1);
-    g_testServer->Start(nullptr);
-
     int ret = 0;
     AppSpawnClientHandle clientHandle = nullptr;
     do {
         APPSPAWN_LOGV("App_Spawn_001 start");
         ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
         APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", APPSPAWN_SERVER_NAME);
-        AppSpawnReqMsgHandle reqHandle = g_testServer->CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+        AppSpawnReqMsgHandle reqHandle = testServer->CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
 
         AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_NO_SANDBOX);
         AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_DEBUGGABLE);
@@ -90,7 +98,7 @@ HWTEST(AppSpawnServiceTest, App_Spawn_001, TestSize.Level0)
  * @brief 模拟测试，孵化进程退出后，MSG_GET_RENDER_TERMINATION_STATUS
  *
  */
-HWTEST(AppSpawnServiceTest, App_Spawn_002, TestSize.Level0)
+HWTEST_F(AppSpawnServiceTest, App_Spawn_002, TestSize.Level0)
 {
     int ret = 0;
     AppSpawnClientHandle clientHandle = nullptr;
@@ -98,7 +106,7 @@ HWTEST(AppSpawnServiceTest, App_Spawn_002, TestSize.Level0)
         APPSPAWN_LOGV("App_Spawn_002 start");
         ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
         APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", APPSPAWN_SERVER_NAME);
-        AppSpawnReqMsgHandle reqHandle = g_testServer->CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+        AppSpawnReqMsgHandle reqHandle = testServer->CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
         AppSpawnResult result = {};
         ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
         APPSPAWN_LOGV("App_Spawn_002 recv result %{public}d  %{public}d", result.result, result.pid);
@@ -124,14 +132,14 @@ HWTEST(AppSpawnServiceTest, App_Spawn_002, TestSize.Level0)
  * @brief 模拟测试，MSG_GET_RENDER_TERMINATION_STATUS 关闭孵化进程
  *
  */
-HWTEST(AppSpawnServiceTest, App_Spawn_003, TestSize.Level0)
+HWTEST_F(AppSpawnServiceTest, App_Spawn_003, TestSize.Level0)
 {
     int ret = 0;
     AppSpawnClientHandle clientHandle = nullptr;
     do {
         ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
         APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", APPSPAWN_SERVER_NAME);
-        AppSpawnReqMsgHandle reqHandle = g_testServer->CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+        AppSpawnReqMsgHandle reqHandle = testServer->CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
         AppSpawnResult result = {};
         ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
         APPSPAWN_LOGV("App_Spawn_003 recv result %{public}d  %{public}d", result.result, result.pid);
@@ -154,14 +162,14 @@ HWTEST(AppSpawnServiceTest, App_Spawn_003, TestSize.Level0)
  * @brief dump 消息
  *
  */
-HWTEST(AppSpawnServiceTest, App_Spawn_004, TestSize.Level0)
+HWTEST_F(AppSpawnServiceTest, App_Spawn_004, TestSize.Level0)
 {
     int ret = 0;
     AppSpawnClientHandle clientHandle = nullptr;
     do {
         ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
         APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", APPSPAWN_SERVER_NAME);
-        AppSpawnReqMsgHandle reqHandle = g_testServer->CreateMsg(clientHandle, MSG_DUMP, 0);
+        AppSpawnReqMsgHandle reqHandle = testServer->CreateMsg(clientHandle, MSG_DUMP, 0);
         AppSpawnResult result = {};
         ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
         APPSPAWN_CHECK(ret == 0, break, "Failed to send msg %{public}d", ret);
@@ -175,14 +183,14 @@ HWTEST(AppSpawnServiceTest, App_Spawn_004, TestSize.Level0)
  * @brief MSG_SPAWN_NATIVE_PROCESS 正常消息发送和接收，完整应用孵化过程
  *
  */
-HWTEST(AppSpawnServiceTest, App_Spawn_005, TestSize.Level0)
+HWTEST_F(AppSpawnServiceTest, App_Spawn_005, TestSize.Level0)
 {
     int ret = 0;
     AppSpawnClientHandle clientHandle = nullptr;
     do {
         ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
         APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", APPSPAWN_SERVER_NAME);
-        AppSpawnReqMsgHandle reqHandle = g_testServer->CreateMsg(clientHandle, MSG_SPAWN_NATIVE_PROCESS, 0);
+        AppSpawnReqMsgHandle reqHandle = testServer->CreateMsg(clientHandle, MSG_SPAWN_NATIVE_PROCESS, 0);
 
         AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_DEBUGGABLE);
         AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_NATIVEDEBUG);
@@ -206,15 +214,15 @@ HWTEST(AppSpawnServiceTest, App_Spawn_005, TestSize.Level0)
  * @brief 多线程发送消息
  *
  */
-HWTEST(AppSpawnServiceTest, App_Spawn_006, TestSize.Level0)
+HWTEST_F(AppSpawnServiceTest, App_Spawn_006, TestSize.Level0)
 {
     int ret = 0;
     AppSpawnClientHandle clientHandle = nullptr;
     do {
         ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
         APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", APPSPAWN_SERVER_NAME);
-        auto sendMsg = [](AppSpawnClientHandle clientHandle) {
-            AppSpawnReqMsgHandle reqHandle = g_testServer->CreateMsg(clientHandle, MSG_SPAWN_NATIVE_PROCESS, 0);
+        auto sendMsg = [this](AppSpawnClientHandle clientHandle) {
+            AppSpawnReqMsgHandle reqHandle = testServer->CreateMsg(clientHandle, MSG_SPAWN_NATIVE_PROCESS, 0);
 
             AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_DEBUGGABLE);
             AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_NATIVEDEBUG);
@@ -246,22 +254,22 @@ HWTEST(AppSpawnServiceTest, App_Spawn_006, TestSize.Level0)
     ASSERT_EQ(ret, 0);
 }
 
-HWTEST(AppSpawnServiceTest, App_Spawn_Msg_001, TestSize.Level0)
+HWTEST_F(AppSpawnServiceTest, App_Spawn_Msg_001, TestSize.Level0)
 {
     int ret = -1;
     int socketId = -1;
     // 没有tlv的消息，返回错误
     do {
-        socketId = g_testServer->CreateSocket();
+        socketId = testServer->CreateSocket();
         APPSPAWN_CHECK(socketId >= 0, break, "Failed to create socket %{public}s", APPSPAWN_SERVER_NAME);
 
         std::vector<uint8_t> buffer(sizeof(AppSpawnResponseMsg));
         uint32_t msgLen = 0;
-        ret = g_testServer->CreateSendMsg(buffer, MSG_APP_SPAWN, msgLen, {});
-        APPSPAWN_CHECK(ret == 0, break, "Failed to create msg %{public}s", g_testServer->GetDefaultTestAppBundleName());
+        ret = testServer->CreateSendMsg(buffer, MSG_APP_SPAWN, msgLen, {});
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create msg %{public}s", testServer->GetDefaultTestAppBundleName());
 
         int len = write(socketId, buffer.data(), msgLen);
-        APPSPAWN_CHECK(len > 0, break, "Failed to send msg %{public}s", g_testServer->GetDefaultTestAppBundleName());
+        APPSPAWN_CHECK(len > 0, break, "Failed to send msg %{public}s", testServer->GetDefaultTestAppBundleName());
         // recv
         APPSPAWN_LOGV("Start recv ... ");
         len = read(socketId, buffer.data(), buffer.size());
@@ -287,22 +295,22 @@ static int RecvMsg(int socketId, uint8_t *buffer, uint32_t buffSize)
  * @brief 消息不完整，断开连接
  *
  */
-HWTEST(AppSpawnServiceTest, App_Spawn_Msg_002, TestSize.Level0)
+HWTEST_F(AppSpawnServiceTest, App_Spawn_Msg_002, TestSize.Level0)
 {
     int ret = 0;
     int socketId = -1;
     do {
-        socketId = g_testServer->CreateSocket();
+        socketId = testServer->CreateSocket();
         APPSPAWN_CHECK(socketId >= 0, break, "Failed to create socket %{public}s", APPSPAWN_SERVER_NAME);
 
         std::vector<uint8_t> buffer(sizeof(AppSpawnResponseMsg));
         uint32_t msgLen = 0;
-        ret = g_testServer->CreateSendMsg(buffer, MSG_APP_SPAWN, msgLen, {});
-        APPSPAWN_CHECK(ret == 0, break, "Failed to create msg %{public}s", g_testServer->GetDefaultTestAppBundleName());
+        ret = testServer->CreateSendMsg(buffer, MSG_APP_SPAWN, msgLen, {});
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create msg %{public}s", testServer->GetDefaultTestAppBundleName());
 
         ret = -1;
         int len = write(socketId, buffer.data(), msgLen - 10);  // 10
-        APPSPAWN_CHECK(len > 0, break, "Failed to send msg %{public}s", g_testServer->GetDefaultTestAppBundleName());
+        APPSPAWN_CHECK(len > 0, break, "Failed to send msg %{public}s", testServer->GetDefaultTestAppBundleName());
         // recv timeout
         len = RecvMsg(socketId, buffer.data(), buffer.size());
         APPSPAWN_CHECK(len <= 0, break, "Failed to recv msg len: %{public}d", len);
@@ -318,21 +326,21 @@ HWTEST(AppSpawnServiceTest, App_Spawn_Msg_002, TestSize.Level0)
  * @brief 测试异常tlv
  *
  */
-HWTEST(AppSpawnServiceTest, App_Spawn_Msg_003, TestSize.Level0)
+HWTEST_F(AppSpawnServiceTest, App_Spawn_Msg_003, TestSize.Level0)
 {
     int ret = -1;
     int socketId = -1;
     do {
-        socketId = g_testServer->CreateSocket();
+        socketId = testServer->CreateSocket();
         APPSPAWN_CHECK(socketId >= 0, break, "Failed to create socket %{public}s", APPSPAWN_SERVER_NAME);
 
         std::vector<uint8_t> buffer(sizeof(AppSpawnResponseMsg));
         uint32_t msgLen = 0;
-        ret = g_testServer->CreateSendMsg(buffer, MSG_APP_SPAWN, msgLen, {});
-        APPSPAWN_CHECK(ret == 0, break, "Failed to create msg %{public}s", g_testServer->GetDefaultTestAppBundleName());
+        ret = testServer->CreateSendMsg(buffer, MSG_APP_SPAWN, msgLen, {});
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create msg %{public}s", testServer->GetDefaultTestAppBundleName());
 
         int len = write(socketId, buffer.data(), msgLen);
-        APPSPAWN_CHECK(len > 0, break, "Failed to send msg %{public}s", g_testServer->GetDefaultTestAppBundleName());
+        APPSPAWN_CHECK(len > 0, break, "Failed to send msg %{public}s", testServer->GetDefaultTestAppBundleName());
         // recv
         len = RecvMsg(socketId, buffer.data(), buffer.size());
         APPSPAWN_CHECK(len >= static_cast<int>(sizeof(AppSpawnResponseMsg)), ret = -1;
@@ -351,18 +359,18 @@ HWTEST(AppSpawnServiceTest, App_Spawn_Msg_003, TestSize.Level0)
  * @brief 测试小包发送，随机获取发送大小，发送数据。消息20时，按33发送
  *
  */
-HWTEST(AppSpawnServiceTest, App_Spawn_Msg_004, TestSize.Level0)
+HWTEST_F(AppSpawnServiceTest, App_Spawn_Msg_004, TestSize.Level0)
 {
     int ret = -1;
     int socketId = -1;
     do {
-        socketId = g_testServer->CreateSocket();
+        socketId = testServer->CreateSocket();
         APPSPAWN_CHECK(socketId >= 0, break, "Failed to create socket %{public}s", APPSPAWN_SERVER_NAME);
 
         std::vector<uint8_t> buffer(1024, 0);  // 1024 1k
         uint32_t msgLen = 0;
-        ret = g_testServer->CreateSendMsg(buffer, MSG_APP_SPAWN, msgLen, {AppSpawnTestHelper::AddBaseTlv});
-        APPSPAWN_CHECK(ret == 0, break, "Failed to create msg %{public}s", g_testServer->GetDefaultTestAppBundleName());
+        ret = testServer->CreateSendMsg(buffer, MSG_APP_SPAWN, msgLen, {AppSpawnTestHelper::AddBaseTlv});
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create msg %{public}s", testServer->GetDefaultTestAppBundleName());
 
         // 分片发送
         uint32_t sendStep = OHOS::AppSpawnTestHelper::GenRandom() % 70;  // 70 一次发送的字节数
@@ -375,14 +383,14 @@ HWTEST(AppSpawnServiceTest, App_Spawn_Msg_004, TestSize.Level0)
                 break;
             }
             len = write(socketId, buffer.data() + currIndex, sendStep);
-            APPSPAWN_CHECK(len > 0, break, "Failed to send %{public}s", g_testServer->GetDefaultTestAppBundleName());
+            APPSPAWN_CHECK(len > 0, break, "Failed to send %{public}s", testServer->GetDefaultTestAppBundleName());
             usleep(2000);  // wait recv
             currIndex += sendStep;
         } while (1);
-        APPSPAWN_CHECK(len > 0, break, "Failed to send %{public}s", g_testServer->GetDefaultTestAppBundleName());
+        APPSPAWN_CHECK(len > 0, break, "Failed to send %{public}s", testServer->GetDefaultTestAppBundleName());
         if (msgLen > currIndex) {
             len = write(socketId, buffer.data() + currIndex, msgLen - currIndex);
-            APPSPAWN_CHECK(len > 0, break, "Failed to send %{public}s", g_testServer->GetDefaultTestAppBundleName());
+            APPSPAWN_CHECK(len > 0, break, "Failed to send %{public}s", testServer->GetDefaultTestAppBundleName());
         }
 
         // recv
@@ -404,27 +412,28 @@ HWTEST(AppSpawnServiceTest, App_Spawn_Msg_004, TestSize.Level0)
  * @brief 测试2个消息一起发送
  *
  */
-HWTEST(AppSpawnServiceTest, App_Spawn_Msg_005, TestSize.Level0)
+HWTEST_F(AppSpawnServiceTest, App_Spawn_Msg_005, TestSize.Level0)
 {
     int ret = -1;
     int socketId = -1;
     do {
-        socketId = g_testServer->CreateSocket();
+        socketId = testServer->CreateSocket();
         APPSPAWN_CHECK(socketId >= 0, break, "Failed to create socket %{public}s", APPSPAWN_SERVER_NAME);
 
         std::vector<uint8_t> buffer1(1024);  // 1024
         std::vector<uint8_t> buffer2(1024);  // 1024
         uint32_t msgLen1 = 0;
         uint32_t msgLen2 = 0;
-        ret = g_testServer->CreateSendMsg(buffer1, MSG_APP_SPAWN, msgLen1, {AppSpawnTestHelper::AddBaseTlv});
-        APPSPAWN_CHECK(ret == 0, break, "Failed to create msg %{public}s", g_testServer->GetDefaultTestAppBundleName());
-        ret = g_testServer->CreateSendMsg(buffer2, MSG_APP_SPAWN, msgLen2, {AppSpawnTestHelper::AddBaseTlv});
-        APPSPAWN_CHECK(ret == 0, break, "Failed to create msg %{public}s", g_testServer->GetDefaultTestAppBundleName());
+        ret = testServer->CreateSendMsg(buffer1, MSG_APP_SPAWN, msgLen1, {AppSpawnTestHelper::AddBaseTlv});
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create msg %{public}s", testServer->GetDefaultTestAppBundleName());
+        ret = testServer->CreateSendMsg(buffer2, MSG_APP_SPAWN, msgLen2, {AppSpawnTestHelper::AddBaseTlv});
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create msg %{public}s", testServer->GetDefaultTestAppBundleName());
 
         buffer1.insert(buffer1.begin() + msgLen1, buffer2.begin(), buffer2.end());
         int len = write(socketId, buffer1.data(), msgLen1 + msgLen2);
-        APPSPAWN_CHECK(len > 0, break, "Failed to send msg %{public}s", g_testServer->GetDefaultTestAppBundleName());
+        APPSPAWN_CHECK(len > 0, break, "Failed to send msg %{public}s", testServer->GetDefaultTestAppBundleName());
         // recv
+        sleep(2);
         len = RecvMsg(socketId, buffer2.data(), buffer2.size());
         APPSPAWN_CHECK(len >= static_cast<int>(sizeof(AppSpawnResponseMsg)), ret = -1;
             break, "Failed to recv msg %{public}s", APPSPAWN_SERVER_NAME);
@@ -444,26 +453,26 @@ HWTEST(AppSpawnServiceTest, App_Spawn_Msg_005, TestSize.Level0)
  * @brief 测试连续2个消息，spawn和dump 消息
  *
  */
-HWTEST(AppSpawnServiceTest, App_Spawn_Msg_006, TestSize.Level0)
+HWTEST_F(AppSpawnServiceTest, App_Spawn_Msg_006, TestSize.Level0)
 {
     int ret = -1;
     int socketId = -1;
     do {
-        socketId = g_testServer->CreateSocket();
+        socketId = testServer->CreateSocket();
         APPSPAWN_CHECK(socketId >= 0, break, "Failed to create socket %{public}s", APPSPAWN_SERVER_NAME);
 
         std::vector<uint8_t> buffer1(2 * 1024);  // 2 * 1024
         std::vector<uint8_t> buffer2(1024);  // 1024
         uint32_t msgLen1 = 0;
         uint32_t msgLen2 = 0;
-        ret = g_testServer->CreateSendMsg(buffer1, MSG_APP_SPAWN, msgLen1, {AppSpawnTestHelper::AddBaseTlv});
-        APPSPAWN_CHECK(ret == 0, break, "Failed to create msg %{public}s", g_testServer->GetDefaultTestAppBundleName());
-        ret = g_testServer->CreateSendMsg(buffer2, MSG_DUMP, msgLen2, {});
-        APPSPAWN_CHECK(ret == 0, break, "Failed to create msg %{public}s", g_testServer->GetDefaultTestAppBundleName());
+        ret = testServer->CreateSendMsg(buffer1, MSG_APP_SPAWN, msgLen1, {AppSpawnTestHelper::AddBaseTlv});
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create msg %{public}s", testServer->GetDefaultTestAppBundleName());
+        ret = testServer->CreateSendMsg(buffer2, MSG_DUMP, msgLen2, {});
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create msg %{public}s", testServer->GetDefaultTestAppBundleName());
 
         buffer1.insert(buffer1.begin() + msgLen1, buffer2.begin(), buffer2.end());
         int len = write(socketId, buffer1.data(), msgLen1 + msgLen2);
-        APPSPAWN_CHECK(len > 0, break, "Failed to send msg %{public}s", g_testServer->GetDefaultTestAppBundleName());
+        APPSPAWN_CHECK(len > 0, break, "Failed to send msg %{public}s", testServer->GetDefaultTestAppBundleName());
         // recv
         len = RecvMsg(socketId, buffer2.data(), buffer2.size());
         APPSPAWN_CHECK(len >= static_cast<int>(sizeof(AppSpawnResponseMsg)), ret = -1;
@@ -484,20 +493,20 @@ HWTEST(AppSpawnServiceTest, App_Spawn_Msg_006, TestSize.Level0)
  * @brief 测试连接中断
  *
  */
-HWTEST(AppSpawnServiceTest, App_Spawn_Msg_007, TestSize.Level0)
+HWTEST_F(AppSpawnServiceTest, App_Spawn_Msg_007, TestSize.Level0)
 {
     int ret = -1;
     int socketId = -1;
     do {
-        socketId = g_testServer->CreateSocket();
+        socketId = testServer->CreateSocket();
         APPSPAWN_CHECK(socketId >= 0, break, "Failed to create socket %{public}s", APPSPAWN_SERVER_NAME);
         std::vector<uint8_t> buffer(1024, 0);  // 1024 1k
         uint32_t msgLen = 0;
-        ret = g_testServer->CreateSendMsg(buffer, MSG_APP_SPAWN, msgLen, {AppSpawnTestHelper::AddBaseTlv});
-        APPSPAWN_CHECK(ret == 0, break, "Failed to create msg %{public}s", g_testServer->GetDefaultTestAppBundleName());
+        ret = testServer->CreateSendMsg(buffer, MSG_APP_SPAWN, msgLen, {AppSpawnTestHelper::AddBaseTlv});
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create msg %{public}s", testServer->GetDefaultTestAppBundleName());
 
         int len = write(socketId, buffer.data(), msgLen);
-        APPSPAWN_CHECK(len > 0, break, "Failed to send msg %{public}s", g_testServer->GetDefaultTestAppBundleName());
+        APPSPAWN_CHECK(len > 0, break, "Failed to send msg %{public}s", testServer->GetDefaultTestAppBundleName());
         // close socket
         APPSPAWN_LOGV("CloseClientSocket");
         CloseClientSocket(socketId);
@@ -513,19 +522,19 @@ HWTEST(AppSpawnServiceTest, App_Spawn_Msg_007, TestSize.Level0)
  * @brief 发送不完整报文，等待超时
  *
  */
-HWTEST(AppSpawnServiceTest, App_Spawn_Msg_008, TestSize.Level0)
+HWTEST_F(AppSpawnServiceTest, App_Spawn_Msg_008, TestSize.Level0)
 {
     int ret = 0;
     int socketId = -1;
     do {
-        socketId = g_testServer->CreateSocket();
+        socketId = testServer->CreateSocket();
         APPSPAWN_CHECK(socketId >= 0, break, "Failed to create socket %{public}s", APPSPAWN_SERVER_NAME);
         std::vector<uint8_t> buffer(1024, 0);  // 1024 1k
         uint32_t msgLen = 0;
-        ret = g_testServer->CreateSendMsg(buffer, MSG_APP_SPAWN, msgLen, {AppSpawnTestHelper::AddBaseTlv});
-        APPSPAWN_CHECK(ret == 0, break, "Failed to create msg %{public}s", g_testServer->GetDefaultTestAppBundleName());
+        ret = testServer->CreateSendMsg(buffer, MSG_APP_SPAWN, msgLen, {AppSpawnTestHelper::AddBaseTlv});
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create msg %{public}s", testServer->GetDefaultTestAppBundleName());
         int len = write(socketId, buffer.data(), msgLen - 20);  // 20 test
-        APPSPAWN_CHECK(len > 0, break, "Failed to send msg %{public}s", g_testServer->GetDefaultTestAppBundleName());
+        APPSPAWN_CHECK(len > 0, break, "Failed to send msg %{public}s", testServer->GetDefaultTestAppBundleName());
         // recv
         len = read(socketId, buffer.data(), buffer.size());  // timeout EAGAIN
         APPSPAWN_CHECK(len <= 0, ret = -1; break, "Can not receive timeout %{public}d", errno);
@@ -540,33 +549,30 @@ HWTEST(AppSpawnServiceTest, App_Spawn_Msg_008, TestSize.Level0)
  * @brief 必须最后一个，kill nwebspawn，appspawn的线程结束
  *
  */
-HWTEST(AppSpawnServiceTest, App_Spawn_NWebSpawn_001, TestSize.Level0)
+HWTEST_F(AppSpawnServiceTest, App_Spawn_NWebSpawn_001, TestSize.Level0)
 {
     int ret = 0;
     AppSpawnClientHandle clientHandle = nullptr;
     do {
         ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
         APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", APPSPAWN_SERVER_NAME);
-        AppSpawnReqMsgHandle reqHandle = g_testServer->CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+        AppSpawnReqMsgHandle reqHandle = testServer->CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
         AppSpawnResult result = {};
         ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
         APPSPAWN_CHECK(ret == 0, break, "Failed to send msg %{public}d", ret);
         // kill nwebspawn
         APPSPAWN_LOGV("App_Spawn_NWebSpawn_001 Kill nwebspawn");
-        g_testServer->KillNWebSpawnServer();
+        testServer->KillNWebSpawnServer();
     } while (0);
     AppSpawnClientDestroy(clientHandle);
     ASSERT_EQ(ret, 0);
-
-    g_testServer->Stop();
-    delete g_testServer;
 }
 
 /**
  * @brief 测试环境变量设置是否正确
  *
  */
-HWTEST(AppSpawnServiceTest, App_Spawn_InitCommonEnv_001, TestSize.Level0)
+HWTEST_F(AppSpawnServiceTest, App_Spawn_InitCommonEnv_001, TestSize.Level0)
 {
     char *env;
 
@@ -615,7 +621,7 @@ HWTEST(AppSpawnServiceTest, App_Spawn_InitCommonEnv_001, TestSize.Level0)
  * @brief 测试环境变量转换功能是否正常
  *
  */
-HWTEST(AppSpawnServiceTest, App_Spawn_ConvertEnvValue_001, TestSize.Level0)
+HWTEST_F(AppSpawnServiceTest, App_Spawn_ConvertEnvValue_001, TestSize.Level0)
 {
     char outEnv[MAX_ENV_VALUE_LEN];
 
@@ -631,7 +637,7 @@ HWTEST(AppSpawnServiceTest, App_Spawn_ConvertEnvValue_001, TestSize.Level0)
 
     EXPECT_EQ(ConvertEnvValue("/path/to/lib/${", outEnv, MAX_ENV_VALUE_LEN), 0);
     EXPECT_EQ(strcmp(outEnv, "/path/to/lib/${"), 0);
-    
+
     EXPECT_EQ(ConvertEnvValue("/path/to/lib/${ENV_TEST_VALUE}", outEnv, MAX_ENV_VALUE_LEN), 0);
     EXPECT_EQ(strcmp(outEnv, "/path/to/lib/"), 0);
 

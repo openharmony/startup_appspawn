@@ -40,7 +40,7 @@ namespace OHOS {
 extern "C" {
     void RunAppSandbox(const char *ptyName);
 }
-static OHOS::AppSpawnTestServer *g_testServer = nullptr;
+
 static std::string g_ptyName = {};
 static AppSpawnTestHelper g_testHelper;
 class AppSpawnBegetCtlTest : public testing::Test {
@@ -90,7 +90,7 @@ static int TestSendAppspawnCmdMessage(const char *cmd, const char *ptyName)
     return 0;
 }
 
-HWTEST(AppSpawnBegetCtlTest, App_Spawn_BetgetCtl_001, TestSize.Level0)
+HWTEST_F(AppSpawnBegetCtlTest, App_Spawn_BetgetCtl_001, TestSize.Level0)
 {
     InitPtyInterface();
     EXPECT_NE(g_ptyName.c_str(), nullptr);
@@ -101,22 +101,21 @@ HWTEST(AppSpawnBegetCtlTest, App_Spawn_BetgetCtl_001, TestSize.Level0)
     RunAppSandbox(nullptr);
 }
 
-HWTEST(AppSpawnBegetCtlTest, App_Spawn_BetgetCtl_002, TestSize.Level0)
+HWTEST_F(AppSpawnBegetCtlTest, App_Spawn_BetgetCtl_002, TestSize.Level0)
 {
-    g_testServer = new OHOS::AppSpawnTestServer("appspawn -mode appspawn");
-    ASSERT_EQ(g_testServer != nullptr, 1);
-    g_testServer->Start(nullptr);
+    std::unique_ptr<OHOS::AppSpawnTestServer> testServer =
+        std::make_unique<OHOS::AppSpawnTestServer>("appspawn -mode appspawn");
+    testServer->Start(nullptr);
     int ret = -1;
     InitPtyInterface();
     EXPECT_NE(g_ptyName.c_str(), nullptr);
     ret = TestSendAppspawnCmdMessage("1008", g_ptyName.c_str());
     EXPECT_EQ(ret, 0);
-    g_testServer->KillNWebSpawnServer();
-    g_testServer->Stop();
-    delete g_testServer;
+    testServer->KillNWebSpawnServer();
+    testServer->Stop();
 }
 
-HWTEST(AppSpawnBegetCtlTest, App_Spawn_BetgetCtl_003, TestSize.Level0)
+HWTEST_F(AppSpawnBegetCtlTest, App_Spawn_BetgetCtl_003, TestSize.Level0)
 {
     AppSpawnClientHandle clientHandle = nullptr;
     AppSpawnReqMsgHandle reqHandle = 0;

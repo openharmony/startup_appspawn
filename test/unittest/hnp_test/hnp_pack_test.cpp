@@ -78,7 +78,7 @@ void HnpPackTest::TearDown()
 * @tc.require:issueI98PSE
 * @tc.author:
 */
-HWTEST(HnpPackTest, Hnp_Pack_001, TestSize.Level0)
+HWTEST_F(HnpPackTest, Hnp_Pack_001, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "Hnp_Pack_001 start";
 
@@ -136,7 +136,7 @@ HWTEST(HnpPackTest, Hnp_Pack_001, TestSize.Level0)
 * @tc.require:issueI98PSE
 * @tc.author:
 */
-HWTEST(HnpPackTest, Hnp_Pack_002, TestSize.Level0)
+HWTEST_F(HnpPackTest, Hnp_Pack_002, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "Hnp_Pack_002 start";
 
@@ -176,7 +176,7 @@ HWTEST(HnpPackTest, Hnp_Pack_002, TestSize.Level0)
 * @tc.require:issueI98PSE
 * @tc.author:
 */
-HWTEST(HnpPackTest, Hnp_Pack_003, TestSize.Level0)
+HWTEST_F(HnpPackTest, Hnp_Pack_003, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "Hnp_Pack_003 start";
 
@@ -226,7 +226,7 @@ HWTEST(HnpPackTest, Hnp_Pack_003, TestSize.Level0)
 * @tc.require:issueI98PSE
 * @tc.author:
 */
-HWTEST(HnpPackTest, Hnp_Pack_004, TestSize.Level0)
+HWTEST_F(HnpPackTest, Hnp_Pack_004, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "Hnp_Pack_004 start";
 
@@ -286,7 +286,7 @@ HWTEST(HnpPackTest, Hnp_Pack_004, TestSize.Level0)
 * @tc.require:issueI98PSE
 * @tc.author:
 */
-HWTEST(HnpPackTest, Hnp_Pack_005, TestSize.Level0)
+HWTEST_F(HnpPackTest, Hnp_Pack_005, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "Hnp_Pack_005 start";
 
@@ -343,7 +343,7 @@ HWTEST(HnpPackTest, Hnp_Pack_005, TestSize.Level0)
 * @tc.require:issueI98PSE
 * @tc.author:
 */
-HWTEST(HnpPackTest, Hnp_Pack_006, TestSize.Level0)
+HWTEST_F(HnpPackTest, Hnp_Pack_006, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "Hnp_Pack_006 start";
 
