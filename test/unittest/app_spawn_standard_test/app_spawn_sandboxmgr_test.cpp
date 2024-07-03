@@ -48,7 +48,7 @@ public:
  * @brief AppSpawnSandboxCfg
  *
  */
-HWTEST(AppSpawnSandboxMgrTest, App_Spawn_AppSpawnSandboxCfg_001, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxMgrTest, App_Spawn_AppSpawnSandboxCfg_001, TestSize.Level0)
 {
     AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
     EXPECT_EQ(mgr != nullptr, 1);
@@ -78,7 +78,7 @@ HWTEST(AppSpawnSandboxMgrTest, App_Spawn_AppSpawnSandboxCfg_001, TestSize.Level0
     EXPECT_EQ(sandbox == nullptr, 1);
 }
 
-HWTEST(AppSpawnSandboxMgrTest, App_Spawn_AppSpawnSandboxCfg_002, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxMgrTest, App_Spawn_AppSpawnSandboxCfg_002, TestSize.Level0)
 {
     AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
     EXPECT_EQ(mgr != nullptr, 1);
@@ -100,7 +100,7 @@ HWTEST(AppSpawnSandboxMgrTest, App_Spawn_AppSpawnSandboxCfg_002, TestSize.Level0
     EXPECT_NE(ret, 0);
 }
 
-HWTEST(AppSpawnSandboxMgrTest, App_Spawn_AppSpawnSandboxCfg_003, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxMgrTest, App_Spawn_AppSpawnSandboxCfg_003, TestSize.Level0)
 {
     AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
     EXPECT_EQ(mgr != nullptr, 1);
@@ -131,7 +131,7 @@ HWTEST(AppSpawnSandboxMgrTest, App_Spawn_AppSpawnSandboxCfg_003, TestSize.Level0
     EXPECT_NE(ret, 0);
 }
 
-HWTEST(AppSpawnSandboxMgrTest, App_Spawn_SandboxSection_001, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxMgrTest, App_Spawn_SandboxSection_001, TestSize.Level0)
 {
     AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
     EXPECT_EQ(mgr != nullptr, 1);
@@ -178,7 +178,7 @@ HWTEST(AppSpawnSandboxMgrTest, App_Spawn_SandboxSection_001, TestSize.Level0)
     DeleteAppSpawnMgr(mgr);
 }
 
-HWTEST(AppSpawnSandboxMgrTest, App_Spawn_SandboxSection_002, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxMgrTest, App_Spawn_SandboxSection_002, TestSize.Level0)
 {
     AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
     EXPECT_EQ(mgr != nullptr, 1);
@@ -215,7 +215,7 @@ HWTEST(AppSpawnSandboxMgrTest, App_Spawn_SandboxSection_002, TestSize.Level0)
     DeleteAppSpawnMgr(mgr);
 }
 
-HWTEST(AppSpawnSandboxMgrTest, App_Spawn_SandboxSection_003, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxMgrTest, App_Spawn_SandboxSection_003, TestSize.Level0)
 {
     AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
     EXPECT_EQ(mgr != nullptr, 1);
@@ -241,7 +241,7 @@ HWTEST(AppSpawnSandboxMgrTest, App_Spawn_SandboxSection_003, TestSize.Level0)
     DeleteAppSpawnMgr(mgr);
 }
 
-HWTEST(AppSpawnSandboxMgrTest, App_Spawn_SandboxSection_004, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxMgrTest, App_Spawn_SandboxSection_004, TestSize.Level0)
 {
     AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
     EXPECT_EQ(mgr != nullptr, 1);
@@ -283,7 +283,7 @@ HWTEST(AppSpawnSandboxMgrTest, App_Spawn_SandboxSection_004, TestSize.Level0)
  * @brief SandboxMountNode
  *
  */
-HWTEST(AppSpawnSandboxMgrTest, App_Spawn_SandboxMountNode_001, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxMgrTest, App_Spawn_SandboxMountNode_001, TestSize.Level0)
 {
     AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
     EXPECT_EQ(mgr != nullptr, 1);
@@ -318,7 +318,7 @@ HWTEST(AppSpawnSandboxMgrTest, App_Spawn_SandboxMountNode_001, TestSize.Level0)
     DeleteAppSpawnMgr(mgr);
 }
 
-HWTEST(AppSpawnSandboxMgrTest, App_Spawn_SandboxMountNode_002, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxMgrTest, App_Spawn_SandboxMountNode_002, TestSize.Level0)
 {
     AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
     EXPECT_EQ(mgr != nullptr, 1);
@@ -349,7 +349,7 @@ HWTEST(AppSpawnSandboxMgrTest, App_Spawn_SandboxMountNode_002, TestSize.Level0)
     DeleteAppSpawnMgr(mgr);
 }
 
-HWTEST(AppSpawnSandboxMgrTest, App_Spawn_SandboxMountNode_003, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxMgrTest, App_Spawn_SandboxMountNode_003, TestSize.Level0)
 {
     AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
     EXPECT_EQ(mgr != nullptr, 1);
@@ -397,7 +397,7 @@ HWTEST(AppSpawnSandboxMgrTest, App_Spawn_SandboxMountNode_003, TestSize.Level0)
     DeleteAppSpawnMgr(mgr);
 }
 
-HWTEST(AppSpawnSandboxMgrTest, App_Spawn_SandboxMountNode_004, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxMgrTest, App_Spawn_SandboxMountNode_004, TestSize.Level0)
 {
     AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
     EXPECT_EQ(mgr != nullptr, 1);
@@ -472,7 +472,7 @@ static AppSpawningCtx *TestCreateAppSpawningCtx()
     return appCtx;
 }
 
-HWTEST(AppSpawnSandboxMgrTest, App_Spawn_Mount_001, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxMgrTest, App_Spawn_Mount_001, TestSize.Level0)
 {
     AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
     EXPECT_EQ(mgr != nullptr, 1);
@@ -512,7 +512,7 @@ HWTEST(AppSpawnSandboxMgrTest, App_Spawn_Mount_001, TestSize.Level0)
     DeleteAppSpawnMgr(mgr);
 }
 
-HWTEST(AppSpawnSandboxMgrTest, App_Spawn_Mount_002, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxMgrTest, App_Spawn_Mount_002, TestSize.Level0)
 {
     AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
     EXPECT_EQ(mgr != nullptr, 1);
@@ -545,7 +545,7 @@ HWTEST(AppSpawnSandboxMgrTest, App_Spawn_Mount_002, TestSize.Level0)
     DeleteAppSpawnMgr(mgr);
 }
 
-HWTEST(AppSpawnSandboxMgrTest, App_Spawn_Mount_003, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxMgrTest, App_Spawn_Mount_003, TestSize.Level0)
 {
     AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
     EXPECT_EQ(mgr != nullptr, 1);
@@ -577,7 +577,7 @@ HWTEST(AppSpawnSandboxMgrTest, App_Spawn_Mount_003, TestSize.Level0)
  * @brief SandboxMountPath
  *
  */
-HWTEST(AppSpawnSandboxMgrTest, App_Spawn_Add_App_SandboxMountPath_001, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxMgrTest, App_Spawn_Add_App_SandboxMountPath_001, TestSize.Level0)
 {
     MountArg arg = {};
     arg.originPath = "/data/";
@@ -605,7 +605,7 @@ static int TestReplaceVarHandler(const SandboxContext *context,
     return 0;
 }
 
-HWTEST(AppSpawnSandboxMgrTest, App_Spawn_AddVariableReplaceHandler_001, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxMgrTest, App_Spawn_AddVariableReplaceHandler_001, TestSize.Level0)
 {
     int ret = AddVariableReplaceHandler(nullptr, nullptr);
     EXPECT_EQ(ret, APPSPAWN_ARG_INVALID);
@@ -633,7 +633,7 @@ static int TestProcessExpandSandboxCfg(const SandboxContext *context,
     return 0;
 }
 
-HWTEST(AppSpawnSandboxMgrTest, App_Spawn_RegisterExpandSandboxCfgHandler_001, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxMgrTest, App_Spawn_RegisterExpandSandboxCfgHandler_001, TestSize.Level0)
 {
     int ret = RegisterExpandSandboxCfgHandler(nullptr, 0, nullptr);
     EXPECT_EQ(ret, APPSPAWN_ARG_INVALID);
@@ -654,7 +654,7 @@ HWTEST(AppSpawnSandboxMgrTest, App_Spawn_RegisterExpandSandboxCfgHandler_001, Te
  * @brief permission test
  *
  */
-HWTEST(AppSpawnSandboxMgrTest, App_Spawn_Permission_001, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxMgrTest, App_Spawn_Permission_001, TestSize.Level0)
 {
     int ret = LoadPermission(CLIENT_FOR_APPSPAWN);
     EXPECT_EQ(ret, 0);
@@ -671,7 +671,7 @@ HWTEST(AppSpawnSandboxMgrTest, App_Spawn_Permission_001, TestSize.Level0)
     DeletePermission(CLIENT_MAX);
 }
 
-HWTEST(AppSpawnSandboxMgrTest, App_Spawn_Permission_002, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxMgrTest, App_Spawn_Permission_002, TestSize.Level0)
 {
     int ret = LoadPermission(CLIENT_FOR_APPSPAWN);
     EXPECT_EQ(ret, 0);
@@ -696,7 +696,7 @@ HWTEST(AppSpawnSandboxMgrTest, App_Spawn_Permission_002, TestSize.Level0)
     AppSpawnClientDestroy(clientHandle);
 }
 
-HWTEST(AppSpawnSandboxMgrTest, App_Spawn_Permission_003, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxMgrTest, App_Spawn_Permission_003, TestSize.Level0)
 {
     int ret = LoadPermission(CLIENT_FOR_APPSPAWN);
     EXPECT_EQ(ret, 0);
@@ -729,7 +729,7 @@ HWTEST(AppSpawnSandboxMgrTest, App_Spawn_Permission_003, TestSize.Level0)
     AppSpawnClientDestroy(clientHandle);
 }
 
-HWTEST(AppSpawnSandboxMgrTest, App_Spawn_Permission_004, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxMgrTest, App_Spawn_Permission_004, TestSize.Level0)
 {
     int ret = LoadPermission(CLIENT_FOR_APPSPAWN);
     EXPECT_EQ(ret, 0);

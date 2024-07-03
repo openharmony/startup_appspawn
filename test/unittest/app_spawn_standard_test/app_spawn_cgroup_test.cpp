@@ -79,7 +79,7 @@ static int GetTestCGroupFilePath(const AppSpawnedProcess *appInfo, const char *f
     return 0;
 }
 
-HWTEST(AppSpawnCGroupTest, App_Spawn_CGroup_001, TestSize.Level0)
+HWTEST_F(AppSpawnCGroupTest, App_Spawn_CGroup_001, TestSize.Level0)
 {
     int ret = -1;
     AppSpawnedProcess *appInfo = nullptr;
@@ -100,7 +100,7 @@ HWTEST(AppSpawnCGroupTest, App_Spawn_CGroup_001, TestSize.Level0)
     ASSERT_EQ(ret, 0);
 }
 
-HWTEST(AppSpawnCGroupTest, App_Spawn_CGroup_002, TestSize.Level0)
+HWTEST_F(AppSpawnCGroupTest, App_Spawn_CGroup_002, TestSize.Level0)
 {
     int ret = -1;
     AppSpawnedProcess *appInfo = nullptr;
@@ -154,7 +154,7 @@ HWTEST(AppSpawnCGroupTest, App_Spawn_CGroup_002, TestSize.Level0)
     ASSERT_EQ(ret, 0);
 }
 
-HWTEST(AppSpawnCGroupTest, App_Spawn_CGroup_003, TestSize.Level0)
+HWTEST_F(AppSpawnCGroupTest, App_Spawn_CGroup_003, TestSize.Level0)
 {
     int ret = -1;
     AppSpawnedProcess *appInfo = nullptr;
@@ -179,7 +179,7 @@ HWTEST(AppSpawnCGroupTest, App_Spawn_CGroup_003, TestSize.Level0)
     ASSERT_EQ(ret, 0);
 }
 
-HWTEST(AppSpawnCGroupTest, App_Spawn_CGroup_004, TestSize.Level0)
+HWTEST_F(AppSpawnCGroupTest, App_Spawn_CGroup_004, TestSize.Level0)
 {
     int ret = -1;
     AppSpawnedProcess *appInfo = nullptr;
@@ -216,7 +216,7 @@ HWTEST(AppSpawnCGroupTest, App_Spawn_CGroup_004, TestSize.Level0)
     ASSERT_EQ(ret, 0);
 }
 
-HWTEST(AppSpawnCGroupTest, App_Spawn_CGroup_005, TestSize.Level0)
+HWTEST_F(AppSpawnCGroupTest, App_Spawn_CGroup_005, TestSize.Level0)
 {
     int ret = -1;
     AppSpawnedProcess *appInfo = nullptr;
@@ -245,7 +245,7 @@ HWTEST(AppSpawnCGroupTest, App_Spawn_CGroup_005, TestSize.Level0)
  * @brief in appspawn service, add and delete app
  *
  */
-HWTEST(AppSpawnCGroupTest, App_Spawn_CGroup_006, TestSize.Level0)
+HWTEST_F(AppSpawnCGroupTest, App_Spawn_CGroup_006, TestSize.Level0)
 {
     int ret = -1;
     AppSpawnedProcess *appInfo = nullptr;
@@ -293,7 +293,7 @@ HWTEST(AppSpawnCGroupTest, App_Spawn_CGroup_006, TestSize.Level0)
  * @brief in appspawn service, max write
  *
  */
-HWTEST(AppSpawnCGroupTest, App_Spawn_CGroup_007, TestSize.Level0)
+HWTEST_F(AppSpawnCGroupTest, App_Spawn_CGroup_007, TestSize.Level0)
 {
     int ret = -1;
     AppSpawnedProcess *appInfo = nullptr;

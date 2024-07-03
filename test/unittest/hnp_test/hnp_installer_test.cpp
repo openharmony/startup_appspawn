@@ -250,7 +250,7 @@ void HnpUnInstall(char *package)
 * @tc.require:issueI9BU5F
 * @tc.author:
 */
-HWTEST(HnpInstallerTest, Hnp_Install_001, TestSize.Level0)
+HWTEST_F(HnpInstallerTest, Hnp_Install_001, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "Hnp_Installer_001 start";
 
@@ -319,7 +319,7 @@ HWTEST(HnpInstallerTest, Hnp_Install_001, TestSize.Level0)
 * @tc.require:issueI9BU5F
 * @tc.author:
 */
-HWTEST(HnpInstallerTest, Hnp_Install_002, TestSize.Level0)
+HWTEST_F(HnpInstallerTest, Hnp_Install_002, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "Hnp_Installer_002 start";
 
@@ -380,7 +380,7 @@ HWTEST(HnpInstallerTest, Hnp_Install_002, TestSize.Level0)
 * @tc.require:issueI9BU5F
 * @tc.author:
 */
-HWTEST(HnpInstallerTest, Hnp_Install_003, TestSize.Level0)
+HWTEST_F(HnpInstallerTest, Hnp_Install_003, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "Hnp_Installer_003 start";
 
@@ -433,7 +433,7 @@ HWTEST(HnpInstallerTest, Hnp_Install_003, TestSize.Level0)
 * @tc.require:issueI9BU5F
 * @tc.author:
 */
-HWTEST(HnpInstallerTest, Hnp_Install_004, TestSize.Level0)
+HWTEST_F(HnpInstallerTest, Hnp_Install_004, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "Hnp_Installer_004 start";
 
@@ -488,7 +488,7 @@ HWTEST(HnpInstallerTest, Hnp_Install_004, TestSize.Level0)
 * @tc.require:issueI9BU5F
 * @tc.author:
 */
-HWTEST(HnpInstallerTest, Hnp_Install_005, TestSize.Level0)
+HWTEST_F(HnpInstallerTest, Hnp_Install_005, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "Hnp_Installer_005 start";
 
@@ -550,7 +550,7 @@ HWTEST(HnpInstallerTest, Hnp_Install_005, TestSize.Level0)
 * @tc.require:issueI9BU5F
 * @tc.author:
 */
-HWTEST(HnpInstallerTest, Hnp_Install_006, TestSize.Level0)
+HWTEST_F(HnpInstallerTest, Hnp_Install_006, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "Hnp_Install_006 start";
 
@@ -594,7 +594,7 @@ HWTEST(HnpInstallerTest, Hnp_Install_006, TestSize.Level0)
 * @tc.require:issueI9BU5F
 * @tc.author:
 */
-HWTEST(HnpInstallerTest, Hnp_Install_007, TestSize.Level0)
+HWTEST_F(HnpInstallerTest, Hnp_Install_007, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "Hnp_Install_007 start";
 
@@ -660,7 +660,7 @@ HWTEST(HnpInstallerTest, Hnp_Install_007, TestSize.Level0)
 * @tc.require:issueI9RYCK
 * @tc.author:
 */
-HWTEST(HnpInstallerTest, Hnp_Install_008, TestSize.Level0)
+HWTEST_F(HnpInstallerTest, Hnp_Install_008, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "Hnp_Install_08 start";
 
@@ -713,7 +713,7 @@ HWTEST(HnpInstallerTest, Hnp_Install_008, TestSize.Level0)
 * @tc.require:issueI9RYCK
 * @tc.author:
 */
-HWTEST(HnpInstallerTest, Hnp_Install_009, TestSize.Level0)
+HWTEST_F(HnpInstallerTest, Hnp_Install_009, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "Hnp_Install_009 start";
 
@@ -766,7 +766,7 @@ HWTEST(HnpInstallerTest, Hnp_Install_009, TestSize.Level0)
 * @tc.require:issueI9DQSE
 * @tc.author:
 */
-HWTEST(HnpInstallerTest, Hnp_Install_API_001, TestSize.Level0)
+HWTEST_F(HnpInstallerTest, Hnp_Install_API_001, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "Hnp_Install_API_001 start";
 
@@ -809,7 +809,7 @@ HWTEST(HnpInstallerTest, Hnp_Install_API_001, TestSize.Level0)
 * @tc.require:issueI9DQSE
 * @tc.author:
 */
-HWTEST(HnpInstallerTest, Hnp_Install_API_002, TestSize.Level0)
+HWTEST_F(HnpInstallerTest, Hnp_Install_API_002, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "Hnp_Install_API_002 start";
 
@@ -845,7 +845,7 @@ HWTEST(HnpInstallerTest, Hnp_Install_API_002, TestSize.Level0)
 * @tc.require:issueI9DQSE
 * @tc.author:
 */
-HWTEST(HnpInstallerTest, Hnp_Install_API_003, TestSize.Level0)
+HWTEST_F(HnpInstallerTest, Hnp_Install_API_003, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "Hnp_Install_API_003 start";
 
@@ -883,7 +883,7 @@ HWTEST(HnpInstallerTest, Hnp_Install_API_003, TestSize.Level0)
 * @tc.require:issueI9JCQ1
 * @tc.author:
 */
-HWTEST(HnpInstallerTest, Hnp_Install_API_004, TestSize.Level0)
+HWTEST_F(HnpInstallerTest, Hnp_Install_API_004, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "Hnp_Install_API_004 start";
 
@@ -927,7 +927,7 @@ HWTEST(HnpInstallerTest, Hnp_Install_API_004, TestSize.Level0)
 * @tc.require:issueI9BU5F
 * @tc.author:
 */
-HWTEST(HnpInstallerTest, Hnp_UnInstall_001, TestSize.Level0)
+HWTEST_F(HnpInstallerTest, Hnp_UnInstall_001, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "Hnp_UnInstall_001 start";
 
@@ -979,7 +979,7 @@ HWTEST(HnpInstallerTest, Hnp_UnInstall_001, TestSize.Level0)
 * @tc.require:issueI9BU5F
 * @tc.author:
 */
-HWTEST(HnpInstallerTest, Hnp_UnInstall_002, TestSize.Level0)
+HWTEST_F(HnpInstallerTest, Hnp_UnInstall_002, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "Hnp_UnInstall_002 start";
 
@@ -1024,7 +1024,7 @@ HWTEST(HnpInstallerTest, Hnp_UnInstall_002, TestSize.Level0)
 * @tc.require:issueI9BU5F
 * @tc.author:
 */
-HWTEST(HnpInstallerTest, Hnp_UnInstall_003, TestSize.Level0)
+HWTEST_F(HnpInstallerTest, Hnp_UnInstall_003, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "Hnp_UnInstall_003 start";
 
@@ -1071,7 +1071,7 @@ HWTEST(HnpInstallerTest, Hnp_UnInstall_003, TestSize.Level0)
 * @tc.require:issueI9DQSE
 * @tc.author:
 */
-HWTEST(HnpInstallerTest, Hnp_UnInstall_API_001, TestSize.Level0)
+HWTEST_F(HnpInstallerTest, Hnp_UnInstall_API_001, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "Hnp_UnInstall_API_001 start";
 
@@ -1106,7 +1106,7 @@ HWTEST(HnpInstallerTest, Hnp_UnInstall_API_001, TestSize.Level0)
 * @tc.require:issueI9DQSE
 * @tc.author:
 */
-HWTEST(HnpInstallerTest, Hnp_UnInstall_API_002, TestSize.Level0)
+HWTEST_F(HnpInstallerTest, Hnp_UnInstall_API_002, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "Hnp_UnInstall_API_002 start";
 
@@ -1137,7 +1137,7 @@ HWTEST(HnpInstallerTest, Hnp_UnInstall_API_002, TestSize.Level0)
 * @tc.require:issueI9JCQ1
 * @tc.author:
 */
-HWTEST(HnpInstallerTest, Hnp_UnInstall_API_003, TestSize.Level0)
+HWTEST_F(HnpInstallerTest, Hnp_UnInstall_API_003, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "Hnp_UnInstall_API_003 start";
 
