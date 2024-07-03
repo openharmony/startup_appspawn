@@ -113,8 +113,10 @@ static void LoadExtendLib(void)
 
     OHOS::AppExecFwk::MainThread::PreloadExtensionPlugin();
     bool preload = OHOS::system::GetBoolParameter("persist.appspawn.preload", DEFAULT_PRELOAD_VALUE);
-    APPSPAWN_CHECK(preload, dlclose(aceAbilityLib);
-        return, "LoadExtendLib: Do not preload JS VM");
+    if (!preload) {
+        APPSPAWN_LOGI("LoadExtendLib: Do not preload JS VM");
+        return;
+    }
 
     APPSPAWN_LOGI("LoadExtendLib: Start preload JS VM");
     SetTraceDisabled(true);
@@ -123,8 +125,7 @@ static void LoadExtendLib(void)
 
     OHOS::Ace::AceForwardCompatibility::ReclaimFileCache(getpid());
     Resource::ResourceManager *systemResMgr = Resource::GetSystemResourceManagerNoSandBox();
-    APPSPAWN_CHECK(systemResMgr != nullptr, dlclose(aceAbilityLib);
-        return, "Fail to get system resource manager");
+    APPSPAWN_CHECK(systemResMgr != nullptr, return, "Fail to get system resource manager");
     APPSPAWN_LOGI("LoadExtendLib: End preload JS VM");
 }
 
