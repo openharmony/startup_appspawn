@@ -50,7 +50,7 @@ public:
  * @brief module interface
  *
  */
-HWTEST(AppSpawnModuleInterfaceTest, App_Spawn_AppSpawnModuleMgrInstall_001, TestSize.Level1)
+HWTEST_F(AppSpawnModuleInterfaceTest, App_Spawn_AppSpawnModuleMgrInstall_001, TestSize.Level1)
 {
     int ret = AppSpawnModuleMgrInstall(nullptr);
     EXPECT_NE(0, ret);
@@ -67,7 +67,7 @@ HWTEST(AppSpawnModuleInterfaceTest, App_Spawn_AppSpawnModuleMgrInstall_001, Test
     EXPECT_EQ(0, ret);
 }
 
-HWTEST(AppSpawnModuleInterfaceTest, App_Spawn_AppSpawnLoadAutoRunModules_001, TestSize.Level1)
+HWTEST_F(AppSpawnModuleInterfaceTest, App_Spawn_AppSpawnLoadAutoRunModules_001, TestSize.Level1)
 {
     int ret = AppSpawnLoadAutoRunModules(MODULE_DEFAULT);
     EXPECT_EQ(0, ret);
@@ -83,7 +83,7 @@ HWTEST(AppSpawnModuleInterfaceTest, App_Spawn_AppSpawnLoadAutoRunModules_001, Te
     EXPECT_NE(0, ret);
 }
 
-HWTEST(AppSpawnModuleInterfaceTest, App_Spawn_AppSpawnModuleMgrUnInstall_001, TestSize.Level1)
+HWTEST_F(AppSpawnModuleInterfaceTest, App_Spawn_AppSpawnModuleMgrUnInstall_001, TestSize.Level1)
 {
     AppSpawnModuleMgrUnInstall(MODULE_DEFAULT);
     AppSpawnModuleMgrUnInstall(MODULE_APPSPAWN);
@@ -102,7 +102,7 @@ static int TestAppPreload(AppSpawnMgr *content)
     return 0;
 }
 
-HWTEST(AppSpawnModuleInterfaceTest, App_Spawn_Server_Hook_001, TestSize.Level0)
+HWTEST_F(AppSpawnModuleInterfaceTest, App_Spawn_Server_Hook_001, TestSize.Level0)
 {
     AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
     EXPECT_EQ(mgr != nullptr, 1);
@@ -136,7 +136,7 @@ static int TestAppSpawn(AppSpawnMgr *content, AppSpawningCtx *property)
     return 0;
 }
 
-HWTEST(AppSpawnModuleInterfaceTest, App_Spawn_App_Spawn_Hook_001, TestSize.Level0)
+HWTEST_F(AppSpawnModuleInterfaceTest, App_Spawn_App_Spawn_Hook_001, TestSize.Level0)
 {
     AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
     EXPECT_EQ(mgr != nullptr, 1);
@@ -184,7 +184,7 @@ static int ReportProcessExitInfo(const AppSpawnMgr *content, const AppSpawnedPro
     return 0;
 }
 
-HWTEST(AppSpawnModuleInterfaceTest, App_Spawn_Process_Hook_001, TestSize.Level0)
+HWTEST_F(AppSpawnModuleInterfaceTest, App_Spawn_Process_Hook_001, TestSize.Level0)
 {
     AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
     EXPECT_EQ(mgr != nullptr, 1);
@@ -227,7 +227,7 @@ static int TestChildLoop(AppSpawnContent *content, AppSpawnClient *client)
     return 0;
 }
 
-HWTEST(AppSpawnModuleInterfaceTest, App_Spawn_RegChildLooper_001, TestSize.Level0)
+HWTEST_F(AppSpawnModuleInterfaceTest, App_Spawn_RegChildLooper_001, TestSize.Level0)
 {
     AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
     EXPECT_EQ(mgr != nullptr, 1);
@@ -241,7 +241,7 @@ HWTEST(AppSpawnModuleInterfaceTest, App_Spawn_RegChildLooper_001, TestSize.Level
  * @brief MakeDirRec
  * int MakeDirRec(const char *path, mode_t mode, int lastPath);
  */
-HWTEST(AppSpawnModuleInterfaceTest, App_Spawn_MakeDirRec_001, TestSize.Level0)
+HWTEST_F(AppSpawnModuleInterfaceTest, App_Spawn_MakeDirRec_001, TestSize.Level0)
 {
     int ret = MakeDirRec(nullptr, 0, -1);
     EXPECT_EQ(ret, -1);
@@ -253,7 +253,7 @@ HWTEST(AppSpawnModuleInterfaceTest, App_Spawn_MakeDirRec_001, TestSize.Level0)
     EXPECT_EQ(ret, 0);
 }
 
-HWTEST(AppSpawnModuleInterfaceTest, App_Spawn_DiffTime_001, TestSize.Level0)
+HWTEST_F(AppSpawnModuleInterfaceTest, App_Spawn_DiffTime_001, TestSize.Level0)
 {
     struct timespec endTime;
     struct timespec startTime;
@@ -278,7 +278,7 @@ int TestSplitStringHandle(const char *str, void *context)
     return 0;
 }
 
-HWTEST(AppSpawnModuleInterfaceTest, App_Spawn_StringSplit_001, TestSize.Level0)
+HWTEST_F(AppSpawnModuleInterfaceTest, App_Spawn_StringSplit_001, TestSize.Level0)
 {
     const char *testStr = "aaaa|bbbb|cccc  |dddd|   eeee| 1111 | 2222";
     int ret = StringSplit(testStr, "|", nullptr, TestSplitStringHandle);
@@ -296,7 +296,7 @@ HWTEST(AppSpawnModuleInterfaceTest, App_Spawn_StringSplit_001, TestSize.Level0)
     EXPECT_NE(ret, 0);
 }
 
-HWTEST(AppSpawnModuleInterfaceTest, App_Spawn_GetLastStr_001, TestSize.Level0)
+HWTEST_F(AppSpawnModuleInterfaceTest, App_Spawn_GetLastStr_001, TestSize.Level0)
 {
     const char *testStr = "aaaa|bbbb|cccc  |dddd|   eeee| 1111 | 2222";
     char *tmp = GetLastStr(testStr, "2222");
@@ -311,7 +311,7 @@ HWTEST(AppSpawnModuleInterfaceTest, App_Spawn_GetLastStr_001, TestSize.Level0)
     EXPECT_EQ(tmp != nullptr, 0);
 }
 
-HWTEST(AppSpawnModuleInterfaceTest, App_Spawn_DumpCurrentDir_001, TestSize.Level0)
+HWTEST_F(AppSpawnModuleInterfaceTest, App_Spawn_DumpCurrentDir_001, TestSize.Level0)
 {
     char path[PATH_MAX] = {};
     DumpCurrentDir(path, sizeof(path), APPSPAWN_BASE_DIR "/test_appspawn/");
@@ -327,7 +327,7 @@ static int TestParseAppSandboxConfig(const cJSON *root, ParseJsonContext *contex
     return 0;
 }
 
-HWTEST(AppSpawnModuleInterfaceTest, App_Spawn_ParseJsonConfig_001, TestSize.Level0)
+HWTEST_F(AppSpawnModuleInterfaceTest, App_Spawn_ParseJsonConfig_001, TestSize.Level0)
 {
     int ret = 0;
 #ifdef APPSPAWN_SANDBOX_NEW
@@ -353,7 +353,7 @@ HWTEST(AppSpawnModuleInterfaceTest, App_Spawn_ParseJsonConfig_001, TestSize.Leve
     EXPECT_NE(ret, 0);
 }
 
-HWTEST(AppSpawnModuleInterfaceTest, App_Spawn_GetJsonObjFromFile_001, TestSize.Level0)
+HWTEST_F(AppSpawnModuleInterfaceTest, App_Spawn_GetJsonObjFromFile_001, TestSize.Level0)
 {
     cJSON *json = GetJsonObjFromFile("/etc/sandbox/appdata-sandbox.json");
     EXPECT_EQ(json != nullptr, 1);
@@ -362,7 +362,7 @@ HWTEST(AppSpawnModuleInterfaceTest, App_Spawn_GetJsonObjFromFile_001, TestSize.L
     EXPECT_EQ(json == nullptr, 1);
 }
 
-HWTEST(AppSpawnModuleInterfaceTest, App_Spawn_GetStringFromJsonObj_001, TestSize.Level0)
+HWTEST_F(AppSpawnModuleInterfaceTest, App_Spawn_GetStringFromJsonObj_001, TestSize.Level0)
 {
     const std::string buffer = "{ \
         \"global\": { \
@@ -386,7 +386,7 @@ HWTEST(AppSpawnModuleInterfaceTest, App_Spawn_GetStringFromJsonObj_001, TestSize
     cJSON_Delete(json);
 }
 
-HWTEST(AppSpawnModuleInterfaceTest, App_Spawn_GetBoolValueFromJsonObj_001, TestSize.Level0)
+HWTEST_F(AppSpawnModuleInterfaceTest, App_Spawn_GetBoolValueFromJsonObj_001, TestSize.Level0)
 {
     const std::string buffer = "{ \
         \"global\": { \
@@ -410,7 +410,7 @@ HWTEST(AppSpawnModuleInterfaceTest, App_Spawn_GetBoolValueFromJsonObj_001, TestS
     cJSON_Delete(json);
 }
 
-HWTEST(AppSpawnModuleInterfaceTest, App_Spawn_GetIntValueFromJsonObj_001, TestSize.Level0)
+HWTEST_F(AppSpawnModuleInterfaceTest, App_Spawn_GetIntValueFromJsonObj_001, TestSize.Level0)
 {
     const std::string buffer = "{ \
         \"global\": { \

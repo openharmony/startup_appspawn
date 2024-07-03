@@ -392,7 +392,7 @@ static int TestJsonUtilSplit(const char *args[], uint32_t argc, const std::strin
     return 0;
 }
 
-HWTEST(AppSpawnSandboxTest, App_Spawn_JsonUtil_001, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_JsonUtil_001, TestSize.Level0)
 {
     const char *args[] = {"S_IRUSR", "S_IWOTH", "S_IRWXU"};
     std::string cmd = "   S_IRUSR   S_IWOTH      S_IRWXU   ";
@@ -400,7 +400,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_JsonUtil_001, TestSize.Level0)
     ASSERT_EQ(TestJsonUtilSplit(args, size, cmd, " "), 0);
 }
 
-HWTEST(AppSpawnSandboxTest, App_Spawn_JsonUtil_002, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_JsonUtil_002, TestSize.Level0)
 {
     const char *args[] = {"S_IRUSR", "S_IWOTH", "S_IRWXU"};
     std::string cmd = "S_IRUSR   S_IWOTH      S_IRWXU";
@@ -408,7 +408,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_JsonUtil_002, TestSize.Level0)
     ASSERT_EQ(TestJsonUtilSplit(args, size, cmd, " "), 0);
 }
 
-HWTEST(AppSpawnSandboxTest, App_Spawn_JsonUtil_003, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_JsonUtil_003, TestSize.Level0)
 {
     const char *args[] = {"S_IRUSR", "S_IWOTH", "S_IRWXU"};
     std::string cmd = "  S_IRUSR   S_IWOTH      S_IRWXU";
@@ -416,7 +416,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_JsonUtil_003, TestSize.Level0)
     ASSERT_EQ(TestJsonUtilSplit(args, size, cmd, " "), 0);
 }
 
-HWTEST(AppSpawnSandboxTest, App_Spawn_JsonUtil_004, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_JsonUtil_004, TestSize.Level0)
 {
     const char *args[] = {"S_IRUSR", "S_IWOTH", "S_IRWXU"};
     std::string cmd = "S_IRUSR   S_IWOTH      S_IRWXU  ";
@@ -424,7 +424,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_JsonUtil_004, TestSize.Level0)
     ASSERT_EQ(TestJsonUtilSplit(args, size, cmd, " "), 0);
 }
 
-HWTEST(AppSpawnSandboxTest, App_Spawn_JsonUtil_005, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_JsonUtil_005, TestSize.Level0)
 {
     const char *args[] = {"S_IRUSR"};
     std::string cmd = "  S_IRUSR    ";
@@ -432,7 +432,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_JsonUtil_005, TestSize.Level0)
     ASSERT_EQ(TestJsonUtilSplit(args, size, cmd, " "), 0);
 }
 
-HWTEST(AppSpawnSandboxTest, App_Spawn_JsonUtil_006, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_JsonUtil_006, TestSize.Level0)
 {
     const char *args[] = {"S_IRUSR", "S_IWOTH", "S_IRWXU"};
     std::string cmd = "  S_IRUSR |  S_IWOTH    |  S_IRWXU  ";
@@ -440,7 +440,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_JsonUtil_006, TestSize.Level0)
     ASSERT_EQ(TestJsonUtilSplit(args, size, cmd, "|"), 0);
 }
 
-HWTEST(AppSpawnSandboxTest, App_Spawn_JsonUtil_007, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_JsonUtil_007, TestSize.Level0)
 {
     const char *args[] = {"send", "--type", "2"};
     std::string cmd = "send --type 2 ";
@@ -452,7 +452,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_JsonUtil_007, TestSize.Level0)
  * @brief 测试Variable 变量替换 <currentUserId> <PackageName_index>
  *
  */
-HWTEST(AppSpawnSandboxTest, App_Spawn_Variable_001, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Variable_001, TestSize.Level0)
 {
     AddDefaultVariable();
     AppSpawningCtx *spawningCtx = TestCreateAppSpawningCtx();
@@ -474,7 +474,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Variable_001, TestSize.Level0)
  * @brief 测试变量<lib>
  *
  */
-HWTEST(AppSpawnSandboxTest, App_Spawn_Variable_002, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Variable_002, TestSize.Level0)
 {
     AppSpawningCtx *spawningCtx = TestCreateAppSpawningCtx();
     SandboxContext *context = TestGetSandboxContext(spawningCtx, 0);
@@ -496,7 +496,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Variable_002, TestSize.Level0)
  * @brief 测试系统参数变量<param:test.variable.001>
  *
  */
-HWTEST(AppSpawnSandboxTest, App_Spawn_Variable_003, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Variable_003, TestSize.Level0)
 {
     AppSpawningCtx *spawningCtx = TestCreateAppSpawningCtx();
     SandboxContext *context = TestGetSandboxContext(spawningCtx, 0);
@@ -525,7 +525,7 @@ static int TestVariableReplace(const SandboxContext *context,
  * @brief 测试注册变量，和替换
  *
  */
-HWTEST(AppSpawnSandboxTest, App_Spawn_Variable_004, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Variable_004, TestSize.Level0)
 {
     AppSpawningCtx *spawningCtx = TestCreateAppSpawningCtx();
     SandboxContext *context = TestGetSandboxContext(spawningCtx, 0);
@@ -563,7 +563,7 @@ static inline void TestSetMountPathOperation(uint32_t *operation, uint32_t index
     *operation |= (1 << index);
 }
 
-HWTEST(AppSpawnSandboxTest, App_Spawn_Variable_005, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Variable_005, TestSize.Level0)
 {
     AppSpawningCtx *spawningCtx = TestCreateAppSpawningCtx();
     SandboxContext *context = TestGetSandboxContext(spawningCtx, 0);
@@ -588,7 +588,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Variable_005, TestSize.Level0)
  * @brief 测试dep-path 变量替换
  *
  */
-HWTEST(AppSpawnSandboxTest, App_Spawn_Variable_006, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Variable_006, TestSize.Level0)
 {
     AppSpawningCtx *spawningCtx = TestCreateAppSpawningCtx();
     SandboxContext *context = TestGetSandboxContext(spawningCtx, 0);
@@ -612,7 +612,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Variable_006, TestSize.Level0)
  * @brief 测试dep-src-path 变量替换
  *
  */
-HWTEST(AppSpawnSandboxTest, App_Spawn_Variable_007, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Variable_007, TestSize.Level0)
 {
     AppSpawningCtx *spawningCtx = TestCreateAppSpawningCtx();
     SandboxContext *context = TestGetSandboxContext(spawningCtx, 0);
@@ -636,7 +636,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Variable_007, TestSize.Level0)
  * @brief 测试dep-sandbox-path 变量替换
  *
  */
-HWTEST(AppSpawnSandboxTest, App_Spawn_Variable_008, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Variable_008, TestSize.Level0)
 {
     AppSpawningCtx *spawningCtx = TestCreateAppSpawningCtx();
     SandboxContext *context = TestGetSandboxContext(spawningCtx, 0);
@@ -660,7 +660,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Variable_008, TestSize.Level0)
  * @brief 测试不存在的变量替换
  *
  */
-HWTEST(AppSpawnSandboxTest, App_Spawn_Variable_009, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Variable_009, TestSize.Level0)
 {
     AppSpawningCtx *spawningCtx = TestCreateAppSpawningCtx();
     SandboxContext *context = TestGetSandboxContext(spawningCtx, 0);
@@ -675,7 +675,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Variable_009, TestSize.Level0)
     DeleteAppSpawningCtx(spawningCtx);
 }
 
-HWTEST(AppSpawnSandboxTest, App_Spawn_Permission_01, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Permission_01, TestSize.Level0)
 {
     AppSpawnSandboxCfg *sandbox = nullptr;
     int ret = -1;
@@ -720,7 +720,7 @@ static int ProcessTestExpandConfig(const SandboxContext *context,
     return 0;
 }
 
-HWTEST(AppSpawnSandboxTest, App_Spawn_ExpandCfg_01, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_ExpandCfg_01, TestSize.Level0)
 {
     AppSpawnClientHandle clientHandle = nullptr;
     AppSpawnReqMsgHandle reqHandle = 0;
@@ -760,7 +760,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_ExpandCfg_01, TestSize.Level0)
     ASSERT_EQ(ret, 0);
 }
 
-HWTEST(AppSpawnSandboxTest, App_Spawn_ExpandCfg_02, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_ExpandCfg_02, TestSize.Level0)
 {
     AppSpawnClientHandle clientHandle = nullptr;
     AppSpawnReqMsgHandle reqHandle = 0;
@@ -802,7 +802,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_ExpandCfg_02, TestSize.Level0)
     ASSERT_EQ(ret, 0);
 }
 
-HWTEST(AppSpawnSandboxTest, App_Spawn_ExpandCfg_03, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_ExpandCfg_03, TestSize.Level0)
 {
     AppSpawnClientHandle clientHandle = nullptr;
     AppSpawnReqMsgHandle reqHandle = 0;
@@ -844,7 +844,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_ExpandCfg_03, TestSize.Level0)
     ASSERT_EQ(ret, 0);
 }
 
-HWTEST(AppSpawnSandboxTest, App_Spawn_ExpandCfg_04, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_ExpandCfg_04, TestSize.Level0)
 {
     AppSpawnClientHandle clientHandle = nullptr;
     AppSpawnReqMsgHandle reqHandle = 0;
@@ -906,7 +906,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_ExpandCfg_04, TestSize.Level0)
  * @brief 加载系统的sandbox文件
  *
  */
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_cfg_001, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_cfg_001, TestSize.Level0)
 {
     AppSpawnSandboxCfg *sandbox = nullptr;
     int ret = -1;
@@ -927,7 +927,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_cfg_001, TestSize.Level0)
  * @brief 加载基础的sandbox配置，并检查结果
  *
  */
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_cfg_002, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_cfg_002, TestSize.Level0)
 {
     AppSpawnSandboxCfg *sandbox = nullptr;
     int ret = -1;
@@ -973,7 +973,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_cfg_002, TestSize.Level0)
  * @brief 加载包名sandbox配置，并检查结果
  *
  */
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_cfg_003, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_cfg_003, TestSize.Level0)
 {
     AppSpawnSandboxCfg *sandbox = nullptr;
     int ret = -1;
@@ -1021,7 +1021,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_cfg_003, TestSize.Level0)
  * @brief 加载一个permission sandbox 配置。并检查配置解析是否正确
  *
  */
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_cfg_004, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_cfg_004, TestSize.Level0)
 {
     AppSpawnSandboxCfg *sandbox = nullptr;
     int ret = -1;
@@ -1070,7 +1070,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_cfg_004, TestSize.Level0)
  * @brief 加载一个spawn-flags sandbox 配置。并检查配置解析是否正确
  *
  */
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_cfg_005, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_cfg_005, TestSize.Level0)
 {
     AppSpawnSandboxCfg *sandbox = nullptr;
     int ret = -1;
@@ -1111,7 +1111,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_cfg_005, TestSize.Level0)
  * @brief 加载一个name-group sandbox 配置。并检查配置解析是否正确
  *
  */
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_cfg_006, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_cfg_006, TestSize.Level0)
 {
     AppSpawnSandboxCfg *sandbox = nullptr;
     int ret = -1;
@@ -1150,7 +1150,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_cfg_006, TestSize.Level0)
  * @brief 沙盒执行，能执行到对应的检查项，并且检查通过
  *
  */
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_mount_001, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_mount_001, TestSize.Level0)
 {
     AppSpawnSandboxCfg *sandbox = nullptr;
     AppSpawnClientHandle clientHandle = nullptr;
@@ -1203,7 +1203,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_mount_001, TestSize.Level0)
  * @brief app-variable部分执行。让mount执行失败，但是不需要返回错误结果
  *
  */
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_mount_002, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_mount_002, TestSize.Level0)
 {
     AppSpawnSandboxCfg *sandbox = nullptr;
     AppSpawnClientHandle clientHandle = nullptr;
@@ -1255,7 +1255,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_mount_002, TestSize.Level0)
  * @brief app-variable部分执行。让mount执行失败，失败返回错误结果
  *
  */
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_mount_003, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_mount_003, TestSize.Level0)
 {
     AppSpawnSandboxCfg *sandbox = nullptr;
     AppSpawnClientHandle clientHandle = nullptr;
@@ -1315,7 +1315,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_mount_003, TestSize.Level0)
  * @brief package name 执行
  *
  */
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_mount_004, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_mount_004, TestSize.Level0)
 {
     AppSpawnSandboxCfg *sandbox = nullptr;
     AppSpawnClientHandle clientHandle = nullptr;
@@ -1366,7 +1366,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_mount_004, TestSize.Level0)
  * @brief 测试package-name执行，执行失败
  *
  */
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_mount_005, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_mount_005, TestSize.Level0)
 {
     AppSpawnSandboxCfg *sandbox = nullptr;
     AppSpawnClientHandle clientHandle = nullptr;
@@ -1418,7 +1418,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_mount_005, TestSize.Level0)
  * @brief 测试permission 添加下appFullMountEnable 打开
  *
  */
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_mount_006, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_mount_006, TestSize.Level0)
 {
     AppSpawnSandboxCfg *sandbox = nullptr;
     AppSpawnClientHandle clientHandle = nullptr;
@@ -1476,7 +1476,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_mount_006, TestSize.Level0)
  * @brief 测试permission 添加下appFullMountEnable 打开，执行失败
  *
  */
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_mount_007, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_mount_007, TestSize.Level0)
 {
     AppSpawnSandboxCfg *sandbox = nullptr;
     AppSpawnClientHandle clientHandle = nullptr;
@@ -1533,7 +1533,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_mount_007, TestSize.Level0)
  *  测试 shared
  *
  */
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_Category_001, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Category_001, TestSize.Level0)
 {
     AppSpawnSandboxCfg *sandbox = nullptr;
     AppSpawnClientHandle clientHandle = nullptr;
@@ -1586,7 +1586,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_Category_001, TestSize.Level0)
  *  测试 rdonly
  *
  */
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_Category_002, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Category_002, TestSize.Level0)
 {
     AppSpawnSandboxCfg *sandbox = nullptr;
     AppSpawnClientHandle clientHandle = nullptr;
@@ -1639,7 +1639,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_Category_002, TestSize.Level0)
  *  测试 epfs
  *
  */
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_Category_003, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Category_003, TestSize.Level0)
 {
     AppSpawnSandboxCfg *sandbox = nullptr;
     AppSpawnClientHandle clientHandle = nullptr;
@@ -1692,7 +1692,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_Category_003, TestSize.Level0)
  *  测试 fuse
  *
  */
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_Category_004, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Category_004, TestSize.Level0)
 {
     AppSpawnSandboxCfg *sandbox = nullptr;
     AppSpawnClientHandle clientHandle = nullptr;
@@ -1744,7 +1744,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_Category_004, TestSize.Level0)
  * @brief 测试unshare前的执行，not-exist时，节点不存在，执行dep的挂载
  *
  */
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_Deps_001, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Deps_001, TestSize.Level0)
 {
     AppSpawnSandboxCfg *sandbox = nullptr;
     AppSpawnClientHandle clientHandle = nullptr;
@@ -1796,7 +1796,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_Deps_001, TestSize.Level0)
  * @brief 测试unshare前的执行，not-exist时，节点存在，不执行dep的挂载
  *
  */
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_Deps_002, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Deps_002, TestSize.Level0)
 {
     AppSpawnSandboxCfg *sandbox = nullptr;
     AppSpawnClientHandle clientHandle = nullptr;
@@ -1847,7 +1847,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_Deps_002, TestSize.Level0)
  * @brief 测试unshare前的执行，always时，执行dep的挂载
  *
  */
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_Deps_003, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Deps_003, TestSize.Level0)
 {
     AppSpawnSandboxCfg *sandbox = nullptr;
     AppSpawnClientHandle clientHandle = nullptr;
@@ -1899,7 +1899,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_Deps_003, TestSize.Level0)
  * @brief 测试unshare后执行，一次挂载时，使用sandbox-path
  *
  */
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_Deps_004, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Deps_004, TestSize.Level0)
 {
     AppSpawnSandboxCfg *sandbox = nullptr;
     AppSpawnClientHandle clientHandle = nullptr;
@@ -1951,7 +1951,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_Deps_004, TestSize.Level0)
  * @brief system-const，一次挂载时，使用sandbox-path
  *
  */
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_Deps_005, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Deps_005, TestSize.Level0)
 {
     AppSpawnSandboxCfg *sandbox = nullptr;
     AppSpawnClientHandle clientHandle = nullptr;
@@ -2003,7 +2003,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_Deps_005, TestSize.Level0)
  * @brief 测试app extension
  *
  */
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_001, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_001, TestSize.Level0)
 {
     AppSpawnSandboxCfg *sandbox = nullptr;
     AppSpawnClientHandle clientHandle = nullptr;
@@ -2039,7 +2039,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_001, TestSize.Level0)
     ASSERT_EQ(ret, 0);
 }
 
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_002, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_002, TestSize.Level0)
 {
     AppSpawnSandboxCfg *sandbox = nullptr;
     AppSpawnClientHandle clientHandle = nullptr;
@@ -2076,7 +2076,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_002, TestSize.Level0)
     ASSERT_EQ(ret, 0);
 }
 
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_003, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_003, TestSize.Level0)
 {
     AppSpawnSandboxCfg *sandbox = nullptr;
     AppSpawnClientHandle clientHandle = nullptr;
@@ -2120,7 +2120,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_003, TestSize.Level0)
     ASSERT_EQ(ret, 0);
 }
 
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_004, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_004, TestSize.Level0)
 {
     AppSpawningCtx *spawningCtx = TestCreateAppSpawningCtx();
     SandboxContext *context = TestGetSandboxContext(spawningCtx, 0);
@@ -2134,7 +2134,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_004, TestSize.Level0)
     DeleteAppSpawningCtx(spawningCtx);
 }
 
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_005, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_005, TestSize.Level0)
 {
     AppSpawningCtx *spawningCtx = TestCreateAppSpawningCtx();
     ASSERT_EQ(spawningCtx != nullptr, 1);
@@ -2151,7 +2151,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_005, TestSize.Level0)
     DeleteAppSpawningCtx(spawningCtx);
 }
 
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_006, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_006, TestSize.Level0)
 {
     AppSpawnClientHandle clientHandle = nullptr;
     int ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
@@ -2177,7 +2177,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_006, TestSize.Level0)
     AppSpawnClientDestroy(clientHandle);
 }
 
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_007, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_007, TestSize.Level0)
 {
     AppSpawnClientHandle clientHandle = nullptr;
     int ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
@@ -2205,7 +2205,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_007, TestSize.Level0)
     AppSpawnClientDestroy(clientHandle);
 }
 
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_008, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_008, TestSize.Level0)
 {
     AppSpawnClientHandle clientHandle = nullptr;
     int ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
@@ -2230,7 +2230,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_008, TestSize.Level0)
     AppSpawnClientDestroy(clientHandle);
 }
 
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_009, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_009, TestSize.Level0)
 {
     AppSpawnClientHandle clientHandle = nullptr;
     int ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);

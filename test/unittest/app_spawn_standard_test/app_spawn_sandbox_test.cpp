@@ -82,7 +82,7 @@ static AppSpawningCtx *GetTestAppPropertyWithExtInfo(const char *name, const cha
  * @tc.require:issueI5NTX6
  * @tc.author:
  */
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_08, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_08, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_08 start";
     g_testHelper.SetTestUid(1000);  // 1000 test
@@ -101,7 +101,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_08, TestSize.Level0)
  * @tc.require:issueI5NTX6
  * @tc.author:
  */
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_09, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_09, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_09 start";
     g_testHelper.SetProcessName("com.ohos.dlpmanager");
@@ -112,7 +112,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_09, TestSize.Level0)
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_09 end";
 }
 
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_09_1, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_09_1, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_09_1 start";
     g_testHelper.SetTestUid(1000);  // 1000 test
@@ -126,7 +126,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_09_1, TestSize.Level0)
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_09_1 end";
 }
 
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_09_2, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_09_2, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_09_1 start";
     g_testHelper.SetTestUid(1000);  // 1000 test
@@ -141,7 +141,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_09_2, TestSize.Level0)
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_09_1 end";
 }
 
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_09_3, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_09_3, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_09_1 start";
     g_testHelper.SetTestUid(1000);  // 1000 test
@@ -155,7 +155,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_09_3, TestSize.Level0)
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_09_1 end";
 }
 
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_09_4, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_09_4, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_09_1 start";
     g_testHelper.SetTestUid(1000);  // 1000 test
@@ -176,7 +176,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_09_4, TestSize.Level0)
  * @tc.require:issueI5NTX6
  * @tc.author:
  */
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_10, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_10, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_10 start";
     std::string mJsconfig = "{ \
@@ -218,7 +218,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_10, TestSize.Level0)
  * @tc.require:issueI5NTX6
  * @tc.author:
  */
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_13, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_13, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_13 start";
     std::string mJsconfig = "{ \
@@ -259,7 +259,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_13, TestSize.Level0)
  * @tc.require:issueI5NTX6
  * @tc.author:
  */
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_14, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_14, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_14 start";
     std::string mJsconfig = "{ \
@@ -302,7 +302,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_14, TestSize.Level0)
  * @tc.require:issueI5NTX6
  * @tc.author:
  */
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_15, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_15, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_15 start";
     std::string mJsconfig = "{ \
@@ -344,7 +344,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_15, TestSize.Level0)
  * @tc.require:issueI5NTX6
  * @tc.author:
  */
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_16, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_16, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_16 start";
     std::string mJsconfig = "{ \
@@ -371,7 +371,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_16, TestSize.Level0)
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_16 end";
 }
 
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_17, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_17, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_09 start";
     nlohmann::json appSandboxConfig;
@@ -399,7 +399,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_17, TestSize.Level0)
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_09 end";
 }
 
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_18, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_18, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_18 start";
     std::string mJsconfig1 = "{ \
@@ -426,7 +426,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_18, TestSize.Level0)
     EXPECT_TRUE(ret);
 }
 
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_20, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_20, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_20 start";
     std::string mJsconfig = "{ \
@@ -470,7 +470,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_20, TestSize.Level0)
     DeleteAppSpawningCtx(appProperty);
 }
 
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_21, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_21, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_21 start";
 
@@ -478,7 +478,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_21, TestSize.Level0)
     EXPECT_FALSE(ret);
 }
 
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_22, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_22, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_22 start";
     std::string mJsconfig1 = "{ \
@@ -501,7 +501,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_22, TestSize.Level0)
     EXPECT_EQ(ret, 0);
 }
 
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_23, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_23, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_23 start";
     const char *strl1 = "/mnt/sandbox/100/test.bundle1";
@@ -510,7 +510,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_23, TestSize.Level0)
     EXPECT_EQ(ret, 0);
 }
 
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_24, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_24, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_24 start";
 
@@ -563,7 +563,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_24, TestSize.Level0)
     EXPECT_EQ(ret, 0);
 }
 
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_25, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_25, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_25 start";
     g_testHelper.SetTestUid(1000);  // 1000 test
@@ -604,7 +604,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_25, TestSize.Level0)
     EXPECT_EQ(ret, 0);
 }
 
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_26, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_26, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_26 start";
     g_testHelper.SetTestUid(1000);  // 1000 test
@@ -632,7 +632,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_26, TestSize.Level0)
     EXPECT_NE(ret, 0);
 }
 
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_27, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_27, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_27 start";
     g_testHelper.SetTestUid(1000);  // 1000 test
@@ -676,7 +676,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_27, TestSize.Level0)
     EXPECT_EQ(ret, 0);
 }
 
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_28, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_28, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_28 start";
     g_testHelper.SetTestUid(1000);  // 1000 test
@@ -710,7 +710,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_28, TestSize.Level0)
     EXPECT_EQ(ret, 0);
 }
 
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_29, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_29, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_29 start";
     g_testHelper.SetTestUid(1000);  // 1000 test
@@ -744,7 +744,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_29, TestSize.Level0)
     EXPECT_EQ(ret, 0);
 }
 
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_30, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_30, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_30 start";
     g_testHelper.SetTestUid(1000);  // 1000 test
@@ -784,7 +784,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_30, TestSize.Level0)
     EXPECT_EQ(ret, 0);
 }
 
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_31, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_31, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_31 start";
     g_testHelper.SetTestUid(1000);  // 1000 test
@@ -832,7 +832,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_31, TestSize.Level0)
     EXPECT_TRUE(ret != 0);
 }
 
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_32, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_32, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_32 start";
     int ret = OHOS::AppSpawn::SandboxUtils::DoAppSandboxMountOnce(nullptr, "", nullptr, 0, nullptr);
@@ -848,7 +848,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_32, TestSize.Level0)
     OHOS::AppSpawn::SandboxUtils::DoSandboxChmod(j_config1, sandboxRoot);
 }
 
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_34, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_34, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_34 start";
     g_testHelper.SetTestUid(1000);  // 1000 test
@@ -983,7 +983,7 @@ static void ElementTypeIsNotSameTestNS(std::string &testBundle)
     EXPECT_NE(0, ret);
 }
 
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_35, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_35, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_35 start";
     const char *strl1 = "/mnt/sandbox/100/test.bundle1";
@@ -1000,7 +1000,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_35, TestSize.Level0)
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_35 end";
 }
 
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_36, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_36, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_36 start";
     const char *strl1 = "/mnt/sandbox/100/test.bundle1";
@@ -1053,7 +1053,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_36, TestSize.Level0)
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_36 end";
 }
 
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_37, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_37, TestSize.Level0)
 {
     APPSPAWN_LOGI("App_Spawn_Sandbox_37 start");
     g_testHelper.SetTestUid(1000);  // 1000 test
@@ -1076,7 +1076,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_37, TestSize.Level0)
     APPSPAWN_LOGI("App_Spawn_Sandbox_37 end");
 }
 
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_38, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_38, TestSize.Level0)
 {
     APPSPAWN_LOGI("App_Spawn_Sandbox_38 start");
     g_testHelper.SetTestUid(1000);  // 1000 test
@@ -1129,7 +1129,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_38, TestSize.Level0)
  * @tc.require:issueI7D0H9
  * @tc.author:
  */
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_39, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_39, TestSize.Level0)
 {
     APPSPAWN_LOGI("App_Spawn_Sandbox_39 start");
     g_testHelper.SetTestUid(1000);  // 1000 test
@@ -1154,7 +1154,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_39, TestSize.Level0)
  * @tc.require:issueI7FUPV
  * @tc.author:
  */
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_40, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_40, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_40 start";
     g_testHelper.SetTestUid(1000);  // 1000 test
@@ -1183,7 +1183,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_40, TestSize.Level0)
  * @tc.require:issueI8B63M
  * @tc.author:
  */
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_41, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_41, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_41 start";
     std::string mJsconfig = "{ \
@@ -1225,7 +1225,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_41, TestSize.Level0)
  * @tc.require: https://gitee.com/openharmony/startup_appspawn/issues/I8OF9K
  * @tc.author:
  */
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_42, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_42, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_42 start";
     std::string mJsconfig = "{ \
@@ -1257,7 +1257,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_42, TestSize.Level0)
  * @tc.require: https://gitee.com/openharmony/startup_appspawn/issues/I8OF9K
  * @tc.author:
  */
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_43, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_43, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_43 start";
     std::string mJsconfig = "{ \
@@ -1291,7 +1291,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_43, TestSize.Level0)
  * @tc.require: https://gitee.com/openharmony/startup_appspawn/issues/I8OF9K
  * @tc.author:
  */
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_44, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_44, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_44 start";
     std::string mJsconfig = "{ \
@@ -1325,7 +1325,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_44, TestSize.Level0)
  * @tc.require: https://gitee.com/openharmony/startup_appspawn/issues/I8OF9K
  * @tc.author:
  */
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_45, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_45, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_45 start";
     std::string mJsconfig = "{ \
@@ -1354,7 +1354,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_45, TestSize.Level0)
  * @brief 测试app extension
  *
  */
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_004, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_004, TestSize.Level0)
 {
     AppSpawningCtx *spawningCtx = GetTestAppProperty();
     std::string path = SandboxUtils::ConvertToRealPath(spawningCtx, "/system/<variablePackageName>/module");
@@ -1364,7 +1364,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_004, TestSize.Level0)
     DeleteAppSpawningCtx(spawningCtx);
 }
 
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_005, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_005, TestSize.Level0)
 {
     AppSpawningCtx *spawningCtx = GetTestAppProperty();
     ASSERT_EQ(spawningCtx != nullptr, 1);
@@ -1378,7 +1378,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_005, TestSize.Level0)
     DeleteAppSpawningCtx(spawningCtx);
 }
 
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_006, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_006, TestSize.Level0)
 {
     AppSpawnClientHandle clientHandle = nullptr;
     int ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
@@ -1400,7 +1400,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_006, TestSize.Level0)
     AppSpawnClientDestroy(clientHandle);
 }
 
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_007, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_007, TestSize.Level0)
 {
     AppSpawnClientHandle clientHandle = nullptr;
     int ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
@@ -1425,7 +1425,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_007, TestSize.Level0)
     AppSpawnClientDestroy(clientHandle);
 }
 
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_008, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_008, TestSize.Level0)
 {
     AppSpawnClientHandle clientHandle = nullptr;
     int ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
@@ -1447,7 +1447,7 @@ HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_008, TestSize.Level0)
     AppSpawnClientDestroy(clientHandle);
 }
 
-HWTEST(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_009, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_009, TestSize.Level0)
 {
     AppSpawnClientHandle clientHandle = nullptr;
     int ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);

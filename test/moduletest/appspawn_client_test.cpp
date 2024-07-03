@@ -81,7 +81,7 @@ static AppSpawnClientHandle CreateClient(const char *serviceName)
     return clientHandle;
 }
 
-HWTEST(AppSpawnClientTest, AppSpawn_Client_test001, TestSize.Level0)
+HWTEST_F(AppSpawnClientTest, AppSpawn_Client_test001, TestSize.Level0)
 {
     AppSpawnClientHandle clientHandle = CreateClient(APPSPAWN_SERVER_NAME);
     ASSERT_EQ(clientHandle != NULL, 1);

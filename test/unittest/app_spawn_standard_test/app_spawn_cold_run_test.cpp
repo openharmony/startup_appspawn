@@ -39,7 +39,7 @@ using namespace testing::ext;
 using namespace OHOS;
 
 namespace OHOS {
-static OHOS::AppSpawnTestServer *g_testServer = nullptr;
+
 class AppSpawnColdRunTest : public testing::Test {
 public:
     static void SetUpTestCase() {}
@@ -50,8 +50,21 @@ public:
             stub->flags &= ~STUB_NEED_CHECK;
         }
     }
-    void SetUp() {}
-    void TearDown() {}
+    void SetUp()
+    {
+        testServer = std::make_unique<OHOS::AppSpawnTestServer>("appspawn -mode appspawn");
+        if (testServer != nullptr) {
+            testServer->Start(nullptr);
+        }
+    }
+    void TearDown()
+    {
+        if (testServer != nullptr) {
+            testServer->Stop();
+        }
+    }
+public:
+    std::unique_ptr<OHOS::AppSpawnTestServer> testServer = nullptr;
 };
 
 /**
@@ -114,12 +127,8 @@ static int HandleExecvStub(const char *pathName, char *const argv[])
     return 0;
 }
 
-HWTEST(AppSpawnColdRunTest, App_Spawn_Cold_Run_001, TestSize.Level0)
+HWTEST_F(AppSpawnColdRunTest, App_Spawn_Cold_Run_001, TestSize.Level0)
 {
-    g_testServer = new OHOS::AppSpawnTestServer("appspawn -mode appspawn");
-    ASSERT_EQ(g_testServer != nullptr, 1);
-    g_testServer->Start(nullptr);
-
     int ret = 0;
     AppSpawnClientHandle clientHandle = nullptr;
     StubNode *node = GetStubNode(STUB_EXECV);
@@ -127,7 +136,7 @@ HWTEST(AppSpawnColdRunTest, App_Spawn_Cold_Run_001, TestSize.Level0)
     do {
         ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
         APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", APPSPAWN_SERVER_NAME);
-        AppSpawnReqMsgHandle reqHandle = g_testServer->CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+        AppSpawnReqMsgHandle reqHandle = testServer->CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
         // set cold start flags
         AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_COLD_BOOT);
 
@@ -146,7 +155,7 @@ HWTEST(AppSpawnColdRunTest, App_Spawn_Cold_Run_001, TestSize.Level0)
     ASSERT_EQ(ret, 0);
 }
 
-HWTEST(AppSpawnColdRunTest, App_Spawn_Cold_Run_002, TestSize.Level0)
+HWTEST_F(AppSpawnColdRunTest, App_Spawn_Cold_Run_002, TestSize.Level0)
 {
     int ret = 0;
     AppSpawnClientHandle clientHandle = nullptr;
@@ -155,7 +164,7 @@ HWTEST(AppSpawnColdRunTest, App_Spawn_Cold_Run_002, TestSize.Level0)
     do {
         ret = AppSpawnClientInit(NWEBSPAWN_SERVER_NAME, &clientHandle);
         APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", NWEBSPAWN_SERVER_NAME);
-        AppSpawnReqMsgHandle reqHandle = g_testServer->CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+        AppSpawnReqMsgHandle reqHandle = testServer->CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
         // set cold start flags
         AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_COLD_BOOT);
 
@@ -179,7 +188,7 @@ HWTEST(AppSpawnColdRunTest, App_Spawn_Cold_Run_002, TestSize.Level0)
  * @brief 测试子进程abort
  *
  */
-HWTEST(AppSpawnColdRunTest, App_Spawn_Cold_Run_003, TestSize.Level0)
+HWTEST_F(AppSpawnColdRunTest, App_Spawn_Cold_Run_003, TestSize.Level0)
 {
     // child abort
     int ret = 0;
@@ -189,7 +198,7 @@ HWTEST(AppSpawnColdRunTest, App_Spawn_Cold_Run_003, TestSize.Level0)
     do {
         ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
         APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", APPSPAWN_SERVER_NAME);
-        AppSpawnReqMsgHandle reqHandle = g_testServer->CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+        AppSpawnReqMsgHandle reqHandle = testServer->CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
         // set cold start flags
         AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_COLD_BOOT);
 
@@ -213,7 +222,7 @@ HWTEST(AppSpawnColdRunTest, App_Spawn_Cold_Run_003, TestSize.Level0)
  * @brief 测试子进程不回复，导致等到超时
  *
  */
-HWTEST(AppSpawnColdRunTest, App_Spawn_Cold_Run_004, TestSize.Level0)
+HWTEST_F(AppSpawnColdRunTest, App_Spawn_Cold_Run_004, TestSize.Level0)
 {
     int ret = 0;
     AppSpawnClientHandle clientHandle = nullptr;
@@ -222,7 +231,7 @@ HWTEST(AppSpawnColdRunTest, App_Spawn_Cold_Run_004, TestSize.Level0)
     do {
         ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
         APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", APPSPAWN_SERVER_NAME);
-        AppSpawnReqMsgHandle reqHandle = g_testServer->CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+        AppSpawnReqMsgHandle reqHandle = testServer->CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
         // set cold start flags
         AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_COLD_BOOT);
 
@@ -240,9 +249,6 @@ HWTEST(AppSpawnColdRunTest, App_Spawn_Cold_Run_004, TestSize.Level0)
     AppSpawnClientDestroy(clientHandle);
     node->flags &= ~STUB_NEED_CHECK;
     ASSERT_EQ(ret, 0);
-
-    g_testServer->Stop();
-    delete g_testServer;
 }
 
 }  // namespace OHOS
