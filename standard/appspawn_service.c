@@ -43,6 +43,8 @@
 #include <sys/ioctl.h>
 #endif
 
+#define PARAM_BUFFER_SIZE 10
+
 static void WaitChildTimeout(const TimerHandle taskHandle, void *context);
 static void ProcessChildResponse(const WatcherHandle taskHandle, int fd, uint32_t *events, const void *context);
 static void WaitChildDied(pid_t pid);
@@ -453,6 +455,22 @@ static int AddChildWatcher(AppSpawningCtx *property)
     return 0;
 }
 
+static bool IsSupportRunHnp()
+{
+    char buffer[PARAM_BUFFER_SIZE] = {0};
+    int ret = GetParameter("const.startup.hnp.execute.enable", "false", buffer, PARAM_BUFFER_SIZE);
+    if (ret <= 0) {
+        APPSPAWN_LOGE("Get hnp execute enable param unsuccess! ret =%{public}d", ret);
+        return false;
+    }
+
+    if (strcmp(buffer, "true") == 0) {
+        return true;
+    }
+
+    return false;
+}
+
 static void ProcessSpawnReqMsg(AppSpawnConnection *connection, AppSpawnMsgNode *message)
 {
     int ret = CheckAppSpawnMsg(message);
@@ -463,7 +481,11 @@ static void ProcessSpawnReqMsg(AppSpawnConnection *connection, AppSpawnMsgNode *
     }
 
     if (IsDeveloperModeOpen()) {
-        SetAppSpawnMsgFlag(message, TLV_MSG_FLAGS, APP_FLAGS_DEVELOPER_MODE);
+        if (IsSupportRunHnp()) {
+            SetAppSpawnMsgFlag(message, TLV_MSG_FLAGS, APP_FLAGS_DEVELOPER_MODE);
+        } else {
+            APPSPAWN_LOGI("Not support execute hnp file!");
+        }
     }
 
     AppSpawningCtx *property = CreateAppSpawningCtx();

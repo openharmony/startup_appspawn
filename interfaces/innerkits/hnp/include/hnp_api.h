@@ -51,6 +51,9 @@ typedef enum {
 // 0x2008 移动内存失败
 #define HNP_API_ERRNO_MEMMOVE_FAILED            (HNP_API_ERRNO_BASE + 0x8)
 
+// 0x2009 产品不支持安装hnp软件包
+#define HNP_API_ERRNO_HNP_INSTALL_DISABLED      (HNP_API_ERRNO_BASE + 0x9)
+
 #define PACK_NAME_LENTH 256
 #define HAP_PATH_LENTH 256
 #define ABI_LENTH 128
