@@ -165,7 +165,7 @@ ohos_unittest("AppSpawn_ut") {
   }
   if (asan_detector || is_asan) {
     defines += [ "ASAN_DETECTOR" ]
-    sources += [ "${appspawn_path}/modules/asan_detector/asan_detector.c" ]
+    sources += [ "${appspawn_path}/modules/asan/asan_detector.c" ]
   }
 
   if (build_selinux) {
