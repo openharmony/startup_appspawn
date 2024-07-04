@@ -788,6 +788,7 @@ HWTEST_F(HnpInstallerTest, Hnp_Install_API_001, TestSize.Level0)
     GTEST_LOG_(INFO) << "Hnp_Install_API_001 start";
 
     int ret;
+    bool installEnable = IsHnpInstallEnable();
 
     EXPECT_EQ(mkdir(HNP_BASE_PATH, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
 
@@ -798,11 +799,11 @@ HWTEST_F(HnpInstallerTest, Hnp_Install_API_001, TestSize.Level0)
     EXPECT_EQ(sprintf_s(hapInfo.abi, sizeof(hapInfo.abi), "%s", "system64") > 0, true);
     EXPECT_EQ(sprintf_s(hapInfo.hapPath, sizeof(hapInfo.hapPath), "%s", "./hnp_out") > 0, true);
 
-    if (!IsHnpInstallEnable()) {
+    if (!installEnable) {
         GTEST_LOG_(INFO) << "hnp install enable false";
     }
 
-    if (IsDeveloperModeOpen() && IsHnpInstallEnable()) {
+    if (IsDeveloperModeOpen() && installEnable) {
         { //param is invalid
             ret = NativeInstallHnp(NULL, "./hnp_out", &hapInfo, 1);
             EXPECT_EQ(ret, HNP_API_ERRNO_PARAM_INVALID);
@@ -835,16 +836,17 @@ HWTEST_F(HnpInstallerTest, Hnp_Install_API_002, TestSize.Level0)
     GTEST_LOG_(INFO) << "Hnp_Install_API_002 start";
 
     int ret;
+    bool installEnable = IsHnpInstallEnable();
 
     EXPECT_EQ(mkdir(HNP_BASE_PATH, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
 
     HnpPackWithCfg(true, true);
 
-    if (!IsHnpInstallEnable()) {
+    if (!installEnable) {
         GTEST_LOG_(INFO) << "hnp install enable false";
     }
 
-    if (IsDeveloperModeOpen() && IsHnpInstallEnable()) {
+    if (IsDeveloperModeOpen() && installEnable) {
         { //st dir path is invalid
             struct HapInfo hapInfo;
             (void)memset_s(&hapInfo, sizeof(HapInfo), 0, sizeof(HapInfo));
@@ -875,16 +877,13 @@ HWTEST_F(HnpInstallerTest, Hnp_Install_API_003, TestSize.Level0)
     GTEST_LOG_(INFO) << "Hnp_Install_API_003 start";
 
     int ret;
+    bool installEnable = IsHnpInstallEnable();
 
     EXPECT_EQ(mkdir(HNP_BASE_PATH, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
 
     HnpPackWithCfg(true, true);
 
-    if (!IsHnpInstallEnable()) {
-        GTEST_LOG_(INFO) << "hnp install enable false";
-    }
-
-    if (IsDeveloperModeOpen() && IsHnpInstallEnable()) {
+    if (IsDeveloperModeOpen()) {
         { //ok
             struct HapInfo hapInfo;
             (void)memset_s(&hapInfo, sizeof(HapInfo), 0, sizeof(HapInfo));
@@ -892,9 +891,14 @@ HWTEST_F(HnpInstallerTest, Hnp_Install_API_003, TestSize.Level0)
             EXPECT_EQ(sprintf_s(hapInfo.hapPath, sizeof(hapInfo.hapPath), "%s", "test") > 0, true);
             EXPECT_EQ(sprintf_s(hapInfo.abi, sizeof(hapInfo.abi), "%s", "system64") > 0, true);
             ret = NativeInstallHnp("10000", "./hnp_out/", &hapInfo, 1);
-            EXPECT_EQ(ret, 0);
-            EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/bin/outt", F_OK), 0);
-            EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/bin/out2", F_OK), 0);
+            if (installEnable) {
+                EXPECT_EQ(ret, 0);
+                EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/bin/outt", F_OK), 0);
+                EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/bin/out2", F_OK), 0);
+            } else {
+                GTEST_LOG_(INFO) << "hnp install enable false";
+                EXPECT_EQ(ret, HNP_API_ERRNO_HNP_INSTALL_DISABLED);
+            }
         }
     }
 
