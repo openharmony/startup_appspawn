@@ -45,6 +45,8 @@ typedef struct TagAppSpawnMsgReceiverCtx {
     uint32_t nextMsgId;              // 校验消息id
     uint32_t msgRecvLen;             // 已经接收的长度
     TimerHandle timer;               // 测试消息完整
+    int fdCount;
+    int fds[APP_MAX_FD_COUNT];
     AppSpawnMsgNode *incompleteMsg;  // 保存不完整的消息，额外保存消息头信息
 } AppSpawnMsgReceiverCtx;
 

@@ -24,6 +24,7 @@
 
 #include "appspawn_hook.h"
 #include "appspawn_server.h"
+#include "appspawn_service.h"
 #include "appspawn_manager.h"
 #include "appspawn_utils.h"
 #include "command_lexer.h"
@@ -138,15 +139,53 @@ static void LoadExtendCJLib(void)
     APPSPAWN_LOGI("LoadExtendLib: Success to dlopen %{public}s", acelibdir);
 }
 
+static int BuildFdInfoMap(const AppSpawnMsgNode *message, std::map<std::string, int> &fdMap)
+{
+    APPSPAWN_CHECK_ONLY_EXPER(message != NULL && message->buffer != NULL, return -1);
+    APPSPAWN_CHECK_ONLY_EXPER(message->tlvOffset != NULL, return -1);
+    int findFdIndex = 0;
+    AppSpawnMsgReceiverCtx recvCtx = message->connection->receiverCtx;
+    APPSPAWN_CHECK(recvCtx.fds != NULL && recvCtx.fdCount > 0, return 0,
+        "no need to build fd info %d, %d", recvCtx.fds != NULL, recvCtx.fdCount);
+    for (uint32_t index = TLV_MAX; index < (TLV_MAX + message->tlvCount); index++) {
+        if (message->tlvOffset[index] == INVALID_OFFSET) {
+            return -1;
+        }
+        uint8_t *data = message->buffer + message->tlvOffset[index];
+        if (((AppSpawnTlv *)data)->tlvType != TLV_MAX) {
+            continue;
+        }
+        AppSpawnTlvExt *tlv = (AppSpawnTlvExt *)data;
+        if (strcmp(tlv->tlvName, MSG_EXT_NAME_APP_FD) != 0) {
+            continue;
+        }
+        APPSPAWN_CHECK(findFdIndex < recvCtx.fdCount && recvCtx.fds[findFdIndex] > 0,
+            return -1, "invalid fd info  %d %d", findFdIndex, recvCtx.fds[findFdIndex]);
+        std::string key((char *)data + sizeof(AppSpawnTlvExt));
+        fdMap[key] = recvCtx.fds[findFdIndex++];
+        if (findFdIndex >= recvCtx.fdCount) {
+            break;
+        }
+    }
+    return 0;
+}
+
 static int RunChildThread(const AppSpawnMgr *content, const AppSpawningCtx *property)
 {
-    AppSpawnEnvClear((AppSpawnContent *)&content->content, (AppSpawnClient *)&property->client);
     std::string checkExit;
     if (OHOS::system::GetBoolParameter("persist.init.debug.checkexit", true)) {
         checkExit = std::to_string(getpid());
     }
     setenv(APPSPAWN_CHECK_EXIT, checkExit.c_str(), true);
-    OHOS::AppExecFwk::MainThread::Start();
+    if (CheckAppMsgFlagsSet(property, APP_FLAGS_CHILDPROCESS)) {
+        std::map<std::string, int> fdMap;
+        BuildFdInfoMap(property->message, fdMap);
+        AppSpawnEnvClear((AppSpawnContent *)&content->content, (AppSpawnClient *)&property->client);
+        OHOS::AppExecFwk::MainThread::StartChild(fdMap);
+    } else {
+        AppSpawnEnvClear((AppSpawnContent *)&content->content, (AppSpawnClient *)&property->client);
+        OHOS::AppExecFwk::MainThread::Start();
+    }
     unsetenv(APPSPAWN_CHECK_EXIT);
     return 0;
 }

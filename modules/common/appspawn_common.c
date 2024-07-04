@@ -39,6 +39,7 @@
 
 #include "appspawn_adapter.h"
 #include "appspawn_hook.h"
+#include "appspawn_service.h"
 #include "appspawn_msg.h"
 #include "appspawn_manager.h"
 #include "appspawn_silk.h"
@@ -470,6 +471,60 @@ static int SpawnLoadConfig(AppSpawnMgr *content)
     return 0;
 }
 
+static int CloseFdArgs(AppSpawnMgr *content, AppSpawningCtx *property)
+{
+    int fdCount = property->message->connection->receiverCtx.fdCount;
+    int *fds = property->message->connection->receiverCtx.fds;
+    if (fds != NULL && fdCount > 0) {
+        for (int i = 0; i < fdCount; i++) {
+            if (fds[i] > 0) {
+                close(fds[i]);
+            }
+        }
+    }
+    property->message->connection->receiverCtx.fdCount = 0;
+    return 0;
+}
+
+static int SetFdEnv(AppSpawnMgr *content, AppSpawningCtx *property)
+{
+    AppSpawnMsgNode *message = property->message;
+    APPSPAWN_CHECK_ONLY_EXPER(message != NULL && message->buffer != NULL, return -1);
+    APPSPAWN_CHECK_ONLY_EXPER(message->tlvOffset != NULL, return -1);
+    int findFdIndex = 0;
+    AppSpawnMsgReceiverCtx recvCtx = message->connection->receiverCtx;
+    APPSPAWN_CHECK(recvCtx.fds != NULL && recvCtx.fdCount > 0, return 0,
+        "no need set fd info %d, %d", recvCtx.fds != NULL, recvCtx.fdCount);
+    char keyBuffer[APP_FDNAME_MAXLEN + sizeof(APP_FDENV_PREFIX)];
+    char value[sizeof(int)];
+
+    for (uint32_t index = TLV_MAX; index < (TLV_MAX + message->tlvCount); index++) {
+        if (message->tlvOffset[index] == INVALID_OFFSET) {
+            return -1;
+        }
+        uint8_t *data = message->buffer + message->tlvOffset[index];
+        if (((AppSpawnTlv *)data)->tlvType != TLV_MAX) {
+            continue;
+        }
+        AppSpawnTlvExt *tlv = (AppSpawnTlvExt *)data;
+        if (strcmp(tlv->tlvName, MSG_EXT_NAME_APP_FD) != 0) {
+            continue;
+        }
+        APPSPAWN_CHECK(findFdIndex < recvCtx.fdCount && recvCtx.fds[findFdIndex] > 0, return -1,
+            "check set env args failed %d, %d, %d", findFdIndex, recvCtx.fdCount, recvCtx.fds[findFdIndex]);
+        APPSPAWN_CHECK(snprintf_s(keyBuffer, sizeof(keyBuffer), sizeof(keyBuffer) - 1,
+            APP_FDENV_PREFIX"%s", data + sizeof(AppSpawnTlvExt)) >= 0, return -1, "failed print env key %d", errno);
+        APPSPAWN_CHECK(snprintf_s(value, sizeof(value), sizeof(value) - 1,
+            "%d", recvCtx.fds[findFdIndex++]) >= 0, return -1, "failed print env key %d", errno);
+        int ret = setenv(keyBuffer, value, 1);
+        APPSPAWN_CHECK(ret == 0, return -1, "failed setenv %s, %s", keyBuffer, value);
+        if (findFdIndex >= recvCtx.fdCount) {
+            break;
+        }
+    }
+    return 0;
+}
+
 MODULE_CONSTRUCTOR(void)
 {
     APPSPAWN_LOGV("Load common module ...");
@@ -482,4 +537,6 @@ MODULE_CONSTRUCTOR(void)
     AddAppSpawnHook(STAGE_CHILD_EXECUTE, HOOK_PRIO_HIGHEST, SpawnEnableCache);
     AddAppSpawnHook(STAGE_CHILD_EXECUTE, HOOK_PRIO_PROPERTY, SpawnSetProperties);
     AddAppSpawnHook(STAGE_CHILD_POST_RELY, HOOK_PRIO_HIGHEST, SpawnComplete);
+    AddAppSpawnHook(STAGE_PARENT_POST_FORK, HOOK_PRIO_HIGHEST, CloseFdArgs);
+    AddAppSpawnHook(STAGE_CHILD_PRE_RUN, HOOK_PRIO_HIGHEST, SetFdEnv);
 }
