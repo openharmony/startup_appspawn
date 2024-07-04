@@ -142,17 +142,47 @@ static int ReadMessage(int socketFd, uint32_t sendMsgId, uint8_t *buf, int len, 
     return APPSPAWN_TIMEOUT;
 }
 
-static int WriteMessage(int socketFd, const uint8_t *buf, ssize_t len)
+static int WriteMessage(int socketFd, const uint8_t *buf, ssize_t len, int *fds, int *fdCount)
 {
     ssize_t written = 0;
     ssize_t remain = len;
     const uint8_t *offset = buf;
+    struct iovec iov = {
+        .iov_base = (void *) offset,
+        .iov_len = len,
+    };
+    struct msghdr msg = {
+        .msg_iov = &iov,
+        .msg_iovlen = 1,
+    };
+    char *ctrlBuffer = NULL;
+    if (fdCount != NULL && fds != NULL && *fdCount > 0) {
+        msg.msg_controllen = CMSG_SPACE(*fdCount * sizeof(int));
+        ctrlBuffer = (char *) malloc(msg.msg_controllen);
+        APPSPAWN_CHECK(ctrlBuffer != NULL, return -1, "WriteMessage fail to alloc memory for msg_control %d %d",
+           msg.msg_controllen, errno);
+        msg.msg_control = ctrlBuffer;
+        struct cmsghdr *cmsg = CMSG_FIRSTHDR(&msg);
+        APPSPAWN_CHECK(cmsg != NULL, free(ctrlBuffer);
+            return -1, "WriteMessage fail to get  CMSG_FIRSTHDR %d", errno);
+        cmsg->cmsg_len = CMSG_LEN(*fdCount * sizeof(int));
+        cmsg->cmsg_type = SCM_RIGHTS;
+        cmsg->cmsg_level = SOL_SOCKET;
+        int ret = memcpy_s(CMSG_DATA(cmsg), cmsg->cmsg_len, fds, *fdCount * sizeof(int));
+        APPSPAWN_CHECK(ret == 0, free(ctrlBuffer);
+            return -1, "WriteMessage fail to memcpy_s fd %d", errno);
+        APPSPAWN_LOGV("build fd info count %d", *fdCount);
+        *fdCount = 0;
+    }
     for (ssize_t wLen = 0; remain > 0; offset += wLen, remain -= wLen, written += wLen) {
-        wLen = send(socketFd, offset, remain, MSG_NOSIGNAL);
+        errno = 0;
+        wLen = sendmsg(socketFd, &msg, MSG_NOSIGNAL);
         APPSPAWN_LOGV("Write msg errno: %{public}d %{public}zd", errno, wLen);
-        APPSPAWN_CHECK((wLen > 0) || (errno == EINTR), return -errno,
+        APPSPAWN_CHECK((wLen > 0) || (errno == EINTR), free(ctrlBuffer);
+            return -errno,
             "Failed to write message to fd %{public}d, wLen %{public}zd errno: %{public}d", socketFd, wLen, errno);
     }
+    free(ctrlBuffer);
     return written == len ? 0 : -EFAULT;
 }
 
@@ -163,7 +193,7 @@ static int HandleMsgSend(AppSpawnReqMsgMgr *reqMgr, int socketId, AppSpawnReqMsg
     uint32_t currentIndex = 0;
     while (sendNode != NULL && sendNode != &reqNode->msgBlocks) {
         AppSpawnMsgBlock *sendBlock = (AppSpawnMsgBlock *)ListEntry(sendNode, AppSpawnMsgBlock, node);
-        int ret = WriteMessage(socketId, sendBlock->buffer, sendBlock->currentIndex);
+        int ret = WriteMessage(socketId, sendBlock->buffer, sendBlock->currentIndex, reqNode->fds, &reqNode->fdCount);
         currentIndex += sendBlock->currentIndex;
         APPSPAWN_LOGV("Write msg ret: %{public}d msgId: %{public}u %{public}u %{public}u",
             ret, reqNode->msg->msgId, reqNode->msg->msgLen, currentIndex);

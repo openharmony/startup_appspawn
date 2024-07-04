@@ -299,12 +299,25 @@ static AppSpawnReqMsgNode *CreateAppSpawnReqMsg(uint32_t msgType, const char *pr
     reqNode->msg = NULL;
     reqNode->msgFlags = NULL;
     reqNode->permissionFlags = NULL;
+    reqNode->fdCount = 0;
     int ret = CreateBaseMsg(reqNode, msgType, processName);
     APPSPAWN_CHECK(ret == 0, DeleteAppSpawnReqMsg(reqNode);
          return NULL, "Failed to create base msg for %{public}s", processName);
     APPSPAWN_LOGV("CreateAppSpawnReqMsg reqId: %{public}d msg type: %{public}u processName: %{public}s",
         reqNode->reqId, msgType, processName);
     return reqNode;
+}
+
+int AppSpawnReqMsgAddFd(AppSpawnReqMsgHandle reqHandle, const char* fdName, int fd)
+{
+    APPSPAWN_CHECK(reqHandle != NULL, return APPSPAWN_ARG_INVALID, "Invalid reqHandle");
+    AppSpawnReqMsgNode *reqNode = (AppSpawnReqMsgNode *)reqHandle;
+    APPSPAWN_CHECK(reqNode != NULL, return APPSPAWN_ARG_INVALID, "Invalid reqNode");
+    APPSPAWN_CHECK(fd > 0 && fdName != NULL && strlen(fdName) <= APP_FDNAME_MAXLEN
+        &&  reqNode->fdCount < APP_MAX_FD_COUNT,
+        return APPSPAWN_ARG_INVALID, "Invalid fdinfo %d %d %d", fd, fdName != NULL, reqNode->fdCount);
+    reqNode->fds[reqNode->fdCount++] = fd;
+    return AppSpawnReqMsgAddStringInfo(reqHandle, MSG_EXT_NAME_APP_FD, (void *)fdName);
 }
 
 static void GetSpecialGid(const char *bundleName, gid_t gidTable[], uint32_t *gidCount)

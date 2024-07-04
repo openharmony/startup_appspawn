@@ -91,6 +91,7 @@ namespace AppExecFwk {
 
         static void PreloadExtensionPlugin() {}
         static void Start() {}
+        static void StartChild(std::map<std::string, int> &map) {}
     };
 }  // namespace AppExecFwk
 

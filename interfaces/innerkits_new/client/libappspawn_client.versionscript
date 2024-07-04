@@ -18,6 +18,7 @@
     AppSpawnClientSendMsg;
     AppSpawnReqMsgCreate;
     AppSpawnReqMsgFree;
+    AppSpawnReqMsgAddFd;
     AppSpawnReqMsgSetBundleInfo;
     AppSpawnReqMsgSetAppFlag;
     AppSpawnReqMsgSetAppDacInfo;

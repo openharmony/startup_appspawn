@@ -52,6 +52,9 @@ typedef void *AppSpawnClientHandle;
 #pragma pack(4)
 #define APP_MAX_GIDS 64
 #define APP_USER_NAME 64
+#define APP_MAX_FD_COUNT 16
+#define APP_FDENV_PREFIX "APPSPAWN_FD_"
+#define APP_FDNAME_MAXLEN 20
 typedef struct {
     uint32_t uid;       // the UNIX uid that the child process setuid() to after fork()
     uint32_t gid;       // the UNIX gid that the child process setgid() to after fork()
@@ -166,6 +169,7 @@ typedef enum {
     APP_FLAGS_DEVELOPER_MODE = 17,
     APP_FLAGS_BEGETCTL_BOOT, // Start an app from begetctl.
     APP_FLAGS_ATOMIC_SERVICE,
+    APP_FLAGS_CHILDPROCESS,
     MAX_FLAGS_INDEX = 63,
 } AppFlagsIndex;
 
@@ -258,6 +262,7 @@ int AppSpawnClientAddPermission(AppSpawnClientHandle handle, AppSpawnReqMsgHandl
 #define MSG_EXT_NAME_PROVISION_TYPE "ProvisionType"
 #define MSG_EXT_NAME_PROCESS_TYPE "ProcessType"
 #define MSG_EXT_NAME_MAX_CHILD_PROCCESS_MAX "MaxChildProcess"
+#define MSG_EXT_NAME_APP_FD "AppFd"
 
 int AppSpawnReqMsgAddExtInfo(AppSpawnReqMsgHandle reqHandle, const char *name, const uint8_t *value, uint32_t valueLen);
 
@@ -270,6 +275,16 @@ int AppSpawnReqMsgAddExtInfo(AppSpawnReqMsgHandle reqHandle, const char *name, c
  * @return if succeed return 0,else return other value
  */
 int AppSpawnReqMsgAddStringInfo(AppSpawnReqMsgHandle reqHandle, const char *name, const char *value);
+
+/**
+ * @brief add fd info to message
+ *
+ * @param reqHandle handle for request message
+ * @param name fd name
+ * @param value fd value
+ * @return if succeed return 0,else return other value
+ */
+int AppSpawnReqMsgAddFd(AppSpawnReqMsgHandle reqHandle, const char* fdName, int fd);
 
 /**
  * @brief Get the permission index by permission name
