@@ -272,6 +272,42 @@ static inline int StartTimerForCheckMsg(AppSpawnConnection *connection)
     return ret;
 }
 
+static int HandleRecvMessage(const TaskHandle taskHandle, uint8_t * buffer, int bufferSize, int flags)
+{
+    int socketFd = LE_GetSocketFd(taskHandle);
+    struct iovec iov = {
+        .iov_base = buffer,
+        .iov_len = bufferSize,
+    };
+    char ctrlBuffer[CMSG_SPACE(APP_MAX_FD_COUNT * sizeof(int))];
+    struct msghdr msg = {
+        .msg_iov = &iov,
+        .msg_iovlen = 1,
+        .msg_control = ctrlBuffer,
+        .msg_controllen = sizeof(ctrlBuffer),
+    };
+
+    AppSpawnConnection *connection = (AppSpawnConnection *) LE_GetUserData(taskHandle);
+    errno = 0;
+    int recvLen = recvmsg(socketFd, &msg, flags);
+    APPSPAWN_CHECK_ONLY_LOG(errno == 0, "recvmsg with errno %d", errno);
+    struct cmsghdr *cmsg = NULL;
+    for (cmsg = CMSG_FIRSTHDR(&msg); cmsg != NULL; cmsg = CMSG_NXTHDR(&msg, cmsg)) {
+        if (cmsg->cmsg_level == SOL_SOCKET && cmsg->cmsg_type == SCM_RIGHTS) {
+            int fdCount = (cmsg->cmsg_len - CMSG_LEN(0)) / sizeof(int);
+            int *fd = (int *) CMSG_DATA(cmsg);
+            APPSPAWN_CHECK(fdCount <= APP_MAX_FD_COUNT,
+                return -1, "failed to recv fd %d %d", connection->receiverCtx.fdCount, fdCount) ;
+            int ret = memcpy_s(connection->receiverCtx.fds,
+                fdCount * sizeof(int), fd, fdCount * sizeof(int));
+            APPSPAWN_CHECK(ret == 0, return -1, "memcpy_s fd ret %d", ret);
+            connection->receiverCtx.fdCount = fdCount;
+        }
+    }
+
+    return recvLen;
+}
+
 static int OnConnection(const LoopHandle loopHandle, const TaskHandle server)
 {
     APPSPAWN_CHECK(server != NULL && loopHandle != NULL, return -1, "Error server");
@@ -284,6 +320,7 @@ static int OnConnection(const LoopHandle loopHandle, const TaskHandle server)
     info.disConnectComplete = OnDisConnect;
     info.sendMessageComplete = SendMessageComplete;
     info.recvMessage = OnReceiveRequest;
+    info.handleRecvMsg = HandleRecvMessage;
     LE_STATUS ret = LE_AcceptStreamClient(loopHandle, server, &stream, &info);
     APPSPAWN_CHECK(ret == 0, return -1, "Failed to alloc stream");
 
@@ -301,6 +338,7 @@ static int OnConnection(const LoopHandle loopHandle, const TaskHandle server)
 
     connection->connectionId = ++connectionId;
     connection->stream = stream;
+    connection->receiverCtx.fdCount = 0;
     connection->receiverCtx.incompleteMsg = NULL;
     connection->receiverCtx.timer = NULL;
     connection->receiverCtx.msgRecvLen = 0;
