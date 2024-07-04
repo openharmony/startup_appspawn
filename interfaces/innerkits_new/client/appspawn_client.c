@@ -182,6 +182,7 @@ static int WriteMessage(int socketFd, const uint8_t *buf, ssize_t len, int *fds,
             return -errno,
             "Failed to write message to fd %{public}d, wLen %{public}zd errno: %{public}d", socketFd, wLen, errno);
     }
+    free(ctrlBuffer);
     return written == len ? 0 : -EFAULT;
 }
 
