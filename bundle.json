@@ -80,22 +80,12 @@
             "inner_kits": [
                 {
                     "header": {
-                        "header_base": "//base/startup/appspawn/interfaces/innerkits_new/include/",
+                        "header_base": "//base/startup/appspawn/interfaces/innerkits/include/",
                         "header_files": [
                             "appspawn.h"
                         ]
                     },
-                    "name": "//base/startup/appspawn/interfaces/innerkits_new/client:appspawn_client"
-                },
-                {
-                    "header": {
-                        "header_base": "//base/startup/appspawn/interfaces/innerkits/include/",
-                        "header_files": [
-                            "appspawn_socket.h",
-                            "client_socket.h"
-                        ]
-                    },
-                    "name": "//base/startup/appspawn/interfaces/innerkits:appspawn_socket_client"
+                    "name": "//base/startup/appspawn/interfaces/innerkits/client:appspawn_client"
                 },
                 {
                     "header": {
