@@ -21,6 +21,7 @@
 #include "hilog/log.h"
 #include "appspawn_utils.h"
 #include "securec.h"
+#include "parameter.h"
 
 #include "hnp_api.h"
 
@@ -35,6 +36,7 @@ extern "C" {
 #define IS_OPTION_SET(x, option) ((x) & (1 << (option)))
 #define BUFFER_SIZE 1024
 #define CMD_API_TEXT_LEN 50
+#define PARAM_BUFFER_SIZE 10
 
 /* 数字索引 */
 enum {
@@ -140,6 +142,22 @@ static int StartHnpProcess(char *const argv[], char *const apcEnv[])
     return exitVal;
 }
 
+static bool IsHnpInstallEnable()
+{
+    char buffer[PARAM_BUFFER_SIZE] = {0};
+    int ret = GetParameter("const.startup.hnp.install.enable", "false", buffer, PARAM_BUFFER_SIZE);
+    if (ret <= 0) {
+        HNPAPI_LOG("\r\n [HNP API] get hnp install enable param unsuccess! ret =%{public}d\r\n", ret);
+        return false;
+    }
+
+    if (strcmp(buffer, "true") == 0) {
+        return true;
+    }
+
+    return false;
+}
+
 int NativeInstallHnp(const char *userId, const char *hnpRootPath,  const HapInfo *hapInfo, int installOptions)
 {
     char *argv[MAX_ARGV_NUM] = {0};
@@ -153,6 +171,10 @@ int NativeInstallHnp(const char *userId, const char *hnpRootPath,  const HapInfo
 
     if ((userId == NULL) || (hnpRootPath == NULL) || (hapInfo == NULL)) {
         return HNP_API_ERRNO_PARAM_INVALID;
+    }
+
+    if (!IsHnpInstallEnable()) {
+        return HNP_API_ERRNO_HNP_INSTALL_DISABLED;
     }
 
     HNPAPI_LOG("\r\n [HNP API] native package install! userId=%{public}s, hap path=%{public}s, sys abi=%{public}s, "

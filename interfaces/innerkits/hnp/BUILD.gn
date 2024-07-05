@@ -28,6 +28,7 @@ if (!defined(ohos_lite)) {
     external_deps = [
       "bounds_checking_function:libsec_shared",
       "hilog:libhilog",
+      "init:libbegetutil",
     ]
     deps = [ "${appspawn_path}/util:libappspawn_util" ]
     install_enable = true
