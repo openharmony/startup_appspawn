@@ -21,9 +21,9 @@ ohos_fuzztest("AppSpawnClientFuzzTest") {
   module_out_path = module_output_path
   fuzz_config_file = "${appspawn_path}/test/fuzztest/appspawnclient_fuzzer"
 
-  include_dirs = [ "${appspawn_path}/interfaces/innerkits_new/include" ]
+  include_dirs = [ "${appspawn_path}/interfaces/innerkits/include" ]
 
-  deps = [ "${appspawn_path}/interfaces/innerkits_new/client:appspawn_client" ]
+  deps = [ "${appspawn_path}/interfaces/innerkits/client:appspawn_client" ]
   external_deps = [ "bounds_checking_function:libsec_static" ]
 
   defines = []
