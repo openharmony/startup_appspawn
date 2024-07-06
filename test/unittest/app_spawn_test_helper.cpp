@@ -246,6 +246,41 @@ void AppSpawnTestServer::ProcessIdle(const IdleHandle taskHandle, void *context)
     }
 }
 
+static int HandleRecvMessage(const TaskHandle taskHandle, uint8_t * buffer, int bufferSize, int flags)
+{
+    int socketFd = LE_GetSocketFd(taskHandle);
+    struct iovec iov = {
+        .iov_base = buffer,
+        .iov_len = bufferSize,
+    };
+    char ctrlBuffer[CMSG_SPACE(APP_MAX_FD_COUNT * sizeof(int))];
+    struct msghdr msg = {
+        .msg_iov = &iov,
+        .msg_iovlen = 1,
+        .msg_control = ctrlBuffer,
+        .msg_controllen = sizeof(ctrlBuffer),
+    };
+
+    AppSpawnConnection *connection = (AppSpawnConnection *) LE_GetUserData(taskHandle);
+    errno = 0;
+    int recvLen = recvmsg(socketFd, &msg, flags);
+    APPSPAWN_CHECK_ONLY_LOG(errno == 0, "recvmsg with errno %d", errno);
+    struct cmsghdr *cmsg = nullptr;
+    for (cmsg = CMSG_FIRSTHDR(&msg); cmsg != nullptr; cmsg = CMSG_NXTHDR(&msg, cmsg)) {
+        if (cmsg->cmsg_level == SOL_SOCKET && cmsg->cmsg_type == SCM_RIGHTS) {
+            int fdCount = (cmsg->cmsg_len - CMSG_LEN(0)) / sizeof(int);
+            int* fd = reinterpret_cast<int*>(CMSG_DATA(cmsg));
+            APPSPAWN_CHECK(fdCount <= APP_MAX_FD_COUNT,
+                return -1, "failed to recv fd %d %d", connection->receiverCtx.fdCount, fdCount);
+            APPSPAWN_CHECK(memcpy_s(connection->receiverCtx.fds, fdCount * sizeof(int), fd,
+                fdCount * sizeof(int)) == 0, return -1, "memcpy_s fd failed");
+            connection->receiverCtx.fdCount = fdCount;
+        }
+    }
+
+    return recvLen;
+}
+
 int LocalTestServer::OnConnection(const LoopHandle loopHandle, const TaskHandle server)
 {
     static uint32_t connectionId = 0;
@@ -257,6 +292,7 @@ int LocalTestServer::OnConnection(const LoopHandle loopHandle, const TaskHandle 
     info.disConnectComplete = nullptr;
     info.sendMessageComplete = SendMessageComplete;
     info.recvMessage = OnReceiveRequest;
+    info.handleRecvMsg = HandleRecvMessage;
 
     ServerInfo *serverInfo = (ServerInfo *)LE_GetUserData(server);
     APPSPAWN_CHECK(serverInfo != nullptr, return -1, "Failed to alloc stream");
@@ -287,6 +323,17 @@ void LocalTestServer::OnClose(const TaskHandle taskHandle)
     APPSPAWN_CHECK(connection != nullptr, return, "Invalid connection");
     APPSPAWN_LOGI("OnClose connection.id %{public}d socket %{public}d",
         connection->connectionId, LE_GetSocketFd(taskHandle));
+
+    AppSpawnConnection *spawnConnection = (AppSpawnConnection *) LE_GetUserData(taskHandle);
+    if (spawnConnection != nullptr) {
+        int fdCount = spawnConnection->receiverCtx.fdCount;
+        for (int i = 0; i < fdCount; i++) {
+            APPSPAWN_LOGI("OnClose close fd %d", spawnConnection->receiverCtx.fds[i]);
+            if (spawnConnection->receiverCtx.fds[i] >= 0) {
+                close(spawnConnection->receiverCtx.fds[i]);
+            }
+        }
+    }
 }
 
 void LocalTestServer::OnReceiveRequest(const TaskHandle taskHandle, const uint8_t *buffer, uint32_t buffLen)
@@ -405,6 +452,28 @@ CmdArgs *AppSpawnTestHelper::ToCmdList(const char *cmd)
     return args;
 }
 
+int AppSpawnTestHelper::AddDacInfo(AppSpawnReqMsgHandle &reqHandle)
+{
+    AppDacInfo dacInfo = {};
+    dacInfo.uid = defaultTestUid_;
+    dacInfo.gid = defaultTestGid_;
+    dacInfo.gidCount = 2;  // 2 count
+    dacInfo.gidTable[0] = defaultTestGidGroup_;
+    dacInfo.gidTable[1] = defaultTestGidGroup_ + 1;
+    (void)strcpy_s(dacInfo.userName, sizeof(dacInfo.userName), "test-app-name");
+    return AppSpawnReqMsgSetAppDacInfo(reqHandle, &dacInfo);
+}
+
+int AppSpawnTestHelper::AddFdInfo(AppSpawnReqMsgHandle &reqHandle)
+{
+    if (fdArg < 0) {
+        fdArg = open("/dev/random", O_RDONLY);
+    }
+    APPSPAWN_LOGE("Add fd info %d", fdArg);
+    APPSPAWN_CHECK(fdArg > 0, return -1, "open fd failed ");
+    return AppSpawnReqMsgAddFd(reqHandle, "fdname", fdArg);
+}
+
 AppSpawnReqMsgHandle AppSpawnTestHelper::CreateMsg(AppSpawnClientHandle handle, uint32_t msgType, int base)
 {
     AppSpawnReqMsgHandle reqHandle = 0;
@@ -412,19 +481,12 @@ AppSpawnReqMsgHandle AppSpawnTestHelper::CreateMsg(AppSpawnClientHandle handle, 
     APPSPAWN_CHECK(ret == 0, return INVALID_REQ_HANDLE, "Failed to create req %{public}s", processName_.c_str());
     APPSPAWN_CHECK_ONLY_EXPER(msgType == MSG_APP_SPAWN || msgType == MSG_SPAWN_NATIVE_PROCESS, return reqHandle);
     do {
+        ret = AddFdInfo(reqHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to add fd %{public}s", processName_.c_str());
         ret = AppSpawnReqMsgSetBundleInfo(reqHandle, 100, processName_.c_str());  // 100 test index
         APPSPAWN_CHECK(ret == 0, break, "Failed to add bundle info req %{public}s", processName_.c_str());
-
-        AppDacInfo dacInfo = {};
-        dacInfo.uid = defaultTestUid_;
-        dacInfo.gid = defaultTestGid_;
-        dacInfo.gidCount = 2;  // 2 count
-        dacInfo.gidTable[0] = defaultTestGidGroup_;
-        dacInfo.gidTable[1] = defaultTestGidGroup_ + 1;
-        (void)strcpy_s(dacInfo.userName, sizeof(dacInfo.userName), "test-app-name");
-        ret = AppSpawnReqMsgSetAppDacInfo(reqHandle, &dacInfo);
+        ret = AddDacInfo(reqHandle);
         APPSPAWN_CHECK(ret == 0, break, "Failed to add dac %{public}s", processName_.c_str());
-
         ret = AppSpawnReqMsgSetAppAccessToken(reqHandle, 12345678);  // 12345678
         APPSPAWN_CHECK(ret == 0, break, "Failed to add access token %{public}s", processName_.c_str());
 

@@ -473,6 +473,9 @@ static int SpawnLoadConfig(AppSpawnMgr *content)
 
 static int CloseFdArgs(AppSpawnMgr *content, AppSpawningCtx *property)
 {
+    APPSPAWN_CHECK(property != NULL && property->message != NULL
+        && property->message->connection != NULL,
+        return -1, "Get connection info failed");
     int fdCount = property->message->connection->receiverCtx.fdCount;
     int *fds = property->message->connection->receiverCtx.fds;
     if (fds != NULL && fdCount > 0) {
@@ -488,8 +491,9 @@ static int CloseFdArgs(AppSpawnMgr *content, AppSpawningCtx *property)
 
 static int SetFdEnv(AppSpawnMgr *content, AppSpawningCtx *property)
 {
+    APPSPAWN_CHECK_ONLY_EXPER(property != NULL, return -1);
     AppSpawnMsgNode *message = property->message;
-    APPSPAWN_CHECK_ONLY_EXPER(message != NULL && message->buffer != NULL, return -1);
+    APPSPAWN_CHECK_ONLY_EXPER(message != NULL && message->buffer != NULL && message->connection != NULL, return -1);
     APPSPAWN_CHECK_ONLY_EXPER(message->tlvOffset != NULL, return -1);
     int findFdIndex = 0;
     AppSpawnMsgReceiverCtx recvCtx = message->connection->receiverCtx;
