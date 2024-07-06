@@ -57,7 +57,13 @@ public:
     {
         SetDefaultTestData();
     }
-    ~AppSpawnTestHelper() {}
+    ~AppSpawnTestHelper()
+    {
+        if (fdArg >= 0) {
+            APPSPAWN_LOGE("destory test helper close fd %d", fdArg);
+            close(fdArg);
+        }
+    }
 
     void SetDefaultTestData();
     const char *GetDefaultTestAppBundleName()
@@ -104,7 +110,8 @@ public:
 
     AppSpawnReqMsgHandle CreateMsg(AppSpawnClientHandle handle, uint32_t msgType = MSG_APP_SPAWN, int base = 0);
     AppSpawningCtx *GetAppProperty(AppSpawnClientHandle handle, AppSpawnReqMsgHandle reqHandle);
-
+    int AddDacInfo(AppSpawnReqMsgHandle &reqHandle);
+    int AddFdInfo(AppSpawnReqMsgHandle &reqHandle);
     int CreateSocket(int type = 0);
     int CreateSendMsg(std::vector<uint8_t> &buffer, uint32_t msgType, uint32_t &msgLen,
         const std::vector<AddTlvFunction> &addTlvFuncs);
@@ -139,6 +146,7 @@ private:
     gid_t defaultTestGidGroup_;
     int32_t defaultTestBundleIndex_;
     uint32_t defaultMsgFlags_ = 0;
+    int fdArg = -1;
     std::vector<const char *> permissions_ = {
         const_cast<char *>("ohos.permission.READ_IMAGEVIDEO"),
         const_cast<char *>("ohos.permission.FILE_CROSS_APP"),
