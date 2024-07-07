@@ -69,6 +69,9 @@
                 "sandbox-path" : "/system/etc",
                 "src-path" : "/system/etc"
             }, {
+                "src-path" : "/system/etc/hosts",
+                "sandbox-path" : "/data/service/el1/network/hosts_user/hosts"
+            }, {
                 "sandbox-path" : "/system/resource",
                 "src-path" : "/system/resource"
             }, {
