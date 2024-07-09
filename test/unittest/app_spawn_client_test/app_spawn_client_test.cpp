@@ -331,6 +331,44 @@ HWTEST_F(AppSpawnClientTest, App_Client_Msg_004, TestSize.Level0)
 }
 
 /**
+ * @brief 测试消息构建及解析，fd
+ *
+ */
+HWTEST_F(AppSpawnClientTest, App_Client_Msg_025, TestSize.Level0)
+{
+    int ret = 0;
+    AppSpawnClientHandle clientHandle = nullptr;
+    AppSpawnReqMsgHandle reqHandle = 0;
+    AppSpawningCtx *property = nullptr;
+    int fd = open("/dev/null", O_RDONLY);
+    APPSPAWN_CHECK(fd >= 0, ret = APPSPAWN_ARG_INVALID, "open fd failed");
+    do {
+        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create reqMgr %{public}s", APPSPAWN_SERVER_NAME);
+        reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 1);
+        APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break, "Failed to create req %{public}s", APPSPAWN_SERVER_NAME);
+
+        const char *fdname = "fdname";
+        ret = AppSpawnReqMsgAddFd(reqHandle, fdname, fd);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to add fd  %{public}s", APPSPAWN_SERVER_NAME);
+
+        ret = APPSPAWN_ARG_INVALID;
+        property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
+        APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
+        DumpAppSpawnMsg(property->message);
+        uint32_t len = 0;
+        char *recvFdName = reinterpret_cast<char *>(GetAppPropertyExt(property, MSG_EXT_NAME_APP_FD, &len));
+        APPSPAWN_CHECK(strcmp(recvFdName, fdname) == 0,
+            break, "Invalid fdname %{public}s", fdname);
+        ret = 0;
+    } while (0);
+    close(fd);
+    DeleteAppSpawningCtx(property);
+    AppSpawnClientDestroy(clientHandle);
+    ASSERT_EQ(ret, 0);
+}
+
+/**
  * @brief 测试消息构建及解析，ownerId cmd
  *
  */

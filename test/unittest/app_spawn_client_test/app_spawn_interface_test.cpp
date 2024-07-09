@@ -381,6 +381,34 @@ HWTEST_F(AppSpawnInterfaceTest, App_Spawn_Interface_Add_Permission_001, TestSize
 }
 
 /**
+ * @brief 测试接口：AppSpawnReqMsgAddFd
+ *
+ */
+HWTEST_F(AppSpawnInterfaceTest, App_Spawn_Interface_Add_Fd_001, TestSize.Level0)
+{
+    AppSpawnReqMsgHandle reqHandle = nullptr;
+    int ret = AppSpawnReqMsgCreate(MSG_APP_SPAWN, "com.ohos.myapplication", &reqHandle);
+    EXPECT_EQ(0, ret);
+    const AppSpawnReqMsgHandle inputHandle[] = {reqHandle, nullptr};
+    static const struct {
+        const char *name;
+        int fd;
+    } fdInfoMap[] = {
+        {"fd1", 10},
+        {"fd2", -1},
+        {"fd3000000000000000000000000000000", 101},
+    };
+    for (size_t i = 0; i < ARRAY_LENGTH(inputHandle); i++) {
+        for (size_t j = 0; j < ARRAY_LENGTH(fdInfoMap); j++) {
+            printf("App_Spawn_Interface_Add_fd_001 %zu %zu %d \n", i, j, ret);
+            ret = AppSpawnReqMsgAddFd(inputHandle[i], fdInfoMap[j].name, fdInfoMap[j].fd);
+            EXPECT_EQ((i == 0 && j == 0 && ret == 0) || (ret != 0), 1);
+        }
+    }
+    AppSpawnReqMsgFree(reqHandle);
+}
+
+/**
  * @brief 测试接口：AppSpawnReqMsgAddExtInfo
  *
  */
