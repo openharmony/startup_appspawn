@@ -14,7 +14,7 @@
 ability_runtime_path = "//foundation/ability/ability_runtime"
 ability_runtime_kits_path = "${ability_runtime_path}/frameworks/kits"
 appspawn_path = "//base/startup/appspawn"
-appspawn_innerkits_path = "//base/startup/appspawn/interfaces/innerkits_new"
+appspawn_innerkits_path = "//base/startup/appspawn/interfaces/innerkits"
 startup_path = "//base/startup"
 subsystem_name = "startup"
 part_name = "appspawn"
