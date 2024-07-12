@@ -194,7 +194,7 @@ static int ProcessMgrAddApp(const AppSpawnMgr *content, const AppSpawnedProcessI
     APPSPAWN_LOGV("ProcessMgrAddApp %{public}d %{public}d to cgroup ", appInfo->pid, appInfo->uid);
     int ret = GetCgroupPath(appInfo, path, sizeof(path));
     APPSPAWN_CHECK(ret == 0, return -1, "Failed to get real path errno: %{public}d", errno);
-    (void)CreateSandboxDir(path, 0755);  // 0755 default mode
+    (void)CreateSandboxDir(path, 0750);  // 0750 default mode
     uint32_t pathLen = strlen(path);
     ret = strcat_s(path, sizeof(path), "cgroup.procs");
     APPSPAWN_CHECK(ret == 0, return ret, "Failed to strcat_s errno: %{public}d", errno);
