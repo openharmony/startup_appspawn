@@ -852,6 +852,16 @@
                     "sandbox-flags": [ "bind", "rec" ]
                 }
             ]
+        }],
+        "ohos.permission.ACCESS_FACTORY_OTA_DIR":[{
+            "sandbox-switch": "ON",
+            "mount-paths": [{
+                    "src-path": "/data/update/sd_package",
+                    "sandbox-path": "/data/update/sd_package",
+                    "sandbox-flags": [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }
+            ]
         }]
     }]
 }
