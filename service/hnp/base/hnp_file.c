@@ -165,6 +165,7 @@ static int HnpDeleteAllFileInPath(const char *path, DIR *dir)
         }
 
         if (lstat(filePath, &statbuf) < 0) {
+            unlink(filePath); // 如果是已被删除源文件的软链，是获取不到文件信息的，此处作删除处理
             continue;
         }
 
