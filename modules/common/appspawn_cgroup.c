@@ -173,13 +173,22 @@ static int ProcessMgrRemoveApp(const AppSpawnMgr *content, const AppSpawnedProce
     if (IsNWebSpawnMode(content) || strcmp(appInfo->name, NWEBSPAWN_SERVER_NAME) == 0) {
         return 0;
     }
-    char path[PATH_MAX] = {};
+    char cgroupPath[PATH_MAX] = {};
     APPSPAWN_LOGV("ProcessMgrRemoveApp %{public}d %{public}d to cgroup ", appInfo->pid, appInfo->uid);
-    int ret = GetCgroupPath(appInfo, path, sizeof(path));
+    int ret = GetCgroupPath(appInfo, cgroupPath, sizeof(cgroupPath));
     APPSPAWN_CHECK(ret == 0, return -1, "Failed to get real path errno: %{public}d", errno);
-    ret = strcat_s(path, sizeof(path), "cgroup.procs");
+    char procPath[PATH_MAX] = {};
+    ret = memcpy_s(procPath, sizeof(procPath), cgroupPath, sizeof(cgroupPath));
+    if (ret != 0) {
+        return APPSPAWN_ERROR_UTILS_MEM_FAIL;
+    }
+    ret = strcat_s(procPath, sizeof(procPath), "cgroup.procs");
     APPSPAWN_CHECK(ret == 0, return ret, "Failed to strcat_s errno: %{public}d", errno);
-    KillProcessesByCGroup(path, (AppSpawnMgr *)content, appInfo);
+    KillProcessesByCGroup(procPath, (AppSpawnMgr *)content, appInfo);
+    ret = rmdir(cgroupPath);
+    if (ret != 0) {
+        return APPSPAWN_ERROR_FILE_RMDIR_FAIL;
+    }
     return ret;
 }
 
