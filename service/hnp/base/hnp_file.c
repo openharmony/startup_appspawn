@@ -124,6 +124,7 @@ int GetRealPath(char *srcPath, char *realPath)
         return HNP_ERRNO_PARAM_INVALID;
     }
 #ifdef _WIN32
+    // 使用wchar_t支持处理字符串长度超过260的路径字符串
     wchar_t wideSrcPath[MAX_FILE_PATH_LEN] = {0};
     wchar_t wideDstPathExt[MAX_FILE_PATH_LEN] = {0};
     MultiByteToWideChar(CP_ACP, 0, srcPath, -1, wideSrcPath, MAX_FILE_PATH_LEN);
