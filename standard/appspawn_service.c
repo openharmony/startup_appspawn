@@ -707,7 +707,11 @@ void AppSpawnDestroyContent(AppSpawnContent *content)
 static int AppSpawnColdStartApp(struct AppSpawnContent *content, AppSpawnClient *client)
 {
     AppSpawningCtx *property = (AppSpawningCtx *)client;
+#ifndef CJAPP_SPAWN
     char *path = property->forkCtx.coldRunPath != NULL ? property->forkCtx.coldRunPath : "/system/bin/appspawn";
+#else
+    char *path = property->forkCtx.coldRunPath != NULL ? property->forkCtx.coldRunPath : "/system/bin/cjappspawn";
+#endif
     APPSPAWN_LOGI("ColdStartApp::processName: %{public}s path: %{public}s", GetProcessName(property), path);
 
     // for cold run, use shared memory to exchange message
