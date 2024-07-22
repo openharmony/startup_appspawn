@@ -64,7 +64,7 @@ static bool TransWidePath(const char *inPath, wchar_t *outPath)
         HNP_LOGE("swprintf unsuccess.");
         return false; 
     }
-	return true;
+    return true;
 }
 #endif
 
@@ -80,11 +80,11 @@ static int ZipAddFile(const char* file, int offset, zipFile zf)
 
 #ifdef _WIN32
     struct _stat buffer = {0};
-	// 使用wchar_t支持处理字符串长度超过260的路径字符串
+    // 使用wchar_t支持处理字符串长度超过260的路径字符串
     wchar_t wideFullPath[MAX_FILE_PATH_LEN] = {0};
     if (!TransWidePath(file, wideFullPath)) {
         return HNP_ERRNO_BASE_STAT_FAILED;
-	}
+    }
     if (_wstat(wideFullPath, &buffer) != 0) {
         HNP_LOGE("get filefile[%{public}s] stat fail.", file);
         return HNP_ERRNO_BASE_STAT_FAILED;
