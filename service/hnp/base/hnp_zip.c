@@ -83,7 +83,7 @@ static int ZipAddFile(const char* file, int offset, zipFile zf)
     if (!TransWidePath(file, wideFullPath)) {
         return HNP_ERRNO_BASE_STAT_FAILED;
 	}
-    if (_wstat(fullPathExt1, &buffer) != 0) {
+    if (_wstat(wideFullPath, &buffer) != 0) {
         HNP_LOGE("get filefile[%{public}s] stat fail.", file);
         return HNP_ERRNO_BASE_STAT_FAILED;
     }
