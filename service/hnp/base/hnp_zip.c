@@ -62,7 +62,7 @@ static bool TransWidePath(const char *inPath, wchar_t *outPath)
     MultiByteToWideChar(CP_ACP, 0, inPath, -1, tmpPath, MAX_FILE_PATH_LEN);
     if (swprintf_s(outPath, MAX_FILE_PATH_LEN, L"\\\\?\\%ls", tmpPath) < 0) {
         HNP_LOGE("swprintf unsuccess.");
-        return false; 
+        return false;
     }
     return true;
 }
