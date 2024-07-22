@@ -89,6 +89,9 @@
             }, {
                 "src-path" : "/mnt/hmdfs/<currentUserId>/cloud/data/<PackageName>",
                 "sandbox-path" : "/data/storage/el2/cloud"
+            }, {
+                "sandbox-path" : "/data/data/hiai",
+                "src-path" : "/data/data/hiai"
             }],
             "mount-files": [{
                 "src-path" : "/system/<lib>/ld-musl-arm.so.1",
