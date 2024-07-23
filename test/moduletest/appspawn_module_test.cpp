@@ -34,7 +34,6 @@ namespace AppSpawn {
 namespace {
 static const int32_t DEFAULT_PID = 0;
 static const int32_t FILE_PATH_SIZE = 50;
-static const int32_t CMD_SIZE = 50;
 static const int32_t BUFFER_SIZE = 512;
 static const int32_t BASE_TYPE = 10;
 static const int32_t CONNECT_RETRY_DELAY = 50 * 1000;
@@ -216,38 +215,19 @@ bool CheckGidsCount(const int32_t &pid, const std::vector<int32_t> newGids)
 
 bool CheckProcName(const int32_t &pid, const std::string &newProcessName)
 {
-    FILE *fp = nullptr;
-    char cmd[CMD_SIZE];
-    if (sprintf_s(cmd, sizeof(cmd), "ps -o ARGS=CMD -p %d |grep -v CMD", pid) <= 0) {
-        HILOG_ERROR(LOG_CORE, "cmd sprintf_s fail .");
-        return false;
-    }
-    if (strlen(cmd) > CMD_SIZE) {
-        HILOG_ERROR(LOG_CORE, " cmd length is too long  .");
-        return false;
-    }
-    fp = popen(cmd, "r");
-    if (fp == nullptr) {
-        HILOG_ERROR(LOG_CORE, " popen function call failed .");
-        return false;
-    }
-    if (fgets(g_buffer, sizeof(g_buffer), fp) != nullptr) {
-        for (unsigned int i = 0; i < sizeof(g_buffer); i++) {
-            if (g_buffer[i] == '\n') {
-                g_buffer[i] = '\0';
-                break;
-            }
+    if (ReadFileInfo(g_buffer, pid, "cmdline")) {
+        if (strlen(g_buffer) > BUFFER_SIZE) {
+            HILOG_ERROR(LOG_CORE, " cmd length is too long  .");
+            return false;
         }
-        GTEST_LOG_(INFO) << "procName " << " :" << g_buffer << ".";
+        GTEST_LOG_(INFO) << "CheckProcName pid " << pid << " buffer :" << g_buffer;
         if (newProcessName.compare(0, newProcessName.size(), g_buffer, newProcessName.size()) == 0) {
-            pclose(fp);
             return true;
         }
         HILOG_ERROR(LOG_CORE, " procName=%{public}s, newProcessName=%{public}s.", g_buffer, newProcessName.c_str());
     } else {
         HILOG_ERROR(LOG_CORE, "Getting procName failed.");
     }
-    pclose(fp);
     return false;
 }
 
