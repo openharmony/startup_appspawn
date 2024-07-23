@@ -36,7 +36,7 @@ if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
     if (target_cpu == "arm64" || target_cpu == "x86_64") {
       extra_sandbox_cfgs += [ "../appdata-sandbox64.json" ]
     }
-    if (is_asan) {
+    if (is_asan || asan_detector) {
       extra_sandbox_cfgs += [ "../appdata-sandbox-asan.json" ]
     }
     subsystem_name = "${subsystem_name}"
