@@ -35,6 +35,7 @@
 #include "init_socket.h"
 #include "init_utils.h"
 #include "parameter.h"
+#include "appspawn_adapter.h"
 #include "securec.h"
 #ifdef APPSPAWN_HISYSEVENT
 #include "appspawn_hisysevent.h"
@@ -582,6 +583,9 @@ static void WaitChildTimeout(const TimerHandle taskHandle, void *context)
     APPSPAWN_LOGI("Child process %{public}s fail \'wait child timeout \'pid %{public}d appId: %{public}d",
         GetProcessName(property), property->pid, property->client.id);
     if (property->pid > 0) {
+#ifndef CJAPP_SPAWN
+        DumpSpawnStack(property->pid);
+#endif
         kill(property->pid, SIGKILL);
     }
     SendResponse(property->message->connection, &property->message->msgHeader, APPSPAWN_SPAWN_TIMEOUT, 0);
