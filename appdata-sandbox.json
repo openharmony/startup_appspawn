@@ -34,6 +34,11 @@
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
+                    "src-path" : "/module_update",
+                    "sandbox-path" : "/module_update",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
                     "src-path" : "/system/fonts",
                     "sandbox-path" : "/system/fonts",
                     "sandbox-flags" : [ "bind", "rec" ],
@@ -138,11 +143,6 @@
                     "sandbox-path" : "/vendor/etc/vulkan",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
-                }, {
-                    "src-path" : "/data/app/el1/bundle/public/<PackageName>",
-                    "sandbox-path" : "/data/storage/el1/bundle",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "true"
                 }, {
                     "src-path" : "/mnt/sandbox/<currentUserId>/<PackageName>/data/storage/el2",
                     "sandbox-path" : "/data/storage/el2",
@@ -561,6 +561,11 @@
                 }, {
                     "src-path" : "/system/app/NWeb",
                     "sandbox-path" : "/system/app/NWeb",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/module_update/ArkWebCore/app/com.ohos.nweb",
+                    "sandbox-path" : "/module_update/ArkWebCore/app/com.ohos.nweb",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }
