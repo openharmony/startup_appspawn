@@ -128,7 +128,7 @@ public:
     int AppSpawnReqMsgSetFlags(AppSpawnReqMsgHandle reqHandle, uint32_t tlv, uint32_t flags)
     {
         AppSpawnReqMsgNode *reqNode = (AppSpawnReqMsgNode *)reqHandle;
-        APPSPAWN_CHECK_ONLY_EXPER(reqNode != NULL, return APPSPAWN_ARG_INVALID);
+        APPSPAWN_CHECK_ONLY_EXPER(reqNode != nullptr, return APPSPAWN_ARG_INVALID);
         if (tlv == TLV_MSG_FLAGS) {
             *(uint32_t *)reqNode->msgFlags->flags = flags;
         } else if (tlv == TLV_PERMISSION) {

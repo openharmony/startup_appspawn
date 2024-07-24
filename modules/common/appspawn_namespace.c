@@ -38,14 +38,14 @@ typedef struct {
     int nsInitPidFd;  // ns pid fd of pid_ns_init
 } AppSpawnNamespace;
 
-static pid_t GetPidByName(const char *name);
+APPSPAWN_STATIC pid_t GetPidByName(const char *name);
 static int AppSpawnExtDataCompareDataId(ListNode *node, void *data)
 {
     AppSpawnExtData *extData = (AppSpawnExtData *)ListEntry(node, AppSpawnExtData, node);
     return extData->dataId - *(uint32_t *)data;
 }
 
-static AppSpawnNamespace *GetAppSpawnNamespace(const AppSpawnMgr *content)
+APPSPAWN_STATIC AppSpawnNamespace *GetAppSpawnNamespace(const AppSpawnMgr *content)
 {
     APPSPAWN_CHECK_ONLY_EXPER(content != NULL, return NULL);
     uint32_t dataId = EXT_DATA_NAMESPACE;
@@ -96,7 +96,7 @@ static AppSpawnNamespace *CreateAppSpawnNamespace(void)
     return namespace;
 }
 
-static pid_t GetPidByName(const char *name)
+APPSPAWN_STATIC pid_t GetPidByName(const char *name)
 {
     int pid = -1;  // initial pid set to -1
     DIR *dir = opendir("/proc");
@@ -143,7 +143,7 @@ static pid_t GetPidByName(const char *name)
     return pid;
 }
 
-static int NsInitFunc()
+APPSPAWN_STATIC int NsInitFunc()
 {
     setuid(PID_NS_INIT_UID);
     setgid(PID_NS_INIT_GID);
@@ -152,11 +152,13 @@ static int NsInitFunc()
 #endif
     char *argv[] = {"/system/bin/pid_ns_init", NULL};
     execve("/system/bin/pid_ns_init", argv, NULL);
+#ifndef APPSPAWN_TEST
     _exit(0);
+#endif
     return 0;
 }
 
-static int GetNsPidFd(pid_t pid)
+APPSPAWN_STATIC int GetNsPidFd(pid_t pid)
 {
     char nsPath[256];  // filepath of ns pid
     int ret = snprintf_s(nsPath, sizeof(nsPath), sizeof(nsPath) - 1, "/proc/%d/ns/pid", pid);
