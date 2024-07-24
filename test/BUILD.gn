@@ -24,10 +24,10 @@ group("moduletest") {
 group("unittest") {
   if (!defined(ohos_lite)) {
     testonly = true
-    deps = [
-      "unittest/app_spawn_client_test:AppSpawn_client_ut",
-      "unittest/app_spawn_standard_test:AppSpawn_ut",
-    ]
+    deps = [ "unittest/app_spawn_client_test:AppSpawn_client_ut" ]
+    if (!use_libfuzzer) {
+      deps += [ "unittest/app_spawn_standard_test:AppSpawn_ut" ]
+    }
     deps += [ "unittest/hnp_test:HnpTest" ]
   } else {
     testonly = true
