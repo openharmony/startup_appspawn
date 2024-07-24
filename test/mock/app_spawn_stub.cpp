@@ -107,11 +107,6 @@ bool IsEnableSeccomp(void)
 }
 #endif
 
-int setcon(const char *name)
-{
-    return 0;
-}
-
 int GetControlSocket(const char *name)
 {
     return -1;

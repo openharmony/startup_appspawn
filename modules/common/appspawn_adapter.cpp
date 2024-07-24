@@ -61,9 +61,9 @@ int SetAppAccessToken(const AppSpawnMgr *content, const AppSpawningCtx *property
     return 0;
 }
 
-int SetSelinuxConNweb(const AppSpawnMgr *content, const AppSpawningCtx *property)
+APPSPAWN_STATIC int SetSelinuxConNweb(const AppSpawnMgr *content, const AppSpawningCtx *property)
 {
-#ifdef WITH_SELINUX
+#if defined(WITH_SELINUX) && !defined(APPSPAWN_TEST)
     uint32_t len = 0;
     std::string processType =
         reinterpret_cast<char *>(GetAppPropertyExt(property, MSG_EXT_NAME_PROCESS_TYPE, &len));
@@ -187,7 +187,7 @@ int SetInternetPermission(const AppSpawningCtx *property)
     return 0;
 }
 
-void InitAppCommonEnv(const AppSpawningCtx *property)
+APPSPAWN_STATIC void InitAppCommonEnv(const AppSpawningCtx *property)
 {
     AppDacInfo *appInfo = reinterpret_cast<AppDacInfo *>(GetAppProperty(property, TLV_DAC_INFO));
     if (appInfo == NULL) {

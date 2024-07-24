@@ -115,9 +115,9 @@ void AppSpawnTestServer::ServiceThread()
             APPSPAWN_LOGV("Service start timer %{public}s ", serviceCmd_.c_str());
             StartCheckHandler();
             AppSpawnMgr *content = reinterpret_cast<AppSpawnMgr *>(content_);
-            APPSPAWN_CHECK_ONLY_EXPER(content != NULL, return);
+            APPSPAWN_CHECK_ONLY_EXPER(content != nullptr, return);
             AppSpawnedProcess *info = GetSpawnedProcessByName(NWEBSPAWN_SERVER_NAME);
-            if (info != NULL) {
+            if (info != nullptr) {
                 APPSPAWN_LOGV("Save nwebspawn pid: %{public}d %{public}d", info->pid, serverId_);
                 appPid_.store(info->pid);
             }
@@ -526,16 +526,16 @@ AppSpawnReqMsgHandle AppSpawnTestHelper::CreateMsg(AppSpawnClientHandle handle, 
 AppSpawnMsgNode *AppSpawnTestHelper::CreateAppSpawnMsg(AppSpawnMsg *msg)
 {
     AppSpawnMsgNode *msgNode = static_cast<AppSpawnMsgNode *>(calloc(1, sizeof(AppSpawnMsgNode)));
-    APPSPAWN_CHECK(msgNode != NULL, return NULL, "Failed to create receiver");
+    APPSPAWN_CHECK(msgNode != nullptr, return nullptr, "Failed to create receiver");
     int ret = memcpy_s(&msgNode->msgHeader, sizeof(msgNode->msgHeader), msg, sizeof(msgNode->msgHeader));
     APPSPAWN_CHECK(ret == 0, free(msgNode);
         return nullptr, "Failed to memcpy msg");
     msgNode->buffer = static_cast<uint8_t *>(malloc(msg->msgLen));
-    APPSPAWN_CHECK(msgNode->buffer != NULL, free(msgNode);
+    APPSPAWN_CHECK(msgNode->buffer != nullptr, free(msgNode);
         return nullptr, "Failed to memcpy msg");
     uint32_t totalCount = msg->tlvCount + TLV_MAX;
     msgNode->tlvOffset = static_cast<uint32_t *>(malloc(totalCount * sizeof(uint32_t)));
-    APPSPAWN_CHECK(msgNode->tlvOffset != NULL, free(msgNode);
+    APPSPAWN_CHECK(msgNode->tlvOffset != nullptr, free(msgNode);
         return nullptr, "Failed to alloc memory for recv message");
     for (uint32_t i = 0; i < totalCount; i++) {
         msgNode->tlvOffset[i] = INVALID_OFFSET;
@@ -716,7 +716,7 @@ int AppSpawnTestHelper::AddBaseTlv(uint8_t *buffer, uint32_t bufferLen, uint32_t
 AppSpawnContent *AppSpawnTestHelper::StartSpawnServer(std::string &cmd, CmdArgs *&args)
 {
     args = AppSpawnTestHelper::ToCmdList(cmd.c_str());
-    APPSPAWN_CHECK(args != nullptr, return NULL, "Failed to alloc args");
+    APPSPAWN_CHECK(args != nullptr, return nullptr, "Failed to alloc args");
 
     AppSpawnStartArg startRrg = {};
     startRrg.mode = MODE_FOR_APP_SPAWN;
@@ -728,12 +728,12 @@ AppSpawnContent *AppSpawnTestHelper::StartSpawnServer(std::string &cmd, CmdArgs 
         startRrg.mode = MODE_FOR_APP_SPAWN;
     } else if (strcmp(args->argv[MODE_VALUE_INDEX], "app_cold") == 0) {  // cold start
         APPSPAWN_CHECK(args->argc >= ARG_NULL, free(args);
-            return NULL, "Invalid arg for cold start %{public}d", args->argc);
+            return nullptr, "Invalid arg for cold start %{public}d", args->argc);
         startRrg.mode = MODE_FOR_APP_COLD_RUN;
         startRrg.initArg = 0;
     } else if (strcmp(args->argv[MODE_VALUE_INDEX], "nweb_cold") == 0) {  // cold start
         APPSPAWN_CHECK(args->argc >= ARG_NULL, free(args);
-            return NULL, "Invalid arg for cold start %{public}d", args->argc);
+            return nullptr, "Invalid arg for cold start %{public}d", args->argc);
         startRrg.mode = MODE_FOR_NWEB_COLD_RUN;
         startRrg.serviceName = NWEBSPAWN_SERVER_NAME;
         startRrg.initArg = 0;

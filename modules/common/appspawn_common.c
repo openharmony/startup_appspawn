@@ -489,7 +489,7 @@ static int CloseFdArgs(AppSpawnMgr *content, AppSpawningCtx *property)
     return 0;
 }
 
-static int SetFdEnv(AppSpawnMgr *content, AppSpawningCtx *property)
+APPSPAWN_STATIC int SetFdEnv(AppSpawnMgr *content, AppSpawningCtx *property)
 {
     APPSPAWN_CHECK_ONLY_EXPER(property != NULL, return -1);
     AppSpawnMsgNode *message = property->message;

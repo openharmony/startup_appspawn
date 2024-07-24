@@ -276,7 +276,7 @@ static inline SandboxMountNode *GetFirstSandboxMountPathNode(const SandboxSectio
     APPSPAWN_CHECK_ONLY_EXPER(section != nullptr, return nullptr);
     ListNode *node = section->front.next;
     if (node == &section->front) {
-        return NULL;
+        return nullptr;
     }
     return reinterpret_cast<SandboxMountNode *>(ListEntry(node, SandboxMountNode, node));
 }
@@ -285,7 +285,7 @@ static inline SandboxMountNode *GetNextSandboxMountPathNode(const SandboxSection
 {
     APPSPAWN_CHECK_ONLY_EXPER(section != nullptr && pathNode != nullptr, return nullptr);
     if (pathNode->node.next == &section->front) {
-        return NULL;
+        return nullptr;
     }
     return reinterpret_cast<SandboxMountNode *>(ListEntry(pathNode->node.next, SandboxMountNode, node));
 }
@@ -318,23 +318,23 @@ static AppSpawningCtx *TestCreateAppSpawningCtx()
 static SandboxContext *TestGetSandboxContext(const AppSpawningCtx *property, int nwebspawn)
 {
     AppSpawnMsgFlags *msgFlags = (AppSpawnMsgFlags *)GetAppProperty(property, TLV_MSG_FLAGS);
-    APPSPAWN_CHECK(msgFlags != NULL, return nullptr, "No msg flags in msg %{public}s", GetProcessName(property));
+    APPSPAWN_CHECK(msgFlags != nullptr, return nullptr, "No msg flags in msg %{public}s", GetProcessName(property));
 
     SandboxContext *context = GetSandboxContext();
-    APPSPAWN_CHECK(context != NULL, return nullptr, "Failed to get context");
+    APPSPAWN_CHECK(context != nullptr, return nullptr, "Failed to get context");
 
     context->nwebspawn = nwebspawn;
     context->bundleName = GetBundleName(property);
-    context->bundleHasWps = strstr(context->bundleName, "wps") != NULL;
-    context->dlpBundle = strstr(context->bundleName, "com.ohos.dlpmanager") != NULL;
+    context->bundleHasWps = strstr(context->bundleName, "wps") != nullptr;
+    context->dlpBundle = strstr(context->bundleName, "com.ohos.dlpmanager") != nullptr;
     context->appFullMountEnable = 0;
-    context->dlpUiExtType = strstr(GetProcessName(property), "sys/commonUI") != NULL;
+    context->dlpUiExtType = strstr(GetProcessName(property), "sys/commonUI") != nullptr;
 
     context->sandboxSwitch = 1;
     context->sandboxShared = false;
     context->message = property->message;
-    context->rootPath = NULL;
-    context->rootPath = NULL;
+    context->rootPath = nullptr;
+    context->rootPath = nullptr;
     return context;
 }
 
@@ -354,7 +354,7 @@ static int TestParseAppSandboxConfig(AppSpawnSandboxCfg *sandbox, const char *bu
         APPSPAWN_CHECK_ONLY_EXPER(depNodeCount > 0, break);
 
         sandbox->depGroupNodes = (SandboxNameGroupNode **)calloc(1, sizeof(SandboxNameGroupNode *) * depNodeCount);
-        APPSPAWN_CHECK(sandbox->depGroupNodes != NULL, break, "Failed alloc memory ");
+        APPSPAWN_CHECK(sandbox->depGroupNodes != nullptr, break, "Failed alloc memory ");
         sandbox->depNodeCount = 0;
         ListNode *node = sandbox->nameGroupsQueue.front.next;
         while (node != &sandbox->nameGroupsQueue.front) {
@@ -714,7 +714,7 @@ static int ProcessTestExpandConfig(const SandboxContext *context,
 {
     uint32_t size = 0;
     char *extInfo = (char *)GetAppSpawnMsgExtInfo(context->message, name, &size);
-    if (size == 0 || extInfo == NULL) {
+    if (size == 0 || extInfo == nullptr) {
         return 0;
     }
     return 0;
@@ -945,21 +945,21 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_cfg_002, TestSize.Level0)
         ASSERT_EQ(section != nullptr, 1);
         // check mount path
         PathMountNode *pathNode = reinterpret_cast<PathMountNode *>(GetFirstSandboxMountPathNode(section));
-        ASSERT_EQ(pathNode != NULL, 1);
+        ASSERT_EQ(pathNode != nullptr, 1);
         ASSERT_EQ(pathNode->checkErrorFlag == 0, 1);
         ASSERT_EQ((pathNode->destMode & (S_IRUSR | S_IWOTH | S_IRWXU)) == (S_IRUSR | S_IWOTH | S_IRWXU), 1);
         ASSERT_EQ(pathNode->category, MOUNT_TMP_SHRED);
         pathNode = reinterpret_cast<PathMountNode *>(GetNextSandboxMountPathNode(section, &pathNode->sandboxNode));
-        ASSERT_EQ(pathNode != NULL, 1);
+        ASSERT_EQ(pathNode != nullptr, 1);
         ASSERT_EQ(pathNode->category, MOUNT_TMP_RDONLY);
         pathNode = reinterpret_cast<PathMountNode *>(GetNextSandboxMountPathNode(section, &pathNode->sandboxNode));
-        ASSERT_EQ(pathNode != NULL, 1);
+        ASSERT_EQ(pathNode != nullptr, 1);
         ASSERT_EQ(pathNode->category, MOUNT_TMP_EPFS);
         pathNode = reinterpret_cast<PathMountNode *>(GetNextSandboxMountPathNode(section, &pathNode->sandboxNode));
-        ASSERT_EQ(pathNode != NULL, 1);
+        ASSERT_EQ(pathNode != nullptr, 1);
         ASSERT_EQ(pathNode->category, MOUNT_TMP_DAC_OVERRIDE);
         pathNode = reinterpret_cast<PathMountNode *>(GetNextSandboxMountPathNode(section, &pathNode->sandboxNode));
-        ASSERT_EQ(pathNode != NULL, 1);
+        ASSERT_EQ(pathNode != nullptr, 1);
         ASSERT_EQ(pathNode->category, MOUNT_TMP_FUSE);
         ret = 0;
     } while (0);
@@ -991,14 +991,14 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_cfg_003, TestSize.Level0)
         // check private section
         SandboxPackageNameNode *sandboxNode = reinterpret_cast<SandboxPackageNameNode *>(
             GetSandboxSection(&sandbox->packageNameQueue, "test.example.ohos.com"));
-        ASSERT_EQ(sandboxNode != NULL, 1);
+        ASSERT_EQ(sandboxNode != nullptr, 1);
         ASSERT_EQ(strcmp(sandboxNode->section.name, "test.example.ohos.com"), 0);
         ASSERT_EQ((sandboxNode->section.sandboxShared == 1) && (sandboxNode->section.sandboxSwitch == 1), 1);
 
         // check path node
         PathMountNode *pathNode = reinterpret_cast<PathMountNode *>(
             GetFirstSandboxMountPathNode(&sandboxNode->section));
-        ASSERT_EQ(pathNode != NULL, 1);
+        ASSERT_EQ(pathNode != nullptr, 1);
         ASSERT_EQ(pathNode->checkErrorFlag == 0, 1);
         ASSERT_EQ((pathNode->destMode & (S_IRUSR | S_IWOTH | S_IRWXU)) == (S_IRUSR | S_IWOTH | S_IRWXU), 1);
 
@@ -1006,7 +1006,7 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_cfg_003, TestSize.Level0)
         // check symlink
         SymbolLinkNode *linkNode = reinterpret_cast<SymbolLinkNode *>(
             GetNextSandboxMountPathNode(&sandboxNode->section, &pathNode->sandboxNode));
-        ASSERT_EQ(linkNode != NULL, 1);
+        ASSERT_EQ(linkNode != nullptr, 1);
         ASSERT_EQ(linkNode->checkErrorFlag == 0, 1);
         ASSERT_EQ((linkNode->destMode & (S_IRUSR | S_IWOTH | S_IRWXU)) == (S_IRUSR | S_IWOTH | S_IRWXU), 1);
         ret = 0;
@@ -1047,7 +1047,7 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_cfg_004, TestSize.Level0)
         // check path node
         PathMountNode *pathNode = reinterpret_cast<PathMountNode *>(
             GetFirstSandboxMountPathNode(&permissionNode->section));
-        ASSERT_EQ(pathNode != NULL, 1);
+        ASSERT_EQ(pathNode != nullptr, 1);
         ASSERT_EQ(pathNode->checkErrorFlag == 1, 1);
         ASSERT_EQ((pathNode->destMode & (S_IRUSR | S_IWOTH | S_IRWXU)) == (S_IRUSR | S_IWOTH | S_IRWXU), 1);
         ASSERT_EQ((pathNode->appAplName != nullptr) && (strcmp(pathNode->appAplName, "system") == 0), 1);
@@ -1055,7 +1055,7 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_cfg_004, TestSize.Level0)
         // check symlink
         SymbolLinkNode *linkNode = reinterpret_cast<SymbolLinkNode *>(
             GetNextSandboxMountPathNode(&permissionNode->section, &pathNode->sandboxNode));
-        ASSERT_EQ(linkNode != NULL, 1);
+        ASSERT_EQ(linkNode != nullptr, 1);
         ASSERT_EQ(linkNode->checkErrorFlag == 0, 1);
         ASSERT_EQ((linkNode->destMode & (S_IRUSR | S_IWOTH | S_IRWXU)) == (S_IRUSR | S_IWOTH | S_IRWXU), 1);
         ret = 0;
@@ -2251,5 +2251,84 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_009, TestSize.Level
     DeleteSandboxContext(context);
     DeleteAppSpawningCtx(spawningCtx);
     AppSpawnClientDestroy(clientHandle);
+}
+
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_sandbox, TestSize.Level0)
+{
+    const char *path = "/test1/xxxx/xxxx";
+    bool ret = CheckDirRecursive(path);
+    ASSERT_TRUE(ret);
+
+    AppSpawningCtx *spawningCtx = TestCreateAppSpawningCtx();
+    SandboxContext *context = TestGetSandboxContext(spawningCtx, 0);
+    ASSERT_EQ(context != nullptr, 1);
+    const SandboxContext *contextTest = const_cast<SandboxContext*>(context);
+    SandboxMountNode node = {};
+    char source[] = {"/data/app/el5/<currentUserId>/database/<PackageName>"};
+    char target[] = {"/data/storage/el1/database"};
+    const PathMountNode sandboxNode = {node, nullptr, nullptr, 0, false, 1, 1, 0, nullptr, {}};
+    const MountArg args = {"/data/xxx/xxx", nullptr, nullptr, 0, nullptr, 0};
+    CreateDemandSrc(contextTest, &sandboxNode, &args);
+
+    char apl[] = "apl";
+    const PathMountNode sandboxNode1 = {node, source, nullptr, 0, false, 1, 1, 0, nullptr, {}};
+    const PathMountNode sandboxNode2 = {node, nullptr, target, 0, false, 1, 1, 0, nullptr, {}};
+    const PathMountNode sandboxNode3 = {node, source, target, 0, false, 1, 1, 0, apl, {}};
+    struct ListNode front;
+    char name[] = {"test"};
+    const SandboxSection section = {node, front, name, 16, 16, nullptr, 1, 1, nullptr};
+    char rootPath[] = "/test/xxxx";
+    SandboxContext context1 = {{{}}, "test.example.ohos.com", nullptr, 1, 1, 1, 1, 1, 1, 1, 1, rootPath};
+    int res = CheckSandboxMountNode(nullptr, &section, &sandboxNode, 0);
+    ASSERT_EQ(res, 0);
+    res = CheckSandboxMountNode(nullptr, &section, &sandboxNode1, 0);
+    ASSERT_EQ(res, 0);
+    res = CheckSandboxMountNode(nullptr, &section, &sandboxNode2, 0);
+    ASSERT_EQ(res, 0);
+    res = CheckSandboxMountNode(&context1, &section, &sandboxNode3, MOUNT_PATH_OP_NONE);
+    ASSERT_EQ(res, 0);
+}
+
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_mount_template, TestSize.Level0)
+{
+    uint32_t ret = GetMountCategory("test");
+    ASSERT_EQ(ret, MOUNT_TMP_DEFAULT);
+    const MountArgTemplate *arg = GetMountArgTemplate(10);
+    ASSERT_EQ(arg, nullptr);
+    arg = GetMountArgTemplate(7);
+    ASSERT_EQ(arg, nullptr);
+    const SandboxFlagInfo info[2] = {{"test1", 0}, {"test2", 0}};
+    const SandboxFlagInfo *info1 = GetSandboxFlagInfo("test", info, 2);
+    ASSERT_EQ(info1, nullptr);
+    ret = GetPathMode("test");
+    ASSERT_EQ(ret, 0);
+}
+
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_permission, TestSize.Level0)
+{
+    AppSpawnSandboxCfg *sandbox = CreateAppSpawnSandbox();
+    ASSERT_NE(sandbox, nullptr);
+    int ret = AddSandboxPermissionNode(FILE_CROSS_APP_MODE, nullptr);
+    ASSERT_EQ(ret, APPSPAWN_ARG_INVALID);
+    ret = AddSandboxPermissionNode(nullptr, &sandbox->permissionQueue);
+    ASSERT_EQ(ret, APPSPAWN_ARG_INVALID);
+    ret = AddSandboxPermissionNode(nullptr, nullptr);
+    ASSERT_EQ(ret, APPSPAWN_ARG_INVALID);
+    ret = AddSandboxPermissionNode(FILE_CROSS_APP_MODE, &sandbox->permissionQueue);
+    ASSERT_EQ(ret, 0);
+    ret = AddSandboxPermissionNode(FILE_CROSS_APP_MODE, &sandbox->permissionQueue);
+    ASSERT_EQ(ret, 0);
+
+    const SandboxPermissionNode *node = GetPermissionNodeInQueue(nullptr, nullptr);
+    ASSERT_EQ(node, nullptr);
+    node = GetPermissionNodeInQueue(&sandbox->permissionQueue, nullptr);
+    ASSERT_EQ(node, nullptr);
+    node = GetPermissionNodeInQueue(nullptr, FILE_CROSS_APP_MODE);
+    ASSERT_EQ(node, nullptr);
+    node = GetPermissionNodeInQueueByIndex(nullptr, 0);
+    ASSERT_EQ(node, nullptr);
+
+    ret = PermissionRenumber(nullptr);
+    ASSERT_EQ(ret, -1);
 }
 }  // namespace OHOS
