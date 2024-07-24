@@ -171,7 +171,6 @@ APPSPAWN_STATIC int LoadPermission(AppSpawnClientType type)
 
 APPSPAWN_STATIC void DeletePermission(AppSpawnClientType type)
 {
-    APPSPAWN_LOGW("DeletePermission %{public}d", type);
     pthread_mutex_lock(&g_mutex);
     PermissionManager *mgr = GetPermissionMgrByType(type);
     if (mgr == NULL || !mgr->inited) {
