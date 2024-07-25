@@ -21,7 +21,6 @@
 
 #include "appspawn_server.h"
 #include "appspawn_service.h"
-#include "appspawn_sandbox.h"
 #include "json_utils.h"
 #include "parameter.h"
 #include "sandbox_utils.h"
@@ -1349,7 +1348,6 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_45, TestSize.Level0)
     EXPECT_EQ(ret, 0);
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_45 end";
 }
-
 /**
  * @brief 测试app extension
  *
