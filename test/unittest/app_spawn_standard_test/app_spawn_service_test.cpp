@@ -24,6 +24,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#include "appspawn_adapter.h"
 #include "appspawn_manager.h"
 #include "appspawn_modulemgr.h"
 #include "appspawn_server.h"
@@ -86,6 +87,7 @@ HWTEST_F(AppSpawnServiceTest, App_Spawn_001, TestSize.Level0)
         APPSPAWN_CHECK(ret == 0, break, "Failed to send msg %{public}d", ret);
         if (ret == 0 && result.pid > 0) {
             APPSPAWN_LOGV("App_Spawn_001 Kill pid %{public}d ", result.pid);
+            DumpSpawnStack(result.pid);
             kill(result.pid, SIGKILL);
         }
     } while (0);
@@ -580,38 +582,38 @@ HWTEST_F(AppSpawnServiceTest, App_Spawn_InitCommonEnv_001, TestSize.Level0)
 
     if (IsDeveloperModeOpen() == true) {
         env = getenv("HNP_PRIVATE_HOME");
-        EXPECT_NE(env, NULL);
+        EXPECT_NE(env, nullptr);
         if (env != nullptr) {
             EXPECT_EQ(strcmp(env, "/data/app"), 0);
         }
         env = getenv("HNP_PUBLIC_HOME");
-        EXPECT_NE(env, NULL);
+        EXPECT_NE(env, nullptr);
         if (env != nullptr) {
             EXPECT_EQ(strcmp(env, "/data/service/hnp"), 0);
         }
         env = getenv("PATH");
-        EXPECT_NE(env, NULL);
+        EXPECT_NE(env, nullptr);
         if (env != nullptr) {
             EXPECT_NE((uint64_t)strstr(env, "/data/app/bin:/data/service/hnp/bin"), 0);
         }
     }
     env = getenv("HOME");
-    EXPECT_NE(env, NULL);
+    EXPECT_NE(env, nullptr);
     if (env != nullptr) {
         EXPECT_EQ(strcmp(env, "/storage/Users/currentUser"), 0);
     }
     env = getenv("TMPDIR");
-    EXPECT_NE(env, NULL);
+    EXPECT_NE(env, nullptr);
     if (env != nullptr) {
         EXPECT_EQ(strcmp(env, "/data/storage/el2/base/cache"), 0);
     }
     env = getenv("SHELL");
-    EXPECT_NE(env, NULL);
+    EXPECT_NE(env, nullptr);
     if (env != nullptr) {
         EXPECT_EQ(strcmp(env, "/bin/sh"), 0);
     }
     env = getenv("PWD");
-    EXPECT_NE(env, NULL);
+    EXPECT_NE(env, nullptr);
     if (env != nullptr) {
         EXPECT_EQ(strcmp(env, "/storage/Users/currentUser"), 0);
     }
@@ -646,4 +648,5 @@ HWTEST_F(AppSpawnServiceTest, App_Spawn_ConvertEnvValue_001, TestSize.Level0)
     EXPECT_EQ(strcmp(outEnv, "/path/to/lib/envtest"), 0);
     EXPECT_EQ(unsetenv("ENV_TEST_VALUE"), 0);
 }
+
 }  // namespace OHOS

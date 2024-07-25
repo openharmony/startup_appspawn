@@ -47,6 +47,8 @@ ohos_unittest("AppSpawn_ut") {
     "setgid=SetgidStub",
     "execvp=ExecvpStub",
     "ioctl=IoctlStub",
+    "execve=ExecveStub",
+    "setcon=SetconStub",
   ]
 
   include_dirs = [
@@ -115,10 +117,12 @@ ohos_unittest("AppSpawn_ut") {
   include_dirs += [ "${appspawn_path}/test/unittest" ]
   sources += [
     "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_appmgr_test.cpp",
+    "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_beget_test.cpp",
     "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_cgroup_test.cpp",
     "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_child_test.cpp",
     "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_cold_run_test.cpp",
     "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_command_lexer_test.cpp",
+    "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_common_test.cpp",
     "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_module_interface_test.cpp",
     "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_sandboxmgr_test.cpp",
     "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_service_test.cpp",

@@ -151,7 +151,7 @@ HWTEST_F(AppSpawnInterfaceTest, App_Spawn_Interface_Msg_Create_001, TestSize.Lev
     name1.push_back('\0');
     std::vector<char> name2(APP_LEN_PROC_NAME, 'b');
     name2.push_back('\0');
-    std::vector<char> name3(APP_LEN_PROC_NAME + 1, 'c');
+    std::vector<char> name3(APP_LEN_PROC_NAME + 8, 'c');
     name3.push_back('\0');
 
     AppSpawnMsgType msgType[] = {MSG_APP_SPAWN, MSG_GET_RENDER_TERMINATION_STATUS,

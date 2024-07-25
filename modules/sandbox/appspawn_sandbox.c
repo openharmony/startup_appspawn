@@ -45,14 +45,14 @@ static inline bool CheckSpawningMsgFlagSet(const SandboxContext *context, uint32
     return CheckAppSpawnMsgFlag(context->message, TLV_MSG_FLAGS, index);
 }
 
-static inline bool CheckSpawningPermissionFlagSet(const SandboxContext *context, uint32_t index)
+APPSPAWN_STATIC inline bool CheckSpawningPermissionFlagSet(const SandboxContext *context, uint32_t index)
 {
     APPSPAWN_CHECK(context != NULL && context->message != NULL,
         return NULL, "Invalid property for type %{public}u", TLV_PERMISSION);
     return CheckAppSpawnMsgFlag(context->message, TLV_PERMISSION, index);
 }
 
-static bool CheckDirRecursive(const char *path)
+APPSPAWN_STATIC bool CheckDirRecursive(const char *path)
 {
     char buffer[PATH_MAX] = {0};
     const char slash = '/';
@@ -244,7 +244,7 @@ static uint32_t GetMountArgs(const SandboxContext *context,
     return category;
 }
 
-static int CheckSandboxMountNode(const SandboxContext *context,
+APPSPAWN_STATIC int CheckSandboxMountNode(const SandboxContext *context,
     const SandboxSection *section, const PathMountNode *sandboxNode, uint32_t operation)
 {
     if (sandboxNode->source == NULL || sandboxNode->target == NULL) {
@@ -313,7 +313,7 @@ static int32_t SandboxMountFusePath(const SandboxContext *context, const MountAr
     return 0;
 }
 
-static void CheckAndCreateSandboxFile(const char *file)
+APPSPAWN_STATIC void CheckAndCreateSandboxFile(const char *file)
 {
     if (access(file, F_OK) == 0) {
         APPSPAWN_LOGI("file %{public}s already exist", file);
@@ -329,7 +329,8 @@ static void CheckAndCreateSandboxFile(const char *file)
     return;
 }
 
-static void CreateDemandSrc(const SandboxContext *context, const PathMountNode *sandboxNode, const MountArg *args)
+APPSPAWN_STATIC void CreateDemandSrc(const SandboxContext *context, const PathMountNode *sandboxNode,
+    const MountArg *args)
 {
     if (!sandboxNode->createDemand) {
         return;
@@ -354,7 +355,7 @@ static void CreateDemandSrc(const SandboxContext *context, const PathMountNode *
     }
 }
 
-static const char *GetRealSrcPath(const SandboxContext *context, const char *source, VarExtraData *extraData)
+APPSPAWN_STATIC const char *GetRealSrcPath(const SandboxContext *context, const char *source, VarExtraData *extraData)
 {
     bool hasPackageName = strstr(source, "<variablePackageName>") != NULL;
     extraData->variablePackageName = (char *)context->bundleName;

@@ -37,10 +37,6 @@ using namespace testing::ext;
 using namespace OHOS;
 
 namespace OHOS {
-extern "C" {
-    void RunAppSandbox(const char *ptyName);
-}
-
 static std::string g_ptyName = {};
 static AppSpawnTestHelper g_testHelper;
 class AppSpawnBegetCtlTest : public testing::Test {
@@ -97,7 +93,7 @@ HWTEST_F(AppSpawnBegetCtlTest, App_Spawn_BetgetCtl_001, TestSize.Level0)
     APPSPAWN_LOGI(" ***ptsbuffer is %{public}s", g_ptyName.c_str());
     int ret = TestSendAppspawnCmdMessage("1111", g_ptyName.c_str());
     EXPECT_EQ(ret, 0);
-    RunAppSandbox(g_ptyName.c_str());
+    RunBegetctlBootApp(nullptr, nullptr);
     RunAppSandbox(nullptr);
 }
 
@@ -106,6 +102,7 @@ HWTEST_F(AppSpawnBegetCtlTest, App_Spawn_BetgetCtl_002, TestSize.Level0)
     std::unique_ptr<OHOS::AppSpawnTestServer> testServer =
         std::make_unique<OHOS::AppSpawnTestServer>("appspawn -mode appspawn");
     testServer->Start(nullptr);
+    SetSystemEnv();
     int ret = -1;
     InitPtyInterface();
     EXPECT_NE(g_ptyName.c_str(), nullptr);
@@ -127,7 +124,7 @@ HWTEST_F(AppSpawnBegetCtlTest, App_Spawn_BetgetCtl_003, TestSize.Level0)
         EXPECT_NE(g_ptyName.c_str(), nullptr);
         ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
         APPSPAWN_CHECK(ret == 0, break, "Failed to create reqMgr %{public}s", APPSPAWN_SERVER_NAME);
-        reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+        reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_BEGET_CMD, 0);
         APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break, "Failed to create req %{public}s", APPSPAWN_SERVER_NAME);
         char path[PATH_MAX] = {};
         content = AppSpawnCreateContent(APPSPAWN_SOCKET_NAME, path, sizeof(path), MODE_FOR_APP_SPAWN);
@@ -155,6 +152,33 @@ HWTEST_F(AppSpawnBegetCtlTest, App_Spawn_BetgetCtl_003, TestSize.Level0)
     } while (0);
     DeleteAppSpawningCtx(property);
     AppSpawnReqMsgFree(reqHandle);
+    AppSpawnClientDestroy(clientHandle);
+    ASSERT_EQ(ret, 0);
+}
+
+HWTEST_F(AppSpawnBegetCtlTest, App_Spawn_BetgetCtl_004, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = nullptr;
+    AppSpawnReqMsgHandle reqHandle = 0;
+    AppSpawningCtx *property = nullptr;
+    int ret = -1;
+    do {
+        // add default
+        AddDefaultVariable();
+
+        // create msg
+        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create reqMgr %{public}s", APPSPAWN_SERVER_NAME);
+        reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_BEGET_CMD, 0);
+        APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break, "Failed to create req %{public}s", APPSPAWN_SERVER_NAME);
+
+        (void)AppSpawnReqMsgSetAppFlag(reqHandle, MAX_FLAGS_INDEX);
+        AppSpawnReqMsgAddStringInfo(reqHandle, MSG_EXT_NAME_BEGET_PTY_NAME, nullptr);
+
+        property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
+        APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
+    } while (0);
+    DeleteAppSpawningCtx(property);
     AppSpawnClientDestroy(clientHandle);
     ASSERT_EQ(ret, 0);
 }
