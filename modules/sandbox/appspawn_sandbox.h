@@ -345,7 +345,7 @@ int GetPathMode(const char *name);
 
 void DumpMountPathMountNode(const PathMountNode *pathNode);
 
-typedef struct {
+typedef struct TagMountArg {
     const char *originPath;
     const char *destinationPath;
     const char *fsType;

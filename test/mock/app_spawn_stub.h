@@ -44,30 +44,39 @@ typedef struct TagAppSpawnedProcess AppSpawnedProcess;
 typedef struct TagAppSpawnForkArg AppSpawnForkArg;
 typedef struct TagAppSpawnMsgNode AppSpawnMsgNode;
 typedef struct TagAppSpawnMgr AppSpawnMgr;
-
-void SetHapDomainSetcontextResult(int result);
+typedef struct TagPathMountNode PathMountNode;
+typedef struct TagMountArg MountArg;
+typedef struct TagVarExtraData VarExtraData;
+typedef struct TagSandboxSection SandboxSection;
 
 void ProcessSignal(const struct signalfd_siginfo *siginfo);
-
 int CreateClientSocket(uint32_t type, int block);
 void CloseClientSocket(int socketId);
-
 int ParseAppSandboxConfig(const cJSON *appSandboxConfig, AppSpawnSandboxCfg *sandbox);
 AppSpawnSandboxCfg *CreateAppSpawnSandbox(void);
 void AddDefaultVariable(void);
-
+bool CheckDirRecursive(const char *path);
+void CreateDemandSrc(const SandboxContext *context, const PathMountNode *sandboxNode, const MountArg *args);
+int CheckSandboxMountNode(const SandboxContext *context,
+    const SandboxSection *section, const PathMountNode *sandboxNode, uint32_t operation);
 int AppSpawnClearEnv(AppSpawnMgr *content, AppSpawningCtx *property);
 int AppSpawnChild(AppSpawnContent *content, AppSpawnClient *client);
 int WriteMsgToChild(AppSpawningCtx *property, bool isNweb);
-
 int WriteToFile(const char *path, int truncated, pid_t pids[], uint32_t count);
 int GetCgroupPath(const AppSpawnedProcess *appInfo, char *buffer, uint32_t buffLen);
-
 void SetDeveloperMode(bool mode);
-
 int LoadPermission(AppSpawnClientType type);
 void DeletePermission(AppSpawnClientType type);
-
+int SetProcessName(const AppSpawnMgr *content, const AppSpawningCtx *property);
+int SetFdEnv(AppSpawnMgr *content, AppSpawningCtx *property);
+int PreLoadEnablePidNs(AppSpawnMgr *content);
+int NsInitFunc();
+int GetNsPidFd(pid_t pid);
+int PreLoadEnablePidNs(AppSpawnMgr *content);
+pid_t GetPidByName(const char *name);
+int RunBegetctlBootApp(AppSpawnMgr *content, AppSpawningCtx *property);
+void SetSystemEnv(void);
+void RunAppSandbox(const char *ptyName);
 #define STUB_NEED_CHECK 0x01
 typedef int (*ExecvFunc)(const char *pathname, char *const argv[]);
 enum {
@@ -86,4 +95,6 @@ StubNode *GetStubNode(int type);
 #ifdef __cplusplus
 }
 #endif
+int SetSelinuxConNweb(const AppSpawnMgr *content, const AppSpawningCtx *property);
+void InitAppCommonEnv(const AppSpawningCtx *property);
 #endif // APPSPAWN_TEST_STUB_H

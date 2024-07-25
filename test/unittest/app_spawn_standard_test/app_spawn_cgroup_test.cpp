@@ -19,7 +19,6 @@
 #include <memory>
 #include <string>
 #include <unistd.h>
-
 #include <gtest/gtest.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -27,12 +26,11 @@
 #include "appspawn_modulemgr.h"
 #include "appspawn_server.h"
 #include "appspawn_manager.h"
+#include "app_spawn_stub.h"
+#include "app_spawn_test_helper.h"
 #include "json_utils.h"
 #include "parameter.h"
 #include "securec.h"
-
-#include "app_spawn_stub.h"
-#include "app_spawn_test_helper.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -73,7 +71,7 @@ static int GetTestCGroupFilePath(const AppSpawnedProcess *appInfo, const char *f
     APPSPAWN_CHECK(ret == 0, return errno, "Failed to strcat_s errno: %{public}d", errno);
     if (create) {
         FILE *file = fopen(path, "w");
-        APPSPAWN_CHECK(file != NULL, return errno, "Create file fail %{public}s errno: %{public}d", path, errno);
+        APPSPAWN_CHECK(file != nullptr, return errno, "Create file fail %{public}s errno: %{public}d", path, errno);
         fclose(file);
     }
     return 0;
@@ -129,7 +127,7 @@ HWTEST_F(AppSpawnCGroupTest, App_Spawn_CGroup_002, TestSize.Level0)
 
         ret = -1;
         file = fopen(path, "r");
-        APPSPAWN_CHECK(file != NULL, break, "Open file fail %{public}s errno: %{public}d", path, errno);
+        APPSPAWN_CHECK(file != nullptr, break, "Open file fail %{public}s errno: %{public}d", path, errno);
         pid_t pid = 0;
         ret = -1;
         while (fscanf_s(file, "%d\n", &pid) == 1 && pid > 0) {
@@ -202,7 +200,7 @@ HWTEST_F(AppSpawnCGroupTest, App_Spawn_CGroup_004, TestSize.Level0)
         APPSPAWN_CHECK(ret == 0, break, "Failed to strcat_s errno: %{public}d", errno);
         // do not write for nwebspawn, so no file
         file = fopen(path, "r");
-        APPSPAWN_CHECK(file == NULL, break, "Find file %{public}s ", path);
+        APPSPAWN_CHECK(file == nullptr, break, "Find file %{public}s ", path);
     } while (0);
     if (appInfo) {
         free(appInfo);
@@ -315,7 +313,7 @@ HWTEST_F(AppSpawnCGroupTest, App_Spawn_CGroup_007, TestSize.Level0)
         APPSPAWN_CHECK_ONLY_EXPER(ret == 0, break);
         ret = -1;
         FILE *file = fopen(path, "r");
-        APPSPAWN_CHECK(file != NULL, break, "Open file fail %{public}s errno: %{public}d", path, errno);
+        APPSPAWN_CHECK(file != nullptr, break, "Open file fail %{public}s errno: %{public}d", path, errno);
         uint32_t max = 0;
         ret = -1;
         while (fscanf_s(file, "%d\n", &max) == 1 && max > 0) {
@@ -326,6 +324,65 @@ HWTEST_F(AppSpawnCGroupTest, App_Spawn_CGroup_007, TestSize.Level0)
             }
         }
         fclose(file);
+    } while (0);
+    if (appInfo) {
+        free(appInfo);
+    }
+    AppSpawnDestroyContent(content);
+    LE_StopLoop(LE_GetDefaultLoop());
+    LE_CloseLoop(LE_GetDefaultLoop());
+    ASSERT_EQ(ret, 0);
+}
+
+HWTEST_F(AppSpawnCGroupTest, App_Spawn_CGroup_008, TestSize.Level0)
+{
+    int ret = -1;
+    AppSpawnedProcess *appInfo = nullptr;
+    const char name[] = "app-test-001";
+    do {
+        appInfo = CreateTestAppInfo(name);
+        APPSPAWN_CHECK(appInfo != nullptr, break, "Failed to create appInfo");
+        char path[PATH_MAX] = {};
+        ret = GetCgroupPath(appInfo, path, -1);
+    } while (0);
+    if (appInfo) {
+        free(appInfo);
+    }
+    ASSERT_NE(ret, 0);
+}
+
+HWTEST_F(AppSpawnCGroupTest, App_Spawn_CGroup_009, TestSize.Level0)
+{
+    pid_t pids[] = {100, 101, 102};
+    int ret = WriteToFile(nullptr, -1, pids, 3);
+    ASSERT_NE(ret, 0);
+}
+
+HWTEST_F(AppSpawnCGroupTest, App_Spawn_CGroup_010, TestSize.Level0)
+{
+    int ret = -1;
+    AppSpawnedProcess *appInfo = nullptr;
+    AppSpawnContent *content = nullptr;
+    const char name[] = "app-test-001";
+    do {
+        char path[PATH_MAX] = {};
+        appInfo = CreateTestAppInfo(name);
+        APPSPAWN_CHECK(appInfo != nullptr, break, "Failed to create appInfo");
+
+        ret = GetTestCGroupFilePath(appInfo, "cgroup.procs", path, true);
+        APPSPAWN_CHECK_ONLY_EXPER(ret == 0, break);
+        content = AppSpawnCreateContent(APPSPAWN_SOCKET_NAME, path, sizeof(path), MODE_FOR_APP_SPAWN);
+        APPSPAWN_CHECK_ONLY_EXPER(content != nullptr, break);
+        // spawn prepare process
+        ProcessMgrHookExecute(STAGE_SERVER_APP_ADD, content, appInfo);
+
+        // add success
+        ret = GetTestCGroupFilePath(appInfo, "cgroup.procs", path, false);
+        APPSPAWN_CHECK_ONLY_EXPER(ret == 0, break);
+        // write pid
+        pid_t pids[] = {100, 101, 102, 103};
+        ret = WriteToFile(path, 0, pids, 3);
+
     } while (0);
     if (appInfo) {
         free(appInfo);

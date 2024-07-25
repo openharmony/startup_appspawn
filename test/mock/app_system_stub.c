@@ -228,7 +228,6 @@ int mallopt(int param, int value)
 
 int AccessStub(const char *pathName, int mode)
 {
-    printf(" AccessStub pathName %s \n", pathName);
     if (strstr(pathName, "/data/app/el2/50/base") != NULL) {
         return -1;
     }
@@ -257,6 +256,18 @@ int ExecvStub(const char *pathName, char *const argv[])
 int ExecvpStub(const char *pathName, char *const argv[])
 {
     printf("ExecvpStub %s \n", pathName);
+    return 0;
+}
+
+int ExecveStub(const char *pathName, char *const argv[], char *const env[])
+{
+    printf("ExecveStub %s \n", pathName);
+    return 0;
+}
+
+int SetconStub(const char *name)
+{
+    printf("SetconStub %s \n", name);
     return 0;
 }
 
