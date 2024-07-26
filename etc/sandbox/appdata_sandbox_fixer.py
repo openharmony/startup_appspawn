@@ -161,13 +161,13 @@ def _merge_scope_common(origin, new):
 
     #处理 app-base
     app = new.get("app-base")
-    if  app is not None and len(app) > 0:
+    if app is not None and len(app) > 0:
         _merge_scope_app(origin.get("app-base"), app)
         pass
 
     #处理 app-resources
     app = new.get("app-resources")
-    if  app is not None and len(app) > 0:
+    if app is not None and len(app) > 0:
         _merge_scope_app(origin.get("app-resources"), app)
         pass
 
@@ -225,7 +225,7 @@ def fix_sandbox_config_file(options):
 
         #处理individual
         individuals = data.get("individual")
-        if  individuals is not None and len(individuals) > 0:
+        if individuals is not None and len(individuals) > 0:
             _merge_scope_individual(origin_json.get("individual")[0], individuals[0])
             pass
         
