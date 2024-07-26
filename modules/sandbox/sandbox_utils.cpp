@@ -550,7 +550,7 @@ std::string SandboxUtils::GetSbxPathByConfig(const AppSpawningCtx *appProperty, 
             sandboxRoot = defaultSandboxRoot;
         } else {
             sandboxRoot = ConvertToRealPath(appProperty, sandboxRoot);
-            APPSPAWN_LOGI("set sandbox-root name is %{public}s", sandboxRoot.c_str());
+            APPSPAWN_LOGV("set sandbox-root name is %{public}s", sandboxRoot.c_str());
         }
     } else {
         sandboxRoot = defaultSandboxRoot;

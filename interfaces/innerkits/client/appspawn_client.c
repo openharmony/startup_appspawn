@@ -159,19 +159,19 @@ static int WriteMessage(int socketFd, const uint8_t *buf, ssize_t len, int *fds,
     if (fdCount != NULL && fds != NULL && *fdCount > 0) {
         msg.msg_controllen = CMSG_SPACE(*fdCount * sizeof(int));
         ctrlBuffer = (char *) malloc(msg.msg_controllen);
-        APPSPAWN_CHECK(ctrlBuffer != NULL, return -1, "WriteMessage fail to alloc memory for msg_control %d %d",
-           msg.msg_controllen, errno);
+        APPSPAWN_CHECK(ctrlBuffer != NULL, return -1,
+            "WriteMessage fail to alloc memory for msg_control %{public}d %{public}d", msg.msg_controllen, errno);
         msg.msg_control = ctrlBuffer;
         struct cmsghdr *cmsg = CMSG_FIRSTHDR(&msg);
         APPSPAWN_CHECK(cmsg != NULL, free(ctrlBuffer);
-            return -1, "WriteMessage fail to get  CMSG_FIRSTHDR %d", errno);
+            return -1, "WriteMessage fail to get CMSG_FIRSTHDR %{public}d", errno);
         cmsg->cmsg_len = CMSG_LEN(*fdCount * sizeof(int));
         cmsg->cmsg_type = SCM_RIGHTS;
         cmsg->cmsg_level = SOL_SOCKET;
         int ret = memcpy_s(CMSG_DATA(cmsg), cmsg->cmsg_len, fds, *fdCount * sizeof(int));
         APPSPAWN_CHECK(ret == 0, free(ctrlBuffer);
-            return -1, "WriteMessage fail to memcpy_s fd %d", errno);
-        APPSPAWN_LOGV("build fd info count %d", *fdCount);
+            return -1, "WriteMessage fail to memcpy_s fd %{public}d", errno);
+        APPSPAWN_LOGV("build fd info count %{public}d", *fdCount);
         *fdCount = 0;
     }
     for (ssize_t wLen = 0; remain > 0; offset += wLen, remain -= wLen, written += wLen) {
