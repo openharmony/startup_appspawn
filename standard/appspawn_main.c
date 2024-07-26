@@ -99,6 +99,11 @@ int main(int argc, char *const argv[])
         arg.moduleType = MODULE_NWEBSPAWN;
         arg.socketName = NWEBSPAWN_SOCKET_NAME;
         arg.serviceName = NWEBSPAWN_SERVER_NAME;
+    } else if (strcmp(argv[MODE_VALUE_INDEX], NWEBSPAWN_RESTART) == 0) {  // nweb spawn restart
+        arg.mode = MODE_FOR_NWEB_SPAWN;
+        arg.moduleType = MODULE_NWEBSPAWN;
+        arg.socketName = NWEBSPAWN_SOCKET_NAME;
+        arg.serviceName = NWEBSPAWN_SERVER_NAME;
     } else {
         APPSPAWN_CHECK(argvSize >= APP_LEN_PROC_NAME,
             return 0, "Invalid arg size for service %{public}s", arg.serviceName);

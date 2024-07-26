@@ -15,6 +15,7 @@
 
 #include "appspawn_service.h"
 
+#include <dirent.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -23,6 +24,7 @@
 #include <sys/socket.h>
 #include <sys/wait.h>
 #include <sys/mman.h>
+#include <sys/mount.h>
 #include <unistd.h>
 
 #include "appspawn.h"
@@ -45,6 +47,7 @@
 #endif
 
 #define PARAM_BUFFER_SIZE 10
+#define PATH_SIZE 256
 
 static void WaitChildTimeout(const TimerHandle taskHandle, void *context);
 static void ProcessChildResponse(const WatcherHandle taskHandle, int fd, uint32_t *events, const void *context);
@@ -332,7 +335,8 @@ static int OnConnection(const LoopHandle loopHandle, const TaskHandle server)
     struct ucred cred = {-1, -1, -1};
     socklen_t credSize = sizeof(struct ucred);
     if ((getsockopt(LE_GetSocketFd(stream), SOL_SOCKET, SO_PEERCRED, &cred, &credSize) < 0) ||
-        (cred.uid != DecodeUid("foundation") && cred.uid != DecodeUid("root"))) {
+        (cred.uid != DecodeUid("foundation") && cred.uid != DecodeUid("root")
+        && cred.uid != DecodeUid("app_fwk_update"))) {
         APPSPAWN_LOGE("Invalid uid %{public}d from client", cred.uid);
         LE_CloseStreamTask(LE_GetDefaultLoop(), stream);
         return -1;
@@ -902,7 +906,7 @@ AppSpawnContent *StartSpawnService(const AppSpawnStartArg *startArg, uint32_t ar
             arg->initArg = 1;
         }
 #endif
-    } else if (arg->mode == MODE_FOR_NWEB_SPAWN) {
+    } else if (arg->mode == MODE_FOR_NWEB_SPAWN && getuid() == 0) {
         NWebSpawnInit();
     }
     if (arg->initArg) {
@@ -954,6 +958,137 @@ static AppSpawnMsgNode *ProcessSpawnBegetctlMsg(AppSpawnConnection *connection, 
     return msgNode;
 }
 
+static void ProcessBegetCmdMsg(AppSpawnConnection *connection, AppSpawnMsgNode *message)
+{
+    AppSpawnMsg *msg = &message->msgHeader;
+    if (!IsDeveloperModeOpen()) {
+        SendResponse(connection, msg, APPSPAWN_DEBUG_MODE_NOT_SUPPORT, 0);
+        DeleteAppSpawnMsg(message);
+        return;
+    }
+    AppSpawnMsgNode *msgNode = ProcessSpawnBegetctlMsg(connection, message);
+    if (msgNode == NULL) {
+        SendResponse(connection, msg, APPSPAWN_DEBUG_MODE_NOT_SUPPORT, 0);
+        DeleteAppSpawnMsg(message);
+        return;
+    }
+    ProcessSpawnReqMsg(connection, msgNode);
+    DeleteAppSpawnMsg(message);
+    DeleteAppSpawnMsg(msgNode);
+}
+
+static int GetArkWebInstallPath(const char *key, char *value)
+{
+    int len = GetParameter(key, "", value, PATH_SIZE);
+    APPSPAWN_CHECK(len > 0, return -1, "Failed to get arkwebcore install path from param, len %{public}d", len);
+    for (int i = len - 1; i >= 0; i--) {
+        if (value[i] == '/') {
+            value[i] = '\0';
+            return i;
+        }
+        value[i] = '\0';
+    }
+    return -1;
+}
+
+static bool CheckAllDigit(char *userId)
+{
+    for (int i = 0; userId[i] != '\0'; i++) {
+        if (!isdigit(userId[i])) {
+            return false;
+        }
+    }
+    return true;
+}
+
+static int ProcessSpawnRemountMsg(AppSpawnConnection *connection, AppSpawnMsgNode *message)
+{
+    char srcPath[PATH_SIZE] = {0};
+    int len = GetArkWebInstallPath("persist.arkwebcore.install_path", srcPath);
+    APPSPAWN_CHECK(len > 0, return -1, "Failed to get arkwebcore install path");
+
+    char *rootPath = "/mnt/sandbox";
+    DIR *rootDir = opendir(rootPath);
+    APPSPAWN_CHECK(rootDir != NULL, return -1, "Failed to opendir %{public}s, errno %{public}d", rootPath, errno);
+
+    struct dirent *ent;
+    while ((ent = readdir(rootDir)) != NULL) {
+        char *userId = ent->d_name;
+        if (strcmp(userId, ".") == 0 || strcmp(userId, "..") == 0 || !CheckAllDigit(userId)) {
+                continue;
+        }
+
+        char userIdPath[PATH_SIZE] = {0};
+        int ret = snprintf_s(userIdPath, sizeof(userIdPath), sizeof(userIdPath) - 1, "%s/%s", rootPath, userId);
+        APPSPAWN_CHECK(ret > 0, continue, "Failed to snprintf_s, errno %{public}d", errno);
+
+        DIR *userIdDir = opendir(userIdPath);
+        APPSPAWN_CHECK(userIdDir != NULL, continue, "Failed to open %{public}s, errno %{public}d", userIdPath, errno);
+
+        while ((ent = readdir(userIdDir)) != NULL) {
+            char *bundleName = ent->d_name;
+            if (strcmp(bundleName, ".") == 0 || strcmp(bundleName, "..") == 0) {
+                continue;
+            }
+            char destPath[PATH_SIZE] = {0};
+            ret = snprintf_s(destPath, sizeof(destPath), sizeof(destPath) - 1,
+                "%s/%s/data/storage/el1/bundle/nweb", userIdPath, bundleName);
+            APPSPAWN_CHECK(ret > 0, continue, "Failed to snprintf_s, errno %{public}d", errno);
+
+            umount2(destPath, MNT_DETACH);
+            ret = mount(srcPath, destPath, NULL, MS_BIND | MS_REC, NULL);
+            if (ret != 0 && errno == EBUSY) {
+                ret = mount(srcPath, destPath, NULL, MS_BIND | MS_REC, NULL);
+                APPSPAWN_LOGV("mount again %{public}s to %{public}s, ret %{public}d", srcPath, destPath, ret);
+            }
+            APPSPAWN_CHECK(ret == 0, continue,
+                "Failed to bind mount %{public}s to %{public}s, errno %{public}d", srcPath, destPath, errno);
+
+            ret = mount(NULL, destPath, NULL, MS_SHARED, NULL);
+            APPSPAWN_CHECK(ret == 0, continue,
+                "Failed to shared mount %{public}s to %{public}s, errno %{public}d", srcPath, destPath, errno);
+
+            APPSPAWN_LOGV("Remount %{public}s to %{public}s success", srcPath, destPath);
+        }
+        closedir(userIdDir);
+    }
+    closedir(rootDir);
+    return 0;
+}
+
+static void ProcessSpawnRestartMsg(AppSpawnConnection *connection, AppSpawnMsgNode *message)
+{
+    AppSpawnContent *content = GetAppSpawnContent();
+    if (!IsNWebSpawnMode((AppSpawnMgr *)content)) {
+        SendResponse(connection, &message->msgHeader, APPSPAWN_MSG_INVALID, 0);
+        DeleteAppSpawnMsg(message);
+        APPSPAWN_LOGE("Restart msg only support nwebspawn");
+        return;
+    }
+
+    TraversalSpawnedProcess(AppQueueDestroyProc, NULL);
+    SendResponse(connection, &message->msgHeader, 0, 0);
+    DeleteAppSpawnMsg(message);
+    (void) ServerStageHookExecute(STAGE_SERVER_EXIT, content);
+
+    errno = 0;
+    int fd = GetControlSocket(NWEBSPAWN_SOCKET_NAME);
+    APPSPAWN_CHECK(fd >= 0, return, "Get fd failed %{public}d, errno %{public}d", fd, errno);
+
+    int op = fcntl(fd, F_GETFD);
+    op &= ~FD_CLOEXEC;
+    int ret = fcntl(fd, F_SETFD, op);
+    if (ret < 0) {
+        APPSPAWN_LOGE("Set fd failed %{public}d, %{public}d, ret %{public}d, errno %{public}d", fd, op, ret, errno);
+    }
+
+    char *path = "/system/bin/appspawn";
+    char *mode = NWEBSPAWN_RESTART;
+    const char *const formatCmds[] = {path, "-mode", mode, NULL};
+    ret = execv(path, (char **)formatCmds);
+    APPSPAWN_LOGE("Failed to execv, ret %{public}d, errno %{public}d", ret, errno);
+}
+
 static void ProcessRecvMsg(AppSpawnConnection *connection, AppSpawnMsgNode *message)
 {
     AppSpawnMsg *msg = &message->msgHeader;
@@ -963,10 +1098,11 @@ static void ProcessRecvMsg(AppSpawnConnection *connection, AppSpawnMsgNode *mess
         "Invalid msg id %{public}u %{public}u", connection->receiverCtx.nextMsgId, msg->msgId);
     connection->receiverCtx.nextMsgId++;
 
+    int ret;
     switch (msg->msgType) {
         case MSG_GET_RENDER_TERMINATION_STATUS: {  // get status
             AppSpawnResult result = {0};
-            int ret = ProcessTerminationStatusMsg(message, &result);
+            ret = ProcessTerminationStatusMsg(message, &result);
             SendResponse(connection, msg, ret == 0 ? result.result : ret, result.pid);
             DeleteAppSpawnMsg(message);
             break;
@@ -982,26 +1118,20 @@ static void ProcessRecvMsg(AppSpawnConnection *connection, AppSpawnMsgNode *mess
             DeleteAppSpawnMsg(message);
             break;
         case MSG_BEGET_CMD: {
-            if (!IsDeveloperModeOpen()) {
-                SendResponse(connection, msg, APPSPAWN_DEBUG_MODE_NOT_SUPPORT, 0);
-                DeleteAppSpawnMsg(message);
-                break;
-            }
-            AppSpawnMsgNode *msgNode = ProcessSpawnBegetctlMsg(connection, message);
-            if (msgNode == NULL) {
-                SendResponse(connection, msg, APPSPAWN_DEBUG_MODE_NOT_SUPPORT, 0);
-                DeleteAppSpawnMsg(message);
-                break;
-            }
-            ProcessSpawnReqMsg(connection, msgNode);
-            DeleteAppSpawnMsg(message);
-            DeleteAppSpawnMsg(msgNode);
+            ProcessBegetCmdMsg(connection, message);
             break;
         }
         case MSG_BEGET_SPAWNTIME:
             SendResponse(connection, msg, GetAppSpawnMgr()->spawnTime.minAppspawnTime,
                          GetAppSpawnMgr()->spawnTime.maxAppspawnTime);
             DeleteAppSpawnMsg(message);
+            break;
+        case MSG_UPDATE_MOUNT_POINTS:
+            ret = ProcessSpawnRemountMsg(connection, message);
+            SendResponse(connection, msg, ret, 0);
+            break;
+        case MSG_RESTART_SPAWNER:
+            ProcessSpawnRestartMsg(connection, message);
             break;
         default:
             SendResponse(connection, msg, APPSPAWN_MSG_INVALID, 0);
