@@ -49,12 +49,14 @@ APP_SANDBOX_DEFAULT = '''
 '''
 #only string in list
 
+
 def _merge_list(origin, new):
     if origin is None or new is None:
         return
     for data1 in new:
         if data1 not in origin:
             origin.append(data1)
+
 
 def _is_same_data(data1, data2, keys):
     for key in keys:
@@ -63,6 +65,7 @@ def _is_same_data(data1, data2, keys):
     return True
 
 #for object in list
+
 
 def _handle_same_array(data1, data2):
     for field in ["sandbox-root", "sandbox-path", "check-action-status", "fs-type", "link-name"]:
@@ -73,6 +76,7 @@ def _handle_same_array(data1, data2):
         item = data1.get(field)
         if item is not None and len(item) > 0:
             _merge_list(data2[field], item)
+
 
 def _merge_scope_array(origin, new, keys):
     for data1 in new:
@@ -85,6 +89,7 @@ def _merge_scope_array(origin, new, keys):
         if not found:
             origin.append(data1)
 
+
 def _handle_same_data(data1, data2, field_infos):
     for field in ["sandbox-root"]:
         if data1.get(field) is not None:
@@ -95,6 +100,7 @@ def _handle_same_data(data1, data2, field_infos):
         item = data1.get(name)
         if item is not None and len(item) > 0:
             _merge_scope_array(data2[field], item, keys)
+
 
 def _merge_scope_flags_point(origin, new):
     field_infos = {
@@ -110,6 +116,7 @@ def _merge_scope_flags_point(origin, new):
 
         if not found:
             origin.append(data1)
+
 
 def _merge_scope_app(origin, new):
     field_infos = {
@@ -138,6 +145,7 @@ def _merge_scope_app(origin, new):
         if item is not None and len(item) > 0:
             _merge_scope_array(origin[0].get(name), item, keys)
 
+
 def _merge_scope_individual(origin, new):
     for k, v in new.items():
         if k not in origin:
@@ -152,6 +160,7 @@ def _merge_scope_permission(origin, new):
             origin[k] = v
         else:
             _merge_scope_app(origin[k], v)
+
 
 def _merge_scope_common(origin, new):
     # 处理 top-sandbox-switch
@@ -171,6 +180,7 @@ def _merge_scope_common(origin, new):
         _merge_scope_app(origin.get("app-resources"), app)
         pass
 
+
 def parse_args(args):
     args = build_utils.expand_file_args(args)
     parser = optparse.OptionParser()
@@ -185,6 +195,7 @@ def parse_args(args):
     options, _ = parser.parse_args(args)
     return options
 
+
 def __substitude_contents(options, source_file):
     with open(source_file, "r") as f:
         contents = f.read()
@@ -194,6 +205,7 @@ def __substitude_contents(options, source_file):
             parts = pattern.split(":")
             contents = contents.replace("{%s}" % parts[0], parts[1])
         return json.loads(contents)
+
 
 def _get_json_list(options):
     data_list = []
@@ -211,6 +223,7 @@ def _get_json_list(options):
         if contents :
             data_list.append(contents)
     return data_list
+
 
 def fix_sandbox_config_file(options):
     data_list = _get_json_list(options)
@@ -239,6 +252,7 @@ def fix_sandbox_config_file(options):
     modes = stat.S_IWUSR | stat.S_IRUSR | stat.S_IWGRP | stat.S_IRGRP
     with os.fdopen(os.open(options.output, flags, modes), 'w') as f:
         f.write(json.dumps(origin_json, ensure_ascii=False, indent=2))
+
 
 def main(args):
     options = parse_args(args)
