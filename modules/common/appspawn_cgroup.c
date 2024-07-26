@@ -123,7 +123,7 @@ static void SetForkDenied(const AppSpawnedProcessInfo *appInfo)
 {
     char pathForkDenied[PATH_MAX] = {};
     int ret = GetCgroupPath(appInfo, pathForkDenied, sizeof(pathForkDenied));
-    APPSPAWN_CHECK(ret == 0, return, "Failed to get cgroup path errno: %d", errno);
+    APPSPAWN_CHECK(ret == 0, return, "Failed to get cgroup path errno: %{public}d", errno);
     ret = strcat_s(pathForkDenied, sizeof(pathForkDenied), "pids.fork_denied");
     APPSPAWN_CHECK(ret == 0, return, "Failed to strcat_s fork_denied path errno: %{public}d", errno);
     int fd = open(pathForkDenied, O_RDWR);
