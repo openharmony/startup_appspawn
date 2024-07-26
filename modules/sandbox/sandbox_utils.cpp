@@ -1765,7 +1765,7 @@ static bool IsUnlockStatus(uint32_t uid)
     return false;
 }
 
-static void MountDir(const AppSpawningCtx *property, const char *rootPath, const char *targetPath)
+static void MountDir(const AppSpawningCtx *property, const char *rootPath, const char *srcPath, const char *targetPath)
 {
     const int userIdBase = 200000;
     AppDacInfo *info = reinterpret_cast<AppDacInfo *>(GetAppProperty(property, TLV_DAC_INFO));
@@ -1780,7 +1780,7 @@ static void MountDir(const AppSpawningCtx *property, const char *rootPath, const
     APPSPAWN_CHECK(path != NULL, return, "Failed to malloc path");
     int len = sprintf_s(path, allPathSize, "%s%u/%s%s", rootPath, info->uid / userIdBase, bundleName, targetPath);
     APPSPAWN_CHECK(len > 0 && ((size_t)len < allPathSize), free(path);
-        return, "Failed to get el2 path");
+        return, "Failed to get sandbox path");
 
     if (access(path, F_OK) == 0) {
         free(path);
@@ -1788,48 +1788,55 @@ static void MountDir(const AppSpawningCtx *property, const char *rootPath, const
     }
 
     MakeDirRec(path, DIR_MODE, 1);
-    if (mount(path, path, nullptr, MS_BIND | MS_REC, nullptr) != 0) {
-        APPSPAWN_LOGI("mount el2 path failed! error: %{public}d %{public}s", errno, path);
+    const char *sourcePath = (srcPath == nullptr) ? path : srcPath;
+
+    if (mount(sourcePath, path, nullptr, MS_BIND | MS_REC, nullptr) != 0) {
+        APPSPAWN_LOGI("bind mount %{public}s to %{public}s failed, error %{public}d", sourcePath, path, errno);
         free(path);
         return;
     }
     if (mount(nullptr, path, nullptr, MS_SHARED, nullptr) != 0) {
+        APPSPAWN_LOGI("mount path %{public}s to shared failed, errno %{public}d", path, errno);
         free(path);
-        APPSPAWN_LOGI("mount el2 path to shared failed!");
         return;
     }
-    APPSPAWN_LOGI("mount el2 path to shared success!");
+    APPSPAWN_LOGI("mount path %{public}s to shared success", path);
     free(path);
     return;
 }
 
-static void MountDirOnLock(const AppSpawningCtx *property)
+static void MountDirToShared(const AppSpawningCtx *property)
 {
     const char rootPath[] = "/mnt/sandbox/";
     const char el2Path[] = "/data/storage/el2";
     const char userPath[] = "/storage/Users";
+    const char el1Path[] = "/data/storage/el1/bundle";
     AppDacInfo *info = reinterpret_cast<AppDacInfo *>(GetAppProperty(property, TLV_DAC_INFO));
     const char *bundleName = GetBundleName(property);
     if (info == NULL || bundleName == NULL) {
         return;
     }
+
+    string sourcePath = "/data/app/el1/bundle/public/" + string(bundleName);
+    MountDir(property, rootPath, sourcePath.c_str(), el1Path);
+
     if (IsUnlockStatus(info->uid)) {
         return;
     }
     int index = GetPermissionIndex(nullptr, "ohos.permission.FILE_ACCESS_MANAGER");
     APPSPAWN_LOGV("mount dir on lock mountPermissionFlags %{public}d", index);
     if (CheckAppPermissionFlagSet(property, static_cast<uint32_t>(index))) {
-        MountDir(property, rootPath, userPath);
+        MountDir(property, rootPath, nullptr, userPath);
     }
-    MountDir(property, rootPath, el2Path);
+    MountDir(property, rootPath, nullptr, el2Path);
 }
 #endif
 
-static int SpawnMountDirOnLock(AppSpawnMgr *content, AppSpawningCtx *property)
+static int SpawnMountDirToShared(AppSpawnMgr *content, AppSpawningCtx *property)
 {
 #ifndef APPSPAWN_SANDBOX_NEW
     // mount dynamic directory
-    MountDirOnLock(property);
+    MountDirToShared(property);
 #endif
     return 0;
 }
@@ -1839,7 +1846,7 @@ MODULE_CONSTRUCTOR(void)
 {
     APPSPAWN_LOGV("Load sandbox module ...");
     (void)AddServerStageHook(STAGE_SERVER_PRELOAD, HOOK_PRIO_SANDBOX, LoadAppSandboxConfig);
-    (void)AddAppSpawnHook(STAGE_PARENT_PRE_FORK, HOOK_PRIO_COMMON, SpawnMountDirOnLock);
+    (void)AddAppSpawnHook(STAGE_PARENT_PRE_FORK, HOOK_PRIO_COMMON, SpawnMountDirToShared);
     (void)AddAppSpawnHook(STAGE_CHILD_EXECUTE, HOOK_PRIO_SANDBOX, SetAppSandboxProperty);
 }
 #endif

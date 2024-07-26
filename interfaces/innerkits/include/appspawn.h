@@ -48,6 +48,7 @@ typedef void *AppSpawnClientHandle;
 #define NWEBSPAWN_SERVER_NAME "nwebspawn"
 #define APPSPAWN_SERVER_NAME "appspawn"
 #define CJAPPSPAWN_SERVER_NAME "cjappspawn"
+#define NWEBSPAWN_RESTART "nwebRestart"
 
 #pragma pack(4)
 #define APP_MAX_GIDS 64
@@ -102,6 +103,8 @@ typedef enum {
     MSG_DUMP,
     MSG_BEGET_CMD,
     MSG_BEGET_SPAWNTIME,
+    MSG_UPDATE_MOUNT_POINTS,
+    MSG_RESTART_SPAWNER,
     MAX_TYPE_INVALID
 } AppSpawnMsgType;
 
