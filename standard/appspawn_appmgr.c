@@ -281,6 +281,7 @@ AppSpawningCtx *CreateAppSpawningCtx(void)
     property->client.id = ++requestId;
     property->client.flags = 0;
     property->forkCtx.watcherHandle = NULL;
+    property->forkCtx.pidFdWatcherHandle = NULL;
     property->forkCtx.coldRunPath = NULL;
     property->forkCtx.timer = NULL;
     property->forkCtx.fd[0] = -1;
