@@ -347,7 +347,6 @@ int GetAppSpawnMsgFromBuffer(const uint8_t *buffer, uint32_t bufferLen,
 
 static inline void DumpMsgFlags(const char *info, const AppSpawnMsgFlags *msgFlags)
 {
-    APPSPAPWN_DUMP("%{public}s count: %{public}u ", info, msgFlags->count);
     for (uint32_t i = 0; i < msgFlags->count; i++) {
         APPSPAPWN_DUMP("%{public}s flags: 0x%{public}x", info, msgFlags->flags[i]);
     }
@@ -360,18 +359,19 @@ static inline void DumpMsgExtInfo(const AppSpawnTlv *tlv)
         return;
     }
     AppSpawnTlvExt *tlvExt = (AppSpawnTlvExt *)(tlv);
-    APPSPAPWN_DUMP("App extend info name: %{public}s len: %{public}u", tlvExt->tlvName, tlvExt->dataLen);
     if (tlvExt->dataType == DATA_TYPE_STRING) {
-        APPSPAPWN_DUMP("App extend info value: '%{public}s'", (char *)(tlvExt + 1));
+        APPSPAPWN_DUMP("App extend info name: %{public}s len: %{public}u value: '%{public}s'",
+            tlvExt->tlvName, tlvExt->dataLen, (char *)(tlvExt + 1));
+    } else {
+        APPSPAPWN_DUMP("App extend info name: %{public}s len: %{public}u", tlvExt->tlvName, tlvExt->dataLen);
     }
 }
 
 void DumpAppSpawnMsg(const AppSpawnMsgNode *message)
 {
     APPSPAWN_CHECK_ONLY_EXPER(message != NULL, return);
-    APPSPAPWN_DUMP("App spawn msg msgId: %{public}u msgLen: %{public}u tlvCount: %{public}u",
-        message->msgHeader.msgId, message->msgHeader.msgLen, message->tlvCount);
-    APPSPAPWN_DUMP("App spawn msg process name: %{public}s", message->msgHeader.processName);
+    APPSPAPWN_DUMP("App spawn msg msgId: %{public}u msgLen: %{public}u tlvCount: %{public}u processName: %{public}s",
+        message->msgHeader.msgId, message->msgHeader.msgLen, message->tlvCount, message->msgHeader.processName);
 
     AppSpawnMsgFlags *msgFlags = (AppSpawnMsgFlags *)GetAppSpawnMsgInfo(message, TLV_MSG_FLAGS);
     APPSPAWN_ONLY_EXPER(msgFlags != NULL, DumpMsgFlags("App flags", msgFlags));

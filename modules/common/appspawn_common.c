@@ -157,7 +157,7 @@ static void InitDebugParams(const AppSpawnMgr *content, const AppSpawningCtx *pr
     const char *debugSoPath = "/system/lib/libhidebug.so";
 #endif
     const char *processName = GetProcessName(property);
-    APPSPAWN_CHECK(processName != NULL, return, "Can not get process name ");
+    APPSPAWN_CHECK(processName != NULL, return, "Can not get process name");
 
     bool isRet = access(debugSoPath, F_OK) != 0;
     APPSPAWN_CHECK(!isRet, return,
@@ -498,7 +498,7 @@ APPSPAWN_STATIC int SetFdEnv(AppSpawnMgr *content, AppSpawningCtx *property)
     int findFdIndex = 0;
     AppSpawnMsgReceiverCtx recvCtx = message->connection->receiverCtx;
     APPSPAWN_CHECK(recvCtx.fds != NULL && recvCtx.fdCount > 0, return 0,
-        "no need set fd info %d, %d", recvCtx.fds != NULL, recvCtx.fdCount);
+        "no need set fd info %{public}d, %{public}d", recvCtx.fds != NULL, recvCtx.fdCount);
     char keyBuffer[APP_FDNAME_MAXLEN + sizeof(APP_FDENV_PREFIX)];
     char value[sizeof(int)];
 
@@ -515,13 +515,14 @@ APPSPAWN_STATIC int SetFdEnv(AppSpawnMgr *content, AppSpawningCtx *property)
             continue;
         }
         APPSPAWN_CHECK(findFdIndex < recvCtx.fdCount && recvCtx.fds[findFdIndex] > 0, return -1,
-            "check set env args failed %d, %d, %d", findFdIndex, recvCtx.fdCount, recvCtx.fds[findFdIndex]);
-        APPSPAWN_CHECK(snprintf_s(keyBuffer, sizeof(keyBuffer), sizeof(keyBuffer) - 1,
-            APP_FDENV_PREFIX"%s", data + sizeof(AppSpawnTlvExt)) >= 0, return -1, "failed print env key %d", errno);
+            "check set env args failed %{public}d, %{public}d, %{public}d",
+            findFdIndex, recvCtx.fdCount, recvCtx.fds[findFdIndex]);
+        APPSPAWN_CHECK(snprintf_s(keyBuffer, sizeof(keyBuffer), sizeof(keyBuffer) - 1, APP_FDENV_PREFIX"%s",
+            data + sizeof(AppSpawnTlvExt)) >= 0, return -1, "failed print env key %{public}d", errno);
         APPSPAWN_CHECK(snprintf_s(value, sizeof(value), sizeof(value) - 1,
-            "%d", recvCtx.fds[findFdIndex++]) >= 0, return -1, "failed print env key %d", errno);
+            "%d", recvCtx.fds[findFdIndex++]) >= 0, return -1, "failed print env key %{public}d", errno);
         int ret = setenv(keyBuffer, value, 1);
-        APPSPAWN_CHECK(ret == 0, return -1, "failed setenv %s, %s", keyBuffer, value);
+        APPSPAWN_CHECK(ret == 0, return -1, "failed setenv %{public}s, %{public}s", keyBuffer, value);
         if (findFdIndex >= recvCtx.fdCount) {
             break;
         }

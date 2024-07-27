@@ -146,7 +146,7 @@ static int BuildFdInfoMap(const AppSpawnMsgNode *message, std::map<std::string, 
     int findFdIndex = 0;
     AppSpawnMsgReceiverCtx recvCtx = message->connection->receiverCtx;
     APPSPAWN_CHECK(recvCtx.fds != NULL && recvCtx.fdCount > 0, return 0,
-        "no need to build fd info %d, %d", recvCtx.fds != NULL, recvCtx.fdCount);
+        "no need to build fd info %{public}d, %{public}d", recvCtx.fds != NULL, recvCtx.fdCount);
     for (uint32_t index = TLV_MAX; index < (TLV_MAX + message->tlvCount); index++) {
         if (message->tlvOffset[index] == INVALID_OFFSET) {
             return -1;
@@ -160,7 +160,7 @@ static int BuildFdInfoMap(const AppSpawnMsgNode *message, std::map<std::string, 
             continue;
         }
         APPSPAWN_CHECK(findFdIndex < recvCtx.fdCount && recvCtx.fds[findFdIndex] > 0,
-            return -1, "invalid fd info  %d %d", findFdIndex, recvCtx.fds[findFdIndex]);
+            return -1, "invalid fd info  %{public}d %{public}d", findFdIndex, recvCtx.fds[findFdIndex]);
         std::string key((char *)data + sizeof(AppSpawnTlvExt));
         fdMap[key] = recvCtx.fds[findFdIndex++];
         if (findFdIndex >= recvCtx.fdCount) {

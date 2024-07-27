@@ -296,17 +296,17 @@ static int HandleRecvMessage(const TaskHandle taskHandle, uint8_t * buffer, int 
     AppSpawnConnection *connection = (AppSpawnConnection *) LE_GetUserData(taskHandle);
     errno = 0;
     int recvLen = recvmsg(socketFd, &msg, flags);
-    APPSPAWN_CHECK_ONLY_LOG(errno == 0, "recvmsg with errno %d", errno);
+    APPSPAWN_CHECK_ONLY_LOG(errno == 0, "recvmsg with errno %{public}d", errno);
     struct cmsghdr *cmsg = NULL;
     for (cmsg = CMSG_FIRSTHDR(&msg); cmsg != NULL; cmsg = CMSG_NXTHDR(&msg, cmsg)) {
         if (cmsg->cmsg_level == SOL_SOCKET && cmsg->cmsg_type == SCM_RIGHTS) {
             int fdCount = (cmsg->cmsg_len - CMSG_LEN(0)) / sizeof(int);
             int *fd = (int *) CMSG_DATA(cmsg);
-            APPSPAWN_CHECK(fdCount <= APP_MAX_FD_COUNT,
-                return -1, "failed to recv fd %d %d", connection->receiverCtx.fdCount, fdCount) ;
+            APPSPAWN_CHECK(fdCount <= APP_MAX_FD_COUNT, return -1,
+                "failed to recv fd %{public}d %{public}d", connection->receiverCtx.fdCount, fdCount);
             int ret = memcpy_s(connection->receiverCtx.fds,
                 fdCount * sizeof(int), fd, fdCount * sizeof(int));
-            APPSPAWN_CHECK(ret == 0, return -1, "memcpy_s fd ret %d", ret);
+            APPSPAWN_CHECK(ret == 0, return -1, "memcpy_s fd ret %{public}d", ret);
             connection->receiverCtx.fdCount = fdCount;
         }
     }
