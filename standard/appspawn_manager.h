@@ -68,6 +68,7 @@ typedef struct TagAppSpawnMsgNode {
 typedef struct {
     int32_t fd[2];  // 2 fd count
     WatcherHandle watcherHandle;
+    WatcherHandle pidFdWatcherHandle;
     TimerHandle timer;
     char *childMsg;
     uint32_t msgSize;
