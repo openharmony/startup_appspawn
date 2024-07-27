@@ -21,6 +21,7 @@
 #include "appspawn_modulemgr.h"
 #include "appspawn_manager.h"
 #include "appspawn_service.h"
+#include "appspawn_kickdog.h"
 #include "parameter.h"
 #include "securec.h"
 
@@ -118,6 +119,7 @@ int main(int argc, char *const argv[])
     AppSpawnContent *content = StartCJSpawnService(&arg, argvSize, argc, argv);
 #endif
     if (content != NULL) {
+        AppSpawnKickDogStart();
         content->runAppSpawn(content, argc, argv);
     }
     return 0;
