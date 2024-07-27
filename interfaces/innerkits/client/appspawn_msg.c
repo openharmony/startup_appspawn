@@ -314,8 +314,8 @@ int AppSpawnReqMsgAddFd(AppSpawnReqMsgHandle reqHandle, const char* fdName, int 
     AppSpawnReqMsgNode *reqNode = (AppSpawnReqMsgNode *)reqHandle;
     APPSPAWN_CHECK(reqNode != NULL, return APPSPAWN_ARG_INVALID, "Invalid reqNode");
     APPSPAWN_CHECK(fd > 0 && fdName != NULL && strlen(fdName) <= APP_FDNAME_MAXLEN
-        &&  reqNode->fdCount < APP_MAX_FD_COUNT,
-        return APPSPAWN_ARG_INVALID, "Invalid fdinfo %d %d %d", fd, fdName != NULL, reqNode->fdCount);
+        &&  reqNode->fdCount < APP_MAX_FD_COUNT, return APPSPAWN_ARG_INVALID,
+        "Invalid fdinfo %{public}d %{public}d %{public}d", fd, fdName != NULL, reqNode->fdCount);
     reqNode->fds[reqNode->fdCount++] = fd;
     return AppSpawnReqMsgAddStringInfo(reqHandle, MSG_EXT_NAME_APP_FD, (void *)fdName);
 }
