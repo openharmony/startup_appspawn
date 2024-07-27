@@ -276,7 +276,6 @@ static int HnpUnInstall(int uid, const char *packageName)
 static int HnpInstallForceCheck(HnpCfgInfo *hnpCfgInfo, HnpInstallInfo *hnpInfo)
 {
     int ret = 0;
-    char *version = NULL;
 
     /* 判断安装目录是否存在，存在判断是否是强制安装，如果是则走卸载流程，否则返回错误 */
     if (access(hnpInfo->hnpSoftwarePath, F_OK) == 0) {
@@ -284,17 +283,10 @@ static int HnpInstallForceCheck(HnpCfgInfo *hnpCfgInfo, HnpInstallInfo *hnpInfo)
             HNP_LOGE("hnp install path[%{public}s] exist, but force is false", hnpInfo->hnpSoftwarePath);
             return HNP_ERRNO_INSTALLER_PATH_IS_EXIST;
         }
-        if (hnpInfo->isPublic) {
-            version = HnpPackgeHnpVersionGet(hnpInfo->hapInstallInfo->hapPackageName, hnpCfgInfo->name);
-            if (version != NULL) {
-                ret = HnpUnInstallPublicHnp(hnpInfo->hapInstallInfo->hapPackageName, hnpCfgInfo->name, version,
-                    hnpInfo->hapInstallInfo->uid);
+        if (hnpInfo->isPublic == false) {
+            if (HnpDeleteFolder(hnpInfo->hnpSoftwarePath) != 0) {
+                return ret;
             }
-        } else {
-            ret = HnpDeleteFolder(hnpInfo->hnpSoftwarePath);
-        }
-        if (ret != 0) {
-            return ret;
         }
     }
 
@@ -326,6 +318,19 @@ static int HnpInstallPathGet(HnpCfgInfo *hnpCfgInfo, HnpInstallInfo *hnpInfo)
     }
 
     return 0;
+}
+
+static int HnpPublicDealAfterInstall(HnpInstallInfo *hnpInfo, HnpCfgInfo *hnpCfg)
+{
+    char *version = HnpCurrentVersionUninstallCheck(hnpCfgInfo->name);
+    if (version != NULL) {
+        HnpUnInstallPublicHnp(hnpInfo->hapInstallInfo->hapPackageName, hnpCfgInfo->name, version,
+            hnpInfo->hapInstallInfo->uid);
+    }
+
+    hnpCfg->isInstall = true;
+
+    return HnpInstallInfoJsonWrite(hnpInfo->hapInstallInfo->hapPackageName, hnpCfg);
 }
 
 static int HnpReadAndInstall(char *srcFile, HnpInstallInfo *hnpInfo, HnpSignMapInfo *hnpSignMapInfos, int *count)
@@ -378,8 +383,9 @@ static int HnpReadAndInstall(char *srcFile, HnpInstallInfo *hnpInfo, HnpSignMapI
             hnpInfo->hapInstallInfo->uid);
         return ret;
     }
+
     if (hnpInfo->isPublic) {
-        ret = HnpInstallInfoJsonWrite(hnpInfo->hapInstallInfo->hapPackageName, &hnpCfg);
+        ret = HnpPublicDealAfterInstall(hnpInfo, &hnpCfg);
         if (ret != 0) {
             HnpUnInstallPublicHnp(hnpInfo->hapInstallInfo->hapPackageName, hnpCfg.name, hnpCfg.version,
                 hnpInfo->hapInstallInfo->uid);

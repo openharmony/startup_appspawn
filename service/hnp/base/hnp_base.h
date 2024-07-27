@@ -65,6 +65,7 @@ typedef struct NativeBinLinkStru {
 typedef struct HnpCfgInfoStru {
     char name[MAX_FILE_PATH_LEN];
     char version[HNP_VERSION_LEN];    // Native软件包版本号
+    bool isInstall;         // 是否已安装
     unsigned int linkNum;   // 软链接配置个数
     NativeBinLink *links;
 } HnpCfgInfo;
@@ -260,7 +261,7 @@ int HnpPackageInfoHnpDelete(const char *packageName, const char *name, const cha
 
 int HnpPackageInfoDelete(const char *packageName);
 
-char *HnpPackgeHnpVersionGet(const char *packageName, const char *name);
+char *HnpCurrentVersionUninstallCheck(const char *name);
 
 int HnpFileCountGet(const char *path, int *count);
 
