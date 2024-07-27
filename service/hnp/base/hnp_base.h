@@ -38,7 +38,7 @@ extern "C" {
 #endif
 
 #ifndef MAX_FILE_PATH_LEN
-#define MAX_FILE_PATH_LEN PATH_MAX
+#define MAX_FILE_PATH_LEN 4096
 #endif
 
 #define HNP_VERSION_LEN 32
@@ -266,20 +266,20 @@ int HnpFileCountGet(const char *path, int *count);
 
 #ifdef HNP_CLI
 #define HNP_LOGI(args, ...) \
-    HnpLogPrintf(HNP_LOG_INFO, "HNP", args, ##__VA_ARGS__)
+    HnpLogPrintf(HNP_LOG_INFO, "HNP", "[%{public}s:%{public}d]" args, (__FILE_NAME__), (__LINE__), ##__VA_ARGS__)
 #else
 #define HNP_LOGI(args, ...) \
     HILOG_INFO(LOG_CORE, "[%{public}s:%{public}d]" args, (__FILE_NAME__), (__LINE__), ##__VA_ARGS__); \
-    HnpLogPrintf(HNP_LOG_INFO, "HNP", args, ##__VA_ARGS__)
+    HnpLogPrintf(HNP_LOG_INFO, "HNP", "[%{public}s:%{public}d]" args, (__FILE_NAME__), (__LINE__), ##__VA_ARGS__)
 #endif
 
 #ifdef HNP_CLI
 #define HNP_LOGE(args, ...) \
-    HnpLogPrintf(HNP_LOG_ERROR, "HNP", args, ##__VA_ARGS__)
+    HnpLogPrintf(HNP_LOG_ERROR, "HNP", "[%{public}s:%{public}d]" args, (__FILE_NAME__), (__LINE__), ##__VA_ARGS__)
 #else
 #define HNP_LOGE(args, ...) \
     HILOG_ERROR(LOG_CORE, "[%{public}s:%{public}d]" args, (__FILE_NAME__), (__LINE__), ##__VA_ARGS__); \
-    HnpLogPrintf(HNP_LOG_ERROR, "HNP", args, ##__VA_ARGS__)
+    HnpLogPrintf(HNP_LOG_ERROR, "HNP", "[%{public}s:%{public}d]" args, (__FILE_NAME__), (__LINE__), ##__VA_ARGS__)
 #endif
 
 #ifdef __cplusplus
