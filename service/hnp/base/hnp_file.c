@@ -118,13 +118,18 @@ int HnpWriteInfoToFile(const char* filePath, char *buff, int len)
 
 int GetRealPath(char *srcPath, char *realPath)
 {
-    char dstTmpPath[PATH_MAX];
+    char dstTmpPath[MAX_FILE_PATH_LEN];
 
     if (srcPath == NULL || realPath == NULL) {
         return HNP_ERRNO_PARAM_INVALID;
     }
 #ifdef _WIN32
-    DWORD ret = GetFullPathName(srcPath, PATH_MAX, dstTmpPath, NULL);
+    // 使用wchar_t支持处理字符串长度超过260的路径字符串
+    wchar_t wideSrcPath[MAX_FILE_PATH_LEN] = {0};
+    wchar_t wideDstPathExt[MAX_FILE_PATH_LEN] = {0};
+    MultiByteToWideChar(CP_ACP, 0, srcPath, -1, wideSrcPath, MAX_FILE_PATH_LEN);
+    DWORD ret = GetFullPathNameW(wideSrcPath, MAX_FILE_PATH_LEN, wideDstPathExt, NULL);
+    WideCharToMultiByte(CP_ACP, 0, wideDstPathExt, -1, dstTmpPath, MAX_FILE_PATH_LEN, NULL, NULL);
 #else
     char *ret = realpath(srcPath, dstTmpPath);
 #endif

@@ -75,7 +75,7 @@ static int PackHnp(const char *hnpSrcPath, const char *hnpDstPath, HnpPackInfo *
         hnpSrcPath, hnpCfg->name, hnpCfg->version, hnpDstPath);
 
     /* 拼接hnp文件名 */
-    ret = sprintf_s(hnp_file_path, MAX_FILE_PATH_LEN, "%s/%s.hnp", hnpDstPath, hnpCfg->name);
+    ret = sprintf_s(hnp_file_path, MAX_FILE_PATH_LEN, "%s%c%s.hnp", hnpDstPath, DIR_SPLIT_SYMBOL, hnpCfg->name);
     if (ret < 0) {
         HNP_LOGE("sprintf unsuccess.");
         return HNP_ERRNO_PACK_GET_HNP_PATH_FAILED;
@@ -157,7 +157,7 @@ static int ParsePackArgs(HnpPackArgv *packArgv, HnpPackInfo *packInfo)
         return HNP_ERRNO_PACK_GET_REALPATH_FAILED;
     }
     /* 确认hnp.json文件是否存在，存在则对hnp.json文件进行解析并校验内容是否正确 */
-    int ret = sprintf_s(cfgPath, MAX_FILE_PATH_LEN, "%s/"HNP_CFG_FILE_NAME, packInfo->source);
+    int ret = sprintf_s(cfgPath, MAX_FILE_PATH_LEN, "%s%c"HNP_CFG_FILE_NAME, packInfo->source, DIR_SPLIT_SYMBOL);
     if (ret < 0) {
         HNP_LOGE("sprintf unsuccess.");
         return HNP_ERRNO_BASE_SPRINTF_FAILED;

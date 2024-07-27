@@ -54,6 +54,20 @@ static void TransPath(const char *input, char *output)
     output[len] = '\0';
 }
 
+#ifdef _WIN32
+// 转换char路径字符串为wchar_t宽字符串,支持路径字符串长度超过260
+static bool TransWidePath(const char *inPath, wchar_t *outPath)
+{
+    wchar_t tmpPath[MAX_FILE_PATH_LEN] = {0};
+    MultiByteToWideChar(CP_ACP, 0, inPath, -1, tmpPath, MAX_FILE_PATH_LEN);
+    if (swprintf_s(outPath, MAX_FILE_PATH_LEN, L"\\\\?\\%ls", tmpPath) < 0) {
+        HNP_LOGE("swprintf unsuccess.");
+        return false;
+    }
+    return true;
+}
+#endif
+
 // 向zip压缩包中添加文件
 static int ZipAddFile(const char* file, int offset, zipFile zf)
 {
@@ -62,14 +76,26 @@ static int ZipAddFile(const char* file, int offset, zipFile zf)
     char transPath[MAX_FILE_PATH_LEN];
     int len;
     FILE *f;
-    struct stat buffer = {0};
     zip_fileinfo fileInfo = {0};
 
-    if (stat(file, &buffer) != 0) {
+#ifdef _WIN32
+    struct _stat buffer = {0};
+    // 使用wchar_t支持处理字符串长度超过260的路径字符串
+    wchar_t wideFullPath[MAX_FILE_PATH_LEN] = {0};
+    if (!TransWidePath(file, wideFullPath)) {
         return HNP_ERRNO_BASE_STAT_FAILED;
     }
-#ifdef _WIN32
+    if (_wstat(wideFullPath, &buffer) != 0) {
+        HNP_LOGE("get filefile[%{public}s] stat fail.", file);
+        return HNP_ERRNO_BASE_STAT_FAILED;
+    }
     buffer.st_mode |= S_IXOTH;
+#else
+    struct stat buffer = {0};
+    if (stat(file, &buffer) != 0) {
+        HNP_LOGE("get filefile[%{public}s] stat fail.", file);
+        return HNP_ERRNO_BASE_STAT_FAILED;
+    }
 #endif
     fileInfo.external_fa = (buffer.st_mode & 0xFFFF) << ZIP_EXTERNAL_FA_OFFSET;
     TransPath(file, transPath);
@@ -79,7 +105,11 @@ static int ZipAddFile(const char* file, int offset, zipFile zf)
         HNP_LOGE("open new file[%{public}s] in zip unsuccess ", file);
         return HNP_ERRNO_BASE_CREATE_ZIP_FAILED;
     }
+#ifdef _WIN32
+    f = _wfopen(wideFullPath, L"rb");
+#else
     f = fopen(file, "rb");
+#endif
     if (f == NULL) {
         HNP_LOGE("open file[%{public}s] unsuccess ", file);
         return HNP_ERRNO_BASE_FILE_OPEN_FAILED;
@@ -97,9 +127,15 @@ static int ZipAddFile(const char* file, int offset, zipFile zf)
 static int IsDirPath(struct dirent *entry, char *fullPath, int *isDir)
 {
 #ifdef _WIN32
-    DWORD fileAttr = GetFileAttributes(fullPath);
+    // 使用wchar_t支持处理字符串长度超过260的路径字符串
+    wchar_t wideFullPath[MAX_FILE_PATH_LEN] = {0};
+    if (!TransWidePath(fullPath, wideFullPath)) {
+        return HNP_ERRNO_GET_FILE_ATTR_FAILED;
+    }
+    DWORD fileAttr = GetFileAttributesW(wideFullPath);
     if (fileAttr == INVALID_FILE_ATTRIBUTES) {
-        HNP_LOGE("get file[%{public}s] attr unsuccess.", fullPath);
+        DWORD err = GetLastError();
+        HNP_LOGE("get file[%{public}s] attr unsuccess, errno[%{public}lu].", fullPath, err);
         return HNP_ERRNO_GET_FILE_ATTR_FAILED;
     }
     *isDir = (int)(fileAttr & FILE_ATTRIBUTE_DIRECTORY);
@@ -149,7 +185,7 @@ static int ZipAddDir(const char *sourcePath, int offset, zipFile zf)
         if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
             continue;
         }
-        if (sprintf_s(fullPath, MAX_FILE_PATH_LEN, "%s%c%s", sourcePath, DIR_SPLIT_SYMBOL, entry->d_name) < 0) {
+        if (sprintf_s(fullPath, MAX_FILE_PATH_LEN, "%s%s", sourcePath, entry->d_name) < 0) {
             HNP_LOGE("sprintf unsuccess.");
             closedir(dir);
             return HNP_ERRNO_BASE_SPRINTF_FAILED;
