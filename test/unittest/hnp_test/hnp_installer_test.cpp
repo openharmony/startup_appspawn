@@ -411,6 +411,7 @@ HWTEST_F(HnpInstallerTest, Hnp_Install_003, TestSize.Level0)
         EXPECT_EQ(access(HNP_BASE_PATH"/hnp/sample/bin/out", F_OK), -1);
         HnpPackWithoutBinDelete();
         HnpDeleteFolder(HNP_BASE_PATH);
+        remove(HNP_PACKAGE_INFO_JSON_FILE_PATH);
     }
     { //ok
         EXPECT_EQ(mkdir(HNP_BASE_PATH, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
