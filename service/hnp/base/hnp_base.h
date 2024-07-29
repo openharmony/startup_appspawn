@@ -23,6 +23,8 @@
 
 #include "securec.h"
 
+#include "contrib/minizip/zip.h"
+
 #ifndef HNP_CLI
 
 #include "hilog/log.h"
@@ -228,12 +230,12 @@ int ReadFileToStream(const char *filePath, char **stream, int *streamLen);
 
 int GetRealPath(char *srcPath, char *realPath);
 
-int HnpZip(const char *inputDir, const char *outputFile);
+int HnpZip(const char *inputDir, zipFile zf);
 
 int HnpUnZip(const char *inputFile, const char *outputDir, const char *hnpSignKeyPrefix,
     HnpSignMapInfo *hnpSignMapInfos, int *count);
 
-int HnpAddFileToZip(char *zipfile, char *filename, char *buff, int size);
+int HnpAddFileToZip(zipFile zf, char *filename, char *buff, int size);
 
 void HnpLogPrintf(int logLevel, char *module, const char *format, ...);
 
