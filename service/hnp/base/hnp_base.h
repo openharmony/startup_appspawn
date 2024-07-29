@@ -65,15 +65,16 @@ typedef struct NativeBinLinkStru {
 typedef struct HnpCfgInfoStru {
     char name[MAX_FILE_PATH_LEN];
     char version[HNP_VERSION_LEN];    // Native软件包版本号
-    bool isInstall;         // 是否已安装
-    unsigned int linkNum;   // 软链接配置个数
+    bool isInstall;                   // 是否已安装
+    unsigned int linkNum;             // 软链接配置个数
     NativeBinLink *links;
 } HnpCfgInfo;
 
 /* hnp package文件信息 */
 typedef struct HnpPackageInfoStru {
     char name[MAX_FILE_PATH_LEN];
-    char version[HNP_VERSION_LEN];    // Native软件包版本号
+    char currentVersion[HNP_VERSION_LEN];    // Native当前软件包版本号
+    char installVersion[HNP_VERSION_LEN];    // Native安装软件包版本号，非此hap安装为空
 } HnpPackageInfo;
 
 /* 日志级别 */

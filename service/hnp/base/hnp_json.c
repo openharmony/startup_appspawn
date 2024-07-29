@@ -93,7 +93,7 @@ static int ParseJsonStreamToHnpCfgInfo(cJSON *json, HnpCfgInfo *hnpCfg)
         HNP_LOGE("strcpy unsuccess.");
         return HNP_ERRNO_BASE_COPY_FAILED;
     }
-    cJSON *versionItem = cJSON_GetObjectItem(json, "curretn_version");
+    cJSON *versionItem = cJSON_GetObjectItem(json, "version");
     if ((versionItem == NULL) || (versionItem->valuestring == NULL)) {
         HNP_LOGE("get version info in cfg unsuccess.");
         return HNP_ERRNO_BASE_PARSE_ITEM_NO_FOUND;
@@ -170,7 +170,7 @@ int GetHnpJsonBuff(HnpCfgInfo *hnpCfg, char **buff)
 
     cJSON_AddStringToObject(root, "type", "hnp-config");
     cJSON_AddStringToObject(root, "name", hnpCfg->name);
-    cJSON_AddStringToObject(root, "current_version", hnpCfg->version);
+    cJSON_AddStringToObject(root, "version", hnpCfg->version);
     cJSON_AddObjectToObject(root, "install");
     char *str = cJSON_Print(root);
     cJSON_Delete(root);
@@ -302,6 +302,8 @@ static int HnpHapJsonHnpAdd(bool hapExist, cJSON *json, cJSON *hapItem, const ch
     cJSON_AddItemToObject(hnpItem, "current_version", cJSON_CreateString(hnpCfg->version));
     if (hnpCfg->isInstall) {
         cJSON_AddItemToObject(hnpItem, "install_version", cJSON_CreateString(hnpCfg->version));
+    } else {
+        cJSON_AddItemToObject(hnpItem, "install_version", cJSON_CreateString("none"));
     }
     cJSON_AddItemToArray(hnpItemArr, hnpItem);
 
@@ -449,15 +451,17 @@ int HnpPackageInfoGet(const char *packageName, HnpPackageInfo **packageInfoOut, 
         cJSON *hnpItem = cJSON_GetArrayItem(hnpItemArr, j);
         cJSON *name = cJSON_GetObjectItem(hnpItem, "name");
         cJSON *version = cJSON_GetObjectItem(hnpItem, "current_version");
-        if (name == NULL || version == NULL) {
+        cJSON *installVersion = cJSON_GetObjectItem(hnpItem, "install_version");
+        if (name == NULL || version == NULL || installVersion == NULL) {
             continue;
         }
         hnpExist = HnpOtherPackageInstallCheck(name->valuestring, version->valuestring, hapIndex, json);
         if (!hnpExist) {
             if ((strcpy_s(packageInfos[sum].name, MAX_FILE_PATH_LEN, name->valuestring) != EOK) ||
-                (strcpy_s(packageInfos[sum].version, HNP_VERSION_LEN, version->valuestring) != EOK)) {
-                HNP_LOGE("strcpy hnp info name[%{public}s] version[%{public}s] unsuccess.", name->valuestring,
-                    version->valuestring);
+                (strcpy_s(packageInfos[sum].currentVersion, HNP_VERSION_LEN, version->valuestring) != EOK) ||
+                (strcpy_s(packageInfos[sum].installVersion, HNP_VERSION_LEN, installVersion->valuestring) != EOK)) {
+                HNP_LOGE("strcpy hnp info name[%{public}s],version[%{public}s],install version[%{public}s] unsuccess.", 
+                    name->valuestring, version->valuestring, installVersion->valuestring);
                 cJSON_Delete(json);
                 return HNP_ERRNO_BASE_COPY_FAILED;
             }
