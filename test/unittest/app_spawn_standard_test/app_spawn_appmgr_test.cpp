@@ -865,6 +865,15 @@ HWTEST_F(AppSpawnAppMgrTest, App_Spawn_AppSpawningCtx_Msg_001, TestSize.Level0)
     ret = IsDeveloperModeOn(nullptr);
     EXPECT_EQ(ret, 0);
 
+    //IsJitFortModeOn
+    ret = IsJitFortModeOn(appCtx);
+    EXPECT_EQ(ret, 0);
+    appCtx->client.flags |= APP_JITFORT_MODE;
+    ret = IsJitFortModeOn(appCtx);
+    EXPECT_EQ(ret, 1);
+    ret = IsJitFortModeOn(nullptr);
+    EXPECT_EQ(ret, 0);
+
     DeleteAppSpawningCtx(appCtx);
     DeleteAppSpawnMgr(mgr);
 }
