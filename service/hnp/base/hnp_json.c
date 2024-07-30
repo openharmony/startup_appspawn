@@ -415,14 +415,10 @@ static int HnpPackageInfoGetOut(HnpPackageInfo *packageInfos, int sum, HnpPackag
     return 0;
 }
 
-int HnpPackageInfoGet(const char *packageName, HnpPackageInfo **packageInfoOut, int *count)
+static int HnpPackageJsonGet(cJSON **pJson)
 {
     char *infoStream;
     int size;
-    bool hnpExist = false;
-    int hapIndex = 0;
-    HnpPackageInfo packageInfos[MAX_PACKAGE_HNP_NUM] = {0};
-    int sum = 0;
 
     int ret = ReadFileToStream(HNP_PACKAGE_INFO_JSON_FILE_PATH, &infoStream, &size);
     if (ret != 0) {
@@ -438,6 +434,24 @@ int HnpPackageInfoGet(const char *packageName, HnpPackageInfo **packageInfoOut, 
     if (json == NULL) {
         HNP_LOGE("package info get parse json file unsuccess.");
         return HNP_ERRNO_BASE_PARSE_JSON_FAILED;
+    }
+
+    *pJson = json;
+
+    return 0;
+}
+
+int HnpPackageInfoGet(const char *packageName, HnpPackageInfo **packageInfoOut, int *count)
+{
+    bool hnpExist = false;
+    int hapIndex = 0;
+    HnpPackageInfo packageInfos[MAX_PACKAGE_HNP_NUM] = {0};
+    int sum = 0;
+    cJSON *json = NULL;
+
+    int ret = HnpPackageJsonGet(&json);
+    if (ret != 0 || json == NULL) {
+        return ret;
     }
 
     cJSON *hapItem = NULL;
@@ -456,15 +470,16 @@ int HnpPackageInfoGet(const char *packageName, HnpPackageInfo **packageInfoOut, 
             continue;
         }
         hnpExist = HnpOtherPackageInstallCheck(name->valuestring, version->valuestring, hapIndex, json);
-        if (!hnpExist) {
+        if (!hnpExist || strcmp(installVersion->valuestring, "none") != 0) {
             if ((strcpy_s(packageInfos[sum].name, MAX_FILE_PATH_LEN, name->valuestring) != EOK) ||
                 (strcpy_s(packageInfos[sum].currentVersion, HNP_VERSION_LEN, version->valuestring) != EOK) ||
                 (strcpy_s(packageInfos[sum].installVersion, HNP_VERSION_LEN, installVersion->valuestring) != EOK)) {
-                HNP_LOGE("strcpy hnp info name[%{public}s],version[%{public}s],install version[%{public}s] unsuccess.", 
+                HNP_LOGE("strcpy hnp info name[%{public}s],version[%{public}s],install version[%{public}s] unsuccess.",
                     name->valuestring, version->valuestring, installVersion->valuestring);
                 cJSON_Delete(json);
                 return HNP_ERRNO_BASE_COPY_FAILED;
             }
+            packageInfos[sum].hnpExist = hnpExist;
             sum++;
         }
     }
@@ -564,12 +579,51 @@ static char *HnpNeedUnInstallHnpVersionGet(cJSON *hnpItemArr, const char *name)
             (cJSON_GetObjectItem(hnpItem, "current_version") != NULL) &&
             (cJSON_GetObjectItem(hnpItem, "install_version") != NULL) &&
             (strcmp(cJSON_GetObjectItem(hnpItem, "name")->valuestring, name) == 0) &&
-            (strcmp(cJSON_GetObjectItem(hnpItem, "current_version")->valuestring, 
+            (strcmp(cJSON_GetObjectItem(hnpItem, "current_version")->valuestring,
             cJSON_GetObjectItem(hnpItem, "install_version")->valuestring) == 0)) {
             return cJSON_GetObjectItem(hnpItem, "current_version")->valuestring;
         }
     }
 
+    return NULL;
+}
+
+char *HnpCurrentVersionGet(const char *name)
+{
+    char *infoStream;
+    int size;
+    cJSON *hapItem = NULL;
+
+    int ret = ReadFileToStream(HNP_PACKAGE_INFO_JSON_FILE_PATH, &infoStream, &size);
+    if (ret != 0) {
+        return NULL;
+    }
+
+    cJSON *json = cJSON_Parse(infoStream);
+    free(infoStream);
+    if (json == NULL) {
+        HNP_LOGE("hnp delete parse json file unsuccess.");
+        return NULL;
+    }
+
+    for (int i = 0; i < cJSON_GetArraySize(json); i++) {
+        hapItem = cJSON_GetArrayItem(json, i);
+        cJSON *hnpItemArr = cJSON_GetObjectItem(hapItem, "hnp");
+        if (hnpItemArr == NULL) {
+            return NULL;
+        }
+
+        for (int i = 0; i < cJSON_GetArraySize(hnpItemArr); i++) {
+            cJSON *hnpItem = cJSON_GetArrayItem(hnpItemArr, i);
+            if ((cJSON_GetObjectItem(hnpItem, "name") != NULL) &&
+                (cJSON_GetObjectItem(hnpItem, "current_version") != NULL) &&
+                (strcmp(cJSON_GetObjectItem(hnpItem, "name")->valuestring, name) == 0)) {
+                return cJSON_GetObjectItem(hnpItem, "current_version")->valuestring;
+            }
+        }
+    }
+
+    cJSON_Delete(json);
     return NULL;
 }
 

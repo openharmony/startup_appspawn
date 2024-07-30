@@ -267,6 +267,31 @@ int HnpCreateFolder(const char* path)
 #endif
 }
 
+int HnpPathFileCount(const char *path)
+{
+    int num = 0;
+#ifdef _WIN32
+    return num;
+#else
+
+    struct dirent *entry;
+    DIR *dir = opendir(path);
+    if (dir == NULL) {
+        HNP_LOGE("is empty path open dir=%{public}s unsuccess ", path);
+        return -1;
+    }
+
+    while ((entry = readdir(dir)) != NULL) {
+        if ((strcmp(entry->d_name, ".") == 0) || (strcmp(entry->d_name, "..") == 0)) {
+            continue;
+        }
+        num++;
+    }
+    
+    return num;
+#endif
+}
+
 #ifdef __cplusplus
 }
 #endif
