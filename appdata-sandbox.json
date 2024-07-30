@@ -139,6 +139,11 @@
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
+                    "src-path" : "/data/data/hiai",
+                    "sandbox-path" : "/data/data/hiai",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
                     "src-path" : "/vendor/etc/vulkan",
                     "sandbox-path" : "/vendor/etc/vulkan",
                     "sandbox-flags" : [ "bind", "rec" ],
