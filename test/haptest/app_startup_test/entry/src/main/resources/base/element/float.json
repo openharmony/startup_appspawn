@@ -1,0 +1,16 @@
+{
+  "float": [
+    {
+      "name": "space_24",
+      "value": "24vp"
+    },
+    {
+      "name": "space_bottom",
+      "value": "16vp"
+    },
+    {
+      "name": "button_height",
+      "value": "40vp"
+    }
+  ]
+}
