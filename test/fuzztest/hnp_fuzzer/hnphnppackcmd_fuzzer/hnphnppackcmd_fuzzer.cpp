@@ -32,7 +32,7 @@ namespace OHOS {
         (void)mkdir("hnp_sample", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
         (void)mkdir("hnp_out", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
         FILE *fp = fopen("./hnp_sample/hnp.json", "w");
-        fclose(fp);
+        (void)fclose(fp);
         
         char arg1[] = "hnp";
         char arg2[] = "pack";
@@ -47,7 +47,7 @@ namespace OHOS {
         char cfg[] = "{\"type\":\"hnp-config\",\"name\":\"sample\",\"version\":\"1.1\",\"install\":{}}";
         fp = fopen("./hnp_sample/hnp.json", "w");
         (void)fwrite(cfg, sizeof(char), strlen(cfg) + 1, fp);
-        fclose(fp);
+        (void)fclose(fp);
 
         (void)HnpCmdPack(argc, argv);
         (void)remove("./hnp_out/sample.hnp");
