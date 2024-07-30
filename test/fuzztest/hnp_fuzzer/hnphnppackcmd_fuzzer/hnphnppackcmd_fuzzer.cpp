@@ -43,7 +43,6 @@ namespace OHOS {
         char *argv[] = {arg1, arg2, arg3, arg4, arg5, arg6};
         int argc = sizeof(argv) / sizeof(argv[0]);
 
-
         char cfg[] = "{\"type\":\"hnp-config\",\"name\":\"sample\",\"version\":\"1.1\",\"install\":{}}";
         fp = fopen("./hnp_sample/hnp.json", "w");
         (void)fwrite(cfg, sizeof(char), strlen(cfg) + 1, fp);
