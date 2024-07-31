@@ -116,14 +116,22 @@ void HnpPackWithoutBinDelete(void)
     EXPECT_EQ(HnpDeleteFolder("hnp_out"), 0);
 }
 
-void HnpPackWithBin(char *name, bool isPublic, bool isFirst, mode_t mode)
+void HnpPackWithBin(char *name, char *version, bool isPublic, bool isFirst, mode_t mode)
 {
     char arg6[MAX_FILE_PATH_LEN];
 
-    if (isPublic) {
-        EXPECT_EQ(strcpy_s(arg6, MAX_FILE_PATH_LEN, "./hnp_out/public"), EOK);
+    if (strcmp(version, "1.1") == 0) {
+        if (isPublic) {
+            EXPECT_EQ(strcpy_s(arg6, MAX_FILE_PATH_LEN, "./hnp_out/public"), EOK);
+        } else {
+            EXPECT_EQ(strcpy_s(arg6, MAX_FILE_PATH_LEN, "./hnp_out/private"), EOK);
+        }
     } else {
-        EXPECT_EQ(strcpy_s(arg6, MAX_FILE_PATH_LEN, "./hnp_out/private"), EOK);
+        if (isPublic) {
+            EXPECT_GT(sprintf_s(arg6, MAX_FILE_PATH_LEN, "./hnp_out_%s/public", version), 0);
+        } else {
+            EXPECT_GT(sprintf_s(arg6, MAX_FILE_PATH_LEN, "./hnp_out_%s/private", version), 0);
+        }
     }
 
     if (isFirst) {
@@ -145,8 +153,7 @@ void HnpPackWithBin(char *name, bool isPublic, bool isFirst, mode_t mode)
     char arg5[] = "-o";
     char arg7[] = "-n";
     char arg9[] = "-v";
-    char arg10[] = "1.1";
-    char *argv[] = {arg1, arg2, arg3, arg4, arg5, arg6, arg7, name, arg9, arg10};
+    char *argv[] = {arg1, arg2, arg3, arg4, arg5, arg6, arg7, name, arg9, version};
     int argc = sizeof(argv) / sizeof(argv[0]);
 
     EXPECT_EQ(HnpCmdPack(argc, argv), 0);
@@ -263,8 +270,10 @@ HWTEST_F(HnpInstallerTest, Hnp_Install_001, TestSize.Level0)
     remove(HNP_PACKAGE_INFO_JSON_FILE_PATH);
 
     EXPECT_EQ(mkdir(HNP_BASE_PATH, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
-    HnpPackWithBin(const_cast<char *>("sample_public"), true, true, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH);
-    HnpPackWithBin(const_cast<char *>("sample_private"), false, false, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH);
+    HnpPackWithBin(const_cast<char *>("sample_public"), const_cast<char *>("1.1"), true, true,
+        S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH);
+    HnpPackWithBin(const_cast<char *>("sample_private"), const_cast<char *>("1.1"), false, false,
+        S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH);
 
     char arg1[] = "hnp";
     char arg2[] = "install";
@@ -289,23 +298,6 @@ HWTEST_F(HnpInstallerTest, Hnp_Install_001, TestSize.Level0)
 
         EXPECT_EQ(HnpCmdInstall(argc, argv), HNP_ERRNO_INSTALLER_ARGV_UID_INVALID);
     }
-    { // ok
-        char arg4[] = "10000";
-        char arg5[] = "-i";
-        char arg6[] = "./hnp_out";
-        char arg7[] = "-p";
-        char arg8[] = "sample";
-        char arg9[] = "-s";
-        char arg10[] = "./hnp_out";
-        char arg11[] = "-a";
-        char arg12[] = "system64";
-        char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12};
-        int argc = sizeof(argv) / sizeof(argv[0]);
-
-        EXPECT_EQ(HnpCmdInstall(argc, argv), 0);
-        EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/bin/out", F_OK), 0);
-        EXPECT_EQ(access(HNP_BASE_PATH"/hnp/sample/bin/out", F_OK), 0);
-    }
 
     HnpDeleteFolder(HNP_BASE_PATH);
     HnpPackWithBinDelete();
@@ -326,8 +318,10 @@ HWTEST_F(HnpInstallerTest, Hnp_Install_002, TestSize.Level0)
     GTEST_LOG_(INFO) << "Hnp_Installer_002 start";
 
     EXPECT_EQ(mkdir(HNP_BASE_PATH, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
-    HnpPackWithBin(const_cast<char *>("sample_public"), true, true, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH);
-    HnpPackWithBin(const_cast<char *>("sample_private"), false, false, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH);
+    HnpPackWithBin(const_cast<char *>("sample_public"), const_cast<char *>("1.1"), true, true,
+        S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH);
+    HnpPackWithBin(const_cast<char *>("sample_private"), const_cast<char *>("1.1"), false, false,
+        S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH);
 
     char arg1[] = "hnp";
     char arg2[] = "install";
@@ -415,8 +409,10 @@ HWTEST_F(HnpInstallerTest, Hnp_Install_003, TestSize.Level0)
     }
     { //ok
         EXPECT_EQ(mkdir(HNP_BASE_PATH, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
-        HnpPackWithBin(const_cast<char *>("sample_public"), true, true, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH);
-        HnpPackWithBin(const_cast<char *>("sample_private"), false, false, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH);
+        HnpPackWithBin(const_cast<char *>("sample_public"), const_cast<char *>("1.1"), true, true,
+            S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH);
+        HnpPackWithBin(const_cast<char *>("sample_private"), const_cast<char *>("1.1"), false, false,
+            S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH);
 
         EXPECT_EQ(HnpCmdInstall(argc, argv), 0);
         EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/bin/out", F_OK), 0);
@@ -441,8 +437,10 @@ HWTEST_F(HnpInstallerTest, Hnp_Install_004, TestSize.Level0)
     GTEST_LOG_(INFO) << "Hnp_Installer_004 start";
 
     EXPECT_EQ(mkdir(HNP_BASE_PATH, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
-    HnpPackWithBin(const_cast<char *>("sample_public"), true, true, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH);
-    HnpPackWithBin(const_cast<char *>("sample_private"), false, false, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH);
+    HnpPackWithBin(const_cast<char *>("sample_public"), const_cast<char *>("1.1"), true, true,
+        S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH);
+    HnpPackWithBin(const_cast<char *>("sample_private"), const_cast<char *>("1.1"), false, false,
+        S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH);
 
     char arg1[] = "hnp";
     char arg2[] = "install";
@@ -610,8 +608,10 @@ HWTEST_F(HnpInstallerTest, Hnp_Install_007, TestSize.Level0)
     HnpDeleteFolder(HNP_BASE_PATH);
 
     EXPECT_EQ(mkdir(HNP_BASE_PATH, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
-    HnpPackWithBin(const_cast<char *>("sample_public"), true, true, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH);
-    HnpPackWithBin(const_cast<char *>("sample_private"), false, false, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH);
+    HnpPackWithBin(const_cast<char *>("sample_public"), const_cast<char *>("1.1"), true, true,
+        S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH);
+    HnpPackWithBin(const_cast<char *>("sample_private"), const_cast<char *>("1.1"), false, false,
+        S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH);
 
     char arg1[] = "hnp";
     char arg2[] = "install";
@@ -676,7 +676,8 @@ HWTEST_F(HnpInstallerTest, Hnp_Install_008, TestSize.Level0)
     HnpDeleteFolder(HNP_BASE_PATH);
 
     EXPECT_EQ(mkdir(HNP_BASE_PATH, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
-    HnpPackWithBin(const_cast<char *>("sample_public"), true, true, S_IRWXU | S_IRWXG | S_IROTH | S_IWOTH);
+    HnpPackWithBin(const_cast<char *>("sample_public"), const_cast<char *>("1.1"), true, true,
+        S_IRWXU | S_IRWXG | S_IROTH | S_IWOTH);
 
     char arg1[] = "hnp";
     char arg2[] = "install";
@@ -729,7 +730,8 @@ HWTEST_F(HnpInstallerTest, Hnp_Install_009, TestSize.Level0)
     HnpDeleteFolder(HNP_BASE_PATH);
 
     EXPECT_EQ(mkdir(HNP_BASE_PATH, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
-    HnpPackWithBin(const_cast<char *>("sample_public"), true, true, S_IXUSR | S_IXGRP | S_IXOTH);
+    HnpPackWithBin(const_cast<char *>("sample_public"), const_cast<char *>("1.1"), true, true,
+        S_IXUSR | S_IXGRP | S_IXOTH);
 
     char arg1[] = "hnp";
     char arg2[] = "install";
@@ -760,6 +762,256 @@ HWTEST_F(HnpInstallerTest, Hnp_Install_009, TestSize.Level0)
     remove(HNP_PACKAGE_INFO_JSON_FILE_PATH);
 
     GTEST_LOG_(INFO) << "Hnp_Install_009 end";
+}
+
+static void HnpVersionPathCreate(void)
+{
+    EXPECT_EQ(mkdir(HNP_BASE_PATH, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
+    EXPECT_EQ(mkdir("hnp_out_1", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
+    EXPECT_EQ(mkdir("hnp_out_1/public", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
+    EXPECT_EQ(mkdir("hnp_out_1/private", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
+    EXPECT_EQ(mkdir("hnp_out_2", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
+    EXPECT_EQ(mkdir("hnp_out_2/public", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
+    EXPECT_EQ(mkdir("hnp_out_2/private", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
+    EXPECT_EQ(mkdir("hnp_out_3", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
+    EXPECT_EQ(mkdir("hnp_out_3/public", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
+    EXPECT_EQ(mkdir("hnp_out_3/private", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
+    EXPECT_EQ(mkdir("hnp_out_4", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
+    EXPECT_EQ(mkdir("hnp_out_4/public", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
+    EXPECT_EQ(mkdir("hnp_out_4/private", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
+
+    HnpPackWithBin(const_cast<char *>("sample_public"), const_cast<char *>("1"), true, true,
+        S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH);
+    HnpPackWithBin(const_cast<char *>("sample_public"), const_cast<char *>("2"), true, false,
+        S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH);
+    HnpPackWithBin(const_cast<char *>("sample_public"), const_cast<char *>("3"), true, false,
+        S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH);
+    HnpPackWithBin(const_cast<char *>("sample_public"), const_cast<char *>("4"), true, false,
+        S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH);
+}
+
+static void HnpVersionPathDelete(void)
+{
+    EXPECT_EQ(HnpDeleteFolder("hnp_out_1"), 0);
+    EXPECT_EQ(HnpDeleteFolder("hnp_out_2"), 0);
+    EXPECT_EQ(HnpDeleteFolder("hnp_out_3"), 0);
+    EXPECT_EQ(HnpDeleteFolder("hnp_out_4"), 0);
+}
+
+static void HnpVersionV1Install()
+{
+    char arg1[] = "hnp";
+    char arg2[] = "install";
+    char arg3[] = "-u";
+    char arg4[] = "10000";
+    char arg5[] = "-p";
+    char arg7[] = "-i";
+    char arg9[] = "-f";
+    char arg10[] = "-s";
+    char arg11[] = "./hnp_out_1";
+    char arg12[] = "-a";
+    char arg13[] = "system64";
+
+    char arg6[] = "sample1";
+    char arg8[] = "./hnp_out_1";
+    char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9,  arg10, arg11, arg12, arg13};
+    int argc = sizeof(argv) / sizeof(argv[0]);
+    // install v1
+    EXPECT_EQ(HnpCmdInstall(argc, argv), 0);
+}
+
+static void HnpVersionV2Install()
+{
+    char arg1[] = "hnp";
+    char arg2[] = "install";
+    char arg3[] = "-u";
+    char arg4[] = "10000";
+    char arg5[] = "-p";
+    char arg7[] = "-i";
+    char arg9[] = "-f";
+    char arg10[] = "-s";
+    char arg11[] = "./hnp_out_2";
+    char arg12[] = "-a";
+    char arg13[] = "system64";
+
+    char arg6[] = "sample2";
+    char arg8[] = "./hnp_out_2";
+    char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9,  arg10, arg11, arg12, arg13};
+    int argc = sizeof(argv) / sizeof(argv[0]);
+    // install v1
+    EXPECT_EQ(HnpCmdInstall(argc, argv), 0);
+}
+
+static void HnpVersionV3Install()
+{
+    char arg1[] = "hnp";
+    char arg2[] = "install";
+    char arg3[] = "-u";
+    char arg4[] = "10000";
+    char arg5[] = "-p";
+    char arg7[] = "-i";
+    char arg9[] = "-f";
+    char arg10[] = "-s";
+    char arg11[] = "./hnp_out_3";
+    char arg12[] = "-a";
+    char arg13[] = "system64";
+
+    char arg6[] = "sample3";
+    char arg8[] = "./hnp_out_3";
+    char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9,  arg10, arg11, arg12, arg13};
+    int argc = sizeof(argv) / sizeof(argv[0]);
+    // install v1
+    EXPECT_EQ(HnpCmdInstall(argc, argv), 0);
+}
+
+static void HnpVersionV4Install()
+{
+    char arg1[] = "hnp";
+    char arg2[] = "install";
+    char arg3[] = "-u";
+    char arg4[] = "10000";
+    char arg5[] = "-p";
+    char arg7[] = "-i";
+    char arg9[] = "-f";
+    char arg10[] = "-s";
+    char arg11[] = "./hnp_out_4";
+    char arg12[] = "-a";
+    char arg13[] = "system64";
+
+    char arg6[] = "sample4";
+    char arg8[] = "./hnp_out_4";
+    char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9,  arg10, arg11, arg12, arg13};
+    int argc = sizeof(argv) / sizeof(argv[0]);
+    // install v1
+    EXPECT_EQ(HnpCmdInstall(argc, argv), 0);
+}
+
+static void HnpVersionV1Uninstall()
+{
+    char uarg1[] = "hnp";
+    char uarg2[] = "uninstall";
+    char uarg3[] = "-u";
+    char uarg4[] = "10000";
+    char uarg5[] = "-p";
+
+    // uninstall v1
+    char uarg6[] = "sample1";
+    char* uargv[] = {uarg1, uarg2, uarg3, uarg4, uarg5, uarg6};
+    int uargc = sizeof(uargv) / sizeof(uargv[0]);
+    EXPECT_EQ(HnpCmdUnInstall(uargc, uargv), 0);
+}
+
+static void HnpVersionV2Uninstall()
+{
+    char uarg1[] = "hnp";
+    char uarg2[] = "uninstall";
+    char uarg3[] = "-u";
+    char uarg4[] = "10000";
+    char uarg5[] = "-p";
+
+    // uninstall v2
+    char uarg6[] = "sample2";
+    char* uargv[] = {uarg1, uarg2, uarg3, uarg4, uarg5, uarg6};
+    int uargc = sizeof(uargv) / sizeof(uargv[0]);
+    EXPECT_EQ(HnpCmdUnInstall(uargc, uargv), 0);
+}
+
+static void HnpVersionV3Uninstall()
+{
+    char uarg1[] = "hnp";
+    char uarg2[] = "uninstall";
+    char uarg3[] = "-u";
+    char uarg4[] = "10000";
+    char uarg5[] = "-p";
+
+    // uninstall v3
+    char uarg6[] = "sample3";
+    char* uargv[] = {uarg1, uarg2, uarg3, uarg4, uarg5, uarg6};
+    int uargc = sizeof(uargv) / sizeof(uargv[0]);
+    EXPECT_EQ(HnpCmdUnInstall(uargc, uargv), 0);
+}
+
+static void HnpVersionV4Uninstall()
+{
+    char uarg1[] = "hnp";
+    char uarg2[] = "uninstall";
+    char uarg3[] = "-u";
+    char uarg4[] = "10000";
+    char uarg5[] = "-p";
+
+    // uninstall v4
+    char uarg6[] = "sample4";
+    char* uargv[] = {uarg1, uarg2, uarg3, uarg4, uarg5, uarg6};
+    int uargc = sizeof(uargv) / sizeof(uargv[0]);
+    EXPECT_EQ(HnpCmdUnInstall(uargc, uargv), 0);
+}
+
+/**
+* @tc.name: Hnp_Install_010
+* @tc.desc:  Verify version rule HnpCmdInstall succeed.
+* @tc.type: FUNC
+* @tc.require:issueIAGPEW
+* @tc.author:
+*/
+HWTEST_F(HnpInstallerTest, Hnp_Install_010, TestSize.Level0)
+{
+    GTEST_LOG_(INFO) << "Hnp_Install_010 start";
+
+    HnpVersionPathCreate();
+
+    // install v1 v2 v3
+    HnpVersionV1Install();
+    HnpVersionV2Install();
+    HnpVersionV3Install();
+    // check v1 v2 v3 exist
+    EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_1", F_OK), 0);
+    EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_2", F_OK), 0);
+    EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_3", F_OK), 0);
+
+    // uninstall v3
+    HnpVersionV3Uninstall();
+    // check v1 v2 v3 exist
+    EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_1", F_OK), 0);
+    EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_2", F_OK), 0);
+    EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_3", F_OK), 0);
+
+    HnpVersionV4Install();
+    // check v1 v2 v4 exist v3 is uninstall
+    EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_1", F_OK), 0);
+    EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_2", F_OK), 0);
+    EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_3", F_OK), -1);
+    EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_4", F_OK), 0);
+
+    // uninstall v1
+    HnpVersionV1Uninstall();
+    // check v2 v4 exist v1 v3 is uninstall
+    EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_1", F_OK), -1);
+    EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_2", F_OK), 0);
+    EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_3", F_OK), -1);
+    EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_4", F_OK), 0);
+
+    // uninstall v4
+    HnpVersionV4Uninstall();
+    // check v2 v4 exist v1 v3 is uninstall
+    EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_1", F_OK), -1);
+    EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_2", F_OK), 0);
+    EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_3", F_OK), -1);
+    EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_4", F_OK), 0);
+
+    // uninstall v2
+    HnpVersionV2Uninstall();
+    // all version is uninstall
+    EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_1", F_OK), -1);
+    EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_2", F_OK), -1);
+    EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_3", F_OK), -1);
+    EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_4", F_OK), -1);
+
+    HnpVersionPathDelete();
+    HnpDeleteFolder(HNP_BASE_PATH);
+    HnpPackWithBinDelete();
+    remove(HNP_PACKAGE_INFO_JSON_FILE_PATH);
+
+    GTEST_LOG_(INFO) << "Hnp_Install_010 end";
 }
 
 static bool IsHnpInstallEnable()
@@ -970,7 +1222,8 @@ HWTEST_F(HnpInstallerTest, Hnp_UnInstall_001, TestSize.Level0)
     GTEST_LOG_(INFO) << "Hnp_UnInstall_001 start";
 
     EXPECT_EQ(mkdir(HNP_BASE_PATH, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
-    HnpPackWithBin(const_cast<char *>("sample"), true, true, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH);
+    HnpPackWithBin(const_cast<char *>("sample"), const_cast<char *>("1.1"), true, true,
+        S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH);
     HnpInstall(const_cast<char *>("sample"));
 
     char arg1[] = "hnp";
@@ -1067,8 +1320,10 @@ HWTEST_F(HnpInstallerTest, Hnp_UnInstall_003, TestSize.Level0)
     GTEST_LOG_(INFO) << "Hnp_UnInstall_003 start";
 
     EXPECT_EQ(mkdir(HNP_BASE_PATH, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
-    HnpPackWithBin(const_cast<char *>("sample_public"), true, true, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH);
-    HnpPackWithBin(const_cast<char *>("sample_private"), false, false, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH);
+    HnpPackWithBin(const_cast<char *>("sample_public"), const_cast<char *>("1.1"), true, true,
+        S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH);
+    HnpPackWithBin(const_cast<char *>("sample_private"), const_cast<char *>("1.1"), false, false,
+        S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH);
     HnpInstall(const_cast<char *>("sample"));
 
     char arg1[] = "hnp";
