@@ -872,6 +872,11 @@
                     "check-action-status": "false"
                 }
             ]
+        }],
+        "ohos.permission.GET_ALL_PROCESSES":[{
+            "sandbox-switch": "ON",
+            "gids": [3009],
+            "mount-paths": []
         }]
     }]
 }
