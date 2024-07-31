@@ -1782,13 +1782,17 @@ static void MountDir(const AppSpawningCtx *property, const char *rootPath, const
     APPSPAWN_CHECK(len > 0 && ((size_t)len < allPathSize), free(path);
         return, "Failed to get sandbox path");
 
-    if (access(path, F_OK) == 0) {
+    if (access(path, F_OK) == 0 && srcPath == nullptr) {
         free(path);
         return;
     }
 
     MakeDirRec(path, DIR_MODE, 1);
     const char *sourcePath = (srcPath == nullptr) ? path : srcPath;
+    if (srcPath != nullptr) {
+        int ret = umount2(path, MNT_DETACH);
+        APPSPAWN_CHECK_ONLY_LOG(ret == 0, "Failed to umount path %{public}s, errno %{public}d", path, errno);
+    }
 
     if (mount(sourcePath, path, nullptr, MS_BIND | MS_REC, nullptr) != 0) {
         APPSPAWN_LOGI("bind mount %{public}s to %{public}s failed, error %{public}d", sourcePath, path, errno);
