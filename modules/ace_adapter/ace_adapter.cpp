@@ -130,7 +130,7 @@ static void LoadExtendLib(void)
     APPSPAWN_LOGI("LoadExtendLib: End preload JS VM");
 }
 
-static void LoadExtendCJLib(void)
+APPSPAWN_STATIC void LoadExtendCJLib(void)
 {
     const char *acelibdir = OHOS::Ace::AceForwardCompatibility::GetAceLibName();
     APPSPAWN_LOGI("LoadExtendLib: Start calling dlopen acelibdir.");
@@ -139,7 +139,7 @@ static void LoadExtendCJLib(void)
     APPSPAWN_LOGI("LoadExtendLib: Success to dlopen %{public}s", acelibdir);
 }
 
-static int BuildFdInfoMap(const AppSpawnMsgNode *message, std::map<std::string, int> &fdMap, int isColdRun)
+APPSPAWN_STATIC int BuildFdInfoMap(const AppSpawnMsgNode *message, std::map<std::string, int> &fdMap, int isColdRun)
 {
     APPSPAWN_CHECK_ONLY_EXPER(message != NULL && message->buffer != NULL, return -1);
     APPSPAWN_CHECK_ONLY_EXPER(message->tlvOffset != NULL, return -1);
@@ -205,7 +205,7 @@ static int RunChildThread(const AppSpawnMgr *content, const AppSpawningCtx *prop
     return 0;
 }
 
-static int RunChildByRenderCmd(const AppSpawnMgr *content, const AppSpawningCtx *property)
+APPSPAWN_STATIC int RunChildByRenderCmd(const AppSpawnMgr *content, const AppSpawningCtx *property)
 {
     uint32_t len = 0;
     char *renderCmd = reinterpret_cast<char *>(GetAppPropertyExt(property, MSG_EXT_NAME_RENDER_CMD, &len));
@@ -251,7 +251,7 @@ static int RunChildProcessor(AppSpawnContent *content, AppSpawnClient *client)
     return ret;
 }
 
-static int PreLoadAppSpawn(AppSpawnMgr *content)
+APPSPAWN_STATIC int PreLoadAppSpawn(AppSpawnMgr *content)
 {
     if (IsNWebSpawnMode(content)) {
         return 0;

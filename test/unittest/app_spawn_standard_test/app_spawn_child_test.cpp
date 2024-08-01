@@ -308,6 +308,93 @@ HWTEST_F(AppSpawnChildTest, App_Spawn_Child_006, TestSize.Level0)
     ASSERT_EQ(ret, 0);
 }
 
+HWTEST_F(AppSpawnChildTest, App_Spawn_Child_007, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = nullptr;
+    AppSpawnReqMsgHandle reqHandle = 0;
+    AppSpawningCtx *property = nullptr;
+    AppSpawnContent *content = nullptr;
+    int ret = -1;
+    do {
+        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create reqMgr %{public}s", APPSPAWN_SERVER_NAME);
+        // MSG_SPAWN_NATIVE_PROCESS and render
+        g_testHelper.SetTestUid(10010029);  // 10010029
+        reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_SPAWN_NATIVE_PROCESS, 0);
+        APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break, "Failed to create req");
+        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_DEBUGGABLE);
+        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_NATIVEDEBUG);
+        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_BUNDLE_RESOURCES);
+        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_ACCESS_BUNDLE_DIR);
+        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_GWP_ENABLED_NORMAL);
+
+        content = CreateTestAppSpawnContent(APPSPAWN_SOCKET_NAME, MODE_FOR_APP_SPAWN);
+        APPSPAWN_CHECK_ONLY_EXPER(content != nullptr, break);
+
+        ret = APPSPAWN_ARG_INVALID;
+        property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
+        APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
+
+        // spawn prepare process
+        AppSpawnHookExecute(STAGE_PARENT_PRE_FORK, 0, content, &property->client);
+
+        // spawn
+        property->client.flags = APP_COLD_START;
+        ret = AppSpawnChild(content, &property->client);
+        property = nullptr;
+        content = nullptr;
+    } while (0);
+    DeleteAppSpawningCtx(property);
+    AppSpawnClientDestroy(clientHandle);
+    AppSpawnDestroyContent(content);
+    LE_StopLoop(LE_GetDefaultLoop());
+    LE_CloseLoop(LE_GetDefaultLoop());
+    ASSERT_EQ(ret, 0);
+}
+
+HWTEST_F(AppSpawnChildTest, App_Spawn_Child_008, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = nullptr;
+    AppSpawnReqMsgHandle reqHandle = 0;
+    AppSpawningCtx *property = nullptr;
+    AppSpawnContent *content = nullptr;
+    int ret = -1;
+    do {
+        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create reqMgr %{public}s", APPSPAWN_SERVER_NAME);
+        // MSG_SPAWN_NATIVE_PROCESS and render
+        g_testHelper.SetTestUid(10010029);  // 10010029
+        reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_SPAWN_NATIVE_PROCESS, 0);
+        APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break, "Failed to create req");
+        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_DEBUGGABLE);
+        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_NATIVEDEBUG);
+        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_BUNDLE_RESOURCES);
+        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_ACCESS_BUNDLE_DIR);
+        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_GWP_ENABLED_NORMAL);
+
+        content = CreateTestAppSpawnContent(APPSPAWN_SERVER_NAME, MODE_FOR_APP_COLD_RUN);
+        APPSPAWN_CHECK_ONLY_EXPER(content != nullptr, break);
+        content->coldStartApp = nullptr;
+
+        ret = APPSPAWN_ARG_INVALID;
+        property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
+        APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
+
+
+        // spawn
+        property->client.flags = APP_COLD_START;
+        ret = AppSpawnChild(content, &property->client);
+        property = nullptr;
+        content = nullptr;
+    } while (0);
+    DeleteAppSpawningCtx(property);
+    AppSpawnClientDestroy(clientHandle);
+    AppSpawnDestroyContent(content);
+    LE_StopLoop(LE_GetDefaultLoop());
+    LE_CloseLoop(LE_GetDefaultLoop());
+    ASSERT_EQ(ret, 0);
+}
+
 /**
  * @brief 子进程nweb后半部分处理
  *
@@ -475,6 +562,188 @@ HWTEST_F(AppSpawnChildTest, NWeb_Spawn_Child_005, TestSize.Level0)
     LE_StopLoop(LE_GetDefaultLoop());
     LE_CloseLoop(LE_GetDefaultLoop());
     ASSERT_EQ(ret, 0);
+}
+
+HWTEST_F(AppSpawnChildTest, NWeb_Spawn_Child_006, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = nullptr;
+    AppSpawnReqMsgHandle reqHandle = 0;
+    AppSpawningCtx *property = nullptr;
+    AppSpawnContent *content = nullptr;
+    int ret = -1;
+    do {
+        ret = AppSpawnClientInit(NWEBSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create reqMgr %{public}s", NWEBSPAWN_SERVER_NAME);
+        // MSG_SPAWN_NATIVE_PROCESS and render
+        g_testHelper.SetTestUid(10010029);  // 10010029
+        reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_SPAWN_NATIVE_PROCESS, 0);
+        APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break, "Failed to create req");
+        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_DEBUGGABLE);
+        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_NATIVEDEBUG);
+        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_BUNDLE_RESOURCES);
+        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_ACCESS_BUNDLE_DIR);
+        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_GWP_ENABLED_NORMAL);
+
+        content = CreateTestAppSpawnContent(NWEBSPAWN_SERVER_NAME, MODE_FOR_NWEB_SPAWN);
+        APPSPAWN_CHECK_ONLY_EXPER(content != nullptr, break);
+
+        ret = APPSPAWN_ARG_INVALID;
+        property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
+        APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
+
+        // spawn prepare process
+        AppSpawnHookExecute(STAGE_PARENT_PRE_FORK, 0, content, &property->client);
+
+        // spawn
+        property->client.flags = APP_COLD_START;
+        ret = AppSpawnChild(content, &property->client);
+        property = nullptr;
+        content = nullptr;
+    } while (0);
+    DeleteAppSpawningCtx(property);
+    AppSpawnClientDestroy(clientHandle);
+    AppSpawnDestroyContent(content);
+    LE_StopLoop(LE_GetDefaultLoop());
+    LE_CloseLoop(LE_GetDefaultLoop());
+    ASSERT_EQ(ret, 0);
+}
+
+HWTEST_F(AppSpawnChildTest, NWeb_Spawn_Child_007, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = nullptr;
+    AppSpawnReqMsgHandle reqHandle = 0;
+    AppSpawningCtx *property = nullptr;
+    AppSpawnContent *content = nullptr;
+    int ret = -1;
+    do {
+        ret = AppSpawnClientInit(CJAPPSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create reqMgr %{public}s", CJAPPSPAWN_SERVER_NAME);
+        // MSG_SPAWN_NATIVE_PROCESS and render
+        g_testHelper.SetTestUid(10010029);  // 10010029
+        reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_SPAWN_NATIVE_PROCESS, 0);
+        APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break, "Failed to create req");
+        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_DEBUGGABLE);
+        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_NATIVEDEBUG);
+        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_BUNDLE_RESOURCES);
+        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_ACCESS_BUNDLE_DIR);
+        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_GWP_ENABLED_NORMAL);
+
+        content = CreateTestAppSpawnContent(CJAPPSPAWN_SERVER_NAME, MODE_FOR_APP_COLD_RUN);
+        APPSPAWN_CHECK_ONLY_EXPER(content != nullptr, break);
+
+        ret = APPSPAWN_ARG_INVALID;
+        property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
+        APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
+
+        // spawn prepare process
+        AppSpawnHookExecute(STAGE_PARENT_PRE_FORK, 0, content, &property->client);
+
+        // spawn
+        property->client.flags = APP_COLD_START;
+        ret = AppSpawnChild(content, &property->client);
+        property = nullptr;
+        content = nullptr;
+    } while (0);
+    DeleteAppSpawningCtx(property);
+    AppSpawnClientDestroy(clientHandle);
+    AppSpawnDestroyContent(content);
+    LE_StopLoop(LE_GetDefaultLoop());
+    LE_CloseLoop(LE_GetDefaultLoop());
+    ASSERT_EQ(ret, 0);
+}
+
+HWTEST_F(AppSpawnChildTest, NWeb_Spawn_Child_008, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = nullptr;
+    AppSpawnReqMsgHandle reqHandle = 0;
+    AppSpawningCtx *property = nullptr;
+    AppSpawnContent *content = nullptr;
+    int ret = -1;
+    do {
+        ret = AppSpawnClientInit(NWEBSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create reqMgr %{public}s", NWEBSPAWN_SERVER_NAME);
+        // MSG_SPAWN_NATIVE_PROCESS and render
+        g_testHelper.SetTestUid(10010029);  // 10010029
+        reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_SPAWN_NATIVE_PROCESS, 0);
+        APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break, "Failed to create req");
+        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_DEBUGGABLE);
+        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_NATIVEDEBUG);
+        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_BUNDLE_RESOURCES);
+        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_ACCESS_BUNDLE_DIR);
+        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_GWP_ENABLED_NORMAL);
+
+        content = CreateTestAppSpawnContent(NWEBSPAWN_SERVER_NAME, MODE_FOR_APP_COLD_RUN);
+        APPSPAWN_CHECK_ONLY_EXPER(content != nullptr, break);
+        content->coldStartApp = nullptr;
+
+        ret = APPSPAWN_ARG_INVALID;
+        property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
+        APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
+
+        // spawn
+        property->client.flags = APP_COLD_START;
+        ret = AppSpawnChild(content, &property->client);
+        property = nullptr;
+        content = nullptr;
+    } while (0);
+    DeleteAppSpawningCtx(property);
+    AppSpawnClientDestroy(clientHandle);
+    AppSpawnDestroyContent(content);
+    LE_StopLoop(LE_GetDefaultLoop());
+    LE_CloseLoop(LE_GetDefaultLoop());
+    ASSERT_EQ(ret, 0);
+}
+
+HWTEST_F(AppSpawnChildTest, App_Spawn_Child_Illegal_001, TestSize.Level0)
+{
+    ASSERT_EQ(AppSpawnChild(nullptr, nullptr), -1);
+}
+
+HWTEST_F(AppSpawnChildTest, App_Spawn_Child_Illegal_002, TestSize.Level0)
+{
+    AppSpawnContent *content = nullptr;
+    content = CreateTestAppSpawnContent(NWEBSPAWN_SERVER_NAME, MODE_FOR_APP_COLD_RUN);
+    ASSERT_NE(content, nullptr);
+    AppSpawnDestroyContent(content);
+    content = nullptr;
+    ASSERT_EQ(AppSpawnChild(nullptr, nullptr), -1);
+}
+
+HWTEST_F(AppSpawnChildTest, App_Spawn_Child_Illegal_003, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = nullptr;
+    AppSpawnReqMsgHandle reqHandle = 0;
+    AppSpawningCtx *property = nullptr;
+    AppSpawnContent *content = nullptr;
+    int ret = -1;
+    do {
+        ret = AppSpawnClientInit(NWEBSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create reqMgr %{public}s", NWEBSPAWN_SERVER_NAME);
+        // MSG_SPAWN_NATIVE_PROCESS and render
+        g_testHelper.SetTestUid(10010029);  // 10010029
+        reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_SPAWN_NATIVE_PROCESS, 0);
+        APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break, "Failed to create req");
+        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_DEBUGGABLE);
+        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_NATIVEDEBUG);
+        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_BUNDLE_RESOURCES);
+        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_ACCESS_BUNDLE_DIR);
+        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_GWP_ENABLED_NORMAL);
+        ret = APPSPAWN_ARG_INVALID;
+        property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
+        APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
+
+        // spawn
+        property->client.flags = APP_COLD_START;
+        ret = AppSpawnChild(content, &property->client);
+        property = nullptr;
+        content = nullptr;
+    } while (0);
+    DeleteAppSpawningCtx(property);
+    AppSpawnClientDestroy(clientHandle);
+    AppSpawnDestroyContent(content);
+    LE_StopLoop(LE_GetDefaultLoop());
+    LE_CloseLoop(LE_GetDefaultLoop());
+    ASSERT_EQ(ret, -1);
 }
 
 static std::string GetColdRunArgs(AppSpawningCtx *property, bool isNweb, const char *arg)

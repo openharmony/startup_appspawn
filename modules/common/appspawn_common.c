@@ -390,7 +390,9 @@ static void SpawnLoadSilk(const AppSpawnMgr *content, const AppSpawningCtx *prop
 {
     const char *processName = GetBundleName(property);
     APPSPAWN_CHECK(processName != NULL, return, "Can not get bundle name");
+#ifndef APPSPAWN_TEST
     LoadSilkLibrary(processName);
+#endif
 }
 
 static int SpawnSetProperties(AppSpawnMgr *content, AppSpawningCtx *property)
@@ -469,7 +471,9 @@ static int SpawnGetSpawningFlag(AppSpawnMgr *content, AppSpawningCtx *property)
 
 static int SpawnLoadConfig(AppSpawnMgr *content)
 {
+#ifndef APPSPAWN_TEST
     LoadSilkConfig();
+#endif
     // init flags that will not change until next reboot
     content->flags |= CheckEnabled("const.security.developermode.state", "true") ? APP_DEVELOPER_MODE : 0;
     content->flags |= CheckEnabled("persist.security.jitfort.enabled", "true") ? APP_JITFORT_MODE : 0;

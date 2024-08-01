@@ -61,7 +61,7 @@ int SetAppAccessToken(const AppSpawnMgr *content, const AppSpawningCtx *property
     return 0;
 }
 
-APPSPAWN_STATIC int SetSelinuxConNweb(const AppSpawnMgr *content, const AppSpawningCtx *property)
+int SetSelinuxConNweb(const AppSpawnMgr *content, const AppSpawningCtx *property)
 {
 #if defined(WITH_SELINUX) && !defined(APPSPAWN_TEST)
     uint32_t len = 0;
