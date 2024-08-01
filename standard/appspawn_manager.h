@@ -111,6 +111,7 @@ typedef struct TagAppSpawnMgr {
     pid_t servicePid;
     struct ListNode appQueue;  // save app pid and name
     uint32_t diedAppCount;
+    uint32_t flags;
     struct ListNode diedQueue;      // save app pid and name
     struct ListNode appSpawnQueue;  // save app pid and name
     struct timespec perLoadStart;
@@ -195,6 +196,11 @@ APPSPAWN_INLINE int IsColdRunMode(const AppSpawnMgr *content)
 APPSPAWN_INLINE int IsDeveloperModeOn(const AppSpawningCtx *property)
 {
     return (property != NULL && ((property->client.flags & APP_DEVELOPER_MODE) == APP_DEVELOPER_MODE));
+}
+
+APPSPAWN_INLINE int IsJitFortModeOn(const AppSpawningCtx *property)
+{
+    return (property != NULL && ((property->client.flags & APP_JITFORT_MODE) == APP_JITFORT_MODE));
 }
 
 APPSPAWN_INLINE int GetAppSpawnMsgType(const AppSpawningCtx *appProperty)
