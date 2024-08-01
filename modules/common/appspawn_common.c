@@ -195,9 +195,6 @@ static int SetXpmConfig(const AppSpawnMgr *content, const AppSpawningCtx *proper
     if (IsNWebSpawnMode(content)) {
         return 0;
     }
-    AppSpawnMsgOwnerId *ownerInfo = (AppSpawnMsgOwnerId *)GetAppProperty(property, TLV_OWNER_INFO);
-    int ret = InitXpmRegion();
-    APPSPAWN_CHECK(ret == 0, return ret, "init xpm region failed: %{public}d", ret);
 
     uint32_t len = 0;
     char *provisionType = GetAppPropertyExt(property, MSG_EXT_NAME_PROVISION_TYPE, &len);
@@ -206,13 +203,19 @@ static int SetXpmConfig(const AppSpawnMgr *content, const AppSpawningCtx *proper
         provisionType = PROVISION_TYPE_DEBUG;
     }
 
+    AppSpawnMsgOwnerId *ownerInfo = (AppSpawnMsgOwnerId *)GetAppProperty(property, TLV_OWNER_INFO);
+    int jitfortEnable = IsJitFortModeOn(property) ? 1 : 0;
+    int idType = PROCESS_OWNERID_UNINIT;
+    const char *ownerId = NULL;
     if (strcmp(provisionType, PROVISION_TYPE_DEBUG) == 0) {
-        ret = SetXpmOwnerId(PROCESS_OWNERID_DEBUG, NULL);
+        idType = PROCESS_OWNERID_DEBUG;
     } else if (ownerInfo == NULL) {
-        ret = SetXpmOwnerId(PROCESS_OWNERID_COMPAT, NULL);
+        idType = PROCESS_OWNERID_COMPAT;
     } else {
-        ret = SetXpmOwnerId(PROCESS_OWNERID_APP, ownerInfo->ownerId);
+        idType = PROCESS_OWNERID_APP;
+        ownerId = ownerInfo->ownerId;
     }
+    int ret = InitXpm(jitfortEnable, idType, ownerId);
     APPSPAWN_CHECK(ret == 0, return ret, "set xpm region failed: %{public}d", ret);
 #endif
     return 0;
@@ -459,15 +462,17 @@ static int SpawnGetSpawningFlag(AppSpawnMgr *content, AppSpawningCtx *property)
        // Start app from begetctl for debugging.
         property->client.flags |=  APP_BEGETCTL_BOOT;
         APPSPAWN_LOGI("Spawning: prepare app %{public}s, start from begetctl", GetProcessName(property));
-     }
-    // check developer mode
-    property->client.flags |= CheckEnabled("const.security.developermode.state", "true") ? APP_DEVELOPER_MODE : 0;
+    }
+    property->client.flags |= content->flags;
     return 0;
 }
 
 static int SpawnLoadConfig(AppSpawnMgr *content)
 {
     LoadSilkConfig();
+    // init flags that will not change until next reboot
+    content->flags |= CheckEnabled("const.security.developermode.state", "true") ? APP_DEVELOPER_MODE : 0;
+    content->flags |= CheckEnabled("persist.security.jitfort.enabled", "true") ? APP_JITFORT_MODE : 0;
     return 0;
 }
 
