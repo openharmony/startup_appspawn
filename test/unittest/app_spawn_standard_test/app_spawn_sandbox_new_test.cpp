@@ -937,6 +937,9 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_cfg_002, TestSize.Level0)
         TestParseAppSandboxConfig(sandbox, g_commonConfig.c_str());
         APPSPAWN_LOGV("sandbox->rootPath: %{public}s", sandbox->rootPath);
 
+        ret = UnmountDepPaths(sandbox, 1);
+        ASSERT_EQ(ret, 0);
+
         ASSERT_EQ(sandbox->topSandboxSwitch == 1, 1);
         ASSERT_EQ((sandbox->sandboxNsFlags & (CLONE_NEWPID | CLONE_NEWNET)) == (CLONE_NEWPID | CLONE_NEWNET), 1);
         ASSERT_EQ(strcmp(sandbox->rootPath, "/mnt/sandbox/<currentUserId>/app-root"), 0);

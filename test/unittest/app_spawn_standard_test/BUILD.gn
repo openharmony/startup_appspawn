@@ -97,7 +97,6 @@ ohos_unittest("AppSpawn_ut") {
     "${appspawn_path}/modules/common/appspawn_common.c",
     "${appspawn_path}/modules/common/appspawn_dfx_dump.cpp",
     "${appspawn_path}/modules/common/appspawn_namespace.c",
-    "${appspawn_path}/modules/common/appspawn_silk.c",
     "${appspawn_path}/modules/nweb_adapter/nwebspawn_adapter.cpp",
     "${appspawn_path}/modules/sandbox/appspawn_mount_template.c",
     "${appspawn_path}/modules/sandbox/appspawn_permission.c",
@@ -134,7 +133,10 @@ ohos_unittest("AppSpawn_ut") {
   ]
 
   if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
-    sources += [ "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_sandbox_new_test.cpp" ]
+    sources += [
+      "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_sandbox_new_coverage_test.cpp",
+      "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_sandbox_new_test.cpp",
+    ]
     defines += [ "APPSPAWN_SANDBOX_NEW" ]
   } else {
     sources += [

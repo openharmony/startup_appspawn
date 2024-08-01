@@ -39,6 +39,11 @@ using namespace testing;
 using namespace testing::ext;
 using namespace OHOS;
 
+APPSPAWN_STATIC int BuildFdInfoMap(const AppSpawnMsgNode *message, std::map<std::string, int> &fdMap, int isColdRun);
+APPSPAWN_STATIC void LoadExtendCJLib(void);
+APPSPAWN_STATIC int PreLoadAppSpawn(AppSpawnMgr *content);
+APPSPAWN_STATIC int RunChildByRenderCmd(const AppSpawnMgr *content, const AppSpawningCtx *property);
+
 namespace OHOS {
 static AppSpawnTestHelper g_testHelper;
 class AppSpawnCommonTest : public testing::Test {
@@ -385,4 +390,58 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_017, TestSize.Level0)
     DeleteAppSpawnHookMgr();
     AppSpawnHiSysEventWrite();
 }
-} // namespace OHOS
+
+HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_018, TestSize.Level0)
+{
+    AppSpawnMgr *content = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
+    EXPECT_EQ(content != nullptr, 1);
+    int ret = -1;
+    do {
+        LoadExtendCJLib();
+    } while (0);
+    DeleteAppSpawnMgr(content);
+    ASSERT_EQ(ret, -1);
+}
+
+HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_019, TestSize.Level0)
+{
+    AppSpawnMgr *content = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
+    EXPECT_EQ(content != nullptr, 1);
+    int ret = -1;
+    do {
+        // spawn
+        ret = PreLoadAppSpawn(content);
+    } while (0);
+    DeleteAppSpawnMgr(content);
+    ASSERT_EQ(ret, 0);
+}
+
+HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_020, TestSize.Level0)
+{
+    AppSpawnMgr *content = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
+    EXPECT_EQ(content != nullptr, 1);
+    int ret = -1;
+    do {
+        RunChildByRenderCmd(nullptr, nullptr);
+    } while (0);
+    DeleteAppSpawnMgr(content);
+    ASSERT_EQ(ret, -1);
+}
+
+HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_021, TestSize.Level0)
+{
+    AppSpawnMgr *content = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
+    EXPECT_EQ(content != nullptr, 1);
+    int ret = -1;
+    do {
+        // spawn
+        AppSpawnMsgNode *msgNode = CreateAppSpawnMsg();
+        EXPECT_EQ(msgNode != nullptr, 1);
+        std::map<std::string, int> fdMap;
+        ret = BuildFdInfoMap(msgNode, fdMap, 0);
+    } while (0);
+    DeleteAppSpawnMgr(content);
+    ASSERT_EQ(ret, -1);
+}
+
+}  // namespace OHOS

@@ -37,13 +37,15 @@ static void NotifyResToParent(struct AppSpawnContent *content, AppSpawnClient *c
     }
 }
 
-static void ProcessExit(int code)
+APPSPAWN_STATIC void ProcessExit(int code)
 {
+#ifndef APPSPAWN_TEST
     APPSPAWN_LOGI("App exit code: %{public}d", code);
 #ifdef OHOS_LITE
     _exit(0x7f); // 0x7f user exit
 #else
     quick_exit(0);
+#endif
 #endif
 }
 
@@ -141,7 +143,7 @@ APPSPAWN_STATIC int AppSpawnChild(AppSpawnContent *content, AppSpawnClient *clie
     return 0;
 }
 
-static int CloneAppSpawn(void *arg)
+APPSPAWN_STATIC int CloneAppSpawn(void *arg)
 {
     APPSPAWN_CHECK(arg != NULL, return -1, "Invalid content for appspawn");
     AppSpawnForkArg *forkArg = (AppSpawnForkArg *)arg;
@@ -181,6 +183,7 @@ int AppSpawnProcessMsg(AppSpawnContent *content, AppSpawnClient *client, pid_t *
         struct timespec forkStart = {0};
         clock_gettime(CLOCK_MONOTONIC, &forkStart);
         StartAppspawnTrace("AppspawnForkStart");
+#ifndef APPSPAWN_TEST
         pid = fork();
         FinishAppspawnTrace();
         if (pid == 0) {
@@ -190,6 +193,7 @@ int AppSpawnProcessMsg(AppSpawnContent *content, AppSpawnClient *client, pid_t *
             APPSPAWN_CHECK_ONLY_LOG(diff < MAX_FORK_TIME, "fork time %{public}" PRId64 " us", diff);
             ProcessExit(AppSpawnChild(content, client));
         }
+#endif
     }
     APPSPAWN_CHECK(pid >= 0, return APPSPAWN_FORK_FAIL, "fork child process error: %{public}d", errno);
     *childPid = pid;

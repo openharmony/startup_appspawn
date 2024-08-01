@@ -34,6 +34,12 @@
 #include "seccomp_policy.h"
 #endif
 
+#ifndef APPSPAWN_TEST
+#define APPSPAWN_STATIC static
+#else
+#define APPSPAWN_STATIC
+#endif
+
 namespace {
 #if defined(webview_arm64)
     const std::string NWEB_HAP_LIB_PATH = "/data/storage/el1/bundle/nweb/libs/arm64";
@@ -44,7 +50,7 @@ namespace {
 #endif
 }  // namespace
 
-static bool SetSeccompPolicyForRenderer(void *nwebRenderHandle)
+APPSPAWN_STATIC bool SetSeccompPolicyForRenderer(void *nwebRenderHandle)
 {
 #ifdef WITH_SECCOMP
     if (IsEnableSeccomp()) {
@@ -61,7 +67,7 @@ static bool SetSeccompPolicyForRenderer(void *nwebRenderHandle)
     return true;
 }
 
-static int RunChildProcessor(AppSpawnContent *content, AppSpawnClient *client)
+APPSPAWN_STATIC int RunChildProcessor(AppSpawnContent *content, AppSpawnClient *client)
 {
     uint32_t len = 0;
     char *renderCmd = reinterpret_cast<char *>(GetAppPropertyExt(
