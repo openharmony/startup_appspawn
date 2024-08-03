@@ -1809,11 +1809,17 @@ static void MountDir(const AppSpawningCtx *property, const char *rootPath, const
     return;
 }
 
+static const MountSharedTemplate MOUNT_SHARED_MAP[] = {
+    {"/data/storage/el2", nullptr},
+    {"/data/storage/el3", nullptr},
+    {"/data/storage/el4", nullptr},
+    {"/data/storage/el5", "ohos.permission.PROTECT_SCREEN_LOCK_DATA"},
+    {"/storage/Users", "ohos.permission.FILE_ACCESS_MANAGER"},
+};
+
 static void MountDirToShared(const AppSpawningCtx *property)
 {
     const char rootPath[] = "/mnt/sandbox/";
-    const char el2Path[] = "/data/storage/el2";
-    const char userPath[] = "/storage/Users";
     const char el1Path[] = "/data/storage/el1/bundle";
     AppDacInfo *info = reinterpret_cast<AppDacInfo *>(GetAppProperty(property, TLV_DAC_INFO));
     const char *bundleName = GetBundleName(property);
@@ -1827,12 +1833,19 @@ static void MountDirToShared(const AppSpawningCtx *property)
     if (IsUnlockStatus(info->uid)) {
         return;
     }
-    int index = GetPermissionIndex(nullptr, "ohos.permission.FILE_ACCESS_MANAGER");
-    APPSPAWN_LOGV("mount dir on lock mountPermissionFlags %{public}d", index);
-    if (CheckAppPermissionFlagSet(property, static_cast<uint32_t>(index))) {
-        MountDir(property, rootPath, nullptr, userPath);
+
+    int length = sizeof(MOUNT_SHARED_MAP) / sizeof(MOUNT_SHARED_MAP[0]);
+    for (int i = 0; i < length; i++) {
+        if (MOUNT_SHARED_MAP[i].permission == nullptr) {
+            MountDir(property, rootPath, nullptr, MOUNT_SHARED_MAP[i].sandboxPath);
+        } else {
+            int index = GetPermissionIndex(nullptr, MOUNT_SHARED_MAP[i].permission);
+            APPSPAWN_LOGV("mount dir on lock mountPermissionFlags %{public}d", index);
+            if (CheckAppPermissionFlagSet(property, static_cast<uint32_t>(index))) {
+                MountDir(property, rootPath, nullptr, MOUNT_SHARED_MAP[i].sandboxPath);
+            }
+        }
     }
-    MountDir(property, rootPath, nullptr, el2Path);
 }
 #endif
 
