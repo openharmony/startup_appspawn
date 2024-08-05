@@ -1,4 +1,4 @@
-# Native软件打包功能开发指导
+# Native软件打hnp包功能开发指导
 
 ## 场景介绍
 
@@ -47,8 +47,9 @@ Native包管理功能模块提供了对Native软件的打包、安装、卸载�
         "-Wl,--disable-new-dtags",
     ]
   ```
-  3. native软件包文件目录中不支持中文目录。
-  4. 打包文件路径长度不超过4096个字符。
+  3. Native软件包名和版本号不支持空格和特殊字符，Native软件包中文件目录不支持中文目录。
+  4. 打包文件路径长度不超过4096个字符，打包文件个数不超过65535，打包后hnp文件大小不超过4GB。
+  5. 在windows上打包hnp包，安装后文件默认赋予其他用户可执行权限。在linux、mac、ohos操作系统上打包hnp包，安装后文件继承打hnp包前文件在操作系统上的UGO权限。
 
   样例：
   ```
@@ -82,7 +83,7 @@ Native包管理功能模块提供了对Native软件的打包、安装、卸载�
   ```
 **2. Native软件包打包**
 
-  Native软件打包的目的是为了将Native软件打包成hnp文件以便后面上传到应用市场，为支持不同操作系统（linux、windows、mac、ohos），当前提供了hnpcli命令集成到sdk中，用户通过hnpcli命令进行打包。
+  Native软件打包的目的是为了将Native软件打包成hnp文件以便后面上传到应用市场，为支持不同操作系统（linux、windows、mac、ohos），当前提供了hnpcli命令集成到鸿蒙sdk中，用户通过hnpcli命令进行打包。
 
   hnpcli命令提供帮助信息：
   ```
@@ -126,33 +127,3 @@ Native包管理功能模块提供了对Native软件的打包、安装、卸载�
     hnpcli pack -i ./hnpsample -o ./out
     2. 命令返回成功，则在out目录下生成hnpsample.hnp文件
   ```
-
-**3. 上架应用市场**
-
-  Native软件包通过HAP包上架应用市场发布，具体应用软件上架流程请参考[上架指南](https://developer.huawei.com/consumer/cn/fa/)
-
-HAP包支持hnp包的扩展。
-存放方式：
-```
-HAP包
-|__hnp              #HAP包中新增hnp根目录
-|____arm64-v8a      #（ABI）
-|______python.hnp
-|______sub_dir      #支持子目录
-|________test.hnp
-```
-HAP包中hnp信息配置：
-module.json5配置文件的"module"字段下增加以下字段：
-
-```
-hnpPackages:[
-  {
-    "package": "python.hnp",
-    "type": "public"
-  }，
-  {
-    "package": "sub_dir/test.hnp",
-    "type": "private"
-  }
-]
-```
