@@ -914,11 +914,11 @@ int32_t SandboxUtils::DoSandboxFilePermissionBind(AppSpawningCtx *appProperty,
 std::set<std::string> SandboxUtils::GetMountPermissionNames()
 {
     std::set<std::string> permissionSet;
-    for (auto config : SandboxUtils::GetJsonConfig()) {
+    for (auto& config : SandboxUtils::GetJsonConfig()) {
         if (config.find(g_permissionPrefix) == config.end()) {
             continue;
         }
-        nlohmann::json permissionAppConfig = config[g_permissionPrefix][0];
+        nlohmann::json& permissionAppConfig = config[g_permissionPrefix][0];
         for (auto it = permissionAppConfig.begin(); it != permissionAppConfig.end(); it++) {
             permissionSet.insert(it.key());
         }
@@ -1061,9 +1061,8 @@ int32_t SandboxUtils::SetRenderSandboxProperty(const AppSpawningCtx *appProperty
 int32_t SandboxUtils::SetRenderSandboxPropertyNweb(const AppSpawningCtx *appProperty,
                                                    std::string &sandboxPackagePath)
 {
-    for (auto config : SandboxUtils::GetJsonConfig()) {
-        nlohmann::json privateAppConfig = config[g_privatePrefix][0];
-
+    for (auto& config : SandboxUtils::GetJsonConfig()) {
+        nlohmann::json& privateAppConfig = config[g_privatePrefix][0];
         if (privateAppConfig.find(g_ohosRender) != privateAppConfig.end()) {
             int ret = DoAllMntPointsMount(appProperty, privateAppConfig[g_ohosRender][0], nullptr, g_ohosRender);
             APPSPAWN_CHECK(ret == 0, return ret, "DoAllMntPointsMount failed, %{public}s",
@@ -1082,7 +1081,7 @@ int32_t SandboxUtils::SetRenderSandboxPropertyNweb(const AppSpawningCtx *appProp
 int32_t SandboxUtils::SetPrivateAppSandboxProperty(const AppSpawningCtx *appProperty)
 {
     int ret = 0;
-    for (auto config : SandboxUtils::GetJsonConfig()) {
+    for (auto& config : SandboxUtils::GetJsonConfig()) {
         ret = SetPrivateAppSandboxProperty_(appProperty, config);
         APPSPAWN_CHECK(ret == 0, return ret, "parse adddata-sandbox config failed");
     }
@@ -1092,8 +1091,8 @@ int32_t SandboxUtils::SetPrivateAppSandboxProperty(const AppSpawningCtx *appProp
 static bool GetSandboxPrivateSharedStatus(const string &bundleName)
 {
     bool result = false;
-    for (auto config : SandboxUtils::GetJsonConfig()) {
-        nlohmann::json privateAppConfig = config[g_privatePrefix][0];
+    for (auto& config : SandboxUtils::GetJsonConfig()) {
+        nlohmann::json& privateAppConfig = config[g_privatePrefix][0];
         if (privateAppConfig.find(bundleName) != privateAppConfig.end() &&
             privateAppConfig[bundleName][0].find(g_sandBoxShared) !=
             privateAppConfig[bundleName][0].end()) {
@@ -1110,7 +1109,7 @@ static bool GetSandboxPrivateSharedStatus(const string &bundleName)
 int32_t SandboxUtils::SetPermissionAppSandboxProperty(AppSpawningCtx *appProperty)
 {
     int ret = 0;
-    for (auto config : SandboxUtils::GetJsonConfig()) {
+    for (auto& config : SandboxUtils::GetJsonConfig()) {
         ret = SetPermissionAppSandboxProperty_(appProperty, config);
         APPSPAWN_CHECK(ret == 0, return ret, "parse adddata-sandbox config failed");
     }
@@ -1142,7 +1141,7 @@ int32_t SandboxUtils::SetCommonAppSandboxProperty(const AppSpawningCtx *appPrope
                                                   std::string &sandboxPackagePath)
 {
     int ret = 0;
-    for (auto jsonConfig : SandboxUtils::GetJsonConfig()) {
+    for (auto& jsonConfig : SandboxUtils::GetJsonConfig()) {
         ret = SetCommonAppSandboxProperty_(appProperty, jsonConfig);
         APPSPAWN_CHECK(ret == 0, return ret,
             "parse appdata config for common failed, %{public}s", sandboxPackagePath.c_str());
@@ -1311,15 +1310,15 @@ uint32_t SandboxUtils::GetSandboxNsFlags(bool isNweb)
         return nsFlags;
     }
 
-    for (auto config : SandboxUtils::GetJsonConfig()) {
+    for (auto& config : SandboxUtils::GetJsonConfig()) {
         if (isNweb) {
-            nlohmann::json privateAppConfig = config[g_privatePrefix][0];
+            nlohmann::json& privateAppConfig = config[g_privatePrefix][0];
             if (privateAppConfig.find(g_ohosRender) == privateAppConfig.end()) {
                 continue;
             }
             appConfig = privateAppConfig[g_ohosRender][0];
         } else {
-            nlohmann::json baseConfig = config[g_commonPrefix][0];
+            nlohmann::json& baseConfig = config[g_commonPrefix][0];
             if (baseConfig.find(g_appBase) == baseConfig.end()) {
                 continue;
             }
@@ -1352,11 +1351,11 @@ bool SandboxUtils::CheckBundleNameForPrivate(const std::string &bundleName)
 
 bool SandboxUtils::CheckTotalSandboxSwitchStatus(const AppSpawningCtx *appProperty)
 {
-    for (auto wholeConfig : SandboxUtils::GetJsonConfig()) {
+    for (auto& wholeConfig : SandboxUtils::GetJsonConfig()) {
         if (wholeConfig.find(g_commonPrefix) == wholeConfig.end()) {
             continue;
         }
-        nlohmann::json commonAppConfig = wholeConfig[g_commonPrefix][0];
+        nlohmann::json& commonAppConfig = wholeConfig[g_commonPrefix][0];
         if (commonAppConfig.find(g_topSandBoxSwitchPrefix) != commonAppConfig.end()) {
             std::string switchStatus = commonAppConfig[g_topSandBoxSwitchPrefix].get<std::string>();
             if (switchStatus == g_sbxSwitchCheck) {
@@ -1373,11 +1372,11 @@ bool SandboxUtils::CheckTotalSandboxSwitchStatus(const AppSpawningCtx *appProper
 bool SandboxUtils::CheckAppSandboxSwitchStatus(const AppSpawningCtx *appProperty)
 {
     bool rc = true;
-    for (auto wholeConfig : SandboxUtils::GetJsonConfig()) {
+    for (auto& wholeConfig : SandboxUtils::GetJsonConfig()) {
         if (wholeConfig.find(g_privatePrefix) == wholeConfig.end()) {
             continue;
         }
-        nlohmann::json privateAppConfig = wholeConfig[g_privatePrefix][0];
+        nlohmann::json& privateAppConfig = wholeConfig[g_privatePrefix][0];
         if (privateAppConfig.find(GetBundleName(appProperty)) != privateAppConfig.end()) {
             nlohmann::json appConfig = privateAppConfig[GetBundleName(appProperty)][0];
             rc = GetSbxSwitchStatusByConfig(appConfig);
