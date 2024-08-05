@@ -101,6 +101,7 @@ int main(int argc, char *const argv[])
         arg.socketName = NWEBSPAWN_SOCKET_NAME;
         arg.serviceName = NWEBSPAWN_SERVER_NAME;
     } else if (strcmp(argv[MODE_VALUE_INDEX], NWEBSPAWN_RESTART) == 0) {  // nweb spawn restart
+        APPSPAWN_CHECK_ONLY_EXPER(argvSize >= APP_LEN_PROC_NAME, argvSize = APP_LEN_PROC_NAME);
         arg.mode = MODE_FOR_NWEB_SPAWN;
         arg.moduleType = MODULE_NWEBSPAWN;
         arg.socketName = NWEBSPAWN_SOCKET_NAME;
