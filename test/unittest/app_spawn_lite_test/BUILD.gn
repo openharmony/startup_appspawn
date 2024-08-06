@@ -40,6 +40,7 @@ if (defined(ohos_lite)) {
 
     sources = [
       "//base/startup/appspawn/common/appspawn_server.c",
+      "//base/startup/appspawn/common/appspawn_trace.cpp",
       "//base/startup/appspawn/lite/appspawn_message.c",
       "//base/startup/appspawn/lite/appspawn_process.c",
       "//base/startup/appspawn/lite/appspawn_service.c",
