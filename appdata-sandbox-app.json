@@ -84,7 +84,7 @@
                 "src-path" : "/vendor/etc/hiai",
                 "sandbox-path" : "/vendor/etc/hiai"
             }, {
-                "src-path": "/storage/media/<currentUserId>/local/files/Docs/Downloads/<variablePackageName>",
+                "src-path": "/storage/media/<currentUserId>/local/files/Docs/Downloads/<PackageName>",
                 "sandbox-path": "/storage/Users/<currentUserId>/Downloads"
             }, {
                 "src-path" : "/mnt/hmdfs/<currentUserId>/cloud/data/<PackageName>",
@@ -133,20 +133,20 @@
                 "src-path" : "/system/app/SystemResources",
                 "sandbox-path" : "/data/global/systemResources"
             }, {
-                "src-path" : "/data/app/el1/bundle/public/<variablePackageName>",
+                "src-path" : "/data/app/el1/bundle/public/<PackageName>",
                 "sandbox-path" : "/data/storage/el1/bundle",
                 "check-action-status": "true"
             }, {
                 "src-path" : "/data/misc",
                 "sandbox-path" : "/data/storage/el1/bundle/misc"
             }, {
-                "src-path" : "/data/local/ark-cache/<variablePackageName>",
+                "src-path" : "/data/local/ark-cache/<PackageName>",
                 "sandbox-path" : "/data/storage/ark-cache"
             }, {
-                "src-path" : "/data/local/ark-profile/<currentUserId>/<variablePackageName>",
+                "src-path" : "/data/local/ark-profile/<currentUserId>/<PackageName>",
                 "sandbox-path" : "/data/storage/ark-profile"
             }, {
-                "src-path" : "/data/local/shader_cache/local/<variablePackageName>",
+                "src-path" : "/data/local/shader_cache/local/<PackageName>",
                 "sandbox-path" : "/data/storage/shader_cache/local"
             }, {
                 "src-path" : "/data/local/shader_cache/cloud/<PackageName>",
@@ -333,7 +333,7 @@
                 "src-path": "/data/app/el1/bundle/<currentUserId>/hnppublic",
                 "sandbox-path": "/data/service/hnp"
             }, {
-                "src-path" : "/data/app/el1/bundle/<currentUserId>/hnp/<variablePackageName>",
+                "src-path" : "/data/app/el1/bundle/<currentUserId>/hnp/<PackageName>",
                 "sandbox-path" : "/data/app"
             }
         ]}],
@@ -424,7 +424,7 @@
             "src-path": "/mnt/hmdfs/<currentUserId>/non_account/merge_view/data",
             "sandbox-path": "<deps-path>/auth_groups"
         }, {
-            "src-path": "/mnt/hmdfs/<currentUserId>/account/merge_view/data/<variablePackageName>",
+            "src-path": "/mnt/hmdfs/<currentUserId>/account/merge_view/data/<PackageName>",
             "sandbox-path": "<deps-path>/distributedfiles"
         }, {
             "src-path": "/mnt/share/<currentUserId>/<PackageName_index>",
