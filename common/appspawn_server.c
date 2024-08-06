@@ -21,6 +21,7 @@
 #include <signal.h>
 #include <time.h>
 
+#include "appspawn_trace.h"
 #include "appspawn_utils.h"
 #ifndef OHOS_LITE
 #include "appspawn_manager.h"
@@ -89,7 +90,9 @@ APPSPAWN_STATIC int AppSpawnChild(AppSpawnContent *content, AppSpawnClient *clie
 {
     APPSPAWN_CHECK(content != NULL && client != NULL, return -1, "Invalid arg for appspawn child");
     APPSPAWN_LOGI("AppSpawnChild id %{public}u flags: 0x%{public}x", client->id, client->flags);
+    StartAppspawnTrace("AppSpawnExecuteClearEnvHook");
     int ret = AppSpawnExecuteClearEnvHook(content, client);
+    FinishAppspawnTrace();
     APPSPAWN_CHECK_ONLY_EXPER(ret == 0,
         NotifyResToParent(content, client, ret);
         AppSpawnEnvClear(content, client);
@@ -105,22 +108,29 @@ APPSPAWN_STATIC int AppSpawnChild(AppSpawnContent *content, AppSpawnClient *clie
 #ifdef USE_ENCAPS
     SetEncapsFlag(content->fdEncaps, OH_PROC_APP);
 #endif
+    StartAppspawnTrace("AppSpawnExecuteSpawningHook");
     ret = AppSpawnExecuteSpawningHook(content, client);
+    FinishAppspawnTrace();
     APPSPAWN_CHECK_ONLY_EXPER(ret == 0,
         NotifyResToParent(content, client, ret);
         AppSpawnEnvClear(content, client);
         return 0);
-
+    StartAppspawnTrace("AppSpawnExecutePreReplyHook");
     ret = AppSpawnExecutePreReplyHook(content, client);
+    FinishAppspawnTrace();
     APPSPAWN_CHECK_ONLY_EXPER(ret == 0,
         NotifyResToParent(content, client, ret);
         AppSpawnEnvClear(content, client);
         return 0);
 
     // notify success to father process and start app process
+    StartAppspawnTrace("NotifyResToParent");
     NotifyResToParent(content, client, 0);
+    FinishAppspawnTrace();
 
+    StartAppspawnTrace("AppSpawnExecutePostReplyHook");
     (void)AppSpawnExecutePostReplyHook(content, client);
+    FinishAppspawnTrace();
 
     if (content->runChildProcessor != NULL) {
         ret = content->runChildProcessor(content, client);
@@ -170,7 +180,9 @@ int AppSpawnProcessMsg(AppSpawnContent *content, AppSpawnClient *client, pid_t *
 #endif
         struct timespec forkStart = {0};
         clock_gettime(CLOCK_MONOTONIC, &forkStart);
+        StartAppspawnTrace("AppspawnForkStart");
         pid = fork();
+        FinishAppspawnTrace();
         if (pid == 0) {
             struct timespec forkEnd = {0};
             clock_gettime(CLOCK_MONOTONIC, &forkEnd);
