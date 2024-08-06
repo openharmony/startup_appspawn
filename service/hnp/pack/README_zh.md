@@ -49,7 +49,7 @@ Native包管理功能模块提供了对Native软件的打包、安装、卸载�
   ```
   3. Native软件包名和版本号不支持空格和特殊字符，Native软件包中文件目录不支持中文目录。
   4. 打包文件路径长度不超过4096个字符，打包文件个数不超过65535，打包后hnp文件大小不超过4GB。
-  5. 在windows上打包hnp包，安装后文件默认赋予其他用户可执行权限。在linux、mac、ohos操作系统上打包hnp包，安装后文件继承打hnp包前文件在操作系统上的UGO权限。
+  5. hnp安装之后，用户通常以others权限运行。在windows上打包hnp包，安装后文件默认赋予others可执行权限。在linux、mac、ohos操作系统上打包hnp包，安装后文件继承打hnp包前文件在操作系统上的UGO权限。
 
   样例：
   ```
@@ -83,7 +83,7 @@ Native包管理功能模块提供了对Native软件的打包、安装、卸载�
   ```
 **2. Native软件包打包**
 
-  Native软件打包的目的是为了将Native软件打包成hnp文件以便后面上传到应用市场，为支持不同操作系统（linux、windows、mac、ohos），当前提供了hnpcli命令集成到鸿蒙sdk中，用户通过hnpcli命令进行打包。
+  Native软件打包的目的是为了将Native软件打包成hnp文件以便后面上传到应用市场，为支持不同操作系统（linux、windows、mac、ohos），当前已在OpenHarmony sdk中提供了hnpcli工具，用户通过hnpcli命令进行打包。
 
   hnpcli命令提供帮助信息：
   ```
