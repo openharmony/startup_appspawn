@@ -1,7 +1,7 @@
 # Native软件包开发指南
 ## 1 简介
 
-在PC产品开发场景下，大量生产力软件需要在鸿蒙PC上运行Native软件包（例如Python、node、java等Native软件包）。鸿蒙PC提供Native软件包方案支持在生产力应用上安装并运行Native软件包，支持开发者用户或者自动化测试人员运行通过命令行运行Native软件包二进制。
+大量生产力软件需要在设备上运行Native软件包（例如Python、node、java等Native软件包）。当前提供Native软件包方案支持在生产力应用上安装并运行Native软件包，支持开发者用户或者自动化测试人员运行通过命令行运行Native软件包二进制。
 
 ## 2 Native软件包开发
 
