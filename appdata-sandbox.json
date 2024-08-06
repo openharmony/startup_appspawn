@@ -661,7 +661,6 @@
         }],
         "ohos.permission.FILE_CROSS_APP":[{
             "sandbox-switch": "ON",
-            "gids": [1006],
             "mount-paths": [{
                     "src-path": "/storage/media/<currentUserId>/local/files/Docs",
                     "sandbox-path": "/storage/Users/<currentUserId>",
