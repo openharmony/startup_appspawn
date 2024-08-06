@@ -1228,10 +1228,12 @@ AppSpawnContent *StartCJSpawnService(const AppSpawnStartArg *startArg, uint32_t 
     AppSpawnStartArg *arg = (AppSpawnStartArg *)startArg;
     APPSPAWN_LOGV("Start appspawn argvSize %{public}d mode %{public}d service %{public}s",
                   argvSize, arg->mode, arg->serviceName);
-    int ret = memset_s(argv[0], argvSize, 0, (size_t)argvSize);
-    APPSPAWN_CHECK(ret == EOK, return NULL, "Failed to memset argv[0]");
-    ret = strncpy_s(argv[0], argvSize, arg->serviceName, strlen(arg->serviceName));
-    APPSPAWN_CHECK(ret == EOK, return NULL, "Failed to copy service name %{public}s", arg->serviceName);
+    if (arg->initArg) {
+        int ret = memset_s(argv[0], argvSize, 0, (size_t)argvSize);
+        APPSPAWN_CHECK(ret == EOK, return NULL, "Failed to memset argv[0]");
+        ret = strncpy_s(argv[0], argvSize, arg->serviceName, strlen(arg->serviceName));
+        APPSPAWN_CHECK(ret == EOK, return NULL, "Failed to copy service name %{public}s", arg->serviceName);
+    }
 
     // load module appspawn/common
     AppSpawnLoadAutoRunModules(MODULE_COMMON);
@@ -1242,7 +1244,7 @@ AppSpawnContent *StartCJSpawnService(const AppSpawnStartArg *startArg, uint32_t 
     APPSPAWN_CHECK(content != NULL, return NULL, "Failed to create content for %{public}s", arg->socketName);
 
     AppSpawnLoadAutoRunModules(arg->moduleType);  // load corresponding plugin according to startup mode
-    ret = ServerStageHookExecute(STAGE_SERVER_PRELOAD, content);   // Preload, prase the sandbox
+    int ret = ServerStageHookExecute(STAGE_SERVER_PRELOAD, content);   // Preload, prase the sandbox
     APPSPAWN_CHECK(ret == 0, AppSpawnDestroyContent(content);
     return NULL, "Failed to prepare load %{public}s result: %{public}d", arg->serviceName, ret);
 #ifndef APPSPAWN_TEST

@@ -117,6 +117,12 @@ int main(int argc, char *const argv[])
     arg.serviceName = CJAPPSPAWN_SERVER_NAME;
     arg.moduleType = MODULE_APPSPAWN;
     arg.initArg = 1;
+    // cold start in cjappspawn is for ide-sanitizers (asan/tsan/hwasan)
+    if (strcmp(argv[MODE_VALUE_INDEX], "app_cold") == 0) {  // cold start
+        APPSPAWN_CHECK(argc >= ARG_NULL, return 0, "Invalid arg for cold start %{public}d", argc);
+        arg.mode = MODE_FOR_APP_COLD_RUN;
+        arg.initArg = 0;
+    }
     AppSpawnContent *content = StartCJSpawnService(&arg, argvSize, argc, argv);
 #endif
     if (content != NULL) {
