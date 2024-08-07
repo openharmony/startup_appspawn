@@ -214,6 +214,11 @@
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
+                    "src-path" : "/data/local/shader_cache/cloud/common",
+                    "sandbox-path" : "/data/storage/shader_cache/common",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
                     "src-path" : "/mnt/share/<currentUserId>/<PackageName_index>",
                     "sandbox-path" : "/data/storage/el2/share",
                     "sandbox-flags" : [ "bind", "rec" ],
