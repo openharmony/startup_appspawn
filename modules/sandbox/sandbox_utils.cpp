@@ -394,6 +394,7 @@ static void MakeAtomicServiceDir(const AppSpawningCtx *appProperty, std::string 
     }
 #endif
     AppSpawnMsgDacInfo *dacInfo = reinterpret_cast<AppSpawnMsgDacInfo *>(GetAppProperty(appProperty, TLV_DAC_INFO));
+    APPSPAWN_CHECK(dacInfo != NULL, return, "No dac info in msg app property");
     if (path.find("/base") != std::string::npos) {
         ret = chown(path.c_str(), dacInfo->uid, dacInfo->gid);
     } else if (path.find("/database") != std::string::npos) {
