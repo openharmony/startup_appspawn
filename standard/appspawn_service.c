@@ -300,6 +300,7 @@ static int HandleRecvMessage(const TaskHandle taskHandle, uint8_t * buffer, int 
     };
 
     AppSpawnConnection *connection = (AppSpawnConnection *) LE_GetUserData(taskHandle);
+    APPSPAWN_CHECK(connection != NULL, return -1, "Invalid connection");
     errno = 0;
     int recvLen = recvmsg(socketFd, &msg, flags);
     APPSPAWN_CHECK_ONLY_LOG(errno == 0, "recvmsg with errno %{public}d", errno);
