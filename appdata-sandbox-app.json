@@ -152,6 +152,9 @@
                 "src-path" : "/data/local/shader_cache/cloud/<PackageName>",
                 "sandbox-path" : "/data/storage/shader_cache/cloud"
             }, {
+                "src-path" : "/data/local/shader_cache/cloud/common",
+                "sandbox-path" : "/data/storage/shader_cache/common"
+            }, {
                 "src-path" : "/mnt/share/<currentUserId>/<PackageName_index>",
                 "sandbox-path" : "/data/storage/el2/share"
             }, {
