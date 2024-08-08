@@ -1126,7 +1126,9 @@ HWTEST_F(AppSpawnAppMgrTest, App_Spawn_RebuildAppSpawnMsgNode, TestSize.Level0)
     int ret = CheckAppSpawnMsg(msgNode);
     EXPECT_NE(0, ret);  // check fail
     AppSpawnedProcess *app = (AppSpawnedProcess *)malloc(sizeof(AppSpawnedProcess) + sizeof(char) * 10);
+    EXPECT_EQ(app != nullptr, 1);
     app->message = (AppSpawnMsgNode *)malloc(sizeof(AppSpawnMsgNode));
+    EXPECT_EQ(app->message != nullptr, 1);
     app->message->msgHeader.tlvCount = 10; // 10 is tlvCount
     app->message->msgHeader.msgLen = 200; // 200 is msgLen
     (void)strcpy_s(app->message->msgHeader.processName, APP_LEN_PROC_NAME, "test.xxx");
@@ -1138,7 +1140,7 @@ HWTEST_F(AppSpawnAppMgrTest, App_Spawn_RebuildAppSpawnMsgNode, TestSize.Level0)
 
 static void SignalHandle(int sig)
 {
-    std::cout<<"signal is:%d"<<sig<<std::endl;
+    std::cout<<"signal is: "<<sig<<std::endl;
 }
 
 HWTEST_F(AppSpawnAppMgrTest, App_Spawn_KillAndWaitStatus, TestSize.Level0)

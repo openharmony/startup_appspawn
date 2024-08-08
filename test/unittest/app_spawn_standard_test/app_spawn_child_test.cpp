@@ -379,8 +379,6 @@ HWTEST_F(AppSpawnChildTest, App_Spawn_Child_008, TestSize.Level0)
         ret = APPSPAWN_ARG_INVALID;
         property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
         APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
-
-
         // spawn
         property->client.flags = APP_COLD_START;
         ret = AppSpawnChild(content, &property->client);

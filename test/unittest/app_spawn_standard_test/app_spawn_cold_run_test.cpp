@@ -255,6 +255,7 @@ HWTEST_F(AppSpawnColdRunTest, App_Spawn_Cold_Run_005, TestSize.Level0)
 {
     AppSpawningCtx appProperty;
     appProperty.message = (AppSpawnMsgNode *)malloc(sizeof(AppSpawnMsgNode));
+    ASSERT_EQ(appProperty.message != nullptr, 1);
     (void)strcpy_s(appProperty.message->msgHeader.processName,
         sizeof(appProperty.message->msgHeader.processName), "test.xxx.xxx");
     appProperty.message->msgHeader.msgLen = 1024;
