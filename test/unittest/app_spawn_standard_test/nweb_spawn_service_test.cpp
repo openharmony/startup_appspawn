@@ -521,6 +521,7 @@ HWTEST_F(NWebSpawnServiceTest, NWeb_Spawn_nwebspawn_adapter, TestSize.Level0)
 
     const std::string renderLibDir = NWEB_HAP_LIB_PATH + "/libnweb_render.so";
     void *nwebRenderHandle = dlopen(renderLibDir.c_str(), RTLD_NOW | RTLD_GLOBAL);
+    ASSERT_EQ((nwebRenderHandle != nullptr), 1);
     bool res = SetSeccompPolicyForRenderer(nwebRenderHandle);
     ASSERT_FALSE(res);
 }

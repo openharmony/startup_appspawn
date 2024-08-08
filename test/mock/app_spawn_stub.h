@@ -51,8 +51,6 @@ typedef struct TagSandboxSection SandboxSection;
 
 int MountAllGroup(const SandboxContext *context, const cJSON *groups);
 int MountAllHsp(const SandboxContext *context, const cJSON *hsps);
-void ProcessExit(int code);
-int CloneAppSpawn(void *arg);
 
 int AppSpawnColdStartApp(struct AppSpawnContent *content, AppSpawnClient *client);
 void ProcessSignal(const struct signalfd_siginfo *siginfo);

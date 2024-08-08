@@ -89,10 +89,8 @@ static SandboxContext *TestGetSandboxContext(const AppSpawningCtx *property, int
 
 HWTEST_F(AppSpawnSandboxCoverageTest, App_Spawn_Sandbox_ProcessExpandAppSandboxConfig, TestSize.Level0)
 {
-    // const SandboxContext *context, const AppSpawnSandboxCfg *appSandBox, const char *name
     int ret = ProcessExpandAppSandboxConfig(nullptr, nullptr, nullptr);
     ASSERT_NE(ret, 0);
-
     const SandboxContext context = {};
     const AppSpawnSandboxCfg sandboxCfg = {};
     ret = ProcessExpandAppSandboxConfig(&context, nullptr, nullptr);

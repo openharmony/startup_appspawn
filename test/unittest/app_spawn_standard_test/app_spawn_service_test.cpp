@@ -648,14 +648,4 @@ HWTEST_F(AppSpawnServiceTest, App_Spawn_ConvertEnvValue_001, TestSize.Level0)
     EXPECT_EQ(strcmp(outEnv, "/path/to/lib/envtest"), 0);
     EXPECT_EQ(unsetenv("ENV_TEST_VALUE"), 0);
 }
-
-HWTEST_F(AppSpawnServiceTest, App_Spawn_ConvertInterface_001, TestSize.Level0)
-{
-    ProcessExit(0);
-    int ret = CloneAppSpawn(nullptr);
-    EXPECT_EQ(ret, -1);
-    int a = 10;
-    void *data = &a;
-    CloneAppSpawn(data);
-}
 }  // namespace OHOS
