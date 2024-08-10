@@ -946,6 +946,31 @@ static void HnpVersionV4Uninstall()
     EXPECT_EQ(HnpCmdUnInstall(uargc, uargv), 0);
 }
 
+static bool HnpSymlinkCheck(const char *sourcePath, const char *targetPath)
+{
+    int ret = false;
+    struct stat stat;
+    char link[MAX_FILE_PATH_LEN];
+
+    if (lstat(sourcePath, &stat) < 0) {
+        return ret;
+    }
+
+    if (!S_ISLNK(stat.st_mode)) {
+        return ret;
+    }
+
+    int len = readlink(sourcePath, link, sizeof(link) - 1);
+    if (len < 0) {
+        return ret;
+    }
+
+    link[len] = '\0';
+
+    GTEST_LOG_(INFO) << "sourcelink is" << link << ";targetlink is" << targetPath;
+    return strcmp(link, targetPath) == 0 ? true : false;
+}
+
 /**
 * @tc.name: Hnp_Install_010
 * @tc.desc:  Verify version rule HnpCmdInstall succeed.
@@ -967,6 +992,7 @@ HWTEST_F(HnpInstallerTest, Hnp_Install_010, TestSize.Level0)
     EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_1", F_OK), 0);
     EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_2", F_OK), 0);
     EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_3", F_OK), 0);
+    EXPECT_EQ(HnpSymlinkCheck(HNP_BASE_PATH"/hnppublic/bin/out", "../sample_public.org/sample_public_3/bin/out"), true);
 
     // uninstall v3
     HnpVersionV3Uninstall();
@@ -974,6 +1000,7 @@ HWTEST_F(HnpInstallerTest, Hnp_Install_010, TestSize.Level0)
     EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_1", F_OK), 0);
     EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_2", F_OK), 0);
     EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_3", F_OK), 0);
+    EXPECT_EQ(HnpSymlinkCheck(HNP_BASE_PATH"/hnppublic/bin/out", "../sample_public.org/sample_public_3/bin/out"), true);
 
     HnpVersionV4Install();
     // check v1 v2 v4 exist v3 is uninstall
@@ -981,6 +1008,7 @@ HWTEST_F(HnpInstallerTest, Hnp_Install_010, TestSize.Level0)
     EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_2", F_OK), 0);
     EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_3", F_OK), -1);
     EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_4", F_OK), 0);
+    EXPECT_EQ(HnpSymlinkCheck(HNP_BASE_PATH"/hnppublic/bin/out", "../sample_public.org/sample_public_4/bin/out"), true);
 
     // uninstall v1
     HnpVersionV1Uninstall();
@@ -989,6 +1017,7 @@ HWTEST_F(HnpInstallerTest, Hnp_Install_010, TestSize.Level0)
     EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_2", F_OK), 0);
     EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_3", F_OK), -1);
     EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_4", F_OK), 0);
+    EXPECT_EQ(HnpSymlinkCheck(HNP_BASE_PATH"/hnppublic/bin/out", "../sample_public.org/sample_public_4/bin/out"), true);
 
     // uninstall v4
     HnpVersionV4Uninstall();
@@ -997,6 +1026,7 @@ HWTEST_F(HnpInstallerTest, Hnp_Install_010, TestSize.Level0)
     EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_2", F_OK), 0);
     EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_3", F_OK), -1);
     EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_4", F_OK), 0);
+    EXPECT_EQ(HnpSymlinkCheck(HNP_BASE_PATH"/hnppublic/bin/out", "../sample_public.org/sample_public_4/bin/out"), true);
 
     // uninstall v2
     HnpVersionV2Uninstall();

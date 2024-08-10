@@ -191,6 +191,17 @@ static int HnpInstall(const char *hnpFile, HnpInstallInfo *hnpInfo, HnpCfgInfo *
     return HnpGenerateSoftLink(hnpInfo->hnpVersionPath, hnpInfo->hnpBasePath, hnpCfg);
 }
 
+/**
+ * 卸载公共hnp.
+ *
+ * @param packageName hap名称.
+ * @param name  hnp名称
+ * @param version 版本号.
+ * @param uid 用户id.
+ * @param isInstallVersion 是否卸载安装版本.
+ *
+ * @return 0:success;other means failure.
+ */
 static int HnpUnInstallPublicHnp(const char* packageName, const char *name, const char *version, int uid,
     bool isInstallVersion)
 {
@@ -230,11 +241,11 @@ static int HnpUnInstallPublicHnp(const char* packageName, const char *name, cons
     if (ret != 0) {
         return ret;
     }
- 
+
     if (HnpPathFileCount(hnpNamePath) == 0) {
         return HnpDeleteFolder(hnpNamePath);
     }
-    
+
     return 0;
 }
 
@@ -245,7 +256,7 @@ static int HnpNativeUnInstall(HnpPackageInfo *packageInfo, int uid, const char *
     HNP_LOGI("hnp uninstall start now! name=%{public}s,version=[%{public}s,%{public}s],uid=%{public}d,"
         "package=%{public}s", packageInfo->name, packageInfo->currentVersion, packageInfo->installVersion, uid,
         packageName);
-    
+
     if (!packageInfo->hnpExist) {
         ret = HnpUnInstallPublicHnp(packageName, packageInfo->name, packageInfo->currentVersion, uid, false);
         if (ret != 0) {
