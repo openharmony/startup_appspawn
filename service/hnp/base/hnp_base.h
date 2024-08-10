@@ -74,7 +74,7 @@ typedef struct HnpCfgInfoStru {
 typedef struct HnpPackageInfoStru {
     char name[MAX_FILE_PATH_LEN];
     char currentVersion[HNP_VERSION_LEN];    // Native当前软件包版本号
-    char installVersion[HNP_VERSION_LEN];    // Native安装软件包版本号，非此hap安装为空
+    char installVersion[HNP_VERSION_LEN];    // Native安装软件包版本号，非此hap安装值为none
     bool hnpExist;                           // hnp是否被其他hap使用
 } HnpPackageInfo;
 

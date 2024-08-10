@@ -470,6 +470,7 @@ int HnpPackageInfoGet(const char *packageName, HnpPackageInfo **packageInfoOut, 
             continue;
         }
         hnpExist = HnpOtherPackageInstallCheck(name->valuestring, version->valuestring, hapIndex, json);
+        // 当卸载当前版本未被其他hap使用或者存在安装版本的时候，需要卸载对应的当前版本或者安装版本
         if (!hnpExist || strcmp(installVersion->valuestring, "none") != 0) {
             if ((strcpy_s(packageInfos[sum].name, MAX_FILE_PATH_LEN, name->valuestring) != EOK) ||
                 (strcpy_s(packageInfos[sum].currentVersion, HNP_VERSION_LEN, version->valuestring) != EOK) ||
