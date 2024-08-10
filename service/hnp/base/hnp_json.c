@@ -354,7 +354,7 @@ int HnpInstallInfoJsonWrite(const char *hapPackageName, const HnpCfgInfo *hnpCfg
         bool hnpExist = HnpInstallHnpExistCheck(hnpItemArr, hnpCfg->name, &hnpItem, &hnpIndex, NULL);
         if (hnpExist) {
             cJSON *versionJson = cJSON_GetObjectItem(hnpItem, "current_version");
-            if (versionJson != NULL) { //版本存在，即更新版本，非新增，无需更新install_version
+            if (versionJson != NULL) { // 当前版本存在，即非新增版本，仅更新current_version即可，无需更新install_version
                 cJSON_SetValuestring(versionJson, hnpCfg->version);
                 HnpPackageVersionUpdateAll(json, hnpCfg);
                 ret = HnpHapJsonWrite(json);

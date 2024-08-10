@@ -273,7 +273,6 @@ int HnpPathFileCount(const char *path)
 #ifdef _WIN32
     return num;
 #else
-
     struct dirent *entry;
     DIR *dir = opendir(path);
     if (dir == NULL) {
@@ -287,7 +286,7 @@ int HnpPathFileCount(const char *path)
         }
         num++;
     }
-    
+
     return num;
 #endif
 }
