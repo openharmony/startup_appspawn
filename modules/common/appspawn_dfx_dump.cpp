@@ -20,6 +20,7 @@
 
 void DumpSpawnStack(pid_t pid)
 {
+#ifndef APPSPAWN_TEST
     OHOS::HiviewDFX::DfxDumpCatcher dumpLog;
     std::string stackTrace;
     bool ret = dumpLog.DumpCatch(pid, 0, stackTrace);
@@ -28,4 +29,5 @@ void DumpSpawnStack(pid_t pid)
     } else {
         APPSPAWN_LOGE("dumpCatch stackTrace failed.");
     }
+#endif
 }
