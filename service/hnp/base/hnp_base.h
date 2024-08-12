@@ -23,6 +23,8 @@
 
 #include "securec.h"
 
+#include "contrib/minizip/zip.h"
+
 #ifndef HNP_CLI
 
 #include "hilog/log.h"
@@ -65,14 +67,42 @@ typedef struct NativeBinLinkStru {
 typedef struct HnpCfgInfoStru {
     char name[MAX_FILE_PATH_LEN];
     char version[HNP_VERSION_LEN];    // Native软件包版本号
-    unsigned int linkNum;   // 软链接配置个数
+    bool isInstall;                   // 是否已安装
+    unsigned int linkNum;             // 软链接配置个数
     NativeBinLink *links;
 } HnpCfgInfo;
 
-/* hnp package文件信息 */
+/* hnp package文件信息
+ * @attention:版本控住逻辑如下
+ * @li 1.当前版本仍被其他hap使用,但是安装此版本的hap被卸载了，不会卸载当前版本，直到升级版本后
+ * @li 2.如果安装版本不是当前版本，安装版本随hap一起卸载，如果安装版本是当前版本，则根据规则1进行卸载
+ * 例如：
+ * 1.a安装v1,b安装v2,c 安装v3
+ * 1.1 状态：hnppublic:[v1,v2,v3],hnp_info:[a cur=v3,ins=v1],[b cur=v3,ins=v2],[c cur=v3,ins=v3]
+ * 1.2 卸载b
+ * 状态：hnppublic:[v1,v3],hnp_info:[a cur=v3,ins=v1],[c cur=v3,ins=v3]
+ * 1.3 卸载c
+ * 1.3.1 状态：hnppublic:[v1,v2,v3],hnp_info:[a cur=v3,ins=v1],[b cur=v3,ins=v2]
+ * 1.3.2 d安装v4
+ * 1.3.2.1 状态：hnppublic:[v1,v2,v4],hnp_info:[a cur=v4,ins=v1],[b cur=v4,ins=v2],[d cur=v4,ins=v4]
+ * 1.3.2.2 卸载d
+ * 状态：d被卸载,hnppublic:[v1,v2,v4],hnp_info:[a cur=v4,ins=v1],[b cur=v4,ins=v2]
+ * 1.4 卸载a,b
+ * 1.4.1 状态：hnppublic:[v3],hnp_info:[c cur=v3,ins=v3]
+ * 1.4.2 卸载c
+ * 状态：hnppublic:[],hnp_info:[]
+ * 1.5 f安装v3
+ * 1.5.1 状态：hnppublic:[v1,v2,v3],hnp_info:[a cur=v3,ins=v1],[b cur=v3,ins=v2],[c cur=v3,ins=v3],[f cur=v3,ins=none]
+ * 1.5.2 卸载c
+ * 1.5.2.1 状态：hnppublic:[v1,v2,v3],hnp_info:[a cur=v3,ins=v1],[b cur=v3,ins=v2],[f cur=v3,ins=none]
+ * 1.5.3 卸载f
+ * 1.5.3.1 状态：hnppublic:[v1,v2,v3],hnp_info:[a cur=v3,ins=v1],[b cur=v3,ins=v2],[c cur=v3,ins=v3]
+ */
 typedef struct HnpPackageInfoStru {
     char name[MAX_FILE_PATH_LEN];
-    char version[HNP_VERSION_LEN];    // Native软件包版本号
+    char currentVersion[HNP_VERSION_LEN];    // Native当前软件包版本号
+    char installVersion[HNP_VERSION_LEN];    // Native安装软件包版本号，非此hap安装值为none
+    bool hnpExist;                           // hnp是否被其他hap使用
 } HnpPackageInfo;
 
 /* 日志级别 */
@@ -225,12 +255,12 @@ int ReadFileToStream(const char *filePath, char **stream, int *streamLen);
 
 int GetRealPath(char *srcPath, char *realPath);
 
-int HnpZip(const char *inputDir, const char *outputFile);
+int HnpZip(const char *inputDir, zipFile zf);
 
 int HnpUnZip(const char *inputFile, const char *outputDir, const char *hnpSignKeyPrefix,
     HnpSignMapInfo *hnpSignMapInfos, int *count);
 
-int HnpAddFileToZip(char *zipfile, char *filename, char *buff, int size);
+int HnpAddFileToZip(zipFile zf, char *filename, char *buff, int size);
 
 void HnpLogPrintf(int logLevel, char *module, const char *format, ...);
 
@@ -260,9 +290,13 @@ int HnpPackageInfoHnpDelete(const char *packageName, const char *name, const cha
 
 int HnpPackageInfoDelete(const char *packageName);
 
-char *HnpPackgeHnpVersionGet(const char *packageName, const char *name);
+char *HnpCurrentVersionUninstallCheck(const char *name);
 
 int HnpFileCountGet(const char *path, int *count);
+
+int HnpPathFileCount(const char *path);
+
+char *HnpCurrentVersionGet(const char *name);
 
 #ifdef HNP_CLI
 #define HNP_LOGI(args, ...) \

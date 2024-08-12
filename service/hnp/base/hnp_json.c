@@ -208,7 +208,7 @@ static bool HnpInstallHnpExistCheck(cJSON *hnpItemArr, const char *name, cJSON *
     for (int i = 0; i < cJSON_GetArraySize(hnpItemArr); i++) {
         cJSON *hnpItem = cJSON_GetArrayItem(hnpItemArr, i);
         cJSON *nameJson = cJSON_GetObjectItem(hnpItem, "name");
-        cJSON *versionJson = cJSON_GetObjectItem(hnpItem, "version");
+        cJSON *versionJson = cJSON_GetObjectItem(hnpItem, "current_version");
         if ((nameJson != NULL) && (strcmp(nameJson->valuestring, name) == 0)) {
             *hnpItemOut = hnpItem;
             *hnpIndex = i;
@@ -235,7 +235,7 @@ static void HnpPackageVersionUpdateAll(cJSON *json, const HnpCfgInfo *hnpCfg)
                 (strcmp(cJSON_GetObjectItem(hnpItem, "name")->valuestring, hnpCfg->name) != 0)) {
                 continue;
             }
-            cJSON *version = cJSON_GetObjectItem(hnpItem, "version");
+            cJSON *version = cJSON_GetObjectItem(hnpItem, "current_version");
             if (version == NULL) {
                 break;
             }
@@ -299,7 +299,12 @@ static int HnpHapJsonHnpAdd(bool hapExist, cJSON *json, cJSON *hapItem, const ch
         return HNP_ERRNO_BASE_JSON_ARRAY_CREATE_FAILED;
     }
     cJSON_AddItemToObject(hnpItem, "name", cJSON_CreateString(hnpCfg->name));
-    cJSON_AddItemToObject(hnpItem, "version", cJSON_CreateString(hnpCfg->version));
+    cJSON_AddItemToObject(hnpItem, "current_version", cJSON_CreateString(hnpCfg->version));
+    if (hnpCfg->isInstall) {
+        cJSON_AddItemToObject(hnpItem, "install_version", cJSON_CreateString(hnpCfg->version));
+    } else {
+        cJSON_AddItemToObject(hnpItem, "install_version", cJSON_CreateString("none"));
+    }
     cJSON_AddItemToArray(hnpItemArr, hnpItem);
 
     HnpPackageVersionUpdateAll(json, hnpCfg);
@@ -348,8 +353,8 @@ int HnpInstallInfoJsonWrite(const char *hapPackageName, const HnpCfgInfo *hnpCfg
         cJSON *hnpItemArr = cJSON_GetObjectItem(hapItem, "hnp");
         bool hnpExist = HnpInstallHnpExistCheck(hnpItemArr, hnpCfg->name, &hnpItem, &hnpIndex, NULL);
         if (hnpExist) {
-            cJSON *versionJson = cJSON_GetObjectItem(hnpItem, "version");
-            if (versionJson != NULL) {
+            cJSON *versionJson = cJSON_GetObjectItem(hnpItem, "current_version");
+            if (versionJson != NULL) { // 当前版本存在，即非新增版本，仅更新current_version即可，无需更新install_version
                 cJSON_SetValuestring(versionJson, hnpCfg->version);
                 HnpPackageVersionUpdateAll(json, hnpCfg);
                 ret = HnpHapJsonWrite(json);
@@ -410,14 +415,10 @@ static int HnpPackageInfoGetOut(HnpPackageInfo *packageInfos, int sum, HnpPackag
     return 0;
 }
 
-int HnpPackageInfoGet(const char *packageName, HnpPackageInfo **packageInfoOut, int *count)
+static int HnpPackageJsonGet(cJSON **pJson)
 {
     char *infoStream;
     int size;
-    bool hnpExist = false;
-    int hapIndex = 0;
-    HnpPackageInfo packageInfos[MAX_PACKAGE_HNP_NUM] = {0};
-    int sum = 0;
 
     int ret = ReadFileToStream(HNP_PACKAGE_INFO_JSON_FILE_PATH, &infoStream, &size);
     if (ret != 0) {
@@ -435,6 +436,24 @@ int HnpPackageInfoGet(const char *packageName, HnpPackageInfo **packageInfoOut, 
         return HNP_ERRNO_BASE_PARSE_JSON_FAILED;
     }
 
+    *pJson = json;
+
+    return 0;
+}
+
+int HnpPackageInfoGet(const char *packageName, HnpPackageInfo **packageInfoOut, int *count)
+{
+    bool hnpExist = false;
+    int hapIndex = 0;
+    HnpPackageInfo packageInfos[MAX_PACKAGE_HNP_NUM] = {0};
+    int sum = 0;
+    cJSON *json = NULL;
+
+    int ret = HnpPackageJsonGet(&json);
+    if (ret != 0 || json == NULL) {
+        return ret;
+    }
+
     cJSON *hapItem = NULL;
     if (HnpInstallHapExistCheck(packageName, json, &hapItem, &hapIndex) == false) {
         cJSON_Delete(json);
@@ -445,19 +464,23 @@ int HnpPackageInfoGet(const char *packageName, HnpPackageInfo **packageInfoOut, 
     for (int j = 0; j < cJSON_GetArraySize(hnpItemArr); j++) {
         cJSON *hnpItem = cJSON_GetArrayItem(hnpItemArr, j);
         cJSON *name = cJSON_GetObjectItem(hnpItem, "name");
-        cJSON *version = cJSON_GetObjectItem(hnpItem, "version");
-        if (name == NULL || version == NULL) {
+        cJSON *version = cJSON_GetObjectItem(hnpItem, "current_version");
+        cJSON *installVersion = cJSON_GetObjectItem(hnpItem, "install_version");
+        if (name == NULL || version == NULL || installVersion == NULL) {
             continue;
         }
         hnpExist = HnpOtherPackageInstallCheck(name->valuestring, version->valuestring, hapIndex, json);
-        if (!hnpExist) {
+        // 当卸载当前版本未被其他hap使用或者存在安装版本的时候，需要卸载对应的当前版本或者安装版本
+        if (!hnpExist || strcmp(installVersion->valuestring, "none") != 0) {
             if ((strcpy_s(packageInfos[sum].name, MAX_FILE_PATH_LEN, name->valuestring) != EOK) ||
-                (strcpy_s(packageInfos[sum].version, HNP_VERSION_LEN, version->valuestring) != EOK)) {
-                HNP_LOGE("strcpy hnp info name[%{public}s] version[%{public}s] unsuccess.", name->valuestring,
-                    version->valuestring);
+                (strcpy_s(packageInfos[sum].currentVersion, HNP_VERSION_LEN, version->valuestring) != EOK) ||
+                (strcpy_s(packageInfos[sum].installVersion, HNP_VERSION_LEN, installVersion->valuestring) != EOK)) {
+                HNP_LOGE("strcpy hnp info name[%{public}s],version[%{public}s],install version[%{public}s] unsuccess.",
+                    name->valuestring, version->valuestring, installVersion->valuestring);
                 cJSON_Delete(json);
                 return HNP_ERRNO_BASE_COPY_FAILED;
             }
+            packageInfos[sum].hnpExist = hnpExist;
             sum++;
         }
     }
@@ -545,7 +568,7 @@ int HnpPackageInfoDelete(const char *packageName)
     return ret;
 }
 
-static char *HnpInstallHnpVersionGet(cJSON *hnpItemArr, const char *name)
+static char *HnpNeedUnInstallHnpVersionGet(cJSON *hnpItemArr, const char *name)
 {
     if (hnpItemArr == NULL) {
         return NULL;
@@ -554,16 +577,58 @@ static char *HnpInstallHnpVersionGet(cJSON *hnpItemArr, const char *name)
     for (int i = 0; i < cJSON_GetArraySize(hnpItemArr); i++) {
         cJSON *hnpItem = cJSON_GetArrayItem(hnpItemArr, i);
         if ((cJSON_GetObjectItem(hnpItem, "name") != NULL) &&
-            (cJSON_GetObjectItem(hnpItem, "version") != NULL) &&
-            (strcmp(cJSON_GetObjectItem(hnpItem, "name")->valuestring, name) == 0)) {
-            return cJSON_GetObjectItem(hnpItem, "version")->valuestring;
+            (cJSON_GetObjectItem(hnpItem, "current_version") != NULL) &&
+            (cJSON_GetObjectItem(hnpItem, "install_version") != NULL) &&
+            (strcmp(cJSON_GetObjectItem(hnpItem, "name")->valuestring, name) == 0) &&
+            (strcmp(cJSON_GetObjectItem(hnpItem, "current_version")->valuestring,
+            cJSON_GetObjectItem(hnpItem, "install_version")->valuestring) == 0)) {
+            return cJSON_GetObjectItem(hnpItem, "current_version")->valuestring;
         }
     }
 
     return NULL;
 }
 
-char *HnpPackgeHnpVersionGet(const char *packageName, const char *name)
+char *HnpCurrentVersionGet(const char *name)
+{
+    char *infoStream;
+    int size;
+    cJSON *hapItem = NULL;
+
+    int ret = ReadFileToStream(HNP_PACKAGE_INFO_JSON_FILE_PATH, &infoStream, &size);
+    if (ret != 0) {
+        return NULL;
+    }
+
+    cJSON *json = cJSON_Parse(infoStream);
+    free(infoStream);
+    if (json == NULL) {
+        HNP_LOGE("hnp delete parse json file unsuccess.");
+        return NULL;
+    }
+
+    for (int i = 0; i < cJSON_GetArraySize(json); i++) {
+        hapItem = cJSON_GetArrayItem(json, i);
+        cJSON *hnpItemArr = cJSON_GetObjectItem(hapItem, "hnp");
+        if (hnpItemArr == NULL) {
+            return NULL;
+        }
+
+        for (int i = 0; i < cJSON_GetArraySize(hnpItemArr); i++) {
+            cJSON *hnpItem = cJSON_GetArrayItem(hnpItemArr, i);
+            if ((cJSON_GetObjectItem(hnpItem, "name") != NULL) &&
+                (cJSON_GetObjectItem(hnpItem, "current_version") != NULL) &&
+                (strcmp(cJSON_GetObjectItem(hnpItem, "name")->valuestring, name) == 0)) {
+                return cJSON_GetObjectItem(hnpItem, "current_version")->valuestring;
+            }
+        }
+    }
+
+    cJSON_Delete(json);
+    return NULL;
+}
+
+char *HnpCurrentVersionUninstallCheck(const char *name)
 {
     char *infoStream;
     int size;
@@ -585,7 +650,7 @@ char *HnpPackgeHnpVersionGet(const char *packageName, const char *name)
     for (int i = 0; i < cJSON_GetArraySize(json); i++) {
         hapItem = cJSON_GetArrayItem(json, i);
         cJSON *hnpItemArr = cJSON_GetObjectItem(hapItem, "hnp");
-        version = HnpInstallHnpVersionGet(hnpItemArr, name);
+        version = HnpNeedUnInstallHnpVersionGet(hnpItemArr, name);
         if (version != NULL) {
             break;
         }

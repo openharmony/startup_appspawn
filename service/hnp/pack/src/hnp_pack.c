@@ -26,7 +26,7 @@
 extern "C" {
 #endif
 
-static int AddHnpCfgFileToZip(char *zipPath, const char *hnpSrcPath, HnpCfgInfo *hnpCfg)
+static int AddHnpCfgFileToZip(zipFile zf, const char *hnpSrcPath, HnpCfgInfo *hnpCfg)
 {
     int ret;
     char *strPtr;
@@ -55,10 +55,10 @@ static int AddHnpCfgFileToZip(char *zipPath, const char *hnpSrcPath, HnpCfgInfo 
         return ret;
     }
     // 将hnp.json文件写入到.hnp压缩文件中
-    ret = HnpAddFileToZip(zipPath, hnpCfgFile, buff, strlen(buff) + 1);
+    ret = HnpAddFileToZip(zf, hnpCfgFile, buff, strlen(buff) + 1);
     free(buff);
     if (ret != 0) {
-        HNP_LOGE("add file to zip failed.zip=%{public}s, file=%{public}s", zipPath, hnpCfgFile);
+        HNP_LOGE("add file to zip failed, file=%{public}s", hnpCfgFile);
         return ret;
     }
 
@@ -81,23 +81,35 @@ static int PackHnp(const char *hnpSrcPath, const char *hnpDstPath, HnpPackInfo *
         return HNP_ERRNO_PACK_GET_HNP_PATH_FAILED;
     }
 
+    HNP_LOGI("HnpZip dir=%{public}s, output=%{public}s ", hnpSrcPath, hnp_file_path);
+
+    zipFile zf = zipOpen(hnp_file_path, APPEND_STATUS_CREATE);
+    if (zf == NULL) {
+        HNP_LOGE("open zip=%{public}s unsuccess ", hnp_file_path);
+        return HNP_ERRNO_BASE_CREATE_ZIP_FAILED;
+    }
+
     /* 将软件包压缩成独立的.hnp文件 */
-    ret = HnpZip(hnpSrcPath, hnp_file_path);
+    ret = HnpZip(hnpSrcPath, zf);
     if (ret != 0) {
         HNP_LOGE("zip dir unsuccess! srcPath=%{public}s, hnpName=%{public}s, hnpVer=%{public}s, hnpDstPath=%{public}s"
             "ret=%{public}d", hnpSrcPath, hnpCfg->name, hnpCfg->version, hnpDstPath, ret);
+        zipClose(zf, NULL);
         return HNP_ERRNO_PACK_ZIP_DIR_FAILED;
     }
 
     /* 如果软件包中不存在hnp.json文件，则需要在hnp压缩文件中添加 */
     if (hnpPack->hnpCfgExist == 0) {
-        ret = AddHnpCfgFileToZip(hnp_file_path, hnpSrcPath, &hnpPack->cfgInfo);
+        ret = AddHnpCfgFileToZip(zf, hnpSrcPath, &hnpPack->cfgInfo);
         if (ret != 0) {
             HNP_LOGE("add file to zip failed ret=%d. zip=%s, src=%s",
                 ret, hnp_file_path, hnpSrcPath);
+            zipClose(zf, NULL);
             return ret;
         }
     }
+
+    zipClose(zf, NULL);
 
     HNP_LOGI("PackHnp end. srcPath=%{public}s, hnpName=%{public}s, hnpVer=%{public}s, hnpDstPath=%{public}s,"
         "linkNum=%{public}d, ret=%{public}d", hnpSrcPath, hnpCfg->name, hnpCfg->version, hnpDstPath, hnpCfg->linkNum,

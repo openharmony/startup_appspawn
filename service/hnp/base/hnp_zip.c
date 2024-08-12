@@ -215,16 +215,10 @@ static int ZipAddDir(const char *sourcePath, int offset, zipFile zf)
     return 0;
 }
 
-static int ZipDir(const char *sourcePath, int offset, const char *zipPath)
+static int ZipDir(const char *sourcePath, int offset, zipFile zf)
 {
     int ret;
     char transPath[MAX_FILE_PATH_LEN];
-
-    zipFile zf = zipOpen(zipPath, APPEND_STATUS_CREATE);
-    if (zf == NULL) {
-        HNP_LOGE("open zip=%{public}s unsuccess ", zipPath);
-        return HNP_ERRNO_BASE_CREATE_ZIP_FAILED;
-    }
 
     TransPath(sourcePath, transPath);
 
@@ -233,25 +227,20 @@ static int ZipDir(const char *sourcePath, int offset, const char *zipPath)
         0, -MAX_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY, NULL, 0);
     if (ret != ZIP_OK) {
         HNP_LOGE("open new file[%{public}s] in zip unsuccess ", sourcePath + offset);
-        zipClose(zf, NULL);
         return HNP_ERRNO_BASE_CREATE_ZIP_FAILED;
     }
     zipCloseFileInZip(zf);
     ret = ZipAddDir(sourcePath, offset, zf);
 
-    zipClose(zf, NULL);
-
     return ret;
 }
 
-int HnpZip(const char *inputDir, const char *outputFile)
+int HnpZip(const char *inputDir, zipFile zf)
 {
     int ret;
     char *strPtr;
     int offset;
     char sourcePath[MAX_FILE_PATH_LEN];
-
-    HNP_LOGI("HnpZip dir=%{public}s, output=%{public}s ", inputDir, outputFile);
 
     // zip压缩文件内只保存相对路径，不保存绝对路径信息，偏移到压缩文件夹位置
     strPtr = strrchr(inputDir, DIR_SPLIT_SYMBOL);
@@ -268,22 +257,15 @@ int HnpZip(const char *inputDir, const char *outputFile)
         return HNP_ERRNO_BASE_SPRINTF_FAILED;
     }
 
-    ret = ZipDir(sourcePath, offset, outputFile);
+    ret = ZipDir(sourcePath, offset, zf);
 
     return ret;
 }
 
-int HnpAddFileToZip(char *zipfile, char *filename, char *buff, int size)
+int HnpAddFileToZip(zipFile zf, char *filename, char *buff, int size)
 {
-    zipFile zf;
     int ret;
     char transPath[MAX_FILE_PATH_LEN];
-
-    zf = zipOpen(zipfile, APPEND_STATUS_ADDINZIP);
-    if (zf == NULL) {
-        HNP_LOGE("open zip=%{public}s unsuccess ", zipfile);
-        return HNP_ERRNO_BASE_CREATE_ZIP_FAILED;
-    }
 
     TransPath(filename, transPath);
 
@@ -292,12 +274,10 @@ int HnpAddFileToZip(char *zipfile, char *filename, char *buff, int size)
         0, -MAX_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY, NULL, 0);
     if (ret != ZIP_OK) {
         HNP_LOGE("open new file[%{public}s] in zip unsuccess ", filename);
-        zipClose(zf, NULL);
         return HNP_ERRNO_BASE_CREATE_ZIP_FAILED;
     }
     zipWriteInFileInZip(zf, buff, size);
     zipCloseFileInZip(zf);
-    zipClose(zf, NULL);
 
     return 0;
 }
