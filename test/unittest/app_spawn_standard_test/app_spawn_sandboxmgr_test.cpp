@@ -486,7 +486,7 @@ HWTEST_F(AppSpawnSandboxMgrTest, App_Spawn_Mount_001, TestSize.Level0)
 
     // 只做异常测试，正常流程需要基于业务流进行测试
     const AppSpawningCtx *inputAppSpawningCtx[2] = {property, nullptr};
-    const AppSpawnSandboxCfg *inputAppSpawnSandboxCfg[2] = {sandbox, nullptr};
+    AppSpawnSandboxCfg *inputAppSpawnSandboxCfg[2] = {sandbox, nullptr};
     uint32_t inputSpawn[3] = {0, 1, 2};
     int ret = 0;
     for (uint32_t i = 0; i < 2; i++) {          // 2
@@ -524,7 +524,7 @@ HWTEST_F(AppSpawnSandboxMgrTest, App_Spawn_Mount_002, TestSize.Level0)
     SandboxContext context = {};
     // 只做异常测试，正常流程需要基于业务流进行测试
     const SandboxContext *inputContext[2] = {&context, nullptr};
-    const AppSpawnSandboxCfg *inputAppSpawnSandboxCfg[2] = {sandbox, nullptr};
+    AppSpawnSandboxCfg *inputAppSpawnSandboxCfg[2] = {sandbox, nullptr};
 
     int ret = 0;
     for (uint32_t i = 0; i < 2; i++) {      // 2

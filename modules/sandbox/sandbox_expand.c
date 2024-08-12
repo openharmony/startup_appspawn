@@ -25,7 +25,7 @@
 #include "securec.h"
 
 #define SANDBOX_GROUP_PATH "/data/storage/el2/group/"
-#define SANDBOX_INSTALL_PATH "/data/storage/el2/group/"
+#define SANDBOX_INSTALL_PATH "/data/storage/el1/bundle/"
 #define SANDBOX_OVERLAY_PATH "/data/storage/overlay/"
 
 static inline bool CheckPath(const char *name)
@@ -164,6 +164,7 @@ static int SetOverlayAppPath(const char *hapPath, void *context)
     APPSPAWN_LOGV("SetOverlayAppPath path: '%{public}s' => '%{public}s'",
         sandboxContext->buffer[0].buffer, sandboxContext->buffer[1].buffer);
 
+    (void)MakeDirRec(sandboxContext->buffer[1].buffer, FILE_MODE, 1);
     MountArg mountArg = {
         sandboxContext->buffer[0].buffer, sandboxContext->buffer[1].buffer, NULL, MS_REC | MS_BIND, NULL, MS_SHARED
     };
