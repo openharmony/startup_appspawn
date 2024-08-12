@@ -191,14 +191,32 @@ static int HnpInstall(const char *hnpFile, HnpInstallInfo *hnpInfo, HnpCfgInfo *
     return HnpGenerateSoftLink(hnpInfo->hnpVersionPath, hnpInfo->hnpBasePath, hnpCfg);
 }
 
-static int HnpUnInstallPublicHnp(const char* packageName, const char *name, const char *version, int uid)
+/**
+ * 卸载公共hnp.
+ *
+ * @param packageName hap名称.
+ * @param name  hnp名称
+ * @param version 版本号.
+ * @param uid 用户id.
+ * @param isInstallVersion 是否卸载安装版本.
+ *
+ * @return 0:success;other means failure.
+ */
+static int HnpUnInstallPublicHnp(const char* packageName, const char *name, const char *version, int uid,
+    bool isInstallVersion)
 {
     int ret;
     char hnpNamePath[MAX_FILE_PATH_LEN];
+    char hnpVersionPath[MAX_FILE_PATH_LEN];
     char sandboxPath[MAX_FILE_PATH_LEN];
 
     if (sprintf_s(hnpNamePath, MAX_FILE_PATH_LEN, HNP_DEFAULT_INSTALL_ROOT_PATH"/%d/hnppublic/%s.org", uid, name) < 0) {
         HNP_LOGE("hnp uninstall name path sprintf unsuccess,uid:%{public}d,name:%{public}s", uid, name);
+        return HNP_ERRNO_BASE_SPRINTF_FAILED;
+    }
+
+    if (sprintf_s(hnpVersionPath, MAX_FILE_PATH_LEN, "%s/%s_%s", hnpNamePath, name, version) < 0) {
+        HNP_LOGE("hnp uninstall sprintf version path unsuccess.");
         return HNP_ERRNO_BASE_SPRINTF_FAILED;
     }
 
@@ -212,12 +230,53 @@ static int HnpUnInstallPublicHnp(const char* packageName, const char *name, cons
         return ret;
     }
 
-    ret = HnpPackageInfoHnpDelete(packageName, name, version);
+    if (!isInstallVersion) {
+        ret = HnpPackageInfoHnpDelete(packageName, name, version);
+        if (ret != 0) {
+            return ret;
+        }
+    }
+
+    ret = HnpDeleteFolder(hnpVersionPath);
     if (ret != 0) {
         return ret;
     }
 
-    return HnpDeleteFolder(hnpNamePath);
+    if (HnpPathFileCount(hnpNamePath) == 0) {
+        return HnpDeleteFolder(hnpNamePath);
+    }
+
+    return 0;
+}
+
+static int HnpNativeUnInstall(HnpPackageInfo *packageInfo, int uid, const char *packageName)
+{
+    int ret;
+
+    HNP_LOGI("hnp uninstall start now! name=%{public}s,version=[%{public}s,%{public}s],uid=%{public}d,"
+        "package=%{public}s", packageInfo->name, packageInfo->currentVersion, packageInfo->installVersion, uid,
+        packageName);
+
+    if (!packageInfo->hnpExist) {
+        ret = HnpUnInstallPublicHnp(packageName, packageInfo->name, packageInfo->currentVersion, uid, false);
+        if (ret != 0) {
+            return ret;
+        }
+    }
+
+    if (strcmp(packageInfo->installVersion, "none") != 0 &&
+        strcmp(packageInfo->currentVersion, packageInfo->installVersion) != 0) {
+        ret = HnpUnInstallPublicHnp(packageName, packageInfo->name, packageInfo->installVersion, uid, true);
+        if (ret != 0) {
+            return ret;
+        }
+    }
+    HNP_LOGI("hnp uninstall end! ret=%{public}d", ret);
+    if (ret != 0) {
+        return ret;
+    }
+
+    return 0;
 }
 
 static int HnpUnInstall(int uid, const char *packageName)
@@ -246,10 +305,7 @@ static int HnpUnInstall(int uid, const char *packageName)
 
     /* 卸载公有native */
     for (int i = 0; i < count; i++) {
-        HNP_LOGI("hnp uninstall start now! name=%{public}s,version=%{public}s,uid=%{public}d,package=%{public}s",
-            packageInfo[i].name, packageInfo[i].version, uid, packageName);
-        ret = HnpUnInstallPublicHnp(packageName, packageInfo[i].name, packageInfo[i].version, uid);
-        HNP_LOGI("hnp uninstall end! ret=%{public}d", ret);
+        ret = HnpNativeUnInstall(&packageInfo[i], uid, packageName);
         if (ret != 0) {
             free(packageInfo);
             return ret;
@@ -276,7 +332,6 @@ static int HnpUnInstall(int uid, const char *packageName)
 static int HnpInstallForceCheck(HnpCfgInfo *hnpCfgInfo, HnpInstallInfo *hnpInfo)
 {
     int ret = 0;
-    char *version = NULL;
 
     /* 判断安装目录是否存在，存在判断是否是强制安装，如果是则走卸载流程，否则返回错误 */
     if (access(hnpInfo->hnpSoftwarePath, F_OK) == 0) {
@@ -284,17 +339,10 @@ static int HnpInstallForceCheck(HnpCfgInfo *hnpCfgInfo, HnpInstallInfo *hnpInfo)
             HNP_LOGE("hnp install path[%{public}s] exist, but force is false", hnpInfo->hnpSoftwarePath);
             return HNP_ERRNO_INSTALLER_PATH_IS_EXIST;
         }
-        if (hnpInfo->isPublic) {
-            version = HnpPackgeHnpVersionGet(hnpInfo->hapInstallInfo->hapPackageName, hnpCfgInfo->name);
-            if (version != NULL) {
-                ret = HnpUnInstallPublicHnp(hnpInfo->hapInstallInfo->hapPackageName, hnpCfgInfo->name, version,
-                    hnpInfo->hapInstallInfo->uid);
+        if (hnpInfo->isPublic == false) {
+            if (HnpDeleteFolder(hnpInfo->hnpSoftwarePath) != 0) {
+                return ret;
             }
-        } else {
-            ret = HnpDeleteFolder(hnpInfo->hnpSoftwarePath);
-        }
-        if (ret != 0) {
-            return ret;
         }
     }
 
@@ -328,6 +376,22 @@ static int HnpInstallPathGet(HnpCfgInfo *hnpCfgInfo, HnpInstallInfo *hnpInfo)
     return 0;
 }
 
+static int HnpPublicDealAfterInstall(HnpInstallInfo *hnpInfo, HnpCfgInfo *hnpCfg)
+{
+    char *version = HnpCurrentVersionUninstallCheck(hnpCfg->name);
+    if (version == NULL) {
+        version = HnpCurrentVersionGet(hnpCfg->name);
+        if (version != NULL) {
+            HnpUnInstallPublicHnp(hnpInfo->hapInstallInfo->hapPackageName, hnpCfg->name, version,
+                hnpInfo->hapInstallInfo->uid, true);
+        }
+    }
+
+    hnpCfg->isInstall = true;
+
+    return HnpInstallInfoJsonWrite(hnpInfo->hapInstallInfo->hapPackageName, hnpCfg);
+}
+
 static int HnpReadAndInstall(char *srcFile, HnpInstallInfo *hnpInfo, HnpSignMapInfo *hnpSignMapInfos, int *count)
 {
     int ret;
@@ -351,11 +415,16 @@ static int HnpReadAndInstall(char *srcFile, HnpInstallInfo *hnpInfo, HnpSignMapI
 
     /* 存在对应版本的公有hnp包跳过安装 */
     if (access(hnpInfo->hnpVersionPath, F_OK) == 0 && hnpInfo->isPublic) {
+        /* 刷新软链 */
+        ret = HnpGenerateSoftLink(hnpInfo->hnpVersionPath, hnpInfo->hnpBasePath, &hnpCfg);
+        if (ret != 0) {
+            return ret;
+        }
         // 释放软链接占用的内存
         if (hnpCfg.links != NULL) {
             free(hnpCfg.links);
         }
-        return HnpInstallInfoJsonWrite(hnpInfo->hapInstallInfo->hapPackageName, &hnpCfg);
+        return HnpPublicDealAfterInstall(hnpInfo, &hnpCfg);
     }
 
     ret = HnpInstallForceCheck(&hnpCfg, hnpInfo);
@@ -375,14 +444,15 @@ static int HnpReadAndInstall(char *srcFile, HnpInstallInfo *hnpInfo, HnpSignMapI
     }
     if (ret != 0) {
         HnpUnInstallPublicHnp(hnpInfo->hapInstallInfo->hapPackageName, hnpCfg.name, hnpCfg.version,
-            hnpInfo->hapInstallInfo->uid);
+            hnpInfo->hapInstallInfo->uid, false);
         return ret;
     }
+
     if (hnpInfo->isPublic) {
-        ret = HnpInstallInfoJsonWrite(hnpInfo->hapInstallInfo->hapPackageName, &hnpCfg);
+        ret = HnpPublicDealAfterInstall(hnpInfo, &hnpCfg);
         if (ret != 0) {
             HnpUnInstallPublicHnp(hnpInfo->hapInstallInfo->hapPackageName, hnpCfg.name, hnpCfg.version,
-                hnpInfo->hapInstallInfo->uid);
+                hnpInfo->hapInstallInfo->uid, false);
         }
     }
 
