@@ -495,6 +495,9 @@ HWTEST_F(AppSpawnAppMgrTest, App_Spawn_AppSpawnMsgNode_005, TestSize.Level0)
     AppSpawnedProcess *app = AddSpawnedProcess(9999999, "aaaa"); // 9999999 test
     EXPECT_EQ(app != nullptr, 1);
     TerminateSpawnedProcess(app);
+    AppSpawnExtData extData;
+    OH_ListAddTail(&(mgr->extData), &(extData.node));
+    ProcessAppSpawnDumpMsg(outMsg);
 
     ret = DecodeAppSpawnMsg(outMsg);
     EXPECT_EQ(0, ret);
@@ -609,6 +612,8 @@ HWTEST_F(AppSpawnAppMgrTest, App_Spawn_AppSpawnMsgNode_008, TestSize.Level0)
 
     ProcessAppSpawnDumpMsg(outMsg);
     ProcessAppSpawnDumpMsg(nullptr);
+    outMsg->tlvOffset = nullptr;
+    ProcessAppSpawnDumpMsg(outMsg);
 
     DeleteAppSpawnMsg(outMsg);
     DeleteAppSpawnMgr(mgr);
@@ -855,6 +860,15 @@ HWTEST_F(AppSpawnAppMgrTest, App_Spawn_AppSpawningCtx_Msg_001, TestSize.Level0)
     EXPECT_NE(nullptr, bundleName);
     bundleName = GetBundleName(nullptr);
     EXPECT_EQ(nullptr, bundleName);
+
+    // IsDeveloperModeOn
+    ret = IsDeveloperModeOn(appCtx);
+    EXPECT_EQ(ret, 0);
+    appCtx->client.flags |= APP_DEVELOPER_MODE;
+    ret = IsDeveloperModeOn(appCtx);
+    EXPECT_EQ(ret, 1);
+    ret = IsDeveloperModeOn(nullptr);
+    EXPECT_EQ(ret, 0);
 
     DeleteAppSpawningCtx(appCtx);
     DeleteAppSpawnMgr(mgr);
@@ -1103,5 +1117,44 @@ HWTEST_F(AppSpawnAppMgrTest, App_Spawn_AppSpawningCtx_Msg_007, TestSize.Level0)
     EXPECT_EQ(ret, 0);
 
     DeleteAppSpawningCtx(appCtx);
+}
+
+HWTEST_F(AppSpawnAppMgrTest, App_Spawn_RebuildAppSpawnMsgNode, TestSize.Level0)
+{
+    AppSpawnMsgNode *msgNode = CreateAppSpawnMsg();
+    EXPECT_EQ(msgNode != nullptr, 1);
+    int ret = CheckAppSpawnMsg(msgNode);
+    EXPECT_NE(0, ret);  // check fail
+    AppSpawnedProcess *app = (AppSpawnedProcess *)malloc(sizeof(AppSpawnedProcess) + sizeof(char) * 10);
+    EXPECT_EQ(app != nullptr, 1);
+    app->message = (AppSpawnMsgNode *)malloc(sizeof(AppSpawnMsgNode));
+    EXPECT_EQ(app->message != nullptr, 1);
+    app->message->msgHeader.tlvCount = 10; // 10 is tlvCount
+    app->message->msgHeader.msgLen = 200; // 200 is msgLen
+    (void)strcpy_s(app->message->msgHeader.processName, APP_LEN_PROC_NAME, "test.xxx");
+    (void)strcpy_s(app->name, 10, "test.xxx"); // 10 is appNmae length
+    RebuildAppSpawnMsgNode(msgNode, app);
+    free(app->message);
+    free(app);
+}
+
+static void SignalHandle(int sig)
+{
+    std::cout<<"signal is: "<<sig<<std::endl;
+}
+
+HWTEST_F(AppSpawnAppMgrTest, App_Spawn_KillAndWaitStatus, TestSize.Level0)
+{
+    pid_t pid = -1;
+    int sig = SIGTERM;
+    int exitStatus;
+    int ret = KillAndWaitStatus(pid, sig, &exitStatus);
+    EXPECT_EQ(0, ret);
+    ret = KillAndWaitStatus(pid, sig, nullptr);
+    EXPECT_EQ(0, ret);
+    pid = getpid(); //test pid
+    signal(SIGTERM, SignalHandle);
+    ret = KillAndWaitStatus(pid, sig, &exitStatus);
+    EXPECT_EQ(-1, ret);
 }
 }  // namespace OHOS
