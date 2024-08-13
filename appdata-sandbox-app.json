@@ -277,10 +277,12 @@
             "name": "ohos.permission.PROTECT_SCREEN_LOCK_DATA",
             "mount-paths": [{
                 "src-path": "/data/app/el5/<currentUserId>/base/<PackageName>",
-                "sandbox-path": "/data/storage/el5/base"
+                "sandbox-path": "/data/storage/el5/base",
+                "check-action-status": "false"
             }, {
                 "src-path": "/data/app/el5/<currentUserId>/database/<PackageName>",
-                "sandbox-path": "/data/storage/el5/database"
+                "sandbox-path": "/data/storage/el5/database",
+                "check-action-status": "false"
             }]
         }, {
             "name": "ohos.permission.ACCESS_FILE_CONTENT_SHARE",
