@@ -134,7 +134,10 @@ ohos_unittest("AppSpawn_ut") {
   ]
 
   if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
-    sources += [ "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_sandbox_new_test.cpp" ]
+    sources += [
+      "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_sandbox_new_coverage_test.cpp",
+      "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_sandbox_new_test.cpp",
+    ]
     defines += [ "APPSPAWN_SANDBOX_NEW" ]
   } else {
     sources += [

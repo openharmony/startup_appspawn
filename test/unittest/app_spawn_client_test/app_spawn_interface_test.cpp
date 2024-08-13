@@ -601,4 +601,11 @@ HWTEST_F(AppSpawnInterfaceTest, App_Spawn_Interface_GetSpawnTimeout_001, TestSiz
     timeout = GetSpawnTimeout(2);      // 2 test
     EXPECT_EQ(timeout >= 2, 1);        // 2 test
 }
+
+HWTEST_F(AppSpawnInterfaceTest, App_Spawn_Interface_NWeb, TestSize.Level0)
+{
+    pid_t pid = NWebSpawnLaunch();
+    EXPECT_GE(pid, 0);
+}
+
 }  // namespace OHOS

@@ -648,5 +648,4 @@ HWTEST_F(AppSpawnServiceTest, App_Spawn_ConvertEnvValue_001, TestSize.Level0)
     EXPECT_EQ(strcmp(outEnv, "/path/to/lib/envtest"), 0);
     EXPECT_EQ(unsetenv("ENV_TEST_VALUE"), 0);
 }
-
 }  // namespace OHOS

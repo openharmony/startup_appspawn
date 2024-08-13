@@ -33,7 +33,7 @@ static inline bool CheckPath(const char *name)
     return name != NULL && strcmp(name, ".") != 0 && strcmp(name, "..") != 0 && strstr(name, "/") == NULL;
 }
 
-static int MountAllHsp(const SandboxContext *context, const cJSON *hsps)
+APPSPAWN_STATIC int MountAllHsp(const SandboxContext *context, const cJSON *hsps)
 {
     APPSPAWN_CHECK(context != NULL && hsps != NULL, return -1, "Invalid context or hsps");
 
@@ -81,7 +81,7 @@ static inline char *GetLastPath(const char *libPhysicalPath)
     return tmp + 1;
 }
 
-static int MountAllGroup(const SandboxContext *context, const cJSON *groups)
+APPSPAWN_STATIC int MountAllGroup(const SandboxContext *context, const cJSON *groups)
 {
     APPSPAWN_CHECK(context != NULL && groups != NULL, return -1, "Invalid context or group");
     unsigned long mountFlags = MS_REC | MS_BIND;

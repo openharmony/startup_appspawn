@@ -205,7 +205,9 @@ static void DumpProcessSpawnStack(pid_t pid)
     DumpSpawnStack(pid);
     DumpSpawnStack(getpid());
 #endif
+#ifndef APPSPAWN_TEST
     kill(pid, SIGKILL);
+#endif
     APPSPAWN_LOGI("Dump stack finished");
 }
 
@@ -221,9 +223,8 @@ int KillAndWaitStatus(pid_t pid, int sig, int *exitStatus)
         APPSPAWN_LOGE("unable to kill process, pid: %{public}d ret %{public}d", pid, errno);
         return -1;
     }
-
-    int retry = 0;
     pid_t exitPid = 0;
+    int retry = 0;
     while (retry * SLEEP_DURATION < EXIT_APP_TIMEOUT) {
         exitPid = waitpid(pid, exitStatus, WNOHANG);
         if (exitPid == pid) {

@@ -49,6 +49,10 @@ typedef struct TagMountArg MountArg;
 typedef struct TagVarExtraData VarExtraData;
 typedef struct TagSandboxSection SandboxSection;
 
+int MountAllGroup(const SandboxContext *context, const cJSON *groups);
+int MountAllHsp(const SandboxContext *context, const cJSON *hsps);
+
+int AppSpawnColdStartApp(struct AppSpawnContent *content, AppSpawnClient *client);
 void ProcessSignal(const struct signalfd_siginfo *siginfo);
 int CreateClientSocket(uint32_t type, int block);
 void CloseClientSocket(int socketId);
