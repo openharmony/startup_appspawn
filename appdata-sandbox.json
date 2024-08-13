@@ -833,12 +833,14 @@
             "mount-paths": [{
                     "src-path": "/data/app/el5/<currentUserId>/base/<PackageName>",
                     "sandbox-path": "/data/storage/el5/base",
-                    "sandbox-flags": [ "bind", "rec" ]
+                    "sandbox-flags": [ "bind", "rec" ],
+                    "check-action-status": "false"
                 },
                 {
                     "src-path": "/data/app/el5/<currentUserId>/database/<PackageName>",
                     "sandbox-path": "/data/storage/el5/database",
-                    "sandbox-flags": [ "bind", "rec" ]
+                    "sandbox-flags": [ "bind", "rec" ],
+                    "check-action-status": "false"
                 }
             ]
 	    }],
