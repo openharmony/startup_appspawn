@@ -68,7 +68,7 @@ executable("appspawn") {
     "//third_party/bounds_checking_function:libsec_shared",
   ]
 
-  if (enable_ohos_appexecfwk_feature_ability == true) {
+  if (ability_lite_enable_ohos_appexecfwk_feature_ability == true) {
     deps += [
       "//foundation/arkui/ace_engine_lite/frameworks:ace_lite",
       "//foundation/arkui/ui_lite:ui_lite",
