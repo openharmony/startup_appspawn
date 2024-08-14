@@ -18,38 +18,31 @@
 
 #include <fcntl.h>
 #include <stdio.h>
+#include <signal.h>
 #include "loop_event.h"
-#include "signal.h"
 #include "appspawn_utils.h"
+#include "appspawn_server.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #ifdef APPSPAWN_TEST    //macro for test
-#ifdef CONFIG_DFX_LIBLINUX
-#undef CONFIG_DFX_LIBLINUX
-#endif
+#define LINUX_APPSPAWN_WATCHDOG_FILE    "./TestDataFile.txt"
 #define HM_APPSPAWN_WATCHDOG_FILE    "./TestDataFile.txt"
-#endif
-
-#ifdef CONFIG_DFX_LIBLINUX    //linux kernel
-#define UNCHIP_APPSPAWN_WATCHDOG_FILE    "/sys/kernel/hungtask/userlist"
-#define APPSPAWN_WATCHDOG_FILE    "/sys/kernel/appspawn_watchdog/appspawn"
-#define UNCHIP_APPSPAWNWATCHDOGON    "on,30"
-#define APPSPAWNWATCHDOGON    "on"
-#define APPSPAWNWATCHDOGKICK    "kick"
-#else    //harmony kernel
-#ifndef APPSPAWN_TEST
+#else
+#define LINUX_APPSPAWN_WATCHDOG_FILE    "/sys/kernel/hungtask/userlist"
 #define HM_APPSPAWN_WATCHDOG_FILE    "/proc/sys/hguard/user_list"
 #endif
+
+#define LINUX_APPSPAWN_WATCHDOG_ON    "on,30"
+#define LINUX_APPSPAWN_WATCHDOG_KICK    "kick"
 #define HM_APPSPAWN_WATCHDOG_ON    "on,300,appspawn"
 #define HM_APPSPAWN_WATCHDOG_KICK    "kick,appspawn"
-#endif
 
 #define APPSPAWN_WATCHDOG_KICKTIME    (10 * 1000)  //10s
 
-void AppSpawnKickDogStart(void);
+void AppSpawnKickDogStart(AppSpawnContent *content);
 
 #ifdef __cplusplus
 }

@@ -126,7 +126,9 @@ int main(int argc, char *const argv[])
     AppSpawnContent *content = StartCJSpawnService(&arg, argvSize, argc, argv);
 #endif
     if (content != NULL) {
-        AppSpawnKickDogStart();
+        if (arg.moduleType == MODULE_APPSPAWN) {
+            AppSpawnKickDogStart(content);
+        }
         content->runAppSpawn(content, argc, argv);
     }
     return 0;
