@@ -67,6 +67,9 @@ extern "C" {
 #define MOUNT_PATH_OP_REPLACE_BY_SANDBOX    (SANDBOX_TAG_INVALID + 3)
 #define MOUNT_PATH_OP_REPLACE_BY_SRC    (SANDBOX_TAG_INVALID + 4)
 #define FILE_CROSS_APP_MODE "ohos.permission.FILE_CROSS_APP"
+#define FILE_ACCESS_COMMON_DIR_MODE "ohos.permission.FILE_ACCESS_COMMON_DIR"
+#define ACCESS_DLP_FILE_MODE "ohos.permission.ACCESS_DLP_FILE"
+#define FILE_ACCESS_MANAGER_MODE "ohos.permission.FILE_ACCESS_MANAGER"
 
 typedef enum SandboxTag {
     SANDBOX_TAG_MOUNT_PATH = 0,
@@ -208,6 +211,11 @@ typedef struct TagSandboxContext {
     char *rootPath;
 } SandboxContext;
 
+typedef struct {
+    const char *sandboxPath;
+    const char *permission;
+} MountSharedTemplate;
+
 /**
  * @brief AppSpawnSandboxCfg op
  *
@@ -247,9 +255,9 @@ SymbolLinkNode *GetSymbolLinkNode(const SandboxSection *section, const char *tar
  * @brief sandbox mount interface
  *
  */
-int MountSandboxConfigs(const AppSpawnSandboxCfg *sandbox, const AppSpawningCtx *property, int nwebspawn);
-int StagedMountSystemConst(const AppSpawnSandboxCfg *sandbox, const AppSpawningCtx *property, int nwebspawn);
-int StagedMountPreUnShare(const SandboxContext *context, const AppSpawnSandboxCfg *sandbox);
+int MountSandboxConfigs(AppSpawnSandboxCfg *sandbox, const AppSpawningCtx *property, int nwebspawn);
+int StagedMountSystemConst(AppSpawnSandboxCfg *sandbox, const AppSpawningCtx *property, int nwebspawn);
+int StagedMountPreUnShare(const SandboxContext *context, AppSpawnSandboxCfg *sandbox);
 int StagedMountPostUnshare(const SandboxContext *context, const AppSpawnSandboxCfg *sandbox);
 // 在子进程退出时，由父进程发起unmount操作
 int UnmountDepPaths(const AppSpawnSandboxCfg *sandbox, uid_t uid);

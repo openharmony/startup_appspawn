@@ -27,12 +27,16 @@
 #include <sys/stat.h>
 #include <sys/syscall.h>
 #include <sys/types.h>
+#include "securec.h"
 
 #include "appspawn_msg.h"
 #include "appspawn_utils.h"
 #include "init_utils.h"
 #include "parameter.h"
-#include "securec.h"
+#include "appspawn_permission.h"
+
+#define USER_ID_SIZE 16
+#define DIR_MODE     0711
 
 static inline void SetMountPathOperation(uint32_t *operation, uint32_t index)
 {
@@ -199,6 +203,16 @@ static int InitSandboxContext(SandboxContext *context,
         context->sandboxNsFlags |= sandbox->sandboxNsFlags & CLONE_NEWNET ? CLONE_NEWNET : 0;
     }
 
+    ListNode *node = sandbox->permissionQueue.front.next;
+    while (node != &sandbox->permissionQueue.front) {
+        SandboxPermissionNode *permissionNode = (SandboxPermissionNode *)ListEntry(node, SandboxMountNode, node);
+        if (permissionNode == NULL) {
+            return -1;
+        }
+        context->sandboxShared = packageNode->section.sandboxShared;
+        node = node->next;
+    }
+
     // root path
     const char *rootPath = GetSandboxRealVar(context, BUFFER_FOR_SOURCE, sandbox->rootPath, NULL, NULL);
     if (rootPath) {
@@ -234,9 +248,9 @@ static uint32_t GetMountArgs(const SandboxContext *context,
     args->fsType = tmp->fsType;
     args->options = tmp->options;
     args->mountFlags = tmp->mountFlags;
-    if (CHECK_FLAGS_BY_INDEX(operation, SANDBOX_TAG_PERMISSION)) {
+    if (CHECK_FLAGS_BY_INDEX(operation, SANDBOX_TAG_PERMISSION) ||
+        CHECK_FLAGS_BY_INDEX(operation, SANDBOX_TAG_SPAWN_FLAGS)) {
         if (!((category == MOUNT_TMP_DAC_OVERRIDE) && context->appFullMountEnable)) {
-            args->fsType = "";
             args->options = "";
         }
     }
@@ -494,6 +508,98 @@ static int DoSandboxNodeMount(const SandboxContext *context, const SandboxSectio
         node = node->next;
     }
     return 0;
+}
+
+static bool IsUnlockStatus(uint32_t uid)
+{
+    const int userIdBase = UID_BASE;
+    uid = uid / userIdBase;
+    if (uid == 0) {
+        return true;
+    }
+
+    const char rootPath[] = "/data/app/el2/";
+    const char basePath[] = "/base";
+    size_t allPathSize = strlen(rootPath) + strlen(basePath) + 1 + USER_ID_SIZE;
+    char *path = (char *)malloc(sizeof(char) * allPathSize);
+    APPSPAWN_CHECK(path != NULL, return true, "Failed to malloc path");
+    int len = sprintf_s(path, allPathSize, "%s%u%s", rootPath, uid, basePath);
+    APPSPAWN_CHECK(len > 0 && ((size_t)len < allPathSize), return true, "Failed to get base path");
+
+    if (access(path, F_OK) == 0) {
+        APPSPAWN_LOGI("this is unlock status");
+        free(path);
+        return true;
+    }
+    free(path);
+    APPSPAWN_LOGI("this is lock status");
+    return false;
+}
+
+static void MountDir(AppSpawnMsgDacInfo *info, const char *bundleName, const char *rootPath, const char *targetPath)
+{
+    if (info == NULL || bundleName == NULL || rootPath == NULL || targetPath == NULL) {
+        return;
+    }
+
+    const int userIdBase = UID_BASE;
+    size_t allPathSize = strlen(rootPath) + strlen(targetPath) + strlen(bundleName) + 2;
+    allPathSize += USER_ID_SIZE;
+    char *path = (char *)malloc(sizeof(char) * (allPathSize));
+    APPSPAWN_CHECK(path != NULL, return, "Failed to malloc path");
+    int len = sprintf_s(path, allPathSize, "%s%u/%s%s", rootPath, info->uid / userIdBase, bundleName, targetPath);
+    APPSPAWN_CHECK(len > 0 && ((size_t)len < allPathSize), free(path);
+        return, "Failed to get sandbox path");
+
+    if (access(path, F_OK) == 0) {
+        free(path);
+        return;
+    }
+
+    MakeDirRec(path, DIR_MODE, 1);
+    if (mount(path, path, NULL, MS_BIND | MS_REC, NULL) != 0) {
+        APPSPAWN_LOGI("bind mount %{public}s failed, error %{public}d", path, errno);
+        free(path);
+        return;
+    }
+    if (mount(NULL, path, NULL, MS_SHARED, NULL) != 0) {
+        APPSPAWN_LOGI("mount path %{public}s to shared failed, errno %{public}d", path, errno);
+        free(path);
+        return;
+    }
+    APPSPAWN_LOGI("mount path %{public}s to shared success", path);
+    free(path);
+    return;
+}
+
+static const MountSharedTemplate MOUNT_SHARED_MAP[] = {
+    {"/data/storage/el2", NULL},
+    {"/data/storage/el3", NULL},
+    {"/data/storage/el4", NULL},
+    {"/data/storage/el5", "ohos.permission.PROTECT_SCREEN_LOCK_DATA"},
+    {"/storage/Users", "ohos.permission.FILE_ACCESS_MANAGER"},
+};
+
+static void MountDirToShared(const SandboxContext *context, AppSpawnSandboxCfg *sandbox)
+{
+    const char rootPath[] = "/mnt/sandbox/";
+    AppSpawnMsgDacInfo *info = (AppSpawnMsgDacInfo *)GetSpawningMsgInfo(context, TLV_DAC_INFO);
+    if (info == NULL || IsUnlockStatus(info->uid)) {
+        return;
+    }
+
+    int length = sizeof(MOUNT_SHARED_MAP) / sizeof(MOUNT_SHARED_MAP[0]);
+    for (int i = 0; i < length; i++) {
+        if (MOUNT_SHARED_MAP[i].permission == NULL) {
+            MountDir(info, context->bundleName, rootPath, MOUNT_SHARED_MAP[i].sandboxPath);
+        } else {
+            int index = GetPermissionIndexInQueue(&sandbox->permissionQueue, MOUNT_SHARED_MAP[i].permission);
+            APPSPAWN_LOGV("mount dir on lock mountPermissionFlags %{public}d", index);
+            if (CheckSpawningPermissionFlagSet(context, index)) {
+                MountDir(info, context->bundleName, rootPath, MOUNT_SHARED_MAP[i].sandboxPath);
+            }
+        }
+    }
 }
 
 static int UpdateMountPathDepsPath(const SandboxContext *context, SandboxNameGroupNode *groupNode)
@@ -837,7 +943,20 @@ int UnmountSandboxConfigs(const AppSpawnSandboxCfg *sandbox, uid_t uid, const ch
     return 0;
 }
 
-int StagedMountSystemConst(const AppSpawnSandboxCfg *sandbox, const AppSpawningCtx *property, int nwebspawn)
+// Check whether the process incubation contains the ohos.permission.ACCESS_DLP_FILE permission
+static bool IsADFPermision(AppSpawnSandboxCfg *sandbox, const AppSpawningCtx *property)
+{
+    int index = GetPermissionIndexInQueue(&sandbox->permissionQueue, ACCESS_DLP_FILE_MODE);
+    if (index > 0 && CheckAppPermissionFlagSet(property, index)) {
+        return true;
+    }
+    if (strstr(GetBundleName(property), "ohos.permission.dlpmanager") != NULL) {
+        return true;
+    }
+    return false;
+}
+
+int StagedMountSystemConst(AppSpawnSandboxCfg *sandbox, const AppSpawningCtx *property, int nwebspawn)
 {
     APPSPAWN_CHECK(sandbox != NULL, return -1, "Failed to get sandbox for %{public}s", GetProcessName(property));
     /**
@@ -861,7 +980,7 @@ int StagedMountSystemConst(const AppSpawnSandboxCfg *sandbox, const AppSpawningC
     int ret = InitSandboxContext(context, sandbox, property, nwebspawn);
     APPSPAWN_CHECK_ONLY_EXPER(ret == 0, return ret);
 
-    if (IsSandboxMounted(sandbox, "system-const", context->rootPath)) {
+    if (IsSandboxMounted(sandbox, "system-const", context->rootPath) && IsADFPermision(sandbox, property) != true) {
         APPSPAWN_LOGV("Sandbox system-const %{public}s has been mount", context->rootPath);
         DeleteSandboxContext(context);
         return 0;
@@ -879,21 +998,22 @@ int StagedMountSystemConst(const AppSpawnSandboxCfg *sandbox, const AppSpawningC
     return ret;
 }
 
-int StagedMountPreUnShare(const SandboxContext *context, const AppSpawnSandboxCfg *sandbox)
+int StagedMountPreUnShare(const SandboxContext *context, AppSpawnSandboxCfg *sandbox)
 {
     APPSPAWN_CHECK(sandbox != NULL && context != NULL, return -1, "Invalid sandbox or context");
     APPSPAWN_LOGV("Set sandbox config before unshare group count %{public}d", sandbox->depNodeCount);
 
+    MountDirToShared(context, sandbox);
     /**
      * 在unshare前处理mount-paths-deps 处理逻辑
      *   root-dir global.sandbox-root
      *   src-dir "/mnt/sandbox/app-common/<currentUserId>"
-     *   遍历mount-paths-deps，处理mount-paths-deps
+     *   遍历mount-paths-deps,处理mount-paths-deps
      *      src = mount-paths-deps.src-path
      *      dst = root-dir + mount-paths-deps.sandbox-path
-     *      如果设置no-exist，检查mount-paths 的src（实际路径） 是否不存在，
-                则安mount-paths-deps.src-path 创建。 按shared方式挂载mount-paths-deps
-     *      如果是 always，按shared方式挂载mount-paths-deps
+     *      如果设置no-exist,检查mount-paths 的src(实际路径) 是否不存在，
+                则安mount-paths-deps.src-path 创建.按shared方式挂载mount-paths-deps
+     *      如果是 always,按shared方式挂载mount-paths-deps
      *      不配置 按always 处理
      *
      */
@@ -977,7 +1097,7 @@ int StagedMountPostUnshare(const SandboxContext *context, const AppSpawnSandboxC
     return ret;
 }
 
-int MountSandboxConfigs(const AppSpawnSandboxCfg *sandbox, const AppSpawningCtx *property, int nwebspawn)
+int MountSandboxConfigs(AppSpawnSandboxCfg *sandbox, const AppSpawningCtx *property, int nwebspawn)
 {
     APPSPAWN_CHECK_ONLY_EXPER(property != NULL, return -1);
     APPSPAWN_CHECK(sandbox != NULL, return -1, "Failed to get sandbox for %{public}s", GetProcessName(property));
