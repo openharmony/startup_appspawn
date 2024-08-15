@@ -71,6 +71,27 @@ static int VarCurrentUseIdReplace(const SandboxContext *context,
     return 0;
 }
 
+static int VarArkWebPackageNameReplace(const SandboxContext *context,
+    const char *buffer, uint32_t bufferLen, uint32_t *realLen,
+    const VarExtraData *extraData)
+{
+    static char arkWebPackageName[PARAM_BUFFER_SIZE] = {0};
+    if (strlen(arkWebPackageName) == 0) {
+        int len = GetParameter(ARK_WEB_PERSIST_PACKAGE_NAME, "",
+                               arkWebPackageName, sizeof(arkWebPackageName));
+        APPSPAWN_CHECK(len > 0, return -1,
+                "Failed to get param for var %{public}s",
+                ARK_WEB_PERSIST_PACKAGE_NAME);
+    }
+    APPSPAWN_LOGV("ArkWebPackageNameReplace '%{public}s'", arkWebPackageName);
+
+    int len = sprintf_s((char*) buffer, bufferLen, "%s", arkWebPackageName);
+    APPSPAWN_CHECK(len > 0 && ((uint32_t)len < bufferLen), return -1,
+            "Failed to format path app: %{public}s", arkWebPackageName);
+    *realLen = (uint32_t) len;
+    return 0;
+}
+
 static int VariableNodeCompareName(ListNode *node, void *data)
 {
     AppSandboxVarNode *varNode = (AppSandboxVarNode *)ListEntry(node, AppSandboxVarNode, node);
@@ -323,6 +344,7 @@ void AddDefaultVariable(void)
     AddVariableReplaceHandler(PARAMETER_PACKAGE_NAME, VarPackageNameReplace);
     AddVariableReplaceHandler(PARAMETER_USER_ID, VarCurrentUseIdReplace);
     AddVariableReplaceHandler(PARAMETER_PACKAGE_INDEX, VarPackageNameIndexReplace);
+    AddVariableReplaceHandler(PARAMETER_ARK_WEB_PACKAGE_INDEX, VarArkWebPackageNameReplace);
     /*
         deps-path路径变量的含义：
         1）首次挂载时，表示mount-paths-deps->sandbox-path  【STAGE_GLOBAL或者应用孵化时的挂载】
