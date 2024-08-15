@@ -286,8 +286,8 @@
         }],
         "app-resources" : [{
             "mount-paths" : [{
-                    "src-path" : "/data/app/el1/bundle/public/com.ohos.nweb",
-                    "sandbox-path" : "/data/storage/el1/bundle/nweb",
+                    "src-path" : "/data/app/el1/bundle/public/<arkWebPackageName>",
+                    "sandbox-path" : "/data/storage/el1/bundle/arkwebcore",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
@@ -496,8 +496,8 @@
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
-                    "src-path" : "/data/app/el1/bundle/public/com.ohos.nweb",
-                    "sandbox-path" : "/data/storage/el1/bundle/nweb",
+                    "src-path" : "/data/app/el1/bundle/public/<arkWebPackageName>",
+                    "sandbox-path" : "/data/storage/el1/bundle/arkwebcore",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
@@ -556,8 +556,8 @@
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
-                    "src-path" : "/system/app/com.ohos.nweb",
-                    "sandbox-path" : "/system/app/com.ohos.nweb",
+                    "src-path" : "/system/app/<arkWebPackageName>",
+                    "sandbox-path" : "/system/app/<arkWebPackageName>",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
@@ -566,8 +566,8 @@
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
-                    "src-path" : "/data/app/el1/bundle/public/com.ohos.nweb",
-                    "sandbox-path" : "/data/app/el1/bundle/public/com.ohos.nweb",
+                    "src-path" : "/data/app/el1/bundle/public/<arkWebPackageName>",
+                    "sandbox-path" : "/data/app/el1/bundle/public/<arkWebPackageName>",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
@@ -576,8 +576,8 @@
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
-                    "src-path" : "/module_update/ArkWebCore/app/com.ohos.nweb",
-                    "sandbox-path" : "/module_update/ArkWebCore/app/com.ohos.nweb",
+                    "src-path" : "/module_update/ArkWebCore/app/<arkWebPackageName>",
+                    "sandbox-path" : "/module_update/ArkWebCore/app/<arkWebPackageName>",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }

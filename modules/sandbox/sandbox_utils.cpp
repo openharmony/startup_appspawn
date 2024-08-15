@@ -37,6 +37,7 @@
 #include "config_policy_utils.h"
 #include "init_param.h"
 #include "parameter.h"
+#include "parameters.h"
 #include "securec.h"
 
 #ifdef WITH_SELINUX
@@ -74,6 +75,7 @@ namespace {
     const std::string g_packageName = "<PackageName>";
     const std::string g_packageNameIndex = "<PackageName_index>";
     const std::string g_variablePackageName = "<variablePackageName>";
+    const std::string g_arkWebPackageName = "<arkWebPackageName>";
     const std::string g_sandBoxDir = "/mnt/sandbox/";
     const std::string g_statusCheck = "true";
     const std::string g_sbxSwitchCheck = "ON";
@@ -126,6 +128,16 @@ namespace {
     const std::string FILE_ACCESS_COMMON_DIR_MODE = "ohos.permission.FILE_ACCESS_COMMON_DIR";
     const std::string ACCESS_DLP_FILE_MODE = "ohos.permission.ACCESS_DLP_FILE";
     const std::string FILE_ACCESS_MANAGER_MODE = "ohos.permission.FILE_ACCESS_MANAGER";
+    const std::string ARK_WEB_PERSIST_PACKAGE_NAME = "persist.arkwebcore.package_name";
+
+    const std::string& getArkWebPackageName()
+    {
+        static std::string arkWebPackageName;
+        if (arkWebPackageName.empty()) {
+            arkWebPackageName = system::GetParameter(ARK_WEB_PERSIST_PACKAGE_NAME, "");
+        }
+        return arkWebPackageName;
+    }
 }
 
 static uint32_t GetAppMsgFlags(const AppSpawningCtx *property)
@@ -483,6 +495,13 @@ string SandboxUtils::ConvertToRealPath(const AppSpawningCtx *appProperty, std::s
 
     if (path.find(g_variablePackageName) != std::string::npos) {
         path = ReplaceVariablePackageName(appProperty, path);
+    }
+
+    if (path.find(g_arkWebPackageName) != std::string::npos) {
+        path = replace_all(path, g_arkWebPackageName, getArkWebPackageName());
+        APPSPAWN_LOGV(
+            "arkWeb sandbox, path %{public}s, package:%{public}s",
+            path.c_str(), getArkWebPackageName().c_str());
     }
 
     return path;
