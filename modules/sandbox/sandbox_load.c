@@ -209,6 +209,7 @@ static PathMountNode *DecodeMountPathConfig(const SandboxSection *section, const
     if (srcPath == NULL || dstPath == NULL) {
         return NULL;
     }
+
     PathMountNode *tmp = GetPathMountNode(section, type, srcPath, dstPath);
     if (tmp != NULL) { // 删除老的节点，保存新的节点
         DeleteSandboxMountNode((SandboxMountNode *)tmp);
@@ -401,6 +402,7 @@ static int ParseBaseConfig(AppSpawnSandboxCfg *sandbox, SandboxSection *section,
     APPSPAWN_CHECK(cJSON_IsObject(configs),
         return APPSPAWN_SANDBOX_INVALID, "Invalid config %{public}s", section->name);
     APPSPAWN_LOGV("Parse sandbox %{public}s", section->name);
+
     // "sandbox-switch": "ON", default sandbox switch is on
     section->sandboxSwitch = GetBoolValueFromJsonObj(configs, "sandbox-switch", true);
     // "sandbox-shared"
@@ -412,21 +414,25 @@ static int ParseBaseConfig(AppSpawnSandboxCfg *sandbox, SandboxSection *section,
         ret = ParseGidTableConfig(sandbox, gidTabJson, section);
         APPSPAWN_CHECK(ret == 0, return ret, "Parse gids for %{public}s", section->name);
     }
+
     cJSON *pathConfigs = cJSON_GetObjectItemCaseSensitive(configs, "mount-paths");
     if (pathConfigs != NULL) {  // mount-paths
         ret = ParseMountPathsConfig(sandbox, pathConfigs, section, SANDBOX_TAG_MOUNT_PATH);
         APPSPAWN_CHECK(ret == 0, return ret, "Parse mount-paths for %{public}s", section->name);
     }
+
     pathConfigs = cJSON_GetObjectItemCaseSensitive(configs, "mount-files");
     if (pathConfigs != NULL) {  // mount-files
         ret = ParseMountPathsConfig(sandbox, pathConfigs, section, SANDBOX_TAG_MOUNT_FILE);
         APPSPAWN_CHECK(ret == 0, return ret, "Parse mount-paths for %{public}s", section->name);
     }
+
     pathConfigs = cJSON_GetObjectItemCaseSensitive(configs, "symbol-links");
     if (pathConfigs != NULL) {  // symbol-links
         ret = ParseSymbolLinksConfig(sandbox, pathConfigs, section);
         APPSPAWN_CHECK(ret == 0, return ret, "Parse symbol-links for %{public}s", section->name);
     }
+
     cJSON *groupConfig = cJSON_GetObjectItemCaseSensitive(configs, "mount-groups");
     if (groupConfig != NULL) {
         ret = ParseMountGroupsConfig(sandbox, groupConfig, section);

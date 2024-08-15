@@ -1,7 +1,7 @@
 {
     "global": {
         "sandbox-root": "/mnt/sandbox/<currentUserId>/app-root",
-        "sandbox-ns-flags": [ "pid" ]
+        "sandbox-ns-flags": [ "net" ]
     },
     "required": {
         "system-const": {
@@ -27,8 +27,11 @@
                 "src-path" : "/system/fonts",
                 "sandbox-path" : "/system/fonts"
             }, {
-                "src-path" : "/system/<lib>",
-                "sandbox-path" : "/system/<lib>"
+                "src-path" : "/system/lib",
+                "sandbox-path" : "/system/lib"
+            }, {
+                "src-path" : "/system/lib64",
+                "sandbox-path" : "/system/lib64"
             }, {
                 "src-path" : "/system/<lib>/platformsdk",
                 "sandbox-path" : "/system/<lib>/platformsdk"
@@ -191,7 +194,7 @@
                 "src-path": "/storage/media/<currentUserId>/local/files/.Recent",
                 "sandbox-path": "/storage/Users/<currentUserId>/.Recent"
             }],
-            "mount-groups": [ "user-public" ]
+            "mount-groups": [ "user-public", "Users" ]
         }, {
             "name": "ohos.permission.READ_IMAGEVIDEO",
             "sandbox-switch": "ON",
@@ -299,6 +302,21 @@
                 "src-path": "/data/hwbackup",
                 "sandbox-path": "/data/hwbackup"
             }]
+        }, {
+            "name": "ohos.permission.ACCESS_DLP_FILE",
+            "sandbox-switch": "ON",
+            "sandbox-shared" : "true",
+            "mount-paths": [{
+                "src-path": "/mnt/data/<currentUserId>",
+                "sandbox-path": "/mnt/data",
+                "category": "shared",
+                "check-action-status": "true"
+            }, {
+                "src-path": "/mnt/data/<currentUserId>",
+                "sandbox-path": "/mnt/data",
+                "category": "dlp_fuse"
+            }],
+            "mount-groups": ["dlpmgr"]
         }],
         "spawn-flag": [{
             "name": "START_FLAGS_BACKUP",
@@ -371,21 +389,6 @@
             }],
             "symbol-links" : []
         }, {
-            "name": "com.ohos.dlpmanager",
-            "sandbox-switch": "ON",
-            "sandbox-shared" : "true",
-            "mount-paths" :[{
-                "src-path" : "/mnt/data/<currentUserId>",
-                "sandbox-path" : "/mnt/data",
-                "category": "shared",
-                "check-action-status": "true"
-            }, {
-                "src-path" : "/dev/fuse",
-                "sandbox-path" : "/mnt/data/fuse",
-                "category": "dlp_fuse"
-            }],
-            "mount-groups": ["dlpmgr"]
-        }, {
             "name" : "com.ohos.permissionmanager",
             "sandbox-switch": "ON",
             "mount-paths" : [{
@@ -408,11 +411,24 @@
             "sandbox-path": "/storage/External"
         }]
     }, {
+        "name": "Users",
+        "type": "app-variable",
+        "deps-mode": "not-exists",
+        "mount-paths-deps": {
+            "src-path": "/mnt/sandbox/<currentUserId>/<PackageName>/storage/Users",
+            "sandbox-path": "/storage/Users",
+            "category": "shared"
+        },
+        "mount-paths": [{
+            "src-path": "/storage/media/<currentUserId>/local/files/Docs",
+            "sandbox-path": "<deps-path>/currentUser"
+        }]
+    }, {
         "name": "el2",
         "type": "app-variable",
         "deps-mode": "not-exists",
         "mount-paths-deps": {
-            "src-path": "/data/app/el2/<currentUserId>/base",
+            "src-path": "/mnt/sandbox/<currentUserId>/<PackageName>/data/storage/el2",
             "sandbox-path": "/data/storage/el2",
             "category": "shared"
         },
