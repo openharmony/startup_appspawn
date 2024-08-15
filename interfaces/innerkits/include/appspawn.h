@@ -173,6 +173,8 @@ typedef enum {
     APP_FLAGS_BEGETCTL_BOOT, // Start an app from begetctl.
     APP_FLAGS_ATOMIC_SERVICE,
     APP_FLAGS_CHILDPROCESS,
+    APP_FLAGS_HWASAN_ENABLED = 21,
+    APP_FLAGS_UBSAN_ENABLED = 22,
     MAX_FLAGS_INDEX = 63,
 } AppFlagsIndex;
 
