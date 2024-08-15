@@ -48,9 +48,38 @@ typedef struct TagPathMountNode PathMountNode;
 typedef struct TagMountArg MountArg;
 typedef struct TagVarExtraData VarExtraData;
 typedef struct TagSandboxSection SandboxSection;
+typedef struct TagAppSpawnNamespace AppSpawnNamespace;
+typedef struct TagAppSpawnedProcess AppSpawnedProcessInfo;
+
+AppSpawnNamespace *GetAppSpawnNamespace(const AppSpawnMgr *content);
+void DeleteAppSpawnNamespace(AppSpawnNamespace *ns);
+void FreeAppSpawnNamespace(struct TagAppSpawnExtData *data);
+int PreForkSetPidNamespace(AppSpawnMgr *content, AppSpawningCtx *property);
+int PostForkSetPidNamespace(AppSpawnMgr *content, AppSpawningCtx *property);
+int ProcessMgrRemoveApp(const AppSpawnMgr *content, const AppSpawnedProcessInfo *appInfo);
+int ProcessMgrAddApp(const AppSpawnMgr *content, const AppSpawnedProcessInfo *appInfo);
+void TryCreateSocket(AppSpawnReqMsgMgr *reqMgr);
 
 int MountAllGroup(const SandboxContext *context, const cJSON *groups);
 int MountAllHsp(const SandboxContext *context, const cJSON *hsps);
+
+void CheckAndCreateSandboxFile(const char *file);
+int VarPackageNameReplace(const SandboxContext *context,
+    const char *buffer, uint32_t bufferLen, uint32_t *realLen, const VarExtraData *extraData);
+int ReplaceVariableForDepSandboxPath(const SandboxContext *context,
+    const char *buffer, uint32_t bufferLen, uint32_t *realLen, const VarExtraData *extraData);
+int ReplaceVariableForDepSrcPath(const SandboxContext *context,
+    const char *buffer, uint32_t bufferLen, uint32_t *realLen, const VarExtraData *extraData);
+int ReplaceVariableForDepPath(const SandboxContext *context,
+    const char *buffer, uint32_t bufferLen, uint32_t *realLen, const VarExtraData *extraData);
+int SpawnPrepareSandboxCfg(AppSpawnMgr *content, AppSpawningCtx *property);
+unsigned long GetMountModeFromConfig(const cJSON *config, const char *key, unsigned long def);
+uint32_t GetFlagIndexFromJson(const cJSON *config);
+int ParseMountPathsConfig(AppSpawnSandboxCfg *sandbox,
+    const cJSON *mountConfigs, SandboxSection *section, uint32_t type);
+int ParseSymbolLinksConfig(AppSpawnSandboxCfg *sandbox, const cJSON *symbolLinkConfigs,
+    SandboxSection *section);
+int ParseGidTableConfig(AppSpawnSandboxCfg *sandbox, const cJSON *configs, SandboxSection *section);
 
 int AppSpawnColdStartApp(struct AppSpawnContent *content, AppSpawnClient *client);
 void ProcessSignal(const struct signalfd_siginfo *siginfo);
@@ -100,5 +129,4 @@ StubNode *GetStubNode(int type);
 }
 #endif
 int SetSelinuxConNweb(const AppSpawnMgr *content, const AppSpawningCtx *property);
-void InitAppCommonEnv(const AppSpawningCtx *property);
 #endif // APPSPAWN_TEST_STUB_H

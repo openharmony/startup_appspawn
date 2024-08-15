@@ -41,7 +41,7 @@ static int VarPackageNameIndexReplace(const SandboxContext *context,
     return 0;
 }
 
-static int VarPackageNameReplace(const SandboxContext *context,
+APPSPAWN_STATIC int VarPackageNameReplace(const SandboxContext *context,
     const char *buffer, uint32_t bufferLen, uint32_t *realLen, const VarExtraData *extraData)
 {
     int len = sprintf_s((char *)buffer, bufferLen, "%s", context->bundleName);
@@ -97,7 +97,7 @@ static int ReplaceVariableByParameter(const char *varData, SandboxBuffer *sandbo
     return 0;
 }
 
-static int ReplaceVariableForDepSandboxPath(const SandboxContext *context,
+APPSPAWN_STATIC int ReplaceVariableForDepSandboxPath(const SandboxContext *context,
     const char *buffer, uint32_t bufferLen, uint32_t *realLen, const VarExtraData *extraData)
 {
     APPSPAWN_CHECK(extraData != NULL && extraData->data.depNode != NULL, return -1, "Invalid extra data ");
@@ -108,7 +108,7 @@ static int ReplaceVariableForDepSandboxPath(const SandboxContext *context,
     return 0;
 }
 
-static int ReplaceVariableForDepSrcPath(const SandboxContext *context,
+APPSPAWN_STATIC int ReplaceVariableForDepSrcPath(const SandboxContext *context,
     const char *buffer, uint32_t bufferLen, uint32_t *realLen, const VarExtraData *extraData)
 {
     APPSPAWN_CHECK(extraData != NULL && extraData->data.depNode != NULL, return -1, "Invalid extra data ");
@@ -119,7 +119,7 @@ static int ReplaceVariableForDepSrcPath(const SandboxContext *context,
     return 0;
 }
 
-static int ReplaceVariableForDepPath(const SandboxContext *context,
+APPSPAWN_STATIC int ReplaceVariableForDepPath(const SandboxContext *context,
     const char *buffer, uint32_t bufferLen, uint32_t *realLen, const VarExtraData *extraData)
 {
     APPSPAWN_CHECK(extraData != NULL && extraData->data.depNode != NULL, return -1, "Invalid extra data ");

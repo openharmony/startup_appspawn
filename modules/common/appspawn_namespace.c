@@ -32,7 +32,7 @@
 #define PID_NS_INIT_UID 100000  // reserved for pid_ns_init process, avoid app, render proc, etc.
 #define PID_NS_INIT_GID 100000
 
-typedef struct {
+typedef struct TagAppSpawnNamespace {
     AppSpawnExtData extData;
     int nsSelfPidFd;  // ns pid fd of appspawn
     int nsInitPidFd;  // ns pid fd of pid_ns_init
@@ -56,7 +56,7 @@ APPSPAWN_STATIC AppSpawnNamespace *GetAppSpawnNamespace(const AppSpawnMgr *conte
     return (AppSpawnNamespace *)ListEntry(node, AppSpawnNamespace, extData);
 }
 
-static void DeleteAppSpawnNamespace(AppSpawnNamespace *namespace)
+APPSPAWN_STATIC void DeleteAppSpawnNamespace(AppSpawnNamespace *namespace)
 {
     APPSPAWN_CHECK_ONLY_EXPER(namespace != NULL, return);
     APPSPAWN_LOGV("DeleteAppSpawnNamespace");
@@ -74,14 +74,14 @@ static void DeleteAppSpawnNamespace(AppSpawnNamespace *namespace)
     free(namespace);
 }
 
-static void FreeAppSpawnNamespace(struct TagAppSpawnExtData *data)
+APPSPAWN_STATIC void FreeAppSpawnNamespace(struct TagAppSpawnExtData *data)
 {
     AppSpawnNamespace *namespace = ListEntry(data, AppSpawnNamespace, extData);
     APPSPAWN_CHECK_ONLY_EXPER(namespace != NULL, return);
     DeleteAppSpawnNamespace(namespace);
 }
 
-static AppSpawnNamespace *CreateAppSpawnNamespace(void)
+APPSPAWN_STATIC AppSpawnNamespace *CreateAppSpawnNamespace(void)
 {
     APPSPAWN_LOGV("CreateAppSpawnNamespace");
     AppSpawnNamespace *namespace = (AppSpawnNamespace *)calloc(1, sizeof(AppSpawnNamespace));
@@ -235,7 +235,7 @@ static int SetPidNamespace(int nsPidFd, int nsType)
     return 0;
 }
 
-static int PreForkSetPidNamespace(AppSpawnMgr *content, AppSpawningCtx *property)
+APPSPAWN_STATIC int PreForkSetPidNamespace(AppSpawnMgr *content, AppSpawningCtx *property)
 {
     AppSpawnNamespace *namespace = GetAppSpawnNamespace(content);
     if (namespace == NULL) {
@@ -247,7 +247,7 @@ static int PreForkSetPidNamespace(AppSpawnMgr *content, AppSpawningCtx *property
     return 0;
 }
 
-static int PostForkSetPidNamespace(AppSpawnMgr *content, AppSpawningCtx *property)
+APPSPAWN_STATIC int PostForkSetPidNamespace(AppSpawnMgr *content, AppSpawningCtx *property)
 {
     AppSpawnNamespace *namespace = GetAppSpawnNamespace(content);
     if (namespace == NULL) {

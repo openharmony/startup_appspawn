@@ -38,6 +38,13 @@
 using namespace testing;
 using namespace testing::ext;
 
+#define MAX_BUFF 20
+#define TEST_STR_LEN 30
+
+extern "C" {
+    void DumpSandboxMountNode(const SandboxMountNode *sandboxNode, uint32_t index);
+}
+
 namespace OHOS {
 static AppSpawnTestHelper g_testHelper;
 class AppSpawnSandboxCoverageTest : public testing::Test {
@@ -300,5 +307,319 @@ HWTEST_F(AppSpawnSandboxCoverageTest, App_Spawn_Sandbox_MountAllGroup_001, TestS
     const cJSON *config6 = cJSON_Parse(testDataGroupStr6);
     ret = MountAllGroup(context, config6); // dir is not Array
     ASSERT_EQ(ret, -1);
+}
+
+HWTEST_F(AppSpawnSandboxCoverageTest, App_Spawn_Sandbox_cfgvar, TestSize.Level0)
+{
+    SandboxContext context = {};
+    context.bundleName = "com.xxx.xxx.xxx";
+    char buffer[MAX_BUFF] = {};
+    uint32_t realLen = 0;
+    int ret = VarPackageNameReplace(&context, buffer, MAX_BUFF, &realLen, nullptr);
+    EXPECT_EQ(ret, 0);
+
+    context.bundleName = "com.xxxxxxx.xxxxxxx.xxxxxxx";
+    ret = VarPackageNameReplace(&context, buffer, MAX_BUFF, &realLen, nullptr);
+    EXPECT_EQ(ret, -1);
+
+    VarExtraData extraData = {};
+    ret = ReplaceVariableForDepSandboxPath(nullptr, buffer, MAX_BUFF,  &realLen, nullptr);
+    EXPECT_EQ(ret, -1);
+    ret = ReplaceVariableForDepSrcPath(nullptr, buffer, MAX_BUFF,  &realLen, nullptr);
+    EXPECT_EQ(ret, -1);
+    ret = ReplaceVariableForDepSandboxPath(nullptr, buffer, MAX_BUFF,  &realLen, &extraData);
+    EXPECT_EQ(ret, -1);
+    ret = ReplaceVariableForDepSrcPath(nullptr, buffer, MAX_BUFF,  &realLen, &extraData);
+    EXPECT_EQ(ret, -1);
+    extraData.data.depNode = (PathMountNode *)malloc(sizeof(PathMountNode));
+    ASSERT_EQ(extraData.data.depNode != nullptr, 1);
+
+    extraData.data.depNode->target = (char*)malloc(sizeof(char) * TEST_STR_LEN);
+    ASSERT_EQ(extraData.data.depNode->target != nullptr, 1);
+    (void)strcpy_s(extraData.data.depNode->target, TEST_STR_LEN, "/xxxx/xxxx/xxxxxxx/xxxxxx/xxx");
+    ret = ReplaceVariableForDepSandboxPath(nullptr, buffer, MAX_BUFF,  &realLen, &extraData);
+    EXPECT_EQ(ret, -1);
+    (void)strcpy_s(extraData.data.depNode->target, TEST_STR_LEN, "/xxxx/xxxx/xxxxxx");
+    ret = ReplaceVariableForDepSandboxPath(nullptr, buffer, MAX_BUFF,  &realLen, &extraData);
+    EXPECT_EQ(ret, 0);
+
+    extraData.data.depNode->source = (char*)malloc(sizeof(char) * TEST_STR_LEN);
+    ASSERT_EQ(extraData.data.depNode->source != nullptr, 1);
+    (void)strcpy_s(extraData.data.depNode->source, TEST_STR_LEN, "/xxxx/xxxx/xxxxxxx/xxxxxx/xxx");
+    ret = ReplaceVariableForDepSrcPath(nullptr, buffer, MAX_BUFF,  &realLen, &extraData);
+    EXPECT_EQ(ret, -1);
+    (void)strcpy_s(extraData.data.depNode->source, TEST_STR_LEN, "/xxxx/xxxx/xxxxxx");
+    ret = ReplaceVariableForDepSrcPath(nullptr, buffer, MAX_BUFF,  &realLen, &extraData);
+    EXPECT_EQ(ret, 0);
+    free(extraData.data.depNode->target);
+    free(extraData.data.depNode->source);
+    free(extraData.data.depNode);
+}
+
+HWTEST_F(AppSpawnSandboxCoverageTest, App_Spawn_Sandbox_cfgvar_001, TestSize.Level0)
+{
+    char buffer[MAX_BUFF] = {};
+    uint32_t realLen = 0;
+    VarExtraData extraData = {};
+    int ret = ReplaceVariableForDepPath(nullptr, buffer, MAX_BUFF, &realLen, nullptr);
+    EXPECT_EQ(ret, -1);
+    ret = ReplaceVariableForDepPath(nullptr, buffer, MAX_BUFF, &realLen, &extraData);
+    EXPECT_EQ(ret, -1);
+    extraData.data.depNode = (PathMountNode *)malloc(sizeof(PathMountNode));
+    ASSERT_EQ(extraData.data.depNode != nullptr, 1);
+    extraData.data.depNode->source = (char*)malloc(sizeof(char) * TEST_STR_LEN);
+    EXPECT_EQ(extraData.data.depNode->source != nullptr, 1);
+
+    ret = ReplaceVariableForDepPath(nullptr, buffer, MAX_BUFF, &realLen, &extraData);
+    EXPECT_EQ(ret, 0);
+    extraData.operation = 0x1 << MOUNT_PATH_OP_REPLACE_BY_SRC;
+    ret = ReplaceVariableForDepPath(nullptr, buffer, MAX_BUFF, &realLen, &extraData);
+    EXPECT_EQ(ret, 0);
+
+    (void)strcpy_s(extraData.data.depNode->source, TEST_STR_LEN, "/xxxx/xxxx/xxxxxxx/xxxxxx/xxx");
+    ret = ReplaceVariableForDepPath(nullptr, buffer, MAX_BUFF, &realLen, &extraData);
+    EXPECT_EQ(ret, -1);
+
+    (void)strcpy_s(extraData.data.depNode->source, TEST_STR_LEN, "/xxxx/xxxx/xxxxxx");
+    ret = ReplaceVariableForDepPath(nullptr, buffer, MAX_BUFF, &realLen, &extraData);
+    EXPECT_EQ(ret, 0);
+    free(extraData.data.depNode->source);
+    free(extraData.data.depNode);
+}
+
+HWTEST_F(AppSpawnSandboxCoverageTest, App_Spawn_Sandbox_cfgvar_002, TestSize.Level0)
+{
+    const char *realVar = GetSandboxRealVar(nullptr, 0, nullptr, nullptr, nullptr);
+    EXPECT_EQ(realVar == nullptr, 1);
+
+    SandboxContext context = {};
+    realVar = GetSandboxRealVar(&context, 0, nullptr, nullptr, nullptr);
+    EXPECT_EQ(realVar == nullptr, 1);
+
+    context.buffer[0].buffer = (char*)malloc(sizeof(char) * MAX_BUFF);
+    ASSERT_EQ(context.buffer[0].buffer != nullptr, 1);
+    (void)strcpy_s(context.buffer[0].buffer, MAX_BUFF, "xxxxxxxx");
+    context.buffer[0].bufferLen = MAX_BUFF;
+    context.buffer[0].current = 0;
+    realVar = GetSandboxRealVar(&context, 0, nullptr, nullptr, nullptr);
+    EXPECT_EQ(realVar != nullptr, 1);
+    realVar = GetSandboxRealVar(&context, 4, nullptr, nullptr, nullptr);
+    EXPECT_EQ(realVar == nullptr, 1);
+    realVar = GetSandboxRealVar(&context, 0, nullptr, "test/xxxx", nullptr);
+    EXPECT_EQ(realVar != nullptr, 1);
+    realVar = GetSandboxRealVar(&context, 0, "xxxx/xxx", nullptr, nullptr);
+    EXPECT_EQ(realVar != nullptr, 1);
+    realVar = GetSandboxRealVar(&context, 0, "xxxx/xxx", "test/xxxx", nullptr);
+    EXPECT_EQ(realVar != nullptr, 1);
+    GetSandboxRealVar(&context, 1, nullptr, nullptr, nullptr);
+    EXPECT_EQ(realVar != nullptr, 1);
+    free(context.buffer[0].buffer);
+}
+
+HWTEST_F(AppSpawnSandboxCoverageTest, App_Spawn_Sandbox_manager, TestSize.Level0)
+{
+    int  ret = SpawnPrepareSandboxCfg(nullptr, nullptr);
+    EXPECT_EQ(ret, -1);
+
+    AppSpawnMgr content = {};
+    ret = SpawnPrepareSandboxCfg(&content, nullptr);
+    EXPECT_EQ(ret, -1);
+    AppSpawningCtx property = {};
+    property.message = (AppSpawnMsgNode *)malloc(sizeof(AppSpawnMsgNode));
+    ASSERT_EQ(property.message != nullptr, 1);
+    (void)strcpy_s(property.message->msgHeader.processName, APP_LEN_PROC_NAME, "com.xxx.xxx.xxx");
+    ret = SpawnPrepareSandboxCfg(&content, &property);
+    EXPECT_EQ(ret, -1);
+    free(property.message);
+
+    PathMountNode mountNode = {};
+    mountNode.checkErrorFlag = true;
+    mountNode.createDemand = 0;
+    DumpSandboxMountNode(nullptr, 0);
+    mountNode.sandboxNode.type = SANDBOX_TAG_MOUNT_PATH;
+    DumpSandboxMountNode(&mountNode.sandboxNode, 0);
+    mountNode.sandboxNode.type = SANDBOX_TAG_SYMLINK;
+    DumpSandboxMountNode(&mountNode.sandboxNode, 0);
+    mountNode.source = (char*)malloc(sizeof(char) * TEST_STR_LEN);
+    ASSERT_EQ(mountNode.source!= nullptr, 1);
+    mountNode.target = (char*)malloc(sizeof(char) * TEST_STR_LEN);
+    ASSERT_EQ(mountNode.target!= nullptr, 1);
+    mountNode.appAplName = (char*)malloc(sizeof(char) * TEST_STR_LEN);
+    ASSERT_EQ(mountNode.appAplName!= nullptr, 1);
+    (void)strcpy_s(mountNode.source, TEST_STR_LEN, "/xxxxx/xxx");
+    (void)strcpy_s(mountNode.target, TEST_STR_LEN, "/test/xxxx");
+    (void)strcpy_s(mountNode.appAplName, TEST_STR_LEN, "apl");
+    mountNode.sandboxNode.type = SANDBOX_TAG_MOUNT_FILE;
+    DumpSandboxMountNode(&mountNode.sandboxNode, 0);
+    mountNode.checkErrorFlag = false;
+    mountNode.createDemand = 1;
+    mountNode.sandboxNode.type = SANDBOX_TAG_SYMLINK;
+    DumpSandboxMountNode(&mountNode.sandboxNode, 0);
+    mountNode.sandboxNode.type = SANDBOX_TAG_REQUIRED;
+    DumpSandboxMountNode(&mountNode.sandboxNode, 0);
+    free(mountNode.source);
+    free(mountNode.target);
+    free(mountNode.appAplName);
+}
+
+HWTEST_F(AppSpawnSandboxCoverageTest, App_Spawn_Sandbox_load, TestSize.Level0)
+{
+    unsigned long ret = GetMountModeFromConfig(nullptr, nullptr, 1);
+    EXPECT_EQ(ret, 1);
+    const char testStr[] = "{ \
+        \"test\":\"xxxxxxxxx\", \
+    }";
+    const cJSON *config = cJSON_Parse(testStr);
+    ret = GetMountModeFromConfig(config, "test", 1);
+    EXPECT_EQ(ret, 1);
+
+    ret = GetFlagIndexFromJson(config);
+    EXPECT_EQ(ret, 0);
+    const char testStr1[] = "{ \
+        \"name\":\"xxxxxxxxx\", \
+    }";
+    const cJSON *config1 = cJSON_Parse(testStr1);
+    ret = GetFlagIndexFromJson(config1);
+    EXPECT_EQ(ret, 0);
+}
+
+HWTEST_F(AppSpawnSandboxCoverageTest, App_Spawn_Sandbox_load_001, TestSize.Level0)
+{
+    const char testStr[] = "{ \
+        \"test\":\"xxxxxxxxx\" \
+    }";
+    const cJSON *config = cJSON_Parse(testStr);
+    unsigned long ret = GetMountModeFromConfig(config, "test", 1);
+    EXPECT_EQ(ret, 1);
+
+    int result = ParseMountPathsConfig(nullptr, nullptr, nullptr, 1);
+    EXPECT_EQ(result, -1);
+    result = ParseMountPathsConfig(nullptr, config, nullptr, 1);
+    EXPECT_EQ(result, -1);
+
+    const char testStr1[] = "{ \
+        \"mount-paths\":[\"/xxxx/xxx\", \"/xxx/xxx\"] \
+    }";
+    const cJSON *config1 = cJSON_Parse(testStr1);
+    cJSON *mountPaths = cJSON_GetObjectItemCaseSensitive(config1, "mount-paths");
+    result = ParseMountPathsConfig(nullptr, mountPaths, nullptr, 1);
+    EXPECT_EQ(result, 0);
+
+    const char testStr2[] = "{ \
+        \"mount-paths\":[{\
+            \"src-path\": \"/config\", \
+            \"test\": \"/test/xxx\" \
+        }] \
+    }";
+    const cJSON *config2 = cJSON_Parse(testStr2);
+    mountPaths = cJSON_GetObjectItemCaseSensitive(config2, "mount-paths");
+    result = ParseMountPathsConfig(nullptr, mountPaths, nullptr, 1);
+    EXPECT_EQ(result, 0);
+
+    const char testStr3[] = "{ \
+        \"mount-paths\":[{ \
+            \"sandbox-path\": \"/config\", \
+            \"test\": \"/test/xxx\"}] \
+    }";
+    const cJSON *config3 = cJSON_Parse(testStr3);
+    mountPaths = cJSON_GetObjectItemCaseSensitive(config3, "mount-paths");
+    result = ParseMountPathsConfig(nullptr, mountPaths, nullptr, 1);
+    EXPECT_EQ(result, 0);
+
+    const char testStr4[] = "{ \
+        \"mount-paths\":[{ \
+            \"src-path\": \"/xxx/xxx\", \
+            \"sandbox-path\": \"/test/xxx\"}] \
+    }";
+    const cJSON *config4 = cJSON_Parse(testStr4);
+    mountPaths = cJSON_GetObjectItemCaseSensitive(config4, "mount-paths");
+    result = ParseMountPathsConfig(nullptr, mountPaths, nullptr, 1);
+    EXPECT_EQ(result, 0);
+}
+
+HWTEST_F(AppSpawnSandboxCoverageTest, App_Spawn_Sandbox_load_002, TestSize.Level0)
+{
+    int ret = ParseSymbolLinksConfig(nullptr, nullptr, nullptr);
+    EXPECT_EQ(ret, -1);
+
+    const char testStr1[] = "{ \
+        \"test\":\"xxxxxxxxx\" \
+    }";
+    const cJSON *config1 = cJSON_Parse(testStr1);
+    ret = ParseSymbolLinksConfig(nullptr, config1, nullptr);
+    EXPECT_EQ(ret, -1);
+
+    const char testStr2[] = "{ \
+        \"symbol-links\":[\"/xxxx/xxx\", \"/xxx/xxx\"] \
+    }";
+    const cJSON *config2 = cJSON_Parse(testStr2);
+    cJSON *symbolLinks = cJSON_GetObjectItemCaseSensitive(config2, "symbol-links");
+    ret = ParseSymbolLinksConfig(nullptr, symbolLinks, nullptr);
+    EXPECT_EQ(ret, -1);
+
+    const char testStr3[] = "{ \
+        \"symbol-links\":[{\
+            \"test\":\"/xxxx/xxx\", \
+            \"target-name\":\"/xxx/xxx\"}] \
+    }";
+    const cJSON *config3 = cJSON_Parse(testStr3);
+    symbolLinks = cJSON_GetObjectItemCaseSensitive(config3, "symbol-links");
+    ret = ParseSymbolLinksConfig(nullptr, symbolLinks, nullptr);
+    EXPECT_EQ(ret, -1);
+
+    const char testStr4[] = "{ \
+        \"symbol-links\":[{\
+            \"test\":\"/xxxx/xxx\", \
+            \"link-name\":\"/xxx/xxx\"}] \
+    }";
+    const cJSON *config4 = cJSON_Parse(testStr4);
+    symbolLinks = cJSON_GetObjectItemCaseSensitive(config4, "symbol-links");
+    ret = ParseSymbolLinksConfig(nullptr, symbolLinks, nullptr);
+    EXPECT_EQ(ret, -1);
+
+    const char testStr5[] = "{ \
+        \"symbol-links\":[{\
+            \"target-name\":\"/xxxx/xxx\", \
+            \"link-name\":\"/xxx/xxx\"}] \
+    }";
+    const cJSON *config5 = cJSON_Parse(testStr5);
+    symbolLinks = cJSON_GetObjectItemCaseSensitive(config5, "symbol-links");
+    ret = ParseSymbolLinksConfig(nullptr, symbolLinks, nullptr);
+    EXPECT_EQ(ret, 0);
+}
+
+HWTEST_F(AppSpawnSandboxCoverageTest, App_Spawn_Sandbox_load_003, TestSize.Level0)
+{
+    const char testStr[] = "{ \
+        \"test\":\"xxxxxxxxx\" \
+    }";
+    const cJSON *config = cJSON_Parse(testStr);
+    int ret = ParseGidTableConfig(nullptr, config, nullptr);
+    EXPECT_EQ(ret, 0);
+
+    const char testStr1[] = "{ \
+        \"test\":[] \
+    }";
+    const cJSON *config1 = cJSON_Parse(testStr1);
+    cJSON *testCfg = cJSON_GetObjectItemCaseSensitive(config1, "test");
+    ret = ParseGidTableConfig(nullptr, testCfg, nullptr);
+    EXPECT_EQ(ret, 0);
+
+    SandboxSection section = {};
+    const char testStr2[] = "{ \
+        \"gids\":[\"202400\", \"202500\", \"202600\"] \
+    }";
+    const cJSON *config2 = cJSON_Parse(testStr2);
+    testCfg = cJSON_GetObjectItemCaseSensitive(config2, "gids");
+    ret = ParseGidTableConfig(nullptr, testCfg, &section);
+    EXPECT_EQ(ret, 0);
+
+    section.gidTable = (gid_t *)malloc(sizeof(gid_t) * 10);
+    ASSERT_EQ(section.gidTable != nullptr, 1);
+    ret = ParseGidTableConfig(nullptr, testCfg, &section);
+    EXPECT_EQ(ret, 0);
+    if (section.gidTable != nullptr) {
+        free(section.gidTable);
+    }
 }
 }

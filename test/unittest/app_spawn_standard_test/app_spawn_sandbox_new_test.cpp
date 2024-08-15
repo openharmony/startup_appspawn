@@ -2272,7 +2272,6 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_sandbox, TestSize.Level0)
     const PathMountNode sandboxNode = {node, nullptr, nullptr, 0, false, 1, 1, 0, nullptr, {}};
     const MountArg args = {"/data/xxx/xxx", nullptr, nullptr, 0, nullptr, 0};
     CreateDemandSrc(contextTest, &sandboxNode, &args);
-
     char apl[] = "apl";
     const PathMountNode sandboxNode1 = {node, source, nullptr, 0, false, 1, 1, 0, nullptr, {}};
     const PathMountNode sandboxNode2 = {node, nullptr, target, 0, false, 1, 1, 0, nullptr, {}};
@@ -2289,7 +2288,43 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_sandbox, TestSize.Level0)
     res = CheckSandboxMountNode(nullptr, &section, &sandboxNode2, 0);
     ASSERT_EQ(res, 0);
     res = CheckSandboxMountNode(&context1, &section, &sandboxNode3, MOUNT_PATH_OP_NONE);
-    ASSERT_EQ(res, 0);
+    EXPECT_EQ(res, 0);
+}
+
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_sandbox_001, TestSize.Level0)
+{
+    char target[] = {"/data/storage/el1/database"};
+    SandboxMountNode node = {};
+    struct ListNode front;
+    char name[] = "test";
+    char apl[] = "apl";
+    const SandboxSection section = {node, front, name, 16, 16, nullptr, 1, 1, nullptr};
+    char rootPath[] = "/test/xxxx";
+    SandboxContext context1 = {{{}}, "test.example.ohos.com", nullptr, 1, 1, 1, 1, 1, 1, 1, 1, rootPath};
+    char source1[] = {"/xxx/xxx/xxx"};
+    uint32_t operation = 0x1 << SANDBOX_TAG_SPAWN_FLAGS;
+    const PathMountNode sandboxNode4 = {node, source1, target, 0, false, 1, 1, 0, apl, {}};
+    context1.bundleHasWps = 1;
+    int res = CheckSandboxMountNode(&context1, &section, &sandboxNode4, operation);
+    EXPECT_EQ(res, 1);
+    context1.bundleHasWps = 0;
+    res = CheckSandboxMountNode(&context1, &section, &sandboxNode4, operation);
+    EXPECT_EQ(res, 1);
+
+    char source2[] = "/data/app/xxx";
+    const PathMountNode sandboxNode5 = {node, source2, target, 0, false, 1, 1, 0, apl, {}};
+    res = CheckSandboxMountNode(&context1, &section, &sandboxNode5, operation);
+    EXPECT_EQ(res, 1);
+
+    char source3[] = "/data/app/base";
+    const PathMountNode sandboxNode6 = {node, source3, target, 0, false, 1, 1, 0, apl, {}};
+    res = CheckSandboxMountNode(&context1, &section, &sandboxNode6, operation);
+    EXPECT_EQ(res, 1);
+
+    char source4[] = "/data/app/<PackageName>";
+    const PathMountNode sandboxNode7 = {node, source4, target, 0, false, 1, 1, 0, apl, {}};
+    res = CheckSandboxMountNode(&context1, &section, &sandboxNode7, operation);
+    EXPECT_EQ(res, 1);
 }
 
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_mount_template, TestSize.Level0)

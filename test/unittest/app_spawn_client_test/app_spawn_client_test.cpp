@@ -1211,4 +1211,13 @@ HWTEST_F(AppSpawnClientTest, App_Spawn_Permission_006, TestSize.Level0)
 #endif
     AppSpawnClientDestroy(clientHandle);
 }
+
+HWTEST_F(AppSpawnClientTest, App_Spawn_interface001, TestSize.Level0)
+{
+    AppSpawnReqMsgMgr *clientInstance = (AppSpawnReqMsgMgr *)malloc(sizeof(AppSpawnReqMsgMgr) + RECV_BLOCK_LEN);
+    clientInstance->socketId = 1;
+    clientInstance->maxRetryCount = 1;
+    TryCreateSocket(clientInstance);
+    free(clientInstance);
+}
 }  // namespace OHOS

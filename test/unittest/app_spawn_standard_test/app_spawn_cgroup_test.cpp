@@ -392,4 +392,24 @@ HWTEST_F(AppSpawnCGroupTest, App_Spawn_CGroup_010, TestSize.Level0)
     LE_CloseLoop(LE_GetDefaultLoop());
     ASSERT_EQ(ret, 0);
 }
+
+HWTEST_F(AppSpawnCGroupTest, App_Spawn_CGroup_011, TestSize.Level0)
+{
+    int ret = ProcessMgrRemoveApp(nullptr, nullptr);
+    ASSERT_EQ(ret, -1);
+    AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+    ret = ProcessMgrRemoveApp(mgr, nullptr);
+    DeleteAppSpawnMgr(mgr);
+    ASSERT_EQ(ret, -1);
+}
+
+HWTEST_F(AppSpawnCGroupTest, App_Spawn_CGroup_012, TestSize.Level0)
+{
+    int ret = ProcessMgrAddApp(nullptr, nullptr);
+    ASSERT_EQ(ret, -1);
+    AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+    ret = ProcessMgrAddApp(mgr, nullptr);
+    DeleteAppSpawnMgr(mgr);
+    ASSERT_EQ(ret, -1);
+}
 }  // namespace OHOS

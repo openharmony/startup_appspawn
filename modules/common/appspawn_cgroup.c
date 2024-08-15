@@ -166,7 +166,7 @@ static void KillProcessesByCGroup(const char *path, AppSpawnMgr *content, const 
     (void)fclose(file);
 }
 
-static int ProcessMgrRemoveApp(const AppSpawnMgr *content, const AppSpawnedProcessInfo *appInfo)
+APPSPAWN_STATIC int ProcessMgrRemoveApp(const AppSpawnMgr *content, const AppSpawnedProcessInfo *appInfo)
 {
     APPSPAWN_CHECK_ONLY_EXPER(content != NULL, return -1);
     APPSPAWN_CHECK_ONLY_EXPER(appInfo != NULL, return -1);
@@ -192,7 +192,7 @@ static int ProcessMgrRemoveApp(const AppSpawnMgr *content, const AppSpawnedProce
     return ret;
 }
 
-static int ProcessMgrAddApp(const AppSpawnMgr *content, const AppSpawnedProcessInfo *appInfo)
+APPSPAWN_STATIC int ProcessMgrAddApp(const AppSpawnMgr *content, const AppSpawnedProcessInfo *appInfo)
 {
     APPSPAWN_CHECK_ONLY_EXPER(content != NULL, return -1);
     APPSPAWN_CHECK_ONLY_EXPER(appInfo != NULL, return -1);
