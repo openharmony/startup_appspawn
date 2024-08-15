@@ -119,7 +119,7 @@ static inline bool CheckAppFullMountEnable(void)
     return GetBoolParameter("const.filemanager.full_mount.enable", false);
 }
 
-static unsigned long GetMountModeFromConfig(const cJSON *config, const char *key, unsigned long def)
+APPSPAWN_STATIC unsigned long GetMountModeFromConfig(const cJSON *config, const char *key, unsigned long def)
 {
     char *value = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(config, key));
     if (value == NULL) {
@@ -181,7 +181,7 @@ static mode_t GetChmodFromJson(const cJSON *config)
     return mode;
 }
 
-static uint32_t GetFlagIndexFromJson(const cJSON *config)
+APPSPAWN_STATIC uint32_t GetFlagIndexFromJson(const cJSON *config)
 {
     char *flagStr = GetStringFromJsonObj(config, "name");
     if (flagStr == NULL) {
@@ -241,7 +241,7 @@ static PathMountNode *DecodeMountPathConfig(const SandboxSection *section, const
     return sandboxNode;
 }
 
-static int ParseMountPathsConfig(AppSpawnSandboxCfg *sandbox,
+APPSPAWN_STATIC int ParseMountPathsConfig(AppSpawnSandboxCfg *sandbox,
     const cJSON *mountConfigs, SandboxSection *section, uint32_t type)
 {
     APPSPAWN_CHECK_ONLY_EXPER(mountConfigs != NULL && cJSON_IsArray(mountConfigs), return -1);
@@ -287,7 +287,8 @@ static SymbolLinkNode *DecodeSymbolLinksConfig(const SandboxSection *section, co
     return node;
 }
 
-static int ParseSymbolLinksConfig(AppSpawnSandboxCfg *sandbox, const cJSON *symbolLinkConfigs, SandboxSection *section)
+APPSPAWN_STATIC int ParseSymbolLinksConfig(AppSpawnSandboxCfg *sandbox, const cJSON *symbolLinkConfigs,
+    SandboxSection *section)
 {
     APPSPAWN_CHECK_ONLY_EXPER(symbolLinkConfigs != NULL && cJSON_IsArray(symbolLinkConfigs), return -1);
     uint32_t symlinkPointSize = cJSON_GetArraySize(symbolLinkConfigs);
@@ -303,7 +304,7 @@ static int ParseSymbolLinksConfig(AppSpawnSandboxCfg *sandbox, const cJSON *symb
     return 0;
 }
 
-static int ParseGidTableConfig(AppSpawnSandboxCfg *sandbox, const cJSON *configs, SandboxSection *section)
+APPSPAWN_STATIC int ParseGidTableConfig(AppSpawnSandboxCfg *sandbox, const cJSON *configs, SandboxSection *section)
 {
     APPSPAWN_CHECK(cJSON_IsArray(configs), return 0, "json is not array.");
     uint32_t arrayLen = (uint32_t)cJSON_GetArraySize(configs);

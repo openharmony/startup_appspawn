@@ -182,4 +182,31 @@ HWTEST_F(AppSpawnBegetCtlTest, App_Spawn_BetgetCtl_004, TestSize.Level0)
     AppSpawnClientDestroy(clientHandle);
     ASSERT_EQ(ret, 0);
 }
+
+HWTEST_F(AppSpawnBegetCtlTest, App_Spawn_BetgetCtl_005, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = nullptr;
+    AppSpawnReqMsgHandle reqHandle = 0;
+    AppSpawningCtx *property = nullptr;
+    AppSpawnMgr *mgr = nullptr;
+    int ret = -1;
+    do {
+        mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
+        EXPECT_EQ(mgr != nullptr, 1);
+        // create msg
+        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create reqMgr %{public}s", APPSPAWN_SERVER_NAME);
+        reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_SPAWN_NATIVE_PROCESS, 0);
+        APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break,
+            "Failed to create req %{public}s", APPSPAWN_SERVER_NAME);
+        property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
+        property->client.flags |= APP_BEGETCTL_BOOT;
+        APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
+        ret = RunBegetctlBootApp(mgr, property);
+    } while (0);
+    DeleteAppSpawningCtx(property);
+    AppSpawnClientDestroy(clientHandle);
+    DeleteAppSpawnMgr(mgr);
+    ASSERT_EQ(ret, -1);
+}
 }  // namespace OHOS
