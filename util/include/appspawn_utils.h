@@ -82,6 +82,15 @@ extern "C" {
 
 #define INVALID_PERMISSION_INDEX (-1)
 
+typedef struct {
+    int flag;
+    const char *ldPreload;
+    const char *asanOptions;
+    const char *tsanOptions;
+    const char *ubsanOptions;
+    const char *hwasanOptions;
+} EnvConfig;
+
 #define MAX_ENV_VALUE_LEN 1024
 
 typedef struct TagAppSpawnCommonEnv {
