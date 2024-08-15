@@ -472,7 +472,7 @@ static int SpawnLoadConfig(AppSpawnMgr *content)
     LoadSilkConfig();
     // init flags that will not change until next reboot
     content->flags |= CheckEnabled("const.security.developermode.state", "true") ? APP_DEVELOPER_MODE : 0;
-    content->flags |= CheckEnabled("persist.security.jitfort.enabled", "true") ? APP_JITFORT_MODE : 0;
+    content->flags |= CheckEnabled("persist.security.jitfort.disabled", "true") ? 0 : APP_JITFORT_MODE;
     return 0;
 }
 
