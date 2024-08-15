@@ -141,18 +141,12 @@ static int ReplaceVariableForpackageName(const SandboxContext *context,
     const char *buffer, uint32_t bufferLen, uint32_t *realLen, const VarExtraData *extraData)
 {
     APPSPAWN_CHECK(context != NULL, return -1, "Invalid extra data ");
-    if (extraData != NULL && extraData->variablePackageName != NULL) {
-        int len = sprintf_s((char *)buffer, bufferLen, "%s", extraData->variablePackageName);
-        APPSPAWN_CHECK(len > 0 && ((uint32_t)len < bufferLen),
-            return -1, "Failed to format path app: %{public}s", context->bundleName);
-        *realLen = (uint32_t)len;
-        return 0;
-    }
 
     AppSpawnMsgBundleInfo *bundleInfo = (AppSpawnMsgBundleInfo *)GetSpawningMsgInfo(context, TLV_BUNDLE_INFO);
     APPSPAWN_CHECK(bundleInfo != NULL, return APPSPAWN_TLV_NONE,
         "No bundle info in msg %{public}s", context->bundleName);
-    uint32_t flags = CheckAppSpawnMsgFlag(context->message, TLV_MSG_FLAGS, APP_FLAGS_CLONE_ENABLE) ? 1 : 0;
+    uint32_t flags = (CheckAppSpawnMsgFlag(context->message, TLV_MSG_FLAGS, APP_FLAGS_CLONE_ENABLE) &&
+            bundleInfo->bundleIndex > 0) ? 0x1 : 0;
     flags |= CheckAppSpawnMsgFlag(context->message, TLV_MSG_FLAGS, APP_FLAGS_EXTENSION_SANDBOX) ? 0x2 : 0;
     char *extension = GetAppSpawnMsgExtInfo(context->message, MSG_EXT_NAME_APP_EXTENSION, NULL);
     int32_t len = 0;
