@@ -41,6 +41,8 @@ extern "C" {
 #define PARAMETER_PACKAGE_NAME "<PackageName>"
 #define PARAMETER_USER_ID "<currentUserId>"
 #define PARAMETER_PACKAGE_INDEX "<PackageName_index>"
+#define ARK_WEB_PERSIST_PACKAGE_NAME "persist.arkwebcore.package_name"
+#define PARAMETER_ARK_WEB_PACKAGE_INDEX "<arkWebPackageName>"
 
 #define FILE_MODE 0711
 #define MAX_SANDBOX_BUFFER 256
@@ -49,6 +51,7 @@ extern "C" {
 #define APP_FLAGS_SECTION 0x80000000
 #define BASIC_MOUNT_FLAGS (MS_REC | MS_BIND)
 #define INVALID_UID ((uint32_t)-1)
+#define PARAM_BUFFER_SIZE 128
 
 #ifdef APPSPAWN_64
 #define APPSPAWN_LIB_NAME "lib64"
