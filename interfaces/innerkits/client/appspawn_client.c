@@ -208,7 +208,7 @@ static int HandleMsgSend(AppSpawnReqMsgMgr *reqMgr, int socketId, AppSpawnReqMsg
     return 0;
 }
 
-static void TryCreateSocket(AppSpawnReqMsgMgr *reqMgr)
+APPSPAWN_STATIC void TryCreateSocket(AppSpawnReqMsgMgr *reqMgr)
 {
     uint32_t retryCount = 1;
     while (retryCount <= reqMgr->maxRetryCount) {

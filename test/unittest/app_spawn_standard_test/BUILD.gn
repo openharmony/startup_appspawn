@@ -16,6 +16,11 @@ import("//build/test.gni")
 
 ohos_unittest("AppSpawn_ut") {
   module_out_path = "${module_output_path}"
+  if (appspawn_unittest_coverage) {
+    cflags = [ "--coverage" ]
+    ldflags = [ "--coverage" ]
+    cflags_cc = [ "--coverage" ]
+  }
   deps = []
   defines = [
     "APPSPAWN_BASE_DIR=\"/data/appspawn_ut\"",
@@ -135,7 +140,7 @@ ohos_unittest("AppSpawn_ut") {
 
   if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
     sources += [
-      "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_sandbox_new_coverage_test.cpp",
+      "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_sandbox_new_mount_test.cpp",
       "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_sandbox_new_test.cpp",
     ]
     defines += [ "APPSPAWN_SANDBOX_NEW" ]
