@@ -394,7 +394,7 @@
                     "src-path" : "/storage/cloud/<currentUserId>",
                     "sandbox-path" : "/storage/cloud",
                     "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
+                    "check-action-status": "true"
                 }, {
                     "src-path" : "none",
                     "sandbox-path" : "/storage/cloud/epfs",

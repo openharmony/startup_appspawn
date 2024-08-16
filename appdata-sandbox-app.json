@@ -370,7 +370,8 @@
                 "sandbox-path" : "/data/service/el2/<currentUserId>/hmdfs/cache/account_cache"
             }, {
                 "src-path" : "/storage/cloud/<currentUserId>",
-                "sandbox-path" : "/storage/cloud"
+                "sandbox-path" : "/storage/cloud",
+                "check-action-status": "true"
             }, {
                 "src-path" : "none",
                 "sandbox-path" : "/storage/cloud/epfs",
