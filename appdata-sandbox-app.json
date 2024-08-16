@@ -317,6 +317,11 @@
                 "category": "dlp_fuse"
             }],
             "mount-groups": ["dlpmgr"]
+        }, {
+            "name": "ohos.permission.GET_ALL_PROCESSES",
+            "sandbox-switch": "ON",
+            "gids" : [3009],
+            "mount-paths": []
         }],
         "spawn-flag": [{
             "name": "START_FLAGS_BACKUP",
