@@ -30,8 +30,8 @@
                 "src-path" : "/system/<lib>",
                 "sandbox-path" : "/system/<lib>"
             }, {
-                "src-path" : "/data/app/el1/bundle/public/com.ohos.nweb",
-                "sandbox-path" : "/data/storage/el1/bundle/nweb"
+                "src-path" : "/data/app/el1/bundle/public/<arkWebPackageName>",
+                "sandbox-path" : "/data/storage/el1/bundle/arkwebcore"
             }, {
                 "src-path" : "/system/<lib>/platformsdk",
                 "sandbox-path" : "/system/<lib>/platformsdk"
@@ -57,8 +57,8 @@
                 "src-path" : "/system/<lib>/media",
                 "sandbox-path" : "/system/<lib>/media"
             }, {
-                "src-path" : "/system/app/com.ohos.nweb",
-                "sandbox-path" : "/system/app/com.ohos.nweb"
+                "src-path" : "/system/app/<arkWebPackageName>",
+                "sandbox-path" : "/system/app/<arkWebPackageName>"
             }, {
                 "src-path" : "/vendor/lib",
                 "sandbox-path" : "/vendor/lib",
