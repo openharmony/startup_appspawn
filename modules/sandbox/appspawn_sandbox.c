@@ -209,7 +209,7 @@ static int InitSandboxContext(SandboxContext *context,
         if (permissionNode == NULL) {
             return -1;
         }
-        context->sandboxShared = packageNode->section.sandboxShared;
+        context->sandboxShared = permissionNode->section.sandboxShared;
         node = node->next;
     }
 
@@ -524,7 +524,7 @@ static bool IsUnlockStatus(uint32_t uid)
     char *path = (char *)malloc(sizeof(char) * allPathSize);
     APPSPAWN_CHECK(path != NULL, return true, "Failed to malloc path");
     int len = sprintf_s(path, allPathSize, "%s%u%s", rootPath, uid, basePath);
-    APPSPAWN_CHECK(len > 0 && ((size_t)len < allPathSize), return true, "Failed to get base path");
+    APPSPAWN_CHECK(len > 0 && ((size_t)len < allPathSize), free(path); return true, "Failed to get base path");
 
     if (access(path, F_OK) == 0) {
         APPSPAWN_LOGI("this is unlock status");
