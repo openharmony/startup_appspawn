@@ -187,7 +187,7 @@ int SetInternetPermission(const AppSpawningCtx *property)
     return 0;
 }
 
-APPSPAWN_STATIC void InitAppCommonEnv(const AppSpawningCtx *property)
+void InitAppCommonEnv(const AppSpawningCtx *property)
 {
     AppDacInfo *appInfo = reinterpret_cast<AppDacInfo *>(GetAppProperty(property, TLV_DAC_INFO));
     if (appInfo == NULL) {
