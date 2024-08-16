@@ -42,12 +42,19 @@
 
 namespace {
 #if defined(webview_arm64)
-    const std::string NWEB_HAP_LIB_PATH = "/data/storage/el1/bundle/nweb/libs/arm64";
+    const std::string ARK_WEB_CORE_HAP_LIB_PATH =
+        "/data/storage/el1/bundle/arkwebcore/libs/arm64";
 #elif defined(webview_x86_64)
-    const std::string NWEB_HAP_LIB_PATH = "/data/storage/el1/bundle/nweb/libs/x86_64";
+    const std::string ARK_WEB_CORE_HAP_LIB_PATH =
+        "/data/storage/el1/bundle/arkwebcore/libs/x86_64";
 #else
-    const std::string NWEB_HAP_LIB_PATH = "/data/storage/el1/bundle/nweb/libs/arm";
+    const std::string ARK_WEB_CORE_HAP_LIB_PATH =
+        "/data/storage/el1/bundle/arkwebcore/libs/arm";
 #endif
+    const std::string ARK_WEB_ENGINE_LIB_NAME = "libarkweb_engine.so";
+    const std::string ARK_WEB_RENDER_LIB_NAME = "libarkweb_render.so";
+    const std::string WEB_ENGINE_LIB_NAME = "libweb_engine.so";
+    const std::string WEB_RENDER_LIB_NAME = "libnweb_render.so";
 }  // namespace
 
 APPSPAWN_STATIC bool SetSeccompPolicyForRenderer(void *nwebRenderHandle)
@@ -67,6 +74,24 @@ APPSPAWN_STATIC bool SetSeccompPolicyForRenderer(void *nwebRenderHandle)
     return true;
 }
 
+APPSPAWN_STATIC std::string GetArkWebEngineLibName()
+{
+    std::string arkWebEngineLibPath = ARK_WEB_CORE_HAP_LIB_PATH + "/"
+            + ARK_WEB_ENGINE_LIB_NAME;
+    bool isArkWebEngineLibPathExist = access(arkWebEngineLibPath.c_str(), F_OK) == 0;
+    return isArkWebEngineLibPathExist ?
+            ARK_WEB_ENGINE_LIB_NAME : WEB_ENGINE_LIB_NAME;
+}
+
+APPSPAWN_STATIC std::string GetArkWebRenderLibName()
+{
+    std::string arkWebRenderLibPath = ARK_WEB_CORE_HAP_LIB_PATH + "/"
+            + ARK_WEB_RENDER_LIB_NAME;
+    bool isArkWebRenderLibPathExist = access(arkWebRenderLibPath.c_str(), F_OK) == 0;
+    return isArkWebRenderLibPathExist ?
+            ARK_WEB_RENDER_LIB_NAME : WEB_RENDER_LIB_NAME;
+}
+
 APPSPAWN_STATIC int RunChildProcessor(AppSpawnContent *content, AppSpawnClient *client)
 {
     uint32_t len = 0;
@@ -78,29 +103,33 @@ APPSPAWN_STATIC int RunChildProcessor(AppSpawnContent *content, AppSpawnClient *
     std::string renderStr(renderCmd);
     void *webEngineHandle = nullptr;
     void *nwebRenderHandle = nullptr;
+
+    const std::string& libPath = ARK_WEB_CORE_HAP_LIB_PATH;
+    const std::string engineLibName = GetArkWebEngineLibName();
+    const std::string renderLibName = GetArkWebRenderLibName();
+
 #ifdef __MUSL__
     Dl_namespace dlns;
     dlns_init(&dlns, "nweb_ns");
-    dlns_create(&dlns, NWEB_HAP_LIB_PATH.c_str());
-
+    dlns_create(&dlns, libPath.c_str());
     // preload libweb_engine
-    webEngineHandle = dlopen_ns(&dlns, "libweb_engine.so", RTLD_NOW | RTLD_GLOBAL);
-
+    webEngineHandle =
+        dlopen_ns(&dlns, engineLibName.c_str(), RTLD_NOW | RTLD_GLOBAL);
     // load libnweb_render
-    nwebRenderHandle = dlopen_ns(&dlns, "libnweb_render.so", RTLD_NOW | RTLD_GLOBAL);
+    nwebRenderHandle =
+        dlopen_ns(&dlns, renderLibName.c_str(), RTLD_NOW | RTLD_GLOBAL);
 #else
     // preload libweb_engine
-    const std::string engineLibDir = NWEB_HAP_LIB_PATH + "/libweb_engine.so";
-    webEngineHandle = dlopen(engineLibDir.c_str(), RTLD_NOW | RTLD_GLOBAL);
+    const std::string engineLibPath = libPath + "/" + engineLibName;
+    webEngineHandle = dlopen(engineLibPath.c_str(), RTLD_NOW | RTLD_GLOBAL);
 
     // load libnweb_render
-    const std::string renderLibDir = NWEB_HAP_LIB_PATH + "/libnweb_render.so";
-    nwebRenderHandle = dlopen(renderLibDir.c_str(), RTLD_NOW | RTLD_GLOBAL);
+    const std::string renderLibPath = libPath + "/" + renderLibName;
+    nwebRenderHandle = dlopen(renderLibPath.c_str(), RTLD_NOW | RTLD_GLOBAL);
 #endif
     if (webEngineHandle == nullptr) {
         APPSPAWN_LOGE("Fail to dlopen libweb_engine.so, errno: %{public}d", errno);
     }
-
     if (nwebRenderHandle == nullptr) {
         APPSPAWN_LOGE("Fail to dlopen libnweb_render.so, errno: %{public}d", errno);
         return -1;
