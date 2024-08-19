@@ -21,9 +21,6 @@
                 "src-path" : "/system/etc",
                 "sandbox-path" : "/system/etc"
             }, {
-                "src-path" : "/system/etc/hosts",
-                "sandbox-path" : "/data/service/el1/network/hosts_user/hosts"
-            }, {
                 "src-path" : "/system/bin",
                 "sandbox-path" : "/system/bin"
             }, {
@@ -65,8 +62,16 @@
                 "sandbox-flags" : [ "bind", "rec" ],
                 "check-action-status": "false"
             }, {
+                "src-path" : "/vendor/lib64",
+                "sandbox-path" : "/vendor/lib64",
+                "sandbox-flags" : [ "bind", "rec" ],
+                "check-action-status": "false"
+            }, {
                 "src-path" : "/system/app/NWeb",
                 "sandbox-path" : "/system/app/NWeb"
+            }, {
+                "src-path" : "/module_update/ArkWebCore/app/<arkWebPackageName>",
+                "sandbox-path" : "/module_update/ArkWebCore/app/<arkWebPackageName>"
             }],
             "symbol-links" : [{
                     "target-name" : "/system/etc",
@@ -80,11 +85,15 @@
                     "target-name" : "/system/lib",
                     "link-name" : "/lib",
                     "check-action-status": "false"
+                }, {
+                    "target-name" : "/system/lib64",
+                    "link-name" : "/lib64",
+                    "check-action-status": "false"
                 }
             ],
             "mount-files": [{
-                    "src-path" : "/system/<lib>/ld-musl-arm.so.1",
-                    "sandbox-path" : "/system/<lib>/ld-musl-arm.so.1"
+                "src-path" : "/system/etc/hosts",
+                "sandbox-path" : "/data/service/el1/network/hosts_user/hosts"
             }],
             "mount-groups" : []
         },
