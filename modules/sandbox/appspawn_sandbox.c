@@ -14,6 +14,7 @@
  */
 
 #include "appspawn_sandbox.h"
+#include "sandbox_adapter.h"
 
 #include <errno.h>
 #include <fcntl.h>
@@ -377,32 +378,9 @@ APPSPAWN_STATIC const char *GetRealSrcPath(const SandboxContext *context, const 
     if (originPath == NULL) {
         return NULL;
     }
-    if (!hasPackageName) {
-        return originPath;
+    if (hasPackageName && CheckSpawningMsgFlagSet(context, APP_FLAGS_ATOMIC_SERVICE)) {
+        MakeAtomicServiceDir(context, originPath);
     }
-    if (!CheckSpawningMsgFlagSet(context, APP_FLAGS_ATOMIC_SERVICE) ||
-        !CheckDirRecursive(originPath)) {
-        return originPath;
-    }
-
-    AppSpawnMsgDacInfo *dacInfo = (AppSpawnMsgDacInfo *)GetSpawningMsgInfo(context, TLV_DAC_INFO);
-    char *accountId = GetAppSpawnMsgExtInfo(context->message, MSG_EXT_NAME_ACCOUNT_ID, NULL);
-    if (accountId == NULL || dacInfo == NULL) {
-        return originPath;
-    }
-
-    // user target to format path
-    int len = sprintf_s(context->buffer[BUFFER_FOR_TARGET].buffer,
-        context->buffer[BUFFER_FOR_TARGET].bufferLen, "%s/%s", context->bundleName, accountId);
-    APPSPAWN_CHECK(len > 0, return NULL, "format variablePackageName fail %{public}s", context->bundleName);
-    extraData->variablePackageName = context->buffer[BUFFER_FOR_TARGET].buffer;
-    originPath = GetSandboxRealVar(context, BUFFER_FOR_SOURCE, source, NULL, extraData);
-    if (originPath == NULL) {
-        return NULL;
-    }
-    MakeDirRec(originPath, FILE_MODE, 0);
-    int ret = chown(originPath, dacInfo->uid, dacInfo->gid);
-    APPSPAWN_CHECK_ONLY_LOG(ret == 0, "chown failed, path %{public}s, errno %{public}d", originPath, errno);
     return originPath;
 }
 
