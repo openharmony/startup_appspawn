@@ -91,8 +91,22 @@ APPSPAWN_STATIC void CloseClientSocket(int socketId)
 
 APPSPAWN_STATIC int CreateClientSocket(uint32_t type, uint32_t timeout)
 {
-    const char *socketName = type == CLIENT_FOR_APPSPAWN ? APPSPAWN_SOCKET_NAME :
-                             (type == CLIENT_FOR_CJAPPSPAWN ? CJAPPSPAWN_SOCKET_NAME : NWEBSPAWN_SOCKET_NAME);
+    const char *socketName;
+
+    switch (type) {
+        case CLIENT_FOR_APPSPAWN:
+            socketName = APPSPAWN_SOCKET_NAME;
+            break;
+        case CLIENT_FOR_CJAPPSPAWN:
+            socketName = CJAPPSPAWN_SOCKET_NAME;
+            break;
+        case CLIENT_FOR_NATIVESPAWN:
+            socketName = NATIVESPAWN_SOCKET_NAME;
+            break;
+        default:
+            socketName = NWEBSPAWN_SOCKET_NAME;
+            break;
+    }
 
     int socketFd = socket(AF_UNIX, SOCK_STREAM, 0);  // SOCK_SEQPACKET
     APPSPAWN_CHECK(socketFd >= 0, return -1,
@@ -270,6 +284,9 @@ int AppSpawnClientInit(const char *serviceName, AppSpawnClientHandle *handle)
         type = CLIENT_FOR_CJAPPSPAWN;
     } else if (strcmp(serviceName, NWEBSPAWN_SERVER_NAME) == 0 || strstr(serviceName, NWEBSPAWN_SOCKET_NAME) != NULL) {
         type = CLIENT_FOR_NWEBSPAWN;
+    } else if (strcmp(serviceName, NATIVESPAWN_SERVER_NAME) == 0 ||
+        strstr(serviceName, NATIVESPAWN_SOCKET_NAME) != NULL) {
+        type = CLIENT_FOR_NATIVESPAWN;
     }
     int ret = InitClientInstance(type);
     APPSPAWN_CHECK(ret == 0, return APPSPAWN_SYSTEM_ERROR, "Failed to create reqMgr");

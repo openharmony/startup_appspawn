@@ -41,6 +41,9 @@
 #define NWEB_UID 3081
 #define NWEB_GID 3081
 #define NWEB_NAME "nwebspawn"
+#define NATIVE_UID 3082
+#define NATIVE_GID 3082
+#define NATIVE_NAME "nativespawn"
 #define CAP_NUM 2
 #define BITLEN32 32
 
@@ -92,4 +95,28 @@ pid_t NWebSpawnLaunch(void)
     }
     APPSPAWN_LOGI("nwebspawn fork success pid: %{public}d", ret);
     return ret;
+}
+
+void NativeSpawnInit(void)
+{
+    APPSPAWN_LOGI("NativeSpawnInit");
+#ifdef WITH_SELINUX
+    int ret = setcon("u:r:nativespawn:s0");
+    APPSPAWN_CHECK_ONLY_LOG(ret == 0, "Setcon failed, errno: %{public}d", errno);
+#endif
+    pid_t pid = getpid();
+    setpriority(PRIO_PROCESS, pid, 0);
+#ifndef APPSPAWN_TEST
+    (void)prctl(PR_SET_NAME, NATIVE_NAME);
+#endif
+}
+
+pid_t NativeSpawnLaunch(void)
+{
+    pid_t pid = fork();
+    if (pid == 0) {
+        NativeSpawnInit();
+    }
+    APPSPAWN_LOGI("Nativespawn fork success pid: %{public}d", pid);
+    return pid;
 }

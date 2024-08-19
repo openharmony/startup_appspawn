@@ -101,7 +101,7 @@ private:
     int ptyFd_{-1};
     uint32_t dumpFlags : 1;
     uint32_t exit_ : 1;
-    uint32_t appSpawn_ : 1;
+    uint32_t appSpawn_ : 2;
     uint32_t msgType_;
     pid_t terminatePid_;
     uint32_t threadCount_{1};

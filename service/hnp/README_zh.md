@@ -74,7 +74,7 @@ HAP工程根目录
 ## 3 Native软件包的使用方法
 ### 3.1 在hap应用中访问Native二进制
 以c++语言为例，可以在hap应用代码中通过system、execv等函数执行二进制。默认公有hnp包软链接路径为/data/service/hnp/bin，默认私有hnp包软链接路径为/data/app/bin，默认软链接路径已加入环境变量中。
-### 3.1 hdc shell执行方法
+### 3.2 hdc shell执行方法
 
 **操作步骤：**
 1. 从应用市场下载Native软件包hap应用并安装。

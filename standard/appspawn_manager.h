@@ -187,6 +187,11 @@ APPSPAWN_INLINE int IsNWebSpawnMode(const AppSpawnMgr *content)
         (content->content.mode == MODE_FOR_NWEB_SPAWN || content->content.mode == MODE_FOR_NWEB_COLD_RUN);
 }
 
+APPSPAWN_INLINE int IsNativeSpawnMode(const AppSpawnMgr *content)
+{
+    return (content != NULL) && (content->content.mode == MODE_FOR_NATIVE_SPAWN);
+}
+
 APPSPAWN_INLINE int IsColdRunMode(const AppSpawnMgr *content)
 {
     return (content != NULL) &&

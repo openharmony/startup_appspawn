@@ -88,15 +88,15 @@ HWTEST_F(AppSpawnSandboxMgrTest, App_Spawn_AppSpawnSandboxCfg_002, TestSize.Leve
     OH_ListAddTail(&sandbox->extData.node, &mgr->extData);
 
     // for appspawn
-    int ret = LoadAppSandboxConfig(sandbox, 0);
+    int ret = LoadAppSandboxConfig(sandbox, MODE_FOR_APP_SPAWN);
     EXPECT_EQ(ret, 0);
-    ret = LoadAppSandboxConfig(sandbox, 0);  // 重复load
+    ret = LoadAppSandboxConfig(sandbox, MODE_FOR_APP_SPAWN);  // 重复load
     EXPECT_EQ(ret, 0);
 
     DeleteAppSpawnSandbox(sandbox);
     DeleteAppSpawnMgr(mgr);
 
-    ret = LoadAppSandboxConfig(nullptr, 0);
+    ret = LoadAppSandboxConfig(nullptr, MODE_FOR_APP_SPAWN);
     EXPECT_NE(ret, 0);
 }
 
@@ -111,23 +111,23 @@ HWTEST_F(AppSpawnSandboxMgrTest, App_Spawn_AppSpawnSandboxCfg_003, TestSize.Leve
     int ret = 0;
 #ifdef APPSPAWN_SANDBOX_NEW
     // for nwebspawn
-    ret = LoadAppSandboxConfig(sandbox, 1);
+    ret = LoadAppSandboxConfig(sandbox, MODE_FOR_NWEB_SPAWN);
     EXPECT_EQ(ret, 0);
-    ret = LoadAppSandboxConfig(sandbox, 1);  // 重复load
+    ret = LoadAppSandboxConfig(sandbox, MODE_FOR_NWEB_SPAWN);  // 重复load
     EXPECT_EQ(ret, 0);
-    ret = LoadAppSandboxConfig(sandbox, 2);  // 重复load
+    ret = LoadAppSandboxConfig(sandbox, MODE_FOR_NWEB_SPAWN);  // 重复load
     EXPECT_EQ(ret, 0);
 #else
     // for nwebspawn
-    ret = LoadAppSandboxConfig(sandbox, 0);
+    ret = LoadAppSandboxConfig(sandbox, MODE_FOR_NWEB_SPAWN);
     EXPECT_EQ(ret, 0);
-    ret = LoadAppSandboxConfig(sandbox, 0);  // 重复load
+    ret = LoadAppSandboxConfig(sandbox, MODE_FOR_NWEB_SPAWN);  // 重复load
     EXPECT_EQ(ret, 0);
 #endif
     DeleteAppSpawnSandbox(sandbox);
     DeleteAppSpawnMgr(mgr);
 
-    ret = LoadAppSandboxConfig(nullptr, 1);
+    ret = LoadAppSandboxConfig(nullptr, MODE_FOR_NWEB_SPAWN);
     EXPECT_NE(ret, 0);
 }
 
