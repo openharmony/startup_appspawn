@@ -21,6 +21,9 @@
                 "src-path" : "/sys_prod",
                 "sandbox-path" : "/sys_prod"
             }, {
+                "src-path" : "/module_update",
+                "sandbox-path" : "/module_update"
+            }, {
                 "src-path" : "/system/app",
                 "sandbox-path" : "/system/app"
             }, {
@@ -72,9 +75,6 @@
                 "src-path" : "/system/etc",
                 "sandbox-path" : "/system/etc"
             }, {
-                "src-path" : "/system/etc/hosts",
-                "sandbox-path" : "/data/service/el1/network/hosts_user/hosts"
-            }, {
                 "src-path" : "/system/resource",
                 "sandbox-path" : "/system/resource"
             }, {
@@ -90,21 +90,21 @@
                 "src-path" : "/data/local/shader_cache/cloud/common",
                 "sandbox-path" : "/data/storage/shader_cache/common"
             }, {
-                "src-path": "/storage/media/<currentUserId>/local/files/Docs/Downloads/<PackageName>",
-                "sandbox-path": "/storage/Users/<currentUserId>/Downloads"
+                "src-path" : "/storage/media/<currentUserId>/local/files/Docs/Downloads/<PackageName>",
+                "sandbox-path" : "/storage/Users/<currentUserId>/Downloads"
             }, {
                 "src-path" : "/mnt/hmdfs/<currentUserId>/cloud/data/<PackageName>",
                 "sandbox-path" : "/data/storage/el2/cloud"
             }, {
                 "src-path" : "/data/data/hiai",
-	            "sandbox-path" : "/data/data/hiai"
+                "sandbox-path" : "/data/data/hiai"
             }, {
-	            "src-path" : "/chip_prod/lib64/passthrough",
+                "src-path" : "/chip_prod/lib64/passthrough",
                 "sandbox-path" : "/chip_prod/lib64/passthrough"
             }],
             "mount-files": [{
-                "src-path" : "/system/<lib>/ld-musl-arm.so.1",
-                "sandbox-path" : "/system/<lib>/ld-musl-arm.so.1"
+                "src-path" : "/system/etc/hosts",
+                "sandbox-path" : "/data/service/el1/network/hosts_user/hosts"
             }],
             "symbol-links" : [{
                 "target-name" : "/system/bin",
@@ -127,11 +127,11 @@
         },
         "app-variable": {
             "mount-paths": [{
-                "src-path": "/data/app/el1/<currentUserId>/base/<variablePackageName>",
-                "sandbox-path": "/data/storage/el1/base"
+                "src-path" : "/data/app/el1/<currentUserId>/base/<variablePackageName>",
+                "sandbox-path" : "/data/storage/el1/base"
             }, {
-                "src-path": "/data/app/el1/<currentUserId>/database/<variablePackageName>",
-                "sandbox-path": "/data/storage/el1/database"
+                "src-path" : "/data/app/el1/<currentUserId>/database/<variablePackageName>",
+                "sandbox-path" : "/data/storage/el1/database"
             }, {
                 "src-path" : "/system/app/ohos.global.systemres",
                 "sandbox-path" : "/data/global/systemResources"
@@ -175,7 +175,7 @@
             }, {
                 "src-path" : "/data/app/el1/bundle/public/<arkWebPackageName>",
                 "sandbox-path" : "/data/storage/el1/bundle/arkwebcore"
-            },{
+            }, {
                 "src-path" : "/mnt/hmdfs/<currentUserId>",
                 "sandbox-path" : "/mnt/hmdfs/<currentUserId>"
             }],
@@ -230,7 +230,7 @@
             }, {
                 "src-path": "/data/service/el1/public/themes/<currentUserId>/fa",
                 "sandbox-path": "/data/themes/f"
-            },{
+            }, {
                 "src-path": "/data/service/el1/public/themes/<currentUserId>/share",
                 "sandbox-path": "/data/themes/s"
             }]
@@ -260,10 +260,9 @@
             "name": "ohos.permission.ACCESS_MEDIALIB_THUMB_DB",
             "gids": [3008],
             "mount-paths": [{
-                    "src-path": "/data/app/el2/<currentUserId>/database/com.ohos.medialibrary.medialibrarydata",
-                    "sandbox-path": "/data/medialibrary/database"
-                }
-            ]
+                "src-path": "/data/app/el2/<currentUserId>/database/com.ohos.medialibrary.medialibrarydata",
+                "sandbox-path": "/data/medialibrary/database"
+            }]
         }, {
             "name": "ohos.permission.ACCESS_SHADER_CACHE_DIR",
             "mount-paths": [{
@@ -278,23 +277,16 @@
             }]
         }, {
             "name": "ohos.permission.PROTECT_SCREEN_LOCK_DATA",
-            "mount-paths": [{
-                "src-path": "/data/app/el5/<currentUserId>/base/<PackageName>",
-                "sandbox-path": "/data/storage/el5/base",
-                "check-action-status": "false"
-            }, {
-                "src-path": "/data/app/el5/<currentUserId>/database/<PackageName>",
-                "sandbox-path": "/data/storage/el5/database",
-                "check-action-status": "false"
-            }]
+            "sandbox-switch": "ON",
+            "mount-group": ["el5"]
         }, {
             "name": "ohos.permission.ACCESS_FILE_CONTENT_SHARE",
             "sandbox-switch": "ON",
             "gids": ["file_manager", "user_data_rw"],
             "mount-paths": [{
-              "src-path": "/data/service/el2/public/file_monitor_service/content_share",
-              "sandbox-path": "/storage/ContentShare"
-           }]
+                "src-path": "/data/service/el2/public/file_monitor_service/content_share",
+                "sandbox-path": "/storage/ContentShare"
+            }]
         }, {
             "name": "ohos.permission.ACCESS_LOCAL_BACKUP",
             "gids": [1023],
@@ -398,11 +390,10 @@
             "name" : "com.ohos.permissionmanager",
             "sandbox-switch": "ON",
             "mount-paths" : [{
-                    "src-path" : "/data/app/el1/bundle/public/",
-                    "sandbox-path" : "/data/bundles/",
-                    "check-action-status": "true"
-                }
-            ],
+                "src-path" : "/data/app/el1/bundle/public/",
+                "sandbox-path" : "/data/bundles/",
+                "check-action-status": "true"
+            }],
             "symbol-links" : []
         }]
     },
@@ -462,7 +453,7 @@
         "type": "app-variable",
         "deps-mode": "not-exists",
         "mount-paths-deps": {
-            "src-path": "/data/app/el3/<currentUserId>/base",
+            "src-path": "/mnt/sandbox/<currentUserId>/<PackageName>/data/storage/el3",
             "sandbox-path": "/data/storage/el3",
             "category": "shared"
         },
@@ -478,7 +469,7 @@
         "type": "app-variable",
         "deps-mode": "not-exists",
         "mount-paths-deps": {
-            "src-path": "/data/app/el4/<currentUserId>/base",
+            "src-path": "/mnt/sandbox/<currentUserId>/<PackageName>/data/storage/el4",
             "sandbox-path": "/data/storage/el4",
             "category": "shared"
         },
@@ -488,6 +479,24 @@
         }, {
             "src-path": "/data/app/el4/<currentUserId>/database/<variablePackageName>",
             "sandbox-path": "<deps-path>/database"
+        }]
+    }, {
+        "name": "el5",
+        "type": "app-variable",
+        "deps-mode": "not-exists",
+        "mount-paths-deps": {
+            "src-path": "/mnt/sandbox/<currentUserId>/<PackageName>/data/storage/el5",
+            "sandbox-path": "/data/storage/el5",
+            "category": "shared"
+        },
+        "mount-paths": [{
+            "src-path": "/data/app/el5/<currentUserId>/base/<variablePackageName>",
+            "sandbox-path": "<deps-path>/base",
+            "check-action-status": "false"
+        }, {
+            "src-path": "/data/app/el5/<currentUserId>/database/<variablePackageName>",
+            "sandbox-path": "<deps-path>/database",
+            "check-action-status": "false"
         }]
     }, {
         "name": "HspList",
