@@ -326,10 +326,10 @@
         "spawn-flag": [{
             "name": "START_FLAGS_BACKUP",
             "mount-paths": [{
-                "src-path": "/data/app/el2/<currentUserId>/base/<variablePackageName>/.backup",
+                "src-path": "/data/app/el2/<currentUserId>/base/<PackageName>/.backup",
                 "sandbox-path": "/data/storage/el2/backup"
             }, {
-                "src-path": "/data/app/el1/<currentUserId>/base/<variablePackageName>/.backup",
+                "src-path": "/data/app/el1/<currentUserId>/base/<PackageName>/.backup",
                 "sandbox-path": "/data/storage/el1/backup"
             }],
             "mount-groups": []
