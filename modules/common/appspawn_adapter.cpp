@@ -48,7 +48,7 @@ int SetAppAccessToken(const AppSpawnMgr *content, const AppSpawningCtx *property
     APPSPAWN_LOGV("AppSpawnServer::set access token %{public}" PRId64 " %{public}d",
         tokenInfo->accessTokenIdEx, IsNWebSpawnMode(content));
 
-    if (IsNWebSpawnMode(content)) {
+    if (IsNWebSpawnMode(content) || IsNativeSpawnMode(content)) {
         TokenIdKit tokenIdKit;
         tokenId = tokenIdKit.GetRenderTokenID(tokenInfo->accessTokenIdEx);
     } else {
@@ -151,7 +151,7 @@ int SetSeccompFilter(const AppSpawnMgr *content, const AppSpawningCtx *property)
 #ifdef WITH_SECCOMP
     const char *appName = APP_NAME;
     SeccompFilterType type = APP;
-    
+
     if (IsNWebSpawnMode(content)) {
         uint32_t len = 0;
         std::string processType =

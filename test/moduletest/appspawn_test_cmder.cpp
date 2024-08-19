@@ -88,7 +88,8 @@ static const char *APPSPAWN_TEST_USAGE = "usage: AppSpawnTest <options> \n"
     "  --thread xx              use multi-thread to send message\n"
     "  --type xx                send msg type \n"
     "  --pid xx                 render terminate pid\n"
-    "  --mode nwebspawn         send message to nwebspawn service\n";
+    "  --mode nwebspawn         send message to nwebspawn service\n"
+    "  --mode nativespawn       send message to nativespawn service\n";
 
 int AppSpawnTestCommander::ProcessArgs(int argc, char *const argv[])
 {
@@ -111,7 +112,13 @@ int AppSpawnTestCommander::ProcessArgs(int argc, char *const argv[])
             sendMsg = 1;
         } else if (strcmp(argv[i], "--mode") == 0 && ((i + 1) < argc)) {
             i++;
-            appSpawn_ = strcmp(argv[i], "nwebspawn") == 0 ? 0 : 1;
+            if (strcmp(argv[i], "nwebspawn") == 0) {
+                appSpawn_ = 0;
+            } else if (strcmp(argv[i], "nativespawn") == 0) {
+                appSpawn_ = 2;
+            } else {
+                appSpawn_ = 1;
+            }
             sendMsg = 1;
         } else if (strcmp(argv[i], "--type") == 0 && ((i + 1) < argc)) {
             i++;
@@ -380,7 +387,8 @@ int AppSpawnTestCommander::CreateMsg(AppSpawnReqMsgHandle &reqHandle,
 
 int AppSpawnTestCommander::SendMsg()
 {
-    const char *server = appSpawn_ ? APPSPAWN_SERVER_NAME : NWEBSPAWN_SERVER_NAME;
+    const char *server = appSpawn_ == 1 ? APPSPAWN_SERVER_NAME : (appSpawn_ == 2 ? NATIVESPAWN_SERVER_NAME :
+        NWEBSPAWN_SERVER_NAME);
     printf("Send msg to server '%s' \n", server);
     AppSpawnReqMsgHandle reqHandle = INVALID_REQ_HANDLE;
     int ret = 0;
@@ -547,7 +555,8 @@ void AppSpawnTestCommander::DumpThread(ThreadTaskHandle handle, const ThreadCont
 int AppSpawnTestCommander::Run()
 {
     int ret = 0;
-    const char *name = appSpawn_ ? APPSPAWN_SERVER_NAME : NWEBSPAWN_SERVER_NAME;
+    const char *name = appSpawn_ == 1 ? APPSPAWN_SERVER_NAME : (appSpawn_ == 2 ? NATIVESPAWN_SERVER_NAME :
+        NWEBSPAWN_SERVER_NAME);
     if (clientHandle_ == NULL) {
         ret = AppSpawnClientInit(name, &clientHandle_);
         APPSPAWN_CHECK(ret == 0, return -1, "Failed to create client %{public}s", name);

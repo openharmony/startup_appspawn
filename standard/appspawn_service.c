@@ -117,6 +117,16 @@ static void StopAppSpawn(void)
         OH_ListInit(&appInfo->node);
         free(appInfo);
     }
+    // delete nativespawn, and wait exit. Otherwise, the process of nativespawn spawning will become zombie
+    appInfo = GetSpawnedProcessByName(NATIVESPAWN_SERVER_NAME);
+    if (appInfo != NULL) {
+        APPSPAWN_LOGI("kill %{public}s pid: %{public}d", appInfo->name, appInfo->pid);
+        int exitStatus = 0;
+        KillAndWaitStatus(appInfo->pid, SIGTERM, &exitStatus);
+        OH_ListRemove(&appInfo->node);
+        OH_ListInit(&appInfo->node);
+        free(appInfo);
+    }
     TraversalSpawnedProcess(AppQueueDestroyProc, NULL);
     APPSPAWN_LOGI("StopAppSpawn ");
 #ifdef APPSPAWN_HISYSEVENT
@@ -962,25 +972,54 @@ AppSpawnContent *AppSpawnCreateContent(const char *socketName, char *longProcNam
     return &appSpawnContent->content;
 }
 
-#ifndef CJAPP_SPAWN
+APPSPAWN_STATIC void AppSpawnArgSet(RunMode mode, AppSpawnStartArg *arg)
+{
+    if (mode == MODE_FOR_NWEB_SPAWN) {
+        arg->socketName = NWEBSPAWN_SOCKET_NAME;
+        arg->serviceName = NWEBSPAWN_SERVER_NAME;
+        arg->moduleType = MODULE_NWEBSPAWN;
+        arg->mode = MODE_FOR_NWEB_SPAWN;
+        arg->initArg = 1;
+    } else if (mode == MODE_FOR_NATIVE_SPAWN) {
+        arg->socketName = NATIVESPAWN_SOCKET_NAME;
+        arg->serviceName = NATIVESPAWN_SERVER_NAME;
+        arg->moduleType = MODULE_APPSPAWN;
+        arg->mode = MODE_FOR_NATIVE_SPAWN;
+        arg->initArg = 1;
+    }
+
+    return;
+}
+
+APPSPAWN_STATIC void AppSpawnStartServiceEnd(pid_t nwebSpawnPid, pid_t NativeSpawnPid)
+{
+    AddSpawnedProcess(nwebSpawnPid, NWEBSPAWN_SERVER_NAME);
+    AddSpawnedProcess(NativeSpawnPid, NATIVESPAWN_SERVER_NAME);
+    SetParameter("bootevent.appspawn.started", "true");
+}
+
 AppSpawnContent *StartSpawnService(const AppSpawnStartArg *startArg, uint32_t argvSize, int argc, char *const argv[])
 {
     APPSPAWN_CHECK(startArg != NULL && argv != NULL, return NULL, "Invalid start arg");
     pid_t pid = 0;
+    pid_t NativeSpawnPid  = 0;
     AppSpawnStartArg *arg = (AppSpawnStartArg *)startArg;
     APPSPAWN_LOGV("Start appspawn argvSize %{public}d mode %{public}d service %{public}s",
         argvSize, arg->mode, arg->serviceName);
     if (arg->mode == MODE_FOR_APP_SPAWN) {
         pid = NWebSpawnLaunch();
         if (pid == 0) {
-            arg->socketName = NWEBSPAWN_SOCKET_NAME;
-            arg->serviceName = NWEBSPAWN_SERVER_NAME;
-            arg->moduleType = MODULE_NWEBSPAWN;
-            arg->mode = MODE_FOR_NWEB_SPAWN;
-            arg->initArg = 1;
+            AppSpawnArgSet(MODE_FOR_NWEB_SPAWN, arg);
+        } else {
+            NativeSpawnPid = NativeSpawnLaunch();
+            if (NativeSpawnPid  == 0) {
+                AppSpawnArgSet(MODE_FOR_NATIVE_SPAWN, arg);
+            }
         }
     } else if (arg->mode == MODE_FOR_NWEB_SPAWN && getuid() == 0) {
         NWebSpawnInit();
+    } else if (arg->mode == MODE_FOR_NATIVE_SPAWN && getuid() == 0) {
+        NativeSpawnInit();
     }
     if (arg->initArg) {
         int ret = memset_s(argv[0], argvSize, 0, (size_t)argvSize);
@@ -1007,12 +1046,10 @@ AppSpawnContent *StartSpawnService(const AppSpawnStartArg *startArg, uint32_t ar
 #endif
     AddAppSpawnHook(STAGE_CHILD_PRE_RUN, HOOK_PRIO_LOWEST, AppSpawnClearEnv);
     if (arg->mode == MODE_FOR_APP_SPAWN) {
-        AddSpawnedProcess(pid, NWEBSPAWN_SERVER_NAME);
-        SetParameter("bootevent.appspawn.started", "true");
+        AppSpawnStartServiceEnd(pid, NativeSpawnPid);
     }
     return content;
 }
-#endif
 
 static AppSpawnMsgNode *ProcessSpawnBegetctlMsg(AppSpawnConnection *connection, AppSpawnMsgNode *message)
 {
@@ -1212,40 +1249,3 @@ static void ProcessRecvMsg(AppSpawnConnection *connection, AppSpawnMsgNode *mess
             break;
     }
 }
-
-// To support cjappspawn
-#ifdef CJAPP_SPAWN
-AppSpawnContent *StartCJSpawnService(const AppSpawnStartArg *startArg, uint32_t argvSize, int argc, char *const argv[])
-{
-    APPSPAWN_LOGI("Start CJ Spawn Service ...");
-    APPSPAWN_CHECK(startArg != NULL && argv != NULL, return NULL, "Invalid start arg");
-    AppSpawnStartArg *arg = (AppSpawnStartArg *)startArg;
-    APPSPAWN_LOGV("Start appspawn argvSize %{public}d mode %{public}d service %{public}s",
-                  argvSize, arg->mode, arg->serviceName);
-    if (arg->initArg) {
-        int ret = memset_s(argv[0], argvSize, 0, (size_t)argvSize);
-        APPSPAWN_CHECK(ret == EOK, return NULL, "Failed to memset argv[0]");
-        ret = strncpy_s(argv[0], argvSize, arg->serviceName, strlen(arg->serviceName));
-        APPSPAWN_CHECK(ret == EOK, return NULL, "Failed to copy service name %{public}s", arg->serviceName);
-    }
-
-    // load module appspawn/common
-    AppSpawnLoadAutoRunModules(MODULE_COMMON);
-    AppSpawnModuleMgrInstall(ASAN_MODULE_PATH);
-
-    APPSPAWN_CHECK(LE_GetDefaultLoop() != NULL, return NULL, "Invalid default loop");
-    AppSpawnContent *content = AppSpawnCreateContent(arg->socketName, argv[0], argvSize, arg->mode);
-    APPSPAWN_CHECK(content != NULL, return NULL, "Failed to create content for %{public}s", arg->socketName);
-
-    AppSpawnLoadAutoRunModules(arg->moduleType);  // load corresponding plugin according to startup mode
-    int ret = ServerStageHookExecute(STAGE_SERVER_PRELOAD, content);   // Preload, prase the sandbox
-    APPSPAWN_CHECK(ret == 0, AppSpawnDestroyContent(content);
-    return NULL, "Failed to prepare load %{public}s result: %{public}d", arg->serviceName, ret);
-#ifndef APPSPAWN_TEST
-    APPSPAWN_CHECK(content->runChildProcessor != NULL, AppSpawnDestroyContent(content);
-    return NULL, "No child processor %{public}s result: %{public}d", arg->serviceName, ret);
-#endif
-    AddAppSpawnHook(STAGE_CHILD_PRE_RUN, HOOK_PRIO_LOWEST, AppSpawnClearEnv);
-    return content;
-}
-#endif

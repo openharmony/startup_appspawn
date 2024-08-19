@@ -199,7 +199,7 @@ static int InitSandboxContext(SandboxContext *context,
     context->message = property->message;
 
     context->sandboxNsFlags = CLONE_NEWNS;
-    if (CheckSpawningMsgFlagSet(context, APP_FLAGS_ISOLATED_SANDBOX)) {
+    if (CheckSpawningMsgFlagSet(context, APP_FLAGS_ISOLATED_NETWORK)) {
         context->sandboxNsFlags |= sandbox->sandboxNsFlags & CLONE_NEWNET ? CLONE_NEWNET : 0;
     }
 
