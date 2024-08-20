@@ -460,7 +460,8 @@ int AppSpawnTestHelper::AddDacInfo(AppSpawnReqMsgHandle &reqHandle)
     dacInfo.gidCount = 2;  // 2 count
     dacInfo.gidTable[0] = defaultTestGidGroup_;
     dacInfo.gidTable[1] = defaultTestGidGroup_ + 1;
-    (void)strcpy_s(dacInfo.userName, sizeof(dacInfo.userName), "test-app-name");
+    APPSPAWN_CHECK_ONLY_EXPER(strcpy_s(dacInfo.userName, sizeof(dacInfo.userName), "test-app-name") == 0,
+        return APPSPAWN_ARG_INVALID);
     return AppSpawnReqMsgSetAppDacInfo(reqHandle, &dacInfo);
 }
 
@@ -625,7 +626,8 @@ int AppSpawnTestHelper::CreateSendMsg(std::vector<uint8_t> &buffer, uint32_t msg
     msg->msgLen = sizeof(AppSpawnMsg);
     msg->msgId = 1;
     msg->tlvCount = 0;
-    (void)strcpy_s(msg->processName, sizeof(msg->processName), processName_.c_str());
+    APPSPAWN_CHECK_ONLY_EXPER(strcpy_s(msg->processName, sizeof(msg->processName), processName_.c_str()) == 0,
+        return -1);
     // add tlv
     uint32_t currLen = sizeof(AppSpawnMsg);
     for (auto addTlvFunc : addTlvFuncs) {
@@ -697,7 +699,8 @@ int AppSpawnTestHelper::AddBaseTlv(uint8_t *buffer, uint32_t bufferLen, uint32_t
 
     // add bundle info
     AppBundleInfo info = {};
-    (void)strcpy_s(info.bundleName, sizeof(info.bundleName), "test-bundleName");
+    APPSPAWN_CHECK_ONLY_EXPER(strcpy_s(info.bundleName, sizeof(info.bundleName), "test-bundleName") == 0,
+        return -1);
     info.bundleIndex = 100;  // 100 test index
     ADD_TLV(TLV_BUNDLE_INFO, info, currLen, tlvCount);
 
