@@ -136,6 +136,7 @@ static void SetForkDenied(const AppSpawnedProcessInfo *appInfo)
         APPSPAWN_CHECK(ret >= 0, break,
         "Failed to write file errno: %{public}d path: %{public}s %{public}d", errno, pathForkDenied, ret);
         fsync(fd);
+        APPSPAWN_LOGI("SetForkDenied success, cgroup's owner:%{public}d", appInfo->pid);
     } while (0);
     close(fd);
 }
