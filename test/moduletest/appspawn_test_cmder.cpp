@@ -115,7 +115,7 @@ int AppSpawnTestCommander::ProcessArgs(int argc, char *const argv[])
             if (strcmp(argv[i], "nwebspawn") == 0) {
                 appSpawn_ = 0;
             } else if (strcmp(argv[i], "nativespawn") == 0) {
-                appSpawn_ = 2;
+                appSpawn_ = 2; // 2 is nwebspawn
             } else {
                 appSpawn_ = 1;
             }
