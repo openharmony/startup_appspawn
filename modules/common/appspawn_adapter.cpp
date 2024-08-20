@@ -48,7 +48,7 @@ int SetAppAccessToken(const AppSpawnMgr *content, const AppSpawningCtx *property
     APPSPAWN_LOGV("AppSpawnServer::set access token %{public}" PRId64 " %{public}d",
         tokenInfo->accessTokenIdEx, IsNWebSpawnMode(content));
 
-    if (IsNWebSpawnMode(content) || IsNativeSpawnMode(content)) {
+    if (IsNWebSpawnMode(content)) {
         TokenIdKit tokenIdKit;
         tokenId = tokenIdKit.GetRenderTokenID(tokenInfo->accessTokenIdEx);
     } else {
