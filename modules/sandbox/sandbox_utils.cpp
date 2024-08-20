@@ -488,8 +488,11 @@ string SandboxUtils::ConvertToRealPath(const AppSpawningCtx *appProperty, std::s
         path = replace_all(path, g_packageNameIndex, bundleNameWithIndex);
     }
 
+    const std::string bundleName = CheckAppMsgFlagsSet(appProperty, APP_FLAGS_ISOLATED_SANDBOX_TYPE) ? "isolated/"
+        : "" + std::string(info->bundleName);
+
     if (path.find(g_packageName) != std::string::npos) {
-        path = replace_all(path, g_packageName, info->bundleName);
+        path = replace_all(path, g_packageName, bundleName.c_str());
     }
 
     if (path.find(g_userId) != std::string::npos) {
