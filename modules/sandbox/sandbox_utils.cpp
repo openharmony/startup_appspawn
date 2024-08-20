@@ -901,6 +901,7 @@ int32_t SandboxUtils::DoSandboxFilePrivateBind(const AppSpawningCtx *appProperty
     nlohmann::json privateAppConfig = wholeConfig[g_privatePrefix][0];
     if (privateAppConfig.find(bundleName) != privateAppConfig.end()) {
         APPSPAWN_LOGV("DoSandboxFilePrivateBind %{public}s", bundleName);
+        DoAddGid((AppSpawningCtx *)appProperty, privateAppConfig[bundleName][0], "", g_privatePrefix);
         return DoAllMntPointsMount(appProperty, privateAppConfig[bundleName][0], nullptr, g_privatePrefix);
     }
 
