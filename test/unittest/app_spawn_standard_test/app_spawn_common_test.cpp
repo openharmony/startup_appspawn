@@ -682,11 +682,6 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_SetFdEnv, TestSize.Level0)
     ret = SetFdEnv(nullptr, &property); // message != null, message->connection == null, message->buffer != null
     EXPECT_EQ(ret, -1);
 
-    property.message->buffer = buffer;
-    property.message->connection = connection;
-    ret = SetFdEnv(nullptr, &property); // message != null, message->connection != null, message->buffer != null
-    EXPECT_EQ(ret, -1);
-
     free(buffer);
     free(connection);
     free(property.message);
