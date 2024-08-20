@@ -108,7 +108,7 @@ HWTEST_F(AppSpawnSandboxCoverageTest, App_Spawn_Sandbox_ProcessExpandAppSandboxC
     ASSERT_NE(ret, 0);
 }
 
-HWTEST_F(AppSpawnSandboxCoverageTest, App_Spawn_Sandbox_MountAllHsp, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxCoverageTest, App_Spawn_Sandbox_MountAllHsp_001, TestSize.Level0)
 {
     AppSpawningCtx *spawningCtx = TestCreateAppSpawningCtx();
     SandboxContext *context = TestGetSandboxContext(spawningCtx, 0);
@@ -117,7 +117,8 @@ HWTEST_F(AppSpawnSandboxCoverageTest, App_Spawn_Sandbox_MountAllHsp, TestSize.Le
         \"modules\":[\"module1\", \"module2\"], \
         \"versions\":[\"v10001\", \"v10002\"] \
     }";
-    const cJSON *config = cJSON_Parse(testJson);
+    cJSON *config = cJSON_Parse(testJson);
+    ASSERT_NE(config, nullptr);
     int ret = MountAllHsp(nullptr, nullptr);
     ASSERT_EQ(ret, -1);
     ret = MountAllHsp(context, nullptr);
@@ -126,13 +127,22 @@ HWTEST_F(AppSpawnSandboxCoverageTest, App_Spawn_Sandbox_MountAllHsp, TestSize.Le
     ASSERT_EQ(ret, -1);
     ret = MountAllHsp(context, config);
     ASSERT_EQ(ret, 0);
+    cJSON_Delete(config);
+}
+
+HWTEST_F(AppSpawnSandboxCoverageTest, App_Spawn_Sandbox_MountAllHsp_002, TestSize.Level0)
+{
+    AppSpawningCtx *spawningCtx = TestCreateAppSpawningCtx();
+    SandboxContext *context = TestGetSandboxContext(spawningCtx, 0);
     char testJson1[] = "{ \
         \"bundles\":[\"test.bundle1\", \"test.bundle2\"], \
         \"modules\":[\"module1\"], \
         \"versions\":[\"v10001\"] \
     }";
-    const cJSON *config1 = cJSON_Parse(testJson1);
-    ret = MountAllHsp(context, config1); // bundles count != modules
+    cJSON *config1 = cJSON_Parse(testJson1);
+    ASSERT_NE(config1, nullptr);
+    int ret = MountAllHsp(context, config1); // bundles count != modules
+    cJSON_Delete(config1);
     ASSERT_EQ(ret, -1);
 
     char testJson2[] = "{ \
@@ -140,8 +150,10 @@ HWTEST_F(AppSpawnSandboxCoverageTest, App_Spawn_Sandbox_MountAllHsp, TestSize.Le
         \"modules\":[\"module1\", \"module2\"], \
         \"versions\":[\"v10001\"] \
     }";
-    const cJSON *config2 = cJSON_Parse(testJson2);
+    cJSON *config2 = cJSON_Parse(testJson2);
+    ASSERT_NE(config2, nullptr);
     ret = MountAllHsp(context, config2); // bundles count != versions
+    cJSON_Delete(config2);
     ASSERT_EQ(ret, -1);
 
     char testJson3[] = "{ \
@@ -149,8 +161,10 @@ HWTEST_F(AppSpawnSandboxCoverageTest, App_Spawn_Sandbox_MountAllHsp, TestSize.Le
         \"modules\":[\"module1\", \"module2\"], \
         \"versions\":[\"v10001\", \"v10002\"] \
     }";
-    const cJSON *config3 = cJSON_Parse(testJson3);
+    cJSON *config3 = cJSON_Parse(testJson3);
+    ASSERT_NE(config3, nullptr);
     ret = MountAllHsp(context, config3);
+    cJSON_Delete(config3);
     ASSERT_EQ(ret, -1);
 
     char testJson4[] = "{ \
@@ -158,12 +172,14 @@ HWTEST_F(AppSpawnSandboxCoverageTest, App_Spawn_Sandbox_MountAllHsp, TestSize.Le
         \"modules\":[\"..\", \"module2\"], \
         \"versions\":[\"v10001\", \"v10002\"] \
     }";
-    const cJSON *config4 = cJSON_Parse(testJson4);
+    cJSON *config4 = cJSON_Parse(testJson4);
+    ASSERT_NE(config4, nullptr);
     ret = MountAllHsp(context, config4);
+    cJSON_Delete(config4);
     ASSERT_EQ(ret, -1);
 }
 
-HWTEST_F(AppSpawnSandboxCoverageTest, App_Spawn_Sandbox_MountAllHsp_001, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxCoverageTest, App_Spawn_Sandbox_MountAllHsp_003, TestSize.Level0)
 {
     const SandboxContext context = {};
     char testJson1[] = "{ \
@@ -172,44 +188,60 @@ HWTEST_F(AppSpawnSandboxCoverageTest, App_Spawn_Sandbox_MountAllHsp_001, TestSiz
     char testJson2[] = "{ \
         \"bundles\":\"test.bundle1\"\
     }";
-    const cJSON *config1 = cJSON_Parse(testJson1);
-    const cJSON *config2 = cJSON_Parse(testJson2);
+    cJSON *config1 = cJSON_Parse(testJson1);
+    ASSERT_NE(config1, nullptr);
+    cJSON *config2 = cJSON_Parse(testJson2);
+    ASSERT_NE(config2, nullptr);
     int ret = MountAllHsp(&context, config1); // bundles is null
     ASSERT_EQ(ret, -1);
     ret = MountAllHsp(&context, config2); // bundles not Array
     ASSERT_EQ(ret, -1);
+    cJSON_Delete(config1);
+    cJSON_Delete(config2);
+}
 
-    char testJson3[] = "{ \
+HWTEST_F(AppSpawnSandboxCoverageTest, App_Spawn_Sandbox_MountAllHsp_004, TestSize.Level0)
+{
+    const SandboxContext context = {};
+    char testJson1[] = "{ \
         \"bundles\":[\"test.bundle1\", \"test.bundle2\"], \
         \"test\":\"module1\" \
     }";
-    char testJson4[] = "{ \
+    char testJson2[] = "{ \
         \"bundles\":[\"test.bundle1\", \"test.bundle2\"], \
         \"modules\":\"module1\" \
     }";
-    const cJSON *config3 = cJSON_Parse(testJson3);
-    const cJSON *config4 = cJSON_Parse(testJson4);
-    ret = MountAllHsp(&context, config3); // modules is null
+    cJSON *config1 = cJSON_Parse(testJson1);
+    ASSERT_NE(config1, nullptr);
+    cJSON *config2 = cJSON_Parse(testJson2);
+    ASSERT_NE(config2, nullptr);
+    int ret = MountAllHsp(&context, config1); // modules is null
     ASSERT_EQ(ret, -1);
-    ret = MountAllHsp(&context, config4); // bundles not Array
+    ret = MountAllHsp(&context, config2); // bundles not Array
     ASSERT_EQ(ret, -1);
+    cJSON_Delete(config1);
+    cJSON_Delete(config2);
 
-    char testJson5[] = "{ \
+    char testJson3[] = "{ \
         \"bundles\":[\"test.bundle1\", \"test.bundle2\"], \
         \"modules\":[\"module1\", \"module2\"], \
         \"test\":\"v10001\" \
     }";
-    char testJson6[] = "{ \
+    char testJson4[] = "{ \
         \"bundles\":[\"test.bundle1\", \"test.bundle2\"], \
         \"modules\":[\"module1\", \"module2\"], \
         \"versions\":\"v10001\" \
     }";
-    const cJSON *config5 = cJSON_Parse(testJson5);
-    const cJSON *config6 = cJSON_Parse(testJson6);
-    ret = MountAllHsp(&context, config5); // versions is null
+    cJSON *config3 = cJSON_Parse(testJson3);
+    ASSERT_NE(config3, nullptr);
+    cJSON *config4 = cJSON_Parse(testJson4);
+    ASSERT_NE(config4, nullptr);
+    ret = MountAllHsp(&context, config3); // versions is null
     ASSERT_EQ(ret, -1);
-    ret = MountAllHsp(&context, config6); // versions not Array
+    ret = MountAllHsp(&context, config4); // versions not Array
     ASSERT_EQ(ret, -1);
+    cJSON_Delete(config3);
+    cJSON_Delete(config4);
 }
 
 HWTEST_F(AppSpawnSandboxCoverageTest, App_Spawn_Sandbox_MountAllGroup, TestSize.Level0)
@@ -221,37 +253,43 @@ HWTEST_F(AppSpawnSandboxCoverageTest, App_Spawn_Sandbox_MountAllGroup, TestSize.
     SandboxContext *context = TestGetSandboxContext(spawningCtx, 0);
     ASSERT_EQ(context != nullptr, 1);
 
-    const char testDataGroupStr[] = "{ \
+    const char testDataGroupStr1[] = "{ \
         \"dataGroupId\":[\"1234abcd5678efgh\", \"abcduiop1234\"], \
         \"dir\":[\"/data/app/el2/100/group/091a68a9-2cc9-4279-8849-28631b598975\", \
                     \"/data/app/el2/100/group/ce876162-fe69-45d3-aa8e-411a047af564\"], \
         \"gid\":[\"20100001\", \"20100002\"] \
     }";
-    const cJSON *config = cJSON_Parse(testDataGroupStr);
+    cJSON *config1 = cJSON_Parse(testDataGroupStr1);
+    ASSERT_NE(config1, nullptr);
     ret = MountAllGroup(context, nullptr);
     ASSERT_EQ(ret, -1);
-    ret = MountAllGroup(nullptr, config);
+    ret = MountAllGroup(nullptr, config1);
     ASSERT_EQ(ret, -1);
-    ret = MountAllGroup(context, config);
+    ret = MountAllGroup(context, config1);
     ASSERT_EQ(ret, 0);
+    cJSON_Delete(config1);
 
-    const char testDataGroupStr8[] = "{ \
+    const char testDataGroupStr2[] = "{ \
         \"dataGroupId\":[\"1234abcd5678efgh\", \"abcduiop1234\"], \
         \"dir\":[\"/data/app/el2/100/group/091a68a9-2cc9-4279-8849-28631b598975\"], \
         \"gid\":[\"20100001\"] \
     }";
-    const cJSON *config8 = cJSON_Parse(testDataGroupStr8);
-    ret = MountAllGroup(context, config8); // gid count != dataGroupId
+    cJSON *config2 = cJSON_Parse(testDataGroupStr2);
+    ASSERT_NE(config2, nullptr);
+    ret = MountAllGroup(context, config2); // gid count != dataGroupId
     ASSERT_EQ(ret, -1);
+    cJSON_Delete(config2);
 
-    const char testDataGroupStr9[] = "{ \
+    const char testDataGroupStr3[] = "{ \
         \"dataGroupId\":[\"1234abcd5678efgh\", \"abcduiop1234\"], \
         \"dir\":[\"/data/app/el2/100/group/091a68a9-2cc9-4279-8849-28631b598975\"], \
         \"gid\":[\"20100001\", \"20100002\"] \
     }";
-    const cJSON *config9 = cJSON_Parse(testDataGroupStr9);
-    ret = MountAllGroup(context, config9); // dir count != dataGroupId
+    cJSON *config3 = cJSON_Parse(testDataGroupStr3);
+    ASSERT_NE(config3, nullptr);
+    ret = MountAllGroup(context, config3); // dir count != dataGroupId
     ASSERT_EQ(ret, -1);
+    cJSON_Delete(config3);
 }
 
 HWTEST_F(AppSpawnSandboxCoverageTest, App_Spawn_Sandbox_MountAllGroup_001, TestSize.Level0)
@@ -261,52 +299,71 @@ HWTEST_F(AppSpawnSandboxCoverageTest, App_Spawn_Sandbox_MountAllGroup_001, TestS
     ASSERT_EQ(context != nullptr, 1);
 
     const char testDataGroupStr1[] = "{ \
-        \"test\":[\"1234abcd5678efgh\", \"abcduiop1234\"], \
+        \"test\":[\"1234abcd5678efgh\", \"abcduiop1234\"] \
     }";
-    const cJSON *config1 = cJSON_Parse(testDataGroupStr1);
+    cJSON *config1 = cJSON_Parse(testDataGroupStr1);
+    ASSERT_NE(config1, nullptr);
     int ret = MountAllGroup(context, config1); // dataGroupIds is null
     ASSERT_EQ(ret, -1);
+    cJSON_Delete(config1);
 
     const char testDataGroupStr2[] = "{ \
-        \"dataGroupId\":\"1234abcd5678efgh\", \
+        \"dataGroupId\":\"1234abcd5678efgh\" \
     }";
-    const cJSON *config2 = cJSON_Parse(testDataGroupStr2);
+    cJSON *config2 = cJSON_Parse(testDataGroupStr2);
+    ASSERT_NE(config2, nullptr);
     ret = MountAllGroup(context, config2); // dataGroupIds is not Array
     ASSERT_EQ(ret, -1);
+    cJSON_Delete(config2);
+}
 
-    const char testDataGroupStr3[] = "{ \
+HWTEST_F(AppSpawnSandboxCoverageTest, App_Spawn_Sandbox_MountAllGroup_002, TestSize.Level0)
+{
+    AppSpawningCtx *spawningCtx = TestCreateAppSpawningCtx();
+    SandboxContext *context = TestGetSandboxContext(spawningCtx, 0);
+    ASSERT_EQ(context != nullptr, 1);
+
+    const char testDataGroupStr1[] = "{ \
         \"dataGroupId\":[\"1234abcd5678efgh\", \"abcduiop1234\"], \
         \"test\":[\"20100001\", \"20100002\"] \
     }";
-    const cJSON *config3 = cJSON_Parse(testDataGroupStr3);
-    ret = MountAllGroup(context, config3); // gid is null
+    cJSON *config1 = cJSON_Parse(testDataGroupStr1);
+    ASSERT_NE(config1, nullptr);
+    int ret = MountAllGroup(context, config1); // gid is null
     ASSERT_EQ(ret, -1);
+    cJSON_Delete(config1);
 
-    const char testDataGroupStr4[] = "{ \
+    const char testDataGroupStr2[] = "{ \
         \"dataGroupId\":[\"1234abcd5678efgh\", \"abcduiop1234\"], \
         \"gid\":\"20100001\" \
     }";
-    const cJSON *config4 = cJSON_Parse(testDataGroupStr4);
-    ret = MountAllGroup(context, config4); // gid is not Array
+    cJSON *config2 = cJSON_Parse(testDataGroupStr2);
+    ASSERT_NE(config2, nullptr);
+    ret = MountAllGroup(context, config2); // gid is not Array
     ASSERT_EQ(ret, -1);
+    cJSON_Delete(config2);
 
-    const char testDataGroupStr5[] = "{ \
+    const char testDataGroupStr3[] = "{ \
         \"dataGroupId\":[\"1234abcd5678efgh\", \"abcduiop1234\"], \
         \"test\":[\"/data/app/el2/100/group/ce876162-fe69-45d3-aa8e-411a047af564\"], \
         \"gid\":[\"20100001\", \"20100002\"] \
     }";
-    const cJSON *config5 = cJSON_Parse(testDataGroupStr5);
-    ret = MountAllGroup(context, config5); // dir is null
+    cJSON *config3 = cJSON_Parse(testDataGroupStr3);
+    ASSERT_NE(config3, nullptr);
+    ret = MountAllGroup(context, config3); // dir is null
     ASSERT_EQ(ret, -1);
+    cJSON_Delete(config3);
 
-    const char testDataGroupStr6[] = "{ \
+    const char testDataGroupStr4[] = "{ \
         \"dataGroupId\":[\"1234abcd5678efgh\", \"abcduiop1234\"], \
         \"dir\":\"/data/app/el2/100/group/091a68a9-2cc9-4279-8849-28631b598975\", \
         \"gid\":[\"20100001\", \"20100002\"] \
     }";
-    const cJSON *config6 = cJSON_Parse(testDataGroupStr6);
-    ret = MountAllGroup(context, config6); // dir is not Array
+    cJSON *config4 = cJSON_Parse(testDataGroupStr4);
+    ASSERT_NE(config4, nullptr);
+    ret = MountAllGroup(context, config4); // dir is not Array
     ASSERT_EQ(ret, -1);
+    cJSON_Delete(config4);
 }
 
 HWTEST_F(AppSpawnSandboxCoverageTest, App_Spawn_Sandbox_cfgvar, TestSize.Level0)
@@ -336,19 +393,23 @@ HWTEST_F(AppSpawnSandboxCoverageTest, App_Spawn_Sandbox_cfgvar, TestSize.Level0)
 
     extraData.data.depNode->target = (char*)malloc(sizeof(char) * TEST_STR_LEN);
     ASSERT_EQ(extraData.data.depNode->target != nullptr, 1);
-    (void)strcpy_s(extraData.data.depNode->target, TEST_STR_LEN, "/xxxx/xxxx/xxxxxxx/xxxxxx/xxx");
+    ret = strcpy_s(extraData.data.depNode->target, TEST_STR_LEN, "/xxxx/xxxx/xxxxxxx/xxxxxx/xxx");
+    EXPECT_EQ(ret, 0);
     ret = ReplaceVariableForDepSandboxPath(nullptr, buffer, MAX_BUFF,  &realLen, &extraData);
     EXPECT_EQ(ret, -1);
-    (void)strcpy_s(extraData.data.depNode->target, TEST_STR_LEN, "/xxxx/xxxx/xxxxxx");
+    ret = strcpy_s(extraData.data.depNode->target, TEST_STR_LEN, "/xxxx/xxxx/xxxxxx");
+    EXPECT_EQ(ret, 0);
     ret = ReplaceVariableForDepSandboxPath(nullptr, buffer, MAX_BUFF,  &realLen, &extraData);
     EXPECT_EQ(ret, 0);
 
     extraData.data.depNode->source = (char*)malloc(sizeof(char) * TEST_STR_LEN);
     ASSERT_EQ(extraData.data.depNode->source != nullptr, 1);
-    (void)strcpy_s(extraData.data.depNode->source, TEST_STR_LEN, "/xxxx/xxxx/xxxxxxx/xxxxxx/xxx");
+    ret = strcpy_s(extraData.data.depNode->source, TEST_STR_LEN, "/xxxx/xxxx/xxxxxxx/xxxxxx/xxx");
+    EXPECT_EQ(ret, 0);
     ret = ReplaceVariableForDepSrcPath(nullptr, buffer, MAX_BUFF,  &realLen, &extraData);
     EXPECT_EQ(ret, -1);
-    (void)strcpy_s(extraData.data.depNode->source, TEST_STR_LEN, "/xxxx/xxxx/xxxxxx");
+    ret = strcpy_s(extraData.data.depNode->source, TEST_STR_LEN, "/xxxx/xxxx/xxxxxx");
+    EXPECT_EQ(ret, 0);
     ret = ReplaceVariableForDepSrcPath(nullptr, buffer, MAX_BUFF,  &realLen, &extraData);
     EXPECT_EQ(ret, 0);
     free(extraData.data.depNode->target);
@@ -376,11 +437,13 @@ HWTEST_F(AppSpawnSandboxCoverageTest, App_Spawn_Sandbox_cfgvar_001, TestSize.Lev
     ret = ReplaceVariableForDepPath(nullptr, buffer, MAX_BUFF, &realLen, &extraData);
     EXPECT_EQ(ret, 0);
 
-    (void)strcpy_s(extraData.data.depNode->source, TEST_STR_LEN, "/xxxx/xxxx/xxxxxxx/xxxxxx/xxx");
+    ret = strcpy_s(extraData.data.depNode->source, TEST_STR_LEN, "/xxxx/xxxx/xxxxxxx/xxxxxx/xxx");
+    EXPECT_EQ(ret, 0);
     ret = ReplaceVariableForDepPath(nullptr, buffer, MAX_BUFF, &realLen, &extraData);
     EXPECT_EQ(ret, -1);
 
-    (void)strcpy_s(extraData.data.depNode->source, TEST_STR_LEN, "/xxxx/xxxx/xxxxxx");
+    ret = strcpy_s(extraData.data.depNode->source, TEST_STR_LEN, "/xxxx/xxxx/xxxxxx");
+    EXPECT_EQ(ret, 0);
     ret = ReplaceVariableForDepPath(nullptr, buffer, MAX_BUFF, &realLen, &extraData);
     EXPECT_EQ(ret, 0);
     free(extraData.data.depNode->source);
@@ -398,7 +461,8 @@ HWTEST_F(AppSpawnSandboxCoverageTest, App_Spawn_Sandbox_cfgvar_002, TestSize.Lev
 
     context.buffer[0].buffer = (char*)malloc(sizeof(char) * MAX_BUFF);
     ASSERT_EQ(context.buffer[0].buffer != nullptr, 1);
-    (void)strcpy_s(context.buffer[0].buffer, MAX_BUFF, "xxxxxxxx");
+    int ret = strcpy_s(context.buffer[0].buffer, MAX_BUFF, "xxxxxxxx");
+    EXPECT_EQ(ret, 0);
     context.buffer[0].bufferLen = MAX_BUFF;
     context.buffer[0].current = 0;
     realVar = GetSandboxRealVar(&context, 0, nullptr, nullptr, nullptr);
@@ -418,7 +482,7 @@ HWTEST_F(AppSpawnSandboxCoverageTest, App_Spawn_Sandbox_cfgvar_002, TestSize.Lev
 
 HWTEST_F(AppSpawnSandboxCoverageTest, App_Spawn_Sandbox_manager, TestSize.Level0)
 {
-    int  ret = SpawnPrepareSandboxCfg(nullptr, nullptr);
+    int ret = SpawnPrepareSandboxCfg(nullptr, nullptr);
     EXPECT_EQ(ret, -1);
 
     AppSpawnMgr content = {};
@@ -427,7 +491,8 @@ HWTEST_F(AppSpawnSandboxCoverageTest, App_Spawn_Sandbox_manager, TestSize.Level0
     AppSpawningCtx property = {};
     property.message = (AppSpawnMsgNode *)malloc(sizeof(AppSpawnMsgNode));
     ASSERT_EQ(property.message != nullptr, 1);
-    (void)strcpy_s(property.message->msgHeader.processName, APP_LEN_PROC_NAME, "com.xxx.xxx.xxx");
+    ret = strcpy_s(property.message->msgHeader.processName, APP_LEN_PROC_NAME, "com.xxx.xxx.xxx");
+    EXPECT_EQ(ret, 0);
     ret = SpawnPrepareSandboxCfg(&content, &property);
     EXPECT_EQ(ret, -1);
     free(property.message);
@@ -446,9 +511,12 @@ HWTEST_F(AppSpawnSandboxCoverageTest, App_Spawn_Sandbox_manager, TestSize.Level0
     ASSERT_EQ(mountNode.target!= nullptr, 1);
     mountNode.appAplName = (char*)malloc(sizeof(char) * TEST_STR_LEN);
     ASSERT_EQ(mountNode.appAplName!= nullptr, 1);
-    (void)strcpy_s(mountNode.source, TEST_STR_LEN, "/xxxxx/xxx");
-    (void)strcpy_s(mountNode.target, TEST_STR_LEN, "/test/xxxx");
-    (void)strcpy_s(mountNode.appAplName, TEST_STR_LEN, "apl");
+    ret = strcpy_s(mountNode.source, TEST_STR_LEN, "/xxxxx/xxx");
+    EXPECT_EQ(ret, 0);
+    ret = strcpy_s(mountNode.target, TEST_STR_LEN, "/test/xxxx");
+    EXPECT_EQ(ret, 0);
+    ret = strcpy_s(mountNode.appAplName, TEST_STR_LEN, "apl");
+    EXPECT_EQ(ret, 0);
     mountNode.sandboxNode.type = SANDBOX_TAG_MOUNT_FILE;
     DumpSandboxMountNode(&mountNode.sandboxNode, 0);
     mountNode.checkErrorFlag = false;
@@ -462,48 +530,42 @@ HWTEST_F(AppSpawnSandboxCoverageTest, App_Spawn_Sandbox_manager, TestSize.Level0
     free(mountNode.appAplName);
 }
 
-HWTEST_F(AppSpawnSandboxCoverageTest, App_Spawn_Sandbox_load, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxCoverageTest, App_Spawn_Sandbox_load_001, TestSize.Level0)
 {
     unsigned long ret = GetMountModeFromConfig(nullptr, nullptr, 1);
     EXPECT_EQ(ret, 1);
-    const char testStr[] = "{ \
+    const char testStr1[] = "{ \
         \"test\":\"xxxxxxxxx\", \
     }";
-    const cJSON *config = cJSON_Parse(testStr);
-    ret = GetMountModeFromConfig(config, "test", 1);
+    cJSON *config1 = cJSON_Parse(testStr1);
+    ASSERT_EQ(config1, nullptr);
+    ret = GetMountModeFromConfig(config1, "test", 1);
     EXPECT_EQ(ret, 1);
 
-    ret = GetFlagIndexFromJson(config);
-    EXPECT_EQ(ret, 0);
-    const char testStr1[] = "{ \
-        \"name\":\"xxxxxxxxx\", \
-    }";
-    const cJSON *config1 = cJSON_Parse(testStr1);
     ret = GetFlagIndexFromJson(config1);
     EXPECT_EQ(ret, 0);
+    const char testStr2[] = "{ \
+        \"name\":\"xxxxxxxxx\", \
+    }";
+    cJSON *config2 = cJSON_Parse(testStr2);
+    ASSERT_EQ(config2, nullptr);
+    ret = GetFlagIndexFromJson(config2);
+    EXPECT_EQ(ret, 0);
+    cJSON_Delete(config1);
+    cJSON_Delete(config2);
 }
 
-HWTEST_F(AppSpawnSandboxCoverageTest, App_Spawn_Sandbox_load_001, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxCoverageTest, App_Spawn_Sandbox_load_002, TestSize.Level0)
 {
-    const char testStr[] = "{ \
-        \"test\":\"xxxxxxxxx\" \
-    }";
-    const cJSON *config = cJSON_Parse(testStr);
-    unsigned long ret = GetMountModeFromConfig(config, "test", 1);
-    EXPECT_EQ(ret, 1);
-
-    int result = ParseMountPathsConfig(nullptr, nullptr, nullptr, 1);
-    EXPECT_EQ(result, -1);
-    result = ParseMountPathsConfig(nullptr, config, nullptr, 1);
-    EXPECT_EQ(result, -1);
-
     const char testStr1[] = "{ \
         \"mount-paths\":[\"/xxxx/xxx\", \"/xxx/xxx\"] \
     }";
-    const cJSON *config1 = cJSON_Parse(testStr1);
+    cJSON *config1 = cJSON_Parse(testStr1);
+    ASSERT_NE(config1, nullptr);
     cJSON *mountPaths = cJSON_GetObjectItemCaseSensitive(config1, "mount-paths");
-    result = ParseMountPathsConfig(nullptr, mountPaths, nullptr, 1);
+    int result = ParseMountPathsConfig(nullptr, mountPaths, nullptr, 1);
     EXPECT_EQ(result, 0);
+    cJSON_Delete(config1);
 
     const char testStr2[] = "{ \
         \"mount-paths\":[{\
@@ -511,33 +573,42 @@ HWTEST_F(AppSpawnSandboxCoverageTest, App_Spawn_Sandbox_load_001, TestSize.Level
             \"test\": \"/test/xxx\" \
         }] \
     }";
-    const cJSON *config2 = cJSON_Parse(testStr2);
+    cJSON *config2 = cJSON_Parse(testStr2);
+    ASSERT_NE(config2, nullptr);
     mountPaths = cJSON_GetObjectItemCaseSensitive(config2, "mount-paths");
     result = ParseMountPathsConfig(nullptr, mountPaths, nullptr, 1);
     EXPECT_EQ(result, 0);
+    cJSON_Delete(config2);
+}
 
-    const char testStr3[] = "{ \
+HWTEST_F(AppSpawnSandboxCoverageTest, App_Spawn_Sandbox_load_003, TestSize.Level0)
+{
+    const char testStr1[] = "{ \
         \"mount-paths\":[{ \
             \"sandbox-path\": \"/config\", \
             \"test\": \"/test/xxx\"}] \
     }";
-    const cJSON *config3 = cJSON_Parse(testStr3);
-    mountPaths = cJSON_GetObjectItemCaseSensitive(config3, "mount-paths");
-    result = ParseMountPathsConfig(nullptr, mountPaths, nullptr, 1);
+    cJSON *config1 = cJSON_Parse(testStr1);
+    ASSERT_NE(config1, nullptr);
+    cJSON *mountPaths = cJSON_GetObjectItemCaseSensitive(config1, "mount-paths");
+    int result = ParseMountPathsConfig(nullptr, mountPaths, nullptr, 1);
     EXPECT_EQ(result, 0);
+    cJSON_Delete(config1);
 
-    const char testStr4[] = "{ \
+    const char testStr2[] = "{ \
         \"mount-paths\":[{ \
             \"src-path\": \"/xxx/xxx\", \
             \"sandbox-path\": \"/test/xxx\"}] \
     }";
-    const cJSON *config4 = cJSON_Parse(testStr4);
-    mountPaths = cJSON_GetObjectItemCaseSensitive(config4, "mount-paths");
+    cJSON *config2 = cJSON_Parse(testStr2);
+    ASSERT_NE(config2, nullptr);
+    mountPaths = cJSON_GetObjectItemCaseSensitive(config2, "mount-paths");
     result = ParseMountPathsConfig(nullptr, mountPaths, nullptr, 1);
     EXPECT_EQ(result, 0);
+    cJSON_Delete(config2);
 }
 
-HWTEST_F(AppSpawnSandboxCoverageTest, App_Spawn_Sandbox_load_002, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxCoverageTest, App_Spawn_Sandbox_load_004, TestSize.Level0)
 {
     int ret = ParseSymbolLinksConfig(nullptr, nullptr, nullptr);
     EXPECT_EQ(ret, -1);
@@ -545,74 +616,93 @@ HWTEST_F(AppSpawnSandboxCoverageTest, App_Spawn_Sandbox_load_002, TestSize.Level
     const char testStr1[] = "{ \
         \"test\":\"xxxxxxxxx\" \
     }";
-    const cJSON *config1 = cJSON_Parse(testStr1);
+    cJSON *config1 = cJSON_Parse(testStr1);
+    ASSERT_NE(config1, nullptr);
     ret = ParseSymbolLinksConfig(nullptr, config1, nullptr);
     EXPECT_EQ(ret, -1);
+    cJSON_Delete(config1);
 
     const char testStr2[] = "{ \
         \"symbol-links\":[\"/xxxx/xxx\", \"/xxx/xxx\"] \
     }";
-    const cJSON *config2 = cJSON_Parse(testStr2);
+    cJSON *config2 = cJSON_Parse(testStr2);
+    ASSERT_NE(config2, nullptr);
     cJSON *symbolLinks = cJSON_GetObjectItemCaseSensitive(config2, "symbol-links");
     ret = ParseSymbolLinksConfig(nullptr, symbolLinks, nullptr);
     EXPECT_EQ(ret, -1);
+    cJSON_Delete(config2);
+}
 
-    const char testStr3[] = "{ \
+HWTEST_F(AppSpawnSandboxCoverageTest, App_Spawn_Sandbox_load_005, TestSize.Level0)
+{
+    const char testStr1[] = "{ \
         \"symbol-links\":[{\
             \"test\":\"/xxxx/xxx\", \
             \"target-name\":\"/xxx/xxx\"}] \
     }";
-    const cJSON *config3 = cJSON_Parse(testStr3);
-    symbolLinks = cJSON_GetObjectItemCaseSensitive(config3, "symbol-links");
-    ret = ParseSymbolLinksConfig(nullptr, symbolLinks, nullptr);
+    cJSON *config1 = cJSON_Parse(testStr1);
+    ASSERT_NE(config1, nullptr);
+    cJSON *symbolLinks = cJSON_GetObjectItemCaseSensitive(config1, "symbol-links");
+    int ret = ParseSymbolLinksConfig(nullptr, symbolLinks, nullptr);
     EXPECT_EQ(ret, -1);
+    cJSON_Delete(config1);
 
-    const char testStr4[] = "{ \
+    const char testStr2[] = "{ \
         \"symbol-links\":[{\
             \"test\":\"/xxxx/xxx\", \
             \"link-name\":\"/xxx/xxx\"}] \
     }";
-    const cJSON *config4 = cJSON_Parse(testStr4);
-    symbolLinks = cJSON_GetObjectItemCaseSensitive(config4, "symbol-links");
+    cJSON *config2 = cJSON_Parse(testStr2);
+    ASSERT_NE(config2, nullptr);
+    symbolLinks = cJSON_GetObjectItemCaseSensitive(config2, "symbol-links");
     ret = ParseSymbolLinksConfig(nullptr, symbolLinks, nullptr);
     EXPECT_EQ(ret, -1);
+    cJSON_Delete(config2);
 
-    const char testStr5[] = "{ \
+    const char testStr3[] = "{ \
         \"symbol-links\":[{\
             \"target-name\":\"/xxxx/xxx\", \
             \"link-name\":\"/xxx/xxx\"}] \
     }";
-    const cJSON *config5 = cJSON_Parse(testStr5);
-    symbolLinks = cJSON_GetObjectItemCaseSensitive(config5, "symbol-links");
+    cJSON *config3 = cJSON_Parse(testStr3);
+    ASSERT_NE(config3, nullptr);
+    symbolLinks = cJSON_GetObjectItemCaseSensitive(config3, "symbol-links");
     ret = ParseSymbolLinksConfig(nullptr, symbolLinks, nullptr);
     EXPECT_EQ(ret, 0);
+    cJSON_Delete(config3);
 }
 
-HWTEST_F(AppSpawnSandboxCoverageTest, App_Spawn_Sandbox_load_003, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxCoverageTest, App_Spawn_Sandbox_load_006, TestSize.Level0)
 {
-    const char testStr[] = "{ \
+    const char testStr1[] = "{ \
         \"test\":\"xxxxxxxxx\" \
     }";
-    const cJSON *config = cJSON_Parse(testStr);
-    int ret = ParseGidTableConfig(nullptr, config, nullptr);
+    cJSON *config1 = cJSON_Parse(testStr1);
+    ASSERT_NE(config1, nullptr);
+    int ret = ParseGidTableConfig(nullptr, config1, nullptr);
     EXPECT_EQ(ret, 0);
+    cJSON_Delete(config1);
 
-    const char testStr1[] = "{ \
+    const char testStr2[] = "{ \
         \"test\":[] \
     }";
-    const cJSON *config1 = cJSON_Parse(testStr1);
-    cJSON *testCfg = cJSON_GetObjectItemCaseSensitive(config1, "test");
+    cJSON *config2 = cJSON_Parse(testStr2);
+    ASSERT_NE(config2, nullptr);
+    cJSON *testCfg = cJSON_GetObjectItemCaseSensitive(config2, "test");
     ret = ParseGidTableConfig(nullptr, testCfg, nullptr);
     EXPECT_EQ(ret, 0);
+    cJSON_Delete(config2);
 
     SandboxSection section = {};
-    const char testStr2[] = "{ \
+    const char testStr3[] = "{ \
         \"gids\":[\"202400\", \"202500\", \"202600\"] \
     }";
-    const cJSON *config2 = cJSON_Parse(testStr2);
-    testCfg = cJSON_GetObjectItemCaseSensitive(config2, "gids");
+    cJSON *config3 = cJSON_Parse(testStr3);
+    ASSERT_NE(config3, nullptr);
+    testCfg = cJSON_GetObjectItemCaseSensitive(config3, "gids");
     ret = ParseGidTableConfig(nullptr, testCfg, &section);
     EXPECT_EQ(ret, 0);
+    cJSON_Delete(config3);
 
     section.gidTable = (gid_t *)malloc(sizeof(gid_t) * 10);
     ASSERT_EQ(section.gidTable != nullptr, 1);

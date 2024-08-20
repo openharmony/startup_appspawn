@@ -1131,8 +1131,10 @@ HWTEST_F(AppSpawnAppMgrTest, App_Spawn_RebuildAppSpawnMsgNode, TestSize.Level0)
     EXPECT_EQ(app->message != nullptr, 1);
     app->message->msgHeader.tlvCount = 10; // 10 is tlvCount
     app->message->msgHeader.msgLen = 200; // 200 is msgLen
-    (void)strcpy_s(app->message->msgHeader.processName, APP_LEN_PROC_NAME, "test.xxx");
-    (void)strcpy_s(app->name, 10, "test.xxx"); // 10 is appNmae length
+    ret = strcpy_s(app->message->msgHeader.processName, APP_LEN_PROC_NAME, "test.xxx");
+    EXPECT_EQ(ret, 0);
+    ret = strcpy_s(app->name, 10, "test.xxx"); // 10 is appNmae length
+    EXPECT_EQ(ret, 0);
     RebuildAppSpawnMsgNode(msgNode, app);
     free(app->message);
     free(app);

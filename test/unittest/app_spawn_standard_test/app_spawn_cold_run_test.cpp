@@ -256,8 +256,9 @@ HWTEST_F(AppSpawnColdRunTest, App_Spawn_Cold_Run_005, TestSize.Level0)
     AppSpawningCtx appProperty;
     appProperty.message = (AppSpawnMsgNode *)malloc(sizeof(AppSpawnMsgNode));
     ASSERT_EQ(appProperty.message != nullptr, 1);
-    (void)strcpy_s(appProperty.message->msgHeader.processName,
+    int ret = strcpy_s(appProperty.message->msgHeader.processName,
         sizeof(appProperty.message->msgHeader.processName), "test.xxx.xxx");
+    EXPECT_EQ(ret, 0);
     appProperty.message->msgHeader.msgLen = 1024;
     char msg[] = "test-xxx-xxx";
     appProperty.message->buffer = (uint8_t *)msg;
@@ -274,7 +275,7 @@ HWTEST_F(AppSpawnColdRunTest, App_Spawn_Cold_Run_005, TestSize.Level0)
     AppSpawnMgr spawnMgr;
     spawnMgr.content = content;
 
-    int ret = AppSpawnColdStartApp(&content, &client);
+    ret = AppSpawnColdStartApp(&content, &client);
     ASSERT_EQ(ret, APPSPAWN_SYSTEM_ERROR);
     free(appProperty.message);
 }
