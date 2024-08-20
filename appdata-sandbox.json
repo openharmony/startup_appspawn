@@ -412,6 +412,7 @@
         }],
         "com.ohos.sceneboard" : [{
             "sandbox-switch": "ON",
+            "gids": [1065],
             "mount-paths" : [{
                     "src-path" : "/data/app/el1/bundle/public/",
                     "sandbox-path" : "/data/app/el1/bundle/public/",
@@ -420,6 +421,12 @@
                 }
             ],
             "symbol-links" : []
+        }],
+        "com.ohos.settingsdata":[{
+            "sandbox-switch": "ON",
+            "gids": [1065],
+            "mount-paths": [],
+            "symbol-links": []
         }],
         "com.ohos.permissionmanager" : [{
             "sandbox-switch": "ON",
