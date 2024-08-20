@@ -3,6 +3,7 @@
         "top-sandbox-switch": "ON",
         "app-base": [{
             "sandbox-ns-flags" : [ "net" ],
+            "sandbox-root" : "/mnt/sandbox/<PackageName>",
             "mount-paths" : [{
                 "src-path" : "/dev",
                 "sandbox-path" : "/dev",
@@ -94,8 +95,8 @@
                 "sandbox-flags" : [ "bind", "rec" ],
                 "check-action-status": "false"
             }, {
-                "src-path" : "/data/app/el1/bundle/public/",
-                "sandbox-path" : "/data/app/el1/bundle/public/",
+                "src-path" : "/data/app/el1/bundle/public/<PackageName>",
+                "sandbox-path" : "/data/storage/el1/bundle",
                 "sandbox-flags" : [ "bind", "rec" ],
                 "check-action-status": "false"
             }],
@@ -117,6 +118,12 @@
                 "check-action-status": "false"
             }]
 
+        }],
+        "app-resources" : [{
+            "sandbox-root" : "/mnt/sandbox/<PackageName>",
+            "mount-paths" : [],
+            "flag-point" : [],
+            "symbol-links" : []
         }]
     }]
 }

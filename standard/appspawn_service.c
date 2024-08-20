@@ -991,10 +991,10 @@ APPSPAWN_STATIC void AppSpawnArgSet(RunMode mode, AppSpawnStartArg *arg)
     return;
 }
 
-APPSPAWN_STATIC void AppSpawnStartServiceEnd(pid_t nwebSpawnPid, pid_t NativeSpawnPid)
+APPSPAWN_STATIC void AppSpawnStartServiceEnd(pid_t nwebSpawnPid, pid_t nativeSpawnPid)
 {
     AddSpawnedProcess(nwebSpawnPid, NWEBSPAWN_SERVER_NAME);
-    AddSpawnedProcess(NativeSpawnPid, NATIVESPAWN_SERVER_NAME);
+    AddSpawnedProcess(nativeSpawnPid, NATIVESPAWN_SERVER_NAME);
     SetParameter("bootevent.appspawn.started", "true");
 }
 
@@ -1002,7 +1002,7 @@ AppSpawnContent *StartSpawnService(const AppSpawnStartArg *startArg, uint32_t ar
 {
     APPSPAWN_CHECK(startArg != NULL && argv != NULL, return NULL, "Invalid start arg");
     pid_t pid = 0;
-    pid_t NativeSpawnPid  = 0;
+    pid_t nativeSpawnPid  = 0;
     AppSpawnStartArg *arg = (AppSpawnStartArg *)startArg;
     APPSPAWN_LOGV("Start appspawn argvSize %{public}d mode %{public}d service %{public}s",
         argvSize, arg->mode, arg->serviceName);
@@ -1011,8 +1011,8 @@ AppSpawnContent *StartSpawnService(const AppSpawnStartArg *startArg, uint32_t ar
         if (pid == 0) {
             AppSpawnArgSet(MODE_FOR_NWEB_SPAWN, arg);
         } else {
-            NativeSpawnPid = NativeSpawnLaunch();
-            if (NativeSpawnPid  == 0) {
+            nativeSpawnPid = NativeSpawnLaunch();
+            if (nativeSpawnPid  == 0) {
                 AppSpawnArgSet(MODE_FOR_NATIVE_SPAWN, arg);
             }
         }
@@ -1046,7 +1046,7 @@ AppSpawnContent *StartSpawnService(const AppSpawnStartArg *startArg, uint32_t ar
 #endif
     AddAppSpawnHook(STAGE_CHILD_PRE_RUN, HOOK_PRIO_LOWEST, AppSpawnClearEnv);
     if (arg->mode == MODE_FOR_APP_SPAWN) {
-        AppSpawnStartServiceEnd(pid, NativeSpawnPid);
+        AppSpawnStartServiceEnd(pid, nativeSpawnPid);
     }
     return content;
 }
