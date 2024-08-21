@@ -64,8 +64,15 @@ typedef struct TagAppSpawnStartArg {
     uint32_t initArg : 1;
 } AppSpawnStartArg;
 
+typedef struct {
+    char *serverName;
+    AppSpawnStartArg arg;
+} AppSpawnStartArgTemplate;
+
 pid_t NWebSpawnLaunch(void);
 void NWebSpawnInit(void);
+pid_t NativeSpawnLaunch(void);
+void NativeSpawnInit(void);
 AppSpawnContent *StartSpawnService(const AppSpawnStartArg *arg, uint32_t argvSize, int argc, char *const argv[]);
 #ifdef CJAPP_SPAWN
 AppSpawnContent *StartCJSpawnService(const AppSpawnStartArg *arg, uint32_t argvSize, int argc, char *const argv[]);

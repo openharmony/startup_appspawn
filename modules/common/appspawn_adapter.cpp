@@ -151,7 +151,7 @@ int SetSeccompFilter(const AppSpawnMgr *content, const AppSpawningCtx *property)
 #ifdef WITH_SECCOMP
     const char *appName = APP_NAME;
     SeccompFilterType type = APP;
-    
+
     if (IsNWebSpawnMode(content)) {
         uint32_t len = 0;
         std::string processType =

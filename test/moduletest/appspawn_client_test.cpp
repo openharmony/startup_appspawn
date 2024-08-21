@@ -16,6 +16,7 @@
 #include "appspawn.h"
 #include "appspawn_utils.h"
 #include "securec.h"
+#include "appspawn_server.h"
 
 #include <gtest/gtest.h>
 
@@ -32,7 +33,7 @@ public:
     void TearDown() {}
 };
 
-static AppSpawnReqMsgHandle CreateMsg(AppSpawnClientHandle handle, const char *bundleName)
+static AppSpawnReqMsgHandle CreateMsg(AppSpawnClientHandle handle, const char *bundleName, RunMode mode)
 {
     AppSpawnReqMsgHandle reqHandle = 0;
     int ret = AppSpawnReqMsgCreate(MSG_APP_SPAWN, bundleName, &reqHandle);
@@ -52,6 +53,14 @@ static AppSpawnReqMsgHandle CreateMsg(AppSpawnClientHandle handle, const char *b
         APPSPAWN_CHECK(ret == 0, break, "Failed to add dac %{public}s", APPSPAWN_SERVER_NAME);
 
         AppSpawnReqMsgSetAppFlag(reqHandle, static_cast<AppFlagsIndex>(10));  // 10 test
+        if (mode == MODE_FOR_NATIVE_SPAWN) {
+            AppSpawnReqMsgSetAppFlag(reqHandle, static_cast<AppFlagsIndex>(23)); // 23 APP_FLAGS_ISOLATED_SANDBOX_TYPE
+            AppSpawnReqMsgSetAppFlag(reqHandle, static_cast<AppFlagsIndex>(26)); // 26 APP_FLAGS_ISOLATED_NETWORK
+        }
+
+        const char *apl = "normal";
+        ret = AppSpawnReqMsgSetAppDomainInfo(reqHandle, 1, apl);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to add domain %{public}s", APPSPAWN_SERVER_NAME);
 
         ret = AppSpawnReqMsgSetAppAccessToken(reqHandle, 12345678);  // 12345678
         APPSPAWN_CHECK(ret == 0, break, "Failed to add access token %{public}s", APPSPAWN_SERVER_NAME);
@@ -85,7 +94,7 @@ HWTEST_F(AppSpawnClientTest, AppSpawn_Client_test001, TestSize.Level0)
 {
     AppSpawnClientHandle clientHandle = CreateClient(APPSPAWN_SERVER_NAME);
     ASSERT_EQ(clientHandle != NULL, 1);
-    AppSpawnReqMsgHandle reqHandle = CreateMsg(clientHandle, "ohos.samples.clock");
+    AppSpawnReqMsgHandle reqHandle = CreateMsg(clientHandle, "ohos.samples.clock", MODE_FOR_APP_SPAWN);
     ASSERT_EQ(reqHandle != INVALID_REQ_HANDLE, 1);
 
     AppSpawnResult result = {};
@@ -95,5 +104,21 @@ HWTEST_F(AppSpawnClientTest, AppSpawn_Client_test001, TestSize.Level0)
     }
     AppSpawnClientDestroy(clientHandle);
 }
+
+HWTEST_F(AppSpawnClientTest, AppSpawn_Client_test002, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = CreateClient(NATIVESPAWN_SERVER_NAME);
+    ASSERT_EQ(clientHandle != NULL, 1);
+    AppSpawnReqMsgHandle reqHandle = CreateMsg(clientHandle, "ohos.samples.clock", MODE_FOR_NATIVE_SPAWN);
+    ASSERT_EQ(reqHandle != INVALID_REQ_HANDLE, 1);
+
+    AppSpawnResult result = {};
+    int ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
+    if (ret == 0 && result.pid > 0) {
+        kill(result.pid, SIGKILL);
+    }
+    AppSpawnClientDestroy(clientHandle);
+}
+
 }  // namespace AppSpawn
 }  // namespace OHOS
