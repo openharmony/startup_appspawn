@@ -186,7 +186,7 @@ static int InitSandboxContext(SandboxContext *context,
     context->nwebspawn = nwebspawn;
     context->bundleName = GetBundleName(property);
     context->bundleHasWps = strstr(context->bundleName, "wps") != NULL;
-    context->dlpBundle = strstr(context->bundleName, "com.ohos.dlpmanager") != NULL;
+    context->dlpBundle = strcmp(GetProcessName(property), "com.ohos.dlpmanager") == 0;
     context->appFullMountEnable = sandbox->appFullMountEnable;
     context->dlpUiExtType = strstr(GetProcessName(property), "sys/commonUI") != NULL;
 
@@ -421,7 +421,7 @@ static int DoSandboxPathNodeMount(const SandboxContext *context,
         umount2(args.destinationPath, MNT_DETACH);
     }
     int ret = 0;
-    if (category == MOUNT_TMP_DLP_FUSE || category == MOUNT_TMP_FUSE) {
+    if ((category == MOUNT_TMP_DLP_FUSE || category == MOUNT_TMP_FUSE) && context->dlpBundle == 1) {
         ret = SandboxMountFusePath(context, &args);
     } else {
         ret = SandboxMountPath(&args);
