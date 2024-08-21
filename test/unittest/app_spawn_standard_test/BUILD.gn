@@ -107,6 +107,7 @@ ohos_unittest("AppSpawn_ut") {
     "${appspawn_path}/modules/sandbox/appspawn_mount_template.c",
     "${appspawn_path}/modules/sandbox/appspawn_permission.c",
     "${appspawn_path}/modules/sandbox/appspawn_sandbox.c",
+    "${appspawn_path}/modules/sandbox/sandbox_adapter.cpp",
     "${appspawn_path}/modules/sandbox/sandbox_cfgvar.c",
     "${appspawn_path}/modules/sandbox/sandbox_expand.c",
     "${appspawn_path}/modules/sandbox/sandbox_load.c",
