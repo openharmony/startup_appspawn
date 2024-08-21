@@ -20,6 +20,7 @@ if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
       "appspawn_mount_template.c",
       "appspawn_permission.c",
       "appspawn_sandbox.c",
+      "sandbox_adapter.cpp",
       "sandbox_cfgvar.c",
       "sandbox_expand.c",
       "sandbox_load.c",

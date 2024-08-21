@@ -161,32 +161,45 @@ APPSPAWN_STATIC int ReplaceVariableForDepPath(const SandboxContext *context,
 static int ReplaceVariableForpackageName(const SandboxContext *context,
     const char *buffer, uint32_t bufferLen, uint32_t *realLen, const VarExtraData *extraData)
 {
-    APPSPAWN_CHECK(context != NULL, return -1, "Invalid extra data ");
-
+    APPSPAWN_CHECK(context != NULL, return -1, "Invalid extra data");
     AppSpawnMsgBundleInfo *bundleInfo = (AppSpawnMsgBundleInfo *)GetSpawningMsgInfo(context, TLV_BUNDLE_INFO);
     APPSPAWN_CHECK(bundleInfo != NULL, return APPSPAWN_TLV_NONE,
         "No bundle info in msg %{public}s", context->bundleName);
-    uint32_t flags = (CheckAppSpawnMsgFlag(context->message, TLV_MSG_FLAGS, APP_FLAGS_CLONE_ENABLE) &&
-            bundleInfo->bundleIndex > 0) ? 0x1 : 0;
-    flags |= CheckAppSpawnMsgFlag(context->message, TLV_MSG_FLAGS, APP_FLAGS_EXTENSION_SANDBOX) ? 0x2 : 0;
-    char *extension = GetAppSpawnMsgExtInfo(context->message, MSG_EXT_NAME_APP_EXTENSION, NULL);
+
+    uint32_t flags = 0;
+    char *extension = NULL;
+    if (CheckAppSpawnMsgFlag(context->message, TLV_MSG_FLAGS, APP_FLAGS_ATOMIC_SERVICE)) {
+        flags |= SANDBOX_PACKAGENAME_ATOMIC_SERVICE;
+    } else {
+        flags |= (CheckAppSpawnMsgFlag(context->message, TLV_MSG_FLAGS, APP_FLAGS_CLONE_ENABLE) &&
+            bundleInfo->bundleIndex > 0) ? SANDBOX_PACKAGENAME_CLONE : 0;
+        flags |= CheckAppSpawnMsgFlag(context->message, TLV_MSG_FLAGS, APP_FLAGS_EXTENSION_SANDBOX)
+            ? SANDBOX_PACKAGENAME_EXTENSION : 0;
+        extension = (char *)GetAppSpawnMsgExtInfo(context->message, MSG_EXT_NAME_APP_EXTENSION, NULL);
+    }
+
     int32_t len = 0;
     switch (flags) {
-        case 0:  // default,
+        case SANDBOX_PACKAGENAME_DEFAULT:               // 0 packageName
             len = sprintf_s((char *)buffer, bufferLen, "%s", bundleInfo->bundleName);
             break;
-        case 1:  // 1 +clone-bundleIndex+packageName
+        case SANDBOX_PACKAGENAME_CLONE:                 // 1 +clone-bundleIndex+packageName
             len = sprintf_s((char *)buffer, bufferLen, "+clone-%u+%s", bundleInfo->bundleIndex, bundleInfo->bundleName);
             break;
-        case 2: {  // 2 +extension-<extensionType>+packageName
-            APPSPAWN_CHECK(extension != NULL, return -1, "Invalid extension data ");
+        case SANDBOX_PACKAGENAME_EXTENSION: {           // 2 +extension-<extensionType>+packageName
+            APPSPAWN_CHECK(extension != NULL, return -1, "Invalid extension data");
             len = sprintf_s((char *)buffer, bufferLen, "+extension-%s+%s", extension, bundleInfo->bundleName);
             break;
         }
-        case 3: {  // 3 +clone-bundleIndex+extension-<extensionType>+packageName
-            APPSPAWN_CHECK(extension != NULL, return -1, "Invalid extension data ");
+        case SANDBOX_PACKAGENAME_CLONE_AND_EXTENSION: { // 3 +clone-bundleIndex+extension-<extensionType>+packageName
+            APPSPAWN_CHECK(extension != NULL, return -1, "Invalid extension data");
             len = sprintf_s((char *)buffer, bufferLen, "+clone-%u+extension-%s+%s",
                 bundleInfo->bundleIndex, extension, bundleInfo->bundleName);
+            break;
+        }
+        case SANDBOX_PACKAGENAME_ATOMIC_SERVICE: {      // 4 +auid-<accountId>+packageName
+            char *accountId = (char *)GetAppSpawnMsgExtInfo(context->message, MSG_EXT_NAME_ACCOUNT_ID, NULL);
+            len = sprintf_s((char *)buffer, bufferLen, "+auid-%s+%s", accountId, bundleInfo->bundleName);
             break;
         }
         default:

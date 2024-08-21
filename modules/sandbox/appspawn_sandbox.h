@@ -89,6 +89,14 @@ typedef enum SandboxTag {
     SANDBOX_TAG_INVALID
 } SandboxNodeType;
 
+typedef enum {
+    SANDBOX_PACKAGENAME_DEFAULT = 0,
+    SANDBOX_PACKAGENAME_CLONE,
+    SANDBOX_PACKAGENAME_EXTENSION,
+    SANDBOX_PACKAGENAME_CLONE_AND_EXTENSION,
+    SANDBOX_PACKAGENAME_ATOMIC_SERVICE,
+} SandboxVarPackageNameType;
+
 typedef struct {
     struct ListNode node;
     uint32_t type;
