@@ -24,8 +24,9 @@
 #include <getopt.h>
 
 #include "policycoreutils.h"
+#ifdef CODE_SIGNATURE_ENABLE
 #include "code_sign_utils_in_c.h"
-
+#endif
 #include "hnp_installer.h"
 
 #ifdef __cplusplus
@@ -637,8 +638,10 @@ static int HnpInsatllPre(HapInstallInfo *installInfo)
     char dstPath[MAX_FILE_PATH_LEN];
     int count = 0;
     HnpSignMapInfo *hnpSignMapInfos = NULL;
+#ifdef CODE_SIGNATURE_ENABLE
     struct EntryMapEntryData data = {0};
     int i;
+#endif
     int ret;
 
     if ((ret = CheckInstallPath(dstPath, installInfo)) != 0 ||
@@ -657,6 +660,7 @@ static int HnpInsatllPre(HapInstallInfo *installInfo)
     ret = HapReadAndInstall(dstPath, installInfo, hnpSignMapInfos, &count);
     HNP_LOGI("sign start hap path[%{public}s],abi[%{public}s],count=%{public}d", installInfo->hapPath, installInfo->abi,
         count);
+#ifdef CODE_SIGNATURE_ENABLE
     if ((ret == 0) && (count > 0)) {
         data.entries = malloc(sizeof(struct EntryMapEntry) * count);
         if (data.entries == NULL) {
@@ -676,6 +680,7 @@ static int HnpInsatllPre(HapInstallInfo *installInfo)
             ret = HNP_ERRNO_INSTALLER_CODE_SIGN_APP_FAILED;
         }
     }
+#endif
     free(hnpSignMapInfos);
     return ret;
 }
