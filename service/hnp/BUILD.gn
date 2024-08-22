@@ -38,6 +38,11 @@ if (!defined(ohos_lite)) {
       "selinux_adapter:librestorecon",
       "zlib:shared_libz",
     ]
+    defines = []
+    if (defined(global_parts_info) &&
+        defined(global_parts_info.security_code_signature)) {
+      defines += [ "CODE_SIGNATURE_ENABLE" ]
+    }
     install_enable = true
     subsystem_name = "${subsystem_name}"
     part_name = "${part_name}"
