@@ -181,7 +181,7 @@ APPSPAWN_STATIC void ProcessSignal(const struct signalfd_siginfo *siginfo)
             while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
                 HandleDiedPid(pid, siginfo->ssi_uid, status);
             }
-#ifdef CJAPP_SPAWN
+#if (defined(CJAPP_SPAWN) || defined(NATIVE_SPAWN))
             if (OH_ListGetCnt(&GetAppSpawnMgr()->appQueue) == 0) {
                 LE_StopLoop(LE_GetDefaultLoop());
             }
@@ -676,7 +676,7 @@ static void WaitChildTimeout(const TimerHandle taskHandle, void *context)
     APPSPAWN_LOGI("Child process %{public}s fail \'wait child timeout \'pid %{public}d appId: %{public}d",
         GetProcessName(property), property->pid, property->client.id);
     if (property->pid > 0) {
-#ifndef CJAPP_SPAWN
+#if (!defined(CJAPP_SPAWN) && !defined(NATIVE_SPAWN))
         DumpSpawnStack(property->pid);
 #endif
         kill(property->pid, SIGKILL);
@@ -805,10 +805,12 @@ void AppSpawnDestroyContent(AppSpawnContent *content)
 APPSPAWN_STATIC int AppSpawnColdStartApp(struct AppSpawnContent *content, AppSpawnClient *client)
 {
     AppSpawningCtx *property = (AppSpawningCtx *)client;
-#ifndef CJAPP_SPAWN
-    char *path = property->forkCtx.coldRunPath != NULL ? property->forkCtx.coldRunPath : "/system/bin/appspawn";
-#else
+#ifdef CJAPP_SPAWN
     char *path = property->forkCtx.coldRunPath != NULL ? property->forkCtx.coldRunPath : "/system/bin/cjappspawn";
+#elif NATIVE_SPAWN
+    char *path = property->forkCtx.coldRunPath != NULL ? property->forkCtx.coldRunPath : "/system/bin/nativespawn";
+#else
+    char *path = property->forkCtx.coldRunPath != NULL ? property->forkCtx.coldRunPath : "/system/bin/appspawn";
 #endif
     APPSPAWN_LOGI("ColdStartApp::processName: %{public}s path: %{public}s", GetProcessName(property), path);
 
@@ -987,8 +989,6 @@ APPSPAWN_STATIC void AppSpawnArgSet(RunMode mode, AppSpawnStartArg *arg)
         arg->mode = MODE_FOR_NATIVE_SPAWN;
         arg->initArg = 1;
     }
-
-    return;
 }
 
 APPSPAWN_STATIC void AppSpawnStartServiceEnd(pid_t nwebSpawnPid, pid_t nativeSpawnPid)
