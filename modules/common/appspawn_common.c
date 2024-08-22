@@ -211,6 +211,9 @@ static int SetXpmConfig(const AppSpawnMgr *content, const AppSpawningCtx *proper
         idType = PROCESS_OWNERID_DEBUG;
     } else if (ownerInfo == NULL) {
         idType = PROCESS_OWNERID_COMPAT;
+    } else if (CheckAppMsgFlagsSet(property, APP_FLAGS_TEMP_JIT)) {
+        idType = PROCESS_OWNERID_APP_TEMP_ALLOW;
+        ownerId = ownerInfo->ownerId;
     } else {
         idType = PROCESS_OWNERID_APP;
         ownerId = ownerInfo->ownerId;
