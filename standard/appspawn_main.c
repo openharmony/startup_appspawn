@@ -27,6 +27,7 @@
 
 #define APPSPAWN_PRELOAD "libappspawn_helper.z.so"
 
+#ifndef CJAPP_SPAWN
 static AppSpawnStartArgTemplate g_appSpawnStartArgTemplate[PROCESS_INVALID] = {
     {APPSPAWN_SERVER_NAME, {MODE_FOR_APP_SPAWN, MODULE_APPSPAWN, APPSPAWN_SOCKET_NAME, APPSPAWN_SERVER_NAME, 1}},
     {NWEBSPAWN_SERVER_NAME, {MODE_FOR_NWEB_SPAWN, MODULE_NWEBSPAWN, NWEBSPAWN_SOCKET_NAME, NWEBSPAWN_SERVER_NAME, 1}},
@@ -36,12 +37,13 @@ static AppSpawnStartArgTemplate g_appSpawnStartArgTemplate[PROCESS_INVALID] = {
         NATIVESPAWN_SERVER_NAME, 1}},
     {NWEBSPAWN_RESTART, {MODE_FOR_NWEB_SPAWN, MODULE_NWEBSPAWN, NWEBSPAWN_SOCKET_NAME, NWEBSPAWN_SERVER_NAME, 1}},
 };
-
+#else
 static AppSpawnStartArgTemplate g_appCJSpawnStartArgTemplate[CJPROCESS_INVALID] = {
     {CJAPPSPAWN_SERVER_NAME, {MODE_FOR_CJAPP_SPAWN, MODULE_APPSPAWN, CJAPPSPAWN_SOCKET_NAME, CJAPPSPAWN_SERVER_NAME,
         1}},
     {"app_cold", {MODE_FOR_APP_COLD_RUN, MODULE_APPSPAWN, CJAPPSPAWN_SOCKET_NAME, CJAPPSPAWN_SERVER_NAME, 0}},
 };
+#endif
 
 static void CheckPreload(char *const argv[])
 {
@@ -74,26 +76,19 @@ static void CheckPreload(char *const argv[])
     APPSPAWN_LOGE("execv fail: %{public}s: %{public}d: %{public}d", buf, errno, ret);
 }
 
-static AppSpawnStartArgTemplate *GetAppSpawnStartArg(const char *serverName, ProcessType type)
+#ifndef NATIVE_SPAWN
+static AppSpawnStartArgTemplate *GetAppSpawnStartArg(const char *serverName, AppSpawnStartArgTemplate *argTemplate,
+    int count)
 {
-    if (type == PROCESS_TYPE_APPSPAWN) {
-        for (uint32_t i = 0; i < ARRAY_LENGTH(g_appSpawnStartArgTemplate); i++) {
-            if (strcmp(serverName, g_appSpawnStartArgTemplate[i].serverName) == 0) {
-                return &g_appSpawnStartArgTemplate[i];
-            }
+    for (int i = 0; i < count; i++) {
+        if (strcmp(serverName, argTemplate[i].serverName) == 0) {
+            return &argTemplate[i];
         }
-
-        return &g_appSpawnStartArgTemplate[PROCESS_FOR_APP_SPAWN];
-    } else {
-        for (uint32_t i = 0; i < ARRAY_LENGTH(g_appCJSpawnStartArgTemplate); i++) {
-            if (strcmp(serverName, g_appCJSpawnStartArgTemplate[i].serverName) == 0) {
-                return &g_appCJSpawnStartArgTemplate[i];
-            }
-        }
-
-        return &g_appCJSpawnStartArgTemplate[CJPROCESS_FOR_APP_SPAWN];
     }
+
+    return argTemplate;
 }
+#endif
 
 // appspawn -mode appspawn | cold | nwebspawn -param app_property -fd clientFd
 int main(int argc, char *const argv[])
@@ -117,12 +112,16 @@ int main(int argc, char *const argv[])
 #ifdef CJAPP_SPAWN
     argTemp = &g_appCJSpawnStartArgTemplate[CJPROCESS_FOR_APP_SPAWN];
     if (argc > MODE_VALUE_INDEX) {
-        argTemp = GetAppSpawnStartArg(argv[MODE_VALUE_INDEX], PROCESS_TYPE_CJAPPSPAWN);
+        argTemp = GetAppSpawnStartArg(argv[MODE_VALUE_INDEX], g_appCJSpawnStartArgTemplate,
+            ARRAY_LENGTH(g_appCJSpawnStartArgTemplate));
     }
+#elif NATIVE_SPAWN
+    argTemp = &g_appSpawnStartArgTemplate[PROCESS_FOR_NATIVE_SPAWN];
 #else
     argTemp = &g_appSpawnStartArgTemplate[PROCESS_FOR_APP_SPAWN];
     if (argc > MODE_VALUE_INDEX) {
-        argTemp = GetAppSpawnStartArg(argv[MODE_VALUE_INDEX], PROCESS_TYPE_APPSPAWN);
+        argTemp = GetAppSpawnStartArg(argv[MODE_VALUE_INDEX], g_appSpawnStartArgTemplate,
+            ARRAY_LENGTH(g_appSpawnStartArgTemplate));
     }
 #endif
     arg = &argTemp->arg;
