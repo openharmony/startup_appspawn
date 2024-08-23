@@ -325,8 +325,8 @@ static SandboxContext *TestGetSandboxContext(const AppSpawningCtx *property, int
 
     context->nwebspawn = nwebspawn;
     context->bundleName = GetBundleName(property);
-    context->bundleHasWps = strstr(context->bundleName, "wps") != nullptr;
-    context->dlpBundle = strstr(context->bundleName, "com.ohos.dlpmanager") != nullptr;
+    context->bundleHasWps = strstr(context->bundleName, "wps") != NULL;
+    context->dlpBundle = strcmp(GetProcessName(property), "com.ohos.dlpmanager") == 0;
     context->appFullMountEnable = 0;
     context->dlpUiExtType = strstr(GetProcessName(property), "sys/commonUI") != nullptr;
 
