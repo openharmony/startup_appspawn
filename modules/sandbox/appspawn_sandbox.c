@@ -154,7 +154,6 @@ SandboxContext *GetSandboxContext(void)
         context->bundleHasWps = 0;
         context->dlpBundle = 0;
         context->appFullMountEnable = 0;
-        context->dlpUiExtType = 0;
         context->sandboxSwitch = 1;
         context->sandboxShared = false;
         context->message = NULL;
@@ -188,7 +187,6 @@ static int InitSandboxContext(SandboxContext *context,
     context->bundleHasWps = strstr(context->bundleName, "wps") != NULL;
     context->dlpBundle = strcmp(GetProcessName(property), "com.ohos.dlpmanager") == 0;
     context->appFullMountEnable = sandbox->appFullMountEnable;
-    context->dlpUiExtType = strstr(GetProcessName(property), "sys/commonUI") != NULL;
 
     context->sandboxSwitch = 1;
     context->sandboxShared = false;

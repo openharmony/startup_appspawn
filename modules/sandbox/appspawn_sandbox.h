@@ -215,7 +215,6 @@ typedef struct TagSandboxContext {
     uint32_t sandboxShared : 1;
     uint32_t bundleHasWps : 1;
     uint32_t dlpBundle : 1;
-    uint32_t dlpUiExtType : 1;
     uint32_t appFullMountEnable : 1;
     uint32_t nwebspawn : 1;
     uint32_t sandboxNsFlags;
