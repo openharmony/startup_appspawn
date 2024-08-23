@@ -40,6 +40,13 @@ if (!defined(ohos_lite)) {
     part_name = "${part_name}"
   }
 
+  ohos_prebuilt_etc("nativespawn.rc") {
+    source = "nativespawn.cfg"
+    relative_install_dir = "init"
+    subsystem_name = "${subsystem_name}"
+    part_name = "${part_name}"
+  }
+
   ohos_prebuilt_etc("cjappspawn.rc") {
     source = "cjappspawn.cfg"
     relative_install_dir = "init"
@@ -72,6 +79,12 @@ group("appspawn_all") {
       deps += [
         ":cjappspawn.rc",
         "standard:cjappspawn",
+      ]
+    }
+    if (appspawn_support_native) {  # for support nativespawn
+      deps += [
+        ":nativespawn.rc",
+        "standard:nativespawn",
       ]
     }
   } else {

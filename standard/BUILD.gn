@@ -211,8 +211,81 @@ ohos_executable("cjappspawn") {
   part_name = "${part_name}"
 }
 
+# to support nativespawn
+ohos_executable("nativespawn") {
+  sources = [
+    "${appspawn_path}/common/appspawn_server.c",
+    "${appspawn_path}/common/appspawn_trace.cpp",
+    "${appspawn_path}/modules/modulemgr/appspawn_modulemgr.c",
+    "${appspawn_path}/standard/appspawn_appmgr.c",
+    "${appspawn_path}/standard/appspawn_kickdog.c",
+    "${appspawn_path}/standard/appspawn_main.c",
+    "${appspawn_path}/standard/appspawn_msgmgr.c",
+    "${appspawn_path}/standard/appspawn_service.c",
+    "${appspawn_path}/standard/nwebspawn_launcher.c",
+  ]
+
+  defines = [ "NATIVE_SPAWN" ]
+  configs = [
+    ":appspawn_server_config",
+    "${appspawn_path}:appspawn_config",
+  ]
+  deps = [
+    "${appspawn_path}/modules/module_engine:libappspawn_stub_versionscript",
+    "${appspawn_path}/util:libappspawn_util",
+  ]
+  if (asan_detector || is_asan) {
+    defines += [ "ASAN_DETECTOR" ]
+  }
+
+  external_deps = [
+    "c_utils:utils",
+    "config_policy:configpolicy_util",
+    "hilog:libhilog",
+    "hitrace:hitrace_meter",
+    "init:libbegetutil",
+  ]
+  if (appspawn_report_event) {
+    defines += [ "APPSPAWN_HISYSEVENT" ]
+    external_deps += [ "hisysevent:libhisysevent" ]
+    sources += [ "${appspawn_path}/modules/sysevent/appspawn_hisysevent.cpp" ]
+  }
+  if (build_selinux) {
+    defines += [ "WITH_SELINUX" ]
+    external_deps += [
+      "selinux:libselinux",
+      "selinux_adapter:libhap_restorecon",
+    ]
+  }
+  cflags = []
+
+  #ldflags = [ "-Wl,--dynamic-linker,/system/bin/linker64z" ]
+  if (!defined(global_parts_info) ||
+      defined(global_parts_info.security_code_signature)) {
+    defines += [ "CODE_SIGNATURE_ENABLE" ]
+    external_deps += [ "code_signature:libcode_sign_attr_utils" ]
+  }
+
+  version_script = get_label_info(
+                       "${appspawn_path}/modules/module_engine:libappspawn_stub_versionscript",
+                       "target_gen_dir") + "/" + get_label_info(
+                       "${appspawn_path}/modules/module_engine:libappspawn_stub_versionscript",
+                       "name") + stub_version_script_suffix
+
+  install_enable = true
+  subsystem_name = "${subsystem_name}"
+  part_name = "${part_name}"
+}
+
 ohos_prebuilt_etc("cjappspawn.rc") {
   source = "cjappspawn.cfg"
+  relative_install_dir = "init"
+  subsystem_name = "${subsystem_name}"
+  part_name = "${part_name}"
+}
+
+ohos_prebuilt_etc("nativespawn.rc") {
+  source = "nativespawn.cfg"
   relative_install_dir = "init"
   subsystem_name = "${subsystem_name}"
   part_name = "${part_name}"

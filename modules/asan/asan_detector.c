@@ -122,6 +122,8 @@ static int AsanSpawnGetSpawningFlag(AppSpawnMgr *content, AppSpawningCtx *proper
         }
 #ifndef CJAPP_SPAWN
         property->forkCtx.coldRunPath = strdup("/system/asan/bin/appspawn");
+#elif NATIVE_SPAWN
+        property->forkCtx.coldRunPath = strdup("/system/asan/bin/nativespawn");
 #else
         property->forkCtx.coldRunPath = strdup("/system/asan/bin/cjappspawn");
 #endif
