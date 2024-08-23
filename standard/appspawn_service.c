@@ -1007,6 +1007,7 @@ AppSpawnContent *StartSpawnService(const AppSpawnStartArg *startArg, uint32_t ar
     APPSPAWN_LOGV("Start appspawn argvSize %{public}d mode %{public}d service %{public}s",
         argvSize, arg->mode, arg->serviceName);
     if (arg->mode == MODE_FOR_APP_SPAWN) {
+#ifndef APPSPAWN_TEST
         pid = NWebSpawnLaunch();
         if (pid == 0) {
             AppSpawnArgSet(MODE_FOR_NWEB_SPAWN, arg);
@@ -1016,6 +1017,7 @@ AppSpawnContent *StartSpawnService(const AppSpawnStartArg *startArg, uint32_t ar
                 AppSpawnArgSet(MODE_FOR_NATIVE_SPAWN, arg);
             }
         }
+#endif
     } else if (arg->mode == MODE_FOR_NWEB_SPAWN && getuid() == 0) {
         NWebSpawnInit();
     } else if (arg->mode == MODE_FOR_NATIVE_SPAWN && getuid() == 0) {
