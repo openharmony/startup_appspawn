@@ -50,12 +50,6 @@ typedef enum {
     CJPROCESS_INVALID
 } CJRunProcess;
 
-typedef enum {
-    PROCESS_TYPE_APPSPAWN,
-    PROCESS_TYPE_CJAPPSPAWN,
-    PROCESS_TYPE_INVALID
-} ProcessType;
-
 typedef struct AppSpawnClient {
     uint32_t id;
     uint32_t flags;  // Save negotiated flags

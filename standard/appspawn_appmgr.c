@@ -202,7 +202,7 @@ AppSpawnedProcess *GetSpawnedProcessByName(const char *name)
 
 static void DumpProcessSpawnStack(pid_t pid)
 {
-#ifndef CJAPP_SPAWN
+#if (!defined(CJAPP_SPAWN) && !defined(NATIVE_SPAWN))
     DumpSpawnStack(pid);
     DumpSpawnStack(getpid());
 #endif
