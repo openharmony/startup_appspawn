@@ -974,52 +974,24 @@ AppSpawnContent *AppSpawnCreateContent(const char *socketName, char *longProcNam
     return &appSpawnContent->content;
 }
 
-APPSPAWN_STATIC void AppSpawnArgSet(RunMode mode, AppSpawnStartArg *arg)
-{
-    if (mode == MODE_FOR_NWEB_SPAWN) {
-        arg->socketName = NWEBSPAWN_SOCKET_NAME;
-        arg->serviceName = NWEBSPAWN_SERVER_NAME;
-        arg->moduleType = MODULE_NWEBSPAWN;
-        arg->mode = MODE_FOR_NWEB_SPAWN;
-        arg->initArg = 1;
-    } else if (mode == MODE_FOR_NATIVE_SPAWN) {
-        arg->socketName = NATIVESPAWN_SOCKET_NAME;
-        arg->serviceName = NATIVESPAWN_SERVER_NAME;
-        arg->moduleType = MODULE_APPSPAWN;
-        arg->mode = MODE_FOR_NATIVE_SPAWN;
-        arg->initArg = 1;
-    }
-}
-
-APPSPAWN_STATIC void AppSpawnStartServiceEnd(pid_t nwebSpawnPid, pid_t nativeSpawnPid)
-{
-    AddSpawnedProcess(nwebSpawnPid, NWEBSPAWN_SERVER_NAME);
-    AddSpawnedProcess(nativeSpawnPid, NATIVESPAWN_SERVER_NAME);
-    SetParameter("bootevent.appspawn.started", "true");
-}
-
 AppSpawnContent *StartSpawnService(const AppSpawnStartArg *startArg, uint32_t argvSize, int argc, char *const argv[])
 {
     APPSPAWN_CHECK(startArg != NULL && argv != NULL, return NULL, "Invalid start arg");
     pid_t pid = 0;
-    pid_t nativeSpawnPid  = 0;
     AppSpawnStartArg *arg = (AppSpawnStartArg *)startArg;
     APPSPAWN_LOGV("Start appspawn argvSize %{public}d mode %{public}d service %{public}s",
         argvSize, arg->mode, arg->serviceName);
     if (arg->mode == MODE_FOR_APP_SPAWN) {
         pid = NWebSpawnLaunch();
         if (pid == 0) {
-            AppSpawnArgSet(MODE_FOR_NWEB_SPAWN, arg);
-        } else {
-            nativeSpawnPid = NativeSpawnLaunch();
-            if (nativeSpawnPid  == 0) {
-                AppSpawnArgSet(MODE_FOR_NATIVE_SPAWN, arg);
-            }
+            arg->socketName = NWEBSPAWN_SOCKET_NAME;
+            arg->serviceName = NWEBSPAWN_SERVER_NAME;
+            arg->moduleType = MODULE_NWEBSPAWN;
+            arg->mode = MODE_FOR_NWEB_SPAWN;
+            arg->initArg = 1;
         }
     } else if (arg->mode == MODE_FOR_NWEB_SPAWN && getuid() == 0) {
         NWebSpawnInit();
-    } else if (arg->mode == MODE_FOR_NATIVE_SPAWN && getuid() == 0) {
-        NativeSpawnInit();
     }
     if (arg->initArg) {
         int ret = memset_s(argv[0], argvSize, 0, (size_t)argvSize);
@@ -1046,7 +1018,8 @@ AppSpawnContent *StartSpawnService(const AppSpawnStartArg *startArg, uint32_t ar
 #endif
     AddAppSpawnHook(STAGE_CHILD_PRE_RUN, HOOK_PRIO_LOWEST, AppSpawnClearEnv);
     if (arg->mode == MODE_FOR_APP_SPAWN) {
-        AppSpawnStartServiceEnd(pid, nativeSpawnPid);
+        AddSpawnedProcess(pid, NWEBSPAWN_SERVER_NAME);
+        SetParameter("bootevent.appspawn.started", "true");
     }
     return content;
 }
