@@ -71,8 +71,6 @@ typedef struct {
 
 pid_t NWebSpawnLaunch(void);
 void NWebSpawnInit(void);
-pid_t NativeSpawnLaunch(void);
-void NativeSpawnInit(void);
 AppSpawnContent *StartSpawnService(const AppSpawnStartArg *arg, uint32_t argvSize, int argc, char *const argv[]);
 void AppSpawnDestroyContent(AppSpawnContent *content);
 
