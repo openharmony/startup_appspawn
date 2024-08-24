@@ -84,6 +84,9 @@
                 "src-path" : "/vendor/etc/vulkan",
                 "sandbox-path" : "/vendor/etc/vulkan" 
             }, {
+                "src-path" : "/vendor/etc/passthrough",
+                "sandbox-path" : "/vendor/etc/passthrough" 
+            }, {
                 "src-path" : "/vendor/etc/hiai",
                 "sandbox-path" : "/vendor/etc/hiai"
             }, {

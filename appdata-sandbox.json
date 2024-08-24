@@ -149,6 +149,11 @@
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
+                    "src-path" : "/vendor/etc/passthrough",
+                    "sandbox-path" : "/vendor/etc/passthrough",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
                     "src-path" : "/mnt/sandbox/<currentUserId>/<PackageName>/data/storage/el2",
                     "sandbox-path" : "/data/storage/el2",
                     "sandbox-flags" : [ "bind", "rec" ],
