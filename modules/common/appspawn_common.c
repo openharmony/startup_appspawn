@@ -500,6 +500,7 @@ static int CloseFdArgs(AppSpawnMgr *content, AppSpawningCtx *property)
 APPSPAWN_STATIC int SetFdEnv(AppSpawnMgr *content, AppSpawningCtx *property)
 {
     APPSPAWN_CHECK_ONLY_EXPER(property != NULL, return -1);
+    APPSPAWN_CHECK_ONLY_EXPER(!property->isPrefork, return 0);
     AppSpawnMsgNode *message = property->message;
     APPSPAWN_CHECK_ONLY_EXPER(message != NULL && message->buffer != NULL && message->connection != NULL, return -1);
     APPSPAWN_CHECK_ONLY_EXPER(message->tlvOffset != NULL, return -1);

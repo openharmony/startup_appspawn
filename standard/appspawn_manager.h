@@ -80,6 +80,7 @@ typedef struct TagAppSpawningCtx {
     struct ListNode node;
     AppSpawnForkCtx forkCtx;
     AppSpawnMsgNode *message;
+    bool isPrefork;
     pid_t pid;
     int state;
     struct timespec spawnStart;
