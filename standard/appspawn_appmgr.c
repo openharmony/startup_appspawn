@@ -304,13 +304,14 @@ void DeleteAppSpawningCtx(AppSpawningCtx *property)
     APPSPAWN_CHECK_ONLY_EXPER(property != NULL, return);
     APPSPAWN_LOGV("DeleteAppSpawningCtx");
 
+    int isNweb = IsNWebSpawnMode((AppSpawnMgr *)GetAppSpawnContent());
     if (property->forkCtx.childMsg != NULL) {
         munmap((char *)property->forkCtx.childMsg, property->forkCtx.msgSize);
         property->forkCtx.childMsg = NULL;
         if (property->message != NULL) {
             char path[PATH_MAX] = {};
-            int len = sprintf_s(path, sizeof(path),
-                APPSPAWN_MSG_DIR "/%s_%d", property->message->msgHeader.processName, property->client.id);
+            int len = sprintf_s(path, sizeof(path), APPSPAWN_MSG_DIR "%s/%s_%d",
+                isNweb ? "nwebspawn" : "appspawn", property->message->msgHeader.processName, property->client.id);
             if (len > 0) {
                 unlink(path);
             }
