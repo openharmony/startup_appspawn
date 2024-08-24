@@ -174,12 +174,12 @@ static void HandleDiedPid(pid_t pid, uid_t uid, int status)
 
 APPSPAWN_STATIC void ProcessSignal(const struct signalfd_siginfo *siginfo)
 {
-    APPSPAWN_LOGI("ProcessSignal signum %{public}d", siginfo->ssi_signo);
+    APPSPAWN_LOGI("ProcessSignal signum %{public}d %{public}d", siginfo->ssi_signo, siginfo->ssi_pid);
     switch (siginfo->ssi_signo) {
         case SIGCHLD: { // delete pid from app map
             pid_t pid;
             int status;
-            while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
+            while ((pid = waitpid(siginfo->ssi_pid, &status, WNOHANG)) > 0) {
                 HandleDiedPid(pid, siginfo->ssi_uid, status);
             }
 #if (defined(CJAPP_SPAWN) || defined(NATIVE_SPAWN))
