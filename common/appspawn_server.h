@@ -64,7 +64,13 @@ typedef struct AppSpawnContent {
     int fdEncaps;
 #endif
     RunMode mode;
-
+#ifndef OHOS_LITE
+    int32_t preforkFd[2];
+    int32_t parentToChildFd[2];
+    char *propertyBuffer;
+    int isPrefork;
+    pid_t reservedPid;
+#endif
     // system
     void (*runAppSpawn)(struct AppSpawnContent *content, int argc, char *const argv[]);
     void (*notifyResToParent)(struct AppSpawnContent *content, AppSpawnClient *client, int result);
@@ -85,7 +91,8 @@ int AppSpawnExecutePreReplyHook(AppSpawnContent *content, AppSpawnClient *client
 int AppSpawnExecutePostReplyHook(AppSpawnContent *content, AppSpawnClient *client);
 void AppSpawnEnvClear(AppSpawnContent *content, AppSpawnClient *client);
 int AppSpawnProcessMsg(AppSpawnContent *content, AppSpawnClient *client, pid_t *childPid);
-
+void ProcessExit(int code);
+int AppSpawnChild(AppSpawnContent *content, AppSpawnClient *client);
 #ifdef __cplusplus
 }
 #endif
