@@ -197,8 +197,13 @@ static int ZipAddDir(const char *sourcePath, int offset, zipFile zf)
         }
         if (isDir) {
             int endPos = strlen(fullPath);
-            fullPath[endPos] = DIR_SPLIT_SYMBOL;
-            fullPath[endPos + 1] = '\0';
+            if (endPos + 1 < MAX_FILE_PATH_LEN) {
+                fullPath[endPos] = DIR_SPLIT_SYMBOL;
+                fullPath[endPos + 1] = '\0';
+            } else {
+                closedir(dir);
+                return HNP_ERRNO_BASE_STRING_LEN_OVER_LIMIT;
+            }
             ret = ZipHandleDir(fullPath, offset, zf);
             if (ret != 0) {
                 closedir(dir);
