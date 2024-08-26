@@ -169,15 +169,13 @@ bool JsonUtils::GetJsonObjFromJson(nlohmann::json &jsonObj, const std::string &j
 
 bool JsonUtils::GetStringFromJson(const nlohmann::json &json, const std::string &key, std::string &value)
 {
-    APPSPAWN_CHECK(json.is_object(), return false, "json is not object.");
+    APPSPAWN_CHECK(json != nullptr && json.is_object(), return false, "json is not object.");
     bool isRet = json.find(key) != json.end() && json.at(key).is_string();
     if (isRet) {
         value = json.at(key).get<std::string>();
         APPSPAWN_LOGV("Find key[%{public}s] : %{public}s successful.", key.c_str(), value.c_str());
-        return true;
-    } else {
-        return false;
     }
+    return isRet;
 }
 
 std::map<SandboxConfigType, std::vector<nlohmann::json>> SandboxUtils::appSandboxConfig_ = {};
@@ -682,9 +680,7 @@ static int32_t HandleSpecialAppMount(const AppSpawningCtx *appProperty,
     /* dlp is an example, we should change to real bundle name later */
     if (bundleName.find(g_dlpBundleName) != std::string::npos &&
         processName.compare(g_dlpBundleName) == 0) {
-        if (fsType.empty()) {
-            return -1;
-        } else {
+        if (!fsType.empty()) {
             return DoDlpAppMountStrategy(appProperty, srcPath, sandboxPath, fsType, mountFlags);
         }
     }
@@ -717,11 +713,9 @@ unsigned long SandboxUtils::GetSandboxMountFlags(nlohmann::json &config)
 
 std::string SandboxUtils::GetSandboxFsType(nlohmann::json &config)
 {
-    std::string fsType;
+    std::string fsType = "";
     if (GetSandboxDacOverrideEnable(config) && (config.find(g_fsType) != config.end())) {
         fsType = config[g_fsType].get<std::string>();
-    } else {
-        fsType = "";
     }
     return fsType;
 }
@@ -733,13 +727,11 @@ std::string SandboxUtils::GetSandboxOptions(const AppSpawningCtx *appProperty, n
         return "";
     }
 
-    std::string options;
+    std::string options = "";
     const int userIdBase = 200000;
     if (GetSandboxDacOverrideEnable(config) && (config.find(g_sandBoxOptions) != config.end())) {
         options = config[g_sandBoxOptions].get<std::string>() + ",user_id=";
         options += std::to_string(dacInfo->uid / userIdBase);
-    } else {
-        options = "";
     }
     return options;
 }
@@ -1397,11 +1389,7 @@ bool SandboxUtils::CheckTotalSandboxSwitchStatus(const AppSpawningCtx *appProper
         nlohmann::json& commonAppConfig = wholeConfig[g_commonPrefix][0];
         if (commonAppConfig.find(g_topSandBoxSwitchPrefix) != commonAppConfig.end()) {
             std::string switchStatus = commonAppConfig[g_topSandBoxSwitchPrefix].get<std::string>();
-            if (switchStatus == g_sbxSwitchCheck) {
-                return true;
-            } else {
-                return false;
-            }
+            return switchStatus == g_sbxSwitchCheck;
         }
     }
     // default sandbox switch is on
