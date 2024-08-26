@@ -36,7 +36,7 @@
 #include "resource_manager.h"
 #ifndef APPSPAWN_TEST
 #include "ace_forward_compatibility.h"
-#include "foundation/ability/ability_runtime/interfaces/kits/native/appkit/app/main_thread.h"
+#include "main_thread.h"
 #include "runtime.h"
 #endif
 
