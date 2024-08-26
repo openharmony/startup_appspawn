@@ -675,8 +675,6 @@ static void ProcessPreFork(AppSpawnContent *content, AppSpawningCtx *property)
         content->reservedPid, content->preforkFd[0], content->preforkFd[1], content->parentToChildFd[0],
         content->parentToChildFd[1]);
     if (content->reservedPid == 0) {
-        (void)close(property->forkCtx.fd[0]);
-        (void)close(property->forkCtx.fd[1]);
         int isRet = prctl(PR_SET_NAME, "apppool");
         APPSPAWN_LOGI("prefork process start wait read msg with set processname %{public}d", isRet);
         AppSpawnClient client = {0, 0};
@@ -687,7 +685,14 @@ static void ProcessPreFork(AppSpawnContent *content, AppSpawningCtx *property)
             ProcessExit(0);
             return;
         }
-
+        DeleteAppSpawningCtx(property);
+        property =  CreateAppSpawningCtx();
+        if (property == NULL) {
+            APPSPAWN_LOGE("CreateAppSpawningCtx failed");
+            content->notifyResToParent(content, &client, APPSPAWN_MSG_INVALID);
+            ProcessExit(0);
+            return;
+        }
         property->client.id = client.id;
         property->client.flags = client.flags;
         property->isPrefork = true;
