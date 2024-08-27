@@ -76,8 +76,6 @@ namespace {
     const std::string g_statusCheck = "true";
     const std::string g_sbxSwitchCheck = "ON";
     const std::string g_dlpBundleName = "com.ohos.dlpmanager";
-    const std::string g_dlpUiExtType = "sys/commonUI";
-    const std::string g_dlpShareType = "action";
     const std::string g_internal = "__internal__";
     const std::string g_hspList_key_bundles = "bundles";
     const std::string g_hspList_key_modules = "modules";
@@ -660,8 +658,7 @@ static int32_t HandleSpecialAppMount(const AppSpawningCtx *appProperty,
     /* dlp application mount strategy */
     /* dlp is an example, we should change to real bundle name later */
     if (bundleName.find(g_dlpBundleName) != std::string::npos &&
-        processName.find(g_dlpUiExtType) == std::string::npos &&
-        processName.find(g_dlpShareType) == std::string::npos) {
+        processName.compare(g_dlpBundleName) == 0) {
         if (fsType.empty()) {
             return -1;
         } else {
