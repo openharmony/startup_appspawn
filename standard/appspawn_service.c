@@ -692,6 +692,8 @@ static void ProcessPreFork(AppSpawnContent *content, AppSpawningCtx *property)
         content->reservedPid, content->preforkFd[0], content->preforkFd[1], content->parentToChildFd[0],
         content->parentToChildFd[1]);
     if (content->reservedPid == 0) {
+        (void)close(property->forkCtx.fd[0]);
+        (void)close(property->forkCtx.fd[1]);
         int isRet = prctl(PR_SET_NAME, "apppool");
         APPSPAWN_LOGI("prefork process start wait read msg with set processname %{public}d", isRet);
         AppSpawnClient client = {0, 0};
@@ -699,14 +701,6 @@ static void ProcessPreFork(AppSpawnContent *content, AppSpawningCtx *property)
         if (infoSize != sizeof(AppSpawnClient)) {
             APPSPAWN_LOGE("prefork process read msg failed %{public}d,%{public}d", infoSize, errno);
             content->notifyResToParent(content, &property->client, APPSPAWN_MSG_INVALID);
-            ProcessExit(0);
-            return;
-        }
-        DeleteAppSpawningCtx(property);
-        property =  CreateAppSpawningCtx();
-        if (property == NULL) {
-            APPSPAWN_LOGE("CreateAppSpawningCtx failed");
-            content->notifyResToParent(content, &client, APPSPAWN_MSG_INVALID);
             ProcessExit(0);
             return;
         }
@@ -770,6 +764,9 @@ static int AppSpawnProcessMsgForPrefork(AppSpawnContent *content, AppSpawnClient
 static bool IsSupportPrefork(AppSpawnContent *content, AppSpawnClient *client)
 {
     if (client == NULL || content == NULL) {
+        return false;
+    }
+    if (!content->enablePerfork) {
         return false;
     }
     if (!content->isPrefork) {
@@ -1179,6 +1176,13 @@ APPSPAWN_STATIC int AppSpawnClearEnv(AppSpawnMgr *content, AppSpawningCtx *prope
     return 0;
 }
 
+static int IsEnablePerfork()
+{
+    char buffer[32] = {0};
+    int ret = GetParameter("persist.sys.prefork.enable", "false", buffer, sizeof(buffer));
+    return (ret > 0 && strcmp(buffer, "true") == 0);
+}
+
 AppSpawnContent *AppSpawnCreateContent(const char *socketName, char *longProcName, uint32_t nameLen, int mode)
 {
     APPSPAWN_CHECK(socketName != NULL && longProcName != NULL, return NULL, "Invalid name");
@@ -1199,6 +1203,7 @@ AppSpawnContent *AppSpawnCreateContent(const char *socketName, char *longProcNam
         APPSPAWN_CHECK(ret == 0, AppSpawnDestroyContent(&appSpawnContent->content);
             return NULL, "Failed to create server");
     }
+    appSpawnContent->content.enablePerfork = IsEnablePerfork();
     return &appSpawnContent->content;
 }
 
