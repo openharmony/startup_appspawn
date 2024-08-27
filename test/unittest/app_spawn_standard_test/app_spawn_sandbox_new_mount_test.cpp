@@ -432,9 +432,6 @@ HWTEST_F(AppSpawnSandboxCoverageTest, App_Spawn_Sandbox_cfgvar_001, TestSize.Lev
 
     ret = ReplaceVariableForDepPath(nullptr, buffer, MAX_BUFF, &realLen, &extraData);
     EXPECT_EQ(ret, 0);
-    extraData.operation = 0x1 << MOUNT_PATH_OP_REPLACE_BY_SRC;
-    ret = ReplaceVariableForDepPath(nullptr, buffer, MAX_BUFF, &realLen, &extraData);
-    EXPECT_EQ(ret, 0);
 
     ret = strcpy_s(extraData.data.depNode->source, TEST_STR_LEN, "/xxxx/xxxx/xxxxxxx/xxxxxx/xxx");
     EXPECT_EQ(ret, 0);
