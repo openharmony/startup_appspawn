@@ -131,7 +131,7 @@ APPSPAWN_STATIC int CreateClientSocket(uint32_t type, uint32_t timeout)
         int pathLen = snprintf_s(addr.sun_path, pathSize, (pathSize - 1), "%s%s", APPSPAWN_SOCKET_DIR, socketName);
         APPSPAWN_CHECK(pathLen > 0, break, "Format path %{public}s error: %{public}d", socketName, errno);
         addr.sun_family = AF_LOCAL;
-        socklen_t socketAddrLen = (socklen_t)(offsetof(struct sockaddr_un, sun_path) + pathLen + 1);
+        socklen_t socketAddrLen = (socklen_t)(offsetof(struct sockaddr_un, sun_path) + (socklen_t)pathLen + 1);
         ret = connect(socketFd, (struct sockaddr *)(&addr), socketAddrLen);
         APPSPAWN_CHECK(ret == 0, break,
             "Failed to connect %{public}s error: %{public}d", addr.sun_path, errno);
