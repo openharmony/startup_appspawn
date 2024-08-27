@@ -70,6 +70,7 @@ typedef struct AppSpawnContent {
     char *propertyBuffer;
     int isPrefork;
     pid_t reservedPid;
+    int enablePerfork;
 #endif
     // system
     void (*runAppSpawn)(struct AppSpawnContent *content, int argc, char *const argv[]);
