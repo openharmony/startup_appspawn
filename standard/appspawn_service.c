@@ -687,7 +687,6 @@ static void ProcessPreFork(AppSpawnContent *content, AppSpawningCtx *property)
             ProcessExit(0);
             return;
         }
-
         property->client.id = client.id;
         property->client.flags = client.flags;
         property->isPrefork = true;
@@ -748,6 +747,9 @@ static int AppSpawnProcessMsgForPrefork(AppSpawnContent *content, AppSpawnClient
 static bool IsSupportPrefork(AppSpawnContent *content, AppSpawnClient *client)
 {
     if (client == NULL || content == NULL) {
+        return false;
+    }
+    if (!content->enablePerfork) {
         return false;
     }
     if (!content->isPrefork) {
@@ -1134,6 +1136,13 @@ APPSPAWN_STATIC int AppSpawnClearEnv(AppSpawnMgr *content, AppSpawningCtx *prope
     return 0;
 }
 
+static int IsEnablePerfork()
+{
+    char buffer[32] = {0};
+    int ret = GetParameter("persist.sys.prefork.enable", "false", buffer, sizeof(buffer));
+    return (ret > 0 && strcmp(buffer, "true") == 0);
+}
+
 AppSpawnContent *AppSpawnCreateContent(const char *socketName, char *longProcName, uint32_t nameLen, int mode)
 {
     APPSPAWN_CHECK(socketName != NULL && longProcName != NULL, return NULL, "Invalid name");
@@ -1154,6 +1163,7 @@ AppSpawnContent *AppSpawnCreateContent(const char *socketName, char *longProcNam
         APPSPAWN_CHECK(ret == 0, AppSpawnDestroyContent(&appSpawnContent->content);
             return NULL, "Failed to create server");
     }
+    appSpawnContent->content.enablePerfork = IsEnablePerfork();
     return &appSpawnContent->content;
 }
 
