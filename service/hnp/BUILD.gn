@@ -75,7 +75,3 @@ if (!defined(ohos_lite)) {
     part_name = "${part_name}"
   }
 }
-
-group("hnpcli_host_toolchain") {
-  deps = [ ":hnpcli($host_toolchain)" ]
-}
