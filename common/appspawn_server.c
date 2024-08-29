@@ -182,13 +182,14 @@ int AppSpawnProcessMsg(AppSpawnContent *content, AppSpawnClient *client, pid_t *
         clock_gettime(CLOCK_MONOTONIC, &forkStart);
         StartAppspawnTrace("AppspawnForkStart");
         pid = fork();
-        FinishAppspawnTrace();
         if (pid == 0) {
             struct timespec forkEnd = {0};
             clock_gettime(CLOCK_MONOTONIC, &forkEnd);
             uint64_t diff = DiffTime(&forkStart, &forkEnd);
             APPSPAWN_CHECK_ONLY_LOG(diff < MAX_FORK_TIME, "fork time %{public}" PRId64 " us", diff);
             ProcessExit(AppSpawnChild(content, client));
+        } else {
+            FinishAppspawnTrace();
         }
     }
     APPSPAWN_CHECK(pid >= 0, return APPSPAWN_FORK_FAIL, "fork child process error: %{public}d", errno);
