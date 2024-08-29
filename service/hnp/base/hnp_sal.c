@@ -68,6 +68,11 @@ static void HnpRelPath(const char *fromPath, const char *toPath, char *relPath)
         to++;
     }
 
+    while (from > fromHead && *(from - 1) != DIR_SPLIT_SYMBOL) {
+        from--;
+        to--;
+    }
+
     char *p = from;
     while (*p) {
         if (*p == DIR_SPLIT_SYMBOL) {
