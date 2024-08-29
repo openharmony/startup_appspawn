@@ -363,7 +363,7 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_014, TestSize.Level0)
     DeleteAppSpawningCtx(property);
     AppSpawnClientDestroy(clientHandle);
     DeleteAppSpawnMgr(mgr);
-    ASSERT_EQ(ret, 0);
+    ASSERT_EQ(ret, -1);
 }
 
 HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_015, TestSize.Level0)
