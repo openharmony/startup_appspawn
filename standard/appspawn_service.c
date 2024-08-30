@@ -180,6 +180,8 @@ APPSPAWN_STATIC void ProcessSignal(const struct signalfd_siginfo *siginfo)
             pid_t pid;
             int status;
             while ((pid = waitpid(siginfo->ssi_pid, &status, WNOHANG)) > 0) {
+                APPSPAWN_CHECK(WIFSIGNALED(status) || WIFEXITED(status), return,
+                    "ProcessSignal with wrong status:%{public}d", status);
                 HandleDiedPid(pid, siginfo->ssi_uid, status);
             }
 #if (defined(CJAPP_SPAWN) || defined(NATIVE_SPAWN))
