@@ -253,8 +253,7 @@ int32_t SandboxUtils::DoAppSandboxMountOnce(const char *originPath, const char *
                                             const char *fsType, unsigned long mountFlags,
                                             const char *options, mode_t mountSharedFlag)
 {
-    struct stat st = {};
-    if (stat(originPath, &st) == 0 && S_ISREG(st.st_mode)) {
+    if (originPath != nullptr && strstr(originPath, "system/etc/hosts") != nullptr) {
         CheckAndCreatFile(destinationPath);
     } else {
         MakeDirRecursive(destinationPath, FILE_MODE);
