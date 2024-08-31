@@ -248,12 +248,6 @@ static uint32_t GetMountArgs(const SandboxContext *context,
     args->fsType = tmp->fsType;
     args->options = tmp->options;
     args->mountFlags = tmp->mountFlags;
-    if (CHECK_FLAGS_BY_INDEX(operation, SANDBOX_TAG_PERMISSION) ||
-        CHECK_FLAGS_BY_INDEX(operation, SANDBOX_TAG_SPAWN_FLAGS)) {
-        if (!((category == MOUNT_TMP_DAC_OVERRIDE) && context->appFullMountEnable)) {
-            args->options = "";
-        }
-    }
     args->mountSharedFlag = (sandboxNode->mountSharedFlag) ? MS_SHARED : tmp->mountSharedFlag;
     return category;
 }
@@ -301,7 +295,7 @@ static int32_t SandboxMountFusePath(const SandboxContext *context, const MountAr
     APPSPAWN_CHECK(fd != -1, return -EINVAL,
         "open /dev/fuse failed, errno: %{public}d sandbox path %{public}s", errno, args->destinationPath);
 
-    char options[FUSE_OPTIONS_MAX_LEN];
+    char options[OPTIONS_MAX_LEN];
     (void)sprintf_s(options, sizeof(options), "fd=%d,"
         "rootmode=40000,user_id=%d,group_id=%d,allow_other,"
         "context=\"u:object_r:dlp_fuse_file:s0\","
@@ -383,6 +377,52 @@ APPSPAWN_STATIC const char *GetRealSrcPath(const SandboxContext *context, const 
     return originPath;
 }
 
+// 设置挂载参数options
+static int32_t SetMountArgsOption(const SandboxContext *context, uint32_t category, uint32_t operation, MountArg *args)
+{
+    args->options = "";
+    if ((category != MOUNT_TMP_DAC_OVERRIDE) && (category != MOUNT_TMP_DAC_OVERRIDE_DELETE)) {
+        return 0;
+    }
+
+    AppSpawnMsgDacInfo *info = (AppSpawnMsgDacInfo *)GetSpawningMsgInfo(context, TLV_DAC_INFO);
+    if (info == NULL) {
+        APPSPAWN_LOGE("Get msg dac info failed");
+        return APPSPAWN_ARG_INVALID;
+    }
+
+    char options[OPTIONS_MAX_LEN] = {0};
+    int len = sprintf_s(options, OPTIONS_MAX_LEN, "%s%s%d", args->options, SHAREFS_OPTION_USER, info->uid / UID_BASE);
+    if (len <= 0) {
+        APPSPAWN_LOGE("sprintf_s failed");
+        return APPSPAWN_ERROR_UTILS_MEM_FAIL;
+    }
+    args->options = options;
+    return 0;
+}
+
+// 根据沙盒配置文件中挂载类别进行挂载挂载
+static int DoSandboxMountByCategory(const SandboxContext *context, const PathMountNode *sandboxNode,
+                                    MountArg *args, uint32_t operation)
+{
+    int ret = 0;
+    uint32_t category = GetMountArgs(context, sandboxNode, operation, args);
+    if (CHECK_FLAGS_BY_INDEX(operation, SANDBOX_TAG_PERMISSION) ||
+        CHECK_FLAGS_BY_INDEX(operation, SANDBOX_TAG_SPAWN_FLAGS)) {
+        ret = SetMountArgsOption(context, category, operation, args);
+        if (ret != 0) {
+            APPSPAWN_LOGE("set mount arg option fail. ret: %{public}d", ret);
+            return ret;
+        }
+    }
+    if (category == MOUNT_TMP_DLP_FUSE || category == MOUNT_TMP_FUSE) {
+        ret = SandboxMountFusePath(context, args);
+    } else {
+        ret = SandboxMountPath(args);
+    }
+    return ret;
+}
+
 static int DoSandboxPathNodeMount(const SandboxContext *context,
     const SandboxSection *section, const PathMountNode *sandboxNode, uint32_t operation)
 {
@@ -410,7 +450,9 @@ static int DoSandboxPathNodeMount(const SandboxContext *context,
     if (sandboxNode->sandboxNode.type == SANDBOX_TAG_MOUNT_FILE) {
         CheckAndCreateSandboxFile(args.destinationPath);
     } else {
-        CreateSandboxDir(args.destinationPath, FILE_MODE);
+        if (access(args.destinationPath, F_OK) != 0) {
+            CreateSandboxDir(args.destinationPath, FILE_MODE);
+        }
     }
     CreateDemandSrc(context, sandboxNode, &args);
 
@@ -419,12 +461,7 @@ static int DoSandboxPathNodeMount(const SandboxContext *context,
         umount2(args.destinationPath, MNT_DETACH);
     }
     int ret = 0;
-    if ((category == MOUNT_TMP_DLP_FUSE || category == MOUNT_TMP_FUSE) && context->dlpBundle == 1) {
-        ret = SandboxMountFusePath(context, &args);
-    } else {
-        ret = SandboxMountPath(&args);
-    }
-
+    ret = DoSandboxMountByCategory(context, sandboxNode, &args, operation);
     if (ret != 0 && sandboxNode->checkErrorFlag) {
         APPSPAWN_LOGE("Failed to mount config, section: %{public}s result: %{public}d category: %{public}d",
             section->name, ret, category);
@@ -921,13 +958,13 @@ int UnmountSandboxConfigs(const AppSpawnSandboxCfg *sandbox, uid_t uid, const ch
 }
 
 // Check whether the process incubation contains the ohos.permission.ACCESS_DLP_FILE permission
-static bool IsADFPermision(AppSpawnSandboxCfg *sandbox, const AppSpawningCtx *property)
+static bool IsADFPermission(AppSpawnSandboxCfg *sandbox, const AppSpawningCtx *property)
 {
     int index = GetPermissionIndexInQueue(&sandbox->permissionQueue, ACCESS_DLP_FILE_MODE);
     if (index > 0 && CheckAppPermissionFlagSet(property, index)) {
         return true;
     }
-    if (strstr(GetBundleName(property), "ohos.permission.dlpmanager") != NULL) {
+    if (strstr(GetBundleName(property), "com.ohos.dlpmanager") != NULL) {
         return true;
     }
     return false;
@@ -957,7 +994,7 @@ int StagedMountSystemConst(AppSpawnSandboxCfg *sandbox, const AppSpawningCtx *pr
     int ret = InitSandboxContext(context, sandbox, property, nwebspawn);
     APPSPAWN_CHECK_ONLY_EXPER(ret == 0, return ret);
 
-    if (IsSandboxMounted(sandbox, "system-const", context->rootPath) && IsADFPermision(sandbox, property) != true) {
+    if (IsSandboxMounted(sandbox, "system-const", context->rootPath) && IsADFPermission(sandbox, property) != true) {
         APPSPAWN_LOGV("Sandbox system-const %{public}s has been mount", context->rootPath);
         DeleteSandboxContext(context);
         return 0;
