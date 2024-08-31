@@ -93,9 +93,6 @@
                 "src-path" : "/data/local/shader_cache/cloud/common",
                 "sandbox-path" : "/data/storage/shader_cache/common"
             }, {
-                "src-path" : "/storage/media/<currentUserId>/local/files/Docs/Downloads/<PackageName>",
-                "sandbox-path" : "/storage/Users/<currentUserId>/Downloads"
-            }, {
                 "src-path" : "/mnt/hmdfs/<currentUserId>/cloud/data/<PackageName>",
                 "sandbox-path" : "/data/storage/el2/cloud"
             }, {
@@ -307,8 +304,8 @@
                 "category": "shared",
                 "check-action-status": "true"
             }, {
-                "src-path": "/mnt/data/<currentUserId>",
-                "sandbox-path": "/mnt/data",
+                "src-path": "/dev/fuse",
+                "sandbox-path": "/mnt/data/fuse",
                 "category": "dlp_fuse"
             }],
             "mount-groups": ["dlpmgr"]

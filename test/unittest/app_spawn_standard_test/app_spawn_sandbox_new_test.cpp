@@ -2332,7 +2332,7 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_mount_template, TestSize.Level0)
     ASSERT_EQ(ret, MOUNT_TMP_DEFAULT);
     const MountArgTemplate *arg = GetMountArgTemplate(10);
     ASSERT_EQ(arg, nullptr);
-    arg = GetMountArgTemplate(7);
+    arg = GetMountArgTemplate(8);
     ASSERT_EQ(arg, nullptr);
     const SandboxFlagInfo info[2] = {{"test1", 0}, {"test2", 0}};
     const SandboxFlagInfo *info1 = GetSandboxFlagInfo("test", info, 2);
