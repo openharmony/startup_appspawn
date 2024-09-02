@@ -115,6 +115,10 @@
                 "link-name" : "/lib",
                 "check-action-status": "false"
             }, {
+                "target-name" : "/system/lib64",
+                "link-name" : "/lib64",
+                "check-action-status": "false"
+            }, {
                 "target-name" : "/system/etc",
                 "link-name" : "/etc",
                 "check-action-status": "false"
@@ -278,7 +282,7 @@
         }, {
             "name": "ohos.permission.PROTECT_SCREEN_LOCK_DATA",
             "sandbox-switch": "ON",
-            "mount-group": ["el5"]
+            "mount-groups": ["el5"]
         }, {
             "name": "ohos.permission.ACCESS_FILE_CONTENT_SHARE",
             "sandbox-switch": "ON",

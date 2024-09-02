@@ -16,8 +16,6 @@
 #ifndef APPSPAWN_SANDBOX_H
 #define APPSPAWN_SANDBOX_H
 
-#include <limits.h>
-
 #include "appspawn.h"
 #include "appspawn_hook.h"
 #include "appspawn_manager.h"
