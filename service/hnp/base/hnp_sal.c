@@ -53,7 +53,7 @@ int HnpProcessRunCheck(const char *runPath)
     return 0;
 }
 
-static void HnpRelPath(const char *fromPath, const char *toPath, char *relPath)
+APPSPAWN_STATIC void HnpRelPath(const char *fromPath, const char *toPath, char *relPath)
 {
     char *from = strdup(fromPath);
     char *to = strdup(toPath);
@@ -66,6 +66,11 @@ static void HnpRelPath(const char *fromPath, const char *toPath, char *relPath)
     while ((*from) && (*to) && (*from == *to)) {
         from++;
         to++;
+    }
+
+    while (from > fromHead && *(from - 1) != DIR_SPLIT_SYMBOL) {
+        from--;
+        to--;
     }
 
     char *p = from;
