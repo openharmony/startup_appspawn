@@ -57,6 +57,12 @@ extern "C" {
 #define DIR_SPLIT_SYMBOL '/'
 #endif
 
+#ifndef APPSPAWN_TEST
+#define APPSPAWN_STATIC static
+#else
+#define APPSPAWN_STATIC
+#endif
+
 /* Native软件二进制软链接配置 */
 typedef struct NativeBinLinkStru {
     char source[MAX_FILE_PATH_LEN];
