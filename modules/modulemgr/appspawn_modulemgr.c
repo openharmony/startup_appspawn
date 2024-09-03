@@ -35,6 +35,7 @@ static struct {
     {NULL, MODULE_APPSPAWN, "appspawn/appspawn"},
     {NULL, MODULE_NWEBSPAWN, "appspawn/nwebspawn"},
     {NULL, MODULE_COMMON, "appspawn/common"},
+    {NULL, MODULE_NATIVESPAWN, "appspawn/nativespawn"},
 };
 static HOOK_MGR *g_appspawnHookMgr = NULL;
 
