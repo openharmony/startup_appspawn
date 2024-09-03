@@ -31,25 +31,14 @@ ohos_shared_library("nativespawn") {
     defines += [ "ASAN_DETECTOR" ]
   }
   external_deps = [
-    "ability_base:want",
     "ability_runtime:app_manager",
     "ability_runtime:appkit_native",
     "ability_runtime:runtime",
-    "access_token:libtokensetproc_shared",
-    "ace_engine:ace_forward_compatibility",
-    "cJSON:cjson",
     "c_utils:utils",
-    "common_event_service:cesfwk_innerkits",
-    "config_policy:configpolicy_util",
     "eventhandler:libeventhandler",
     "hilog:libhilog",
-    "hitrace:hitrace_meter",
     "init:libbegetutil",
-    "ipc:ipc_single",
     "napi:ace_napi",
-    "os_account:os_account_innerkits",
-    "resource_management:global_resmgr",
-    "selinux:libselinux",
   ]
   subsystem_name = "${subsystem_name}"
   part_name = "${part_name}"
