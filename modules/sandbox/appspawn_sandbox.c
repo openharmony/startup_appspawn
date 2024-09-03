@@ -295,11 +295,12 @@ static int32_t SandboxMountFusePath(const SandboxContext *context, const MountAr
     APPSPAWN_CHECK(fd != -1, return -EINVAL,
         "open /dev/fuse failed, errno: %{public}d sandbox path %{public}s", errno, args->destinationPath);
 
-    char options[OPTIONS_MAX_LEN];
-    (void)sprintf_s(options, sizeof(options), "fd=%d,"
+    char options[OPTIONS_MAX_LEN] = {0};
+    int ret = sprintf_s(options, sizeof(options), "fd=%d,"
         "rootmode=40000,user_id=%d,group_id=%d,allow_other,"
         "context=\"u:object_r:dlp_fuse_file:s0\","
         "fscontext=u:object_r:dlp_fuse_file:s0", fd, info->uid, info->gid);
+    APPSPAWN_CHECK(ret > 0, return APPSPAWN_ERROR_UTILS_MEM_FAIL, "sprintf options fail");
 
     APPSPAWN_LOGV("Bind mount dlp fuse \n "
         "mount arg: '%{public}s' '%{public}s' %{public}x '%{public}s' %{public}s => %{public}s",
@@ -309,7 +310,7 @@ static int32_t SandboxMountFusePath(const SandboxContext *context, const MountAr
     // To make sure destinationPath exist
     CreateSandboxDir(args->destinationPath, FILE_MODE);
     MountArg mountArg = {args->originPath, args->destinationPath, args->fsType, args->mountFlags, options, MS_SHARED};
-    int ret = SandboxMountPath(&mountArg);
+    ret = SandboxMountPath(&mountArg);
     if (ret != 0) {
         close(fd);
         return -1;
@@ -964,7 +965,8 @@ static bool IsADFPermission(AppSpawnSandboxCfg *sandbox, const AppSpawningCtx *p
     if (index > 0 && CheckAppPermissionFlagSet(property, index)) {
         return true;
     }
-    if (strstr(GetBundleName(property), "com.ohos.dlpmanager") != NULL) {
+
+    if (GetBundleName(property) != NULL && strstr(GetBundleName(property), "com.ohos.dlpmanager") != NULL) {
         return true;
     }
     return false;
