@@ -108,6 +108,7 @@ static int RunChildProcessor(AppSpawnContent *content, AppSpawnClient *client)
 
 APPSPAWN_STATIC int PreLoadNativeSpawn(AppSpawnMgr *content)
 {
+    content->content.mode = MODE_FOR_NATIVE_SPAWN;
     RegChildLooper(&content->content, RunChildProcessor);
     return 0;
 }
