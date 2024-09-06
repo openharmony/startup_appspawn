@@ -964,16 +964,9 @@ static void ClosePidFds(pid_t pid)
 APPSPAWN_STATIC int AppSpawnClearEnv(AppSpawnMgr *content, AppSpawningCtx *property)
 {
     APPSPAWN_CHECK(content != NULL, return 0, "Invalid appspawn content");
-    bool isNweb = IsNWebSpawnMode(content);
-    APPSPAWN_LOGV("Clear %{public}s context in child %{public}d process", !isNweb ? "appspawn" : "nwebspawn", getpid());
-
     ClosePidFds(getpid());
     DeleteAppSpawningCtx(property);
     AppSpawnDestroyContent(&content->content);
-
-    AppSpawnModuleMgrUnInstall(MODULE_DEFAULT);
-    AppSpawnModuleMgrUnInstall(isNweb ? MODULE_APPSPAWN : MODULE_NWEBSPAWN);
-    AppSpawnModuleMgrUnInstall(MODULE_COMMON);
     APPSPAWN_LOGV("clear %{public}d end", getpid());
     return 0;
 }
