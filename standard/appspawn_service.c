@@ -179,7 +179,7 @@ APPSPAWN_STATIC void ProcessSignal(const struct signalfd_siginfo *siginfo)
         case SIGCHLD: { // delete pid from app map
             pid_t pid;
             int status;
-            while ((pid = waitpid(siginfo->ssi_pid, &status, WNOHANG)) > 0) {
+            while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
                 APPSPAWN_CHECK(WIFSIGNALED(status) || WIFEXITED(status), return,
                     "ProcessSignal with wrong status:%{public}d", status);
                 HandleDiedPid(pid, siginfo->ssi_uid, status);
