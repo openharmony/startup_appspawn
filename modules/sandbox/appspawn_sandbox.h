@@ -215,7 +215,7 @@ typedef struct TagSandboxContext {
 AppSpawnSandboxCfg *CreateAppSpawnSandbox(void);
 AppSpawnSandboxCfg *GetAppSpawnSandbox(const AppSpawnMgr *content);
 void DeleteAppSpawnSandbox(AppSpawnSandboxCfg *sandbox);
-int LoadAppSandboxConfig(AppSpawnSandboxCfg *sandbox, int nwebSpawn);
+int LoadAppSandboxConfig(AppSpawnSandboxCfg *sandbox, RunMode mode);
 void DumpAppSpawnSandboxCfg(AppSpawnSandboxCfg *sandbox);
 
 /**

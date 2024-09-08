@@ -41,6 +41,7 @@
 #define NWEB_UID 3081
 #define NWEB_GID 3081
 #define NWEB_NAME "nwebspawn"
+#define NATIVE_NAME "nativespawn"
 #define CAP_NUM 2
 #define BITLEN32 32
 

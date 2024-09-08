@@ -654,10 +654,19 @@ APPSPAWN_STATIC int ParseAppSandboxConfig(const cJSON *root, ParseJsonContext *c
     return ret;
 }
 
-int LoadAppSandboxConfig(AppSpawnSandboxCfg *sandbox, int nwebSpawn)
+APPSPAWN_STATIC const char *GetSandboxNameByMode(RunMode mode)
+{
+    if (mode == MODE_FOR_NATIVE_SPAWN) {
+        return ISOLATED_SANDBOX_FILE_NAME;
+    }
+
+    return APP_SANDBOX_FILE_NAME;
+}
+
+int LoadAppSandboxConfig(AppSpawnSandboxCfg *sandbox, RunMode mode)
 {
     APPSPAWN_CHECK_ONLY_EXPER(sandbox != NULL, return APPSPAWN_ARG_INVALID);
-    const char *sandboxName = nwebSpawn ? WEB_SANDBOX_FILE_NAME : APP_SANDBOX_FILE_NAME;
+    const char *sandboxName = GetSandboxNameByMode(mode);
     if (sandbox->depGroupNodes != NULL) {
         APPSPAWN_LOGW("Sandbox has been load");
         return 0;
