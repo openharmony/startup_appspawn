@@ -21,6 +21,7 @@
         "features": [
             "appspawn_support_nweb",
             "appspawn_support_cj",
+            "appspawn_support_native",
             "appspawn_use_encaps"
         ],
         "rom": "296KB",

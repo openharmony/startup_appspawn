@@ -33,6 +33,7 @@
 #include "appspawn_msg.h"
 #include "appspawn_server.h"
 #include "appspawn_service.h"
+#include "appspawn_utils.h"
 #include "config_policy_utils.h"
 #include "init_param.h"
 #include "parameter.h"
@@ -61,6 +62,7 @@ namespace {
     constexpr std::string_view APL_SYSTEM_CORE("system_core");
     constexpr std::string_view APL_SYSTEM_BASIC("system_basic");
     const std::string APP_JSON_CONFIG("/appdata-sandbox.json");
+    const std::string APP_ISOLATED_JSON_CONFIG("/appdata-sandbox-isolated.json");
     const std::string g_physicalAppInstallPath = "/data/app/el1/bundle/public/";
     const std::string g_sandboxGroupPath = "/data/storage/el2/group/";
     const std::string g_sandboxHspInstallPath = "/data/storage/el1/bundle/";
@@ -166,17 +168,17 @@ bool JsonUtils::GetStringFromJson(const nlohmann::json &json, const std::string 
     }
 }
 
-std::vector<nlohmann::json> SandboxUtils::appSandboxConfig_ = {};
+std::map<SandboxConfigType, std::vector<nlohmann::json>> SandboxUtils::appSandboxConfig_ = {};
 int32_t SandboxUtils::deviceTypeEnable_ = -1;
 
-void SandboxUtils::StoreJsonConfig(nlohmann::json &appSandboxConfig)
+void SandboxUtils::StoreJsonConfig(nlohmann::json &appSandboxConfig, SandboxConfigType type)
 {
-    SandboxUtils::appSandboxConfig_.push_back(appSandboxConfig);
+    SandboxUtils::appSandboxConfig_[type].push_back(appSandboxConfig);
 }
 
-std::vector<nlohmann::json> &SandboxUtils::GetJsonConfig()
+std::vector<nlohmann::json> &SandboxUtils::GetJsonConfig(SandboxConfigType type)
 {
-    return SandboxUtils::appSandboxConfig_;
+    return SandboxUtils::appSandboxConfig_[type];
 }
 
 static void MakeDirRecursive(const std::string &path, mode_t mode)
@@ -540,8 +542,9 @@ std::string SandboxUtils::GetSbxPathByConfig(const AppSpawningCtx *appProperty, 
 
     std::string sandboxRoot = "";
     const std::string originSandboxPath = "/mnt/sandbox/<PackageName>";
+    std::string isolatedFlagText = CheckAppMsgFlagsSet(appProperty, APP_FLAGS_ISOLATED_SANDBOX_TYPE) ? "isolated/" : "";
     const std::string defaultSandboxRoot = g_sandBoxDir + to_string(dacInfo->uid / UID_BASE) +
-        "/" + GetBundleName(appProperty);
+        "/" + isolatedFlagText.c_str() + GetBundleName(appProperty);
     if (config.find(g_sandboxRootPrefix) != config.end()) {
         sandboxRoot = config[g_sandboxRootPrefix].get<std::string>();
         if (sandboxRoot == originSandboxPath) {
@@ -912,7 +915,7 @@ int32_t SandboxUtils::DoSandboxFilePermissionBind(AppSpawningCtx *appProperty,
 std::set<std::string> SandboxUtils::GetMountPermissionNames()
 {
     std::set<std::string> permissionSet;
-    for (auto config : SandboxUtils::GetJsonConfig()) {
+    for (auto& config : SandboxUtils::GetJsonConfig(SANBOX_APP_JSON_CONFIG)) {
         if (config.find(g_permissionPrefix) == config.end()) {
             continue;
         }
@@ -1059,9 +1062,11 @@ int32_t SandboxUtils::SetRenderSandboxProperty(const AppSpawningCtx *appProperty
 int32_t SandboxUtils::SetRenderSandboxPropertyNweb(const AppSpawningCtx *appProperty,
                                                    std::string &sandboxPackagePath)
 {
-    for (auto config : SandboxUtils::GetJsonConfig()) {
-        nlohmann::json privateAppConfig = config[g_privatePrefix][0];
+    SandboxConfigType type = CheckAppMsgFlagsSet(appProperty, APP_FLAGS_ISOLATED_SANDBOX_TYPE) ?
+        SANBOX_ISOLATED_JSON_CONFIG : SANBOX_APP_JSON_CONFIG;
 
+    for (auto& config : SandboxUtils::GetJsonConfig(type)) {
+        nlohmann::json& privateAppConfig = config[g_privatePrefix][0];
         if (privateAppConfig.find(g_ohosRender) != privateAppConfig.end()) {
             int ret = DoAllMntPointsMount(appProperty, privateAppConfig[g_ohosRender][0], nullptr, g_ohosRender);
             APPSPAWN_CHECK(ret == 0, return ret, "DoAllMntPointsMount failed, %{public}s",
@@ -1080,18 +1085,24 @@ int32_t SandboxUtils::SetRenderSandboxPropertyNweb(const AppSpawningCtx *appProp
 int32_t SandboxUtils::SetPrivateAppSandboxProperty(const AppSpawningCtx *appProperty)
 {
     int ret = 0;
-    for (auto config : SandboxUtils::GetJsonConfig()) {
+    SandboxConfigType type = CheckAppMsgFlagsSet(appProperty, APP_FLAGS_ISOLATED_SANDBOX_TYPE) ?
+        SANBOX_ISOLATED_JSON_CONFIG : SANBOX_APP_JSON_CONFIG;
+
+    for (auto& config : SandboxUtils::GetJsonConfig(type)) {
         ret = SetPrivateAppSandboxProperty_(appProperty, config);
         APPSPAWN_CHECK(ret == 0, return ret, "parse adddata-sandbox config failed");
     }
     return ret;
 }
 
-static bool GetSandboxPrivateSharedStatus(const string &bundleName)
+static bool GetSandboxPrivateSharedStatus(const string &bundleName, AppSpawningCtx *appProperty)
 {
     bool result = false;
-    for (auto config : SandboxUtils::GetJsonConfig()) {
-        nlohmann::json privateAppConfig = config[g_privatePrefix][0];
+    SandboxConfigType type = CheckAppMsgFlagsSet(appProperty, APP_FLAGS_ISOLATED_SANDBOX_TYPE) ?
+        SANBOX_ISOLATED_JSON_CONFIG : SANBOX_APP_JSON_CONFIG;
+
+    for (auto& config : SandboxUtils::GetJsonConfig(type)) {
+        nlohmann::json& privateAppConfig = config[g_privatePrefix][0];
         if (privateAppConfig.find(bundleName) != privateAppConfig.end() &&
             privateAppConfig[bundleName][0].find(g_sandBoxShared) !=
             privateAppConfig[bundleName][0].end()) {
@@ -1108,7 +1119,10 @@ static bool GetSandboxPrivateSharedStatus(const string &bundleName)
 int32_t SandboxUtils::SetPermissionAppSandboxProperty(AppSpawningCtx *appProperty)
 {
     int ret = 0;
-    for (auto config : SandboxUtils::GetJsonConfig()) {
+    SandboxConfigType type = CheckAppMsgFlagsSet(appProperty, APP_FLAGS_ISOLATED_SANDBOX_TYPE) ?
+        SANBOX_ISOLATED_JSON_CONFIG : SANBOX_APP_JSON_CONFIG;
+
+    for (auto& config : SandboxUtils::GetJsonConfig(type)) {
         ret = SetPermissionAppSandboxProperty_(appProperty, config);
         APPSPAWN_CHECK(ret == 0, return ret, "parse adddata-sandbox config failed");
     }
@@ -1140,7 +1154,10 @@ int32_t SandboxUtils::SetCommonAppSandboxProperty(const AppSpawningCtx *appPrope
                                                   std::string &sandboxPackagePath)
 {
     int ret = 0;
-    for (auto jsonConfig : SandboxUtils::GetJsonConfig()) {
+    SandboxConfigType type = CheckAppMsgFlagsSet(appProperty, APP_FLAGS_ISOLATED_SANDBOX_TYPE) ?
+        SANBOX_ISOLATED_JSON_CONFIG : SANBOX_APP_JSON_CONFIG;
+
+    for (auto& jsonConfig : SandboxUtils::GetJsonConfig(type)) {
         ret = SetCommonAppSandboxProperty_(appProperty, jsonConfig);
         APPSPAWN_CHECK(ret == 0, return ret,
             "parse appdata config for common failed, %{public}s", sandboxPackagePath.c_str());
@@ -1309,7 +1326,7 @@ uint32_t SandboxUtils::GetSandboxNsFlags(bool isNweb)
         return nsFlags;
     }
 
-    for (auto config : SandboxUtils::GetJsonConfig()) {
+    for (auto& config : SandboxUtils::GetJsonConfig(SANBOX_APP_JSON_CONFIG)) {
         if (isNweb) {
             nlohmann::json privateAppConfig = config[g_privatePrefix][0];
             if (privateAppConfig.find(g_ohosRender) == privateAppConfig.end()) {
@@ -1350,7 +1367,10 @@ bool SandboxUtils::CheckBundleNameForPrivate(const std::string &bundleName)
 
 bool SandboxUtils::CheckTotalSandboxSwitchStatus(const AppSpawningCtx *appProperty)
 {
-    for (auto wholeConfig : SandboxUtils::GetJsonConfig()) {
+    SandboxConfigType type = CheckAppMsgFlagsSet(appProperty, APP_FLAGS_ISOLATED_SANDBOX_TYPE) ?
+        SANBOX_ISOLATED_JSON_CONFIG : SANBOX_APP_JSON_CONFIG;
+
+    for (auto& wholeConfig : SandboxUtils::GetJsonConfig(type)) {
         if (wholeConfig.find(g_commonPrefix) == wholeConfig.end()) {
             continue;
         }
@@ -1371,7 +1391,10 @@ bool SandboxUtils::CheckTotalSandboxSwitchStatus(const AppSpawningCtx *appProper
 bool SandboxUtils::CheckAppSandboxSwitchStatus(const AppSpawningCtx *appProperty)
 {
     bool rc = true;
-    for (auto wholeConfig : SandboxUtils::GetJsonConfig()) {
+    SandboxConfigType type = CheckAppMsgFlagsSet(appProperty, APP_FLAGS_ISOLATED_SANDBOX_TYPE) ?
+        SANBOX_ISOLATED_JSON_CONFIG : SANBOX_APP_JSON_CONFIG;
+
+    for (auto& wholeConfig : SandboxUtils::GetJsonConfig(type)) {
         if (wholeConfig.find(g_privatePrefix) == wholeConfig.end()) {
             continue;
         }
@@ -1563,8 +1586,10 @@ int32_t SandboxUtils::SetAppSandboxProperty(AppSpawningCtx *appProperty, uint32_
 
     std::string sandboxPackagePath = g_sandBoxRootDir + to_string(dacInfo->uid / UID_BASE) + "/";
     const std::string bundleName = GetBundleName(appProperty);
-    bool sandboxSharedStatus = GetSandboxPrivateSharedStatus(bundleName) || (CheckAppPermissionFlagSet(appProperty,
-        static_cast<uint32_t>(GetPermissionIndex(nullptr, ACCESS_DLP_FILE_MODE.c_str()))) != 0);
+    bool sandboxSharedStatus = GetSandboxPrivateSharedStatus(bundleName, appProperty) ||
+        (CheckAppPermissionFlagSet(appProperty, static_cast<uint32_t>(GetPermissionIndex(nullptr,
+        ACCESS_DLP_FILE_MODE.c_str()))) != 0);
+    sandboxPackagePath += CheckAppMsgFlagsSet(appProperty, APP_FLAGS_ISOLATED_SANDBOX_TYPE) ? "isolated/" : "";
     sandboxPackagePath += bundleName;
     MakeDirRecursive(sandboxPackagePath.c_str(), FILE_MODE);
 
@@ -1603,7 +1628,7 @@ int32_t SandboxUtils::SetAppSandboxPropertyNweb(AppSpawningCtx *appProperty, uin
     }
     std::string sandboxPackagePath = g_sandBoxRootDirNweb;
     const std::string bundleName = GetBundleName(appProperty);
-    bool sandboxSharedStatus = GetSandboxPrivateSharedStatus(bundleName);
+    bool sandboxSharedStatus = GetSandboxPrivateSharedStatus(bundleName, appProperty);
     sandboxPackagePath += bundleName;
     MakeDirRecursive(sandboxPackagePath.c_str(), FILE_MODE);
 
@@ -1684,11 +1709,17 @@ int LoadAppSandboxConfig(AppSpawnMgr *content)
             continue;
         }
         std::string path = files->paths[i];
-        path += OHOS::AppSpawn::APP_JSON_CONFIG;
-        APPSPAWN_LOGI("LoadAppSandboxConfig %{public}s", path.c_str());
-        rc = OHOS::AppSpawn::JsonUtils::GetJsonObjFromJson(appSandboxConfig, path);
-        APPSPAWN_CHECK(rc, continue, "Failed to load app data sandbox config %{public}s", path.c_str());
-        OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(appSandboxConfig);
+        std::string appPath = path + OHOS::AppSpawn::APP_JSON_CONFIG;
+        APPSPAWN_LOGI("LoadAppSandboxConfig %{public}s", appPath.c_str());
+        rc = OHOS::AppSpawn::JsonUtils::GetJsonObjFromJson(appSandboxConfig, appPath);
+        APPSPAWN_CHECK(rc, continue, "Failed to load app data sandbox config %{public}s", appPath.c_str());
+        OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(appSandboxConfig, SANBOX_APP_JSON_CONFIG);
+
+        std::string isolatedPath = path + OHOS::AppSpawn::APP_ISOLATED_JSON_CONFIG;
+        APPSPAWN_LOGI("LoadAppSandboxConfig %{public}s", isolatedPath.c_str());
+        rc = OHOS::AppSpawn::JsonUtils::GetJsonObjFromJson(appSandboxConfig, isolatedPath);
+        APPSPAWN_CHECK(rc, continue, "Failed to load app data sandbox config %{public}s", isolatedPath.c_str());
+        OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(appSandboxConfig, SANBOX_ISOLATED_JSON_CONFIG);
     }
     FreeCfgFiles(files);
     bool isNweb = IsNWebSpawnMode(content);
@@ -1715,7 +1746,8 @@ int32_t SetAppSandboxProperty(AppSpawnMgr *content, AppSpawningCtx *property)
         }
     }
     uint32_t sandboxNsFlags = CLONE_NEWNS;
-    if (CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX)) {
+    if (CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX) ||
+        CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_NETWORK)) {
         sandboxNsFlags |= content->content.sandboxNsFlags & CLONE_NEWNET ? CLONE_NEWNET : 0;
     }
     APPSPAWN_LOGV("SetAppSandboxProperty sandboxNsFlags 0x%{public}x", sandboxNsFlags);

@@ -197,7 +197,7 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_10, TestSize.Level0)
     }";
     nlohmann::json j_config = nlohmann::json::parse(mJsconfig.c_str());
 
-    OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config);
+    OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config, SANBOX_APP_JSON_CONFIG);
     GTEST_LOG_(INFO) << "SetAppSandboxProperty start" << std::endl;
     g_testHelper.SetTestUid(1000);  // 1000 test
     g_testHelper.SetTestGid(1000);  // 1000 test
@@ -238,7 +238,7 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_13, TestSize.Level0)
     }";
     nlohmann::json j_config = nlohmann::json::parse(mJsconfig.c_str());
 
-    OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config);
+    OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config, SANBOX_APP_JSON_CONFIG);
 
     GTEST_LOG_(INFO) << "SetAppSandboxProperty start" << std::endl;
     g_testHelper.SetTestUid(1000);  // 1000 test
@@ -278,7 +278,7 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_14, TestSize.Level0)
     }";
     nlohmann::json j_config = nlohmann::json::parse(mJsconfig.c_str());
 
-    OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config);
+    OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config, SANBOX_APP_JSON_CONFIG);
 
     GTEST_LOG_(INFO) << "SetAppSandboxProperty start" << std::endl;
 
@@ -322,7 +322,7 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_15, TestSize.Level0)
     }";
     nlohmann::json j_config = nlohmann::json::parse(mJsconfig.c_str());
 
-    OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config);
+    OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config, SANBOX_APP_JSON_CONFIG);
 
     GTEST_LOG_(INFO) << "SetAppSandboxProperty start" << std::endl;
     g_testHelper.SetTestUid(1000);  // 1000 test
@@ -357,7 +357,7 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_16, TestSize.Level0)
     }";
     nlohmann::json j_config = nlohmann::json::parse(mJsconfig.c_str());
 
-    OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config);
+    OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config, SANBOX_APP_JSON_CONFIG);
 
     GTEST_LOG_(INFO) << "SetAppSandboxProperty start" << std::endl;
     g_testHelper.SetTestUid(1000);  // 1000 test
@@ -390,7 +390,7 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_17, TestSize.Level0)
         \"individual\": [] \
     }";
     nlohmann::json j_config = nlohmann::json::parse(mJsconfig.c_str());
-    OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config);
+    OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config, SANBOX_APP_JSON_CONFIG);
 
     std::string value;
     rc = JsonUtils::GetStringFromJson(j_config, "common", value);
@@ -439,7 +439,7 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_20, TestSize.Level0)
         \"individual\": [] \
     }";
     nlohmann::json j_config = nlohmann::json::parse(mJsconfig.c_str());
-    OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config);
+    OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config, SANBOX_APP_JSON_CONFIG);
 
     g_testHelper.SetTestUid(1000);  // 1000 test
     g_testHelper.SetTestGid(1000);  // 1000 test
@@ -464,7 +464,7 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_20, TestSize.Level0)
         }] \
     }";
     nlohmann::json j_config1 = nlohmann::json::parse(mJsconfig1.c_str());
-    OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config1);
+    OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config1, SANBOX_APP_JSON_CONFIG);
     OHOS::AppSpawn::SandboxUtils::SetAppSandboxProperty(appProperty);
     DeleteAppSpawningCtx(appProperty);
 }
@@ -485,7 +485,7 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_22, TestSize.Level0)
         \"individual\": [] \
     }";
     nlohmann::json j_config1 = nlohmann::json::parse(mJsconfig1.c_str());
-    OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config1);
+    OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config1, SANBOX_APP_JSON_CONFIG);
 
     g_testHelper.SetTestUid(1000);  // 1000 test
     g_testHelper.SetTestGid(1000);  // 1000 test
@@ -1108,7 +1108,7 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_38, TestSize.Level0)
     }";
 
     nlohmann::json p_config1 = nlohmann::json::parse(pJsconfig1.c_str());
-    OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(p_config1);
+    OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(p_config1, SANBOX_APP_JSON_CONFIG);
 
     std::string sandboxPackagePath = "/mnt/sandbox/100/";
     const std::string bundleName = GetBundleName(appProperty);
@@ -1206,7 +1206,7 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_41, TestSize.Level0)
     }";
     nlohmann::json j_config = nlohmann::json::parse(mJsconfig.c_str());
 
-    OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config);
+    OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config, SANBOX_APP_JSON_CONFIG);
 
     uint32_t cloneFlags = OHOS::AppSpawn::SandboxUtils::GetSandboxNsFlags(false);
     EXPECT_EQ(!!(cloneFlags & CLONE_NEWPID), true);
@@ -1240,7 +1240,7 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_42, TestSize.Level0)
     nlohmann::json j_config = nlohmann::json::parse(mJsconfig.c_str());
     const char *mountPath = "mount-paths";
     nlohmann::json j_secondConfig = j_config[mountPath][0];
-    OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config);
+    OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config, SANBOX_APP_JSON_CONFIG);
 
     std::string fsType = OHOS::AppSpawn::SandboxUtils::GetSandboxFsType(j_secondConfig);
     int ret = strcmp(fsType.c_str(), "sharefs");
@@ -1273,7 +1273,7 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_43, TestSize.Level0)
     const char *mountPath = "mount-paths";
     nlohmann::json j_secondConfig = j_config[mountPath][0];
 
-    OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config);
+    OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config, SANBOX_APP_JSON_CONFIG);
     OHOS::AppSpawn::SandboxUtils::SandboxMountConfig mountConfig;
     std::string section = "common";
     AppSpawningCtx *appProperty = GetTestAppProperty();
@@ -1307,7 +1307,7 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_44, TestSize.Level0)
     const char *mountPath = "mount-paths";
     nlohmann::json j_secondConfig = j_config[mountPath][0];
 
-    OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config);
+    OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config, SANBOX_APP_JSON_CONFIG);
     OHOS::AppSpawn::SandboxUtils::SandboxMountConfig mountConfig;
     std::string section = "permission";
     AppSpawningCtx *appProperty = GetTestAppProperty();
@@ -1341,7 +1341,7 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_45, TestSize.Level0)
     const char *mountPath = "mount-paths";
     nlohmann::json j_secondConfig = j_config[mountPath][0];
 
-    OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config);
+    OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config, SANBOX_APP_JSON_CONFIG);
     AppSpawningCtx *appProperty = GetTestAppProperty();
     std::string options = OHOS::AppSpawn::SandboxUtils::GetSandboxOptions(appProperty, j_secondConfig);
     int ret = strcmp(options.c_str(), "support_overwrite=1,user_id=100");
