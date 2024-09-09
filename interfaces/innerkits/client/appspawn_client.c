@@ -166,7 +166,7 @@ static int ReadMessage(int socketFd, uint32_t sendMsgId, uint8_t *buf, int len, 
     return APPSPAWN_TIMEOUT;
 }
 
-static int WriteMessage(int socketFd, const uint8_t *buf, ssize_t len, int *fds, int *fdCount, bool isMsgSend)
+static int WriteMessage(int socketFd, const uint8_t *buf, ssize_t len, int *fds, int *fdCount)
 {
     ssize_t written = 0;
     ssize_t remain = len;
@@ -180,7 +180,7 @@ static int WriteMessage(int socketFd, const uint8_t *buf, ssize_t len, int *fds,
         .msg_iovlen = 1,
     };
     char *ctrlBuffer = NULL;
-    if (fdCount != NULL && fds != NULL && *fdCount > 0 && isMsgSend == false) {
+    if (fdCount != NULL && fds != NULL && *fdCount > 0) {
         msg.msg_controllen = CMSG_SPACE(*fdCount * sizeof(int));
         ctrlBuffer = (char *) malloc(msg.msg_controllen);
         APPSPAWN_CHECK(ctrlBuffer != NULL, return -1,
@@ -214,16 +214,17 @@ static int HandleMsgSend(AppSpawnReqMsgMgr *reqMgr, int socketId, AppSpawnReqMsg
     APPSPAWN_LOGV("HandleMsgSend reqId: %{public}u msgId: %{public}d", reqNode->reqId, reqNode->msg->msgId);
     ListNode *sendNode = reqNode->msgBlocks.next;
     uint32_t currentIndex = 0;
-    bool isMsgSend = false;
+    bool sendFd = true;
     while (sendNode != NULL && sendNode != &reqNode->msgBlocks) {
         AppSpawnMsgBlock *sendBlock = (AppSpawnMsgBlock *)ListEntry(sendNode, AppSpawnMsgBlock, node);
-        int ret = WriteMessage(socketId, sendBlock->buffer, sendBlock->currentIndex, reqNode->fds, &reqNode->fdCount,
-            isMsgSend);
+        int ret = WriteMessage(socketId, sendBlock->buffer, sendBlock->currentIndex,
+            sendFd ? reqNode->fds : NULL,
+            sendFd ? &reqNode->fdCount : NULL);
         currentIndex += sendBlock->currentIndex;
         APPSPAWN_LOGV("Write msg ret: %{public}d msgId: %{public}u %{public}u %{public}u",
             ret, reqNode->msg->msgId, reqNode->msg->msgLen, currentIndex);
         if (ret == 0) {
-            isMsgSend = true;
+            sendFd = false;
             sendNode = sendNode->next;
             continue;
         }
