@@ -49,6 +49,7 @@ typedef void *AppSpawnClientHandle;
 #define APPSPAWN_SERVER_NAME "appspawn"
 #define CJAPPSPAWN_SERVER_NAME "cjappspawn"
 #define NWEBSPAWN_RESTART "nwebRestart"
+#define NATIVESPAWN_SERVER_NAME "nativespawn"
 
 #pragma pack(4)
 #define APP_MAX_GIDS 64
@@ -173,6 +174,11 @@ typedef enum {
     APP_FLAGS_BEGETCTL_BOOT, // Start an app from begetctl.
     APP_FLAGS_ATOMIC_SERVICE,
     APP_FLAGS_CHILDPROCESS,
+    APP_FLAGS_ISOLATED_SANDBOX_TYPE,
+    APP_FLAGS_ISOLATED_SELINUX_LABEL,
+    APP_FLAGS_ISOLATED_SECCOMP_TYPE,
+    APP_FLAGS_ISOLATED_NETWORK,
+    APP_FLAGS_ISOLATED_DATAGROUP,
     MAX_FLAGS_INDEX = 63,
 } AppFlagsIndex;
 

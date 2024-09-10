@@ -26,12 +26,17 @@
 #include "appspawn_server.h"
 #include "appspawn_manager.h"
 
+typedef enum {
+    SANBOX_APP_JSON_CONFIG,
+    SANBOX_ISOLATED_JSON_CONFIG
+} SandboxConfigType;
+
 namespace OHOS {
 namespace AppSpawn {
 class SandboxUtils {
 public:
-    static void StoreJsonConfig(nlohmann::json &appSandboxConfig);
-    static std::vector<nlohmann::json> &GetJsonConfig();
+    static void StoreJsonConfig(nlohmann::json &appSandboxConfig, SandboxConfigType type);
+    static std::vector<nlohmann::json> &GetJsonConfig(SandboxConfigType type);
     static int32_t SetAppSandboxProperty(AppSpawningCtx *client, uint32_t sandboxNsFlags = CLONE_NEWNS);
     static int32_t SetAppSandboxPropertyNweb(AppSpawningCtx *client, uint32_t sandboxNsFlags = CLONE_NEWNS);
     static uint32_t GetSandboxNsFlags(bool isNweb);
@@ -115,7 +120,7 @@ private:
                                       const std::string &section, std::string sandboxRoot);
     static void GetSandboxMountConfig(const AppSpawningCtx *appProperty, const std::string &section,
                                       nlohmann::json &mntPoint,SandboxMountConfig &mountConfig);
-    static std::vector<nlohmann::json> appSandboxConfig_;
+    static std::map<SandboxConfigType, std::vector<nlohmann::json>> appSandboxConfig_;
     static int32_t deviceTypeEnable_;
 };
 class JsonUtils {

@@ -30,6 +30,7 @@ extern "C" {
 #define APPSPAWN_SOCKET_NAME "AppSpawn"
 #define CJAPPSPAWN_SOCKET_NAME "CJAppSpawn"
 #define KEEPALIVE_NAME "keepalive"
+#define NATIVESPAWN_SOCKET_NAME "NativeSpawn"
 
 #define APPSPAWN_ALIGN(len) (((len) + 0x03) & (~0x03))
 #define APPSPAWN_TLV_NAME_LEN 32
