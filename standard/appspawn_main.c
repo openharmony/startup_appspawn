@@ -27,6 +27,24 @@
 
 #define APPSPAWN_PRELOAD "libappspawn_helper.z.so"
 
+#ifndef CJAPP_SPAWN
+static AppSpawnStartArgTemplate g_appSpawnStartArgTemplate[PROCESS_INVALID] = {
+    {APPSPAWN_SERVER_NAME, {MODE_FOR_APP_SPAWN, MODULE_APPSPAWN, APPSPAWN_SOCKET_NAME, APPSPAWN_SERVER_NAME, 1}},
+    {NWEBSPAWN_SERVER_NAME, {MODE_FOR_NWEB_SPAWN, MODULE_NWEBSPAWN, NWEBSPAWN_SOCKET_NAME, NWEBSPAWN_SERVER_NAME, 1}},
+    {"app_cold", {MODE_FOR_APP_COLD_RUN, MODULE_APPSPAWN, APPSPAWN_SOCKET_NAME, APPSPAWN_SERVER_NAME, 0}},
+    {"nweb_cold", {MODE_FOR_NWEB_COLD_RUN, MODULE_NWEBSPAWN, APPSPAWN_SOCKET_NAME, NWEBSPAWN_SERVER_NAME, 0}},
+    {NATIVESPAWN_SERVER_NAME, {MODE_FOR_NATIVE_SPAWN, MODULE_NATIVESPAWN, NATIVESPAWN_SOCKET_NAME,
+        NATIVESPAWN_SERVER_NAME, 1}},
+    {NWEBSPAWN_RESTART, {MODE_FOR_NWEB_SPAWN, MODULE_NWEBSPAWN, NWEBSPAWN_SOCKET_NAME, NWEBSPAWN_SERVER_NAME, 1}},
+};
+#else
+static AppSpawnStartArgTemplate g_appCJSpawnStartArgTemplate[CJPROCESS_INVALID] = {
+    {CJAPPSPAWN_SERVER_NAME, {MODE_FOR_CJAPP_SPAWN, MODULE_APPSPAWN, CJAPPSPAWN_SOCKET_NAME, CJAPPSPAWN_SERVER_NAME,
+        1}},
+    {"app_cold", {MODE_FOR_APP_COLD_RUN, MODULE_APPSPAWN, CJAPPSPAWN_SOCKET_NAME, CJAPPSPAWN_SERVER_NAME, 0}},
+};
+#endif
+
 static void CheckPreload(char *const argv[])
 {
     char buf[256] = APPSPAWN_PRELOAD;  // 256 is enough in most cases
@@ -58,6 +76,20 @@ static void CheckPreload(char *const argv[])
     APPSPAWN_LOGE("execv fail: %{public}s: %{public}d: %{public}d", buf, errno, ret);
 }
 
+#ifndef NATIVE_SPAWN
+static AppSpawnStartArgTemplate *GetAppSpawnStartArg(const char *serverName, AppSpawnStartArgTemplate *argTemplate,
+    int count)
+{
+    for (int i = 0; i < count; i++) {
+        if (strcmp(serverName, argTemplate[i].serverName) == 0) {
+            return &argTemplate[i];
+        }
+    }
+
+    return argTemplate;
+}
+#endif
+
 // appspawn -mode appspawn | cold | nwebspawn -param app_property -fd clientFd
 int main(int argc, char *const argv[])
 {
@@ -74,52 +106,40 @@ int main(int argc, char *const argv[])
     CheckPreload(argv);
     (void)signal(SIGPIPE, SIG_IGN);
     uint32_t argvSize = end - start;
-    AppSpawnStartArg arg = {};
-#ifndef CJAPP_SPAWN
-    arg.mode = MODE_FOR_APP_SPAWN;
-    arg.socketName = APPSPAWN_SOCKET_NAME;
-    arg.serviceName = APPSPAWN_SERVER_NAME;
-    arg.moduleType = MODULE_APPSPAWN;
-    arg.initArg = 1;
-    if (argc <= MODE_VALUE_INDEX) {  // appspawn start
-        arg.mode = MODE_FOR_APP_SPAWN;
-    } else if (strcmp(argv[MODE_VALUE_INDEX], "app_cold") == 0) {  // cold start
-        APPSPAWN_CHECK(argc >= ARG_NULL, return 0, "Invalid arg for cold start %{public}d", argc);
-        arg.mode = MODE_FOR_APP_COLD_RUN;
-        arg.initArg = 0;
-    } else if (strcmp(argv[MODE_VALUE_INDEX], "nweb_cold") == 0) {  // cold start
-        APPSPAWN_CHECK(argc >= ARG_NULL, return 0, "Invalid arg for cold start %{public}d", argc);
-        arg.mode = MODE_FOR_NWEB_COLD_RUN;
-        arg.moduleType = MODULE_NWEBSPAWN;
-        arg.serviceName = NWEBSPAWN_SERVER_NAME;
-        arg.initArg = 0;
-    } else if (strcmp(argv[MODE_VALUE_INDEX], NWEBSPAWN_SERVER_NAME) == 0) {  // nweb spawn start
-        APPSPAWN_CHECK(argvSize >= APP_LEN_PROC_NAME,
-            return 0, "Invalid arg size for service %{public}s", arg.serviceName);
-        arg.mode = MODE_FOR_NWEB_SPAWN;
-        arg.moduleType = MODULE_NWEBSPAWN;
-        arg.socketName = NWEBSPAWN_SOCKET_NAME;
-        arg.serviceName = NWEBSPAWN_SERVER_NAME;
-    } else if (strcmp(argv[MODE_VALUE_INDEX], NWEBSPAWN_RESTART) == 0) {  // nweb spawn restart
-        arg.mode = MODE_FOR_NWEB_SPAWN;
-        arg.moduleType = MODULE_NWEBSPAWN;
-        arg.socketName = NWEBSPAWN_SOCKET_NAME;
-        arg.serviceName = NWEBSPAWN_SERVER_NAME;
-    } else {
-        APPSPAWN_CHECK(argvSize >= APP_LEN_PROC_NAME,
-            return 0, "Invalid arg size for service %{public}s", arg.serviceName);
+    AppSpawnStartArg *arg;
+    AppSpawnStartArgTemplate *argTemp = NULL;
+
+#ifdef CJAPP_SPAWN
+    argTemp = &g_appCJSpawnStartArgTemplate[CJPROCESS_FOR_APP_SPAWN];
+    if (argc > MODE_VALUE_INDEX) {
+        argTemp = GetAppSpawnStartArg(argv[MODE_VALUE_INDEX], g_appCJSpawnStartArgTemplate,
+            ARRAY_LENGTH(g_appCJSpawnStartArgTemplate));
     }
-    AppSpawnContent *content = StartSpawnService(&arg, argvSize, argc, argv);
+#elif NATIVE_SPAWN
+    argTemp = &g_appSpawnStartArgTemplate[PROCESS_FOR_NATIVE_SPAWN];
 #else
-    arg.mode = MODE_FOR_APP_SPAWN;
-    arg.socketName = CJAPPSPAWN_SOCKET_NAME;
-    arg.serviceName = CJAPPSPAWN_SERVER_NAME;
-    arg.moduleType = MODULE_APPSPAWN;
-    arg.initArg = 1;
-    AppSpawnContent *content = StartCJSpawnService(&arg, argvSize, argc, argv);
+    argTemp = &g_appSpawnStartArgTemplate[PROCESS_FOR_APP_SPAWN];
+    if (argc > MODE_VALUE_INDEX) {
+        argTemp = GetAppSpawnStartArg(argv[MODE_VALUE_INDEX], g_appSpawnStartArgTemplate,
+            ARRAY_LENGTH(g_appSpawnStartArgTemplate));
+    }
 #endif
+    arg = &argTemp->arg;
+    if (arg->initArg == 0) {
+        APPSPAWN_CHECK(argc >= ARG_NULL, return 0, "Invalid arg for cold start %{public}d", argc);
+    } else {
+        if (strcmp(argTemp->serverName, NWEBSPAWN_RESTART) == 0) {  // nweb spawn restart
+            APPSPAWN_CHECK_ONLY_EXPER(argvSize >= APP_LEN_PROC_NAME, argvSize = APP_LEN_PROC_NAME);
+        } else {
+            APPSPAWN_CHECK(argvSize >= APP_LEN_PROC_NAME, return 0, "Invalid arg size for service %{public}s",
+                arg->serviceName);
+        }
+    }
+    AppSpawnContent *content = StartSpawnService(arg, argvSize, argc, argv);
     if (content != NULL) {
-        AppSpawnKickDogStart();
+        if (arg->moduleType == MODULE_APPSPAWN) {
+            AppSpawnKickDogStart();
+        }
         content->runAppSpawn(content, argc, argv);
     }
     return 0;

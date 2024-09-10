@@ -91,8 +91,22 @@ APPSPAWN_STATIC void CloseClientSocket(int socketId)
 
 APPSPAWN_STATIC int CreateClientSocket(uint32_t type, uint32_t timeout)
 {
-    const char *socketName = type == CLIENT_FOR_APPSPAWN ? APPSPAWN_SOCKET_NAME :
-                             (type == CLIENT_FOR_CJAPPSPAWN ? CJAPPSPAWN_SOCKET_NAME : NWEBSPAWN_SOCKET_NAME);
+    const char *socketName;
+
+    switch (type) {
+        case CLIENT_FOR_APPSPAWN:
+            socketName = APPSPAWN_SOCKET_NAME;
+            break;
+        case CLIENT_FOR_CJAPPSPAWN:
+            socketName = CJAPPSPAWN_SOCKET_NAME;
+            break;
+        case CLIENT_FOR_NATIVESPAWN:
+            socketName = NATIVESPAWN_SOCKET_NAME;
+            break;
+        default:
+            socketName = NWEBSPAWN_SOCKET_NAME;
+            break;
+    }
 
     int socketFd = socket(AF_UNIX, SOCK_STREAM, 0);  // SOCK_SEQPACKET
     APPSPAWN_CHECK(socketFd >= 0, return -1,
@@ -142,7 +156,7 @@ static int ReadMessage(int socketFd, uint32_t sendMsgId, uint8_t *buf, int len, 
     return APPSPAWN_TIMEOUT;
 }
 
-static int WriteMessage(int socketFd, const uint8_t *buf, ssize_t len, int *fds, int *fdCount)
+static int WriteMessage(int socketFd, const uint8_t *buf, ssize_t len, int *fds, int *fdCount, bool isMsgSend)
 {
     ssize_t written = 0;
     ssize_t remain = len;
@@ -156,7 +170,7 @@ static int WriteMessage(int socketFd, const uint8_t *buf, ssize_t len, int *fds,
         .msg_iovlen = 1,
     };
     char *ctrlBuffer = NULL;
-    if (fdCount != NULL && fds != NULL && *fdCount > 0) {
+    if (fdCount != NULL && fds != NULL && *fdCount > 0 && isMsgSend == false) {
         msg.msg_controllen = CMSG_SPACE(*fdCount * sizeof(int));
         ctrlBuffer = (char *) malloc(msg.msg_controllen);
         APPSPAWN_CHECK(ctrlBuffer != NULL, return -1,
@@ -172,7 +186,6 @@ static int WriteMessage(int socketFd, const uint8_t *buf, ssize_t len, int *fds,
         APPSPAWN_CHECK(ret == 0, free(ctrlBuffer);
             return -1, "WriteMessage fail to memcpy_s fd %{public}d", errno);
         APPSPAWN_LOGV("build fd info count %{public}d", *fdCount);
-        *fdCount = 0;
     }
     for (ssize_t wLen = 0; remain > 0; offset += wLen, remain -= wLen, written += wLen) {
         errno = 0;
@@ -191,13 +204,16 @@ static int HandleMsgSend(AppSpawnReqMsgMgr *reqMgr, int socketId, AppSpawnReqMsg
     APPSPAWN_LOGV("HandleMsgSend reqId: %{public}u msgId: %{public}d", reqNode->reqId, reqNode->msg->msgId);
     ListNode *sendNode = reqNode->msgBlocks.next;
     uint32_t currentIndex = 0;
+    bool isMsgSend = false;
     while (sendNode != NULL && sendNode != &reqNode->msgBlocks) {
         AppSpawnMsgBlock *sendBlock = (AppSpawnMsgBlock *)ListEntry(sendNode, AppSpawnMsgBlock, node);
-        int ret = WriteMessage(socketId, sendBlock->buffer, sendBlock->currentIndex, reqNode->fds, &reqNode->fdCount);
+        int ret = WriteMessage(socketId, sendBlock->buffer, sendBlock->currentIndex, reqNode->fds, &reqNode->fdCount,
+            isMsgSend);
         currentIndex += sendBlock->currentIndex;
         APPSPAWN_LOGV("Write msg ret: %{public}d msgId: %{public}u %{public}u %{public}u",
             ret, reqNode->msg->msgId, reqNode->msg->msgLen, currentIndex);
         if (ret == 0) {
+            isMsgSend = true;
             sendNode = sendNode->next;
             continue;
         }
@@ -270,6 +286,9 @@ int AppSpawnClientInit(const char *serviceName, AppSpawnClientHandle *handle)
         type = CLIENT_FOR_CJAPPSPAWN;
     } else if (strcmp(serviceName, NWEBSPAWN_SERVER_NAME) == 0 || strstr(serviceName, NWEBSPAWN_SOCKET_NAME) != NULL) {
         type = CLIENT_FOR_NWEBSPAWN;
+    } else if (strcmp(serviceName, NATIVESPAWN_SERVER_NAME) == 0 ||
+        strstr(serviceName, NATIVESPAWN_SOCKET_NAME) != NULL) {
+        type = CLIENT_FOR_NATIVESPAWN;
     }
     int ret = InitClientInstance(type);
     APPSPAWN_CHECK(ret == 0, return APPSPAWN_SYSTEM_ERROR, "Failed to create reqMgr");

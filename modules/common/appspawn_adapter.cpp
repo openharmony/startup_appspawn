@@ -45,10 +45,10 @@ int SetAppAccessToken(const AppSpawnMgr *content, const AppSpawningCtx *property
         reinterpret_cast<AppSpawnMsgAccessToken *>(GetAppProperty(property, TLV_ACCESS_TOKEN_INFO));
     APPSPAWN_CHECK(tokenInfo != NULL, return APPSPAWN_MSG_INVALID,
         "No access token in msg %{public}s", GetProcessName(property));
-    APPSPAWN_LOGV("AppSpawnServer::set access token %{public}" PRId64 " %{public}d",
-        tokenInfo->accessTokenIdEx, IsNWebSpawnMode(content));
+    APPSPAWN_LOGV("AppSpawnServer::set access token %{public}" PRId64 " %{public}d  %{public}d",
+        tokenInfo->accessTokenIdEx, IsNWebSpawnMode(content), IsIsolatedNativeSpawnMode(content, property));
 
-    if (IsNWebSpawnMode(content)) {
+    if (IsNWebSpawnMode(content) || IsIsolatedNativeSpawnMode(content, property)) {
         TokenIdKit tokenIdKit;
         tokenId = tokenIdKit.GetRenderTokenID(tokenInfo->accessTokenIdEx);
     } else {
@@ -95,6 +95,8 @@ int SetSelinuxCon(const AppSpawnMgr *content, const AppSpawningCtx *property)
 #else
         return 0;
 #endif
+    } else if (IsIsolatedNativeSpawnMode(content, property)) {
+        return setcon("u:r:isolated_render:s0");
     }
     AppSpawnMsgDomainInfo *msgDomainInfo =
         reinterpret_cast<AppSpawnMsgDomainInfo *>(GetAppProperty(property, TLV_DOMAIN_INFO));
@@ -151,7 +153,7 @@ int SetSeccompFilter(const AppSpawnMgr *content, const AppSpawningCtx *property)
 #ifdef WITH_SECCOMP
     const char *appName = APP_NAME;
     SeccompFilterType type = APP;
-    
+
     if (IsNWebSpawnMode(content)) {
         uint32_t len = 0;
         std::string processType =
