@@ -1845,6 +1845,7 @@ static void MountDirToShared(const AppSpawningCtx *property)
     const char el2Path[] = "/data/storage/el2";
     const char userPath[] = "/storage/Users";
     const char el1Path[] = "/data/storage/el1/bundle";
+    const char lockSuffix[] = "_locked";
     AppDacInfo *info = reinterpret_cast<AppDacInfo *>(GetAppProperty(property, TLV_DAC_INFO));
     const char *bundleName = GetBundleName(property);
     if (info == NULL || bundleName == NULL) {
@@ -1863,6 +1864,12 @@ static void MountDirToShared(const AppSpawningCtx *property)
         MountDir(property, rootPath, nullptr, userPath);
     }
     MountDir(property, rootPath, nullptr, el2Path);
+    
+    std::string lockSbxPathStamp = rootPath + to_string(info->uid / UID_BASE) + "/";
+    lockSbxPathStamp += CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX_TYPE) ? "isolated/" : "";
+    lockSbxPathStamp += bundleName;
+    lockSbxPathStamp += lockSuffix;
+    OHOS::AppSpawn::MakeDirRecursive(lockSbxPathStamp.c_str(), OHOS::AppSpawn::FILE_MODE);
 }
 #endif
 
