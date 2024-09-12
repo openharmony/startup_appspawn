@@ -332,13 +332,7 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_012, TestSize.Level0)
     ASSERT_EQ(ret, 0);
 }
 
-
 HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_013, TestSize.Level0)
-{
-    DumpSpawnStack(0);
-}
-
-HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_014, TestSize.Level0)
 {
     AppSpawnClientHandle clientHandle = nullptr;
     AppSpawnReqMsgHandle reqHandle = 0;
@@ -366,14 +360,14 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_014, TestSize.Level0)
     ASSERT_EQ(ret, -1);
 }
 
-HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_015, TestSize.Level0)
+HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_014, TestSize.Level0)
 {
     NsInitFunc();
     EXPECT_EQ(GetNsPidFd(-1), -1);
     GetPidByName("///////");
 }
 
-HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_016, TestSize.Level0)
+HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_015, TestSize.Level0)
 {
     AppSpawnMgr *mgr = nullptr;
     int ret = -1;
@@ -385,13 +379,13 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_016, TestSize.Level0)
     ASSERT_NE(ret, 0);
 }
 
-HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_017, TestSize.Level0)
+HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_016, TestSize.Level0)
 {
     DeleteAppSpawnHookMgr();
     AppSpawnHiSysEventWrite();
 }
 
-HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_018, TestSize.Level0)
+HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_017, TestSize.Level0)
 {
     AppSpawnMgr *content = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
     EXPECT_EQ(content != nullptr, 1);
@@ -403,7 +397,7 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_018, TestSize.Level0)
     ASSERT_EQ(ret, -1);
 }
 
-HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_019, TestSize.Level0)
+HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_018, TestSize.Level0)
 {
     AppSpawnMgr *content = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
     EXPECT_EQ(content != nullptr, 1);
@@ -416,7 +410,7 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_019, TestSize.Level0)
     ASSERT_EQ(ret, 0);
 }
 
-HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_020, TestSize.Level0)
+HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_019, TestSize.Level0)
 {
     AppSpawnMgr *content = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
     EXPECT_EQ(content != nullptr, 1);
@@ -428,7 +422,7 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_020, TestSize.Level0)
     ASSERT_EQ(ret, -1);
 }
 
-HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_021, TestSize.Level0)
+HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_020, TestSize.Level0)
 {
     AppSpawnMgr *content = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
     EXPECT_EQ(content != nullptr, 1);
@@ -445,13 +439,13 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_021, TestSize.Level0)
 }
 
 
-HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_022, TestSize.Level0)
+HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_021, TestSize.Level0)
 {
     int ret = SetInternetPermission(nullptr);
     ASSERT_EQ(ret, 0);
 }
 
-HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_023, TestSize.Level0)
+HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_022, TestSize.Level0)
 {
     AppSpawnClientHandle clientHandle = nullptr;
     AppSpawnReqMsgHandle reqHandle = 0;
@@ -480,7 +474,7 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_023, TestSize.Level0)
     ASSERT_EQ(ret, 0);
 }
 
-HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_024, TestSize.Level0)
+HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_023, TestSize.Level0)
 {
     AppSpawnClientHandle clientHandle = nullptr;
     AppSpawnReqMsgHandle reqHandle = 0;
@@ -509,7 +503,7 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_024, TestSize.Level0)
     ASSERT_EQ(ret, 0);
 }
 
-HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_025, TestSize.Level0)
+HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_024, TestSize.Level0)
 {
     AppSpawnClientHandle clientHandle = nullptr;
     AppSpawnReqMsgHandle reqHandle = 0;
@@ -533,7 +527,7 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_025, TestSize.Level0)
     ASSERT_EQ(ret, 0);
 }
 
-HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_026, TestSize.Level0)
+HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_025, TestSize.Level0)
 {
     AppSpawnClientHandle clientHandle = nullptr;
     AppSpawnReqMsgHandle reqHandle = 0;
@@ -561,7 +555,7 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_026, TestSize.Level0)
     ASSERT_EQ(ret, APPSPAWN_NATIVE_NOT_SUPPORT);
 }
 
-HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_027, TestSize.Level0)
+HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_026, TestSize.Level0)
 {
     AppSpawnClientHandle clientHandle = nullptr;
     AppSpawnReqMsgHandle reqHandle = 0;
@@ -589,7 +583,7 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_027, TestSize.Level0)
     ASSERT_EQ(ret, APPSPAWN_NATIVE_NOT_SUPPORT);
 }
 
-HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_028, TestSize.Level0)
+HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_027, TestSize.Level0)
 {
     AppSpawnClientHandle clientHandle = nullptr;
     AppSpawnReqMsgHandle reqHandle = 0;
@@ -617,18 +611,18 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_028, TestSize.Level0)
     ASSERT_EQ(ret, APPSPAWN_NATIVE_NOT_SUPPORT);
 }
 
-HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_029, TestSize.Level0)
+HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_028, TestSize.Level0)
 {
     ASSERT_EQ(GetAppSpawnNamespace(nullptr), nullptr);
 }
 
-HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_030, TestSize.Level0)
+HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_029, TestSize.Level0)
 {
     DeleteAppSpawnNamespace(nullptr);
     FreeAppSpawnNamespace(nullptr);
 }
 
-HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_031, TestSize.Level0)
+HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_030, TestSize.Level0)
 {
     int ret = -1;
     AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
@@ -639,7 +633,7 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_031, TestSize.Level0)
     ASSERT_EQ(ret, 0);
 }
 
-HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_032, TestSize.Level0)
+HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_031, TestSize.Level0)
 {
     int ret = -1;
     AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
