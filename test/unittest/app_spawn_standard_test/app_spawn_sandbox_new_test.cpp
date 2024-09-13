@@ -1183,7 +1183,7 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_mount_001, TestSize.Level0)
         args.destinationPath = "/mnt/sandbox/100/app-root/storage/Users/100/appdata/el1";
         args.fsType = "sharefs";
         args.options = "support_overwrite=1";
-        args.mountFlags = MS_NODEV | MS_RDONLY;
+        args.mountFlags = MS_NODEV;
         args.mountSharedFlag = MS_SLAVE;
         stub->flags = STUB_NEED_CHECK;
         stub->arg = reinterpret_cast<void *>(&args);
