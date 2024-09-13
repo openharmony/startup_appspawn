@@ -25,7 +25,12 @@
 extern "C" {
 #endif
 
+#ifdef APPSPAWN_SANDBOX_NEW
+#define APP_SANDBOX_FILE_NAME "/appdata-sandbox-app.json"
+#else
 #define APP_SANDBOX_FILE_NAME "/appdata-sandbox.json"
+#endif
+
 #define WEB_SANDBOX_FILE_NAME "/appdata-sandbox-nweb.json"
 #define ISOLATED_SANDBOX_FILE_NAME "/appdata-sandbox-isolated.json"
 
