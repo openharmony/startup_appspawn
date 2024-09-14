@@ -25,6 +25,7 @@
 
 #include "cJSON.h"
 #include "appspawn_client.h"
+#include "appspawn_hook.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -86,7 +87,7 @@ void ProcessSignal(const struct signalfd_siginfo *siginfo);
 int CreateClientSocket(uint32_t type, int block);
 void CloseClientSocket(int socketId);
 int ParseAppSandboxConfig(const cJSON *appSandboxConfig, AppSpawnSandboxCfg *sandbox);
-AppSpawnSandboxCfg *CreateAppSpawnSandbox(void);
+AppSpawnSandboxCfg *CreateAppSpawnSandbox(ExtDataType type);
 void AddDefaultVariable(void);
 bool CheckDirRecursive(const char *path);
 void CreateDemandSrc(const SandboxContext *context, const PathMountNode *sandboxNode, const MountArg *args);

@@ -32,7 +32,7 @@ extern "C" {
 #endif
 
 #define WEB_SANDBOX_FILE_NAME "/appdata-sandbox-nweb.json"
-#define ISOLATED_SANDBOX_FILE_NAME "/appdata-sandbox-isolated.json"
+#define ISOLATED_SANDBOX_FILE_NAME "/appdata-sandbox-isolated-new.json"
 
 typedef struct TagSandboxQueue SandboxQueue;
 typedef struct TagPermissionNode SandboxPermissionNode;
