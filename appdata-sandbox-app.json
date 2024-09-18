@@ -294,6 +294,7 @@
             "mount-paths": [{
                 "src-path": "/storage/media/<currentUserId>/local/files",
                 "sandbox-path": "/storage/media/local/files"
+            }]
         }, {
             "name": "ohos.permission.ACCESS_FACTORY_OTA_DIR",
             "sandbox-switch": "ON",
