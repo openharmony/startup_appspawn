@@ -66,6 +66,7 @@ group("appspawn_all") {
     deps += [ "modules/ace_adapter:appspawn_ace" ]
     deps += [ "modules/asan:appspawn_asan" ]
     deps += [ "modules/nweb_adapter:appspawn_nweb" ]
+    deps += [ "modules/native_adapter:nativespawn" ]
     deps += [ "modules/sandbox:appspawn_sandbox" ]
     deps += [ "modules/common:appspawn_common" ]
     deps += [ "modules/sysevent:event_reporter" ]

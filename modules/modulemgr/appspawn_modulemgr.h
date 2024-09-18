@@ -40,6 +40,7 @@ typedef enum {
     MODULE_APPSPAWN,
     MODULE_NWEBSPAWN,
     MODULE_COMMON,
+    MODULE_NATIVESPAWN,
     MODULE_MAX
 } AppSpawnModuleType;
 

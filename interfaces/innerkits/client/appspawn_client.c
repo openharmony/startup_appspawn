@@ -186,7 +186,6 @@ static int WriteMessage(int socketFd, const uint8_t *buf, ssize_t len, int *fds,
         APPSPAWN_CHECK(ret == 0, free(ctrlBuffer);
             return -1, "WriteMessage fail to memcpy_s fd %{public}d", errno);
         APPSPAWN_LOGV("build fd info count %{public}d", *fdCount);
-        *fdCount = 0;
     }
     for (ssize_t wLen = 0; remain > 0; offset += wLen, remain -= wLen, written += wLen) {
         errno = 0;
@@ -205,13 +204,17 @@ static int HandleMsgSend(AppSpawnReqMsgMgr *reqMgr, int socketId, AppSpawnReqMsg
     APPSPAWN_LOGV("HandleMsgSend reqId: %{public}u msgId: %{public}d", reqNode->reqId, reqNode->msg->msgId);
     ListNode *sendNode = reqNode->msgBlocks.next;
     uint32_t currentIndex = 0;
+    bool sendFd = true;
     while (sendNode != NULL && sendNode != &reqNode->msgBlocks) {
         AppSpawnMsgBlock *sendBlock = (AppSpawnMsgBlock *)ListEntry(sendNode, AppSpawnMsgBlock, node);
-        int ret = WriteMessage(socketId, sendBlock->buffer, sendBlock->currentIndex, reqNode->fds, &reqNode->fdCount);
+        int ret = WriteMessage(socketId, sendBlock->buffer, sendBlock->currentIndex,
+            sendFd ? reqNode->fds : NULL,
+            sendFd ? &reqNode->fdCount : NULL);
         currentIndex += sendBlock->currentIndex;
         APPSPAWN_LOGV("Write msg ret: %{public}d msgId: %{public}u %{public}u %{public}u",
             ret, reqNode->msg->msgId, reqNode->msg->msgLen, currentIndex);
         if (ret == 0) {
+            sendFd = false;
             sendNode = sendNode->next;
             continue;
         }

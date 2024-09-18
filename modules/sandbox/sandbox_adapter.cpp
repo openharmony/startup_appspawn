@@ -22,8 +22,9 @@
 
 void MakeAtomicServiceDir(const SandboxContext *context, const char *path)
 {
-    struct stat st = {};
-    if (stat(path, &st) == 0 && S_ISDIR(st.st_mode)) {
+    APPSPAWN_CHECK_ONLY_EXPER(context != NULL && path != NULL, return);
+    if (access(path, F_OK) == 0) {
+        APPSPAWN_LOGV("path %{public}s already exist, no need to recreate", path);
         return;
     }
     int ret = mkdir(path, S_IRWXU);
@@ -64,5 +65,4 @@ void MakeAtomicServiceDir(const SandboxContext *context, const char *path)
         ret = chown(path, dacInfo->uid, DecodeGid("log"));
     }
     APPSPAWN_CHECK(ret == 0, return, "chown %{public}s failed, errno %{public}d", path, errno);
-    return;
 }
