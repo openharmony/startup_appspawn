@@ -266,6 +266,12 @@ APPSPAWN_INLINE int SetAppPermissionFlags(const AppSpawningCtx *property, uint32
     return SetAppSpawnMsgFlag(property->message, TLV_PERMISSION, index);
 }
 
+APPSPAWN_INLINE int IsIsolatedNativeSpawnMode(const AppSpawnMgr *content, const AppSpawningCtx *property)
+{
+    return (content != NULL) && (content->content.mode == MODE_FOR_NATIVE_SPAWN) &&
+        CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX_TYPE);
+}
+
 #ifdef __cplusplus
 }
 #endif

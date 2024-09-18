@@ -161,7 +161,7 @@ APPSPAWN_STATIC int ReplaceVariableForDepPath(const SandboxContext *context,
 static int ReplaceVariableForpackageName(const SandboxContext *context,
     const char *buffer, uint32_t bufferLen, uint32_t *realLen, const VarExtraData *extraData)
 {
-    APPSPAWN_CHECK(context != NULL, return -1, "Invalid extra data");
+    APPSPAWN_CHECK(context != NULL, return -1, "Invalid context");
     AppSpawnMsgBundleInfo *bundleInfo = (AppSpawnMsgBundleInfo *)GetSpawningMsgInfo(context, TLV_BUNDLE_INFO);
     APPSPAWN_CHECK(bundleInfo != NULL, return APPSPAWN_TLV_NONE,
         "No bundle info in msg %{public}s", context->bundleName);
@@ -199,6 +199,7 @@ static int ReplaceVariableForpackageName(const SandboxContext *context,
         }
         case SANDBOX_PACKAGENAME_ATOMIC_SERVICE: {      // 4 +auid-<accountId>+packageName
             char *accountId = (char *)GetAppSpawnMsgExtInfo(context->message, MSG_EXT_NAME_ACCOUNT_ID, NULL);
+            APPSPAWN_CHECK(accountId != NULL, return -1, "Invalid accountId data");
             len = sprintf_s((char *)buffer, bufferLen, "+auid-%s+%s", accountId, bundleInfo->bundleName);
             break;
         }

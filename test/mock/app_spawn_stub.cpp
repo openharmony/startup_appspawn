@@ -145,6 +145,9 @@ int GetParameter(const char *key, const char *def, char *value, uint32_t len)
     if (strcmp(key, "test.variable.001") == 0) {
         return strcpy_s(value, len, "test.variable.001") == 0 ? strlen("test.variable.001") : -1;
     }
+    if (strcmp(key, "persist.arkwebcore.package_name") == 0) {
+        return strcpy_s(value, len, "com.ohos.arkwebcore") == 0 ? strlen("com.ohos.arkwebcore") : -1;
+    }
     return -1;
 }
 

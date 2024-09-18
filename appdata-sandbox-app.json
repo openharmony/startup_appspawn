@@ -36,30 +36,6 @@
                 "src-path" : "/system/lib64",
                 "sandbox-path" : "/system/lib64"
             }, {
-                "src-path" : "/system/<lib>/platformsdk",
-                "sandbox-path" : "/system/<lib>/platformsdk"
-            }, {
-                "src-path" : "/system/<lib>/ndk",
-                "sandbox-path" : "/system/<lib>/ndk"
-            }, {
-                "src-path" : "/system/<lib>/module",
-                "sandbox-path" : "/system/<lib>/module"
-            }, {
-                "src-path" : "/system/<lib>/chipset-pub-sdk",
-                "sandbox-path" : "/system/<lib>/chipset-pub-sdk"
-            }, {
-                "src-path" : "/system/<lib>/chipset-sdk",
-                "sandbox-path" : "/system/<lib>/chipset-sdk"
-            }, {
-                "src-path" : "/system/<lib>/seccomp",
-                "sandbox-path" : "/system/<lib>/seccomp"
-            }, {
-                "src-path" : "/system/<lib>/extensionability",
-                "sandbox-path" : "/system/<lib>/extensionability"
-            }, {
-                "src-path" : "/system/<lib>/media",
-                "sandbox-path" : "/system/<lib>/media"
-            }, {
                 "src-path" : "/system/data",
                 "sandbox-path" : "/system/data"
             }, {
@@ -84,6 +60,9 @@
                 "src-path" : "/vendor/etc/vulkan",
                 "sandbox-path" : "/vendor/etc/vulkan" 
             }, {
+                "src-path" : "/vendor/etc/silk",
+                "sandbox-path" : "/vendor/etc/silk" 
+            }, {
                 "src-path" : "/vendor/etc/passthrough",
                 "sandbox-path" : "/vendor/etc/passthrough" 
             }, {
@@ -93,17 +72,29 @@
                 "src-path" : "/data/local/shader_cache/cloud/common",
                 "sandbox-path" : "/data/storage/shader_cache/common"
             }, {
-                "src-path" : "/storage/media/<currentUserId>/local/files/Docs/Downloads/<PackageName>",
-                "sandbox-path" : "/storage/Users/<currentUserId>/Downloads"
+                "src-path" : "/data/service/el0/public/for-all-app",
+                "sandbox-path" : "/data/service/el0/public/for-all-app"
             }, {
-                "src-path" : "/mnt/hmdfs/<currentUserId>/cloud/data/<PackageName>",
-                "sandbox-path" : "/data/storage/el2/cloud"
+                "src-path" : "/data/service/el1/public/for-all-app",
+                "sandbox-path" : "/data/service/el1/public/for-all-app"
             }, {
                 "src-path" : "/data/data/hiai",
                 "sandbox-path" : "/data/data/hiai"
             }, {
                 "src-path" : "/chip_prod/lib64/passthrough",
                 "sandbox-path" : "/chip_prod/lib64/passthrough"
+            }, {
+                "src-path" : "/system/app/ohos.global.systemres",
+                "sandbox-path" : "/data/global/systemResources"
+            }, {
+                "src-path" : "/system/app/SystemResources",
+                "sandbox-path" : "/data/global/systemResources"
+            }, {
+                "src-path" : "/data/misc",
+                "sandbox-path" : "/data/storage/el1/bundle/misc"
+            }, {
+                "src-path" : "/data/service/el1/public/cert_manager_service/certificates/user_open",
+                "sandbox-path" : "/data/certificates/user_cacerts"
             }],
             "mount-files": [{
                 "src-path" : "/system/etc/hosts",
@@ -111,20 +102,19 @@
             }],
             "symbol-links" : [{
                 "target-name" : "/system/bin",
-                "link-name" : "/bin",
-                "check-action-status": "false"
+                "link-name" : "/bin"
             }, {
                 "target-name" : "/system/lib",
-                "link-name" : "/lib",
-                "check-action-status": "false"
+                "link-name" : "/lib"
+            }, {
+                "target-name" : "/system/lib64",
+                "link-name" : "/lib64"
             }, {
                 "target-name" : "/system/etc",
-                "link-name" : "/etc",
-                "check-action-status": "false"
+                "link-name" : "/etc"
             }, {
                 "target-name" : "/sys/kernel/debug",
-                "link-name" : "/d",
-                "check-action-status": "false"
+                "link-name" : "/d"
             }],
             "mount-groups" : []
         },
@@ -136,18 +126,9 @@
                 "src-path" : "/data/app/el1/<currentUserId>/database/<variablePackageName>",
                 "sandbox-path" : "/data/storage/el1/database"
             }, {
-                "src-path" : "/system/app/ohos.global.systemres",
-                "sandbox-path" : "/data/global/systemResources"
-            }, {
-                "src-path" : "/system/app/SystemResources",
-                "sandbox-path" : "/data/global/systemResources"
-            }, {
                 "src-path" : "/data/app/el1/bundle/public/<PackageName>",
                 "sandbox-path" : "/data/storage/el1/bundle",
                 "check-action-status": "true"
-            }, {
-                "src-path" : "/data/misc",
-                "sandbox-path" : "/data/storage/el1/bundle/misc"
             }, {
                 "src-path" : "/data/local/ark-cache/<PackageName>",
                 "sandbox-path" : "/data/storage/ark-cache"
@@ -173,14 +154,14 @@
                 "src-path" : "/data/service/el1/<currentUserId>/distributeddata/utd",
                 "sandbox-path" : "/data/utd"
             }, {
-                "src-path" : "/data/service/el1/public/cert_manager_service/certificates/user_open",
-                "sandbox-path" : "/data/certificates/user_cacerts"
-            }, {
                 "src-path" : "/data/app/el1/bundle/public/<arkWebPackageName>",
                 "sandbox-path" : "/data/storage/el1/bundle/arkwebcore"
             }, {
                 "src-path" : "/mnt/hmdfs/<currentUserId>",
                 "sandbox-path" : "/mnt/hmdfs/<currentUserId>"
+            }, {
+                "src-path" : "/mnt/hmdfs/<currentUserId>/cloud/data/<PackageName>",
+                "sandbox-path" : "/data/storage/el2/cloud"
             }],
             "mount-groups": ["el2", "el3", "el4"]
         }
@@ -201,7 +182,7 @@
         }, {
             "name": "ohos.permission.READ_IMAGEVIDEO",
             "sandbox-switch": "ON",
-            "gids": ["user_data_rw"],
+            "gids": ["user_data_r"],
             "mount-paths": [{
                 "src-path": "/storage/cloud/<currentUserId>/files/.thumbs/Photo",
                 "sandbox-path": "/storage/Share/.thumbs/Photo"
@@ -224,6 +205,7 @@
             "mount-groups": [ "user-public" ]
         }, {
             "name": "ohos.permission.ACTIVATE_THEME_PACKAGE",
+            "gids": ["wallpaper"],
             "mount-paths": [{
                 "src-path": "/data/service/el1/public/themes/<currentUserId>/a/system",
                 "sandbox-path": "/data/themes/a/system"
@@ -251,7 +233,14 @@
                 "sandbox-path": "/data/bundles/"
             }]
         }, {
+            "name": "ohos.permission.ACCESS_BBOX_DIR",
+            "mount-paths": [{
+                "src-path": "/data/log/bbox/",
+                "sandbox-path": "/data/log/bbox/"
+            }]
+        }, {
             "name": "ohos.permission.ACCESS_PROTOCOL_DFX_DATA",
+            "gids": ["log"],
             "mount-paths": [{
                 "src-path": "/data/log/protocol",
                 "sandbox-path": "/data/log/protocol"
@@ -261,7 +250,7 @@
             }]
         }, {
             "name": "ohos.permission.ACCESS_MEDIALIB_THUMB_DB",
-            "gids": [3008],
+            "gids": ["media_db_rw"],
             "mount-paths": [{
                 "src-path": "/data/app/el2/<currentUserId>/database/com.ohos.medialibrary.medialibrarydata",
                 "sandbox-path": "/data/medialibrary/database"
@@ -281,7 +270,7 @@
         }, {
             "name": "ohos.permission.PROTECT_SCREEN_LOCK_DATA",
             "sandbox-switch": "ON",
-            "mount-group": ["el5"]
+            "mount-groups": ["el5"]
         }, {
             "name": "ohos.permission.ACCESS_FILE_CONTENT_SHARE",
             "sandbox-switch": "ON",
@@ -292,10 +281,26 @@
             }]
         }, {
             "name": "ohos.permission.ACCESS_LOCAL_BACKUP",
-            "gids": [1023],
+            "sandbox-switch": "ON",
+            "gids": ["media_rw"],
             "mount-paths": [{
                 "src-path": "/data/hwbackup",
                 "sandbox-path": "/data/hwbackup"
+            }]
+        }, {
+            "name": "ohos.permission.ACCESS_RINGTONE_RESOURCE",
+            "sandbox-switch": "ON",
+            "gids": ["user_data_rw"],
+            "mount-paths": [{
+                "src-path": "/storage/media/<currentUserId>/local/files",
+                "sandbox-path": "/storage/media/local/files"
+            }]
+        }, {
+            "name": "ohos.permission.ACCESS_FACTORY_OTA_DIR",
+            "sandbox-switch": "ON",
+            "mount-paths": [{
+                "src-path": "/data/update/sd_package",
+                "sandbox-path": "/data/update/sd_package"
             }]
         }, {
             "name": "ohos.permission.ACCESS_DLP_FILE",
@@ -307,21 +312,21 @@
                 "category": "shared",
                 "check-action-status": "true"
             }, {
-                "src-path": "/mnt/data/<currentUserId>",
-                "sandbox-path": "/mnt/data",
+                "src-path": "/dev/fuse",
+                "sandbox-path": "/mnt/data/fuse",
                 "category": "dlp_fuse"
             }],
             "mount-groups": ["dlpmgr"]
         }, {
             "name": "ohos.permission.GET_ALL_PROCESSES",
             "sandbox-switch": "ON",
-            "gids" : [3009],
+            "gids" : ["readproc"],
             "mount-paths": []
         }],
         "spawn-flag": [{
             "name": "START_FLAGS_BACKUP",
             "mount-paths": [{
-                "src-path": "/data/app/el2/<currentUserId>/base/<PackageName>/.backup",
+                "src-path": "/data/app/el2/<currentUserId>/base/<variablePackageName>/.backup",
                 "sandbox-path": "/data/storage/el2/backup"
             }, {
                 "src-path": "/data/app/el1/<currentUserId>/base/<PackageName>/.backup",
@@ -380,29 +385,11 @@
                 "src-path" : "/mnt/data/<currentUserId>",
                 "sandbox-path" : "/mnt/data/<currentUserId>"
             }]
-        }, {
-            "name" : "com.ohos.amsdialog",
-            "sandbox-switch": "ON",
-            "mount-paths" : [{
-                "src-path" : "/data/app/el1/bundle/public/",
-                "sandbox-path" : "/data/bundles/",
-                "check-action-status": "true"
-            }],
-            "symbol-links" : []
-        }, {
-            "name" : "com.ohos.permissionmanager",
-            "sandbox-switch": "ON",
-            "mount-paths" : [{
-                "src-path" : "/data/app/el1/bundle/public/",
-                "sandbox-path" : "/data/bundles/",
-                "check-action-status": "true"
-            }],
-            "symbol-links" : []
         }]
     },
     "name-groups": [{
         "name": "user-public",
-        "type": "system-const",
+        "type": "app-variable",
         "mount-paths": [{
             "src-path": "/data/service/el1/public/storage_daemon/share/public",
             "sandbox-path": "/storage/Share"
@@ -494,12 +481,10 @@
         },
         "mount-paths": [{
             "src-path": "/data/app/el5/<currentUserId>/base/<variablePackageName>",
-            "sandbox-path": "<deps-path>/base",
-            "check-action-status": "false"
+            "sandbox-path": "<deps-path>/base"
         }, {
             "src-path": "/data/app/el5/<currentUserId>/database/<variablePackageName>",
-            "sandbox-path": "<deps-path>/database",
-            "check-action-status": "false"
+            "sandbox-path": "<deps-path>/database"
         }]
     }, {
         "name": "HspList",

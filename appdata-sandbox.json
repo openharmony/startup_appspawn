@@ -239,6 +239,16 @@
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
+                    "src-path" : "/data/service/el0/public/for-all-app",
+                    "sandbox-path" : "/data/service/el0/public/for-all-app",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/data/service/el1/public/for-all-app",
+                    "sandbox-path" : "/data/service/el1/public/for-all-app",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
                     "src-path" : "/data/service/el1/<currentUserId>/distributeddata/utd",
                     "sandbox-path" : "/data/utd",
                     "sandbox-flags" : [ "bind", "rec" ],
@@ -763,6 +773,15 @@
             "mount-paths": [{
                     "src-path": "/data/app/el1/bundle/public",
                     "sandbox-path": "/data/bundles/",
+                    "sandbox-flags": [ "bind", "rec" ]
+                }
+            ]
+        }],
+        "ohos.permission.ACCESS_BBOX_DIR":[{
+            "sandbox-switch": "ON",
+            "mount-paths": [{
+                    "src-path": "/data/log/bbox/",
+                    "sandbox-path": "/data/log/bbox/",
                     "sandbox-flags": [ "bind", "rec" ]
                 }
             ]

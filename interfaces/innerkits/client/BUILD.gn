@@ -21,6 +21,7 @@ config("exported_header_files") {
 
 if (!defined(ohos_lite)) {
   ohos_shared_library("appspawn_client") {
+    branch_protector_ret = "pac_ret"
     sources = [
       "${appspawn_path}/modules/sandbox/appspawn_permission.c",
       "../permission/appspawn_mount_permission.c",

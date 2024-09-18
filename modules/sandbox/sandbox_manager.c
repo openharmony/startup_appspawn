@@ -585,12 +585,20 @@ int SpawnPrepareSandboxCfg(AppSpawnMgr *content, AppSpawningCtx *property)
     AppSpawnSandboxCfg *sandbox = GetAppSpawnSandbox(content);
     APPSPAWN_CHECK(sandbox != NULL, return -1, "Failed to get sandbox for %{public}s", GetProcessName(property));
 
+    int32_t index = 0;
     if (sandbox->appFullMountEnable) {
-        int index = GetPermissionIndexInQueue(&sandbox->permissionQueue, FILE_CROSS_APP_MODE);
-        if (index > 0) {
-            SetAppPermissionFlags(property, index);
+        index = GetPermissionIndexInQueue(&sandbox->permissionQueue, FILE_CROSS_APP_MODE);
+    } else {
+        index = GetPermissionIndexInQueue(&sandbox->permissionQueue, FILE_ACCESS_COMMON_DIR_MODE);
+    }
+
+    int32_t fileMgrIndex = GetPermissionIndexInQueue(&sandbox->permissionQueue, FILE_ACCESS_MANAGER_MODE);
+    if (index > 0 && (CheckAppMsgFlagsSet(property, (uint32_t)fileMgrIndex) == 0)) {
+        if (SetAppPermissionFlags(property, index) != 0) {
+            return -1;
         }
     }
+
     int ret = AppendPermissionGid(sandbox, property);
     APPSPAWN_CHECK(ret == 0, return ret, "Failed to add gid for %{public}s", GetProcessName(property));
     ret = StagedMountSystemConst(sandbox, property, IsNWebSpawnMode(content));

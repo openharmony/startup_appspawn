@@ -30,40 +30,11 @@
                 "src-path" : "/data/app/el1/bundle/public/<arkWebPackageName>",
                 "sandbox-path" : "/data/storage/el1/bundle/arkwebcore"
             }, {
-                "src-path" : "/system/<lib>/platformsdk",
-                "sandbox-path" : "/system/<lib>/platformsdk"
-            }, {
-                "src-path" : "/system/<lib>/ndk",
-                "sandbox-path" : "/system/<lib>/ndk"
-            }, {
-                "src-path" : "/system/<lib>/module",
-                "sandbox-path" : "/system/<lib>/module"
-            }, {
-                "src-path" : "/system/<lib>/chipset-pub-sdk",
-                "sandbox-path" : "/system/<lib>/chipset-pub-sdk"
-            }, {
-                "src-path" : "/system/<lib>/chipset-sdk",
-                "sandbox-path" : "/system/<lib>/chipset-sdk"
-            }, {
-                "src-path" : "/system/<lib>/seccomp",
-                "sandbox-path" : "/system/<lib>/seccomp"
-            }, {
-                "src-path" : "/system/<lib>/extensionability",
-                "sandbox-path" : "/system/<lib>/extensionability"
-            }, {
-                "src-path" : "/system/<lib>/media",
-                "sandbox-path" : "/system/<lib>/media"
-            }, {
                 "src-path" : "/system/app/<arkWebPackageName>",
                 "sandbox-path" : "/system/app/<arkWebPackageName>"
             }, {
-                "src-path" : "/vendor/lib",
-                "sandbox-path" : "/vendor/lib",
-                "sandbox-flags" : [ "bind", "rec" ],
-                "check-action-status": "false"
-            }, {
-                "src-path" : "/vendor/lib64",
-                "sandbox-path" : "/vendor/lib64",
+                "src-path" : "/vendor/<lib>",
+                "sandbox-path" : "/vendor/<lib>",
                 "sandbox-flags" : [ "bind", "rec" ],
                 "check-action-status": "false"
             }, {
