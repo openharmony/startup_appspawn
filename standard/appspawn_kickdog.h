@@ -37,7 +37,7 @@ extern "C" {
 
 #define LINUX_APPSPAWN_WATCHDOG_ON    "on,30"
 #define LINUX_APPSPAWN_WATCHDOG_KICK    "kick"
-#define HM_APPSPAWN_WATCHDOG_ON    "on,300,appspawn"
+#define HM_APPSPAWN_WATCHDOG_ON    "on,10,appspawn"
 #define HM_APPSPAWN_WATCHDOG_KICK    "kick,appspawn"
 
 #define APPSPAWN_WATCHDOG_KICKTIME    (10 * 1000)  //10s
