@@ -681,7 +681,7 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Permission_01, TestSize.Level0)
     do {
         sandbox = CreateAppSpawnSandbox();
         APPSPAWN_CHECK_ONLY_EXPER(sandbox != nullptr, break);
-        LoadAppSandboxConfig(sandbox, 0);
+        LoadAppSandboxConfig(sandbox, MODE_FOR_APP_SPAWN);
         sandbox->extData.dumpNode(&sandbox->extData);
 
         AppSpawnTestHelper testHelper;
@@ -729,7 +729,7 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_ExpandCfg_01, TestSize.Level0)
     do {
         sandbox = CreateAppSpawnSandbox();
         APPSPAWN_CHECK_ONLY_EXPER(sandbox != nullptr, break);
-        LoadAppSandboxConfig(sandbox, 0);
+        LoadAppSandboxConfig(sandbox, MODE_FOR_APP_SPAWN);
         // add default
         AddDefaultExpandAppSandboxConfigHandle();
         // create msg
@@ -769,7 +769,7 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_ExpandCfg_02, TestSize.Level0)
     do {
         sandbox = CreateAppSpawnSandbox();
         APPSPAWN_CHECK_ONLY_EXPER(sandbox != nullptr, break);
-        LoadAppSandboxConfig(sandbox, 0);
+        LoadAppSandboxConfig(sandbox, MODE_FOR_APP_SPAWN);
 
         // add default
         AddDefaultExpandAppSandboxConfigHandle();
@@ -811,7 +811,7 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_ExpandCfg_03, TestSize.Level0)
     do {
         sandbox = CreateAppSpawnSandbox();
         APPSPAWN_CHECK_ONLY_EXPER(sandbox != nullptr, break);
-        LoadAppSandboxConfig(sandbox, 0);
+        LoadAppSandboxConfig(sandbox, MODE_FOR_APP_SPAWN);
 
         // add default
         AddDefaultVariable();
@@ -853,7 +853,7 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_ExpandCfg_04, TestSize.Level0)
     do {
         sandbox = CreateAppSpawnSandbox();
         APPSPAWN_CHECK_ONLY_EXPER(sandbox != nullptr, break);
-        LoadAppSandboxConfig(sandbox, 0);
+        LoadAppSandboxConfig(sandbox, MODE_FOR_APP_SPAWN);
 
         // add test
         ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
@@ -912,7 +912,7 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_cfg_001, TestSize.Level0)
     do {
         sandbox = CreateAppSpawnSandbox();
         APPSPAWN_CHECK_ONLY_EXPER(sandbox != nullptr, break);
-        LoadAppSandboxConfig(sandbox, 0);
+        LoadAppSandboxConfig(sandbox, MODE_FOR_APP_SPAWN);
         sandbox->extData.dumpNode(&sandbox->extData);
         ret = 0;
     } while (0);
@@ -1183,7 +1183,7 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_mount_001, TestSize.Level0)
         args.destinationPath = "/mnt/sandbox/100/app-root/storage/Users/100/appdata/el1";
         args.fsType = "sharefs";
         args.options = "support_overwrite=1";
-        args.mountFlags = MS_NODEV | MS_RDONLY;
+        args.mountFlags = MS_NODEV;
         args.mountSharedFlag = MS_SLAVE;
         stub->flags = STUB_NEED_CHECK;
         stub->arg = reinterpret_cast<void *>(&args);
@@ -2279,7 +2279,7 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_sandbox, TestSize.Level0)
     char name[] = {"test"};
     const SandboxSection section = {node, front, name, 16, 16, nullptr, 1, 1, nullptr};
     char rootPath[] = "/test/xxxx";
-    SandboxContext context1 = {{{}}, "test.example.ohos.com", nullptr, 1, 1, 1, 1, 1, 1, 1, 1, rootPath};
+    SandboxContext context1 = {{{}}, "test.example.ohos.com", nullptr, 1, 1, 1, 1, 1, 1, 1, rootPath};
     int res = CheckSandboxMountNode(nullptr, &section, &sandboxNode, 0);
     ASSERT_EQ(res, 0);
     res = CheckSandboxMountNode(nullptr, &section, &sandboxNode1, 0);
@@ -2299,7 +2299,7 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_sandbox_001, TestSize.Level0)
     char apl[] = "apl";
     const SandboxSection section = {node, front, name, 16, 16, nullptr, 1, 1, nullptr};
     char rootPath[] = "/test/xxxx";
-    SandboxContext context1 = {{{}}, "test.example.ohos.com", nullptr, 1, 1, 1, 1, 1, 1, 1, 1, rootPath};
+    SandboxContext context1 = {{{}}, "test.example.ohos.com", nullptr, 1, 1, 1, 1, 1, 1, 1, rootPath};
     char source1[] = {"/xxx/xxx/xxx"};
     uint32_t operation = 0x1 << SANDBOX_TAG_SPAWN_FLAGS;
     const PathMountNode sandboxNode4 = {node, source1, target, 0, false, 1, 1, 0, apl, {}};
@@ -2332,7 +2332,7 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_mount_template, TestSize.Level0)
     ASSERT_EQ(ret, MOUNT_TMP_DEFAULT);
     const MountArgTemplate *arg = GetMountArgTemplate(10);
     ASSERT_EQ(arg, nullptr);
-    arg = GetMountArgTemplate(7);
+    arg = GetMountArgTemplate(8);
     ASSERT_EQ(arg, nullptr);
     const SandboxFlagInfo info[2] = {{"test1", 0}, {"test2", 0}};
     const SandboxFlagInfo *info1 = GetSandboxFlagInfo("test", info, 2);
