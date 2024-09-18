@@ -666,7 +666,9 @@ APPSPAWN_STATIC const char *GetSandboxNameByMode(RunMode mode)
     if (mode == MODE_FOR_NATIVE_SPAWN) {
         return ISOLATED_SANDBOX_FILE_NAME;
     }
-
+    if (mode == MODE_FOR_NWEB_SPAWN || mode == MODE_FOR_NWEB_COLD_RUN) {
+        return WEB_SANDBOX_FILE_NAME;
+    }
     return APP_SANDBOX_FILE_NAME;
 }
 
