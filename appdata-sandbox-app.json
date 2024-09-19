@@ -242,7 +242,7 @@
             "name": "ohos.permission.ACCESS_PROTOCOL_DFX_DATA",
             "gids": ["log"],
             "mount-paths": [{
-                "src-path": "/data/log/protocol",
+                "src-path": "/data/service/el1/public/chr/protocol",
                 "sandbox-path": "/data/log/protocol"
             }, {
                 "src-path": "/log/chr",
