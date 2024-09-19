@@ -40,6 +40,7 @@ typedef struct TagAppSpawnedProcess AppSpawnedProcessInfo;
 typedef enum {
     EXT_DATA_SANDBOX,
     EXT_DATA_NAMESPACE,
+    EXT_DATA_ISOLATED_SANDBOX,
 } ExtDataType;
 
 struct TagAppSpawnExtData;
