@@ -33,17 +33,17 @@ extern bool may_init_gwp_asan(bool forceInit);
 #define HWASAN_LD_PRELOAD "/system/lib64/libclang_rt.hwasan.so"
 #define TSAN_LD_PRELOAD "/system/lib64/libclang_rt.tsan.so"
 
-#define ASAN_OPTIONS "log_path=/dev/asanlog/asan.log:include=/system/etc/asan.options"
+#define ASAN_OPTIONS "include=/system/etc/asan.options"
+#define HWASAN_OPTIONS "include=/system/etc/asan.options"
 #define TSAN_OPTIONS "include=/system/etc/tsan.options"
-#define UBSAN_OPTIONS "log_path=/dev/ubsan/ubsan.log:print_stacktrace=1:print_module_map=2:log_exe_name=1"
-
+#define UBSAN_OPTIONS "print_stacktrace=1:print_module_map=2:log_exe_name=1"
 
 // 配置表数据
 static const EnvConfig g_configTable[] = {
-    { APP_FLAGS_HWASAN_ENABLED, HWASAN_LD_PRELOAD, ASAN_OPTIONS, NULL, NULL },
-    { APP_FLAGS_ASANENABLED, ASAN_LD_PRELOAD, ASAN_OPTIONS, NULL, NULL },
-    { APP_FLAGS_TSAN_ENABLED, TSAN_LD_PRELOAD, NULL, TSAN_OPTIONS, NULL },
-    { APP_FLAGS_UBSAN_ENABLED, NULL, NULL, NULL, UBSAN_OPTIONS },
+    { APP_FLAGS_HWASAN_ENABLED, HWASAN_LD_PRELOAD, NULL, NULL, NULL, HWASAN_OPTIONS },
+    { APP_FLAGS_ASANENABLED, ASAN_LD_PRELOAD, ASAN_OPTIONS, NULL, NULL, NULL },
+    { APP_FLAGS_TSAN_ENABLED, TSAN_LD_PRELOAD, NULL, TSAN_OPTIONS, NULL, NULL },
+    { APP_FLAGS_UBSAN_ENABLED, NULL, NULL, NULL, UBSAN_OPTIONS, NULL },
 };
 
 static int SetAsanEnabledEnv(const AppSpawnMgr *content, const AppSpawningCtx *property)
@@ -69,9 +69,14 @@ static int SetAsanEnabledEnv(const AppSpawnMgr *content, const AppSpawningCtx *p
             } else {
                 unsetenv("UBSAN_OPTIONS");
             }
-            APPSPAWN_LOGV("SetAsanEnabledEnv %{public}d,%{public}s,%{public}s,%{public}s,%{public}s",
+            if (g_configTable[i].hwasanOptions) {
+                setenv("HWASAN_OPTIONS", g_configTable[i].hwasanOptions, 1);
+            } else {
+                unsetenv("HWASAN_OPTIONS");
+            }
+            APPSPAWN_LOGV("SetAsanEnabledEnv %{public}d,%{public}s,%{public}s,%{public}s,%{public}s,%{public}s",
                 g_configTable[i].flag, g_configTable[i].ldPreload, g_configTable[i].asanOptions,
-                g_configTable[i].tsanOptions, g_configTable[i].ubsanOptions);
+                g_configTable[i].tsanOptions, g_configTable[i].ubsanOptions, g_configTable[i].hwasanOptions);
             return 0;
         }
     }
