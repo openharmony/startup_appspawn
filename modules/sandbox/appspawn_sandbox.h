@@ -230,8 +230,8 @@ typedef struct {
  *
  * @return AppSpawnSandboxCfg*
  */
-AppSpawnSandboxCfg *CreateAppSpawnSandbox(void);
-AppSpawnSandboxCfg *GetAppSpawnSandbox(const AppSpawnMgr *content);
+AppSpawnSandboxCfg *CreateAppSpawnSandbox(ExtDataType type);
+AppSpawnSandboxCfg *GetAppSpawnSandbox(const AppSpawnMgr *content, ExtDataType type);
 void DeleteAppSpawnSandbox(AppSpawnSandboxCfg *sandbox);
 int LoadAppSandboxConfig(AppSpawnSandboxCfg *sandbox, RunMode mode);
 void DumpAppSpawnSandboxCfg(AppSpawnSandboxCfg *sandbox);
