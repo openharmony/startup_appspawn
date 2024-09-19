@@ -790,7 +790,7 @@
             "sandbox-switch": "ON",
             "gids": [1007],
             "mount-paths": [{
-                    "src-path": "/data/log/protocol",
+                    "src-path": "/data/service/el1/public/chr/protocol",
                     "sandbox-path": "/data/log/protocol",
                     "sandbox-flags": [ "bind", "rec" ]
                 },
