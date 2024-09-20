@@ -119,9 +119,9 @@ HWTEST_F(AppSpawnSandboxMgrTest, App_Spawn_AppSpawnSandboxCfg_003, TestSize.Leve
     EXPECT_EQ(ret, 0);
 #else
     // for nwebspawn
-    ret = LoadAppSandboxConfig(sandbox, MODE_FOR_NWEB_SPAWN);
+    ret = LoadAppSandboxConfig(sandbox, MODE_FOR_APP_SPAWN);
     EXPECT_EQ(ret, 0);
-    ret = LoadAppSandboxConfig(sandbox, MODE_FOR_NWEB_SPAWN);  // 重复load
+    ret = LoadAppSandboxConfig(sandbox, MODE_FOR_APP_SPAWN);  // 重复load
     EXPECT_EQ(ret, 0);
 #endif
     DeleteAppSpawnSandbox(sandbox);
