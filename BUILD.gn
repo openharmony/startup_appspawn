@@ -76,6 +76,7 @@ group("appspawn_all") {
       "${appspawn_path}/modules/module_engine:libappspawn_stub_empty",
     ]
     deps += [ "service/hnp:hnp" ]
+    deps += [ "service/devicedebug:devicedebug" ]
     if (appspawn_support_cj) {  # for support cj appspawn
       deps += [
         ":cjappspawn.rc",
