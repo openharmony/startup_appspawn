@@ -20,7 +20,7 @@
 extern "C" {
 #endif
 
-int DeviceDebugKill(int argc, char *argv[]);
+int DeviceDebugCmdKill(int argc, char *argv[]);
 
 #ifdef __cplusplus
 }

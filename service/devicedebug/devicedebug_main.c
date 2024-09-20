@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+#include <stdio.h>
 #include <string.h>
 #include <unistd.h>
 
@@ -23,8 +23,6 @@
 extern "C" {
 #endif
 
-extern int DeviceDebugShowHelp(int argc, char *argv[]);
-
 typedef int (*DEVICEDEBUG_CMD_PROCESS_FUNC)(int argc, char *argv[]);
 
 typedef struct DeviceDebugManagerCmdInfoStru {
@@ -32,23 +30,31 @@ typedef struct DeviceDebugManagerCmdInfoStru {
     DEVICEDEBUG_CMD_PROCESS_FUNC process;
 } DeviceDebugManagerCmdInfo;
 
-DeviceDebugManagerCmdInfo g_deviceDebugManagerCmd[] = {
-    {"help", DeviceDebugShowHelp},
-    {"-h", DeviceDebugShowHelp},
-    {"kill", DeviceDebugKill},
-};
-
-int DeviceDebugShowHelp(int argc, char *argv[])
+APPSPAWN_STATIC int DeviceDebugShowHelp(int argc, char *argv[])
 {
     (void)argc;
     (void)argv;
 
-    DEVICEDEBUG_LOGI("this is device debug help");
+    printf("\r\nusage:devicedebug <command> <options>\r\n"
+        "\r\nThese are common devicedebug commands list:\r\n"
+        "\r\n         help              list available commands"
+        "\r\n         kill              send a signal to a process"
+        "\r\ndevicedebug kill -h"
+        "\r\nusage: devicedebug kill [options]"
+        "\r\noptions list:"
+        "\r\n         -h, --help         list available commands"
+        "\r\n         kill -9 -12111     send a signal to a process\r\n");
 
     return 0;
 }
 
-static DeviceDebugManagerCmdInfo* DeviceDebugCmdCheck(const char *cmd)
+DeviceDebugManagerCmdInfo g_deviceDebugManagerCmd[] = {
+    {"help", DeviceDebugShowHelp},
+    {"-h", DeviceDebugShowHelp},
+    {"kill", DeviceDebugCmdKill},
+};
+
+APPSPAWN_STATIC DeviceDebugManagerCmdInfo* DeviceDebugCmdCheck(const char *cmd)
 {
     int i;
     int cmdNum = sizeof(g_deviceDebugManagerCmd) / sizeof(DeviceDebugManagerCmdInfo);
@@ -71,12 +77,12 @@ int main(int argc, char *argv[])
         return DEVICEDEBUG_ERRNO_PARAM_INVALID;
     }
 
-    DEVICEDEBUG_LOGI("native manager process start.");
+    DEVICEDEBUG_LOGI("devicedebug manager process start.");
 
     /* 检验用户命令，获取对应的处理函数 */
     cmdInfo = DeviceDebugCmdCheck(argv[DEVICEDEBUG_NUM_1]);
     if (cmdInfo == NULL) {
-        DEVICEDEBUG_LOGE("invalid cmd!. cmd:%{public}s\r\n", argv[DEVICEDEBUG_NUM_0]);
+        DEVICEDEBUG_LOGE("invalid cmd!. cmd:%{public}s\r\n", argv[DEVICEDEBUG_NUM_1]);
         return DEVICEDEBUG_ERRNO_OPERATOR_TYPE_INVALID;
     }
 
@@ -87,7 +93,7 @@ int main(int argc, char *argv[])
     }
 
     /* 返回值依赖此条log打印，切勿随意修改 */
-    DEVICEDEBUG_LOGI("native manager process exit. ret=%{public}d \r\n", ret);
+    DEVICEDEBUG_LOGI("devicedebug manager process exit. ret=%{public}d \r\n", ret);
     return ret;
 }
 
