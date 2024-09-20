@@ -1419,6 +1419,45 @@ static void ProcessSpawnRestartMsg(AppSpawnConnection *connection, AppSpawnMsgNo
     APPSPAWN_LOGE("Failed to execv, ret %{public}d, errno %{public}d", ret, errno);
 }
 
+static int ProcessAppSpawnDeviceDebugMsg(AppSpawnMsgNode *message)
+{
+    APPSPAWN_CHECK_ONLY_EXPER(message != NULL, return -1);
+    uint32_t len = 0;
+
+    if (!IsDeveloperModeOpen()) {
+        APPSPAWN_LOGE("appspawn devicedebug this is not develop mode on");
+        return -1;
+    }
+
+    pid_t pid = atoi((char *)GetAppSpawnMsgExtInfo(message, "pid", &len));
+    if (pid == 0) {
+        APPSPAWN_LOGE("appspawn devicedebug get pid fail");
+        return -1;
+    }
+
+    int signal = atoi((char *)GetAppSpawnMsgExtInfo(message, "signal", &len));
+    if (signal == 0) {
+        APPSPAWN_LOGE("appspawn devicedebug get pid fail");
+        return -1;
+    }
+
+    AppSpawningCtx *property = GetAppSpawningCtxByPid(pid);
+    if (property == NULL) {
+        APPSPAWN_LOGE("appspawn devicedebug get property unsuccess, pid=%{public}d", pid);
+        return -1;
+    }
+
+    APPSPAWN_LOGI("appspawn devicedebug debugable=%{public}d, pid=%{public}d, signal=%{public}d",
+        CheckAppMsgFlagsSet(property, APP_FLAGS_DEBUGGABLE), pid, signal);
+
+    if (kill(pid, signal) != 0) {
+        APPSPAWN_LOGE("appspawn devicedebug unable to kill process, pid: %{public}d ret %{public}d", pid, errno);
+        return -1;
+    }
+
+    return 0;
+}
+
 static void ProcessRecvMsg(AppSpawnConnection *connection, AppSpawnMsgNode *message)
 {
     AppSpawnMsg *msg = &message->msgHeader;
@@ -1462,6 +1501,11 @@ static void ProcessRecvMsg(AppSpawnConnection *connection, AppSpawnMsgNode *mess
             break;
         case MSG_RESTART_SPAWNER:
             ProcessSpawnRestartMsg(connection, message);
+            break;
+        case MSG_DEVICE_DEBUG:
+            ret = ProcessAppSpawnDeviceDebugMsg(message);
+            SendResponse(connection, msg, ret, 0);
+            DeleteAppSpawnMsg(message);
             break;
         default:
             SendResponse(connection, msg, APPSPAWN_MSG_INVALID, 0);
