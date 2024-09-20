@@ -17,13 +17,20 @@
 #define DEVICEDEBUG_BASE_H
 
 #include "hilog/log.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #undef LOG_TAG
 #define LOG_TAG "APPSPAWN_DEVICEDEBUG"
 #undef LOG_DOMAIN
 #define LOG_DOMAIN (0xD002C00 + 0x11)
 
-#ifdef __cplusplus
-extern "C" {
+#ifndef APPSPAWN_TEST
+#define APPSPAWN_STATIC static
+#else
+#define APPSPAWN_STATIC
 #endif
 
 /* 数字索引 */
@@ -42,8 +49,8 @@ enum {
 #define DEVICEDEBUG_ERRNO_OPERATOR_TYPE_INVALID    0x11
 // 0x12 参数缺失
 #define DEVICEDEBUG_ERRNO_OPERATOR_ARGV_MISS       0x12
-// 0x13 参数缺失
-#define DEVICEDEBUG_ERRNO_OPERATOR_ARGV_MISS       0x12
+// 0x13 非开发者模式
+#define DEVICEDEBUG_ERRNO_NOT_IN_DEVELOPER_MODE    0x13
 // 0x16 参数错误
 #define DEVICEDEBUG_ERRNO_PARAM_INVALID            0x16
 // 0x17 内存不足
@@ -51,10 +58,10 @@ enum {
 
 
 #define DEVICEDEBUG_LOGI(args, ...) \
-    HILOG_INFO(LOG_CORE, "[%{public}s:%{public}d]" args, (__FILE_NAME__), (__LINE__), ##__VA_ARGS__); \
+    HILOG_INFO(LOG_CORE, "[%{public}s:%{public}d]" args, (__FILE_NAME__), (__LINE__), ##__VA_ARGS__)
 
 #define DEVICEDEBUG_LOGE(args, ...) \
-    HILOG_ERROR(LOG_CORE, "[%{public}s:%{public}d]" args, (__FILE_NAME__), (__LINE__), ##__VA_ARGS__); \
+    HILOG_ERROR(LOG_CORE, "[%{public}s:%{public}d]" args, (__FILE_NAME__), (__LINE__), ##__VA_ARGS__)
 
 #ifdef __cplusplus
 }
