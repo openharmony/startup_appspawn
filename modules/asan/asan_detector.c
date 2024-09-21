@@ -26,25 +26,14 @@ extern bool may_init_gwp_asan(bool forceInit);
 #ifndef ASAN_DETECTOR
 static int SetAsanEnabledEnv(const AppSpawnMgr *content, const AppSpawningCtx *property)
 {
-    const char *bundleName = GetBundleName(property);
     if (CheckAppMsgFlagsSet(property, APP_FLAGS_ASANENABLED)) {
-        char *devPath = "/dev/asanlog";
-        char logPath[PATH_MAX] = {0};
-        int ret = snprintf_s(logPath, sizeof(logPath), sizeof(logPath) - 1,
-                "/data/app/el1/100/base/%s/log", bundleName);
-        APPSPAWN_CHECK(ret > 0, return -1, "Invalid snprintf_s");
-        char asanOptions[PATH_MAX] = {0};
-        ret = snprintf_s(asanOptions, sizeof(asanOptions), sizeof(asanOptions) - 1,
-                "log_path=%s/asan.log:include=/system/etc/asan.options", devPath);
-        APPSPAWN_CHECK(ret > 0, return -1, "Invalid snprintf_s");
-
 #if defined(__aarch64__) || defined(__x86_64__)
         setenv("LD_PRELOAD", "/system/lib64/libclang_rt.asan.so", 1);
 #else
         setenv("LD_PRELOAD", "/system/lib/libclang_rt.asan.so", 1);
 #endif
         unsetenv("UBSAN_OPTIONS");
-        setenv("ASAN_OPTIONS", asanOptions, 1);
+        setenv("ASAN_OPTIONS", "include=/system/etc/asan.options", 1);
         return 0;
     }
     if (CheckAppMsgFlagsSet(property, APP_FLAGS_TSAN_ENABLED)) {
