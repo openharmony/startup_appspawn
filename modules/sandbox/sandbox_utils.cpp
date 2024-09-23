@@ -919,7 +919,7 @@ std::set<std::string> SandboxUtils::GetMountPermissionNames()
         if (config.find(g_permissionPrefix) == config.end()) {
             continue;
         }
-        nlohmann::json permissionAppConfig = config[g_permissionPrefix][0];
+        nlohmann::json& permissionAppConfig = config[g_permissionPrefix][0];
         for (auto it = permissionAppConfig.begin(); it != permissionAppConfig.end(); it++) {
             permissionSet.insert(it.key());
         }
@@ -1328,13 +1328,13 @@ uint32_t SandboxUtils::GetSandboxNsFlags(bool isNweb)
 
     for (auto& config : SandboxUtils::GetJsonConfig(SANBOX_APP_JSON_CONFIG)) {
         if (isNweb) {
-            nlohmann::json privateAppConfig = config[g_privatePrefix][0];
+            nlohmann::json& privateAppConfig = config[g_privatePrefix][0];
             if (privateAppConfig.find(g_ohosRender) == privateAppConfig.end()) {
                 continue;
             }
             appConfig = privateAppConfig[g_ohosRender][0];
         } else {
-            nlohmann::json baseConfig = config[g_commonPrefix][0];
+            nlohmann::json& baseConfig = config[g_commonPrefix][0];
             if (baseConfig.find(g_appBase) == baseConfig.end()) {
                 continue;
             }
@@ -1374,7 +1374,7 @@ bool SandboxUtils::CheckTotalSandboxSwitchStatus(const AppSpawningCtx *appProper
         if (wholeConfig.find(g_commonPrefix) == wholeConfig.end()) {
             continue;
         }
-        nlohmann::json commonAppConfig = wholeConfig[g_commonPrefix][0];
+        nlohmann::json& commonAppConfig = wholeConfig[g_commonPrefix][0];
         if (commonAppConfig.find(g_topSandBoxSwitchPrefix) != commonAppConfig.end()) {
             std::string switchStatus = commonAppConfig[g_topSandBoxSwitchPrefix].get<std::string>();
             if (switchStatus == g_sbxSwitchCheck) {
@@ -1398,7 +1398,7 @@ bool SandboxUtils::CheckAppSandboxSwitchStatus(const AppSpawningCtx *appProperty
         if (wholeConfig.find(g_privatePrefix) == wholeConfig.end()) {
             continue;
         }
-        nlohmann::json privateAppConfig = wholeConfig[g_privatePrefix][0];
+        nlohmann::json& privateAppConfig = wholeConfig[g_privatePrefix][0];
         if (privateAppConfig.find(GetBundleName(appProperty)) != privateAppConfig.end()) {
             nlohmann::json appConfig = privateAppConfig[GetBundleName(appProperty)][0];
             rc = GetSbxSwitchStatusByConfig(appConfig);
