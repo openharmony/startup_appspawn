@@ -1776,7 +1776,7 @@ int32_t SetAppSandboxProperty(AppSpawnMgr *content, AppSpawningCtx *property)
 #define DIR_MODE 0711
 
 #ifndef APPSPAWN_SANDBOX_NEW
-static bool IsUnlockStatus(uint32_t uid)
+static bool IsUnlockStatus(uint32_t uid, const char *bundleName, size_t bundleNameLen)
 {
     const int userIdBase = 200000;
     uid = uid / userIdBase;
@@ -1785,11 +1785,11 @@ static bool IsUnlockStatus(uint32_t uid)
     }
 
     const char rootPath[] = "/data/app/el2/";
-    const char basePath[] = "/base";
-    size_t allPathSize = strlen(rootPath) + strlen(basePath) + 1 + USER_ID_SIZE;
+    const char basePath[] = "/base/";
+    size_t allPathSize = strlen(rootPath) + strlen(basePath) + 1 + USER_ID_SIZE + bundleNameLen;
     char *path = reinterpret_cast<char *>(malloc(sizeof(char) * allPathSize));
     APPSPAWN_CHECK(path != NULL, return true, "Failed to malloc path");
-    int len = sprintf_s(path, allPathSize, "%s%u%s", rootPath, uid, basePath);
+    int len = sprintf_s(path, allPathSize, "%s%u%s%s", rootPath, uid, basePath, bundleName);
     APPSPAWN_CHECK(len > 0 && ((size_t)len < allPathSize), return true, "Failed to get base path");
 
     if (access(path, F_OK) == 0) {
@@ -1867,8 +1867,8 @@ static void MountDirToShared(const AppSpawningCtx *property)
 
     string sourcePath = "/data/app/el1/bundle/public/" + string(bundleName);
     MountDir(property, rootPath, sourcePath.c_str(), el1Path);
-
-    if (IsUnlockStatus(info->uid)) {
+    size_t bundleNameLen = strlen(bundleName);
+    if (IsUnlockStatus(info->uid, bundleName, bundleNameLen)) {
         return;
     }
 
