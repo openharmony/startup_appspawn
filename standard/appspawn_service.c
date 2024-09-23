@@ -905,6 +905,24 @@ static void WaitChildTimeout(const TimerHandle taskHandle, void *context)
     DeleteAppSpawningCtx(property);
 }
 
+static int ProcessChildFdCheck(int fd, AppSpawningCtx *property, int *pResult)
+{
+    int result = 0;
+    (void)read(fd, &result, sizeof(result));
+    APPSPAWN_LOGI("Child process %{public}s success pid %{public}d appId: %{public}d result: %{public}d",
+        GetProcessName(property), property->pid, property->client.id, result);
+    APPSPAWN_CHECK(property->message != NULL, return -1, "Invalid message in ctx %{public}d", property->client.id);
+
+    if (result != 0) {
+        SendResponse(property->message->connection, &property->message->msgHeader, result, property->pid);
+        DeleteAppSpawningCtx(property);
+        return -1;
+    }
+    *pResult = result;
+    
+    return 0;
+}
+
 #define MSG_EXT_NAME_MAX_DECIMAL 10
 #define MSG_EXT_NAME 1
 static void ProcessChildResponse(const WatcherHandle taskHandle, int fd, uint32_t *events, const void *context)
@@ -914,16 +932,10 @@ static void ProcessChildResponse(const WatcherHandle taskHandle, int fd, uint32_
     LE_RemoveWatcher(LE_GetDefaultLoop(), (WatcherHandle)taskHandle);
 
     int result = 0;
-    (void)read(fd, &result, sizeof(result));
-    APPSPAWN_LOGI("Child process %{public}s success pid %{public}d appId: %{public}d result: %{public}d",
-        GetProcessName(property), property->pid, property->client.id, result);
-    APPSPAWN_CHECK(property->message != NULL, return, "Invalid message in ctx %{public}d", property->client.id);
-
-    if (result != 0) {
-        SendResponse(property->message->connection, &property->message->msgHeader, result, property->pid);
-        DeleteAppSpawningCtx(property);
+    if (ProcessChildFdCheck(fd, property, &result) != 0) {
         return;
     }
+
     // success
     bool isDebuggable = CheckAppMsgFlagsSet(property, APP_FLAGS_DEBUGGABLE) == 1 ? true : false;
     AppSpawnedProcess *appInfo = AddSpawnedProcess(property->pid, GetBundleName(property), isDebuggable);
@@ -1445,6 +1457,11 @@ static int ProcessAppSpawnDeviceDebugMsg(AppSpawnMsgNode *message)
     AppSpawnedProcess *appInfo = GetSpawnedProcess(pid);
     if (appInfo == NULL) {
         APPSPAWN_LOGE("appspawn devicedebug get app info unsuccess, pid=%{public}d", pid);
+        return -1;
+    }
+
+    if (!appInfo->isDebuggable) {
+        APPSPAWN_LOGE("appspawn devicedebug process is not debuggable, pid=%{public}d", pid);
         return -1;
     }
 
