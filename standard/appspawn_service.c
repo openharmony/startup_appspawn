@@ -887,7 +887,8 @@ static void ProcessChildResponse(const WatcherHandle taskHandle, int fd, uint32_
         return;
     }
     // success
-    AppSpawnedProcess *appInfo = AddSpawnedProcess(property->pid, GetBundleName(property));
+    bool isDebuggable = CheckAppMsgFlagsSet(property, APP_FLAGS_DEBUGGABLE) == 1 ? true : false;
+    AppSpawnedProcess *appInfo = AddSpawnedProcess(property->pid, GetBundleName(property), isDebuggable);
     uint32_t len = 0;
     char *pidMaxStr = NULL;
     pidMaxStr = GetAppPropertyExt(property, MSG_EXT_NAME_MAX_CHILD_PROCCESS_MAX, &len);
@@ -1224,7 +1225,7 @@ AppSpawnContent *StartSpawnService(const AppSpawnStartArg *startArg, uint32_t ar
 #endif
     AddAppSpawnHook(STAGE_CHILD_PRE_RUN, HOOK_PRIO_LOWEST, AppSpawnClearEnv);
     if (arg->mode == MODE_FOR_APP_SPAWN) {
-        AddSpawnedProcess(pid, NWEBSPAWN_SERVER_NAME);
+        AddSpawnedProcess(pid, NWEBSPAWN_SERVER_NAME, false);
         SetParameter("bootevent.appspawn.started", "true");
     }
     return content;
@@ -1394,20 +1395,20 @@ static int ProcessAppSpawnDeviceDebugMsg(AppSpawnMsgNode *message)
         return -1;
     }
 
-    int signal = atoi((char *)GetAppSpawnMsgExtInfo(message, "signal", &len));
+    int signal = atoi((char *)GetAppSpawnMsgExtInfo(message, "signal", &len) + 1);
     if (signal == 0) {
         APPSPAWN_LOGE("appspawn devicedebug get pid fail");
         return -1;
     }
 
-    AppSpawningCtx *property = GetAppSpawningCtxByPid(pid);
-    if (property == NULL) {
-        APPSPAWN_LOGE("appspawn devicedebug get property unsuccess, pid=%{public}d", pid);
+    AppSpawnedProcess *appInfo = GetSpawnedProcess(pid);
+    if (appInfo == NULL) {
+        APPSPAWN_LOGE("appspawn devicedebug get app info unsuccess, pid=%{public}d", pid);
         return -1;
     }
 
     APPSPAWN_LOGI("appspawn devicedebug debugable=%{public}d, pid=%{public}d, signal=%{public}d",
-        CheckAppMsgFlagsSet(property, APP_FLAGS_DEBUGGABLE), pid, signal);
+        appInfo->isDebuggable, pid, signal);
 
     if (kill(pid, signal) != 0) {
         APPSPAWN_LOGE("appspawn devicedebug unable to kill process, pid: %{public}d ret %{public}d", pid, errno);
