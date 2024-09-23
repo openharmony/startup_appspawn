@@ -60,8 +60,6 @@ static int VarCurrentUseIdReplace(const SandboxContext *context,
     int len = 0;
     if (extraData == NULL || !CHECK_FLAGS_BY_INDEX(extraData->operation, SANDBOX_TAG_PERMISSION)) {
         len = sprintf_s((char *)buffer, bufferLen, "%u", info->uid / UID_BASE);
-    } else if (context->appFullMountEnable && strlen(info->userName) > 0) {
-        len = sprintf_s((char *)buffer, bufferLen, "%s", "currentUser");
     } else {
         len = sprintf_s((char *)buffer, bufferLen, "%s", "currentUser");
     }
