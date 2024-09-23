@@ -137,7 +137,7 @@ static int AppInfoCompareProc(ListNode *node, ListNode *newNode)
     return node1->pid - node2->pid;
 }
 
-AppSpawnedProcess *AddSpawnedProcess(pid_t pid, const char *processName)
+AppSpawnedProcess *AddSpawnedProcess(pid_t pid, const char *processName, bool isDebuggable)
 {
     APPSPAWN_CHECK(g_appSpawnMgr != NULL && processName != NULL, return NULL, "Invalid mgr or process name");
     APPSPAWN_CHECK(pid > 0, return NULL, "Invalid pid for %{public}s", processName);
@@ -150,6 +150,7 @@ AppSpawnedProcess *AddSpawnedProcess(pid_t pid, const char *processName)
     node->max = 0;
     node->uid = 0;
     node->exitStatus = 0;
+    node->isDebuggable = isDebuggable;
     int ret = strcpy_s(node->name, len, processName);
     APPSPAWN_CHECK(ret == 0, free(node);
         return NULL, "Failed to strcpy process name");
