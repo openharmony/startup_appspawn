@@ -35,15 +35,10 @@ APPSPAWN_STATIC int DeviceDebugShowHelp(int argc, char *argv[])
     (void)argc;
     (void)argv;
 
-    printf("\r\nusage:devicedebug <command> <options>\r\n"
+    printf("\r\nusage: devicedebug <command> <options>\r\n"
         "\r\nThese are common devicedebug commands list:\r\n"
         "\r\n         help              list available commands"
-        "\r\n         kill              send a signal to a process"
-        "\r\ndevicedebug kill -h"
-        "\r\nusage: devicedebug kill [options]"
-        "\r\noptions list:"
-        "\r\n         -h, --help         list available commands"
-        "\r\n         kill -9 -12111     send a signal to a process\r\n");
+        "\r\n         kill              send a signal to a process\r\n");
 
     return 0;
 }
@@ -56,10 +51,9 @@ DeviceDebugManagerCmdInfo g_deviceDebugManagerCmd[] = {
 
 APPSPAWN_STATIC DeviceDebugManagerCmdInfo* DeviceDebugCmdCheck(const char *cmd)
 {
-    int i;
     int cmdNum = sizeof(g_deviceDebugManagerCmd) / sizeof(DeviceDebugManagerCmdInfo);
 
-    for (i = 0; i < cmdNum; i++) {
+    for (int i = 0; i < cmdNum; i++) {
         if (!strcmp(cmd, g_deviceDebugManagerCmd[i].cmd)) {
             return &g_deviceDebugManagerCmd[i];
         }
@@ -69,7 +63,7 @@ APPSPAWN_STATIC DeviceDebugManagerCmdInfo* DeviceDebugCmdCheck(const char *cmd)
 
 int main(int argc, char *argv[])
 {
-    int ret;
+    int ret = 0;
     DeviceDebugManagerCmdInfo *cmdInfo = NULL;
 
     if (argc < DEVICEDEBUG_NUM_2) {
@@ -88,9 +82,6 @@ int main(int argc, char *argv[])
 
     /* 执行命令 */
     ret = cmdInfo->process(argc, argv);
-    if (ret == DEVICEDEBUG_ERRNO_OPERATOR_ARGV_MISS) {
-        DeviceDebugShowHelp(argc, argv);
-    }
 
     /* 返回值依赖此条log打印，切勿随意修改 */
     DEVICEDEBUG_LOGI("devicedebug manager process exit. ret=%{public}d \r\n", ret);
