@@ -56,7 +56,6 @@ enum {
 // 0x17 内存不足
 #define DEVICEDEBUG_ERRNO_NOMEM                    0x17
 
-
 #define DEVICEDEBUG_LOGI(args, ...) \
     HILOG_INFO(LOG_CORE, "[%{public}s:%{public}d]" args, (__FILE_NAME__), (__LINE__), ##__VA_ARGS__)
 
