@@ -1,6 +1,6 @@
 {
     "global": {
-        "sandbox-root" : "/mnt/sandbox/<PackageName>",
+        "sandbox-root" : "/mnt/sandbox/<currentUserId>/app-root-isolated",
         "sandbox-ns-flags" : [ "net" ]
     },
     "required": {
@@ -29,9 +29,6 @@
             }, {
                 "src-path" : "/system/lib64",
                 "sandbox-path" : "/system/lib64"
-            }, {
-                "src-path" : "/data/app/el1/bundle/public/<PackageName>",
-                "sandbox-path" : "/data/storage/el1/bundle"
             }],
             "symbol-links" : [{
                 "target-name" : "/system/etc",
@@ -50,13 +47,14 @@
                 "link-name" : "/lib64",
                 "check-action-status": "false"
                 }],
-            "mount-files": [{
-                "src-path" : "/system/etc/hosts",
-                "sandbox-path" : "/data/service/el1/network/hosts_user/hosts"
-            }],
+            "mount-files": [],
             "mount-groups" : []
         },
         "app-variable": {
+            "mount-paths": [{
+                "src-path" : "/data/app/el1/bundle/public/<PackageName>",
+                "sandbox-path" : "/data/storage/el1/bundle"
+            }],
             "mount-groups": []
         }
     }
