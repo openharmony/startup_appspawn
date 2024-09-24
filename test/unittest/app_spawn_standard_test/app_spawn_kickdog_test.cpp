@@ -20,14 +20,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "appspawn.h"
-#include "appspawn_hook.h"
-#include "appspawn_manager.h"
-#include "appspawn_modulemgr.h"
-#include "appspawn_permission.h"
-#include "appspawn_sandbox.h"
 #include "appspawn_kickdog.h"
-#include "appspawn_utils.h"
 #include "securec.h"
 
 #include "app_spawn_stub.h"
@@ -86,21 +79,36 @@ static int CheckFileContent(const char *filePath, const char *targetStr)
  */
 HWTEST_F(AppSpawnKickDogTest, App_Spawn_AppSpawnKickDog_001, TestSize.Level0)
 {
+    AppSpawnContent content;
     int fileFd = open(HM_APPSPAWN_WATCHDOG_FILE, O_CREAT);
     EXPECT_EQ(fileFd != -1, 1);
     close(fileFd);
 
-    AppSpawnKickDogStart();
+    AppSpawnKickDogStart(&content);
     std::unique_ptr<OHOS::AppSpawnTestServer> testServer =
         std::make_unique<OHOS::AppSpawnTestServer>("appspawn -mode appspawn");
     testServer->Start(nullptr);
-    EXPECT_EQ(CheckFileContent(HM_APPSPAWN_WATCHDOG_FILE, HM_APPSPAWN_WATCHDOG_ON), 0);
-    EXPECT_EQ(CheckFileContent(HM_APPSPAWN_WATCHDOG_FILE, HM_APPSPAWN_WATCHDOG_KICK), -1);
+    if (access(LINUX_APPSPAWN_WATCHDOG_FILE, F_OK) == 0) {
+        EXPECT_EQ(CheckFileContent(HM_APPSPAWN_WATCHDOG_FILE, LINUX_APPSPAWN_WATCHDOG_ON), 0);
+        EXPECT_EQ(CheckFileContent(HM_APPSPAWN_WATCHDOG_FILE, LINUX_APPSPAWN_WATCHDOG_KICK), -1);
+    } else {
+        EXPECT_EQ(CheckFileContent(HM_APPSPAWN_WATCHDOG_FILE, HM_APPSPAWN_WATCHDOG_ON), 0);
+        EXPECT_EQ(CheckFileContent(HM_APPSPAWN_WATCHDOG_FILE, HM_APPSPAWN_WATCHDOG_KICK), -1);
+    }
     sleep(12); // wait for kick dog(kick every 10 seconds)
-    EXPECT_EQ(CheckFileContent(HM_APPSPAWN_WATCHDOG_FILE, HM_APPSPAWN_WATCHDOG_ON), -1);
-    EXPECT_EQ(CheckFileContent(HM_APPSPAWN_WATCHDOG_FILE, HM_APPSPAWN_WATCHDOG_KICK), 0);
+    if (access(LINUX_APPSPAWN_WATCHDOG_FILE, F_OK) == 0) {
+        EXPECT_EQ(CheckFileContent(HM_APPSPAWN_WATCHDOG_FILE, LINUX_APPSPAWN_WATCHDOG_ON), -1);
+        EXPECT_EQ(CheckFileContent(HM_APPSPAWN_WATCHDOG_FILE, LINUX_APPSPAWN_WATCHDOG_KICK), 0);
+    } else {
+        EXPECT_EQ(CheckFileContent(HM_APPSPAWN_WATCHDOG_FILE, HM_APPSPAWN_WATCHDOG_ON), -1);
+        EXPECT_EQ(CheckFileContent(HM_APPSPAWN_WATCHDOG_FILE, HM_APPSPAWN_WATCHDOG_KICK), 0);
+    }
     sleep(10);
-    EXPECT_EQ(CheckFileContent(HM_APPSPAWN_WATCHDOG_FILE, HM_APPSPAWN_WATCHDOG_KICK), 0);
+    if (access(LINUX_APPSPAWN_WATCHDOG_FILE, F_OK) == 0) {
+        EXPECT_EQ(CheckFileContent(HM_APPSPAWN_WATCHDOG_FILE, LINUX_APPSPAWN_WATCHDOG_KICK), 0);
+    } else {
+        EXPECT_EQ(CheckFileContent(HM_APPSPAWN_WATCHDOG_FILE, HM_APPSPAWN_WATCHDOG_KICK), 0);
+    }
     testServer->Stop();
     EXPECT_EQ(CheckFileContent(HM_APPSPAWN_WATCHDOG_FILE, nullptr), -1);
 
