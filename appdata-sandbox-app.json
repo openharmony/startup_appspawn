@@ -328,6 +328,14 @@
             "sandbox-switch": "ON",
             "gids" : ["readproc"],
             "mount-paths": []
+        }, {
+            "name": "ohos.permission.ACCESS_ANALYTICS",
+            "sandbox-switch": "ON",
+            "gids" : ["log"],
+            "mount-paths": [{
+                "src-path": "/data/log/faultlog/faultlogger",
+                "sandbox-path": "/data/log/faultlog/faultlogger"
+            }]
         }],
         "spawn-flag": [{
             "name": "START_FLAGS_BACKUP",
