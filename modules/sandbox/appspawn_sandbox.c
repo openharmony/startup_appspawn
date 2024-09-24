@@ -525,7 +525,7 @@ static int DoSandboxNodeMount(const SandboxContext *context, const SandboxSectio
     return 0;
 }
 
-static bool IsUnlockStatus(uint32_t uid)
+static bool IsUnlockStatus(uint32_t uid, const char *bundleName, size_t bundleNameLen)
 {
     const int userIdBase = UID_BASE;
     uid = uid / userIdBase;
@@ -534,11 +534,11 @@ static bool IsUnlockStatus(uint32_t uid)
     }
 
     const char rootPath[] = "/data/app/el2/";
-    const char basePath[] = "/base";
-    size_t allPathSize = strlen(rootPath) + strlen(basePath) + 1 + USER_ID_SIZE;
+    const char basePath[] = "/base/";
+    size_t allPathSize = strlen(rootPath) + strlen(basePath) + 1 + USER_ID_SIZE + bundleNameLen;
     char *path = (char *)malloc(sizeof(char) * allPathSize);
     APPSPAWN_CHECK(path != NULL, return true, "Failed to malloc path");
-    int len = sprintf_s(path, allPathSize, "%s%u%s", rootPath, uid, basePath);
+    int len = sprintf_s(path, allPathSize, "%s%u%s%s", rootPath, uid, basePath, bundleName);
     APPSPAWN_CHECK(len > 0 && ((size_t)len < allPathSize), free(path); return true, "Failed to get base path");
 
     if (access(path, F_OK) == 0) {
@@ -599,7 +599,9 @@ static void MountDirToShared(const SandboxContext *context, AppSpawnSandboxCfg *
 {
     const char rootPath[] = "/mnt/sandbox/";
     AppSpawnMsgDacInfo *info = (AppSpawnMsgDacInfo *)GetSpawningMsgInfo(context, TLV_DAC_INFO);
-    if (info == NULL || IsUnlockStatus(info->uid)) {
+    size_t bundleNameLen = strlen(context->bundleName);
+    if (info == NULL || context->bundleName == NULL ||
+        IsUnlockStatus(info->uid, context->bundleName, bundleNameLen)) {
         return;
     }
 
