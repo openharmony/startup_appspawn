@@ -611,6 +611,38 @@ static int AppendPermissionGid(const AppSpawnSandboxCfg *sandbox, AppSpawningCtx
     return 0;
 }
 
+static int AppendPackageNameGids(const AppSpawnSandboxCfg *sandbox, AppSpawningCtx *property)
+{
+    AppSpawnMsgDacInfo *dacInfo = (AppSpawnMsgDacInfo *)GetAppProperty(property, TLV_DAC_INFO);
+    APPSPAWN_CHECK(dacInfo != NULL, return APPSPAWN_TLV_NONE,
+        "No tlv %{public}d in msg %{public}s", TLV_DAC_INFO, GetProcessName(property));
+    
+    SandboxPackageNameNode *sandboxNode =
+        (SandboxPackageNameNode *)GetSandboxSection(&sandbox->packageNameQueue, GetProcessName(property));
+    if (sandboxNode == NULL || sandboxNode->section.gidCount == 0) {
+        return 0;
+    }
+
+    size_t copyLen = sandboxNode->section.gidCount;
+    if ((sandboxNode->section.gidCount + dacInfo->gidCount) > APP_MAX_GIDS) {
+        APPSPAWN_LOGW("More gid for %{public}s msg count %{public}u permission %{public}u",
+                      GetProcessName(property),
+                      dacInfo->gidCount,
+                      sandboxNode->section.gidCount);
+        copyLen = APP_MAX_GIDS - dacInfo->gidCount;
+    }
+    int ret = memcpy_s(&dacInfo->gidTable[dacInfo->gidCount], sizeof(gid_t) * copyLen,
+                       sandboxNode->section.gidTable, sizeof(gid_t) * copyLen);
+    if (ret != EOK) {
+        APPSPAWN_LOGW("Failed to append permission %{public}s gid to %{public}s",
+                      sandboxNode->section.name,
+                      GetProcessName(property));
+    }
+    dacInfo->gidCount += copyLen;
+
+    return 0;
+}
+
 int SpawnPrepareSandboxCfg(AppSpawnMgr *content, AppSpawningCtx *property)
 {
     APPSPAWN_CHECK_ONLY_EXPER(content != NULL, return -1);
@@ -636,6 +668,8 @@ int SpawnPrepareSandboxCfg(AppSpawnMgr *content, AppSpawningCtx *property)
     }
 
     int ret = AppendPermissionGid(sandbox, property);
+    APPSPAWN_CHECK(ret == 0, return ret, "Failed to add gid for %{public}s", GetProcessName(property));
+    ret = AppendPackageNameGids(sandbox, property);
     APPSPAWN_CHECK(ret == 0, return ret, "Failed to add gid for %{public}s", GetProcessName(property));
     ret = StagedMountSystemConst(sandbox, property, IsNWebSpawnMode(content));
     APPSPAWN_CHECK(ret == 0, return ret, "Failed to mount system-const for %{public}s", GetProcessName(property));
