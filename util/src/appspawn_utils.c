@@ -18,6 +18,7 @@
 #include <ctype.h>
 #include <dirent.h>
 #include <fcntl.h>
+#include <malloc.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -442,4 +443,14 @@ int EnableNewNetNamespace(void)
 
     close(fd);
     return (ret >= 0) ? 0 : APPSPAWN_SYSTEM_ERROR;
+}
+
+void EnableCache(void)
+{
+    APPSPAWN_LOGV("enable cache for app process");
+    // enable cache for app process
+    mallopt(M_OHOS_CONFIG, M_TCACHE_PERFORMANCE_MODE);
+    mallopt(M_OHOS_CONFIG, M_ENABLE_OPT_TCACHE);
+    mallopt(M_SET_THREAD_CACHE, M_THREAD_CACHE_ENABLE);
+    mallopt(M_DELAYED_FREE, M_DELAYED_FREE_ENABLE);
 }
