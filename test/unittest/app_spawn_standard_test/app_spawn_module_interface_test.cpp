@@ -71,25 +71,20 @@ HWTEST_F(AppSpawnModuleInterfaceTest, App_Spawn_AppSpawnLoadAutoRunModules_001, 
 {
     int ret = AppSpawnLoadAutoRunModules(MODULE_DEFAULT);
     EXPECT_EQ(0, ret);
+    AppSpawnModuleMgrUnInstall(MODULE_DEFAULT);
     ret = AppSpawnLoadAutoRunModules(MODULE_APPSPAWN);
     EXPECT_EQ(0, ret);
     ret = AppSpawnLoadAutoRunModules(MODULE_NWEBSPAWN);
     EXPECT_EQ(0, ret);
+    AppSpawnModuleMgrUnInstall(MODULE_NWEBSPAWN);
     ret = AppSpawnLoadAutoRunModules(MODULE_COMMON);
     EXPECT_EQ(0, ret);
+    AppSpawnModuleMgrUnInstall(MODULE_COMMON);
     ret = AppSpawnLoadAutoRunModules(MODULE_MAX);
     EXPECT_NE(0, ret);
+    AppSpawnModuleMgrUnInstall(MODULE_MAX);
     ret = AppSpawnLoadAutoRunModules(100);
     EXPECT_NE(0, ret);
-}
-
-HWTEST_F(AppSpawnModuleInterfaceTest, App_Spawn_AppSpawnModuleMgrUnInstall_001, TestSize.Level1)
-{
-    AppSpawnModuleMgrUnInstall(MODULE_DEFAULT);
-    AppSpawnModuleMgrUnInstall(MODULE_APPSPAWN);
-    AppSpawnModuleMgrUnInstall(MODULE_NWEBSPAWN);
-    AppSpawnModuleMgrUnInstall(MODULE_COMMON);
-    AppSpawnModuleMgrUnInstall(MODULE_MAX);
     AppSpawnModuleMgrUnInstall(100);
 }
 

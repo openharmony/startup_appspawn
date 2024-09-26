@@ -111,6 +111,7 @@ pid_t GetPidByName(const char *name);
 int RunBegetctlBootApp(AppSpawnMgr *content, AppSpawningCtx *property);
 void SetSystemEnv(void);
 void RunAppSandbox(const char *ptyName);
+HOOK_MGR *GetAppSpawnHookMgr(void);
 #define STUB_NEED_CHECK 0x01
 typedef int (*ExecvFunc)(const char *pathname, char *const argv[]);
 enum {
