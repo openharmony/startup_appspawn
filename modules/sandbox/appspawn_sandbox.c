@@ -483,7 +483,12 @@ static int DoSandboxPathSymLink(const SandboxContext *context,
     const char *target = GetSandboxRealVar(context, BUFFER_FOR_SOURCE, sandboxNode->target, NULL, NULL);
     const char *linkName = GetSandboxRealVar(context, BUFFER_FOR_TARGET,
         sandboxNode->linkName, context->rootPath, NULL);
-    APPSPAWN_LOGV("symlink, from %{public}s to %{public}s", target, linkName);
+    APPSPAWN_LOGV("symlink from %{public}s to %{public}s", target, linkName);
+    if (access(linkName, F_OK) == 0) {
+        if (rmdir(linkName) != 0) {
+            APPSPAWN_LOGW("linkName %{public}s already exist and rmdir failed, errno %{public}d", linkName, errno);
+        }
+    }
     int ret = symlink(target, linkName);
     if (ret && errno != EEXIST) {
         if (sandboxNode->checkErrorFlag) {
@@ -598,10 +603,17 @@ static const MountSharedTemplate MOUNT_SHARED_MAP[] = {
 static void MountDirToShared(const SandboxContext *context, AppSpawnSandboxCfg *sandbox)
 {
     const char rootPath[] = "/mnt/sandbox/";
+    const char nwebPath[] = "/mnt/nweb";
+    const char nwebTmpPath[] = "/mnt/nweb/tmp";
+    const char appRootName[] = "app-root";
     AppSpawnMsgDacInfo *info = (AppSpawnMsgDacInfo *)GetSpawningMsgInfo(context, TLV_DAC_INFO);
-    size_t bundleNameLen = strlen(context->bundleName);
-    if (info == NULL || context->bundleName == NULL ||
-        IsUnlockStatus(info->uid, context->bundleName, bundleNameLen)) {
+    if (info == NULL || context->bundleName == NULL) {
+        return;
+    }
+    MountDir(info, appRootName, rootPath, nwebPath);
+    MountDir(info, appRootName, rootPath, nwebTmpPath);
+
+    if (IsUnlockStatus(info->uid, context->bundleName, strlen(context->bundleName))) {
         return;
     }
 

@@ -24,8 +24,11 @@
                 "src-path" : "/system/bin",
                 "sandbox-path" : "/system/bin"
             }, {
-                "src-path" : "/system/<lib>",
-                "sandbox-path" : "/system/<lib>"
+                "src-path" : "/system/lib",
+                "sandbox-path" : "/system/lib"
+            }, {
+                "src-path" : "/system/lib64",
+                "sandbox-path" : "/system/lib64"
             }, {
                 "src-path" : "/data/app/el1/bundle/public/<arkWebPackageName>",
                 "sandbox-path" : "/data/storage/el1/bundle/arkwebcore"
