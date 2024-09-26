@@ -381,6 +381,8 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_015, TestSize.Level0)
 
 HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_016, TestSize.Level0)
 {
+    HOOK_MGR *hookMgr = GetAppSpawnHookMgr();
+    EXPECT_EQ(hookMgr != nullptr, 1);
     DeleteAppSpawnHookMgr();
     AppSpawnHiSysEventWrite();
 }
