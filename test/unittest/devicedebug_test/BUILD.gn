@@ -10,35 +10,32 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 import("//base/startup/appspawn/appspawn.gni")
 import("//build/test.gni")
 
-group("moduletest") {
-  if (!defined(ohos_lite)) {
-    testonly = true
-    deps = [ "moduletest:moduletest" ]
-  }
-}
+if (!defined(ohos_lite)) {
+  ohos_unittest("DevicedebugTest") {
+    module_out_path = "${module_output_path}"
+    cflags = [
+      "-Wno-implicit-fallthrough",
+      "-Wno-unused-function",
+      "-Dprivate=public",
+      "-Dprotected=public",
+    ]
 
-group("unittest") {
-  if (!defined(ohos_lite)) {
-    testonly = true
-    deps = [ "unittest/app_spawn_client_test:AppSpawn_client_ut" ]
-    if (!use_libfuzzer) {
-      deps += [ "unittest/app_spawn_standard_test:AppSpawn_ut" ]
-    }
-    deps += [ "unittest/hnp_test:HnpTest" ]
-    deps += [ "unittest/devicedebug_test:DevicedebugTest" ]
-  } else {
-    testonly = true
-    deps = [ "unittest/app_spawn_lite_test:unittest" ]
-  }
-}
+    cflags_cc = [
+      "-Wno-implicit-fallthrough",
+      "-fexceptions",
+    ]
 
-group("fuzztest") {
-  if (!defined(ohos_lite)) {
-    testonly = true
-    deps = [ "fuzztest:app_spawn_fuzztest" ]
+    sources = [
+      "devicedebug_kill_test.cpp",
+    ]
+
+    defines = [ "APPSPAWN_TEST" ]
+
+    deps = [
+      "${appspawn_path}/service/devicedebug:devicedebug",
+    ]
   }
 }
