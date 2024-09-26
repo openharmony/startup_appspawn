@@ -845,14 +845,29 @@ static void ProcessSpawnReqMsg(AppSpawnConnection *connection, AppSpawnMsgNode *
     }
 }
 
+static uint32_t g_lastDiedAppId = 0;
+static uint32_t g_crashTimes = 0;
+#define MAX_CRASH_TIME 5
 static void WaitChildDied(pid_t pid)
 {
     AppSpawningCtx *property = GetAppSpawningCtxByPid(pid);
     if (property != NULL && property->state == APP_STATE_SPAWNING) {
         APPSPAWN_LOGI("Child process %{public}s fail \'child crash \'pid %{public}d appId: %{public}d",
             GetProcessName(property), property->pid, property->client.id);
+        if (property->client.id == g_lastDiedAppId + 1) {
+            g_crashTimes++;
+        } else {
+            g_crashTimes = 1;
+        }
+        g_lastDiedAppId = property->client.id;
+
         SendResponse(property->message->connection, &property->message->msgHeader, APPSPAWN_CHILD_CRASH, 0);
         DeleteAppSpawningCtx(property);
+
+        if (g_crashTimes >= MAX_CRASH_TIME) {
+            APPSPAWN_LOGW("Continuous failures in spawning the app, restart appspawn");
+            StopAppSpawn();
+        }
     }
 }
 
