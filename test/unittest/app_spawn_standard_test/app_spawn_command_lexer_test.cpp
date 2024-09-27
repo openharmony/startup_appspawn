@@ -17,6 +17,7 @@
 #include <gtest/gtest.h>
 
 #include "command_lexer.h"
+#include "third_party/externals/harfbuzz/src/hb-unicode.hh"
 
 #define SPACE_STR               " "
 #define SINGLE_QUOTE_STR        "'"
