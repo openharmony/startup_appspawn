@@ -918,6 +918,16 @@
             "sandbox-switch": "ON",
             "gids": [3009],
             "mount-paths": []
+        }],
+        "ohos.permission.ACCESS_ANALYTICS":[{
+            "sandbox-switch": "ON",
+            "gids": [1007],
+            "mount-paths": [{
+                    "src-path": "/data/log/faultlog/faultlogger",
+                    "sandbox-path": "/data/log/faultlog/faultlogger",
+                    "sandbox-flags": [ "bind", "rec" ]
+                }
+            ]
         }]
     }]
 }
