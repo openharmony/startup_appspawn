@@ -28,14 +28,33 @@ if (!defined(ohos_lite)) {
       "-fexceptions",
     ]
 
+    include_dirs = [
+      "${appspawn_path}/service/devicedebug/base",
+      "${appspawn_path}/service/devicedebug/kill/include",
+      "${appspawn_path}/test/unittest/devicedebug_test",
+    ]
+
     sources = [
+      "${appspawn_path}/service/devicedebug/kill/src/devicedebug_kill.c",
+      "${appspawn_path}/test/unittest/devicedebug_test/devicedebug_stub.c",
       "devicedebug_kill_test.cpp",
     ]
 
-    defines = [ "APPSPAWN_TEST" ]
+    defines = [
+      "IsDeveloperModeOpen=IsDeveloperModeOpenStub",
+      "AppSpawnClientInit=AppSpawnClientInitStub",
+      "AppSpawnReqMsgCreate=AppSpawnReqMsgCreateStub",
+      "AppSpawnReqMsgAddStringInfo=AppSpawnReqMsgAddStringInfoStub",
+      "AppSpawnClientSendMsg=AppSpawnClientSendMsgStub",
+      "APPSPAWN_TEST",
+    ]
+
+    external_deps = [ "hilog:libhilog" ]
 
     deps = [
+      "${appspawn_path}/interfaces/innerkits/client:appspawn_client",
       "${appspawn_path}/service/devicedebug:devicedebug",
+      "${appspawn_path}/util:libappspawn_util",
     ]
   }
 }

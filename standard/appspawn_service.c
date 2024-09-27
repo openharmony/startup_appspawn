@@ -1450,7 +1450,7 @@ static int ProcessAppSpawnDeviceDebugMsg(AppSpawnMsgNode *message)
 
     int signal = atoi((char *)GetAppSpawnMsgExtInfo(message, "signal", &len) + 1);
     if (signal == 0) {
-        APPSPAWN_LOGE("appspawn devicedebug get pid fail");
+        APPSPAWN_LOGE("appspawn devicedebug get signal fail");
         return -1;
     }
 

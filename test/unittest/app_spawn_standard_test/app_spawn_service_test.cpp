@@ -548,6 +548,80 @@ HWTEST_F(AppSpawnServiceTest, App_Spawn_Msg_008, TestSize.Level0)
     ASSERT_EQ(ret, 0);
 }
 
+HWTEST_F(AppSpawnServiceTest, App_Spawn_Msg_009, TestSize.Level0)
+{
+    int ret = 0;
+    char pid[16];
+    AppSpawnClientHandle clientHandle = nullptr;
+    AppSpawnResult result = {};
+    do {
+        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", APPSPAWN_SERVER_NAME);
+        AppSpawnReqMsgHandle reqHandle = testServer->CreateMsg(clientHandle, MSG_SPAWN_NATIVE_PROCESS, 0);
+
+        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_NATIVEDEBUG);
+        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_BUNDLE_RESOURCES);
+        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_ACCESS_BUNDLE_DIR);
+
+        ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to send msg %{public}d", ret);
+
+        AppSpawnedProcess *app = GetSpawnedProcessByName(testServer->GetDefaultTestAppBundleName());
+        EXPECT_NE(app, nullptr);
+
+        AppSpawnReqMsgHandle reqHandle2;
+        ret = AppSpawnReqMsgCreate(MSG_DEVICE_DEBUG, "devicedebug", &reqHandle2);
+        EXPECT_GT(sprintf_s(pid, 16, "%d", app->pid), 0);
+        AppSpawnReqMsgAddStringInfo(reqHandle2, "signal", "-9");
+        AppSpawnReqMsgAddStringInfo(reqHandle2, "pid", pid);
+        ret = AppSpawnClientSendMsg(clientHandle, reqHandle2, &result);
+        APPSPAWN_CHECK(ret == 0 && result.result == 0, break, "Failed to send msg ret:%{public}d, result:%{public}d",
+            ret, result.result);
+        ASSERT_EQ(kill(app->pid, SIGKILL), 0);
+    } while (0);
+
+    AppSpawnClientDestroy(clientHandle);
+    ASSERT_EQ(ret, 0);
+    ASSERT_EQ(result.result, -1);
+}
+
+HWTEST_F(AppSpawnServiceTest, App_Spawn_Msg_010, TestSize.Level0)
+{
+    int ret = 0;
+    char pid[16];
+    AppSpawnClientHandle clientHandle = nullptr;
+    AppSpawnResult result = {};
+    do {
+        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", APPSPAWN_SERVER_NAME);
+        AppSpawnReqMsgHandle reqHandle = testServer->CreateMsg(clientHandle, MSG_SPAWN_NATIVE_PROCESS, 0);
+
+        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_DEBUGGABLE);
+        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_NATIVEDEBUG);
+        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_BUNDLE_RESOURCES);
+        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_ACCESS_BUNDLE_DIR);
+
+        ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to send msg %{public}d", ret);
+
+        AppSpawnedProcess *app = GetSpawnedProcessByName(testServer->GetDefaultTestAppBundleName());
+        EXPECT_NE(app, nullptr);
+
+        AppSpawnReqMsgHandle reqHandle2;
+        ret = AppSpawnReqMsgCreate(MSG_DEVICE_DEBUG, "devicedebug", &reqHandle2);
+        EXPECT_GT(sprintf_s(pid, 16, "%d", app->pid), 0);
+        AppSpawnReqMsgAddStringInfo(reqHandle2, "signal", "-9");
+        AppSpawnReqMsgAddStringInfo(reqHandle2, "pid", pid);
+        ret = AppSpawnClientSendMsg(clientHandle, reqHandle2, &result);
+        APPSPAWN_CHECK(ret == 0 && result.result == 0, break, "Failed to send msg ret:%{public}d, result:%{public}d",
+            ret, result.result);
+    } while (0);
+
+    AppSpawnClientDestroy(clientHandle);
+    ASSERT_EQ(ret, 0);
+    ASSERT_EQ(result.result, 0);
+}
+
 /**
  * @brief 必须最后一个，kill nwebspawn，appspawn的线程结束
  *
