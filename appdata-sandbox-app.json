@@ -170,7 +170,7 @@
                 "src-path" : "/data/service/el1/public/themes/<currentUserId>/b/app",
                 "sandbox-path" : "/data/themes/b/app"
             }, {
-                "src-path" : "/data/service/el1/<currentUserId>/distributeddata/utd",
+                "src-path" : "/data/service/el1/<currentUserId>/utdtypes/utd",
                 "sandbox-path" : "/data/utd"
             }, {
                 "src-path" : "/data/service/el1/public/cert_manager_service/certificates/user_open",
