@@ -150,6 +150,11 @@ static inline void DumpStatus(const char *appName, pid_t pid, int status)
 
 static void HandleDiedPid(pid_t pid, uid_t uid, int status)
 {
+    AppSpawnContent *content = GetAppSpawnContent();
+    if (pid == content->reservedPid) {
+        APPSPAWN_LOGW("HandleDiedPid with reservedPid %{public}d", pid);
+        content->reservedPid = 0;
+    }
     AppSpawnedProcess *appInfo = GetSpawnedProcess(pid);
     if (appInfo == NULL) { // If an exception occurs during app spawning, kill pid, return failed
         WaitChildDied(pid);
@@ -1184,8 +1189,9 @@ APPSPAWN_STATIC int AppSpawnClearEnv(AppSpawnMgr *content, AppSpawningCtx *prope
 static int IsEnablePerfork()
 {
     char buffer[32] = {0};
-    int ret = GetParameter("persist.sys.prefork.enable", "false", buffer, sizeof(buffer));
-    return (ret > 0 && strcmp(buffer, "true") == 0);
+    int ret = GetParameter("persist.sys.prefork.enable", "true", buffer, sizeof(buffer));
+    APPSPAWN_LOGV("IsEnablePerfork result %{public}d, %{public}s", ret, buffer);
+    return strcmp(buffer, "true") == 0;
 }
 
 AppSpawnContent *AppSpawnCreateContent(const char *socketName, char *longProcName, uint32_t nameLen, int mode)
