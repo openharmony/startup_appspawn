@@ -564,9 +564,19 @@ static void WatchChildProcessFd(AppSpawningCtx *property)
     }
 }
 
+static int IsChildColdRun(AppSpawningCtx *property)
+{
+    return CheckAppMsgFlagsSet(property, APP_FLAGS_UBSAN_ENABLED)
+        || CheckAppMsgFlagsSet(property, APP_FLAGS_ASANENABLED)
+        || CheckAppMsgFlagsSet(property, APP_FLAGS_TSAN_ENABLED)
+        || CheckAppMsgFlagsSet(property, APP_FLAGS_HWASAN_ENABLED)
+        || (property->client.flags & APP_COLD_START);
+}
+
 static int AddChildWatcher(AppSpawningCtx *property)
 {
-    uint32_t timeout = GetSpawnTimeout(WAIT_CHILD_RESPONSE_TIMEOUT);
+    uint32_t defTimeout = IsChildColdRun(property) ? COLD_CHILD_RESPONSE_TIMEOUT : WAIT_CHILD_RESPONSE_TIMEOUT;
+    uint32_t timeout = GetSpawnTimeout(defTimeout);
     LE_WatchInfo watchInfo = {};
     watchInfo.fd = property->forkCtx.fd[0];
     watchInfo.flags = WATCHER_ONCE;
@@ -761,12 +771,9 @@ static bool IsSupportPrefork(AppSpawnContent *content, AppSpawnClient *client)
         }
     }
     AppSpawningCtx *property = (AppSpawningCtx *)client;
-    bool isAsan = CheckAppMsgFlagsSet(property, APP_FLAGS_UBSAN_ENABLED)
-        || CheckAppMsgFlagsSet(property, APP_FLAGS_ASANENABLED)
-        || CheckAppMsgFlagsSet(property, APP_FLAGS_TSAN_ENABLED)
-        || CheckAppMsgFlagsSet(property, APP_FLAGS_HWASAN_ENABLED);
-    if (content->mode == MODE_FOR_APP_SPAWN && !(client->flags & APP_COLD_START) && content->isPrefork
-        && !CheckAppMsgFlagsSet(property, APP_FLAGS_CHILDPROCESS) && !isAsan) {
+
+    if (content->mode == MODE_FOR_APP_SPAWN && !IsChildColdRun(property) && content->isPrefork
+        && !CheckAppMsgFlagsSet(property, APP_FLAGS_CHILDPROCESS)) {
         return true;
     }
     return false;
