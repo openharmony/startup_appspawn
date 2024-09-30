@@ -774,10 +774,10 @@ int SandboxUtils::DoAllMntPointsMount(const AppSpawningCtx *appProperty,
     std::string sandboxRoot = GetSbxPathByConfig(appProperty, appConfig);
     bool checkFlag = CheckMountFlag(appProperty, bundleName, appConfig);
 
-    nlohmann::json mountPoints = appConfig[g_mountPrefix];
+    nlohmann::json& mountPoints = appConfig[g_mountPrefix];
     unsigned int mountPointSize = mountPoints.size();
     for (unsigned int i = 0; i < mountPointSize; i++) {
-        nlohmann::json mntPoint = mountPoints[i];
+        nlohmann::json& mntPoint = mountPoints[i];
         if ((CheckMountConfig(mntPoint, appProperty, checkFlag) == false)) {
             continue;
         }
@@ -823,7 +823,7 @@ int32_t SandboxUtils::DoAddGid(AppSpawningCtx *appProperty, nlohmann::json &appC
         return 0;
     }
 
-    nlohmann::json gids = appConfig[g_gidPrefix];
+    nlohmann::json& gids = appConfig[g_gidPrefix];
     unsigned int gidSize = gids.size();
     for (unsigned int i = 0; i < gidSize; i++) {
         if (dacInfo->gidCount < APP_MAX_GIDS) {
@@ -840,12 +840,12 @@ int SandboxUtils::DoAllSymlinkPointslink(const AppSpawningCtx *appProperty, nloh
     APPSPAWN_CHECK(appConfig.find(g_symlinkPrefix) != appConfig.end(), return 0, "symlink config is not found,"
         "maybe result sandbox launch failed app name is %{public}s", GetBundleName(appProperty));
 
-    nlohmann::json symlinkPoints = appConfig[g_symlinkPrefix];
+    nlohmann::json& symlinkPoints = appConfig[g_symlinkPrefix];
     std::string sandboxRoot = GetSbxPathByConfig(appProperty, appConfig);
     unsigned int symlinkPointSize = symlinkPoints.size();
 
     for (unsigned int i = 0; i < symlinkPointSize; i++) {
-        nlohmann::json symPoint = symlinkPoints[i];
+        nlohmann::json& symPoint = symlinkPoints[i];
 
         // Check the validity of the symlink configuration
         if (symPoint.find(g_targetName) == symPoint.end() || symPoint.find(g_linkName) == symPoint.end()) {
@@ -878,7 +878,7 @@ int32_t SandboxUtils::DoSandboxFilePrivateBind(const AppSpawningCtx *appProperty
                                                nlohmann::json &wholeConfig)
 {
     const char *bundleName = GetBundleName(appProperty);
-    nlohmann::json privateAppConfig = wholeConfig[g_privatePrefix][0];
+    nlohmann::json& privateAppConfig = wholeConfig[g_privatePrefix][0];
     if (privateAppConfig.find(bundleName) != privateAppConfig.end()) {
         APPSPAWN_LOGV("DoSandboxFilePrivateBind %{public}s", bundleName);
         DoAddGid((AppSpawningCtx *)appProperty, privateAppConfig[bundleName][0], "", g_privatePrefix);
@@ -895,7 +895,7 @@ int32_t SandboxUtils::DoSandboxFilePermissionBind(AppSpawningCtx *appProperty,
         APPSPAWN_LOGV("DoSandboxFilePermissionBind not found permission information in config file");
         return 0;
     }
-    nlohmann::json permissionAppConfig = wholeConfig[g_permissionPrefix][0];
+    nlohmann::json& permissionAppConfig = wholeConfig[g_permissionPrefix][0];
     for (nlohmann::json::iterator it = permissionAppConfig.begin(); it != permissionAppConfig.end(); ++it) {
         const std::string permission = it.key();
         int index = GetPermissionIndex(nullptr, permission.c_str());
@@ -932,7 +932,7 @@ int32_t SandboxUtils::DoSandboxFilePrivateSymlink(const AppSpawningCtx *appPrope
                                                   nlohmann::json &wholeConfig)
 {
     const char *bundleName = GetBundleName(appProperty);
-    nlohmann::json privateAppConfig = wholeConfig[g_privatePrefix][0];
+    nlohmann::json& privateAppConfig = wholeConfig[g_privatePrefix][0];
     if (privateAppConfig.find(bundleName) != privateAppConfig.end()) {
         return DoAllSymlinkPointslink(appProperty, privateAppConfig[bundleName][0]);
     }
@@ -947,11 +947,11 @@ int32_t SandboxUtils::HandleFlagsPoint(const AppSpawningCtx *appProperty,
         return 0;
     }
 
-    nlohmann::json flagsPoints = appConfig[g_flagePoint];
+    nlohmann::json& flagsPoints = appConfig[g_flagePoint];
     unsigned int flagsPointSize = flagsPoints.size();
 
     for (unsigned int i = 0; i < flagsPointSize; i++) {
-        nlohmann::json flagPoint = flagsPoints[i];
+        nlohmann::json& flagPoint = flagsPoints[i];
 
         if (flagPoint.find(g_flags) != flagPoint.end()) {
             std::string flagsStr = flagPoint[g_flags].get<std::string>();
@@ -971,7 +971,7 @@ int32_t SandboxUtils::DoSandboxFilePrivateFlagsPointHandle(const AppSpawningCtx 
                                                            nlohmann::json &wholeConfig)
 {
     const char *bundleName = GetBundleName(appProperty);
-    nlohmann::json privateAppConfig = wholeConfig[g_privatePrefix][0];
+    nlohmann::json& privateAppConfig = wholeConfig[g_privatePrefix][0];
     if (privateAppConfig.find(bundleName) != privateAppConfig.end()) {
         return HandleFlagsPoint(appProperty, privateAppConfig[bundleName][0]);
     }
@@ -982,7 +982,7 @@ int32_t SandboxUtils::DoSandboxFilePrivateFlagsPointHandle(const AppSpawningCtx 
 int32_t SandboxUtils::DoSandboxFileCommonFlagsPointHandle(const AppSpawningCtx *appProperty,
                                                           nlohmann::json &wholeConfig)
 {
-    nlohmann::json commonConfig = wholeConfig[g_commonPrefix][0];
+    nlohmann::json& commonConfig = wholeConfig[g_commonPrefix][0];
     if (commonConfig.find(g_appResources) != commonConfig.end()) {
         return HandleFlagsPoint(appProperty, commonConfig[g_appResources][0]);
     }
@@ -992,7 +992,7 @@ int32_t SandboxUtils::DoSandboxFileCommonFlagsPointHandle(const AppSpawningCtx *
 
 int32_t SandboxUtils::DoSandboxFileCommonBind(const AppSpawningCtx *appProperty, nlohmann::json &wholeConfig)
 {
-    nlohmann::json commonConfig = wholeConfig[g_commonPrefix][0];
+    nlohmann::json& commonConfig = wholeConfig[g_commonPrefix][0];
     int ret = 0;
 
     if (commonConfig.find(g_appBase) != commonConfig.end()) {
@@ -1012,7 +1012,7 @@ int32_t SandboxUtils::DoSandboxFileCommonBind(const AppSpawningCtx *appProperty,
 int32_t SandboxUtils::DoSandboxFileCommonSymlink(const AppSpawningCtx *appProperty,
                                                  nlohmann::json &wholeConfig)
 {
-    nlohmann::json commonConfig = wholeConfig[g_commonPrefix][0];
+    nlohmann::json& commonConfig = wholeConfig[g_commonPrefix][0];
     int ret = 0;
 
     if (commonConfig.find(g_appBase) != commonConfig.end()) {
@@ -1400,7 +1400,7 @@ bool SandboxUtils::CheckAppSandboxSwitchStatus(const AppSpawningCtx *appProperty
         }
         nlohmann::json& privateAppConfig = wholeConfig[g_privatePrefix][0];
         if (privateAppConfig.find(GetBundleName(appProperty)) != privateAppConfig.end()) {
-            nlohmann::json appConfig = privateAppConfig[GetBundleName(appProperty)][0];
+            nlohmann::json& appConfig = privateAppConfig[GetBundleName(appProperty)][0];
             rc = GetSbxSwitchStatusByConfig(appConfig);
             if (rc) {
                 break;
