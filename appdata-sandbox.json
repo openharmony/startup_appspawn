@@ -864,7 +864,7 @@
             "mount-paths": [{
                     "src-path": "/data/service/el1/public/update/param_service/install/system/etc/<PackageName>",
                     "sandbox-path": "/data/service/el1/public/update/param_service/install/system/etc/<PackageName>",
-                    "sandbox-flags": [ "bind", "rec" ],
+                    "sandbox-flags": [ "bind", "rec", "MS_RDONLY" ],
                     "check-action-status": "false"
                 }
             ]
