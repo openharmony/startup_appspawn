@@ -61,6 +61,7 @@ APPSPAWN_STATIC void HnpRelPath(const char *fromPath, const char *toPath, char *
     }
     char *to = strdup(toPath);
     if (to == NULL) {
+        free(from);
         return;
     }
     int numDirs = 0;
