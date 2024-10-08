@@ -51,10 +51,10 @@ enum {
 #define DEVICEDEBUG_ERRNO_OPERATOR_ARGV_MISS       0x12
 // 0x13 非开发者模式
 #define DEVICEDEBUG_ERRNO_NOT_IN_DEVELOPER_MODE    0x13
+// 0x14 创建json对象失败
+#define DEVICEDEBUG_ERRNO_JSON_CREATED_FAILED      0x14
 // 0x16 参数错误
 #define DEVICEDEBUG_ERRNO_PARAM_INVALID            0x16
-// 0x17 内存不足
-#define DEVICEDEBUG_ERRNO_NOMEM                    0x17
 
 #define DEVICEDEBUG_LOGI(args, ...) \
     HILOG_INFO(LOG_CORE, "[%{public}s:%{public}d]" args, (__FILE_NAME__), (__LINE__), ##__VA_ARGS__)

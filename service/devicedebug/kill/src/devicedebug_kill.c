@@ -21,6 +21,7 @@
 
 #include "devicedebug_base.h"
 #include "devicedebug_kill.h"
+#include "cJSON.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,7 +39,24 @@ APPSPAWN_STATIC void DeviceDebugShowKillHelp(void)
         "\r\n         kill -9 -12111     send a signal to a process\r\n");
 }
 
-APPSPAWN_STATIC int DeviceDebugKill(char *signal, char *pid)
+APPSPAWN_STATIC char* DeviceDebugJsonStringGeneral(int pid, const char *op, cJSON *args)
+{
+    cJSON *root = cJSON_CreateObject();
+    if (root == NULL) {
+        DEVICEDEBUG_LOGE("devicedebug json write create root object unsuccess");
+        return NULL;
+    }
+
+    cJSON_AddNumberToObject(root, "app", pid);
+    cJSON_AddStringToObject(root, "op", op);
+    cJSON_AddItemToObject(root, "args", args);
+
+    char *jsonString = cJSON_Print(root);
+    cJSON_Delete(root);
+    return jsonString;
+}
+
+APPSPAWN_STATIC int DeviceDebugKill(int pid, int signal)
 {
     AppSpawnClientHandle clientHandle;
     int ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
@@ -54,21 +72,29 @@ APPSPAWN_STATIC int DeviceDebugKill(char *signal, char *pid)
         return ret;
     }
 
-    ret = AppSpawnReqMsgAddStringInfo(reqHandle, "signal", signal);
-    if (ret != 0) {
-        DEVICEDEBUG_LOGE("devicedebug appspawn message add signal unsuccess, ret=%{public}d", ret);
-        return ret;
+    cJSON *args = cJSON_CreateObject();
+    if (args == NULL) {
+        DEVICEDEBUG_LOGE("devicedebug json write create args object unsuccess");
+        return DEVICEDEBUG_ERRNO_JSON_CREATED_FAILED;
+    }
+    cJSON_AddNumberToObject(args, "signal", signal);
+    char *jsonString = DeviceDebugJsonStringGeneral(pid, "kill", args);
+    if (jsonString == NULL) {
+        return DEVICEDEBUG_ERRNO_JSON_CREATED_FAILED;
     }
 
-    ret = AppSpawnReqMsgAddStringInfo(reqHandle, "pid", pid);
+    ret = AppSpawnReqMsgAddExtInfo(reqHandle, "devicedebug", (uint8_t *)jsonString, strlen(jsonString) + 1);
     if (ret != 0) {
-        DEVICEDEBUG_LOGE("devicedebug appspawn message add pid unsuccess, ret=%{public}d", ret);
+        DEVICEDEBUG_LOGE("devicedebug appspawn message add devicedebug[%{public}s] unsuccess, ret=%{public}d",
+            jsonString, ret);
+        free(args);
         return ret;
     }
 
     AppSpawnResult result = {0};
     ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
     AppSpawnClientDestroy(clientHandle);
+    free(args);
     if (ret != 0) {
         DEVICEDEBUG_LOGE("devicedebug appspawn send msg unsuccess, ret=%{public}d", ret);
         return ret;
@@ -110,7 +136,7 @@ int DeviceDebugCmdKill(int argc, char *argv[])
     int pid = atoi(argv[DEVICEDEBUG_KILL_CMD_PID_INDEX]);
     DEVICEDEBUG_LOGI("devicedebug cmd kill start signal[%{public}d], pid[%{public}d]", signal, pid);
 
-    return DeviceDebugKill(argv[DEVICEDEBUG_KILL_CMD_SIGNAL_INDEX], argv[DEVICEDEBUG_KILL_CMD_PID_INDEX]);
+    return DeviceDebugKill(pid, signal);
 }
 
 #ifdef __cplusplus
