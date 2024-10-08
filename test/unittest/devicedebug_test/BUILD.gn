@@ -49,7 +49,10 @@ if (!defined(ohos_lite)) {
       "APPSPAWN_TEST",
     ]
 
-    external_deps = [ "hilog:libhilog" ]
+    external_deps = [
+      "cJSON:cjson",
+      "hilog:libhilog",
+    ]
 
     deps = [
       "${appspawn_path}/interfaces/innerkits/client:appspawn_client",
