@@ -43,6 +43,7 @@
 #include "parameter.h"
 #include "appspawn_adapter.h"
 #include "securec.h"
+#include "cJSON.h"
 #ifdef APPSPAWN_HISYSEVENT
 #include "appspawn_hisysevent.h"
 #endif
@@ -341,7 +342,7 @@ static int OnConnection(const LoopHandle loopHandle, const TaskHandle server)
     socklen_t credSize = sizeof(struct ucred);
     if ((getsockopt(LE_GetSocketFd(stream), SOL_SOCKET, SO_PEERCRED, &cred, &credSize) < 0) ||
         (cred.uid != DecodeUid("foundation") && cred.uid != DecodeUid("root")
-        && cred.uid != DecodeUid("app_fwk_update"))) {
+        && cred.uid != DecodeUid("app_fwk_update") && cred.uid != DecodeUid("shell"))) {
         APPSPAWN_LOGE("Invalid uid %{public}d from client", cred.uid);
         LE_CloseStreamTask(LE_GetDefaultLoop(), stream);
         return -1;
@@ -358,6 +359,32 @@ static int OnConnection(const LoopHandle loopHandle, const TaskHandle server)
     APPSPAWN_LOGI("OnConnection connectionId: %{public}u fd %{public}d ",
         connection->connectionId, LE_GetSocketFd(stream));
     return 0;
+}
+
+APPSPAWN_STATIC bool MsgDevicedebugCheck(TaskHandle stream, AppSpawnMsgNode *message)
+{
+    struct ucred cred = {0, 0, 0};
+    socklen_t credSize = sizeof(cred);
+    if (getsockopt(LE_GetSocketFd(stream), SOL_SOCKET, SO_PEERCRED, &cred, &credSize) < 0) {
+        return false;
+    }
+
+    if (cred.uid != DecodeUid("shell")) {
+        return true;
+    }
+
+    if (!IsDeveloperModeOpen()) {
+        APPSPAWN_LOGE("appspawn devicedebug this is not develop mode on");
+        return false;
+    }
+
+    AppSpawnMsg *msg = &message->msgHeader;
+    if (msg->msgType != MSG_DEVICE_DEBUG) {
+        APPSPAWN_LOGE("appspawn devicedebug msg type is not devicedebug [%{public}d]", msg->msgType);
+        return false;
+    }
+
+    return true;
 }
 
 static void OnReceiveRequest(const TaskHandle taskHandle, const uint8_t *buffer, uint32_t buffLen)
@@ -391,6 +418,10 @@ static void OnReceiveRequest(const TaskHandle taskHandle, const uint8_t *buffer,
             LE_StopTimer(LE_GetDefaultLoop(), connection->receiverCtx.timer);
             connection->receiverCtx.timer = NULL;
         }
+
+        APPSPAWN_CHECK_ONLY_EXPER(MsgDevicedebugCheck(connection->stream, message),
+            LE_CloseTask(LE_GetDefaultLoop(), taskHandle); return);
+
         // decode msg
         ret = DecodeAppSpawnMsg(message);
         APPSPAWN_CHECK_ONLY_EXPER(ret == 0, break);
@@ -1432,25 +1463,11 @@ static void ProcessSpawnRestartMsg(AppSpawnConnection *connection, AppSpawnMsgNo
     APPSPAWN_LOGE("Failed to execv, ret %{public}d, errno %{public}d", ret, errno);
 }
 
-static int ProcessAppSpawnDeviceDebugMsg(AppSpawnMsgNode *message)
+APPSPAWN_STATIC int AppspawpnDevicedebugKill(int pid, cJSON *args)
 {
-    APPSPAWN_CHECK_ONLY_EXPER(message != NULL, return -1);
-    uint32_t len = 0;
-
-    if (!IsDeveloperModeOpen()) {
-        APPSPAWN_LOGE("appspawn devicedebug this is not develop mode on");
-        return -1;
-    }
-
-    pid_t pid = atoi((char *)GetAppSpawnMsgExtInfo(message, "pid", &len));
-    if (pid == 0) {
-        APPSPAWN_LOGE("appspawn devicedebug get pid fail");
-        return -1;
-    }
-
-    int signal = atoi((char *)GetAppSpawnMsgExtInfo(message, "signal", &len) + 1);
-    if (signal == 0) {
-        APPSPAWN_LOGE("appspawn devicedebug get signal fail");
+    cJSON *signal = cJSON_GetObjectItem(args, "signal");
+    if (!cJSON_IsNumber(signal)) {
+        APPSPAWN_LOGE("appspawn devicedebug json get signal fail");
         return -1;
     }
 
@@ -1466,14 +1483,63 @@ static int ProcessAppSpawnDeviceDebugMsg(AppSpawnMsgNode *message)
     }
 
     APPSPAWN_LOGI("appspawn devicedebug debugable=%{public}d, pid=%{public}d, signal=%{public}d",
-        appInfo->isDebuggable, pid, signal);
+        appInfo->isDebuggable, pid, signal->valueint);
 
-    if (kill(pid, signal) != 0) {
+    if (kill(pid, signal->valueint) != 0) {
         APPSPAWN_LOGE("appspawn devicedebug unable to kill process, pid: %{public}d ret %{public}d", pid, errno);
         return -1;
     }
 
     return 0;
+}
+
+APPSPAWN_STATIC int AppspawnDevicedebugDeal(const char* op, int pid, cJSON *args)
+{
+    if (strcmp(op, "kill") == 0) {
+        return AppspawpnDevicedebugKill(pid, args);
+    }
+    
+    APPSPAWN_LOGE("appspawn devicedebug op:%{public}s invaild", op);
+
+    return -1;
+}
+
+APPSPAWN_STATIC int ProcessAppSpawnDeviceDebugMsg(AppSpawnMsgNode *message)
+{
+    APPSPAWN_CHECK_ONLY_EXPER(message != NULL, return -1);
+    uint32_t len = 0;
+
+    const char* jsonString = (char *)GetAppSpawnMsgExtInfo(message, "devicedebug", &len);
+    if (jsonString == NULL || len == 0) {
+        APPSPAWN_LOGE("appspawn devicedebug get devicedebug fail");
+        return -1;
+    }
+
+    cJSON *json = cJSON_Parse(jsonString);
+    if (json == NULL) {
+        APPSPAWN_LOGE("appspawn devicedebug json parse fail");
+        return -1;
+    }
+
+    cJSON *app = cJSON_GetObjectItem(json, "app");
+    if (!cJSON_IsNumber(app)) {
+        APPSPAWN_LOGE("appspawn devicedebug json get app fail");
+        return -1;
+    }
+
+    cJSON *op = cJSON_GetObjectItem(json, "op");
+    if (!cJSON_IsString(op) || op->valuestring == NULL) {
+        APPSPAWN_LOGE("appspawn devicedebug json get op fail");
+        return -1;
+    }
+
+    cJSON *args = cJSON_GetObjectItem(json, "args");
+    if (!cJSON_IsObject(args)) {
+        APPSPAWN_LOGE("appspawn devicedebug json get args fail");
+        return -1;
+    }
+
+    return AppspawnDevicedebugDeal(op->valuestring, app->valueint, args);
 }
 
 static void ProcessRecvMsg(AppSpawnConnection *connection, AppSpawnMsgNode *message)
