@@ -62,6 +62,12 @@ static int HnpGenerateSoftLinkAllByJson(const char *installPath, const char *dst
         }
     }
 
+    if (strstr(currentLink->source, "../") || strstr(currentLink->target, "../")) {
+        HNP_LOGE("hnp json link source[%{public}s],target[%{public}s],does not allow the use of ../",
+            currentLink->source, currentLink->target);
+        return HNP_ERRNO_INSTALLER_GET_HNP_PATH_FAILED;
+    }
+
     for (unsigned int i = 0; i < hnpCfg->linkNum; i++) {
         int ret = sprintf_s(srcFile, MAX_FILE_PATH_LEN, "%s/%s", installPath, currentLink->source);
         char *fileName;
