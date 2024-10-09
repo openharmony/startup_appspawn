@@ -423,15 +423,7 @@ uint32_t GetSpawnTimeout(uint32_t def)
 int EnableNewNetNamespace(void)
 {
     int fd = open(DEVICE_VIRTUAL_NET_IO_FLAGS, O_WRONLY);
-    if (fd < 0) {
-        // avoid open DEVICE_VIRTUAL_NET_IO_FLAGS fail, retry
-        DIR *pDir = opendir(DEVICE_VIRTUAL_NET_IO_DIR);
-        if (pDir != NULL) {
-            closedir(pDir);
-        }
-        fd = open(DEVICE_VIRTUAL_NET_IO_FLAGS, O_WRONLY);
-        APPSPAWN_CHECK(fd >= 0, return APPSPAWN_SYSTEM_ERROR, "Failed to open file errno %{public}d", errno);
-    }
+    APPSPAWN_CHECK(fd >= 0, return APPSPAWN_SYSTEM_ERROR, "Failed to open file errno %{public}d", errno);
 
     int ret = write(fd, IFF_LOOPBACK_VALUE, IFF_LOOPBACK_SIZE);
     if (ret < 0) {
