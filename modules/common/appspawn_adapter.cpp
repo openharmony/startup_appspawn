@@ -31,6 +31,12 @@
 #ifdef WITH_SECCOMP
 #include "seccomp_policy.h"
 #include <sys/prctl.h>
+#ifdef SECCOMP_PRIVILEGE
+#include <dlfcn.h>
+#define GET_ALL_PROCESSES "ohos.permission.GET_ALL_PROCESSES"
+#define GET_PERMISSION_INDEX "GetPermissionIndex"
+using GetPermissionFunc = int32_t (*)(void *, const char *);
+#endif
 #endif
 #define MSG_EXT_NAME_PROCESS_TYPE "ProcessType"
 #define NWEBSPAWN_SERVER_NAME "nwebspawn"
@@ -137,6 +143,11 @@ int SetUidGidFilter(const AppSpawnMgr *content)
         }
         ret = SetSeccompPolicyWithName(INDIVIDUAL, NWEBSPAWN_NAME);
     } else {
+#ifdef SECCOMP_PRIVILEGE
+        if (IsDeveloperModeOpen()) {
+            return 0;
+        }
+#endif
         ret = SetSeccompPolicyWithName(INDIVIDUAL, APPSPAWN_NAME);
     }
     if (!ret) {
@@ -162,6 +173,23 @@ int SetSeccompFilter(const AppSpawnMgr *content, const AppSpawningCtx *property)
             return 0;
         }
     }
+
+#ifdef SECCOMP_PRIVILEGE
+    if (IsDeveloperModeOpen()) {
+        static GetPermissionFunc getPermissionFuncPtr = nullptr;
+        if (getPermissionFuncPtr == nullptr) {
+            getPermissionFuncPtr = reinterpret_cast<GetPermissionFunc>(dlsym(nullptr, GET_PERMISSION_INDEX));
+            if (getPermissionFuncPtr == nullptr) {
+                APPSPAWN_LOGE("Failed to dlsym get permission errno is %{public}d", errno);
+                return -EINVAL;
+            }
+        }
+        int32_t index = getPermissionFuncPtr(nullptr, GET_ALL_PROCESSES);
+        if (CheckAppPermissionFlagSet(property, static_cast<uint32_t>(index)) != 0) {
+            appName = APP_PRIVILEGE;
+        }
+    }
+#endif
 
     if (CheckAppSpawnMsgFlag(property->message, TLV_MSG_FLAGS, APP_FLAGS_ISOLATED_SANDBOX) != 0) {
         appName = IMF_EXTENTOIN_NAME;
