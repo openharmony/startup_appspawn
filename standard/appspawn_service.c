@@ -776,14 +776,9 @@ static bool IsSupportPrefork(AppSpawnContent *content, AppSpawnClient *client)
     if (!content->enablePerfork) {
         return false;
     }
-    if (!content->isPrefork) {
-        if (pipe(content->parentToChildFd) == 0) {
-            content->isPrefork = true;
-        }
-    }
     AppSpawningCtx *property = (AppSpawningCtx *)client;
 
-    if (content->mode == MODE_FOR_APP_SPAWN && !IsChildColdRun(property) && content->isPrefork
+    if (content->mode == MODE_FOR_APP_SPAWN && !IsChildColdRun(property)
         && !CheckAppMsgFlagsSet(property, APP_FLAGS_CHILDPROCESS)) {
         return true;
     }
