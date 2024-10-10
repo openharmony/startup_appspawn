@@ -53,6 +53,7 @@
 #define PATH_SIZE 256
 #define FD_PATH_SIZE 128
 #define MAX_MEM_SIZE (4 * 1024)
+#define APPSPAWN_MSG_USER_CHECK_COUNT 3
 #ifndef PIDFD_NONBLOCK
 #define PIDFD_NONBLOCK O_NONBLOCK
 #endif
@@ -335,6 +336,28 @@ static int HandleRecvMessage(const TaskHandle taskHandle, uint8_t * buffer, int 
     return recvLen;
 }
 
+APPSPAWN_STATIC bool OnConnectionUserCheck(uid_t uid)
+{
+    const uid_t uids[APPSPAWN_MSG_USER_CHECK_COUNT] = {
+        0, // root 0
+        3350, // app_fwk_update 3350
+        5523, // foundation 5523
+    };
+
+    for (int i = 0; i < APPSPAWN_MSG_USER_CHECK_COUNT; i++) {
+        if (uid == uids[i]) {
+            return true;
+        }
+    }
+
+    // shell 2000
+    if (uid == 2000 && IsDeveloperModeOpen()) {
+        return true;
+    }
+
+    return false;
+}
+
 static int OnConnection(const LoopHandle loopHandle, const TaskHandle server)
 {
     APPSPAWN_CHECK(server != NULL && loopHandle != NULL, return -1, "Error server");
@@ -356,8 +379,7 @@ static int OnConnection(const LoopHandle loopHandle, const TaskHandle server)
     struct ucred cred = {-1, -1, -1};
     socklen_t credSize = sizeof(struct ucred);
     if ((getsockopt(LE_GetSocketFd(stream), SOL_SOCKET, SO_PEERCRED, &cred, &credSize) < 0) ||
-        (cred.uid != DecodeUid("foundation") && cred.uid != DecodeUid("root")
-        && cred.uid != DecodeUid("app_fwk_update") && cred.uid != DecodeUid("shell"))) {
+        !OnConnectionUserCheck(cred.uid)) {
         APPSPAWN_LOGE("Invalid uid %{public}d from client", cred.uid);
         LE_CloseStreamTask(LE_GetDefaultLoop(), stream);
         return -1;
@@ -386,11 +408,6 @@ APPSPAWN_STATIC bool MsgDevicedebugCheck(TaskHandle stream, AppSpawnMsgNode *mes
 
     if (cred.uid != DecodeUid("shell")) {
         return true;
-    }
-
-    if (!IsDeveloperModeOpen()) {
-        APPSPAWN_LOGE("appspawn devicedebug this is not develop mode on");
-        return false;
     }
 
     AppSpawnMsg *msg = &message->msgHeader;
