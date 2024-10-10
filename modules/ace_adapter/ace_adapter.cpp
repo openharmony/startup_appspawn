@@ -62,7 +62,7 @@ static void GetModules(const cJSON *root, std::set<std::string> &modules)
         return;
     }
 
-    uint32_t moduleCount = cJSON_GetArraySize(modulesJson);
+    uint32_t moduleCount = (uint32_t)cJSON_GetArraySize(modulesJson);
     for (uint32_t i = 0; i < moduleCount; ++i) {
         const char *moduleName = cJSON_GetStringValue(cJSON_GetArrayItem(modulesJson, i));
         if (moduleName == nullptr) {
