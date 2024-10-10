@@ -232,7 +232,7 @@ static int AddAppData(AppSpawnReqMsgNode *reqNode,
 static int SetFlagsTlv(AppSpawnReqMsgNode *reqNode,
     AppSpawnMsgBlock *block, AppSpawnMsgFlags **msgFlags, int type, int maxCount)
 {
-    uint32_t units = CalcFlagsUnits(maxCount);
+    uint32_t units = (uint32_t)CalcFlagsUnits(maxCount);
     APPSPAWN_LOGV("SetFlagsTlv maxCount %{public}d type %{public}d units %{public}d", maxCount, type, units);
     uint32_t flagsLen = sizeof(AppSpawnTlv) + sizeof(AppSpawnMsgFlags) + sizeof(uint32_t) * units;
     APPSPAWN_CHECK((block->blockSize - block->currentIndex) > flagsLen,
