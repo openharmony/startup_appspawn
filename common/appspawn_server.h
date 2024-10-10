@@ -68,7 +68,6 @@ typedef struct AppSpawnContent {
     int32_t preforkFd[2];
     int32_t parentToChildFd[2];
     char *propertyBuffer;
-    int isPrefork;
     pid_t reservedPid;
     int enablePerfork;
 #endif
