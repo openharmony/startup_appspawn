@@ -781,18 +781,10 @@ static bool IsSupportPrefork(AppSpawnContent *content, AppSpawnClient *client)
     if (!content->enablePerfork) {
         return false;
     }
-    if (!content->isPrefork) {
-        if (pipe(content->parentToChildFd) == 0) {
-            content->isPrefork = true;
-        }
-    }
     AppSpawningCtx *property = (AppSpawningCtx *)client;
-    bool isAsan = CheckAppMsgFlagsSet(property, APP_FLAGS_UBSAN_ENABLED)
-        || CheckAppMsgFlagsSet(property, APP_FLAGS_ASANENABLED)
-        || CheckAppMsgFlagsSet(property, APP_FLAGS_TSAN_ENABLED)
-        || CheckAppMsgFlagsSet(property, APP_FLAGS_HWASAN_ENABLED);
-    if (content->mode == MODE_FOR_APP_SPAWN && !(client->flags & APP_COLD_START) && content->isPrefork
-        && !CheckAppMsgFlagsSet(property, APP_FLAGS_CHILDPROCESS) && !isAsan) {
+
+    if (content->mode == MODE_FOR_APP_SPAWN && !IsChildColdRun(property)
+        && !CheckAppMsgFlagsSet(property, APP_FLAGS_CHILDPROCESS)) {
         return true;
     }
     return false;
