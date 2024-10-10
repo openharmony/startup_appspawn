@@ -80,6 +80,7 @@ APPSPAWN_STATIC int DeviceDebugKill(int pid, int signal)
     cJSON_AddNumberToObject(args, "signal", signal);
     char *jsonString = DeviceDebugJsonStringGeneral(pid, "kill", args);
     if (jsonString == NULL) {
+        cJSON_Delete(args);
         return DEVICEDEBUG_ERRNO_JSON_CREATED_FAILED;
     }
 
@@ -87,14 +88,12 @@ APPSPAWN_STATIC int DeviceDebugKill(int pid, int signal)
     if (ret != 0) {
         DEVICEDEBUG_LOGE("devicedebug appspawn message add devicedebug[%{public}s] unsuccess, ret=%{public}d",
             jsonString, ret);
-        free(args);
         return ret;
     }
 
     AppSpawnResult result = {0};
     ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
     AppSpawnClientDestroy(clientHandle);
-    free(args);
     if (ret != 0) {
         DEVICEDEBUG_LOGE("devicedebug appspawn send msg unsuccess, ret=%{public}d", ret);
         return ret;
