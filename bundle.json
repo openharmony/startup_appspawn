@@ -23,6 +23,7 @@
             "appspawn_support_cj",
             "appspawn_support_native",
             "appspawn_use_encaps",
+            "appspawn_mount_tmpshm",
             "appspawn_seccomp_privilege"
         ],
         "rom": "296KB",
