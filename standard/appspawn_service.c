@@ -208,7 +208,7 @@ APPSPAWN_STATIC void ProcessSignal(const struct signalfd_siginfo *siginfo)
 
 static void AppSpawningCtxOnClose(const AppSpawnMgr *mgr, AppSpawningCtx *ctx, void *data)
 {
-    if (ctx->message == NULL || ctx->message->connection != data) {
+    if (ctx == NULL || ctx->message == NULL || ctx->message->connection != data) {
         return;
     }
     APPSPAWN_LOGI("Kill process, pid: %{public}d app: %{public}s", ctx->pid, GetProcessName(ctx));
