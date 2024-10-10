@@ -280,7 +280,6 @@ int HnpDeleteFolder(const char *path);
 
 int HnpCreateFolder(const char* path);
 
-int HnpWriteInfoToFile(const char* filePath, char *buff, int len);
 
 int ParseHnpCfgFile(const char *hnpCfgPath, HnpCfgInfo *hnpCfg);
 

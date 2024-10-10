@@ -309,11 +309,12 @@ static int32_t CheckTraceStatus(void)
     APPSPAWN_CHECK(fd >= 0, return errno, "Failed to open /proc/self/status error: %{public}d", errno);
 
     char data[1024] = {0};  // 1024 is data length
-    ssize_t dataNum = read(fd, data, sizeof(data));
+    ssize_t dataNum = read(fd, data, sizeof(data) - 1);
     (void)close(fd);
     APPSPAWN_CHECK(dataNum > 0, return -1, "Failed to read file /proc/self/status error: %{public}d", errno);
 
     const char *tracerPid = "TracerPid:\t";
+    data[dataNum] = '\0';
     char *traceStr = strstr(data, tracerPid);
     APPSPAWN_CHECK(traceStr != NULL, return -1, "Not found %{public}s", tracerPid);
 

@@ -1070,12 +1070,12 @@ static AppSpawningCtx *GetAppSpawningCtxFromArg(AppSpawnMgr *content, int argc, 
     AppSpawningCtx *property = CreateAppSpawningCtx();
     APPSPAWN_CHECK(property != NULL, return NULL, "Create app spawning ctx fail");
     property->forkCtx.fd[1] = atoi(argv[FD_VALUE_INDEX]);
-    property->client.flags = atoi(argv[FLAGS_VALUE_INDEX]);
+    property->client.flags = (uint32_t)atoi(argv[FLAGS_VALUE_INDEX]);
     property->client.flags &= ~APP_COLD_START;
 
     int isNweb = IsNWebSpawnMode(content);
-    uint32_t size = atoi(argv[SHM_SIZE_INDEX]);
-    property->client.id = atoi(argv[CLIENT_ID_INDEX]);
+    uint32_t size = (uint32_t)atoi(argv[SHM_SIZE_INDEX]);
+    property->client.id = (uint32_t)atoi(argv[CLIENT_ID_INDEX]);
     uint8_t *buffer = (uint8_t *)GetMapMem(property->client.id,
         argv[PARAM_VALUE_INDEX], size, true, isNweb);
     if (buffer == NULL) {
