@@ -689,6 +689,12 @@ static void ClearMMAP(int clientId)
 static void ProcessPreFork(AppSpawnContent *content, AppSpawningCtx *property)
 {
     APPSPAWN_CHECK(pipe(content->preforkFd) == 0, return, "prefork with prefork pipe failed %{public}d", errno);
+    APPSPAWN_CHECK_ONLY_EXPER(content->parentToChildFd[0] <= 0, close(content->parentToChildFd[0]);
+        content->parentToChildFd[0] = -1);
+    APPSPAWN_CHECK_ONLY_EXPER(content->parentToChildFd[1] <= 0, close(content->parentToChildFd[1]);
+        content->parentToChildFd[1] = -1);
+    APPSPAWN_CHECK(pipe(content->parentToChildFd) == 0, return, "prefork with prefork pipe failed %{public}d", errno);
+
     content->reservedPid = fork();
     APPSPAWN_LOGV("prefork fork finish %{public}d,%{public}d,%{public}d,%{public}d,%{public}d",
         content->reservedPid, content->preforkFd[0], content->preforkFd[1], content->parentToChildFd[0],
@@ -770,14 +776,9 @@ static bool IsSupportPrefork(AppSpawnContent *content, AppSpawnClient *client)
     if (!content->enablePerfork) {
         return false;
     }
-    if (!content->isPrefork) {
-        if (pipe(content->parentToChildFd) == 0) {
-            content->isPrefork = true;
-        }
-    }
     AppSpawningCtx *property = (AppSpawningCtx *)client;
 
-    if (content->mode == MODE_FOR_APP_SPAWN && !IsChildColdRun(property) && content->isPrefork
+    if (content->mode == MODE_FOR_APP_SPAWN && !IsChildColdRun(property)
         && !CheckAppMsgFlagsSet(property, APP_FLAGS_CHILDPROCESS)) {
         return true;
     }
