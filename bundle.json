@@ -22,7 +22,8 @@
             "appspawn_support_nweb",
             "appspawn_support_cj",
             "appspawn_support_native",
-            "appspawn_use_encaps"
+            "appspawn_use_encaps",
+            "appspawn_seccomp_privilege"
         ],
         "rom": "296KB",
         "ram": "13125KB",

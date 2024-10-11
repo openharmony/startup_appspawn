@@ -31,6 +31,9 @@ config("appspawn_server_config") {
 
   if (build_seccomp) {
     cflags += [ "-DWITH_SECCOMP" ]
+    if (appspawn_seccomp_privilege) {
+      cflags += [ "-DSECCOMP_PRIVILEGE" ]
+    }
   }
   configs = [ "${appspawn_path}:appspawn_config" ]
 }

@@ -29,6 +29,9 @@ config("appspawn_config") {
 
   if (build_seccomp) {
     cflags += [ "-DWITH_SECCOMP" ]
+    if (appspawn_seccomp_privilege) {
+      cflags += [ "-DSECCOMP_PRIVILEGE" ]
+    }
   }
 }
 
