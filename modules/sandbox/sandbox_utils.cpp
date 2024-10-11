@@ -645,7 +645,7 @@ static int32_t DoDlpAppMountStrategy(const AppSpawningCtx *appProperty,
 
     char options[OPTIONS_MAX_LEN];
     (void)sprintf_s(options, sizeof(options), "fd=%d,"
-        "rootmode=40000,user_id=%d,group_id=%d,allow_other,"
+        "rootmode=40000,user_id=%u,group_id=%u,allow_other,"
         "context=\"u:object_r:dlp_fuse_file:s0\","
         "fscontext=u:object_r:dlp_fuse_file:s0",
         fd, dacInfo->uid, dacInfo->gid);
@@ -1792,7 +1792,8 @@ static bool IsUnlockStatus(uint32_t uid, const char *bundleName, size_t bundleNa
     char *path = reinterpret_cast<char *>(malloc(sizeof(char) * allPathSize));
     APPSPAWN_CHECK(path != NULL, return true, "Failed to malloc path");
     int len = sprintf_s(path, allPathSize, "%s%u%s%s", rootPath, uid, basePath, bundleName);
-    APPSPAWN_CHECK(len > 0 && ((size_t)len < allPathSize), return true, "Failed to get base path");
+    APPSPAWN_CHECK(len > 0 && ((size_t)len < allPathSize), free(path);
+        return true, "Failed to get base path");
 
     if (access(path, F_OK) == 0) {
         APPSPAWN_LOGI("this is unlock status");
@@ -1886,7 +1887,7 @@ static void MountDirToShared(const AppSpawningCtx *property)
             }
         }
     }
-    
+
     std::string lockSbxPathStamp = rootPath + to_string(info->uid / UID_BASE) + "/";
     lockSbxPathStamp += CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX_TYPE) ? "isolated/" : "";
     lockSbxPathStamp += bundleName;
