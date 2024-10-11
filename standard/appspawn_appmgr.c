@@ -395,10 +395,22 @@ void ProcessAppSpawnDumpMsg(const AppSpawnMsgNode *message)
     FILE *stream = NULL;
     uint32_t len = 0;
     char *ptyName = GetAppSpawnMsgExtInfo(message, "pty-name", &len);
-    if (ptyName != NULL) { //
+    if (ptyName != NULL) {
         APPSPAWN_LOGI("Dump info to file '%{public}s'", ptyName);
-        stream = fopen(ptyName, "w");
-        SetDumpToStream(stream);
+        size_t bufferSize = len + 1; // +1 for the null terminator
+        char *canonicalPtyPath = (char *)calloc(1, bufferSize);
+        if (canonicalPtyPath != NULL) {
+            if (realpath(ptyName, canonicalPtyPath) == NULL) {
+                free(canonicalPtyPath);
+                return;
+            }
+
+            stream = fopen(canonicalPtyPath, "w");
+            free(canonicalPtyPath); // Ensure to free the allocated memory
+        } else {
+            // Handle allocation failure
+            return;
+        }
     } else {
         SetDumpToStream(stdout);
     }
