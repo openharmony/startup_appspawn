@@ -43,6 +43,9 @@ ohos_shared_library("appspawn_nweb") {
   ]
   if (build_seccomp) {
     cflags += [ "-DWITH_SECCOMP" ]
+    if (appspawn_seccomp_privilege) {
+      cflags += [ "-DSECCOMP_PRIVILEGE" ]
+    }
     external_deps += [ "init:seccomp" ]
   }
   subsystem_name = "${subsystem_name}"
