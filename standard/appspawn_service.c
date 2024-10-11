@@ -430,7 +430,7 @@ static void OnReceiveRequest(const TaskHandle taskHandle, const uint8_t *buffer,
 static char *GetMapMem(uint32_t clientId, const char *processName, uint32_t size, bool readOnly, bool isNweb)
 {
     char path[PATH_MAX] = {};
-    int len = sprintf_s(path, sizeof(path), APPSPAWN_MSG_DIR "%s/%s_%d",
+    int len = sprintf_s(path, sizeof(path), APPSPAWN_MSG_DIR "%s/%s_%u",
         isNweb ? "nwebspawn" : "appspawn", processName, clientId);
     APPSPAWN_CHECK(len > 0, return NULL, "Failed to format path %{public}s", processName);
     APPSPAWN_LOGV("GetMapMem for child %{public}s memSize %{public}u", path, size);
@@ -826,9 +826,9 @@ static int AppSpawnColdStartApp(struct AppSpawnContent *content, AppSpawnClient 
     APPSPAWN_CHECK(len > 0, return APPSPAWN_SYSTEM_ERROR, "Invalid to format fd");
     len = sprintf_s(buffer[1], sizeof(buffer[1]), " %u ", property->client.flags);
     APPSPAWN_CHECK(len > 0, return APPSPAWN_SYSTEM_ERROR, "Invalid to format flags");
-    len = sprintf_s(buffer[2], sizeof(buffer[2]), " %d ", property->forkCtx.msgSize); // 2 2 index for dest path
+    len = sprintf_s(buffer[2], sizeof(buffer[2]), " %u ", property->forkCtx.msgSize); // 2 2 index for dest path
     APPSPAWN_CHECK(len > 0, return APPSPAWN_SYSTEM_ERROR, "Invalid to format shmId ");
-    len = sprintf_s(buffer[3], sizeof(buffer[3]), " %d ", property->client.id); // 3 3 index for client id
+    len = sprintf_s(buffer[3], sizeof(buffer[3]), " %u ", property->client.id); // 3 3 index for client id
     APPSPAWN_CHECK(len > 0, return APPSPAWN_SYSTEM_ERROR, "Invalid to format shmId ");
 #ifndef APPSPAWN_TEST
     char *mode = IsNWebSpawnMode((AppSpawnMgr *)content) ? "nweb_cold" : "app_cold";
