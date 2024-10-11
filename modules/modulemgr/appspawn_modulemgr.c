@@ -60,7 +60,7 @@ int AppSpawnModuleMgrInstall(const char *moduleName)
 
 void AppSpawnModuleMgrUnInstall(int type)
 {
-    if (type >= MODULE_MAX) {
+    if ((type < 0) || (type >= MODULE_MAX)) {
         return;
     }
     if (g_moduleMgr[type].moduleMgr == NULL) {
@@ -72,7 +72,7 @@ void AppSpawnModuleMgrUnInstall(int type)
 
 int AppSpawnLoadAutoRunModules(int type)
 {
-    if (type >= MODULE_MAX) {
+    if ((type < 0) || (type >= MODULE_MAX)) {
         return -1;
     }
     if (g_moduleMgr[type].moduleMgr != NULL) {
