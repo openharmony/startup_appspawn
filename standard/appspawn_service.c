@@ -822,7 +822,6 @@ static int AppSpawnColdStartApp(struct AppSpawnContent *content, AppSpawnClient 
     APPSPAWN_CHECK(ret == 0, return APPSPAWN_SYSTEM_ERROR, "Failed to write msg to child");
 
     char buffer[4][32] = {0};  // 4 32 buffer for fd
-    char *mode = IsNWebSpawnMode((AppSpawnMgr *)content) ? "nweb_cold" : "app_cold";
     int len = sprintf_s(buffer[0], sizeof(buffer[0]), " %d ", property->forkCtx.fd[1]);
     APPSPAWN_CHECK(len > 0, return APPSPAWN_SYSTEM_ERROR, "Invalid to format fd");
     len = sprintf_s(buffer[1], sizeof(buffer[1]), " %u ", property->client.flags);
@@ -831,7 +830,8 @@ static int AppSpawnColdStartApp(struct AppSpawnContent *content, AppSpawnClient 
     APPSPAWN_CHECK(len > 0, return APPSPAWN_SYSTEM_ERROR, "Invalid to format shmId ");
     len = sprintf_s(buffer[3], sizeof(buffer[3]), " %d ", property->client.id); // 3 3 index for client id
     APPSPAWN_CHECK(len > 0, return APPSPAWN_SYSTEM_ERROR, "Invalid to format shmId ");
-
+#ifndef APPSPAWN_TEST
+    char *mode = IsNWebSpawnMode((AppSpawnMgr *)content) ? "nweb_cold" : "app_cold";
     // 2 2 index for dest path
     const char *const formatCmds[] = {
         path, "-mode", mode, "-fd", buffer[0], buffer[1], buffer[2],
@@ -842,6 +842,7 @@ static int AppSpawnColdStartApp(struct AppSpawnContent *content, AppSpawnClient 
     if (ret != 0) {
         APPSPAWN_LOGE("Failed to execv, errno: %{public}d", errno);
     }
+#endif
     APPSPAWN_LOGV("ColdStartApp::processName: %{public}s end", GetProcessName(property));
     return 0;
 }
