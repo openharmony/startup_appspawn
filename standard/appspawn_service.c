@@ -85,7 +85,8 @@ static void CloseDevEncaps(int fd)
 static inline void SetFdCtrl(int fd, int opt)
 {
     int option = fcntl(fd, F_GETFD);
-    int ret = fcntl(fd, F_SETFD, option | opt);
+    APPSPAWN_CHECK(option >= 0, return, "SetFdCtrl fcntl failed %{public}d,%{public}d", option, errno);
+    int ret = fcntl(fd, F_SETFD, (unsigned int)option | (unsigned int)opt);
     if (ret < 0) {
         APPSPAWN_LOGI("Set fd %{public}d option %{public}d %{public}d result: %{public}d", fd, option, opt, errno);
     }
@@ -483,7 +484,7 @@ static int InitForkContext(AppSpawningCtx *property)
     }
     int option = fcntl(property->forkCtx.fd[0], F_GETFD);
     if (option > 0) {
-        (void)fcntl(property->forkCtx.fd[0], F_SETFD, option | O_NONBLOCK);
+        (void)fcntl(property->forkCtx.fd[0], F_SETFD, (unsigned int)option | O_NONBLOCK);
     }
     return 0;
 }
@@ -1211,10 +1212,13 @@ static void ProcessSpawnRestartMsg(AppSpawnConnection *connection, AppSpawnMsgNo
     APPSPAWN_CHECK(fd >= 0, return, "Get fd failed %{public}d, errno %{public}d", fd, errno);
 
     int op = fcntl(fd, F_GETFD);
-    op &= ~FD_CLOEXEC;
-    int ret = fcntl(fd, F_SETFD, op);
-    if (ret < 0) {
-        APPSPAWN_LOGE("Set fd failed %{public}d, %{public}d, ret %{public}d, errno %{public}d", fd, op, ret, errno);
+    APPSPAWN_CHECK_ONLY_LOG(op >= 0, "fcntl failed %{public}d %{public}d", op, errno);
+    int ret = 0;
+    if (op > 0) {
+        ret = fcntl(fd, F_SETFD, (unsigned int)op & ~FD_CLOEXEC);
+        if (ret < 0) {
+            APPSPAWN_LOGE("Set fd failed %{public}d, %{public}d, ret %{public}d, errno %{public}d", fd, op, ret, errno);
+        }
     }
 
     char *path = "/system/bin/appspawn";
