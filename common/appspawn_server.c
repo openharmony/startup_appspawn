@@ -166,6 +166,9 @@ int AppSpawnProcessMsg(AppSpawnContent *content, AppSpawnClient *client, pid_t *
         AppSpawningCtx *property = (AppSpawningCtx *)client;
         uint32_t len = 0;
         char *processType = (char *)(GetAppSpawnMsgExtInfo(property->message, MSG_EXT_NAME_PROCESS_TYPE, &len));
+        if (processType == NULL) {
+            return -1;
+        }
         if (strcmp(processType, "gpu") == 0) {
             pid = clone(CloneAppSpawn, NULL, CLONE_NEWNET | SIGCHLD, (void *)&arg);
         } else {
