@@ -74,7 +74,7 @@ static int ZipAddFile(const char* file, int offset, zipFile zf)
     int err;
     char buf[1024];
     char transPath[MAX_FILE_PATH_LEN];
-    int len;
+    size_t len;
     FILE *f;
     zip_fileinfo fileInfo = {0};
 
@@ -346,8 +346,8 @@ static bool HnpELFFileCheck(const char *path)
         return false;
     }
 
-    int ret = fread(buff, sizeof(char), HNP_ELF_FILE_CHECK_HEAD_LEN, fp);
-    if (ret != HNP_ELF_FILE_CHECK_HEAD_LEN) {
+    size_t readLen = fread(buff, sizeof(char), HNP_ELF_FILE_CHECK_HEAD_LEN, fp);
+    if (readLen != HNP_ELF_FILE_CHECK_HEAD_LEN) {
         (void)fclose(fp);
         return false;
     }
@@ -512,11 +512,11 @@ int HnpCfgGetFromZip(const char *inputFile, HnpCfgInfo *hnpCfg)
             unzClose(zipFile);
             return HNP_ERRNO_NOMEM;
         }
-        uLong readSize = unzReadCurrentFile(zipFile, cfgStream, fileInfo.uncompressed_size);
-        if (readSize != fileInfo.uncompressed_size) {
+        int readSize = unzReadCurrentFile(zipFile, cfgStream, fileInfo.uncompressed_size);
+        if ((uLong)readSize != fileInfo.uncompressed_size) {
             free(cfgStream);
             unzClose(zipFile);
-            HNP_LOGE("unzip read zip:%{public}s info size[%{public}lu]=>[%{public}lu] error!", inputFile,
+            HNP_LOGE("unzip read zip:%{public}s info size[%{public}lu]=>[%{public}d] error!", inputFile,
                 fileInfo.uncompressed_size, readSize);
             return HNP_ERRNO_BASE_FILE_READ_FAILED;
         }

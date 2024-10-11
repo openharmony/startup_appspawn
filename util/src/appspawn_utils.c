@@ -168,7 +168,7 @@ int MakeDirRec(const char *path, mode_t mode, int lastPath)
 
 static void TrimTail(char *buffer, uint32_t maxLen)
 {
-    int32_t index = maxLen - 1;
+    uint32_t index = maxLen - 1;
     while (index > 0) {
         if (isspace(buffer[index])) {
             buffer[index] = '\0';
@@ -253,7 +253,7 @@ char *ReadFile(const char *fileName)
         buffer = (char *)malloc((size_t)(fileStat.st_size + 1));
         APPSPAWN_CHECK(buffer != NULL, break, "Failed to alloc mem %{public}s", fileName);
 
-        int ret = fread(buffer, fileStat.st_size, 1, fd);
+        size_t ret = fread(buffer, fileStat.st_size, 1, fd);
         APPSPAWN_CHECK(ret == 1, break, "Failed to read %{public}s to buffer", fileName);
         buffer[fileStat.st_size] = '\0';
         (void)fclose(fd);
@@ -415,7 +415,7 @@ uint32_t GetSpawnTimeout(uint32_t def)
     int ret = GetParameter("persist.appspawn.reqMgr.timeout", "0", data, sizeof(data));
     if (ret > 0 && strcmp(data, "0") != 0) {
         errno = 0;
-        value = atoi(data);
+        value = (uint32_t)atoi(data);
         return (errno != 0) ? def : ((value < def) ? def : value);
     }
     return value;

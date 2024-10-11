@@ -46,7 +46,7 @@ static void ParseSilkConfig(const cJSON *root, struct SilkConfig *config)
         return;
     }
 
-    uint32_t configCount = cJSON_GetArraySize(silkJson);
+    uint32_t configCount = (uint32_t)cJSON_GetArraySize(silkJson);
     APPSPAWN_CHECK(configCount <= SILK_JSON_MAX, configCount = SILK_JSON_MAX,
                    "config count %{public}u is larger than %{public}d", configCount, SILK_JSON_MAX);
     config->configItems = (char **)malloc(configCount * sizeof(char *));
