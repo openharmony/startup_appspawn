@@ -438,25 +438,27 @@ int HnpFileCountGet(const char *path, int *count)
 int HnpUnZip(const char *inputFile, const char *outputDir, const char *hnpSignKeyPrefix,
     HnpSignMapInfo *hnpSignMapInfos, int *count)
 {
-    unzFile zipFile;
-    int result;
     char fileName[MAX_FILE_PATH_LEN];
     unz_file_info fileInfo;
     char filePath[MAX_FILE_PATH_LEN];
 
     HNP_LOGI("HnpUnZip zip=%{public}s, output=%{public}s", inputFile, outputDir);
 
-    zipFile = unzOpen(inputFile);
+    unzFile zipFile = unzOpen(inputFile);
     if (zipFile == NULL) {
         HNP_LOGE("unzip open hnp:%{public}s unsuccess!", inputFile);
         return HNP_ERRNO_BASE_UNZIP_OPEN_FAILED;
     }
 
-    result = unzGoToFirstFile(zipFile);
+    int result = unzGoToFirstFile(zipFile);
     while (result == UNZ_OK) {
         result = unzGetCurrentFileInfo(zipFile, &fileInfo, fileName, sizeof(fileName), NULL, 0, NULL, 0);
         if (result != UNZ_OK) {
             HNP_LOGE("unzip get zip:%{public}s info unsuccess!", inputFile);
+            unzClose(zipFile);
+            return HNP_ERRNO_BASE_UNZIP_GET_INFO_FAILED;
+        }
+        if (strstr(fileName, "../")) {
             unzClose(zipFile);
             return HNP_ERRNO_BASE_UNZIP_GET_INFO_FAILED;
         }
