@@ -65,7 +65,8 @@
                 "zlib",
                 "cJSON",
                 "json",
-                "faultloggerd"
+                "faultloggerd",
+                "dlp_permission_service"
             ],
 	    "third_party": [
                 "bounds_checking_function",

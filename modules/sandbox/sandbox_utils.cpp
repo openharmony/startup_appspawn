@@ -35,6 +35,9 @@
 #include "appspawn_service.h"
 #include "appspawn_utils.h"
 #include "config_policy_utils.h"
+#ifdef WITH_DLP
+#include "dlp_fuse_fd.h"
+#endif
 #include "init_param.h"
 #include "parameter.h"
 #include "securec.h"
@@ -52,7 +55,6 @@ namespace OHOS {
 namespace AppSpawn {
 namespace {
     constexpr int32_t OPTIONS_MAX_LEN = 256;
-    constexpr int32_t DLP_FUSE_FD = 1000;
     constexpr int32_t APP_LOG_DIR_GID = 1007;
     constexpr int32_t APP_DATABASE_DIR_GID = 3012;
     constexpr int32_t FILE_ACCESS_COMMON_DIR_STATUS = 0;
@@ -650,10 +652,11 @@ static int32_t DoDlpAppMountStrategy(const AppSpawningCtx *appProperty,
     APPSPAWN_CHECK(ret == 0, close(fd);
         return ret, "errno is: %{public}d, private mount to %{public}s failed", errno, sandboxPath.c_str());
 #endif
-    /* close DLP_FUSE_FD and dup FD to it */
-    close(DLP_FUSE_FD);
-    ret = dup2(fd, DLP_FUSE_FD);
-    APPSPAWN_CHECK_ONLY_LOG(ret != -1, "dup fuse fd %{public}d failed, errno is %{public}d", fd, errno);
+    /* set DLP_FUSE_FD  */
+#ifdef WITH_DLP
+    SetDlpFuseFd(fd);
+#endif
+    ret = fd;
     return ret;
 }
 
