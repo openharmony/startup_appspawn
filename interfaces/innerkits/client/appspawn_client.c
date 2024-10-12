@@ -142,6 +142,16 @@ APPSPAWN_STATIC int CreateClientSocket(uint32_t type, uint32_t timeout)
     return -1;
 }
 
+APPSPAWN_STATIC int UpdateSocketTimeout(uint32_t timeout, int socketFd)
+{
+    struct timeval timeoutVal = {timeout, 0};
+    int ret = setsockopt(socketFd, SOL_SOCKET, SO_SNDTIMEO, &timeoutVal, sizeof(timeoutVal));
+    APPSPAWN_CHECK(ret == 0, return ret, "Set opt SO_SNDTIMEO error: %{public}d", errno);
+    ret = setsockopt(socketFd, SOL_SOCKET, SO_RCVTIMEO, &timeoutVal, sizeof(timeoutVal));
+    APPSPAWN_CHECK(ret == 0, return ret, "Set opt SO_RCVTIMEO error: %{public}d", errno);
+    return ret;
+}
+
 static int ReadMessage(int socketFd, uint32_t sendMsgId, uint8_t *buf, int len, AppSpawnResult *result)
 {
     ssize_t rLen = TEMP_FAILURE_RETRY(read(socketFd, buf, len));
@@ -245,6 +255,7 @@ APPSPAWN_STATIC void TryCreateSocket(AppSpawnReqMsgMgr *reqMgr)
 static int ClientSendMsg(AppSpawnReqMsgMgr *reqMgr, AppSpawnReqMsgNode *reqNode, AppSpawnResult *result)
 {
     uint32_t retryCount = 1;
+    int isColdRun = reqNode->isAsan;
     while (retryCount <= reqMgr->maxRetryCount) {
         if (reqMgr->socketId < 0) { // try create socket
             TryCreateSocket(reqMgr);
@@ -253,6 +264,9 @@ static int ClientSendMsg(AppSpawnReqMsgMgr *reqMgr, AppSpawnReqMsgNode *reqNode,
                 retryCount++;
                 continue;
             }
+        }
+        if (isColdRun && reqMgr->timeout < ASAN_TIMEOUT) {
+            UpdateSocketTimeout(ASAN_TIMEOUT, reqMgr->socketId);
         }
 
         if (reqNode->msg->msgId == 0) {
@@ -264,6 +278,9 @@ static int ClientSendMsg(AppSpawnReqMsgMgr *reqMgr, AppSpawnReqMsgNode *reqNode,
                 reqMgr->recvBlock.buffer, reqMgr->recvBlock.blockSize, result);
         }
         if (ret == 0) {
+            if (isColdRun && reqMgr->timeout < ASAN_TIMEOUT) {
+                UpdateSocketTimeout(reqMgr->timeout, reqMgr->socketId);
+            }
             return 0;
         }
         // retry
