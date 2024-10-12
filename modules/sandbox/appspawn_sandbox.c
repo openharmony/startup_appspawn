@@ -381,7 +381,6 @@ APPSPAWN_STATIC const char *GetRealSrcPath(const SandboxContext *context, const 
 // 设置挂载参数options
 static int32_t SetMountArgsOption(const SandboxContext *context, uint32_t category, uint32_t operation, MountArg *args)
 {
-    args->options = "";
     if ((category != MOUNT_TMP_DAC_OVERRIDE) && (category != MOUNT_TMP_DAC_OVERRIDE_DELETE)) {
         return 0;
     }
