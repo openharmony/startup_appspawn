@@ -60,6 +60,11 @@ if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
     } else {
       module_install_dir = "lib/appspawn/common"
     }
+
+    if (dlp_permission_enable) {
+      cflags_cc = [ "-DWITH_DLP" ]
+      external_deps += [ "dlp_permission_service:libdlp_fuse" ]
+    }
   }
 } else {
   ohos_shared_library("appspawn_sandbox") {
@@ -106,6 +111,11 @@ if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
       module_install_dir = "lib64/appspawn/common"
     } else {
       module_install_dir = "lib/appspawn/common"
+    }
+
+    if (dlp_permission_enable) {
+      cflags_cc = [ "-DWITH_DLP" ]
+      external_deps += [ "dlp_permission_service:libdlp_fuse" ]
     }
   }
 }
