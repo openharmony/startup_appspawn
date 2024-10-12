@@ -440,6 +440,7 @@ int HnpUnZip(const char *inputFile, const char *outputDir, const char *hnpSignKe
         }
         if (strstr(fileName, "../")) {
             HNP_LOGE("unzip filename[%{public}s],does not allow the use of ../", fileName);
+            unzClose(zipFile);
             return HNP_ERRNO_BASE_UNZIP_GET_INFO_FAILED;
         }
         char *slash = strchr(fileName, '/');
@@ -449,8 +450,7 @@ int HnpUnZip(const char *inputFile, const char *outputDir, const char *hnpSignKe
             slash = fileName;
         }
 
-        result = sprintf_s(filePath, MAX_FILE_PATH_LEN, "%s/%s", outputDir, slash);
-        if (result < 0) {
+        if (sprintf_s(filePath, MAX_FILE_PATH_LEN, "%s/%s", outputDir, slash) < 0) {
             HNP_LOGE("sprintf unsuccess.");
             unzClose(zipFile);
             return HNP_ERRNO_BASE_SPRINTF_FAILED;
