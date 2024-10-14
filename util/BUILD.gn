@@ -17,7 +17,6 @@ import("//build/ohos.gni")
 ohos_static_library("libappspawn_util") {
   sources = [ "src/appspawn_utils.c" ]
   external_deps = [
-    "bounds_checking_function:libsec_shared",
     "cJSON:cjson",
     "config_policy:configpolicy_util",
     "hilog:libhilog",
