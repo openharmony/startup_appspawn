@@ -151,7 +151,7 @@ bool JsonUtils::GetJsonObjFromJson(nlohmann::json &jsonObj, const std::string &j
     }
     jsonFileStream.close();
     jsonObj = nlohmann::json::parse(buf.str(), nullptr, false);
-    APPSPAWN_CHECK(jsonObj.is_structured(), return false, "Parse json file into jsonObj failed.");
+    APPSPAWN_CHECK(!jsonObj.is_discarded() && jsonObj.is_structured(), return false, "Parse json file failed");
     return true;
 }
 
@@ -579,9 +579,10 @@ bool SandboxUtils::GetSbxSwitchStatusByConfig(nlohmann::json &config)
 static bool CheckMountConfig(nlohmann::json &mntPoint, const AppSpawningCtx *appProperty,
                              bool checkFlag)
 {
-    bool istrue = mntPoint.find(g_srcPath) == mntPoint.end() || mntPoint.find(g_sandBoxPath) == mntPoint.end() ||
+    bool istrue = mntPoint.find(g_srcPath) == mntPoint.end() || (!mntPoint[g_srcPath].is_string()) ||
+                  mntPoint.find(g_sandBoxPath) == mntPoint.end() || (!mntPoint[g_sandBoxPath].is_string()) ||
                   ((mntPoint.find(g_sandBoxFlags) == mntPoint.end()) &&
-                    (mntPoint.find(g_sandBoxFlagsCustomized) == mntPoint.end()));
+                  (mntPoint.find(g_sandBoxFlagsCustomized) == mntPoint.end()));
     APPSPAWN_CHECK(!istrue, return false,
         "read mount config failed, app name is %{public}s", GetBundleName(appProperty));
 
@@ -848,7 +849,8 @@ int SandboxUtils::DoAllSymlinkPointslink(const AppSpawningCtx *appProperty, nloh
         nlohmann::json symPoint = symlinkPoints[i];
 
         // Check the validity of the symlink configuration
-        if (symPoint.find(g_targetName) == symPoint.end() || symPoint.find(g_linkName) == symPoint.end()) {
+        if (symPoint.find(g_targetName) == symPoint.end() || (!symPoint[g_targetName].is_string()) ||
+            symPoint.find(g_linkName) == symPoint.end() || (!symPoint[g_linkName].is_string())) {
             APPSPAWN_LOGE("read symlink config failed, app name is %{public}s", GetBundleName(appProperty));
             continue;
         }
@@ -953,7 +955,7 @@ int32_t SandboxUtils::HandleFlagsPoint(const AppSpawningCtx *appProperty,
     for (unsigned int i = 0; i < flagsPointSize; i++) {
         nlohmann::json flagPoint = flagsPoints[i];
 
-        if (flagPoint.find(g_flags) != flagPoint.end()) {
+        if (flagPoint.find(g_flags) != flagPoint.end() && flagPoint[g_flags].is_string()) {
             std::string flagsStr = flagPoint[g_flags].get<std::string>();
             uint32_t flag = ConvertFlagStr(flagsStr);
             if ((GetAppMsgFlags(appProperty) & flag) != 0) {
