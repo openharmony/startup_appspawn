@@ -151,6 +151,7 @@ int SetUidGidFilter(const AppSpawnMgr *content)
 int SetSeccompFilter(const AppSpawnMgr *content, const AppSpawningCtx *property)
 {
 #ifdef WITH_SECCOMP
+    APPSPAWN_CHECK(property != nullptr, return 0, "property is NULL");
     const char *appName = APP_NAME;
     SeccompFilterType type = APP;
 
