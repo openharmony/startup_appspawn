@@ -31,7 +31,7 @@ static int ParseLinksJsonToCfgInfo(cJSON *linksItem, HnpCfgInfo *hnpCfg)
 
     int linkArrayNum = cJSON_GetArraySize(linksItem);
     if (linkArrayNum > 0) {
-        hnpCfg->linkNum = linkArrayNum;
+        hnpCfg->linkNum = (size_t)linkArrayNum;
         linkArray = (NativeBinLink*)malloc(sizeof(NativeBinLink) * linkArrayNum);
         if (linkArray == NULL) {
             HNP_LOGE("malloc unsuccess.");
@@ -257,10 +257,10 @@ static int HnpHapJsonWrite(cJSON *json)
         return HNP_ERRNO_BASE_FILE_OPEN_FAILED;
     }
     char *jsonStr = cJSON_Print(json);
-    int ret = fwrite(jsonStr, strlen(jsonStr), sizeof(char), fp);
+    size_t writeLen = fwrite(jsonStr, strlen(jsonStr), sizeof(char), fp);
     (void)fclose(fp);
     free(jsonStr);
-    if (ret < 0) {
+    if (writeLen == 0) {
         HNP_LOGE("package info write file:%{public}s unsuccess!", HNP_PACKAGE_INFO_JSON_FILE_PATH);
         return HNP_ERRNO_BASE_FILE_WRITE_FAILED;
     }

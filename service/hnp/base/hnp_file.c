@@ -84,9 +84,9 @@ int ReadFileToStream(const char *filePath, char **stream, int *streamLen)
         (void)fclose(file);
         return HNP_ERRNO_NOMEM;
     }
-    ret = fread(streamTmp, sizeof(char), size, file);
-    if (ret != size) {
-        HNP_LOGE("fread unsuccess. ret=%{public}d, size=%{public}d", ret, size);
+    size_t readLen = fread(streamTmp, sizeof(char), size, file);
+    if (readLen != (size_t)size) {
+        HNP_LOGE("fread unsuccess. readLen=%{public}zu, size=%{public}d", readLen, size);
         (void)fclose(file);
         free(streamTmp);
         return HNP_ERRNO_BASE_FILE_READ_FAILED;
@@ -94,25 +94,6 @@ int ReadFileToStream(const char *filePath, char **stream, int *streamLen)
     *stream = streamTmp;
     *streamLen = size;
     (void)fclose(file);
-    return 0;
-}
-
-int HnpWriteInfoToFile(const char* filePath, char *buff, int len)
-{
-    FILE *fp = fopen(filePath, "w");
-    if (fp == NULL) {
-        HNP_LOGE("open file:%{public}s unsuccess!", filePath);
-        return HNP_ERRNO_BASE_FILE_OPEN_FAILED;
-    }
-    int writeLen = fwrite(buff, sizeof(char), len, fp);
-    if (writeLen != len) {
-        HNP_LOGE("write file:%{public}s unsuccess! len=%{public}d, write=%{public}d", filePath, len, writeLen);
-        (void)fclose(fp);
-        return HNP_ERRNO_BASE_FILE_WRITE_FAILED;
-    }
-
-    (void)fclose(fp);
-
     return 0;
 }
 

@@ -85,7 +85,7 @@ static int ParseAppSandboxConfig(const cJSON *appSandboxConfig, PermissionManage
     APPSPAWN_CHECK(configs != NULL && cJSON_IsArray(configs), return 0, "No permission in json");
 
     int ret = 0;
-    uint32_t configSize = cJSON_GetArraySize(configs);
+    uint32_t configSize = (uint32_t)cJSON_GetArraySize(configs);
     for (uint32_t i = 0; i < configSize; i++) {
         cJSON *json = cJSON_GetArrayItem(configs, i);
         ret = ParsePermissionConfig(json, mgr);
