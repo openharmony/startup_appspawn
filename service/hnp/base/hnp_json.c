@@ -290,11 +290,13 @@ static int HnpHapJsonHnpAdd(bool hapExist, cJSON *json, cJSON *hapItem, const ch
         hnpItemArr = cJSON_CreateArray();
         if (hnpItemArr == NULL) {
             HNP_LOGE("hnp json write array create unsuccess");
+            cJSON_Delete(hapItem);
             return HNP_ERRNO_BASE_JSON_ARRAY_CREATE_FAILED;
         }
         cJSON_AddItemToObject(hapItem, "hnp", hnpItemArr);
         cJSON_AddItemToArray(json, hapItem);
     }
+
     cJSON *hnpItem = cJSON_CreateObject();
     if (hnpItem == NULL) {
         HNP_LOGE("hnp json write create hnp object unsuccess");
@@ -573,6 +575,7 @@ int HnpPackageInfoDelete(const char *packageName)
 
 static char *HnpNeedUnInstallHnpVersionGet(cJSON *hnpItemArr, const char *name)
 {
+    char *version = NULL;
     if (hnpItemArr == NULL) {
         return NULL;
     }
@@ -586,7 +589,8 @@ static char *HnpNeedUnInstallHnpVersionGet(cJSON *hnpItemArr, const char *name)
             (cJSON_IsString(currentItem)) && (cJSON_IsString(installItem)) &&
             (strcmp(nameItem->valuestring, name) == 0) &&
             (strcmp(currentItem->valuestring, installItem->valuestring) == 0)) {
-            return currentItem->valuestring;
+            version = strdup(currentItem->valuestring);
+            return version;
         }
     }
 
@@ -598,6 +602,7 @@ char *HnpCurrentVersionGet(const char *name)
     char *infoStream;
     int size;
     cJSON *hapItem = NULL;
+    char *version = NULL;
 
     int ret = ReadFileToStream(HNP_PACKAGE_INFO_JSON_FILE_PATH, &infoStream, &size);
     if (ret != 0) {
@@ -615,16 +620,19 @@ char *HnpCurrentVersionGet(const char *name)
         hapItem = cJSON_GetArrayItem(json, i);
         cJSON *hnpItemArr = cJSON_GetObjectItem(hapItem, "hnp");
         if (hnpItemArr == NULL) {
+            cJSON_Delete(json);
             return NULL;
         }
 
-        for (int i = 0; i < cJSON_GetArraySize(hnpItemArr); i++) {
-            cJSON *hnpItem = cJSON_GetArrayItem(hnpItemArr, i);
+        for (int j = 0; j < cJSON_GetArraySize(hnpItemArr); j++) {
+            cJSON *hnpItem = cJSON_GetArrayItem(hnpItemArr, j);
             cJSON *nameItem = cJSON_GetObjectItem(hnpItem, "name");
             cJSON *versionItem = cJSON_GetObjectItem(hnpItem, "current_version");
             if ((nameItem != NULL) && (versionItem != NULL) && (cJSON_IsString(nameItem)) &&
                 (cJSON_IsString(versionItem)) && (strcmp(nameItem->valuestring, name) == 0)) {
-                return versionItem->valuestring;
+                version = strdup(versionItem->valuestring);
+                cJSON_Delete(json);
+                return version;
             }
         }
     }

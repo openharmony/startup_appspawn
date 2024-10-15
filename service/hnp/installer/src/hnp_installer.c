@@ -392,7 +392,9 @@ static int HnpPublicDealAfterInstall(HnpInstallInfo *hnpInfo, HnpCfgInfo *hnpCfg
                 hnpInfo->hapInstallInfo->uid, true);
         }
     }
-
+    if (version != NULL) {
+        free(version);
+    }
     hnpCfg->isInstall = true;
 
     return HnpInstallInfoJsonWrite(hnpInfo->hapInstallInfo->hapPackageName, hnpCfg);
