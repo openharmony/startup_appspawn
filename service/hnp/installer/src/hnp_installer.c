@@ -257,7 +257,7 @@ static int HnpUnInstallPublicHnp(const char* packageName, const char *name, cons
 
 static int HnpNativeUnInstall(HnpPackageInfo *packageInfo, int uid, const char *packageName)
 {
-    int ret;
+    int ret = 0;
 
     HNP_LOGI("hnp uninstall start now! name=%{public}s,version=[%{public}s,%{public}s],uid=%{public}d,"
         "package=%{public}s", packageInfo->name, packageInfo->currentVersion, packageInfo->installVersion, uid,
@@ -278,9 +278,6 @@ static int HnpNativeUnInstall(HnpPackageInfo *packageInfo, int uid, const char *
         }
     }
     HNP_LOGI("hnp uninstall end! ret=%{public}d", ret);
-    if (ret != 0) {
-        return ret;
-    }
 
     return 0;
 }
