@@ -513,7 +513,7 @@ int HnpCfgGetFromZip(const char *inputFile, HnpCfgInfo *hnpCfg)
             return HNP_ERRNO_NOMEM;
         }
         int readSize = unzReadCurrentFile(zipFile, cfgStream, fileInfo.uncompressed_size);
-        if ((uLong)readSize != fileInfo.uncompressed_size) {
+        if (readSize < 0 || (uLong)readSize != fileInfo.uncompressed_size) {
             free(cfgStream);
             unzClose(zipFile);
             HNP_LOGE("unzip read zip:%{public}s info size[%{public}lu]=>[%{public}d] error!", inputFile,
