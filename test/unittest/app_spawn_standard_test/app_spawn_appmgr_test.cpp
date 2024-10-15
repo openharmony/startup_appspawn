@@ -856,24 +856,6 @@ HWTEST_F(AppSpawnAppMgrTest, App_Spawn_AppSpawningCtx_Msg_001, TestSize.Level0)
     bundleName = GetBundleName(nullptr);
     EXPECT_EQ(nullptr, bundleName);
 
-    // IsDeveloperModeOn
-    ret = IsDeveloperModeOn(appCtx);
-    EXPECT_EQ(ret, 0);
-    appCtx->client.flags |= APP_DEVELOPER_MODE;
-    ret = IsDeveloperModeOn(appCtx);
-    EXPECT_EQ(ret, 1);
-    ret = IsDeveloperModeOn(nullptr);
-    EXPECT_EQ(ret, 0);
-
-    //IsJitFortModeOn
-    ret = IsJitFortModeOn(appCtx);
-    EXPECT_EQ(ret, 0);
-    appCtx->client.flags |= APP_JITFORT_MODE;
-    ret = IsJitFortModeOn(appCtx);
-    EXPECT_EQ(ret, 1);
-    ret = IsJitFortModeOn(nullptr);
-    EXPECT_EQ(ret, 0);
-
     DeleteAppSpawningCtx(appCtx);
     DeleteAppSpawnMgr(mgr);
 }
@@ -1095,5 +1077,31 @@ HWTEST_F(AppSpawnAppMgrTest, App_Spawn_AppSpawningCtx_Msg_006, TestSize.Level0)
 
     DeleteAppSpawningCtx(appCtx);
     DeleteAppSpawnMgr(mgr);
+}
+
+HWTEST_F(AppSpawnAppMgrTest, App_Spawn_AppSpawningCtx_Msg_007, TestSize.Level0)
+{
+    AppSpawningCtx *appCtx = CreateAppSpawningCtx();
+    EXPECT_EQ(appCtx != nullptr, 1);
+
+    // IsDeveloperModeOn
+    int ret = IsDeveloperModeOn(appCtx);
+    EXPECT_EQ(ret, 0);
+    appCtx->client.flags |= APP_DEVELOPER_MODE;
+    ret = IsDeveloperModeOn(appCtx);
+    EXPECT_EQ(ret, 1);
+    ret = IsDeveloperModeOn(nullptr);
+    EXPECT_EQ(ret, 0);
+
+    //IsJitFortModeOn
+    ret = IsJitFortModeOn(appCtx);
+    EXPECT_EQ(ret, 0);
+    appCtx->client.flags |= APP_JITFORT_MODE;
+    ret = IsJitFortModeOn(appCtx);
+    EXPECT_EQ(ret, 1);
+    ret = IsJitFortModeOn(nullptr);
+    EXPECT_EQ(ret, 0);
+
+    DeleteAppSpawningCtx(appCtx);
 }
 }  // namespace OHOS

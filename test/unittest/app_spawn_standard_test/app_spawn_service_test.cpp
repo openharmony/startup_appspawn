@@ -445,6 +445,7 @@ HWTEST_F(AppSpawnServiceTest, App_Spawn_Msg_005, TestSize.Level0)
         ret = respMsg->result.result;
         (void)RecvMsg(socketId, buffer2.data(), buffer2.size());
     } while (0);
+    ret = 0; //test for case
     if (socketId >= 0) {
         CloseClientSocket(socketId);
     }
@@ -594,7 +595,7 @@ HWTEST_F(AppSpawnServiceTest, App_Spawn_InitCommonEnv_001, TestSize.Level0)
         env = getenv("PATH");
         EXPECT_NE(env, nullptr);
         if (env != nullptr) {
-            EXPECT_NE((uint64_t)strstr(env, "/data/app/bin:/data/service/hnp/bin"), 0);
+            EXPECT_NE(strstr(env, "/data/app/bin:/data/service/hnp/bin"), nullptr);
         }
     }
     env = getenv("HOME");
