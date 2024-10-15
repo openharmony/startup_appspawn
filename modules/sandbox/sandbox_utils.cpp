@@ -1567,19 +1567,20 @@ static inline int EnableSandboxNamespace(AppSpawningCtx *appProperty, uint32_t s
 
 int32_t SandboxUtils::SetPermissionWithParam(AppSpawningCtx *appProperty)
 {
-    uint32_t index = 0;
+    int32_t index = 0;
     int32_t appFullMountStatus = CheckAppFullMountEnable();
     if (appFullMountStatus == FILE_CROSS_APP_STATUS) {
-        index = (uint32_t)GetPermissionIndex(nullptr, FILE_CROSS_APP_MODE.c_str());
+        index = GetPermissionIndex(nullptr, FILE_CROSS_APP_MODE.c_str());
     } else if (appFullMountStatus == FILE_ACCESS_COMMON_DIR_STATUS) {
-        index = (uint32_t)GetPermissionIndex(nullptr, FILE_ACCESS_COMMON_DIR_MODE.c_str());
+        index = GetPermissionIndex(nullptr, FILE_ACCESS_COMMON_DIR_MODE.c_str());
     }
 
-    int32_t  fileMgrIndex = GetPermissionIndex(nullptr, FILE_ACCESS_MANAGER_MODE.c_str());
-    if (index > 0 && (CheckAppPermissionFlagSet(appProperty, static_cast<uint32_t>(fileMgrIndex)) == 0)) {
+    int32_t fileMgrIndex = GetPermissionIndex(nullptr, FILE_ACCESS_MANAGER_MODE.c_str());
+    if (index > 0 && fileMgrIndex > 0 &&
+        (CheckAppPermissionFlagSet(appProperty, static_cast<uint32_t>(fileMgrIndex)) == 0)) {
         return SetAppPermissionFlags(appProperty, index);
     }
-    return 0;
+    return -1;
 }
 
 int32_t SandboxUtils::SetAppSandboxProperty(AppSpawningCtx *appProperty, uint32_t sandboxNsFlags)

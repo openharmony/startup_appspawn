@@ -257,10 +257,11 @@ static int HnpHapJsonWrite(cJSON *json)
         return HNP_ERRNO_BASE_FILE_OPEN_FAILED;
     }
     char *jsonStr = cJSON_Print(json);
-    size_t writeLen = fwrite(jsonStr, strlen(jsonStr), sizeof(char), fp);
+    size_t jsonStrSize = strlen(jsonStr);
+    size_t writeLen = fwrite(jsonStr, sizeof(char), jsonStrSize, fp);
     (void)fclose(fp);
     free(jsonStr);
-    if (writeLen == 0) {
+    if (writeLen != jsonStrSize) {
         HNP_LOGE("package info write file:%{public}s unsuccess!", HNP_PACKAGE_INFO_JSON_FILE_PATH);
         return HNP_ERRNO_BASE_FILE_WRITE_FAILED;
     }
