@@ -45,7 +45,7 @@ static uint32_t GetDefaultTimeout(uint32_t def)
     int ret = GetParameter("persist.appspawn.reqMgr.timeout", "0", data, sizeof(data));
     if (ret > 0 && strcmp(data, "0") != 0) {
         errno = 0;
-        value = atoi(data);
+        value = (uint32_t)atoi(data);
         return (errno != 0) ? def : value;
     }
     return value;
@@ -131,7 +131,7 @@ APPSPAWN_STATIC int CreateClientSocket(uint32_t type, uint32_t timeout)
         int pathLen = snprintf_s(addr.sun_path, pathSize, (pathSize - 1), "%s%s", APPSPAWN_SOCKET_DIR, socketName);
         APPSPAWN_CHECK(pathLen > 0, break, "Format path %{public}s error: %{public}d", socketName, errno);
         addr.sun_family = AF_LOCAL;
-        socklen_t socketAddrLen = offsetof(struct sockaddr_un, sun_path) + pathLen + 1;
+        socklen_t socketAddrLen = (socklen_t)(offsetof(struct sockaddr_un, sun_path) + pathLen + 1);
         ret = connect(socketFd, (struct sockaddr *)(&addr), socketAddrLen);
         APPSPAWN_CHECK(ret == 0, break,
             "Failed to connect %{public}s error: %{public}d", addr.sun_path, errno);

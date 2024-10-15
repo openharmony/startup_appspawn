@@ -45,8 +45,6 @@ int SetAppAccessToken(const AppSpawnMgr *content, const AppSpawningCtx *property
         reinterpret_cast<AppSpawnMsgAccessToken *>(GetAppProperty(property, TLV_ACCESS_TOKEN_INFO));
     APPSPAWN_CHECK(tokenInfo != NULL, return APPSPAWN_MSG_INVALID,
         "No access token in msg %{public}s", GetProcessName(property));
-    APPSPAWN_LOGV("AppSpawnServer::set access token %{public}" PRId64 " %{public}d  %{public}d",
-        tokenInfo->accessTokenIdEx, IsNWebSpawnMode(content), IsIsolatedNativeSpawnMode(content, property));
 
     if (IsNWebSpawnMode(content) || IsIsolatedNativeSpawnMode(content, property)) {
         TokenIdKit tokenIdKit;
@@ -196,12 +194,12 @@ APPSPAWN_STATIC void InitAppCommonEnv(const AppSpawningCtx *property)
     if (appInfo == NULL) {
         return;
     }
-    const int userId = appInfo->uid / UID_BASE;
+    const uint32_t userId = appInfo->uid / UID_BASE;
     char user[MAX_USERID_LEN] = {0};
-    int len = sprintf_s(user, MAX_USERID_LEN, "%d", userId);
-    APPSPAWN_CHECK(len > 0, return, "Failed to format userid: %{public}d", userId);
+    int len = sprintf_s(user, MAX_USERID_LEN, "%u", userId);
+    APPSPAWN_CHECK(len > 0, return, "Failed to format userid: %{public}u", userId);
     int ret = setenv("USER", user, 1);
-    APPSPAWN_CHECK(ret == 0, return, "setenv failed, userid:%{public}d, errno: %{public}d", userId, errno);
+    APPSPAWN_CHECK(ret == 0, return, "setenv failed, userid:%{public}u, errno: %{public}d", userId, errno);
 }
 
 int32_t SetEnvInfo(const AppSpawnMgr *content, const AppSpawningCtx *property)

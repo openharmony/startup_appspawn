@@ -123,6 +123,9 @@ const SandboxPermissionNode *GetPermissionNodeInQueue(SandboxQueue *queue, const
         return NULL;
     }
     ListNode *node = OH_ListFind(&queue->front, (void *)permission, PermissionNodeCompareName);
+    if (node == NULL) {
+        return NULL;
+    }
     return (SandboxPermissionNode *)ListEntry(node, SandboxMountNode, node);
 }
 
@@ -132,6 +135,9 @@ const SandboxPermissionNode *GetPermissionNodeInQueueByIndex(SandboxQueue *queue
         return NULL;
     }
     ListNode *node = OH_ListFind(&queue->front, (void *)&index, PermissionNodeCompareIndex);
+    if (node == NULL) {
+        return NULL;
+    }
     return (SandboxPermissionNode *)ListEntry(node, SandboxMountNode, node);
 }
 
