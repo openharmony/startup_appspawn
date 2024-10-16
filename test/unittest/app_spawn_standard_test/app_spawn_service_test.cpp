@@ -31,6 +31,7 @@
 #include "json_utils.h"
 #include "parameter.h"
 #include "securec.h"
+#include "cJSON.h"
 
 #include "app_spawn_stub.h"
 #include "app_spawn_test_helper.h"
@@ -587,7 +588,6 @@ HWTEST_F(AppSpawnServiceTest, App_Spawn_Msg_009, TestSize.Level0)
 HWTEST_F(AppSpawnServiceTest, App_Spawn_Msg_010, TestSize.Level0)
 {
     int ret = 0;
-    char pid[16];
     AppSpawnClientHandle clientHandle = nullptr;
     AppSpawnResult result = {};
     do {
@@ -608,9 +608,18 @@ HWTEST_F(AppSpawnServiceTest, App_Spawn_Msg_010, TestSize.Level0)
 
         AppSpawnReqMsgHandle reqHandle2;
         ret = AppSpawnReqMsgCreate(MSG_DEVICE_DEBUG, "devicedebug", &reqHandle2);
-        EXPECT_GT(sprintf_s(pid, 16, "%d", app->pid), 0);
-        AppSpawnReqMsgAddStringInfo(reqHandle2, "signal", "-9");
-        AppSpawnReqMsgAddStringInfo(reqHandle2, "pid", pid);
+        cJSON *args = cJSON_CreateObject();
+        EXPECT_NE(args, nullptr);
+        cJSON_AddNumberToObject(args, "signal", 9);
+        cJSON *root = cJSON_CreateObject();
+        EXPECT_NE(root, nullptr);
+        cJSON_AddNumberToObject(root, "app", app->pid);
+        cJSON_AddStringToObject(root, "op", "kill");
+        cJSON_AddItemToObject(root, "args", args);
+        char *jsonString = cJSON_Print(root);
+        cJSON_Delete(root);
+        ret = AppSpawnReqMsgAddExtInfo(reqHandle2, "devicedebug", (uint8_t *)jsonString, strlen(jsonString) + 1);
+        ASSERT_EQ(ret, 0);
         ret = AppSpawnClientSendMsg(clientHandle, reqHandle2, &result);
         APPSPAWN_CHECK(ret == 0 && result.result == 0, break, "Failed to send msg ret:%{public}d, result:%{public}d",
             ret, result.result);

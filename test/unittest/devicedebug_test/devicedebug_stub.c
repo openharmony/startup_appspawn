@@ -64,20 +64,22 @@ int AppSpawnReqMsgCreateStub(AppSpawnMsgType msgType, const char *processName, A
     return g_appSpawnReqMsgCreateRet;
 }
 
-int g_appSpawnReqMsgAddStringInfoRet = 0;
+int g_appSpawnReqMsgAddExtInfoRet = 0;
 
-void AppSpawnReqMsgAddStringInfoRetSet(int appSpawnReqMsgAddStringInfoRet)
+void AppSpawnReqMsgAddExtInfoRetSet(int appSpawnReqMsgAddExtInfoRet)
 {
-    g_appSpawnReqMsgAddStringInfoRet = appSpawnReqMsgAddStringInfoRet;
+    g_appSpawnReqMsgAddExtInfoRet = appSpawnReqMsgAddExtInfoRet;
 }
 
-int AppSpawnReqMsgAddStringInfoStub(AppSpawnReqMsgHandle reqHandle, const char *name, const char *value)
+int AppSpawnReqMsgAddExtInfoStub(AppSpawnReqMsgHandle reqHandle, const char *name, const uint8_t *value,
+    uint32_t valueLen)
 {
     (void)reqHandle;
     (void)name;
     (void)value;
+    (void)valueLen;
 
-    return g_appSpawnReqMsgAddStringInfoRet;
+    return g_appSpawnReqMsgAddExtInfoRet;
 }
 
 int g_appSpawnClientSendMsgResulte = 0;
