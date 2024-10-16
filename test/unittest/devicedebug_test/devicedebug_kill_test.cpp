@@ -151,10 +151,10 @@ HWTEST_F(DevicedebugKillTest, DevicedebugCmdKill_003, TestSize.Level0)
     }
     AppSpawnReqMsgCreateRetSet(0);
     {
-        AppSpawnReqMsgAddStringInfoRetSet(-3);
+        AppSpawnReqMsgAddExtInfoRetSet(-3);
         EXPECT_EQ(DeviceDebugCmdKill(argc, argv), -3);
     }
-    AppSpawnReqMsgAddStringInfoRetSet(0);
+    AppSpawnReqMsgAddExtInfoRetSet(0);
     {
         AppSpawnClientSendMsgRetSet(-4);
         EXPECT_EQ(DeviceDebugCmdKill(argc, argv), -4);

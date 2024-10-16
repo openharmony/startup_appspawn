@@ -44,7 +44,7 @@ if (!defined(ohos_lite)) {
       "IsDeveloperModeOpen=IsDeveloperModeOpenStub",
       "AppSpawnClientInit=AppSpawnClientInitStub",
       "AppSpawnReqMsgCreate=AppSpawnReqMsgCreateStub",
-      "AppSpawnReqMsgAddStringInfo=AppSpawnReqMsgAddStringInfoStub",
+      "AppSpawnReqMsgAddExtInfo=AppSpawnReqMsgAddExtInfoStub",
       "AppSpawnClientSendMsg=AppSpawnClientSendMsgStub",
       "APPSPAWN_TEST",
     ]
