@@ -292,6 +292,8 @@ int HnpPathFileCount(const char *path)
         num++;
     }
 
+    closedir(dir);
+
     return num;
 #endif
 }
