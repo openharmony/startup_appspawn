@@ -99,6 +99,10 @@ static void CreateTimerLoopTask(AppSpawnContent *content)
 
 void AppSpawnKickDogStart(AppSpawnContent *content)
 {
+    if (content == NULL) {
+        APPSPAWN_LOGI("Content is null");
+        return;
+    }
     CreateTimerLoopTask(content);
     OpenAppSpawnWatchdogFile(content);
 }
