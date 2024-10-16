@@ -26,7 +26,7 @@ void AppSpawnClientInitRetSet(int appSpawnClientInitRet);
 
 void AppSpawnReqMsgCreateRetSet(int appSpawnClientSendMsgRet);
 
-void AppSpawnReqMsgAddStringInfoRetSet(int appSpawnClientSendMsgRet);
+void AppSpawnReqMsgAddExtInfoRetSet(int appSpawnReqMsgAddExtInfoRet);
 
 void AppSpawnClientSendMsgResultSet(int appSpawnClientSendMsgResult);
 
