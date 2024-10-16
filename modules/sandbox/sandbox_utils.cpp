@@ -1756,7 +1756,7 @@ int32_t SetAppSandboxProperty(AppSpawnMgr *content, AppSpawningCtx *property)
         }
     }
     uint32_t sandboxNsFlags = CLONE_NEWNS;
-    if (CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX) ||
+    if ((CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX) && !IsDeveloperModeOpen()) ||
         CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_NETWORK)) {
         sandboxNsFlags |= content->content.sandboxNsFlags & CLONE_NEWNET ? CLONE_NEWNET : 0;
     }
