@@ -838,9 +838,7 @@ static void ProcessSpawnReqMsg(AppSpawnConnection *connection, AppSpawnMsgNode *
     // mount el2 dir
     // getWrapBundleNameValue
     AppSpawnHookExecute(STAGE_PARENT_PRE_FORK, 0, GetAppSpawnContent(), &property->client);
-    if (IsDeveloperModeOn(property)) {
-        DumpAppSpawnMsg(property->message);
-    }
+    DumpAppSpawnMsg(property->message);
 
     clock_gettime(CLOCK_MONOTONIC, &property->spawnStart);
     ret = RunAppSpawnProcessMsg(GetAppSpawnContent(), &property->client, &property->pid);
@@ -1122,9 +1120,7 @@ static void AppSpawnColdRun(AppSpawnContent *content, int argc, char *const argv
         APPSPAWN_LOGE("Failed to get property from arg");
         return;
     }
-    if (IsDeveloperModeOn(property)) {
-        DumpAppSpawnMsg(property->message);
-    }
+    DumpAppSpawnMsg(property->message);
 
     int ret = AppSpawnExecuteSpawningHook(content, &property->client);
     if (ret == 0) {
