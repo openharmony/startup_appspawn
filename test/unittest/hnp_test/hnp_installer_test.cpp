@@ -34,6 +34,7 @@
 #include "hnp_installer.h"
 #include "hnp_api.h"
 #include "securec.h"
+#include "hnp_stub.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -955,6 +956,46 @@ HWTEST_F(HnpInstallerTest, Hnp_Install_API_004, TestSize.Level0)
     remove(HNP_PACKAGE_INFO_JSON_FILE_PATH);
 
     GTEST_LOG_(INFO) << "Hnp_Install_API_004 end";
+}
+
+/**
+* @tc.name: Hnp_RelPath_API_001
+* @tc.desc:  Verify HnpRelPath succeed.
+* @tc.type: FUNC
+* @tc.require:issueIANH44
+* @tc.author:
+*/
+HWTEST_F(HnpInstallerTest, Hnp_RelPath_API_001, TestSize.Level0)
+{
+    GTEST_LOG_(INFO) << "Hnp_RelPath_API_001 start";
+
+    const char *fromPath = "test";
+    const char *toPath = "test2";
+    char relPath[MAX_FILE_PATH_LEN]{};
+
+    HnpRelPath(fromPath, toPath, relPath);
+    EXPECT_EQ(strcmp(relPath, "test2"), 0);
+
+    const char *fromPath2 = "/aaa/bbb/ccc/ddd";
+    const char *toPath2 = "/aaa/bbb/ccc/eeefff";
+    char relPath2[MAX_FILE_PATH_LEN]{};
+
+    HnpRelPath(fromPath2, toPath2, relPath2);
+    EXPECT_EQ(strcmp(relPath2, "eeefff"), 0);
+
+    const char *fromPath3 = "/aaa/bbb/bin/bbb/aaa";
+    const char *toPath3 = "/aaa/bbb/bisheng/aaa";
+    char relPath3[MAX_FILE_PATH_LEN]{};
+
+    HnpRelPath(fromPath3, toPath3, relPath3);
+    EXPECT_EQ(strcmp(relPath3, "../../bisheng/aaa"), 0);
+
+    const char *fromPath4 = "/aaa/bbb/cccddd/aaa/bbb";
+    const char *toPath4 = "/aaa/bbb/ccc/eeefff";
+    char relPath4[MAX_FILE_PATH_LEN]{};
+
+    HnpRelPath(fromPath4, toPath4, relPath4);
+    EXPECT_EQ(strcmp(relPath4, "../../ccc/eeefff"), 0);
 }
 
 /**
