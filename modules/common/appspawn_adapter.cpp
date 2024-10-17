@@ -59,7 +59,7 @@ int SetAppAccessToken(const AppSpawnMgr *content, const AppSpawningCtx *property
     return 0;
 }
 
-APPSPAWN_STATIC int SetSelinuxConNweb(const AppSpawnMgr *content, const AppSpawningCtx *property)
+int SetSelinuxConNweb(const AppSpawnMgr *content, const AppSpawningCtx *property)
 {
 #if defined(WITH_SELINUX) && !defined(APPSPAWN_TEST)
     uint32_t len = 0;
@@ -112,7 +112,7 @@ int SetSelinuxCon(const AppSpawnMgr *content, const AppSpawningCtx *property)
         hapDomainInfo.hapFlags |= SELINUX_HAP_DLP;
     }
     if (CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX)) {
-        hapDomainInfo.hapFlags |= SELINUX_HAP_INPUT_ISOLATE;
+        hapDomainInfo.hapFlags |= 0x08;
     }
     int32_t ret = hapContext.HapDomainSetcontext(hapDomainInfo);
     if (CheckAppMsgFlagsSet(property, APP_FLAGS_ASANENABLED)) {
