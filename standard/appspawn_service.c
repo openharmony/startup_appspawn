@@ -554,7 +554,7 @@ static void ProcessChildProcessFd(const WatcherHandle taskHandle, int fd, uint32
 {
     APPSPAWN_CHECK_ONLY_EXPER(context != NULL, return);
     pid_t pid = *(pid_t *)context;
-    APPSPAWN_LOGI("Kill process group with process group id %{public}d, pidFd %{public}d", pid, fd);
+    APPSPAWN_LOGI("Clear process group with pid %{public}d, pidFd %{public}d", pid, fd);
     AppSpawnedProcess *appInfo = GetSpawnedProcess(pid);
     if (appInfo == NULL) {
         APPSPAWN_LOGW("Cannot get app info by bundle name: %{public}d", pid);
@@ -903,9 +903,7 @@ static void ProcessSpawnReqMsg(AppSpawnConnection *connection, AppSpawnMsgNode *
     // mount el2 dir
     // getWrapBundleNameValue
     AppSpawnHookExecute(STAGE_PARENT_PRE_FORK, 0, GetAppSpawnContent(), &property->client);
-    if (IsDeveloperModeOn(property)) {
-        DumpAppSpawnMsg(property->message);
-    }
+    DumpAppSpawnMsg(property->message);
 
     clock_gettime(CLOCK_MONOTONIC, &property->spawnStart);
     ret = RunAppSpawnProcessMsg(GetAppSpawnContent(), &property->client, &property->pid);
@@ -1090,9 +1088,9 @@ void AppSpawnDestroyContent(AppSpawnContent *content)
         LE_CloseStreamTask(LE_GetDefaultLoop(), appSpawnContent->server);
         appSpawnContent->server = NULL;
     }
+    DeleteAppSpawnMgr(appSpawnContent);
     LE_StopLoop(LE_GetDefaultLoop());
     LE_CloseLoop(LE_GetDefaultLoop());
-    DeleteAppSpawnMgr(appSpawnContent);
 }
 
 static int AppSpawnColdStartApp(struct AppSpawnContent *content, AppSpawnClient *client)
@@ -1194,9 +1192,7 @@ static void AppSpawnColdRun(AppSpawnContent *content, int argc, char *const argv
         APPSPAWN_LOGE("Failed to get property from arg");
         return;
     }
-    if (IsDeveloperModeOn(property)) {
-        DumpAppSpawnMsg(property->message);
-    }
+    DumpAppSpawnMsg(property->message);
 
     int ret = AppSpawnExecuteSpawningHook(content, &property->client);
     if (ret == 0) {
