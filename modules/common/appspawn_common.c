@@ -550,7 +550,7 @@ APPSPAWN_STATIC int SetFdEnv(AppSpawnMgr *content, AppSpawningCtx *property)
 APPSPAWN_STATIC int RecordStartTime(AppSpawnMgr *content, AppSpawningCtx *property)
 {
     struct timespec ts;
-    int ret = clock_gettime(CLOCK_REALTIME, &ts);
+    int ret = clock_gettime(CLOCK_MONOTONIC, &ts);
     APPSPAWN_CHECK(ret == 0, return 0, "clock_gettime failed %{public}d,%{public}d", ret, errno);
     long long startTime = (ts.tv_sec * 1000LL) + (ts.tv_nsec / 1000000);
     char timeChar[32];
