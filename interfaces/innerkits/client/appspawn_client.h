@@ -28,8 +28,10 @@ extern "C" {
 
 #ifdef ASAN_DETECTOR
 #define TIMEOUT_DEF 60
+#define ASAN_TIMEOUT 60
 #else
 #define TIMEOUT_DEF 2
+#define ASAN_TIMEOUT 5
 #endif
 
 #define RETRY_TIME (200 * 1000)     // 200 * 1000 wait 200ms CONNECT_RETRY_DELAY = 200 * 1000
@@ -73,6 +75,7 @@ typedef struct TagAppSpawnReqMsgNode {
     uint32_t retryCount;
     int fdCount;
     int fds[APP_MAX_FD_COUNT];
+    int isAsan;
     AppSpawnMsgFlags *msgFlags;
     AppSpawnMsgFlags *permissionFlags;
     AppSpawnMsg *msg;
