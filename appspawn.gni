@@ -32,3 +32,10 @@ declare_args() {
   appspawn_unittest_coverage = false
   appspawn_seccomp_privilege = false
 }
+
+if (!defined(global_parts_info) ||
+    defined(global_parts_info.security_dlp_permission_service)) {
+  dlp_permission_enable = true
+} else {
+  dlp_permission_enable = false
+}
