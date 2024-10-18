@@ -65,6 +65,7 @@ if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
   ohos_shared_library("appspawn_sandbox") {
     sources = [
       "${appspawn_innerkits_path}/permission/appspawn_mount_permission.c",
+      "${appspawn_path}/common/appspawn_trace.cpp",
       "appspawn_permission.c",
       "sandbox_utils.cpp",
     ]
@@ -89,6 +90,7 @@ if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
       "c_utils:utils",
       "config_policy:configpolicy_util",
       "hilog:libhilog",
+      "hitrace:hitrace_meter",
       "init:libbegetutil",
       "json:nlohmann_json_static",
     ]
