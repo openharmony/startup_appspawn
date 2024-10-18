@@ -43,7 +43,6 @@ if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
     external_deps = [
       "cJSON:cjson",
       "c_utils:utils",
-      "dlp_permission_service:libdlp_fuse",
       "hilog:libhilog",
       "init:libbegetutil",
     ]
@@ -61,6 +60,11 @@ if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
       module_install_dir = "lib64/appspawn/common"
     } else {
       module_install_dir = "lib/appspawn/common"
+    }
+
+    if (dlp_permission_enable) {
+      cflags_cc = [ "-DWITH_DLP" ]
+      external_deps += [ "dlp_permission_service:libdlp_fuse" ]
     }
   }
 } else {
@@ -90,7 +94,6 @@ if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
       "cJSON:cjson",
       "c_utils:utils",
       "config_policy:configpolicy_util",
-      "dlp_permission_service:libdlp_fuse",
       "hilog:libhilog",
       "init:libbegetutil",
       "json:nlohmann_json_static",
@@ -109,6 +112,11 @@ if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
       module_install_dir = "lib64/appspawn/common"
     } else {
       module_install_dir = "lib/appspawn/common"
+    }
+
+    if (dlp_permission_enable) {
+      cflags_cc = [ "-DWITH_DLP" ]
+      external_deps += [ "dlp_permission_service:libdlp_fuse" ]
     }
   }
 }

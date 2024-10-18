@@ -35,7 +35,9 @@
 #include "appspawn_service.h"
 #include "appspawn_utils.h"
 #include "config_policy_utils.h"
+#ifdef WITH_DLP
 #include "dlp_fuse_fd.h"
+#endif
 #include "init_param.h"
 #include "parameter.h"
 #include "parameters.h"
@@ -665,7 +667,9 @@ static int32_t DoDlpAppMountStrategy(const AppSpawningCtx *appProperty,
         return ret, "errno is: %{public}d, private mount to %{public}s failed", errno, sandboxPath.c_str());
 #endif
     /* set DLP_FUSE_FD  */
+#ifdef WITH_DLP
     SetDlpFuseFd(fd);
+#endif
     ret = fd;
     return ret;
 }
