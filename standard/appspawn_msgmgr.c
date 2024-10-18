@@ -398,10 +398,6 @@ void DumpAppSpawnMsg(const AppSpawnMsgNode *message)
     AppSpawnMsgOwnerId *owner = (AppSpawnMsgOwnerId *)GetAppSpawnMsgInfo(message, TLV_OWNER_INFO);
     APPSPAWN_ONLY_EXPER(owner != NULL, APPSPAPWN_DUMP("App owner info: \"%{public}s\" ", owner->ownerId));
 
-    AppSpawnMsgAccessToken *t = (AppSpawnMsgAccessToken *)GetAppSpawnMsgInfo(message, TLV_ACCESS_TOKEN_INFO);
-    APPSPAWN_ONLY_EXPER(t != NULL,
-        APPSPAPWN_DUMP("App access token info: %{private}" PRId64 "", t->accessTokenIdEx));
-
     AppSpawnMsgInternetInfo *info = (AppSpawnMsgInternetInfo *)GetAppSpawnMsgInfo(message, TLV_INTERNET_INFO);
     APPSPAWN_ONLY_EXPER(info != NULL,
         APPSPAPWN_DUMP("App internet permission info [%{public}d %{public}d]",
