@@ -32,6 +32,7 @@
 
 #include "appspawn_msg.h"
 #include "appspawn_utils.h"
+#include "dlp_fuse_fd.h"
 #include "init_utils.h"
 #include "parameter.h"
 #include "appspawn_permission.h"
@@ -315,10 +316,8 @@ static int32_t SandboxMountFusePath(const SandboxContext *context, const MountAr
         close(fd);
         return -1;
     }
-    /* close DLP_FUSE_FD and dup FD to it */
-    close(DLP_FUSE_FD);
-    ret = dup2(fd, DLP_FUSE_FD);
-    APPSPAWN_CHECK_ONLY_LOG(ret != -1, "dup fuse fd %{public}d failed, errno: %{public}d", fd, errno);
+    /* set DLP_FUSE_FD  */
+    SetDlpFuseFd(fd);
     return 0;
 }
 
