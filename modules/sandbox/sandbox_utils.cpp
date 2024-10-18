@@ -38,6 +38,7 @@
 #include "init_param.h"
 #include "parameter.h"
 #include "securec.h"
+#include "appspawn_trace.h"
 
 #ifdef WITH_SELINUX
 #include "hap_restorecon.h"
@@ -1754,12 +1755,13 @@ int32_t SetAppSandboxProperty(AppSpawnMgr *content, AppSpawningCtx *property)
         sandboxNsFlags |= content->content.sandboxNsFlags & CLONE_NEWNET ? CLONE_NEWNET : 0;
     }
     APPSPAWN_LOGV("SetAppSandboxProperty sandboxNsFlags 0x%{public}x", sandboxNsFlags);
-
+    StartAppspawnTrace("SetAppSandboxProperty");
     if (IsNWebSpawnMode(content)) {
         ret = OHOS::AppSpawn::SandboxUtils::SetAppSandboxPropertyNweb(property, sandboxNsFlags);
     } else {
         ret = OHOS::AppSpawn::SandboxUtils::SetAppSandboxProperty(property, sandboxNsFlags);
     }
+    FinishAppspawnTrace();
     // for module test do not create sandbox, use APP_FLAGS_IGNORE_SANDBOX to ignore sandbox result
     if (CheckAppMsgFlagsSet(property, APP_FLAGS_IGNORE_SANDBOX)) {
         APPSPAWN_LOGW("Do not care sandbox result %{public}d", ret);
