@@ -100,7 +100,7 @@ static void CreateTimerLoopTask(AppSpawnContent *content)
 void AppSpawnKickDogStart(AppSpawnContent *content)
 {
     if (content == NULL) {
-        APPSPAWN_LOGI("Content is null");
+        APPSPAWN_LOGE("Content is null");
         return;
     }
     CreateTimerLoopTask(content);
