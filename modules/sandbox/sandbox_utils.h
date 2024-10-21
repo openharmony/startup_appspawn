@@ -132,4 +132,10 @@ public:
 } // namespace OHOS
 
 int LoadAppSandboxConfig(AppSpawnMgr *content);
+
+typedef struct {
+    const char *sandboxPath;
+    const char *permission;
+} MountSharedTemplate;
+
 #endif  // SANDBOX_UTILS_H
