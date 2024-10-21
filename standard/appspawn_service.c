@@ -174,7 +174,7 @@ static void HandleDiedPid(pid_t pid, uid_t uid, int status)
 
 APPSPAWN_STATIC void ProcessSignal(const struct signalfd_siginfo *siginfo)
 {
-    APPSPAWN_LOGI("ProcessSignal signum %{public}d", siginfo->ssi_signo);
+    APPSPAWN_LOGI("ProcessSignal signum %{public}d %{public}d", siginfo->ssi_signo, siginfo->ssi_pid);
     switch (siginfo->ssi_signo) {
         case SIGCHLD: { // delete pid from app map
             pid_t pid;
@@ -313,6 +313,7 @@ static int HandleRecvMessage(const TaskHandle taskHandle, uint8_t * buffer, int 
     };
 
     AppSpawnConnection *connection = (AppSpawnConnection *) LE_GetUserData(taskHandle);
+    APPSPAWN_CHECK(connection != NULL, return -1, "Invalid connection");
     errno = 0;
     int recvLen = recvmsg(socketFd, &msg, flags);
     APPSPAWN_CHECK_ONLY_LOG(errno == 0, "recvmsg with errno %{public}d", errno);
