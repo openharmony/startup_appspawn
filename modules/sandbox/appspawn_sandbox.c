@@ -44,7 +44,7 @@
 
 #define USER_ID_SIZE 16
 #define DIR_MODE     0711
-#define DEV_SHM_DIR "/dev/shm"
+#define DEV_SHM_DIR "/dev/shm/"
 
 static inline void SetMountPathOperation(uint32_t *operation, uint32_t index)
 {
@@ -1297,9 +1297,7 @@ static void MountDevShmPath(SandboxContext *context)
     APPSPAWN_CHECK(ret == 0, return, "Failed to strcpy rootPath");
     ret = strcat_s(sandboxDevShmPath, sizeof(sandboxDevShmPath), DEV_SHM_DIR);
     APPSPAWN_CHECK(ret == 0, return, "Failed to format devShmPath");
-    const char *str = "size=32M";
-    const void *data = (const void *)str;
-    int result = mount("tmpfs", sandboxDevShmPath, "tmpfs", MS_NOSUID | MS_NOEXEC | MS_NODEV, data);
+    int result = mount("tmpfs", sandboxDevShmPath, "tmpfs", MS_NOSUID | MS_NOEXEC | MS_NODEV, "size=32M");
     if (result != 0) {
         APPSPAWN_LOGW("Error mounting %{public}s to tmpfs, errno %{public}d", sandboxDevShmPath, errno);
     }
