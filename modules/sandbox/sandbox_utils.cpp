@@ -48,6 +48,7 @@
 #endif // WITH_SELINUX
 
 #define MAX_MOUNT_TIME 500  // 500us
+#define DEV_SHM_DIR "/dev/shm"
 
 using namespace std;
 using namespace OHOS;
@@ -1589,7 +1590,7 @@ int32_t SandboxUtils::SetPermissionWithParam(AppSpawningCtx *appProperty)
 #ifdef APPSPAWN_MOUNT_TMPSHM
 void SandboxUtils::MountDevShmPath(std::string &sandboxPath)
 {
-    std::string sandboxDevShmPath = sandboxPath + g_devShmDir;
+    std::string sandboxDevShmPath = sandboxPath + DEV_SHM_DIR;
     const char *str = "size=32M";
     const void *data = reinterpret_cast<const void *>(str);
     int result = mount("tmpfs", sandboxDevShmPath.c_str(), "tmpfs", MS_NOSUID | MS_NOEXEC | MS_NODEV, data);
@@ -1647,7 +1648,7 @@ int32_t SandboxUtils::SetAppSandboxProperty(AppSpawningCtx *appProperty, uint32_
     APPSPAWN_CHECK(rc == 0, return rc, "change current dir failed");
     APPSPAWN_LOGI("Change root dir success");
 #if defined(APPSPAWN_MOUNT_TMPSHM) && defined(WITH_SELINUX)
-    Restorecon(g_devShmDir.c_str());
+    Restorecon(DEV_SHM_DIR);
 #endif // APPSPAWN_MOUNT_TMPSHM && WITH_SELINUX
 #endif // APPSPAWN_TEST
     return 0;
