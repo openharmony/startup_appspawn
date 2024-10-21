@@ -694,7 +694,7 @@ static void ProcessPreFork(AppSpawnContent *content, AppSpawningCtx *property)
     APPSPAWN_CHECK_ONLY_EXPER(content->parentToChildFd[1] <= 0, close(content->parentToChildFd[1]);
         content->parentToChildFd[1] = -1);
     APPSPAWN_CHECK(pipe(content->parentToChildFd) == 0, return, "prefork with prefork pipe failed %{public}d", errno);
-
+    enum fdsan_error_level errorLevel = fdsan_get_error_level();
     content->reservedPid = fork();
     APPSPAWN_LOGV("prefork fork finish %{public}d,%{public}d,%{public}d,%{public}d,%{public}d",
         content->reservedPid, content->preforkFd[0], content->preforkFd[1], content->parentToChildFd[0],
@@ -725,6 +725,8 @@ static void ProcessPreFork(AppSpawnContent *content, AppSpawningCtx *property)
             return;
         }
         ClearMMAP(property->client.id);
+        // Inherit the error level of the original process
+        (void)fdsan_set_error_level(errorLevel);
         ProcessExit(AppSpawnChild(content, &property->client));
     } else if (content->reservedPid < 0) {
         APPSPAWN_LOGE("prefork fork child process failed %{public}d", content->reservedPid);

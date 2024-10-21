@@ -87,8 +87,11 @@ void NWebSpawnInit(void)
 
 pid_t NWebSpawnLaunch(void)
 {
+    enum fdsan_error_level errorLevel = fdsan_get_error_level();
     pid_t ret = fork();
     if (ret == 0) {
+        // Inherit the error level of the original process
+        (void)fdsan_set_error_level(errorLevel);
         NWebSpawnInit();
     }
     APPSPAWN_LOGI("nwebspawn fork success pid: %{public}d", ret);
