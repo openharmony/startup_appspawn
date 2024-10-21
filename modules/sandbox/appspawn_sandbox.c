@@ -44,8 +44,7 @@
 
 #define USER_ID_SIZE 16
 #define DIR_MODE     0711
-
-const char *g_devShmDir = "/dev/shm/";
+#define DEV_SHM_DIR "/dev/shm"
 
 static inline void SetMountPathOperation(uint32_t *operation, uint32_t index)
 {
@@ -1296,7 +1295,7 @@ static void MountDevShmPath(SandboxContext *context)
     char sandboxDevShmPath[PATH_MAX] = {};
     int ret = strcpy_s(sandboxDevShmPath, sizeof(sandboxDevShmPath), context->rootPath);
     APPSPAWN_CHECK(ret == 0, return, "Failed to strcpy rootPath");
-    ret = strcat_s(sandboxDevShmPath, sizeof(sandboxDevShmPath), g_devShmDir);
+    ret = strcat_s(sandboxDevShmPath, sizeof(sandboxDevShmPath), DEV_SHM_DIR);
     APPSPAWN_CHECK(ret == 0, return, "Failed to format devShmPath");
     const char *str = "size=32M";
     const void *data = (const void *)str;
@@ -1350,7 +1349,7 @@ int MountSandboxConfigs(AppSpawnSandboxCfg *sandbox, const AppSpawningCtx *prope
         ret = ChangeCurrentDir(context);
         APPSPAWN_CHECK_ONLY_EXPER(ret == 0, break);
 #if defined(APPSPAWN_MOUNT_TMPSHM) && defined(WITH_SELINUX)
-        Restorecon(g_devShmDir);
+        Restorecon(DEV_SHM_DIR);
 #endif
         APPSPAWN_LOGV("Change root dir success %{public}s ", context->rootPath);
     } while (0);
