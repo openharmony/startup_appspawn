@@ -48,7 +48,7 @@
 #endif // WITH_SELINUX
 
 #define MAX_MOUNT_TIME 500  // 500us
-#define DEV_SHM_DIR "/dev/shm"
+#define DEV_SHM_DIR "/dev/shm/"
 
 using namespace std;
 using namespace OHOS;
@@ -1591,9 +1591,7 @@ int32_t SandboxUtils::SetPermissionWithParam(AppSpawningCtx *appProperty)
 void SandboxUtils::MountDevShmPath(std::string &sandboxPath)
 {
     std::string sandboxDevShmPath = sandboxPath + DEV_SHM_DIR;
-    const char *str = "size=32M";
-    const void *data = reinterpret_cast<const void *>(str);
-    int result = mount("tmpfs", sandboxDevShmPath.c_str(), "tmpfs", MS_NOSUID | MS_NOEXEC | MS_NODEV, data);
+    int result = mount("tmpfs", sandboxDevShmPath.c_str(), "tmpfs", MS_NOSUID | MS_NOEXEC | MS_NODEV, "size=32M");
     if (result != 0) {
         APPSPAWN_LOGW("Error mounting %{public}s to tmpfs, errno %{public}d", sandboxDevShmPath.c_str(), errno);
     }
