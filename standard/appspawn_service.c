@@ -52,6 +52,7 @@
 #define PATH_SIZE 256
 #define FD_PATH_SIZE 128
 #define MAX_MEM_SIZE (4 * 1024)
+#define PREFORK_PROCESS "apppool"
 #ifndef PIDFD_NONBLOCK
 #define PIDFD_NONBLOCK O_NONBLOCK
 #endif
@@ -686,6 +687,28 @@ static void ClearMMAP(int clientId)
     }
 }
 
+static int SetPreforkProcessName(AppSpawnContent *content)
+{
+    int ret = prctl(PR_SET_NAME, PREFORK_PROCESS);
+    if (ret == -1) {
+        return errno;
+    }
+
+    ret = memset_s(content->longProcName,
+        (size_t)content->longProcNameLen, 0, (size_t)content->longProcNameLen);
+    if (ret != EOK) {
+        return EINVAL;
+    }
+
+    ret = strncpy_s(content->longProcName, content->longProcNameLen,
+        PREFORK_PROCESS, strlen(PREFORK_PROCESS));
+    if (ret != EOK) {
+        return EINVAL;
+    }
+
+    return 0;
+}
+
 static void ProcessPreFork(AppSpawnContent *content, AppSpawningCtx *property)
 {
     APPSPAWN_CHECK(pipe(content->preforkFd) == 0, return, "prefork with prefork pipe failed %{public}d", errno);
@@ -702,7 +725,7 @@ static void ProcessPreFork(AppSpawnContent *content, AppSpawningCtx *property)
     if (content->reservedPid == 0) {
         (void)close(property->forkCtx.fd[0]);
         (void)close(property->forkCtx.fd[1]);
-        int isRet = prctl(PR_SET_NAME, "apppool");
+        int isRet = SetPreforkProcessName(content);
         APPSPAWN_LOGI("prefork process start wait read msg with set processname %{public}d", isRet);
         AppSpawnClient client = {0, 0};
         int infoSize = read(content->parentToChildFd[0], &client, sizeof(AppSpawnClient));
