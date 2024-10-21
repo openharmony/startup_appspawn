@@ -472,7 +472,7 @@ int HnpPackageInfoGet(const char *packageName, HnpPackageInfo **packageInfoOut, 
         cJSON *version = cJSON_GetObjectItem(hnpItem, "current_version");
         cJSON *installVersion = cJSON_GetObjectItem(hnpItem, "install_version");
         if (name == NULL || version == NULL || installVersion == NULL || !cJSON_IsString(name) ||
-            !cJSON_IsString(name) || !cJSON_IsString(version) || !cJSON_IsString(installVersion)) {
+            !cJSON_IsString(version) || !cJSON_IsString(installVersion)) {
             continue;
         }
         hnpExist = HnpOtherPackageInstallCheck(name->valuestring, version->valuestring, hapIndex, json);
