@@ -286,7 +286,7 @@
             "sandbox-switch": "ON",
             "gids": ["file_manager", "user_data_rw"],
             "mount-paths": [{
-                "src-path": "/data/service/el2/public/file_monitor_service/content_share",
+                "src-path": "/data/service/el2/<currentUserId>/file_monitor_service/content_share",
                 "sandbox-path": "/storage/ContentShare"
             }]
         }, {
