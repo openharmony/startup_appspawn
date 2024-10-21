@@ -291,11 +291,13 @@ static int HnpHapJsonHnpAdd(bool hapExist, cJSON *json, cJSON *hapItem, const ch
         hnpItemArr = cJSON_CreateArray();
         if (hnpItemArr == NULL) {
             HNP_LOGE("hnp json write array create unsuccess");
+            cJSON_Delete(hapItem);
             return HNP_ERRNO_BASE_JSON_ARRAY_CREATE_FAILED;
         }
         cJSON_AddItemToObject(hapItem, "hnp", hnpItemArr);
         cJSON_AddItemToArray(json, hapItem);
     }
+
     cJSON *hnpItem = cJSON_CreateObject();
     if (hnpItem == NULL) {
         HNP_LOGE("hnp json write create hnp object unsuccess");
