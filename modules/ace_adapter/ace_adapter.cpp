@@ -139,14 +139,20 @@ static void LoadExtendCJLib(void)
     APPSPAWN_LOGI("LoadExtendLib: Success to dlopen %{public}s", acelibdir);
 }
 
-static int BuildFdInfoMap(const AppSpawnMsgNode *message, std::map<std::string, int> &fdMap)
+static int BuildFdInfoMap(const AppSpawnMsgNode *message, std::map<std::string, int> &fdMap, int isColdRun)
 {
     APPSPAWN_CHECK_ONLY_EXPER(message != NULL && message->buffer != NULL, return -1);
     APPSPAWN_CHECK_ONLY_EXPER(message->tlvOffset != NULL, return -1);
     int findFdIndex = 0;
-    AppSpawnMsgReceiverCtx recvCtx = message->connection->receiverCtx;
-    APPSPAWN_CHECK(recvCtx.fds != NULL && recvCtx.fdCount > 0, return 0,
-        "no need to build fd info %{public}d, %{public}d", recvCtx.fds != NULL, recvCtx.fdCount);
+    AppSpawnMsgReceiverCtx recvCtx;
+    if (!isColdRun) {
+        APPSPAWN_CHECK_ONLY_EXPER(message->connection != NULL, return -1);
+        recvCtx = message->connection->receiverCtx;
+        if (recvCtx.fdCount <= 0) {
+            APPSPAWN_LOGI("no need to build fd info %{public}d, %{public}d", recvCtx.fds != NULL, recvCtx.fdCount);
+            return 0;
+        }
+    }
     for (uint32_t index = TLV_MAX; index < (TLV_MAX + message->tlvCount); index++) {
         if (message->tlvOffset[index] == INVALID_OFFSET) {
             return -1;
@@ -159,12 +165,21 @@ static int BuildFdInfoMap(const AppSpawnMsgNode *message, std::map<std::string, 
         if (strcmp(tlv->tlvName, MSG_EXT_NAME_APP_FD) != 0) {
             continue;
         }
-        APPSPAWN_CHECK(findFdIndex < recvCtx.fdCount && recvCtx.fds[findFdIndex] > 0,
-            return -1, "invalid fd info  %{public}d %{public}d", findFdIndex, recvCtx.fds[findFdIndex]);
         std::string key((char *)data + sizeof(AppSpawnTlvExt));
-        fdMap[key] = recvCtx.fds[findFdIndex++];
-        if (findFdIndex >= recvCtx.fdCount) {
-            break;
+        if (isColdRun) {
+            std::string envKey = std::string(APP_FDENV_PREFIX) + key;
+            char *fdChar = getenv(envKey.c_str());
+            APPSPAWN_CHECK(fdChar != NULL, continue, "getfd from env failed %{public}s", envKey.c_str());
+            int fd = atoi(fdChar);
+            APPSPAWN_CHECK(fd > 0, continue, "getfd from env atoi errno %{public}s,%{public}d", envKey.c_str(), fd);
+            fdMap[key] = fd;
+        } else {
+            APPSPAWN_CHECK(findFdIndex < recvCtx.fdCount && recvCtx.fds[findFdIndex] > 0,
+                return -1, "invalid fd info  %{public}d %{public}d", findFdIndex, recvCtx.fds[findFdIndex]);
+            fdMap[key] = recvCtx.fds[findFdIndex++];
+            if (findFdIndex >= recvCtx.fdCount) {
+                break;
+            }
         }
     }
     return 0;
@@ -179,7 +194,7 @@ static int RunChildThread(const AppSpawnMgr *content, const AppSpawningCtx *prop
     setenv(APPSPAWN_CHECK_EXIT, checkExit.c_str(), true);
     if (CheckAppMsgFlagsSet(property, APP_FLAGS_CHILDPROCESS)) {
         std::map<std::string, int> fdMap;
-        BuildFdInfoMap(property->message, fdMap);
+        BuildFdInfoMap(property->message, fdMap, IsColdRunMode(content));
         AppSpawnEnvClear((AppSpawnContent *)&content->content, (AppSpawnClient *)&property->client);
         OHOS::AppExecFwk::MainThread::StartChild(fdMap);
     } else {

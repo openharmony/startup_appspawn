@@ -167,7 +167,7 @@ int MakeDirRec(const char *path, mode_t mode, int lastPath)
 
 static void TrimTail(char *buffer, uint32_t maxLen)
 {
-    uint32_t index = maxLen - 1;
+    int32_t index = (int32_t)maxLen - 1;
     while (index > 0) {
         if (isspace(buffer[index])) {
             buffer[index] = '\0';
