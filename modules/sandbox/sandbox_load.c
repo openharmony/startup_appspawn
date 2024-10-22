@@ -534,6 +534,7 @@ static SandboxNameGroupNode *ParseNameGroup(AppSpawnSandboxCfg *sandbox, const c
     // "type": "system-const",
     // "caps": ["shared"],
     node->destType = GetNameGroupTypeFromConfig(groupConfig, "type", SANDBOX_TAG_INVALID);
+    node->depMounted = 0;
     // success, insert section
     AddSandboxSection(&node->section, &sandbox->nameGroupsQueue);
     return node;

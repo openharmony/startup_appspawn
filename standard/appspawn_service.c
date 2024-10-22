@@ -54,6 +54,7 @@
 #define FD_PATH_SIZE 128
 #define MAX_MEM_SIZE (4 * 1024)
 #define APPSPAWN_MSG_USER_CHECK_COUNT 3
+#define PREFORK_PROCESS "apppool"
 #ifndef PIDFD_NONBLOCK
 #define PIDFD_NONBLOCK O_NONBLOCK
 #endif
@@ -88,7 +89,7 @@ static void CloseDevEncaps(int fd)
 static inline void SetFdCtrl(int fd, int opt)
 {
     int option = fcntl(fd, F_GETFD);
-    int ret = fcntl(fd, F_SETFD, option | opt);
+    int ret = fcntl(fd, F_SETFD, (unsigned int)option | (unsigned int)opt);
     if (ret < 0) {
         APPSPAWN_LOGI("Set fd %{public}d option %{public}d %{public}d result: %{public}d", fd, option, opt, errno);
     }
@@ -150,6 +151,11 @@ static inline void DumpStatus(const char *appName, pid_t pid, int status)
 
 static void HandleDiedPid(pid_t pid, uid_t uid, int status)
 {
+    AppSpawnContent *content = GetAppSpawnContent();
+    if (pid == content->reservedPid) {
+        APPSPAWN_LOGW("HandleDiedPid with reservedPid %{public}d", pid);
+        content->reservedPid = 0;
+    }
     AppSpawnedProcess *appInfo = GetSpawnedProcess(pid);
     if (appInfo == NULL) { // If an exception occurs during app spawning, kill pid, return failed
         WaitChildDied(pid);
@@ -205,7 +211,7 @@ APPSPAWN_STATIC void ProcessSignal(const struct signalfd_siginfo *siginfo)
 
 static void AppSpawningCtxOnClose(const AppSpawnMgr *mgr, AppSpawningCtx *ctx, void *data)
 {
-    if (ctx->message == NULL || ctx->message->connection != data) {
+    if (ctx == NULL || ctx->message == NULL || ctx->message->connection != data) {
         return;
     }
     APPSPAWN_LOGI("Kill process, pid: %{public}d app: %{public}s", ctx->pid, GetProcessName(ctx));
@@ -480,7 +486,7 @@ static void OnReceiveRequest(const TaskHandle taskHandle, const uint8_t *buffer,
 static char *GetMapMem(uint32_t clientId, const char *processName, uint32_t size, bool readOnly, bool isNweb)
 {
     char path[PATH_MAX] = {};
-    int len = sprintf_s(path, sizeof(path), APPSPAWN_MSG_DIR "%s/%s_%d",
+    int len = sprintf_s(path, sizeof(path), APPSPAWN_MSG_DIR "%s/%s_%u",
         isNweb ? "nwebspawn" : "appspawn", processName, clientId);
     APPSPAWN_CHECK(len > 0, return NULL, "Failed to format path %{public}s", processName);
     APPSPAWN_LOGV("GetMapMem for child %{public}s memSize %{public}u", path, size);
@@ -535,7 +541,7 @@ static int InitForkContext(AppSpawningCtx *property)
     }
     int option = fcntl(property->forkCtx.fd[0], F_GETFD);
     if (option > 0) {
-        (void)fcntl(property->forkCtx.fd[0], F_SETFD, option | O_NONBLOCK);
+        (void)fcntl(property->forkCtx.fd[0], F_SETFD, (unsigned int)option | O_NONBLOCK);
     }
     return 0;
 }
@@ -612,9 +618,19 @@ static void WatchChildProcessFd(AppSpawningCtx *property)
     }
 }
 
+static int IsChildColdRun(AppSpawningCtx *property)
+{
+    return CheckAppMsgFlagsSet(property, APP_FLAGS_UBSAN_ENABLED)
+        || CheckAppMsgFlagsSet(property, APP_FLAGS_ASANENABLED)
+        || CheckAppMsgFlagsSet(property, APP_FLAGS_TSAN_ENABLED)
+        || CheckAppMsgFlagsSet(property, APP_FLAGS_HWASAN_ENABLED)
+        || (property->client.flags & APP_COLD_START);
+}
+
 static int AddChildWatcher(AppSpawningCtx *property)
 {
-    uint32_t timeout = GetSpawnTimeout(WAIT_CHILD_RESPONSE_TIMEOUT);
+    uint32_t defTimeout = IsChildColdRun(property) ? COLD_CHILD_RESPONSE_TIMEOUT : WAIT_CHILD_RESPONSE_TIMEOUT;
+    uint32_t timeout = GetSpawnTimeout(defTimeout);
     LE_WatchInfo watchInfo = {};
     watchInfo.fd = property->forkCtx.fd[0];
     watchInfo.flags = WATCHER_ONCE;
@@ -719,9 +735,37 @@ static void ClearMMAP(int clientId)
     }
 }
 
+static int SetPreforkProcessName(AppSpawnContent *content)
+{
+    int ret = prctl(PR_SET_NAME, PREFORK_PROCESS);
+    if (ret == -1) {
+        return errno;
+    }
+
+    ret = memset_s(content->longProcName,
+        (size_t)content->longProcNameLen, 0, (size_t)content->longProcNameLen);
+    if (ret != EOK) {
+        return EINVAL;
+    }
+
+    ret = strncpy_s(content->longProcName, content->longProcNameLen,
+        PREFORK_PROCESS, strlen(PREFORK_PROCESS));
+    if (ret != EOK) {
+        return EINVAL;
+    }
+
+    return 0;
+}
+
 static void ProcessPreFork(AppSpawnContent *content, AppSpawningCtx *property)
 {
     APPSPAWN_CHECK(pipe(content->preforkFd) == 0, return, "prefork with prefork pipe failed %{public}d", errno);
+    APPSPAWN_CHECK_ONLY_EXPER(content->parentToChildFd[0] <= 0, close(content->parentToChildFd[0]);
+        content->parentToChildFd[0] = -1);
+    APPSPAWN_CHECK_ONLY_EXPER(content->parentToChildFd[1] <= 0, close(content->parentToChildFd[1]);
+        content->parentToChildFd[1] = -1);
+    APPSPAWN_CHECK(pipe(content->parentToChildFd) == 0, return, "prefork with prefork pipe failed %{public}d", errno);
+
     content->reservedPid = fork();
     APPSPAWN_LOGV("prefork fork finish %{public}d,%{public}d,%{public}d,%{public}d,%{public}d",
         content->reservedPid, content->preforkFd[0], content->preforkFd[1], content->parentToChildFd[0],
@@ -729,7 +773,7 @@ static void ProcessPreFork(AppSpawnContent *content, AppSpawningCtx *property)
     if (content->reservedPid == 0) {
         (void)close(property->forkCtx.fd[0]);
         (void)close(property->forkCtx.fd[1]);
-        int isRet = prctl(PR_SET_NAME, "apppool");
+        int isRet = SetPreforkProcessName(content);
         APPSPAWN_LOGI("prefork process start wait read msg with set processname %{public}d", isRet);
         AppSpawnClient client = {0, 0};
         int infoSize = read(content->parentToChildFd[0], &client, sizeof(AppSpawnClient));
@@ -781,7 +825,7 @@ static int AppSpawnProcessMsgForPrefork(AppSpawnContent *content, AppSpawnClient
 
         int option = fcntl(property->forkCtx.fd[0], F_GETFD);
         if (option > 0) {
-            ret = fcntl(property->forkCtx.fd[0], F_SETFD, option | O_NONBLOCK);
+            ret = fcntl(property->forkCtx.fd[0], F_SETFD, (unsigned int)option | O_NONBLOCK);
             APPSPAWN_CHECK_ONLY_LOG(ret == 0, "fcntl failed %{public}d,%{public}d", ret, errno);
         }
 
@@ -803,13 +847,9 @@ static bool IsSupportPrefork(AppSpawnContent *content, AppSpawnClient *client)
     if (!content->enablePerfork) {
         return false;
     }
-    if (!content->isPrefork) {
-        if (pipe(content->parentToChildFd) == 0) {
-            content->isPrefork = true;
-        }
-    }
     AppSpawningCtx *property = (AppSpawningCtx *)client;
-    if (content->mode == MODE_FOR_APP_SPAWN && !(client->flags & APP_COLD_START) && content->isPrefork
+
+    if (content->mode == MODE_FOR_APP_SPAWN && !IsChildColdRun(property)
         && !CheckAppMsgFlagsSet(property, APP_FLAGS_CHILDPROCESS)) {
         return true;
     }
@@ -869,9 +909,7 @@ static void ProcessSpawnReqMsg(AppSpawnConnection *connection, AppSpawnMsgNode *
     // mount el2 dir
     // getWrapBundleNameValue
     AppSpawnHookExecute(STAGE_PARENT_PRE_FORK, 0, GetAppSpawnContent(), &property->client);
-    if (IsDeveloperModeOn(property)) {
-        DumpAppSpawnMsg(property->message);
-    }
+    DumpAppSpawnMsg(property->message);
 
     clock_gettime(CLOCK_MONOTONIC, &property->spawnStart);
     ret = RunAppSpawnProcessMsg(GetAppSpawnContent(), &property->client, &property->pid);
@@ -889,14 +927,29 @@ static void ProcessSpawnReqMsg(AppSpawnConnection *connection, AppSpawnMsgNode *
     }
 }
 
+static uint32_t g_lastDiedAppId = 0;
+static uint32_t g_crashTimes = 0;
+#define MAX_CRASH_TIME 5
 static void WaitChildDied(pid_t pid)
 {
     AppSpawningCtx *property = GetAppSpawningCtxByPid(pid);
     if (property != NULL && property->state == APP_STATE_SPAWNING) {
         APPSPAWN_LOGI("Child process %{public}s fail \'child crash \'pid %{public}d appId: %{public}d",
             GetProcessName(property), property->pid, property->client.id);
+        if (property->client.id == g_lastDiedAppId + 1) {
+            g_crashTimes++;
+        } else {
+            g_crashTimes = 1;
+        }
+        g_lastDiedAppId = property->client.id;
+
         SendResponse(property->message->connection, &property->message->msgHeader, APPSPAWN_CHILD_CRASH, 0);
         DeleteAppSpawningCtx(property);
+
+        if (g_crashTimes >= MAX_CRASH_TIME) {
+            APPSPAWN_LOGW("Continuous failures in spawning the app, restart appspawn");
+            StopAppSpawn();
+        }
     }
 }
 
@@ -1073,9 +1126,9 @@ APPSPAWN_STATIC int AppSpawnColdStartApp(struct AppSpawnContent *content, AppSpa
     APPSPAWN_CHECK(len > 0, return APPSPAWN_SYSTEM_ERROR, "Invalid to format fd");
     len = sprintf_s(buffer[1], sizeof(buffer[1]), " %u ", property->client.flags);
     APPSPAWN_CHECK(len > 0, return APPSPAWN_SYSTEM_ERROR, "Invalid to format flags");
-    len = sprintf_s(buffer[2], sizeof(buffer[2]), " %d ", property->forkCtx.msgSize); // 2 2 index for dest path
+    len = sprintf_s(buffer[2], sizeof(buffer[2]), " %u ", property->forkCtx.msgSize); // 2 2 index for dest path
     APPSPAWN_CHECK(len > 0, return APPSPAWN_SYSTEM_ERROR, "Invalid to format shmId ");
-    len = sprintf_s(buffer[3], sizeof(buffer[3]), " %d ", property->client.id); // 3 3 index for client id
+    len = sprintf_s(buffer[3], sizeof(buffer[3]), " %u ", property->client.id); // 3 3 index for client id
     APPSPAWN_CHECK(len > 0, return APPSPAWN_SYSTEM_ERROR, "Invalid to format shmId ");
 
 #ifndef APPSPAWN_TEST
@@ -1100,12 +1153,12 @@ static AppSpawningCtx *GetAppSpawningCtxFromArg(AppSpawnMgr *content, int argc, 
     AppSpawningCtx *property = CreateAppSpawningCtx();
     APPSPAWN_CHECK(property != NULL, return NULL, "Create app spawning ctx fail");
     property->forkCtx.fd[1] = atoi(argv[FD_VALUE_INDEX]);
-    property->client.flags = atoi(argv[FLAGS_VALUE_INDEX]);
+    property->client.flags = (uint32_t)atoi(argv[FLAGS_VALUE_INDEX]);
     property->client.flags &= ~APP_COLD_START;
 
     int isNweb = IsNWebSpawnMode(content);
-    uint32_t size = atoi(argv[SHM_SIZE_INDEX]);
-    property->client.id = atoi(argv[CLIENT_ID_INDEX]);
+    uint32_t size = (uint32_t)atoi(argv[SHM_SIZE_INDEX]);
+    property->client.id = (uint32_t)atoi(argv[CLIENT_ID_INDEX]);
     uint8_t *buffer = (uint8_t *)GetMapMem(property->client.id,
         argv[PARAM_VALUE_INDEX], size, true, isNweb);
     if (buffer == NULL) {
@@ -1123,7 +1176,7 @@ static AppSpawningCtx *GetAppSpawningCtxFromArg(AppSpawnMgr *content, int argc, 
     munmap((char *)buffer, size);
     //unlink
     char path[PATH_MAX] = {0};
-    int len = sprintf_s(path, sizeof(path), APPSPAWN_MSG_DIR "%s/%s_%d",
+    int len = sprintf_s(path, sizeof(path), APPSPAWN_MSG_DIR "%s/%s_%u",
         isNweb ? "nwebspawn" : "appspawn", argv[PARAM_VALUE_INDEX], property->client.id);
     if (len > 0) {
         unlink(path);
@@ -1151,9 +1204,7 @@ static void AppSpawnColdRun(AppSpawnContent *content, int argc, char *const argv
         APPSPAWN_LOGE("Failed to get property from arg");
         return;
     }
-    if (IsDeveloperModeOn(property)) {
-        DumpAppSpawnMsg(property->message);
-    }
+    DumpAppSpawnMsg(property->message);
 
     int ret = AppSpawnExecuteSpawningHook(content, &property->client);
     if (ret == 0) {
@@ -1211,8 +1262,9 @@ APPSPAWN_STATIC int AppSpawnClearEnv(AppSpawnMgr *content, AppSpawningCtx *prope
 static int IsEnablePerfork()
 {
     char buffer[32] = {0};
-    int ret = GetParameter("persist.sys.prefork.enable", "false", buffer, sizeof(buffer));
-    return (ret > 0 && strcmp(buffer, "true") == 0);
+    int ret = GetParameter("persist.sys.prefork.enable", "true", buffer, sizeof(buffer));
+    APPSPAWN_LOGV("IsEnablePerfork result %{public}d, %{public}s", ret, buffer);
+    return strcmp(buffer, "true") == 0;
 }
 
 AppSpawnContent *AppSpawnCreateContent(const char *socketName, char *longProcName, uint32_t nameLen, int mode)
@@ -1351,6 +1403,7 @@ static bool CheckAllDigit(char *userId)
     return true;
 }
 
+#ifdef APPSPAWN_SANDBOX_NEW
 static int ProcessSpawnRemountMsg(AppSpawnConnection *connection, AppSpawnMsgNode *message)
 {
     char srcPath[PATH_SIZE] = {0};
@@ -1365,7 +1418,51 @@ static int ProcessSpawnRemountMsg(AppSpawnConnection *connection, AppSpawnMsgNod
     while ((ent = readdir(rootDir)) != NULL) {
         char *userId = ent->d_name;
         if (strcmp(userId, ".") == 0 || strcmp(userId, "..") == 0 || !CheckAllDigit(userId)) {
-                continue;
+            continue;
+        }
+        char destPath[PATH_SIZE] = {0};
+        int ret = snprintf_s(destPath, sizeof(destPath), sizeof(destPath) - 1,
+            "%s/%s/app-root/mnt/nweb/tmp", rootPath, userId);
+        APPSPAWN_CHECK(ret > 0, continue, "Failed to snprintf_s, errno %{public}d", errno);
+
+        ret = umount2(destPath, MNT_DETACH);
+        if (ret != 0) {
+            APPSPAWN_LOGW("Umount %{public}s failed, errno %{public}d", destPath, errno);
+        }
+
+        ret = mount(srcPath, destPath, NULL, MS_BIND | MS_REC, NULL);
+        if (ret != 0 && errno == EBUSY) {
+            ret = mount(srcPath, destPath, NULL, MS_BIND | MS_REC, NULL);
+            APPSPAWN_LOGW("Bind mount again %{public}s to %{public}s, ret %{public}d", srcPath, destPath, ret);
+        }
+        APPSPAWN_CHECK(ret == 0, continue,
+            "Failed to bind mount %{public}s to %{public}s, errno %{public}d", srcPath, destPath, errno);
+
+        ret = mount(NULL, destPath, NULL, MS_SHARED, NULL);
+        APPSPAWN_CHECK(ret == 0, continue,
+            "Failed to shared mount %{public}s, errno %{public}d", destPath, errno);
+
+        APPSPAWN_LOGI("Remount %{public}s to %{public}s success", srcPath, destPath);
+    }
+    closedir(rootDir);
+    return 0;
+}
+#else
+static int ProcessSpawnRemountMsg(AppSpawnConnection *connection, AppSpawnMsgNode *message)
+{
+    char srcPath[PATH_SIZE] = {0};
+    int len = GetArkWebInstallPath("persist.arkwebcore.install_path", srcPath);
+    APPSPAWN_CHECK(len > 0, return -1, "Failed to get arkwebcore install path");
+
+    char *rootPath = "/mnt/sandbox";
+    DIR *rootDir = opendir(rootPath);
+    APPSPAWN_CHECK(rootDir != NULL, return -1, "Failed to opendir %{public}s, errno %{public}d", rootPath, errno);
+
+    struct dirent *ent;
+    while ((ent = readdir(rootDir)) != NULL) {
+        char *userId = ent->d_name;
+        if (strcmp(userId, ".") == 0 || strcmp(userId, "..") == 0 || !CheckAllDigit(userId)) {
+            continue;
         }
 
         char userIdPath[PATH_SIZE] = {0};
@@ -1405,6 +1502,7 @@ static int ProcessSpawnRemountMsg(AppSpawnConnection *connection, AppSpawnMsgNod
     closedir(rootDir);
     return 0;
 }
+#endif
 
 static void ProcessSpawnRestartMsg(AppSpawnConnection *connection, AppSpawnMsgNode *message)
 {
@@ -1426,8 +1524,7 @@ static void ProcessSpawnRestartMsg(AppSpawnConnection *connection, AppSpawnMsgNo
     APPSPAWN_CHECK(fd >= 0, return, "Get fd failed %{public}d, errno %{public}d", fd, errno);
 
     int op = fcntl(fd, F_GETFD);
-    op &= ~FD_CLOEXEC;
-    int ret = fcntl(fd, F_SETFD, op);
+    int ret = fcntl(fd, F_SETFD, (unsigned int)op & ~FD_CLOEXEC);
     if (ret < 0) {
         APPSPAWN_LOGE("Set fd failed %{public}d, %{public}d, ret %{public}d, errno %{public}d", fd, op, ret, errno);
     }

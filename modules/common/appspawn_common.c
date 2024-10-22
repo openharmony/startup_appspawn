@@ -309,11 +309,12 @@ static int32_t CheckTraceStatus(void)
     APPSPAWN_CHECK(fd >= 0, return errno, "Failed to open /proc/self/status error: %{public}d", errno);
 
     char data[1024] = {0};  // 1024 is data length
-    ssize_t dataNum = read(fd, data, sizeof(data));
+    ssize_t dataNum = read(fd, data, sizeof(data) - 1);
     (void)close(fd);
     APPSPAWN_CHECK(dataNum > 0, return -1, "Failed to read file /proc/self/status error: %{public}d", errno);
 
     const char *tracerPid = "TracerPid:\t";
+    data[dataNum] = '\0';
     char *traceStr = strstr(data, tracerPid);
     APPSPAWN_CHECK(traceStr != NULL, return -1, "Not found %{public}s", tracerPid);
 
@@ -375,15 +376,9 @@ static int SpawnSetAppEnv(AppSpawnMgr *content, AppSpawningCtx *property)
     return 0;
 }
 
-static int SpawnEnableCache(AppSpawnMgr *content, AppSpawningCtx *property)
+static int SpawnSetIntPermission(AppSpawnMgr *content, AppSpawningCtx *property)
 {
-    APPSPAWN_LOGV("Spawning: enable cache for app process");
-    // enable cache for app process
-    mallopt(M_OHOS_CONFIG, M_TCACHE_PERFORMANCE_MODE);
-    mallopt(M_OHOS_CONFIG, M_ENABLE_OPT_TCACHE);
-    mallopt(M_SET_THREAD_CACHE, M_THREAD_CACHE_ENABLE);
-    mallopt(M_DELAYED_FREE, M_DELAYED_FREE_ENABLE);
-
+    APPSPAWN_LOGV("Spawning: set Internet Permission for app process");
     int ret = SetInternetPermission(property);
     APPSPAWN_CHECK_ONLY_EXPER(ret == 0, return ret);
     return ret;
@@ -548,7 +543,7 @@ MODULE_CONSTRUCTOR(void)
     AddAppSpawnHook(STAGE_PARENT_PRE_FORK, HOOK_PRIO_HIGHEST, SpawnGetSpawningFlag);
     AddAppSpawnHook(STAGE_CHILD_PRE_COLDBOOT, HOOK_PRIO_HIGHEST, SpawnInitSpawningEnv);
     AddAppSpawnHook(STAGE_CHILD_PRE_COLDBOOT, HOOK_PRIO_COMMON + 1, SpawnSetAppEnv);
-    AddAppSpawnHook(STAGE_CHILD_EXECUTE, HOOK_PRIO_HIGHEST, SpawnEnableCache);
+    AddAppSpawnHook(STAGE_CHILD_EXECUTE, HOOK_PRIO_HIGHEST, SpawnSetIntPermission);
     AddAppSpawnHook(STAGE_CHILD_EXECUTE, HOOK_PRIO_PROPERTY, SpawnSetProperties);
     AddAppSpawnHook(STAGE_CHILD_POST_RELY, HOOK_PRIO_HIGHEST, SpawnComplete);
     AddAppSpawnHook(STAGE_PARENT_POST_FORK, HOOK_PRIO_HIGHEST, CloseFdArgs);

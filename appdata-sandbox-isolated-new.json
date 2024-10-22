@@ -1,0 +1,61 @@
+{
+    "global": {
+        "sandbox-root" : "/mnt/sandbox/<currentUserId>/app-root-isolated",
+        "sandbox-ns-flags" : [ "net" ]
+    },
+    "required": {
+        "system-const": {
+            "mount-paths": [{
+                "src-path" : "/dev",
+                "sandbox-path" : "/dev"
+            }, {
+                "src-path" : "/proc",
+                "sandbox-path" : "/proc"
+            }, {
+                "src-path" : "/sys",
+                "sandbox-path" : "/sys"
+            }, {
+                "src-path" : "/system/fonts",
+                "sandbox-path" : "/system/fonts"
+            }, {
+                "src-path" : "/system/etc",
+                "sandbox-path" : "/system/etc"
+            }, {
+                "src-path" : "/system/bin",
+                "sandbox-path" : "/system/bin"
+            }, {
+                "src-path" : "/system/lib",
+                "sandbox-path" : "/system/lib"
+            }, {
+                "src-path" : "/system/lib64",
+                "sandbox-path" : "/system/lib64"
+            }],
+            "symbol-links" : [{
+                "target-name" : "/system/etc",
+                "link-name" : "/etc",
+                "check-action-status": "false"
+            }, {
+                "target-name" : "/system/bin",
+                "link-name" : "/bin",
+                "check-action-status": "false"
+            }, {
+                "target-name" : "/system/lib",
+                "link-name" : "/lib",
+                "check-action-status": "false"
+            }, {
+                "target-name" : "/system/lib64",
+                "link-name" : "/lib64",
+                "check-action-status": "false"
+                }],
+            "mount-files": [],
+            "mount-groups" : []
+        },
+        "app-variable": {
+            "mount-paths": [{
+                "src-path" : "/data/app/el1/bundle/public/<PackageName>",
+                "sandbox-path" : "/data/storage/el1/bundle"
+            }],
+            "mount-groups": []
+        }
+    }
+}

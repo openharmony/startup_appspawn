@@ -29,8 +29,8 @@ if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
     module_install_dir = "etc/sandbox"
   }
 
-  ohos_prebuilt_etc("appdata-sandbox-isolated.json") {
-    source = "../appdata-sandbox-isolated.json"
+  ohos_prebuilt_etc("appdata-sandbox-isolated-new.json") {
+    source = "../appdata-sandbox-isolated-new.json"
     part_name = "${part_name}"
     module_install_dir = "etc/sandbox"
   }
@@ -68,11 +68,13 @@ ohos_prebuilt_etc("appspawn_preload.json") {
 
 group("etc_files") {
   deps = [
-    ":appdata-sandbox-isolated.json",
     ":appdata-sandbox.json",
     ":appspawn_preload.json",
   ]
   if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
     deps += [ ":appdata-sandbox-nweb.json" ]
+    deps += [ ":appdata-sandbox-isolated-new.json" ]
+  } else {
+    deps += [ ":appdata-sandbox-isolated.json" ]
   }
 }

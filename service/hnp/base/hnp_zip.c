@@ -74,7 +74,7 @@ static int ZipAddFile(const char* file, int offset, zipFile zf)
     int err;
     char buf[1024];
     char transPath[MAX_FILE_PATH_LEN];
-    int len;
+    size_t len;
     FILE *f;
     zip_fileinfo fileInfo = {0};
 
@@ -346,8 +346,8 @@ static bool HnpELFFileCheck(const char *path)
         return false;
     }
 
-    int ret = fread(buff, sizeof(char), HNP_ELF_FILE_CHECK_HEAD_LEN, fp);
-    if (ret != HNP_ELF_FILE_CHECK_HEAD_LEN) {
+    size_t readLen = fread(buff, sizeof(char), HNP_ELF_FILE_CHECK_HEAD_LEN, fp);
+    if (readLen != HNP_ELF_FILE_CHECK_HEAD_LEN) {
         (void)fclose(fp);
         return false;
     }
@@ -418,25 +418,28 @@ int HnpFileCountGet(const char *path, int *count)
 int HnpUnZip(const char *inputFile, const char *outputDir, const char *hnpSignKeyPrefix,
     HnpSignMapInfo *hnpSignMapInfos, int *count)
 {
-    unzFile zipFile;
-    int result;
     char fileName[MAX_FILE_PATH_LEN];
     unz_file_info fileInfo;
     char filePath[MAX_FILE_PATH_LEN];
 
     HNP_LOGI("HnpUnZip zip=%{public}s, output=%{public}s", inputFile, outputDir);
 
-    zipFile = unzOpen(inputFile);
+    unzFile zipFile = unzOpen(inputFile);
     if (zipFile == NULL) {
         HNP_LOGE("unzip open hnp:%{public}s unsuccess!", inputFile);
         return HNP_ERRNO_BASE_UNZIP_OPEN_FAILED;
     }
 
-    result = unzGoToFirstFile(zipFile);
+    int result = unzGoToFirstFile(zipFile);
     while (result == UNZ_OK) {
         result = unzGetCurrentFileInfo(zipFile, &fileInfo, fileName, sizeof(fileName), NULL, 0, NULL, 0);
         if (result != UNZ_OK) {
             HNP_LOGE("unzip get zip:%{public}s info unsuccess!", inputFile);
+            unzClose(zipFile);
+            return HNP_ERRNO_BASE_UNZIP_GET_INFO_FAILED;
+        }
+        if (strstr(fileName, "../")) {
+            HNP_LOGE("unzip filename[%{public}s],does not allow the use of ../", fileName);
             unzClose(zipFile);
             return HNP_ERRNO_BASE_UNZIP_GET_INFO_FAILED;
         }
@@ -447,8 +450,7 @@ int HnpUnZip(const char *inputFile, const char *outputDir, const char *hnpSignKe
             slash = fileName;
         }
 
-        result = sprintf_s(filePath, MAX_FILE_PATH_LEN, "%s/%s", outputDir, slash);
-        if (result < 0) {
+        if (sprintf_s(filePath, MAX_FILE_PATH_LEN, "%s/%s", outputDir, slash) < 0) {
             HNP_LOGE("sprintf unsuccess.");
             unzClose(zipFile);
             return HNP_ERRNO_BASE_SPRINTF_FAILED;
@@ -510,11 +512,11 @@ int HnpCfgGetFromZip(const char *inputFile, HnpCfgInfo *hnpCfg)
             unzClose(zipFile);
             return HNP_ERRNO_NOMEM;
         }
-        uLong readSize = unzReadCurrentFile(zipFile, cfgStream, fileInfo.uncompressed_size);
-        if (readSize != fileInfo.uncompressed_size) {
+        int readSize = unzReadCurrentFile(zipFile, cfgStream, fileInfo.uncompressed_size);
+        if (readSize < 0 || (uLong)readSize != fileInfo.uncompressed_size) {
             free(cfgStream);
             unzClose(zipFile);
-            HNP_LOGE("unzip read zip:%{public}s info size[%{public}lu]=>[%{public}lu] error!", inputFile,
+            HNP_LOGE("unzip read zip:%{public}s info size[%{public}lu]=>[%{public}d] error!", inputFile,
                 fileInfo.uncompressed_size, readSize);
             return HNP_ERRNO_BASE_FILE_READ_FAILED;
         }

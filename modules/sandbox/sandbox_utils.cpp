@@ -35,6 +35,9 @@
 #include "appspawn_service.h"
 #include "appspawn_utils.h"
 #include "config_policy_utils.h"
+#ifdef WITH_DLP
+#include "dlp_fuse_fd.h"
+#endif
 #include "init_param.h"
 #include "parameter.h"
 #include "parameters.h"
@@ -42,9 +45,13 @@
 
 #ifdef WITH_SELINUX
 #include "hap_restorecon.h"
-#endif
+#ifdef APPSPAWN_MOUNT_TMPSHM
+#include "policycoreutils.h"
+#endif // APPSPAWN_MOUNT_TMPSHM
+#endif // WITH_SELINUX
 
 #define MAX_MOUNT_TIME 500  // 500us
+#define DEV_SHM_DIR "/dev/shm/"
 
 using namespace std;
 using namespace OHOS;
@@ -53,7 +60,6 @@ namespace OHOS {
 namespace AppSpawn {
 namespace {
     constexpr int32_t OPTIONS_MAX_LEN = 256;
-    constexpr int32_t DLP_FUSE_FD = 1000;
     constexpr int32_t APP_LOG_DIR_GID = 1007;
     constexpr int32_t APP_DATABASE_DIR_GID = 3012;
     constexpr int32_t FILE_ACCESS_COMMON_DIR_STATUS = 0;
@@ -163,7 +169,7 @@ bool JsonUtils::GetJsonObjFromJson(nlohmann::json &jsonObj, const std::string &j
     }
     jsonFileStream.close();
     jsonObj = nlohmann::json::parse(buf.str(), nullptr, false);
-    APPSPAWN_CHECK(jsonObj.is_structured(), return false, "Parse json file into jsonObj failed.");
+    APPSPAWN_CHECK(!jsonObj.is_discarded() && jsonObj.is_structured(), return false, "Parse json file failed");
     return true;
 }
 
@@ -263,24 +269,26 @@ int32_t SandboxUtils::DoAppSandboxMountOnce(const char *originPath, const char *
     // to mount fs and bind mount files or directory
     struct timespec mountStart = {0};
     clock_gettime(CLOCK_MONOTONIC, &mountStart);
+    APPSPAWN_LOGV("Bind mount %{public}s to %{public}s '%{public}s' '%{public}lu' '%{public}s' '%{public}u'",
+        originPath, destinationPath, fsType, mountFlags, options, mountSharedFlag);
     ret = mount(originPath, destinationPath, fsType, mountFlags, options);
     struct timespec mountEnd = {0};
     clock_gettime(CLOCK_MONOTONIC, &mountEnd);
     uint64_t diff = DiffTime(&mountStart, &mountEnd);
     APPSPAWN_CHECK_ONLY_LOG(diff < MAX_MOUNT_TIME, "mount %{public}s time %{public}" PRId64 " us", originPath, diff);
     if (ret != 0) {
+        APPSPAWN_LOGI("errno is: %{public}d, bind mount %{public}s to %{public}s", errno, originPath, destinationPath);
         std::string originPathStr = originPath == nullptr ? "" : originPath;
-        size_t index = originPathStr.find("data/app/el2/");
-        if (index != std::string::npos) {
+        if (originPathStr.find("data/app/el1/") != std::string::npos ||
+            originPathStr.find("data/app/el2/") != std::string::npos) {
             CheckDirRecursive(originPathStr);
         }
-        APPSPAWN_LOGI("errno is: %{public}d, bind mount %{public}s to %{public}s", errno, originPath,
-                      destinationPath);
         return ret;
     }
+
     ret = mount(nullptr, destinationPath, nullptr, mountSharedFlag, nullptr);
-    APPSPAWN_CHECK(ret == 0, return ret,
-        "errno is: %{public}d, private mount to %{public}s failed", errno, destinationPath);
+    APPSPAWN_CHECK(ret == 0, return ret, "errno is: %{public}d, private mount to %{public}s %{public}u failed",
+        errno, destinationPath, mountSharedFlag);
     return 0;
 }
 
@@ -596,9 +604,10 @@ bool SandboxUtils::GetSbxSwitchStatusByConfig(nlohmann::json &config)
 static bool CheckMountConfig(nlohmann::json &mntPoint, const AppSpawningCtx *appProperty,
                              bool checkFlag)
 {
-    bool istrue = mntPoint.find(g_srcPath) == mntPoint.end() || mntPoint.find(g_sandBoxPath) == mntPoint.end() ||
+    bool istrue = mntPoint.find(g_srcPath) == mntPoint.end() || (!mntPoint[g_srcPath].is_string()) ||
+                  mntPoint.find(g_sandBoxPath) == mntPoint.end() || (!mntPoint[g_sandBoxPath].is_string()) ||
                   ((mntPoint.find(g_sandBoxFlags) == mntPoint.end()) &&
-                    (mntPoint.find(g_sandBoxFlagsCustomized) == mntPoint.end()));
+                  (mntPoint.find(g_sandBoxFlagsCustomized) == mntPoint.end()));
     APPSPAWN_CHECK(!istrue, return false,
         "read mount config failed, app name is %{public}s", GetBundleName(appProperty));
 
@@ -644,7 +653,7 @@ static int32_t DoDlpAppMountStrategy(const AppSpawningCtx *appProperty,
 
     char options[OPTIONS_MAX_LEN];
     (void)sprintf_s(options, sizeof(options), "fd=%d,"
-        "rootmode=40000,user_id=%d,group_id=%d,allow_other,"
+        "rootmode=40000,user_id=%u,group_id=%u,allow_other,"
         "context=\"u:object_r:dlp_fuse_file:s0\","
         "fscontext=u:object_r:dlp_fuse_file:s0",
         fd, dacInfo->uid, dacInfo->gid);
@@ -654,6 +663,8 @@ static int32_t DoDlpAppMountStrategy(const AppSpawningCtx *appProperty,
 
     int ret = 0;
 #ifndef APPSPAWN_TEST
+    APPSPAWN_LOGV("Bind mount %{public}s to %{public}s '%{public}s' '%{public}lu' '%{public}s'",
+        srcPath.c_str(), sandboxPath.c_str(), fsType.c_str(), mountFlags, options);
     ret = mount(srcPath.c_str(), sandboxPath.c_str(), fsType.c_str(), mountFlags, options);
     APPSPAWN_CHECK(ret == 0, close(fd);
         return ret, "DoDlpAppMountStrategy failed, bind mount %{public}s to %{public}s failed %{public}d",
@@ -663,10 +674,11 @@ static int32_t DoDlpAppMountStrategy(const AppSpawningCtx *appProperty,
     APPSPAWN_CHECK(ret == 0, close(fd);
         return ret, "errno is: %{public}d, private mount to %{public}s failed", errno, sandboxPath.c_str());
 #endif
-    /* close DLP_FUSE_FD and dup FD to it */
-    close(DLP_FUSE_FD);
-    ret = dup2(fd, DLP_FUSE_FD);
-    APPSPAWN_CHECK_ONLY_LOG(ret != -1, "dup fuse fd %{public}d failed, errno is %{public}d", fd, errno);
+    /* set DLP_FUSE_FD  */
+#ifdef WITH_DLP
+    SetDlpFuseFd(fd);
+#endif
+    ret = fd;
     return ret;
 }
 
@@ -785,10 +797,10 @@ int SandboxUtils::DoAllMntPointsMount(const AppSpawningCtx *appProperty,
     std::string sandboxRoot = GetSbxPathByConfig(appProperty, appConfig);
     bool checkFlag = CheckMountFlag(appProperty, bundleName, appConfig);
 
-    nlohmann::json mountPoints = appConfig[g_mountPrefix];
+    nlohmann::json& mountPoints = appConfig[g_mountPrefix];
     unsigned int mountPointSize = mountPoints.size();
     for (unsigned int i = 0; i < mountPointSize; i++) {
-        nlohmann::json mntPoint = mountPoints[i];
+        nlohmann::json& mntPoint = mountPoints[i];
         if ((CheckMountConfig(mntPoint, appProperty, checkFlag) == false)) {
             continue;
         }
@@ -834,7 +846,7 @@ int32_t SandboxUtils::DoAddGid(AppSpawningCtx *appProperty, nlohmann::json &appC
         return 0;
     }
 
-    nlohmann::json gids = appConfig[g_gidPrefix];
+    nlohmann::json& gids = appConfig[g_gidPrefix];
     unsigned int gidSize = gids.size();
     for (unsigned int i = 0; i < gidSize; i++) {
         if (dacInfo->gidCount < APP_MAX_GIDS) {
@@ -851,15 +863,16 @@ int SandboxUtils::DoAllSymlinkPointslink(const AppSpawningCtx *appProperty, nloh
     APPSPAWN_CHECK(appConfig.find(g_symlinkPrefix) != appConfig.end(), return 0, "symlink config is not found,"
         "maybe result sandbox launch failed app name is %{public}s", GetBundleName(appProperty));
 
-    nlohmann::json symlinkPoints = appConfig[g_symlinkPrefix];
+    nlohmann::json& symlinkPoints = appConfig[g_symlinkPrefix];
     std::string sandboxRoot = GetSbxPathByConfig(appProperty, appConfig);
     unsigned int symlinkPointSize = symlinkPoints.size();
 
     for (unsigned int i = 0; i < symlinkPointSize; i++) {
-        nlohmann::json symPoint = symlinkPoints[i];
+        nlohmann::json& symPoint = symlinkPoints[i];
 
         // Check the validity of the symlink configuration
-        if (symPoint.find(g_targetName) == symPoint.end() || symPoint.find(g_linkName) == symPoint.end()) {
+        if (symPoint.find(g_targetName) == symPoint.end() || (!symPoint[g_targetName].is_string()) ||
+            symPoint.find(g_linkName) == symPoint.end() || (!symPoint[g_linkName].is_string())) {
             APPSPAWN_LOGE("read symlink config failed, app name is %{public}s", GetBundleName(appProperty));
             continue;
         }
@@ -889,7 +902,7 @@ int32_t SandboxUtils::DoSandboxFilePrivateBind(const AppSpawningCtx *appProperty
                                                nlohmann::json &wholeConfig)
 {
     const char *bundleName = GetBundleName(appProperty);
-    nlohmann::json privateAppConfig = wholeConfig[g_privatePrefix][0];
+    nlohmann::json& privateAppConfig = wholeConfig[g_privatePrefix][0];
     if (privateAppConfig.find(bundleName) != privateAppConfig.end()) {
         APPSPAWN_LOGV("DoSandboxFilePrivateBind %{public}s", bundleName);
         DoAddGid((AppSpawningCtx *)appProperty, privateAppConfig[bundleName][0], "", g_privatePrefix);
@@ -906,7 +919,7 @@ int32_t SandboxUtils::DoSandboxFilePermissionBind(AppSpawningCtx *appProperty,
         APPSPAWN_LOGV("DoSandboxFilePermissionBind not found permission information in config file");
         return 0;
     }
-    nlohmann::json permissionAppConfig = wholeConfig[g_permissionPrefix][0];
+    nlohmann::json& permissionAppConfig = wholeConfig[g_permissionPrefix][0];
     for (nlohmann::json::iterator it = permissionAppConfig.begin(); it != permissionAppConfig.end(); ++it) {
         const std::string permission = it.key();
         int index = GetPermissionIndex(nullptr, permission.c_str());
@@ -943,7 +956,7 @@ int32_t SandboxUtils::DoSandboxFilePrivateSymlink(const AppSpawningCtx *appPrope
                                                   nlohmann::json &wholeConfig)
 {
     const char *bundleName = GetBundleName(appProperty);
-    nlohmann::json privateAppConfig = wholeConfig[g_privatePrefix][0];
+    nlohmann::json& privateAppConfig = wholeConfig[g_privatePrefix][0];
     if (privateAppConfig.find(bundleName) != privateAppConfig.end()) {
         return DoAllSymlinkPointslink(appProperty, privateAppConfig[bundleName][0]);
     }
@@ -958,13 +971,13 @@ int32_t SandboxUtils::HandleFlagsPoint(const AppSpawningCtx *appProperty,
         return 0;
     }
 
-    nlohmann::json flagsPoints = appConfig[g_flagePoint];
+    nlohmann::json& flagsPoints = appConfig[g_flagePoint];
     unsigned int flagsPointSize = flagsPoints.size();
 
     for (unsigned int i = 0; i < flagsPointSize; i++) {
-        nlohmann::json flagPoint = flagsPoints[i];
+        nlohmann::json& flagPoint = flagsPoints[i];
 
-        if (flagPoint.find(g_flags) != flagPoint.end()) {
+        if (flagPoint.find(g_flags) != flagPoint.end() && flagPoint[g_flags].is_string()) {
             std::string flagsStr = flagPoint[g_flags].get<std::string>();
             uint32_t flag = ConvertFlagStr(flagsStr);
             if ((GetAppMsgFlags(appProperty) & flag) != 0) {
@@ -982,7 +995,7 @@ int32_t SandboxUtils::DoSandboxFilePrivateFlagsPointHandle(const AppSpawningCtx 
                                                            nlohmann::json &wholeConfig)
 {
     const char *bundleName = GetBundleName(appProperty);
-    nlohmann::json privateAppConfig = wholeConfig[g_privatePrefix][0];
+    nlohmann::json& privateAppConfig = wholeConfig[g_privatePrefix][0];
     if (privateAppConfig.find(bundleName) != privateAppConfig.end()) {
         return HandleFlagsPoint(appProperty, privateAppConfig[bundleName][0]);
     }
@@ -993,7 +1006,7 @@ int32_t SandboxUtils::DoSandboxFilePrivateFlagsPointHandle(const AppSpawningCtx 
 int32_t SandboxUtils::DoSandboxFileCommonFlagsPointHandle(const AppSpawningCtx *appProperty,
                                                           nlohmann::json &wholeConfig)
 {
-    nlohmann::json commonConfig = wholeConfig[g_commonPrefix][0];
+    nlohmann::json& commonConfig = wholeConfig[g_commonPrefix][0];
     if (commonConfig.find(g_appResources) != commonConfig.end()) {
         return HandleFlagsPoint(appProperty, commonConfig[g_appResources][0]);
     }
@@ -1003,7 +1016,7 @@ int32_t SandboxUtils::DoSandboxFileCommonFlagsPointHandle(const AppSpawningCtx *
 
 int32_t SandboxUtils::DoSandboxFileCommonBind(const AppSpawningCtx *appProperty, nlohmann::json &wholeConfig)
 {
-    nlohmann::json commonConfig = wholeConfig[g_commonPrefix][0];
+    nlohmann::json& commonConfig = wholeConfig[g_commonPrefix][0];
     int ret = 0;
 
     if (commonConfig.find(g_appBase) != commonConfig.end()) {
@@ -1023,7 +1036,7 @@ int32_t SandboxUtils::DoSandboxFileCommonBind(const AppSpawningCtx *appProperty,
 int32_t SandboxUtils::DoSandboxFileCommonSymlink(const AppSpawningCtx *appProperty,
                                                  nlohmann::json &wholeConfig)
 {
-    nlohmann::json commonConfig = wholeConfig[g_commonPrefix][0];
+    nlohmann::json& commonConfig = wholeConfig[g_commonPrefix][0];
     int ret = 0;
 
     if (commonConfig.find(g_appBase) != commonConfig.end()) {
@@ -1407,7 +1420,7 @@ bool SandboxUtils::CheckAppSandboxSwitchStatus(const AppSpawningCtx *appProperty
         }
         nlohmann::json& privateAppConfig = wholeConfig[g_privatePrefix][0];
         if (privateAppConfig.find(GetBundleName(appProperty)) != privateAppConfig.end()) {
-            nlohmann::json appConfig = privateAppConfig[GetBundleName(appProperty)][0];
+            nlohmann::json& appConfig = privateAppConfig[GetBundleName(appProperty)][0];
             rc = GetSbxSwitchStatusByConfig(appConfig);
             if (rc) {
                 break;
@@ -1565,7 +1578,7 @@ static inline int EnableSandboxNamespace(AppSpawningCtx *appProperty, uint32_t s
 
 int32_t SandboxUtils::SetPermissionWithParam(AppSpawningCtx *appProperty)
 {
-    uint32_t index = 0;
+    int32_t index = 0;
     int32_t appFullMountStatus = CheckAppFullMountEnable();
     if (appFullMountStatus == FILE_CROSS_APP_STATUS) {
         index = GetPermissionIndex(nullptr, FILE_CROSS_APP_MODE.c_str());
@@ -1573,12 +1586,24 @@ int32_t SandboxUtils::SetPermissionWithParam(AppSpawningCtx *appProperty)
         index = GetPermissionIndex(nullptr, FILE_ACCESS_COMMON_DIR_MODE.c_str());
     }
 
-    int32_t  fileMgrIndex = GetPermissionIndex(nullptr, FILE_ACCESS_MANAGER_MODE.c_str());
-    if (index > 0 && (CheckAppPermissionFlagSet(appProperty, static_cast<uint32_t>(fileMgrIndex)) == 0)) {
+    int32_t fileMgrIndex = GetPermissionIndex(nullptr, FILE_ACCESS_MANAGER_MODE.c_str());
+    if (index > 0 && fileMgrIndex > 0 &&
+        (CheckAppPermissionFlagSet(appProperty, static_cast<uint32_t>(fileMgrIndex)) == 0)) {
         return SetAppPermissionFlags(appProperty, index);
     }
-    return 0;
+    return -1;
 }
+
+#ifdef APPSPAWN_MOUNT_TMPSHM
+void SandboxUtils::MountDevShmPath(std::string &sandboxPath)
+{
+    std::string sandboxDevShmPath = sandboxPath + DEV_SHM_DIR;
+    int result = mount("tmpfs", sandboxDevShmPath.c_str(), "tmpfs", MS_NOSUID | MS_NOEXEC | MS_NODEV, "size=32M");
+    if (result != 0) {
+        APPSPAWN_LOGW("Error mounting %{public}s to tmpfs, errno %{public}d", sandboxDevShmPath.c_str(), errno);
+    }
+}
+#endif
 
 int32_t SandboxUtils::SetAppSandboxProperty(AppSpawningCtx *appProperty, uint32_t sandboxNsFlags)
 {
@@ -1619,11 +1644,18 @@ int32_t SandboxUtils::SetAppSandboxProperty(AppSpawningCtx *appProperty, uint32_
     rc = SetSandboxProperty(appProperty, sandboxPackagePath);
     APPSPAWN_CHECK(rc == 0, return rc, "SetSandboxProperty failed, %{public}s", bundleName.c_str());
 
+#ifdef APPSPAWN_MOUNT_TMPSHM
+    MountDevShmPath(sandboxPackagePath);
+#endif
+
 #ifndef APPSPAWN_TEST
     rc = ChangeCurrentDir(sandboxPackagePath, bundleName, sandboxSharedStatus);
     APPSPAWN_CHECK(rc == 0, return rc, "change current dir failed");
     APPSPAWN_LOGI("Change root dir success");
-#endif
+#if defined(APPSPAWN_MOUNT_TMPSHM) && defined(WITH_SELINUX)
+    Restorecon(DEV_SHM_DIR);
+#endif // APPSPAWN_MOUNT_TMPSHM && WITH_SELINUX
+#endif // APPSPAWN_TEST
     return 0;
 }
 
@@ -1753,7 +1785,7 @@ int32_t SetAppSandboxProperty(AppSpawnMgr *content, AppSpawningCtx *property)
         }
     }
     uint32_t sandboxNsFlags = CLONE_NEWNS;
-    if (CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX) ||
+    if ((CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX) && !IsDeveloperModeOpen()) ||
         CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_NETWORK)) {
         sandboxNsFlags |= content->content.sandboxNsFlags & CLONE_NEWNET ? CLONE_NEWNET : 0;
     }
@@ -1776,7 +1808,7 @@ int32_t SetAppSandboxProperty(AppSpawnMgr *content, AppSpawningCtx *property)
 #define DIR_MODE 0711
 
 #ifndef APPSPAWN_SANDBOX_NEW
-static bool IsUnlockStatus(uint32_t uid)
+static bool IsUnlockStatus(uint32_t uid, const char *bundleName, size_t bundleNameLen)
 {
     const int userIdBase = 200000;
     uid = uid / userIdBase;
@@ -1785,12 +1817,13 @@ static bool IsUnlockStatus(uint32_t uid)
     }
 
     const char rootPath[] = "/data/app/el2/";
-    const char basePath[] = "/base";
-    size_t allPathSize = strlen(rootPath) + strlen(basePath) + 1 + USER_ID_SIZE;
+    const char basePath[] = "/base/";
+    size_t allPathSize = strlen(rootPath) + strlen(basePath) + 1 + USER_ID_SIZE + bundleNameLen;
     char *path = reinterpret_cast<char *>(malloc(sizeof(char) * allPathSize));
     APPSPAWN_CHECK(path != NULL, return true, "Failed to malloc path");
-    int len = sprintf_s(path, allPathSize, "%s%u%s", rootPath, uid, basePath);
-    APPSPAWN_CHECK(len > 0 && ((size_t)len < allPathSize), return true, "Failed to get base path");
+    int len = sprintf_s(path, allPathSize, "%s%u%s%s", rootPath, uid, basePath, bundleName);
+    APPSPAWN_CHECK(len > 0 && ((size_t)len < allPathSize), free(path);
+        return true, "Failed to get base path");
 
     if (access(path, F_OK) == 0) {
         APPSPAWN_LOGI("this is unlock status");
@@ -1867,8 +1900,8 @@ static void MountDirToShared(const AppSpawningCtx *property)
 
     string sourcePath = "/data/app/el1/bundle/public/" + string(bundleName);
     MountDir(property, rootPath, sourcePath.c_str(), el1Path);
-
-    if (IsUnlockStatus(info->uid)) {
+    size_t bundleNameLen = strlen(bundleName);
+    if (IsUnlockStatus(info->uid, bundleName, bundleNameLen)) {
         return;
     }
 
@@ -1884,7 +1917,7 @@ static void MountDirToShared(const AppSpawningCtx *property)
             }
         }
     }
-    
+
     std::string lockSbxPathStamp = rootPath + to_string(info->uid / UID_BASE) + "/";
     lockSbxPathStamp += CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX_TYPE) ? "isolated/" : "";
     lockSbxPathStamp += bundleName;

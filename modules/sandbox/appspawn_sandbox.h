@@ -46,7 +46,6 @@ extern "C" {
 #define FILE_MODE 0711
 #define MAX_SANDBOX_BUFFER 256
 #define OPTIONS_MAX_LEN 256
-#define DLP_FUSE_FD 1000
 #define APP_FLAGS_SECTION 0x80000000
 #define BASIC_MOUNT_FLAGS (MS_REC | MS_BIND)
 #define INVALID_UID ((uint32_t)-1)
@@ -230,8 +229,8 @@ typedef struct {
  *
  * @return AppSpawnSandboxCfg*
  */
-AppSpawnSandboxCfg *CreateAppSpawnSandbox(void);
-AppSpawnSandboxCfg *GetAppSpawnSandbox(const AppSpawnMgr *content);
+AppSpawnSandboxCfg *CreateAppSpawnSandbox(ExtDataType type);
+AppSpawnSandboxCfg *GetAppSpawnSandbox(const AppSpawnMgr *content, ExtDataType type);
 void DeleteAppSpawnSandbox(AppSpawnSandboxCfg *sandbox);
 int LoadAppSandboxConfig(AppSpawnSandboxCfg *sandbox, RunMode mode);
 void DumpAppSpawnSandboxCfg(AppSpawnSandboxCfg *sandbox);

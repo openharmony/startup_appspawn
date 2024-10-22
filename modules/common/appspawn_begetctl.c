@@ -43,7 +43,7 @@ APPSPAWN_STATIC void RunAppSandbox(const char *ptyName)
     OpenConsole();
     char *realPath = realpath(ptyName, NULL);
     if (realPath == NULL) {
-        APPSPAWN_CHECK(errno == ENOENT,return,
+        APPSPAWN_CHECK(errno == ENOENT, return,
             "Failed to resolve %{public}s real path err=%{public}d", ptyName, errno);
     }
     APPSPAWN_CHECK(realPath != NULL, _exit(1), "Failed get realpath, err=%{public}d", errno);

@@ -31,6 +31,12 @@
 #ifdef WITH_SECCOMP
 #include "seccomp_policy.h"
 #include <sys/prctl.h>
+#ifdef SECCOMP_PRIVILEGE
+#include <dlfcn.h>
+#define GET_ALL_PROCESSES "ohos.permission.GET_ALL_PROCESSES"
+#define GET_PERMISSION_INDEX "GetPermissionIndex"
+using GetPermissionFunc = int32_t (*)(void *, const char *);
+#endif
 #endif
 #define MSG_EXT_NAME_PROCESS_TYPE "ProcessType"
 #define NWEBSPAWN_SERVER_NAME "nwebspawn"
@@ -45,8 +51,6 @@ int SetAppAccessToken(const AppSpawnMgr *content, const AppSpawningCtx *property
         reinterpret_cast<AppSpawnMsgAccessToken *>(GetAppProperty(property, TLV_ACCESS_TOKEN_INFO));
     APPSPAWN_CHECK(tokenInfo != NULL, return APPSPAWN_MSG_INVALID,
         "No access token in msg %{public}s", GetProcessName(property));
-    APPSPAWN_LOGV("AppSpawnServer::set access token %{public}" PRId64 " %{public}d  %{public}d",
-        tokenInfo->accessTokenIdEx, IsNWebSpawnMode(content), IsIsolatedNativeSpawnMode(content, property));
 
     if (IsNWebSpawnMode(content) || IsIsolatedNativeSpawnMode(content, property)) {
         TokenIdKit tokenIdKit;
@@ -105,7 +109,7 @@ int SetSelinuxCon(const AppSpawnMgr *content, const AppSpawningCtx *property)
     HapContext hapContext;
     HapDomainInfo hapDomainInfo;
     hapDomainInfo.apl = msgDomainInfo->apl;
-    hapDomainInfo.packageName = GetProcessName(property);
+    hapDomainInfo.packageName = GetBundleName(property);
     hapDomainInfo.hapFlags = msgDomainInfo->hapFlags;
     if (CheckAppMsgFlagsSet(property, APP_FLAGS_DEBUGGABLE)) {
         hapDomainInfo.hapFlags |= SELINUX_HAP_DEBUGGABLE;
@@ -137,6 +141,11 @@ int SetUidGidFilter(const AppSpawnMgr *content)
         }
         ret = SetSeccompPolicyWithName(INDIVIDUAL, NWEBSPAWN_NAME);
     } else {
+#ifdef SECCOMP_PRIVILEGE
+        if (IsDeveloperModeOpen()) {
+            return 0;
+        }
+#endif
         ret = SetSeccompPolicyWithName(INDIVIDUAL, APPSPAWN_NAME);
     }
     if (!ret) {
@@ -151,6 +160,7 @@ int SetUidGidFilter(const AppSpawnMgr *content)
 int SetSeccompFilter(const AppSpawnMgr *content, const AppSpawningCtx *property)
 {
 #ifdef WITH_SECCOMP
+    APPSPAWN_CHECK(property != nullptr, return 0, "property is NULL");
     const char *appName = APP_NAME;
     SeccompFilterType type = APP;
 
@@ -162,6 +172,23 @@ int SetSeccompFilter(const AppSpawnMgr *content, const AppSpawningCtx *property)
             return 0;
         }
     }
+
+#ifdef SECCOMP_PRIVILEGE
+    if (IsDeveloperModeOpen()) {
+        static GetPermissionFunc getPermissionFuncPtr = nullptr;
+        if (getPermissionFuncPtr == nullptr) {
+            getPermissionFuncPtr = reinterpret_cast<GetPermissionFunc>(dlsym(nullptr, GET_PERMISSION_INDEX));
+            if (getPermissionFuncPtr == nullptr) {
+                APPSPAWN_LOGE("Failed to dlsym get permission errno is %{public}d", errno);
+                return -EINVAL;
+            }
+        }
+        int32_t index = getPermissionFuncPtr(nullptr, GET_ALL_PROCESSES);
+        if (CheckAppPermissionFlagSet(property, static_cast<uint32_t>(index)) != 0) {
+            appName = APP_PRIVILEGE;
+        }
+    }
+#endif
 
     if (CheckAppSpawnMsgFlag(property->message, TLV_MSG_FLAGS, APP_FLAGS_ISOLATED_SANDBOX) != 0) {
         appName = IMF_EXTENTOIN_NAME;
@@ -195,12 +222,12 @@ void InitAppCommonEnv(const AppSpawningCtx *property)
     if (appInfo == NULL) {
         return;
     }
-    const int userId = appInfo->uid / UID_BASE;
+    const uint32_t userId = appInfo->uid / UID_BASE;
     char user[MAX_USERID_LEN] = {0};
-    int len = sprintf_s(user, MAX_USERID_LEN, "%d", userId);
-    APPSPAWN_CHECK(len > 0, return, "Failed to format userid: %{public}d", userId);
+    int len = sprintf_s(user, MAX_USERID_LEN, "%u", userId);
+    APPSPAWN_CHECK(len > 0, return, "Failed to format userid: %{public}u", userId);
     int ret = setenv("USER", user, 1);
-    APPSPAWN_CHECK(ret == 0, return, "setenv failed, userid:%{public}d, errno: %{public}d", userId, errno);
+    APPSPAWN_CHECK(ret == 0, return, "setenv failed, userid:%{public}u, errno: %{public}d", userId, errno);
 }
 
 int32_t SetEnvInfo(const AppSpawnMgr *content, const AppSpawningCtx *property)

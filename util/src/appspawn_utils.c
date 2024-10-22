@@ -18,6 +18,7 @@
 #include <ctype.h>
 #include <dirent.h>
 #include <fcntl.h>
+#include <malloc.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -167,7 +168,7 @@ int MakeDirRec(const char *path, mode_t mode, int lastPath)
 
 static void TrimTail(char *buffer, uint32_t maxLen)
 {
-    int32_t index = maxLen - 1;
+    uint32_t index = maxLen - 1;
     while (index > 0) {
         if (isspace(buffer[index])) {
             buffer[index] = '\0';
@@ -252,7 +253,7 @@ char *ReadFile(const char *fileName)
         buffer = (char *)malloc((size_t)(fileStat.st_size + 1));
         APPSPAWN_CHECK(buffer != NULL, break, "Failed to alloc mem %{public}s", fileName);
 
-        int ret = fread(buffer, fileStat.st_size, 1, fd);
+        size_t ret = fread(buffer, fileStat.st_size, 1, fd);
         APPSPAWN_CHECK(ret == 1, break, "Failed to read %{public}s to buffer", fileName);
         buffer[fileStat.st_size] = '\0';
         (void)fclose(fd);
@@ -414,7 +415,7 @@ uint32_t GetSpawnTimeout(uint32_t def)
     int ret = GetParameter("persist.appspawn.reqMgr.timeout", "0", data, sizeof(data));
     if (ret > 0 && strcmp(data, "0") != 0) {
         errno = 0;
-        value = atoi(data);
+        value = (uint32_t)atoi(data);
         return (errno != 0) ? def : ((value < def) ? def : value);
     }
     return value;
@@ -423,15 +424,7 @@ uint32_t GetSpawnTimeout(uint32_t def)
 int EnableNewNetNamespace(void)
 {
     int fd = open(DEVICE_VIRTUAL_NET_IO_FLAGS, O_WRONLY);
-    if (fd < 0) {
-        // avoid open DEVICE_VIRTUAL_NET_IO_FLAGS fail, retry
-        DIR *pDir = opendir(DEVICE_VIRTUAL_NET_IO_DIR);
-        if (pDir != NULL) {
-            closedir(pDir);
-        }
-        fd = open(DEVICE_VIRTUAL_NET_IO_FLAGS, O_WRONLY);
-        APPSPAWN_CHECK(fd >= 0, return APPSPAWN_SYSTEM_ERROR, "Failed to open file errno %{public}d", errno);
-    }
+    APPSPAWN_CHECK(fd >= 0, return APPSPAWN_SYSTEM_ERROR, "Failed to open file errno %{public}d", errno);
 
     int ret = write(fd, IFF_LOOPBACK_VALUE, IFF_LOOPBACK_SIZE);
     if (ret < 0) {
@@ -442,4 +435,14 @@ int EnableNewNetNamespace(void)
 
     close(fd);
     return (ret >= 0) ? 0 : APPSPAWN_SYSTEM_ERROR;
+}
+
+void EnableCache(void)
+{
+    APPSPAWN_LOGV("enable cache for app process");
+    // enable cache for app process
+    mallopt(M_OHOS_CONFIG, M_TCACHE_PERFORMANCE_MODE);
+    mallopt(M_OHOS_CONFIG, M_ENABLE_OPT_TCACHE);
+    mallopt(M_SET_THREAD_CACHE, M_THREAD_CACHE_ENABLE);
+    mallopt(M_DELAYED_FREE, M_DELAYED_FREE_ENABLE);
 }

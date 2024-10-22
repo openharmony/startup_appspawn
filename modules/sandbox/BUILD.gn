@@ -50,6 +50,12 @@ if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
       defines += [ "WITH_SELINUX" ]
       external_deps += [ "selinux_adapter:libhap_restorecon" ]
     }
+    if (appspawn_mount_tmpshm) {
+      defines += [ "APPSPAWN_MOUNT_TMPSHM" ]
+      if (build_selinux) {
+        external_deps += [ "selinux_adapter:librestorecon" ]
+      }
+    }
 
     subsystem_name = "${subsystem_name}"
     part_name = "${part_name}"
@@ -60,6 +66,11 @@ if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
       module_install_dir = "lib64/appspawn/common"
     } else {
       module_install_dir = "lib/appspawn/common"
+    }
+
+    if (dlp_permission_enable) {
+      cflags_cc = [ "-DWITH_DLP" ]
+      external_deps += [ "dlp_permission_service:libdlp_fuse" ]
     }
   }
 } else {
@@ -97,6 +108,12 @@ if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
       defines += [ "WITH_SELINUX" ]
       external_deps += [ "selinux_adapter:libhap_restorecon" ]
     }
+    if (appspawn_mount_tmpshm) {
+      defines += [ "APPSPAWN_MOUNT_TMPSHM" ]
+      if (build_selinux) {
+        external_deps += [ "selinux_adapter:librestorecon" ]
+      }
+    }
 
     subsystem_name = "${subsystem_name}"
     part_name = "${part_name}"
@@ -107,6 +124,11 @@ if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
       module_install_dir = "lib64/appspawn/common"
     } else {
       module_install_dir = "lib/appspawn/common"
+    }
+
+    if (dlp_permission_enable) {
+      cflags_cc = [ "-DWITH_DLP" ]
+      external_deps += [ "dlp_permission_service:libdlp_fuse" ]
     }
   }
 }

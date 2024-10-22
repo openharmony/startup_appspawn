@@ -120,6 +120,9 @@ private:
                                       const std::string &section, std::string sandboxRoot);
     static void GetSandboxMountConfig(const AppSpawningCtx *appProperty, const std::string &section,
                                       nlohmann::json &mntPoint,SandboxMountConfig &mountConfig);
+#ifdef APPSPAWN_MOUNT_TMPSHM
+    static void MountDevShmPath(std::string &sandboxPath);
+#endif
     static std::map<SandboxConfigType, std::vector<nlohmann::json>> appSandboxConfig_;
     static int32_t deviceTypeEnable_;
 };

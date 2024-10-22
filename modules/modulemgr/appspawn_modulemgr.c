@@ -60,7 +60,7 @@ int AppSpawnModuleMgrInstall(const char *moduleName)
 
 void AppSpawnModuleMgrUnInstall(int type)
 {
-    if (type >= MODULE_MAX) {
+    if ((type < 0) || (type >= MODULE_MAX)) {
         return;
     }
     if (g_moduleMgr[type].moduleMgr == NULL) {
@@ -72,7 +72,7 @@ void AppSpawnModuleMgrUnInstall(int type)
 
 int AppSpawnLoadAutoRunModules(int type)
 {
-    if (type >= MODULE_MAX) {
+    if ((type < 0) || (type >= MODULE_MAX)) {
         return -1;
     }
     if (g_moduleMgr[type].moduleMgr != NULL) {
@@ -204,7 +204,7 @@ int AppSpawnHookExecute(AppSpawnHookStage stage, uint32_t flags, AppSpawnContent
     forkArg.client = client;
     forkArg.content = content;
     HOOK_EXEC_OPTIONS options;
-    options.flags = flags;  // TRAVERSE_STOP_WHEN_ERROR : 0;
+    options.flags = (int)flags;  // TRAVERSE_STOP_WHEN_ERROR : 0;
     options.preHook = PreAppSpawnHookExec;
     options.postHook = PostAppSpawnHookExec;
     int ret = HookMgrExecute(GetAppSpawnHookMgr(), stage, (void *)(&forkArg), &options);
