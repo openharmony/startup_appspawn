@@ -67,6 +67,9 @@ ohos_executable("appspawn") {
   if (is_debug || build_variant == "root") {
     defines += [ "DEBUG_BEGETCTL_BOOT" ]
   }
+  if (appspawn_support_prefork) {
+    defines += [ "APPSPAWN_SUPPORT_PREFORK" ]
+  }
 
   external_deps = [
     "c_utils:utils",
