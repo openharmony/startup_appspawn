@@ -194,7 +194,7 @@ int NativeInstallHnp(const char *userId, const char *hnpRootPath,  const HapInfo
     argv[index++] = "-a";
     argv[index++] = (char *)hapInfo->abi;
 
-    if (IS_OPTION_SET(installOptions, OPTION_INDEX_FORCE)) {
+    if (installOptions >= 0 && IS_OPTION_SET((unsigned int)installOptions, OPTION_INDEX_FORCE)) {
         argv[index++] = "-f";
     }
 
