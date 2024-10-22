@@ -53,14 +53,14 @@ HWTEST_F(AppSpawnSandboxMgrTest, App_Spawn_AppSpawnSandboxCfg_001, TestSize.Leve
     AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
     EXPECT_EQ(mgr != nullptr, 1);
 
-    AppSpawnSandboxCfg *sandbox = GetAppSpawnSandbox(mgr);
+    AppSpawnSandboxCfg *sandbox = GetAppSpawnSandbox(mgr, EXT_DATA_SANDBOX);
     EXPECT_EQ(sandbox == nullptr, 1);
 
-    sandbox = CreateAppSpawnSandbox();
+    sandbox = CreateAppSpawnSandbox(EXT_DATA_SANDBOX);
     EXPECT_EQ(sandbox != nullptr, 1);
     OH_ListAddTail(&sandbox->extData.node, &mgr->extData);
 
-    sandbox = GetAppSpawnSandbox(mgr);
+    sandbox = GetAppSpawnSandbox(mgr, EXT_DATA_SANDBOX);
     EXPECT_EQ(sandbox != nullptr, 1);
 
     // dump
@@ -69,12 +69,12 @@ HWTEST_F(AppSpawnSandboxMgrTest, App_Spawn_AppSpawnSandboxCfg_001, TestSize.Leve
     // delete
     DeleteAppSpawnSandbox(sandbox);
     // get none
-    sandbox = GetAppSpawnSandbox(mgr);
+    sandbox = GetAppSpawnSandbox(mgr, EXT_DATA_SANDBOX);
     EXPECT_EQ(sandbox == nullptr, 1);
     DumpAppSpawnSandboxCfg(sandbox);
 
     DeleteAppSpawnMgr(mgr);
-    sandbox = GetAppSpawnSandbox(nullptr);
+    sandbox = GetAppSpawnSandbox(nullptr, EXT_DATA_SANDBOX);
     EXPECT_EQ(sandbox == nullptr, 1);
 }
 
@@ -83,7 +83,7 @@ HWTEST_F(AppSpawnSandboxMgrTest, App_Spawn_AppSpawnSandboxCfg_002, TestSize.Leve
     AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
     EXPECT_EQ(mgr != nullptr, 1);
 
-    AppSpawnSandboxCfg *sandbox = CreateAppSpawnSandbox();
+    AppSpawnSandboxCfg *sandbox = CreateAppSpawnSandbox(EXT_DATA_SANDBOX);
     EXPECT_EQ(sandbox != nullptr, 1);
     OH_ListAddTail(&sandbox->extData.node, &mgr->extData);
 
@@ -105,7 +105,7 @@ HWTEST_F(AppSpawnSandboxMgrTest, App_Spawn_AppSpawnSandboxCfg_003, TestSize.Leve
     AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
     EXPECT_EQ(mgr != nullptr, 1);
 
-    AppSpawnSandboxCfg *sandbox = CreateAppSpawnSandbox();
+    AppSpawnSandboxCfg *sandbox = CreateAppSpawnSandbox(EXT_DATA_SANDBOX);
     EXPECT_EQ(sandbox != nullptr, 1);
     OH_ListAddTail(&sandbox->extData.node, &mgr->extData);
     int ret = 0;
@@ -119,9 +119,9 @@ HWTEST_F(AppSpawnSandboxMgrTest, App_Spawn_AppSpawnSandboxCfg_003, TestSize.Leve
     EXPECT_EQ(ret, 0);
 #else
     // for nwebspawn
-    ret = LoadAppSandboxConfig(sandbox, MODE_FOR_NWEB_SPAWN);
+    ret = LoadAppSandboxConfig(sandbox, MODE_FOR_APP_SPAWN);
     EXPECT_EQ(ret, 0);
-    ret = LoadAppSandboxConfig(sandbox, MODE_FOR_NWEB_SPAWN);  // 重复load
+    ret = LoadAppSandboxConfig(sandbox, MODE_FOR_APP_SPAWN);  // 重复load
     EXPECT_EQ(ret, 0);
 #endif
     DeleteAppSpawnSandbox(sandbox);
@@ -136,7 +136,7 @@ HWTEST_F(AppSpawnSandboxMgrTest, App_Spawn_SandboxSection_001, TestSize.Level0)
     AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
     EXPECT_EQ(mgr != nullptr, 1);
 
-    AppSpawnSandboxCfg *sandbox = CreateAppSpawnSandbox();
+    AppSpawnSandboxCfg *sandbox = CreateAppSpawnSandbox(EXT_DATA_SANDBOX);
     EXPECT_EQ(sandbox != nullptr, 1);
     OH_ListAddTail(&sandbox->extData.node, &mgr->extData);
 
@@ -183,7 +183,7 @@ HWTEST_F(AppSpawnSandboxMgrTest, App_Spawn_SandboxSection_002, TestSize.Level0)
     AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
     EXPECT_EQ(mgr != nullptr, 1);
 
-    AppSpawnSandboxCfg *sandbox = CreateAppSpawnSandbox();
+    AppSpawnSandboxCfg *sandbox = CreateAppSpawnSandbox(EXT_DATA_SANDBOX);
     EXPECT_EQ(sandbox != nullptr, 1);
     OH_ListAddTail(&sandbox->extData.node, &mgr->extData);
 
@@ -220,7 +220,7 @@ HWTEST_F(AppSpawnSandboxMgrTest, App_Spawn_SandboxSection_003, TestSize.Level0)
     AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
     EXPECT_EQ(mgr != nullptr, 1);
 
-    AppSpawnSandboxCfg *sandbox = CreateAppSpawnSandbox();
+    AppSpawnSandboxCfg *sandbox = CreateAppSpawnSandbox(EXT_DATA_SANDBOX);
     EXPECT_EQ(sandbox != nullptr, 1);
     OH_ListAddTail(&sandbox->extData.node, &mgr->extData);
 
@@ -246,7 +246,7 @@ HWTEST_F(AppSpawnSandboxMgrTest, App_Spawn_SandboxSection_004, TestSize.Level0)
     AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
     EXPECT_EQ(mgr != nullptr, 1);
 
-    AppSpawnSandboxCfg *sandbox = CreateAppSpawnSandbox();
+    AppSpawnSandboxCfg *sandbox = CreateAppSpawnSandbox(EXT_DATA_SANDBOX);
     EXPECT_EQ(sandbox != nullptr, 1);
     OH_ListAddTail(&sandbox->extData.node, &mgr->extData);
 
@@ -288,7 +288,7 @@ HWTEST_F(AppSpawnSandboxMgrTest, App_Spawn_SandboxMountNode_001, TestSize.Level0
     AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
     EXPECT_EQ(mgr != nullptr, 1);
 
-    AppSpawnSandboxCfg *sandbox = CreateAppSpawnSandbox();
+    AppSpawnSandboxCfg *sandbox = CreateAppSpawnSandbox(EXT_DATA_SANDBOX);
     EXPECT_EQ(sandbox != nullptr, 1);
     OH_ListAddTail(&sandbox->extData.node, &mgr->extData);
 
@@ -323,7 +323,7 @@ HWTEST_F(AppSpawnSandboxMgrTest, App_Spawn_SandboxMountNode_002, TestSize.Level0
     AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
     EXPECT_EQ(mgr != nullptr, 1);
 
-    AppSpawnSandboxCfg *sandbox = CreateAppSpawnSandbox();
+    AppSpawnSandboxCfg *sandbox = CreateAppSpawnSandbox(EXT_DATA_SANDBOX);
     EXPECT_EQ(sandbox != nullptr, 1);
     OH_ListAddTail(&sandbox->extData.node, &mgr->extData);
 
@@ -354,7 +354,7 @@ HWTEST_F(AppSpawnSandboxMgrTest, App_Spawn_SandboxMountNode_003, TestSize.Level0
     AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
     EXPECT_EQ(mgr != nullptr, 1);
 
-    AppSpawnSandboxCfg *sandbox = CreateAppSpawnSandbox();
+    AppSpawnSandboxCfg *sandbox = CreateAppSpawnSandbox(EXT_DATA_SANDBOX);
     EXPECT_EQ(sandbox != nullptr, 1);
     OH_ListAddTail(&sandbox->extData.node, &mgr->extData);
 
@@ -402,7 +402,7 @@ HWTEST_F(AppSpawnSandboxMgrTest, App_Spawn_SandboxMountNode_004, TestSize.Level0
     AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
     EXPECT_EQ(mgr != nullptr, 1);
 
-    AppSpawnSandboxCfg *sandbox = CreateAppSpawnSandbox();
+    AppSpawnSandboxCfg *sandbox = CreateAppSpawnSandbox(EXT_DATA_SANDBOX);
     EXPECT_EQ(sandbox != nullptr, 1);
     OH_ListAddTail(&sandbox->extData.node, &mgr->extData);
 
@@ -477,7 +477,7 @@ HWTEST_F(AppSpawnSandboxMgrTest, App_Spawn_Mount_001, TestSize.Level0)
     AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
     EXPECT_EQ(mgr != nullptr, 1);
 
-    AppSpawnSandboxCfg *sandbox = CreateAppSpawnSandbox();
+    AppSpawnSandboxCfg *sandbox = CreateAppSpawnSandbox(EXT_DATA_SANDBOX);
     EXPECT_EQ(sandbox != nullptr, 1);
     OH_ListAddTail(&sandbox->extData.node, &mgr->extData);
 
@@ -517,7 +517,7 @@ HWTEST_F(AppSpawnSandboxMgrTest, App_Spawn_Mount_002, TestSize.Level0)
     AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
     EXPECT_EQ(mgr != nullptr, 1);
 
-    AppSpawnSandboxCfg *sandbox = CreateAppSpawnSandbox();
+    AppSpawnSandboxCfg *sandbox = CreateAppSpawnSandbox(EXT_DATA_SANDBOX);
     EXPECT_EQ(sandbox != nullptr, 1);
     OH_ListAddTail(&sandbox->extData.node, &mgr->extData);
 
@@ -550,7 +550,7 @@ HWTEST_F(AppSpawnSandboxMgrTest, App_Spawn_Mount_003, TestSize.Level0)
     AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
     EXPECT_EQ(mgr != nullptr, 1);
 
-    AppSpawnSandboxCfg *sandbox = CreateAppSpawnSandbox();
+    AppSpawnSandboxCfg *sandbox = CreateAppSpawnSandbox(EXT_DATA_SANDBOX);
     EXPECT_EQ(sandbox != nullptr, 1);
     sandbox->rootPath = strdup("/data/appspawn_ut/sandbox/");
     OH_ListAddTail(&sandbox->extData.node, &mgr->extData);

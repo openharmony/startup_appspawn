@@ -249,7 +249,7 @@
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
-                    "src-path" : "/data/service/el1/<currentUserId>/distributeddata/utd",
+                    "src-path" : "/data/service/el1/<currentUserId>/utdtypes/utd",
                     "sandbox-path" : "/data/utd",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
@@ -790,7 +790,7 @@
             "sandbox-switch": "ON",
             "gids": [1007],
             "mount-paths": [{
-                    "src-path": "/data/log/protocol",
+                    "src-path": "/data/service/el1/public/chr/protocol",
                     "sandbox-path": "/data/log/protocol",
                     "sandbox-flags": [ "bind", "rec" ]
                 },
@@ -859,6 +859,16 @@
                 }
             ]
         }],
+        "ohos.permission.RECEIVE_UPDATE_MESSAGE":[{
+            "sandbox-switch": "ON",
+            "mount-paths": [{
+                    "src-path": "/data/service/el1/public/update/param_service/install/system/etc/<PackageName>",
+                    "sandbox-path": "/data/service/el1/public/update/param_service/install/system/etc/<PackageName>",
+                    "sandbox-flags": [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }
+            ]
+        }],
         "ohos.permission.READ_DFX_XPOWER":[{
             "sandbox-switch": "ON",
             "mount-paths": [{
@@ -888,7 +898,7 @@
             "sandbox-switch": "ON",
             "gids": [1006, 1008],
             "mount-paths": [{
-                    "src-path": "/data/service/el2/public/file_monitor_service/content_share",
+                    "src-path": "/data/service/el2/<currentUserId>/file_monitor_service/content_share",
                     "sandbox-path": "/storage/ContentShare",
                     "sandbox-flags": [ "bind", "rec" ]
                 }
@@ -918,6 +928,16 @@
             "sandbox-switch": "ON",
             "gids": [3009],
             "mount-paths": []
+        }],
+        "ohos.permission.ACCESS_ANALYTICS":[{
+            "sandbox-switch": "ON",
+            "gids": [1007],
+            "mount-paths": [{
+                    "src-path": "/data/log/faultlog/faultlogger",
+                    "sandbox-path": "/data/log/faultlog/faultlogger",
+                    "sandbox-flags": [ "bind", "rec" ]
+                }
+            ]
         }]
     }]
 }

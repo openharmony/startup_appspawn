@@ -374,9 +374,9 @@ static int DumpAppSpawnQueue(ListNode *node, void *data)
 static int DumpAppQueue(ListNode *node, void *data)
 {
     AppSpawnedProcess *appInfo = ListEntry(node, AppSpawnedProcess, node);
-    int64_t diff = DiffTime(&appInfo->spawnStart, &appInfo->spawnEnd);
+    uint64_t diff = DiffTime(&appInfo->spawnStart, &appInfo->spawnEnd);
     APPSPAPWN_DUMP("App info uid: %{public}u pid: %{public}x", appInfo->uid, appInfo->pid);
-    APPSPAPWN_DUMP("App info name: %{public}s exitStatus: 0x%{public}x spawn time: %{public}" PRId64 " us ",
+    APPSPAPWN_DUMP("App info name: %{public}s exitStatus: 0x%{public}x spawn time: %{public}" PRIu64 " us ",
         appInfo->name, appInfo->exitStatus, diff);
     return 0;
 }
@@ -396,9 +396,13 @@ void ProcessAppSpawnDumpMsg(const AppSpawnMsgNode *message)
     FILE *stream = NULL;
     uint32_t len = 0;
     char *ptyName = GetAppSpawnMsgExtInfo(message, "pty-name", &len);
-    if (ptyName != NULL) { //
+    if (ptyName != NULL) {
         APPSPAWN_LOGI("Dump info to file '%{public}s'", ptyName);
-        stream = fopen(ptyName, "w");
+        char canonicalPtyPath[PATH_MAX] = {0};
+        if (realpath(ptyName, canonicalPtyPath) == NULL) {
+            return;
+        }
+        stream = fopen(canonicalPtyPath, "w");
         SetDumpToStream(stream);
     } else {
         SetDumpToStream(stdout);

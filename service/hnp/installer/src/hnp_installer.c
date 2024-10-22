@@ -63,6 +63,11 @@ static int HnpGenerateSoftLinkAllByJson(const char *installPath, const char *dst
     }
 
     for (unsigned int i = 0; i < hnpCfg->linkNum; i++) {
+        if (strstr(currentLink->source, "../") || strstr(currentLink->target, "../")) {
+            HNP_LOGE("hnp json link source[%{public}s],target[%{public}s],does not allow the use of ../",
+                currentLink->source, currentLink->target);
+            return HNP_ERRNO_INSTALLER_GET_HNP_PATH_FAILED;
+        }
         int ret = sprintf_s(srcFile, MAX_FILE_PATH_LEN, "%s/%s", installPath, currentLink->source);
         char *fileName;
         if (ret < 0) {
@@ -252,7 +257,7 @@ static int HnpUnInstallPublicHnp(const char* packageName, const char *name, cons
 
 static int HnpNativeUnInstall(HnpPackageInfo *packageInfo, int uid, const char *packageName)
 {
-    int ret;
+    int ret = 0;
 
     HNP_LOGI("hnp uninstall start now! name=%{public}s,version=[%{public}s,%{public}s],uid=%{public}d,"
         "package=%{public}s", packageInfo->name, packageInfo->currentVersion, packageInfo->installVersion, uid,
@@ -273,9 +278,6 @@ static int HnpNativeUnInstall(HnpPackageInfo *packageInfo, int uid, const char *
         }
     }
     HNP_LOGI("hnp uninstall end! ret=%{public}d", ret);
-    if (ret != 0) {
-        return ret;
-    }
 
     return 0;
 }
@@ -387,7 +389,9 @@ static int HnpPublicDealAfterInstall(HnpInstallInfo *hnpInfo, HnpCfgInfo *hnpCfg
                 hnpInfo->hapInstallInfo->uid, true);
         }
     }
-
+    if (version != NULL) {
+        free(version);
+    }
     hnpCfg->isInstall = true;
 
     return HnpInstallInfoJsonWrite(hnpInfo->hapInstallInfo->hapPackageName, hnpCfg);

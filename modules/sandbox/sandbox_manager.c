@@ -349,10 +349,10 @@ static int AppSpawnExtDataCompareDataId(ListNode *node, void *data)
     return extData->dataId - *(uint32_t *)data;
 }
 
-AppSpawnSandboxCfg *GetAppSpawnSandbox(const AppSpawnMgr *content)
+AppSpawnSandboxCfg *GetAppSpawnSandbox(const AppSpawnMgr *content, ExtDataType type)
 {
     APPSPAWN_CHECK_ONLY_EXPER(content != NULL, return NULL);
-    uint32_t dataId = EXT_DATA_SANDBOX;
+    uint32_t dataId = type;
     ListNode *node = OH_ListFind(&content->extData, (void *)&dataId, AppSpawnExtDataCompareDataId);
     if (node == NULL) {
         return NULL;
@@ -433,7 +433,7 @@ static void FreeAppSpawnSandbox(struct TagAppSpawnExtData *data)
     DeleteAppSpawnSandbox(sandbox);
 }
 
-AppSpawnSandboxCfg *CreateAppSpawnSandbox(void)
+AppSpawnSandboxCfg *CreateAppSpawnSandbox(ExtDataType type)
 {
     // create sandbox
     AppSpawnSandboxCfg *sandbox = (AppSpawnSandboxCfg *)calloc(1, sizeof(AppSpawnSandboxCfg));
@@ -441,7 +441,7 @@ AppSpawnSandboxCfg *CreateAppSpawnSandbox(void)
 
     // ext data init
     OH_ListInit(&sandbox->extData.node);
-    sandbox->extData.dataId = EXT_DATA_SANDBOX;
+    sandbox->extData.dataId = type;
     sandbox->extData.freeNode = FreeAppSpawnSandbox;
     sandbox->extData.dumpNode = DumpSandbox;
 
@@ -482,17 +482,41 @@ void DumpAppSpawnSandboxCfg(AppSpawnSandboxCfg *sandbox)
     DumpSandboxQueue(&sandbox->nameGroupsQueue.front, DumpSandboxNameGroupNode);
 }
 
-APPSPAWN_STATIC int PreLoadSandboxCfg(AppSpawnMgr *content)
+APPSPAWN_STATIC int PreLoadIsoLatedSandboxCfg(AppSpawnMgr *content)
 {
-    AppSpawnSandboxCfg *sandbox = GetAppSpawnSandbox(content);
-    APPSPAWN_CHECK(sandbox == NULL, return 0, "Sandbox has been load");
+    if (IsNWebSpawnMode(content)) {
+        return 0;
+    }
 
-    sandbox = CreateAppSpawnSandbox();
+    AppSpawnSandboxCfg *sandbox = GetAppSpawnSandbox(content, EXT_DATA_ISOLATED_SANDBOX);
+    APPSPAWN_CHECK(sandbox == NULL, return 0, "Isolated sandbox has been load");
+
+    sandbox = CreateAppSpawnSandbox(EXT_DATA_ISOLATED_SANDBOX);
     APPSPAWN_CHECK_ONLY_EXPER(sandbox != NULL, return APPSPAWN_SYSTEM_ERROR);
     OH_ListAddTail(&content->extData, &sandbox->extData.node);
 
     // load app sandbox config
-    LoadAppSandboxConfig(sandbox, IsNWebSpawnMode(content));
+    LoadAppSandboxConfig(sandbox, MODE_FOR_NATIVE_SPAWN);
+    sandbox->maxPermissionIndex = PermissionRenumber(&sandbox->permissionQueue);
+
+    content->content.sandboxNsFlags = 0;
+    if (sandbox->pidNamespaceSupport) {
+        content->content.sandboxNsFlags = sandbox->sandboxNsFlags;
+    }
+    return 0;
+}
+
+APPSPAWN_STATIC int PreLoadSandboxCfg(AppSpawnMgr *content)
+{
+    AppSpawnSandboxCfg *sandbox = GetAppSpawnSandbox(content, EXT_DATA_SANDBOX);
+    APPSPAWN_CHECK(sandbox == NULL, return 0, "Sandbox has been load");
+
+    sandbox = CreateAppSpawnSandbox(EXT_DATA_SANDBOX);
+    APPSPAWN_CHECK_ONLY_EXPER(sandbox != NULL, return APPSPAWN_SYSTEM_ERROR);
+    OH_ListAddTail(&content->extData, &sandbox->extData.node);
+
+    // load app sandbox config
+    LoadAppSandboxConfig(sandbox, content->content.mode);
     sandbox->maxPermissionIndex = PermissionRenumber(&sandbox->permissionQueue);
 
     content->content.sandboxNsFlags = 0;
@@ -502,9 +526,17 @@ APPSPAWN_STATIC int PreLoadSandboxCfg(AppSpawnMgr *content)
     return 0;
 }
 
+APPSPAWN_STATIC int IsolatedSandboxHandleServerExit(AppSpawnMgr *content)
+{
+    AppSpawnSandboxCfg *sandbox = GetAppSpawnSandbox(content, EXT_DATA_ISOLATED_SANDBOX);
+    APPSPAWN_CHECK(sandbox != NULL, return 0, "Isolated sandbox not load");
+
+    return 0;
+}
+
 APPSPAWN_STATIC int SandboxHandleServerExit(AppSpawnMgr *content)
 {
-    AppSpawnSandboxCfg *sandbox = GetAppSpawnSandbox(content);
+    AppSpawnSandboxCfg *sandbox = GetAppSpawnSandbox(content, EXT_DATA_SANDBOX);
     APPSPAWN_CHECK(sandbox != NULL, return 0, "Sandbox not load");
 
     return 0;
@@ -512,7 +544,9 @@ APPSPAWN_STATIC int SandboxHandleServerExit(AppSpawnMgr *content)
 
 int SpawnBuildSandboxEnv(AppSpawnMgr *content, AppSpawningCtx *property)
 {
-    AppSpawnSandboxCfg *appSandbox = GetAppSpawnSandbox(content);
+    ExtDataType type = CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX_TYPE) ? EXT_DATA_ISOLATED_SANDBOX :
+        EXT_DATA_SANDBOX;
+    AppSpawnSandboxCfg *appSandbox = GetAppSpawnSandbox(content, type);
     APPSPAWN_CHECK(appSandbox != NULL, return -1, "Failed to get sandbox for %{public}s", GetProcessName(property));
     // no sandbox
     if (CheckAppMsgFlagsSet(property, APP_FLAGS_NO_SANDBOX)) {
@@ -577,12 +611,46 @@ static int AppendPermissionGid(const AppSpawnSandboxCfg *sandbox, AppSpawningCtx
     return 0;
 }
 
+static int AppendPackageNameGids(const AppSpawnSandboxCfg *sandbox, AppSpawningCtx *property)
+{
+    AppSpawnMsgDacInfo *dacInfo = (AppSpawnMsgDacInfo *)GetAppProperty(property, TLV_DAC_INFO);
+    APPSPAWN_CHECK(dacInfo != NULL, return APPSPAWN_TLV_NONE,
+        "No tlv %{public}d in msg %{public}s", TLV_DAC_INFO, GetProcessName(property));
+    
+    SandboxPackageNameNode *sandboxNode =
+        (SandboxPackageNameNode *)GetSandboxSection(&sandbox->packageNameQueue, GetProcessName(property));
+    if (sandboxNode == NULL || sandboxNode->section.gidCount == 0) {
+        return 0;
+    }
+
+    size_t copyLen = sandboxNode->section.gidCount;
+    if ((sandboxNode->section.gidCount + dacInfo->gidCount) > APP_MAX_GIDS) {
+        APPSPAWN_LOGW("More gid for %{public}s msg count %{public}u permission %{public}u",
+                      GetProcessName(property),
+                      dacInfo->gidCount,
+                      sandboxNode->section.gidCount);
+        copyLen = APP_MAX_GIDS - dacInfo->gidCount;
+    }
+    int ret = memcpy_s(&dacInfo->gidTable[dacInfo->gidCount], sizeof(gid_t) * copyLen,
+                       sandboxNode->section.gidTable, sizeof(gid_t) * copyLen);
+    if (ret != EOK) {
+        APPSPAWN_LOGW("Failed to append permission %{public}s gid to %{public}s",
+                      sandboxNode->section.name,
+                      GetProcessName(property));
+    }
+    dacInfo->gidCount += copyLen;
+
+    return 0;
+}
+
 int SpawnPrepareSandboxCfg(AppSpawnMgr *content, AppSpawningCtx *property)
 {
     APPSPAWN_CHECK_ONLY_EXPER(content != NULL, return -1);
     APPSPAWN_CHECK_ONLY_EXPER(property != NULL, return -1);
     APPSPAWN_LOGV("Prepare sandbox config %{public}s", GetProcessName(property));
-    AppSpawnSandboxCfg *sandbox = GetAppSpawnSandbox(content);
+    ExtDataType type = CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX_TYPE) ? EXT_DATA_ISOLATED_SANDBOX :
+        EXT_DATA_SANDBOX;
+    AppSpawnSandboxCfg *sandbox = GetAppSpawnSandbox(content, type);
     APPSPAWN_CHECK(sandbox != NULL, return -1, "Failed to get sandbox for %{public}s", GetProcessName(property));
 
     int32_t index = 0;
@@ -601,6 +669,8 @@ int SpawnPrepareSandboxCfg(AppSpawnMgr *content, AppSpawningCtx *property)
 
     int ret = AppendPermissionGid(sandbox, property);
     APPSPAWN_CHECK(ret == 0, return ret, "Failed to add gid for %{public}s", GetProcessName(property));
+    ret = AppendPackageNameGids(sandbox, property);
+    APPSPAWN_CHECK(ret == 0, return ret, "Failed to add gid for %{public}s", GetProcessName(property));
     ret = StagedMountSystemConst(sandbox, property, IsNWebSpawnMode(content));
     APPSPAWN_CHECK(ret == 0, return ret, "Failed to mount system-const for %{public}s", GetProcessName(property));
     return 0;
@@ -610,8 +680,13 @@ APPSPAWN_STATIC int SandboxUnmountPath(const AppSpawnMgr *content, const AppSpaw
 {
     APPSPAWN_CHECK_ONLY_EXPER(content != NULL, return -1);
     APPSPAWN_CHECK_ONLY_EXPER(appInfo != NULL, return -1);
+    AppSpawnSandboxCfg *sandbox = NULL;
     APPSPAWN_LOGV("Sandbox process %{public}s %{public}u exit", appInfo->name, appInfo->uid);
-    AppSpawnSandboxCfg *sandbox = GetAppSpawnSandbox(content);
+    if (content->content.mode == MODE_FOR_NATIVE_SPAWN) {
+        sandbox = GetAppSpawnSandbox(content, EXT_DATA_ISOLATED_SANDBOX);
+    } else {
+        sandbox = GetAppSpawnSandbox(content, EXT_DATA_SANDBOX);
+    }
     return UnmountDepPaths(sandbox, appInfo->uid);
 }
 
@@ -620,7 +695,9 @@ MODULE_CONSTRUCTOR(void)
 {
     APPSPAWN_LOGV("Load sandbox module ...");
     (void)AddServerStageHook(STAGE_SERVER_PRELOAD, HOOK_PRIO_SANDBOX, PreLoadSandboxCfg);
+    (void)AddServerStageHook(STAGE_SERVER_PRELOAD, HOOK_PRIO_SANDBOX, PreLoadIsoLatedSandboxCfg);
     (void)AddServerStageHook(STAGE_SERVER_EXIT, HOOK_PRIO_SANDBOX, SandboxHandleServerExit);
+    (void)AddServerStageHook(STAGE_SERVER_EXIT, HOOK_PRIO_SANDBOX, IsolatedSandboxHandleServerExit);
     (void)AddAppSpawnHook(STAGE_PARENT_PRE_FORK, HOOK_PRIO_SANDBOX, SpawnPrepareSandboxCfg);
     (void)AddAppSpawnHook(STAGE_CHILD_EXECUTE, HOOK_PRIO_SANDBOX, SpawnBuildSandboxEnv);
     (void)AddProcessMgrHook(STAGE_SERVER_APP_DIED, 0, SandboxUnmountPath);

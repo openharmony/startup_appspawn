@@ -32,12 +32,22 @@
 
 #include "appspawn_msg.h"
 #include "appspawn_utils.h"
+#ifdef WITH_DLP
+#include "dlp_fuse_fd.h"
+#endif
 #include "init_utils.h"
 #include "parameter.h"
 #include "appspawn_permission.h"
 
+#ifdef WITH_SELINUX
+#ifdef APPSPAWN_MOUNT_TMPSHM
+#include "policycoreutils.h"
+#endif // APPSPAWN_MOUNT_TMPSHM
+#endif // WITH_SELINUX
+
 #define USER_ID_SIZE 16
 #define DIR_MODE     0711
+#define DEV_SHM_DIR "/dev/shm/"
 
 static inline void SetMountPathOperation(uint32_t *operation, uint32_t index)
 {
@@ -129,7 +139,7 @@ static int BuildRootPath(char *buffer, uint32_t bufferLen, const AppSpawnSandbox
         } else {
             len = sprintf_s(buffer + currLen, bufferLen - currLen, "%d", uid);
         }
-        APPSPAWN_CHECK(len > 0 && (uint32_t)(len < (bufferLen - currLen)), return ret,
+        APPSPAWN_CHECK(len > 0 && ((uint32_t)len < (bufferLen - currLen)), return ret,
             "Failed to format root path %{public}s", sandbox->rootPath);
         currLen += (uint32_t)len;
     }
@@ -198,7 +208,7 @@ static int InitSandboxContext(SandboxContext *context,
     context->message = property->message;
 
     context->sandboxNsFlags = CLONE_NEWNS;
-    if (CheckSpawningMsgFlagSet(context, APP_FLAGS_ISOLATED_SANDBOX) ||
+    if ((CheckSpawningMsgFlagSet(context, APP_FLAGS_ISOLATED_SANDBOX) && !IsDeveloperModeOpen()) ||
         CheckSpawningMsgFlagSet(context, APP_FLAGS_ISOLATED_NETWORK)) {
         context->sandboxNsFlags |= sandbox->sandboxNsFlags & CLONE_NEWNET ? CLONE_NEWNET : 0;
     }
@@ -315,10 +325,10 @@ static int32_t SandboxMountFusePath(const SandboxContext *context, const MountAr
         close(fd);
         return -1;
     }
-    /* close DLP_FUSE_FD and dup FD to it */
-    close(DLP_FUSE_FD);
-    ret = dup2(fd, DLP_FUSE_FD);
-    APPSPAWN_CHECK_ONLY_LOG(ret != -1, "dup fuse fd %{public}d failed, errno: %{public}d", fd, errno);
+    /* set DLP_FUSE_FD  */
+#ifdef WITH_DLP
+    SetDlpFuseFd(fd);
+#endif
     return 0;
 }
 
@@ -381,7 +391,6 @@ APPSPAWN_STATIC const char *GetRealSrcPath(const SandboxContext *context, const 
 // 设置挂载参数options
 static int32_t SetMountArgsOption(const SandboxContext *context, uint32_t category, uint32_t operation, MountArg *args)
 {
-    args->options = "";
     if ((category != MOUNT_TMP_DAC_OVERRIDE) && (category != MOUNT_TMP_DAC_OVERRIDE_DELETE)) {
         return 0;
     }
@@ -483,7 +492,12 @@ static int DoSandboxPathSymLink(const SandboxContext *context,
     const char *target = GetSandboxRealVar(context, BUFFER_FOR_SOURCE, sandboxNode->target, NULL, NULL);
     const char *linkName = GetSandboxRealVar(context, BUFFER_FOR_TARGET,
         sandboxNode->linkName, context->rootPath, NULL);
-    APPSPAWN_LOGV("symlink, from %{public}s to %{public}s", target, linkName);
+    APPSPAWN_LOGV("symlink from %{public}s to %{public}s", target, linkName);
+    if (access(linkName, F_OK) == 0) {
+        if (rmdir(linkName) != 0) {
+            APPSPAWN_LOGW("linkName %{public}s already exist and rmdir failed, errno %{public}d", linkName, errno);
+        }
+    }
     int ret = symlink(target, linkName);
     if (ret && errno != EEXIST) {
         if (sandboxNode->checkErrorFlag) {
@@ -525,7 +539,7 @@ static int DoSandboxNodeMount(const SandboxContext *context, const SandboxSectio
     return 0;
 }
 
-static bool IsUnlockStatus(uint32_t uid)
+static bool IsUnlockStatus(uint32_t uid, const char *bundleName, size_t bundleNameLen)
 {
     const int userIdBase = UID_BASE;
     uid = uid / userIdBase;
@@ -534,11 +548,11 @@ static bool IsUnlockStatus(uint32_t uid)
     }
 
     const char rootPath[] = "/data/app/el2/";
-    const char basePath[] = "/base";
-    size_t allPathSize = strlen(rootPath) + strlen(basePath) + 1 + USER_ID_SIZE;
+    const char basePath[] = "/base/";
+    size_t allPathSize = strlen(rootPath) + strlen(basePath) + 1 + USER_ID_SIZE + bundleNameLen;
     char *path = (char *)malloc(sizeof(char) * allPathSize);
     APPSPAWN_CHECK(path != NULL, return true, "Failed to malloc path");
-    int len = sprintf_s(path, allPathSize, "%s%u%s", rootPath, uid, basePath);
+    int len = sprintf_s(path, allPathSize, "%s%u%s%s", rootPath, uid, basePath, bundleName);
     APPSPAWN_CHECK(len > 0 && ((size_t)len < allPathSize), free(path); return true, "Failed to get base path");
 
     if (access(path, F_OK) == 0) {
@@ -598,8 +612,17 @@ static const MountSharedTemplate MOUNT_SHARED_MAP[] = {
 static void MountDirToShared(const SandboxContext *context, AppSpawnSandboxCfg *sandbox)
 {
     const char rootPath[] = "/mnt/sandbox/";
+    const char nwebPath[] = "/mnt/nweb";
+    const char nwebTmpPath[] = "/mnt/nweb/tmp";
+    const char appRootName[] = "app-root";
     AppSpawnMsgDacInfo *info = (AppSpawnMsgDacInfo *)GetSpawningMsgInfo(context, TLV_DAC_INFO);
-    if (info == NULL || IsUnlockStatus(info->uid)) {
+    if (info == NULL || context->bundleName == NULL) {
+        return;
+    }
+    MountDir(info, appRootName, rootPath, nwebPath);
+    MountDir(info, appRootName, rootPath, nwebTmpPath);
+
+    if (IsUnlockStatus(info->uid, context->bundleName, strlen(context->bundleName))) {
         return;
     }
 
@@ -615,6 +638,21 @@ static void MountDirToShared(const SandboxContext *context, AppSpawnSandboxCfg *
             }
         }
     }
+    char lockSbxPathStamp[MAX_SANDBOX_BUFFER] = { 0 };
+    int ret = 0;
+    if (CheckSpawningMsgFlagSet(context, APP_FLAGS_ISOLATED_SANDBOX_TYPE) != 0) {
+        ret = snprintf_s(lockSbxPathStamp, MAX_SANDBOX_BUFFER, MAX_SANDBOX_BUFFER - 1, "%s%d/isolated/%s_locked",
+                         rootPath, info->uid / UID_BASE, context->bundleName);
+    } else {
+        ret = snprintf_s(lockSbxPathStamp, MAX_SANDBOX_BUFFER, MAX_SANDBOX_BUFFER - 1, "%s%d/%s_locked",
+                         rootPath, info->uid / UID_BASE, context->bundleName);
+    }
+    if (ret <= 0) {
+        APPSPAWN_LOGE("snprintf_s lock sandbox path stamp failed");
+        return;
+    }
+
+    CreateSandboxDir(lockSbxPathStamp, FILE_MODE);
 }
 
 static int UpdateMountPathDepsPath(const SandboxContext *context, SandboxNameGroupNode *groupNode)
@@ -691,6 +729,9 @@ static int MountSandboxConfig(const SandboxContext *context,
             continue;
         }
         SandboxNameGroupNode *groupNode = (SandboxNameGroupNode *)section->nameGroups[i];
+        if (groupNode->depMounted != 1) {
+            SetMountPathOperation(&operation, MOUNT_PATH_OP_REPLACE_BY_SANDBOX);
+        }
         SetMountPathOperation(&operation, SANDBOX_TAG_NAME_GROUP);
         ret = DoSandboxNodeMount(context, &groupNode->section, operation);
         APPSPAWN_CHECK(ret == 0, return ret,
@@ -1014,51 +1055,189 @@ int StagedMountSystemConst(AppSpawnSandboxCfg *sandbox, const AppSpawningCtx *pr
     return ret;
 }
 
+static int MountDepGroups(const SandboxContext *context, SandboxNameGroupNode *groupNode)
+{
+     /**
+     * 在unshare前处理mount-paths-deps 处理逻辑
+     *   1.判断是否有mount-paths-deps节点，没有直接返回;
+     *   2.填充json文件中路径的变量值;
+     *   3.校验deps-mode的值是否是not-exists
+     *          是not-exist则判断mount-paths.src-path是否存在，若不存在则创建并挂载mount-paths-deps中的目录
+     *                                                       若存在则不挂载mount-paths-deps中的目录
+     *          是always则创建并挂载mount-paths-deps中的目录;
+     *          deps-mode默认值为always;
+     *
+     */
+    int ret = 0;
+    if (groupNode == NULL || groupNode->depNode == NULL) {
+        return 0;
+    }
+
+    ret = UpdateMountPathDepsPath(context, groupNode);
+    APPSPAWN_CHECK(ret == 0, return ret, "Failed to updata deps path name groups %{public}s", groupNode->section.name);
+
+    if (groupNode->depMode == MOUNT_MODE_NOT_EXIST && CheckAndCreateDepPath(context, groupNode)) {
+        return 0;
+    }
+
+    uint32_t operation = 0;
+    SetMountPathOperation(&operation, MOUNT_PATH_OP_UNMOUNT);
+    groupNode->depMounted = 1;
+    ret = DoSandboxPathNodeMount(context, &groupNode->section, groupNode->depNode, operation);
+    if (ret != 0) {
+        APPSPAWN_LOGE("Mount deps root fail %{public}s", groupNode->section.name);
+    }
+    return ret;
+}
+
+static int SetSystemConstDepGroups(const SandboxContext *context, AppSpawnSandboxCfg *sandbox)
+{
+    SandboxSection *section = GetSandboxSection(&sandbox->requiredQueue, "system-const");
+    if (section == NULL || section->nameGroups == NULL) {
+        return 0;
+    }
+
+    int ret = 0;
+    for (uint32_t i = 0; i < section->number; i++) {
+        if (section->nameGroups[i] == NULL) {
+            continue;
+        }
+        SandboxNameGroupNode *groupNode = (SandboxNameGroupNode *)section->nameGroups[i];
+        ret = MountDepGroups(context, groupNode);
+        APPSPAWN_CHECK(ret == 0, return ret, "Failed to mount deps groups");
+    }
+    return ret;
+}
+
+static int SetAppVariableDepGroups(const SandboxContext *context, AppSpawnSandboxCfg *sandbox)
+{
+    SandboxSection *section = GetSandboxSection(&sandbox->requiredQueue, "app-variable");
+    if (section == NULL || section->nameGroups == NULL) {
+        return 0;
+    }
+
+    int ret = 0;
+    for (uint32_t i = 0; i < section->number; i++) {
+        if (section->nameGroups[i] == NULL) {
+            continue;
+        }
+        SandboxNameGroupNode *groupNode = (SandboxNameGroupNode *)section->nameGroups[i];
+        ret = MountDepGroups(context, groupNode);
+        APPSPAWN_CHECK(ret == 0, return ret, "Failed to mount deps groups");
+    }
+    return ret;
+}
+
+static int SetSpawnFlagsDepGroups(const SandboxContext *context, AppSpawnSandboxCfg *sandbox)
+{
+    ListNode *node = sandbox->spawnFlagsQueue.front.next;
+    int ret = 0;
+    while (node != &sandbox->spawnFlagsQueue.front) {
+        SandboxFlagsNode *sandboxNode = (SandboxFlagsNode *)ListEntry(node, SandboxMountNode, node);
+        // match flags point
+        if (sandboxNode->flagIndex == 0 || !CheckSpawningMsgFlagSet(context, sandboxNode->flagIndex)) {
+            node = node->next;
+            continue;
+        }
+
+        if (sandboxNode->section.nameGroups == NULL) {
+            node = node->next;
+            continue;
+        }
+
+        for (uint32_t i = 0; i < sandboxNode->section.number; i++) {
+            if (sandboxNode->section.nameGroups[i] == NULL) {
+                continue;
+            }
+            SandboxNameGroupNode *groupNode = (SandboxNameGroupNode *)sandboxNode->section.nameGroups[i];
+            ret = MountDepGroups(context, groupNode);
+            APPSPAWN_CHECK(ret == 0, return ret, "Failed to mount deps groups");
+        }
+        node = node->next;
+    }
+    return ret;
+}
+
+static int SetPackageNameDepGroups(const SandboxContext *context, AppSpawnSandboxCfg *sandbox)
+{
+    SandboxPackageNameNode *sandboxNode =
+        (SandboxPackageNameNode *)GetSandboxSection(&sandbox->packageNameQueue, context->bundleName);
+    if (sandboxNode == NULL || sandboxNode->section.nameGroups == NULL) {
+        return 0;
+    }
+
+    int ret = 0;
+    for (uint32_t i = 0; i < sandboxNode->section.number; i++) {
+        if (sandboxNode->section.nameGroups[i] == NULL) {
+            continue;
+        }
+        SandboxNameGroupNode *groupNode = (SandboxNameGroupNode *)sandboxNode->section.nameGroups[i];
+        ret = MountDepGroups(context, groupNode);
+        APPSPAWN_CHECK(ret == 0, return ret, "Failed to mount deps groups");
+    }
+    return ret;
+}
+
+static int SetPermissionDepGroups(const SandboxContext *context, AppSpawnSandboxCfg *sandbox)
+{
+    ListNode *node = sandbox->permissionQueue.front.next;
+    int ret = 0;
+    while (node != &sandbox->permissionQueue.front) {
+        SandboxPermissionNode *permissionNode = (SandboxPermissionNode *)ListEntry(node, SandboxMountNode, node);
+        // match flags point
+        if (!CheckSpawningPermissionFlagSet(context, permissionNode->permissionIndex)) {
+            node = node->next;
+            continue;
+        }
+
+        if (permissionNode->section.nameGroups == NULL) {
+            node = node->next;
+            continue;
+        }
+
+        for (uint32_t i = 0; i < permissionNode->section.number; i++) {
+            if (permissionNode->section.nameGroups[i] == NULL) {
+                continue;
+            }
+            SandboxNameGroupNode *groupNode = (SandboxNameGroupNode *)permissionNode->section.nameGroups[i];
+            ret = MountDepGroups(context, groupNode);
+            APPSPAWN_CHECK(ret == 0, return ret, "Failed to mount deps groups");
+        }
+        node = node->next;
+    }
+    return ret;
+}
+
+// The execution of the preunshare phase depends on the mounted mount point
+static int StagedDepGroupMounts(const SandboxContext *context, AppSpawnSandboxCfg *sandbox)
+{
+    int ret = SetSystemConstDepGroups(context, sandbox);
+    APPSPAWN_CHECK(ret == 0, return ret, "Failed to set system const deps groups");
+
+    ret = SetAppVariableDepGroups(context, sandbox);
+    APPSPAWN_CHECK(ret == 0, return ret, "Failed to set app variable deps groups");
+
+    ret = SetSpawnFlagsDepGroups(context, sandbox);
+    APPSPAWN_CHECK(ret == 0, return ret, "Failed to set spawn flags deps groups");
+
+    ret = SetPackageNameDepGroups(context, sandbox);
+    APPSPAWN_CHECK(ret == 0, return ret, "Failed to set package name deps groups");
+
+    ret = SetPermissionDepGroups(context, sandbox);
+    APPSPAWN_CHECK(ret == 0, return ret, "Failed to set permission deps groups");
+
+    return ret;
+}
+
 int StagedMountPreUnShare(const SandboxContext *context, AppSpawnSandboxCfg *sandbox)
 {
     APPSPAWN_CHECK(sandbox != NULL && context != NULL, return -1, "Invalid sandbox or context");
     APPSPAWN_LOGV("Set sandbox config before unshare group count %{public}d", sandbox->depNodeCount);
 
     MountDirToShared(context, sandbox);
-    /**
-     * 在unshare前处理mount-paths-deps 处理逻辑
-     *   root-dir global.sandbox-root
-     *   src-dir "/mnt/sandbox/app-common/<currentUserId>"
-     *   遍历mount-paths-deps,处理mount-paths-deps
-     *      src = mount-paths-deps.src-path
-     *      dst = root-dir + mount-paths-deps.sandbox-path
-     *      如果设置no-exist,检查mount-paths 的src(实际路径) 是否不存在，
-                则安mount-paths-deps.src-path 创建.按shared方式挂载mount-paths-deps
-     *      如果是 always,按shared方式挂载mount-paths-deps
-     *      不配置 按always 处理
-     *
-     */
-    int ret = 0;
-    for (uint32_t i = 0; i < sandbox->depNodeCount; i++) {
-        SandboxNameGroupNode *groupNode = sandbox->depGroupNodes[i];
-        if (groupNode == NULL || groupNode->depNode == NULL) {
-            continue;
-        }
-        APPSPAWN_LOGV("Set sandbox deps config %{public}s ", groupNode->section.name);
-        // change source and target to real path
-        ret = UpdateMountPathDepsPath(context, groupNode);
-        APPSPAWN_CHECK(ret == 0, return ret,
-            "Failed to update deps path name group %{public}s", groupNode->section.name);
+    int ret = StagedDepGroupMounts(context, sandbox);
 
-        if (groupNode->depMode == MOUNT_MODE_NOT_EXIST && CheckAndCreateDepPath(context, groupNode)) {
-            continue;
-        }
-
-        uint32_t operation = 0;
-        SetMountPathOperation(&operation, MOUNT_PATH_OP_UNMOUNT);
-        groupNode->depMounted = 1;
-        ret = DoSandboxPathNodeMount(context, &groupNode->section, groupNode->depNode, operation);
-        if (ret != 0) {
-            APPSPAWN_LOGE("Mount deps root fail %{public}s", groupNode->section.name);
-            return ret;
-        }
-    }
-    return 0;
+    return ret;
 }
 
 static int SetAppVariableConfig(const SandboxContext *context, const AppSpawnSandboxCfg *sandbox)
@@ -1113,6 +1292,21 @@ int StagedMountPostUnshare(const SandboxContext *context, const AppSpawnSandboxC
     return ret;
 }
 
+#ifdef APPSPAWN_MOUNT_TMPSHM
+static void MountDevShmPath(SandboxContext *context)
+{
+    char sandboxDevShmPath[PATH_MAX] = {};
+    int ret = strcpy_s(sandboxDevShmPath, sizeof(sandboxDevShmPath), context->rootPath);
+    APPSPAWN_CHECK(ret == 0, return, "Failed to strcpy rootPath");
+    ret = strcat_s(sandboxDevShmPath, sizeof(sandboxDevShmPath), DEV_SHM_DIR);
+    APPSPAWN_CHECK(ret == 0, return, "Failed to format devShmPath");
+    int result = mount("tmpfs", sandboxDevShmPath, "tmpfs", MS_NOSUID | MS_NOEXEC | MS_NODEV, "size=32M");
+    if (result != 0) {
+        APPSPAWN_LOGW("Error mounting %{public}s to tmpfs, errno %{public}d", sandboxDevShmPath, errno);
+    }
+}
+#endif
+
 int MountSandboxConfigs(AppSpawnSandboxCfg *sandbox, const AppSpawningCtx *property, int nwebspawn)
 {
     APPSPAWN_CHECK_ONLY_EXPER(property != NULL, return -1);
@@ -1150,8 +1344,14 @@ int MountSandboxConfigs(AppSpawnSandboxCfg *sandbox, const AppSpawningCtx *prope
         ret = SetBundleResourceSandboxConfig(context, sandbox);
         APPSPAWN_CHECK_ONLY_EXPER(ret == 0, break);
 
+#ifdef APPSPAWN_MOUNT_TMPSHM
+        MountDevShmPath(context);
+#endif
         ret = ChangeCurrentDir(context);
         APPSPAWN_CHECK_ONLY_EXPER(ret == 0, break);
+#if defined(APPSPAWN_MOUNT_TMPSHM) && defined(WITH_SELINUX)
+        Restorecon(DEV_SHM_DIR);
+#endif
         APPSPAWN_LOGV("Change root dir success %{public}s ", context->rootPath);
     } while (0);
     DeleteSandboxContext(context);

@@ -149,6 +149,46 @@ static int CloneAppSpawn(void *arg)
     return 0;
 }
 
+#ifndef OHOS_LITE
+static void NwebSpawnCloneChildProcess(AppSpawnContent *content, AppSpawnClient *client, pid_t *pid)
+{
+    AppSpawnForkArg arg;
+    arg.client = client;
+    arg.content = content;
+#ifndef APPSPAWN_TEST
+    AppSpawningCtx *property = (AppSpawningCtx *)client;
+    uint32_t len = 0;
+    char *processType = (char *)(GetAppSpawnMsgExtInfo(property->message, MSG_EXT_NAME_PROCESS_TYPE, &len));
+    APPSPAWN_CHECK(processType != NULL, return, "Invalid processType data");
+
+    if (strcmp(processType, "gpu") == 0) {
+        *pid = clone(CloneAppSpawn, NULL, CLONE_NEWNET | SIGCHLD, (void *)&arg);
+    } else {
+        *pid = clone(CloneAppSpawn, NULL, content->sandboxNsFlags | SIGCHLD, (void *)&arg);
+    }
+#else
+    *pid = clone(CloneAppSpawn, NULL, content->sandboxNsFlags | SIGCHLD, (void *)&arg);
+#endif
+}
+#endif
+
+static void AppSpawnForkChildProcess(AppSpawnContent *content, AppSpawnClient *client, pid_t *pid)
+{
+    struct timespec forkStart = {0};
+    clock_gettime(CLOCK_MONOTONIC, &forkStart);
+    StartAppspawnTrace("AppspawnForkStart");
+    *pid = fork();
+    if (*pid == 0) {
+        struct timespec forkEnd = {0};
+        clock_gettime(CLOCK_MONOTONIC, &forkEnd);
+        uint64_t diff = DiffTime(&forkStart, &forkEnd);
+        APPSPAWN_CHECK_ONLY_LOG(diff < MAX_FORK_TIME, "fork time %{public}" PRId64 " us", diff);
+        ProcessExit(AppSpawnChild(content, client));
+    } else {
+        FinishAppspawnTrace();
+    }
+}
+
 int AppSpawnProcessMsg(AppSpawnContent *content, AppSpawnClient *client, pid_t *childPid)
 {
     APPSPAWN_CHECK(content != NULL, return -1, "Invalid content for appspawn");
@@ -159,41 +199,14 @@ int AppSpawnProcessMsg(AppSpawnContent *content, AppSpawnClient *client, pid_t *
     pid_t pid = 0;
 #ifndef OHOS_LITE
     if (content->mode == MODE_FOR_NWEB_SPAWN) {
-        AppSpawnForkArg arg;
-        arg.client = client;
-        arg.content = content;
-#ifndef APPSPAWN_TEST
-        AppSpawningCtx *property = (AppSpawningCtx *)client;
-        uint32_t len = 0;
-        char *processType = (char *)(GetAppSpawnMsgExtInfo(property->message, MSG_EXT_NAME_PROCESS_TYPE, &len));
-        if (strcmp(processType, "gpu") == 0) {
-            pid = clone(CloneAppSpawn, NULL, CLONE_NEWNET | SIGCHLD, (void *)&arg);
-        } else {
-            pid = clone(CloneAppSpawn, NULL, content->sandboxNsFlags | SIGCHLD, (void *)&arg);
-        }
-#else
-        pid = clone(CloneAppSpawn, NULL, content->sandboxNsFlags | SIGCHLD, (void *)&arg);
-#endif
+        NwebSpawnCloneChildProcess(content, client, &pid);
     } else {
 #else
     {
 #endif
-        struct timespec forkStart = {0};
-        clock_gettime(CLOCK_MONOTONIC, &forkStart);
-        StartAppspawnTrace("AppspawnForkStart");
-        pid = fork();
-        if (pid == 0) {
-            struct timespec forkEnd = {0};
-            clock_gettime(CLOCK_MONOTONIC, &forkEnd);
-            uint64_t diff = DiffTime(&forkStart, &forkEnd);
-            APPSPAWN_CHECK_ONLY_LOG(diff < MAX_FORK_TIME, "fork time %{public}" PRId64 " us", diff);
-            ProcessExit(AppSpawnChild(content, client));
-        } else {
-            FinishAppspawnTrace();
-        }
+        AppSpawnForkChildProcess(content, client, &pid);
     }
     APPSPAWN_CHECK(pid >= 0, return APPSPAWN_FORK_FAIL, "fork child process error: %{public}d", errno);
     *childPid = pid;
     return 0;
 }
-
