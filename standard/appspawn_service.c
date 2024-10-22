@@ -770,6 +770,7 @@ static int AppSpawnProcessMsgForPrefork(AppSpawnContent *content, AppSpawnClient
 
 static bool IsSupportPrefork(AppSpawnContent *content, AppSpawnClient *client)
 {
+#ifdef APPSPAWN_SUPPORT_PREFORK
     if (client == NULL || content == NULL) {
         return false;
     }
@@ -782,6 +783,7 @@ static bool IsSupportPrefork(AppSpawnContent *content, AppSpawnClient *client)
         && !CheckAppMsgFlagsSet(property, APP_FLAGS_CHILDPROCESS)) {
         return true;
     }
+#endif
     return false;
 }
 
