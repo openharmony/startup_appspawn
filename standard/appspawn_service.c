@@ -856,12 +856,13 @@ static AppSpawningCtx *GetAppSpawningCtxFromArg(AppSpawnMgr *content, int argc, 
     property->client.flags = (uint32_t)atoi(argv[FLAGS_VALUE_INDEX]);
     property->client.flags &= ~APP_COLD_START;
 
-    uint32_t size = (uint32_t)atoi(argv[SHM_SIZE_INDEX]);
-    property->client.id = (uint32_t)atoi(argv[CLIENT_ID_INDEX]);
+    int isNweb = IsNWebSpawnMode(content);
+    uint32_t size = atoi(argv[SHM_SIZE_INDEX]);
+    property->client.id = atoi(argv[CLIENT_ID_INDEX]);
     uint8_t *buffer = (uint8_t *)GetMapMem(property->client.id,
-        argv[PARAM_VALUE_INDEX], size, true, IsNWebSpawnMode(content));
+        argv[PARAM_VALUE_INDEX], size, true, isNweb);
     if (buffer == NULL) {
-        APPSPAWN_LOGE("Failed to map errno %{public}d %{public}s", property->client.id, argv[PARAM_VALUE_INDEX]);
+        APPSPAWN_LOGE("Failed to map errno %{public}u %{public}s", property->client.id, argv[PARAM_VALUE_INDEX]);
         NotifyResToParent(&content->content, &property->client, APPSPAWN_SYSTEM_ERROR);
         DeleteAppSpawningCtx(property);
         return NULL;
@@ -873,6 +874,13 @@ static AppSpawningCtx *GetAppSpawningCtxFromArg(AppSpawnMgr *content, int argc, 
     int ret = GetAppSpawnMsgFromBuffer(buffer, ((AppSpawnMsg *)buffer)->msgLen, &message, &msgRecvLen, &remainLen);
     // release map
     munmap((char *)buffer, size);
+    //unlink
+    char path[PATH_MAX] = {0};
+    int len = sprintf_s(path, sizeof(path), APPSPAWN_MSG_DIR "%s/%s_%u",
+        isNweb ? "nwebspawn" : "appspawn", argv[PARAM_VALUE_INDEX], property->client.id);
+    if (len > 0) {
+        unlink(path);
+    }
 
     if (ret == 0 && DecodeAppSpawnMsg(message) == 0 && CheckAppSpawnMsg(message) == 0) {
         property->message = message;
