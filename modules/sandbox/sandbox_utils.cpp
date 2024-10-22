@@ -243,8 +243,10 @@ int32_t SandboxUtils::DoAppSandboxMountOnce(const char *originPath, const char *
                                             const char *fsType, unsigned long mountFlags,
                                             const char *options, mode_t mountSharedFlag)
 {
-    struct stat st = {};
-    if (stat(originPath, &st) == 0 && S_ISREG(st.st_mode)) {
+    if (originPath == nullptr || destinationPath == nullptr || originPath[0] == '\0' || destinationPath[0] == '\0') {
+        return 0;
+    }
+    if (strstr(originPath, "system/etc/hosts") != nullptr) {
         CheckAndCreatFile(destinationPath);
     } else {
         MakeDirRecursive(destinationPath, FILE_MODE);
@@ -394,6 +396,7 @@ static void MakeAtomicServiceDir(const AppSpawningCtx *appProperty, std::string 
     }
 #endif
     AppSpawnMsgDacInfo *dacInfo = reinterpret_cast<AppSpawnMsgDacInfo *>(GetAppProperty(appProperty, TLV_DAC_INFO));
+    APPSPAWN_CHECK(dacInfo != NULL, return, "No dac info in msg app property");
     if (path.find("/base") != std::string::npos) {
         ret = chown(path.c_str(), dacInfo->uid, dacInfo->gid);
     } else if (path.find("/database") != std::string::npos) {
