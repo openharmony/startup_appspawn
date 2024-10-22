@@ -512,10 +512,6 @@ static void ProcessChildProcessFd(const WatcherHandle taskHandle, int fd, uint32
         APPSPAWN_LOGW("Cannot get app info by bundle name: %{public}d", pid);
         return;
     }
-    if (IsNWebSpawnMode((AppSpawnMgr *)GetAppSpawnContent)) {
-        APPSPAWN_LOGV("Nwebspawn don't need add pidfd");
-        return;
-    }
     ProcessMgrHookExecute(STAGE_SERVER_APP_DIED, GetAppSpawnContent(), appInfo);
     LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
 }
@@ -529,6 +525,10 @@ static void WatchChildProcessFd(AppSpawningCtx *property)
 {
     if (property->pid <= 0) {
         APPSPAWN_LOGW("Invalid child process pid, skip watch");
+        return;
+    }
+    if (IsNWebSpawnMode((AppSpawnMgr *)GetAppSpawnContent)) {
+        APPSPAWN_LOGV("Nwebspawn don't need add pidfd");
         return;
     }
     AppSpawnedProcess *appInfo = GetSpawnedProcess(property->pid);
@@ -575,6 +575,7 @@ static int AddChildWatcher(AppSpawningCtx *property)
 {
     uint32_t defTimeout = IsChildColdRun(property) ? COLD_CHILD_RESPONSE_TIMEOUT : WAIT_CHILD_RESPONSE_TIMEOUT;
     uint32_t timeout = GetSpawnTimeout(defTimeout);
+    APPSPAWN_LOGI("Get spawn timeout: %{public}u.", timeout);
     LE_WatchInfo watchInfo = {};
     watchInfo.fd = property->forkCtx.fd[0];
     watchInfo.flags = WATCHER_ONCE;

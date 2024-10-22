@@ -13,7 +13,7 @@
                 "sandbox-path" : "/dev"
             }, {
                 "src-path" : "/proc",
-                "sandbox-path" : "/proc"  
+                "sandbox-path" : "/proc"
             }, {
                 "src-path" : "/sys",
                 "sandbox-path" : "/sys"
@@ -79,7 +79,7 @@
                 "sandbox-path" : "/vendor/<lib>"
             }, {
                 "src-path" : "/vendor/etc/vulkan",
-                "sandbox-path" : "/vendor/etc/vulkan" 
+                "sandbox-path" : "/vendor/etc/vulkan"
             }, {
                 "src-path" : "/vendor/etc/hiai",
                 "sandbox-path" : "/vendor/etc/hiai"

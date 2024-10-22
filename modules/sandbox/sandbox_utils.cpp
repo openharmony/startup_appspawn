@@ -924,7 +924,7 @@ std::set<std::string> SandboxUtils::GetMountPermissionNames()
         if (config.find(g_permissionPrefix) == config.end()) {
             continue;
         }
-        nlohmann::json permissionAppConfig = config[g_permissionPrefix][0];
+        nlohmann::json& permissionAppConfig = config[g_permissionPrefix][0];
         for (auto it = permissionAppConfig.begin(); it != permissionAppConfig.end(); it++) {
             permissionSet.insert(it.key());
         }
@@ -1333,13 +1333,13 @@ uint32_t SandboxUtils::GetSandboxNsFlags(bool isNweb)
 
     for (auto& config : SandboxUtils::GetJsonConfig(SANBOX_APP_JSON_CONFIG)) {
         if (isNweb) {
-            nlohmann::json privateAppConfig = config[g_privatePrefix][0];
+            nlohmann::json& privateAppConfig = config[g_privatePrefix][0];
             if (privateAppConfig.find(g_ohosRender) == privateAppConfig.end()) {
                 continue;
             }
             appConfig = privateAppConfig[g_ohosRender][0];
         } else {
-            nlohmann::json baseConfig = config[g_commonPrefix][0];
+            nlohmann::json& baseConfig = config[g_commonPrefix][0];
             if (baseConfig.find(g_appBase) == baseConfig.end()) {
                 continue;
             }
@@ -1379,7 +1379,7 @@ bool SandboxUtils::CheckTotalSandboxSwitchStatus(const AppSpawningCtx *appProper
         if (wholeConfig.find(g_commonPrefix) == wholeConfig.end()) {
             continue;
         }
-        nlohmann::json commonAppConfig = wholeConfig[g_commonPrefix][0];
+        nlohmann::json& commonAppConfig = wholeConfig[g_commonPrefix][0];
         if (commonAppConfig.find(g_topSandBoxSwitchPrefix) != commonAppConfig.end()) {
             std::string switchStatus = commonAppConfig[g_topSandBoxSwitchPrefix].get<std::string>();
             if (switchStatus == g_sbxSwitchCheck) {
@@ -1403,7 +1403,7 @@ bool SandboxUtils::CheckAppSandboxSwitchStatus(const AppSpawningCtx *appProperty
         if (wholeConfig.find(g_privatePrefix) == wholeConfig.end()) {
             continue;
         }
-        nlohmann::json privateAppConfig = wholeConfig[g_privatePrefix][0];
+        nlohmann::json& privateAppConfig = wholeConfig[g_privatePrefix][0];
         if (privateAppConfig.find(GetBundleName(appProperty)) != privateAppConfig.end()) {
             nlohmann::json& appConfig = privateAppConfig[GetBundleName(appProperty)][0];
             rc = GetSbxSwitchStatusByConfig(appConfig);
@@ -1775,7 +1775,7 @@ int32_t SetAppSandboxProperty(AppSpawnMgr *content, AppSpawningCtx *property)
 #define DIR_MODE 0711
 
 #ifndef APPSPAWN_SANDBOX_NEW
-static bool IsUnlockStatus(uint32_t uid)
+static bool IsUnlockStatus(uint32_t uid, const char *bundleName, size_t bundleNameLen)
 {
     const int userIdBase = 200000;
     uid = uid / userIdBase;
@@ -1784,11 +1784,11 @@ static bool IsUnlockStatus(uint32_t uid)
     }
 
     const char rootPath[] = "/data/app/el2/";
-    const char basePath[] = "/base";
-    size_t allPathSize = strlen(rootPath) + strlen(basePath) + 1 + USER_ID_SIZE;
+    const char basePath[] = "/base/";
+    size_t allPathSize = strlen(rootPath) + strlen(basePath) + 1 + USER_ID_SIZE + bundleNameLen;
     char *path = reinterpret_cast<char *>(malloc(sizeof(char) * allPathSize));
     APPSPAWN_CHECK(path != NULL, return true, "Failed to malloc path");
-    int len = sprintf_s(path, allPathSize, "%s%u%s", rootPath, uid, basePath);
+    int len = sprintf_s(path, allPathSize, "%s%u%s%s", rootPath, uid, basePath, bundleName);
     APPSPAWN_CHECK(len > 0 && ((size_t)len < allPathSize), free(path);
         return true, "Failed to get base path");
 
@@ -1868,7 +1868,8 @@ static void MountDirToShared(const AppSpawningCtx *property)
     string sourcePath = "/data/app/el1/bundle/public/" + string(bundleName);
     MountDir(property, rootPath, sourcePath.c_str(), el1Path);
 
-    if (IsUnlockStatus(info->uid)) {
+    size_t bundleNameLen = strlen(bundleName);
+    if (IsUnlockStatus(info->uid, bundleName, bundleNameLen)) {
         return;
     }
 
