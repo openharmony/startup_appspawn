@@ -32,7 +32,9 @@
 
 #include "appspawn_msg.h"
 #include "appspawn_utils.h"
+#ifdef WITH_DLP
 #include "dlp_fuse_fd.h"
+#endif
 #include "init_utils.h"
 #include "parameter.h"
 #include "appspawn_permission.h"
@@ -317,7 +319,9 @@ static int32_t SandboxMountFusePath(const SandboxContext *context, const MountAr
         return -1;
     }
     /* set DLP_FUSE_FD  */
+#ifdef WITH_DLP
     SetDlpFuseFd(fd);
+#endif
     return 0;
 }
 
