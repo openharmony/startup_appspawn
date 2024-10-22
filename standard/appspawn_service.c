@@ -490,17 +490,30 @@ static int InitForkContext(AppSpawningCtx *property)
     return 0;
 }
 
+static void ClosePidfdWatcher(const TaskHandle taskHandle)
+{
+    int fd = LE_GetSocketFd(taskHandle);
+    if (fd >= 0) {
+        close(fd);
+    }
+    void *p = LE_GetUserData(taskHandle);
+    if (p != NULL) {
+        free(*(void **)p);
+    }
+}
+
 static void ProcessChildProcessFd(const WatcherHandle taskHandle, int fd, uint32_t *events, const void *context)
 {
     APPSPAWN_CHECK_ONLY_EXPER(context != NULL, return);
     pid_t pid = *(pid_t *)context;
-    void *p = (void *)context;
-    free(p); // Context is allocated outside, free the memory here
     APPSPAWN_LOGI("Kill process group with process group id %{public}d, pidFd %{public}d", pid, fd);
-    close(fd); // close fd to avoid fd leak
     AppSpawnedProcess *appInfo = GetSpawnedProcess(pid);
     if (appInfo == NULL) {
         APPSPAWN_LOGW("Cannot get app info by bundle name: %{public}d", pid);
+        return;
+    }
+    if (IsNWebSpawnMode((AppSpawnMgr *)GetAppSpawnContent)) {
+        APPSPAWN_LOGV("Nwebspawn don't need add pidfd");
         return;
     }
     ProcessMgrHookExecute(STAGE_SERVER_APP_DIED, GetAppSpawnContent(), appInfo);
@@ -534,6 +547,7 @@ static void WatchChildProcessFd(AppSpawningCtx *property)
     watchInfo.fd = fd;
     watchInfo.flags = WATCHER_ONCE;
     watchInfo.events = EVENT_READ;
+    watchInfo.close = ClosePidfdWatcher;
     watchInfo.processEvent = ProcessChildProcessFd;
 
     pid_t *appPid = (pid_t *)malloc(sizeof(pid_t));
@@ -548,9 +562,19 @@ static void WatchChildProcessFd(AppSpawningCtx *property)
     }
 }
 
+static int IsChildColdRun(AppSpawningCtx *property)
+{
+    return CheckAppMsgFlagsSet(property, APP_FLAGS_UBSAN_ENABLED)
+        || CheckAppMsgFlagsSet(property, APP_FLAGS_ASANENABLED)
+        || CheckAppMsgFlagsSet(property, APP_FLAGS_TSAN_ENABLED)
+        || CheckAppMsgFlagsSet(property, APP_FLAGS_HWASAN_ENABLED)
+        || (property->client.flags & APP_COLD_START);
+}
+
 static int AddChildWatcher(AppSpawningCtx *property)
 {
-    uint32_t timeout = GetSpawnTimeout(WAIT_CHILD_RESPONSE_TIMEOUT);
+    uint32_t defTimeout = IsChildColdRun(property) ? COLD_CHILD_RESPONSE_TIMEOUT : WAIT_CHILD_RESPONSE_TIMEOUT;
+    uint32_t timeout = GetSpawnTimeout(defTimeout);
     LE_WatchInfo watchInfo = {};
     watchInfo.fd = property->forkCtx.fd[0];
     watchInfo.flags = WATCHER_ONCE;
@@ -953,58 +977,10 @@ static void AppSpawnRun(AppSpawnContent *content, int argc, char *const argv[])
     AppSpawnDestroyContent(content);
 }
 
-static void ClosePidFds(pid_t pid)
-{
-    if (pid <= 0) {
-        return;
-    }
-    struct timespec closeFdStart = {0};
-    clock_gettime(CLOCK_MONOTONIC, &closeFdStart);
-    APPSPAWN_LOGV("Close pidfd in process: %{public}d", pid);
-    char procFdPath[FD_PATH_SIZE] = {};
-    (void)snprintf_s(procFdPath, FD_PATH_SIZE, FD_PATH_SIZE - 1, "/proc/%d/fd", pid);
-    DIR *dir = opendir(procFdPath);
-    if (dir == NULL) {
-        APPSPAWN_LOGE("Open dir %{public}s failed, err = %{public}d", procFdPath, errno);
-        return;
-    }
-    struct dirent *de = NULL;
-    while ((de = readdir(dir)) != NULL) {
-        if (de->d_name[0] == '.') {
-            continue;
-        }
-        char fdBuffer[FD_PATH_SIZE] = {};
-        char realFile[FD_PATH_SIZE] = {};
-        int ret = snprintf_s(fdBuffer, sizeof(fdBuffer), sizeof(fdBuffer) - 1, "%s/%s", procFdPath, de->d_name);
-        APPSPAWN_CHECK(ret > 0, closedir(dir); continue, "Failed to snprintf_s errno: %{public}d", errno);
-        if (readlink(fdBuffer, realFile, sizeof(realFile) - 1) < 0) {
-            APPSPAWN_LOGE("Read link %{public}s failed, err = %{public}d", fdBuffer, errno);
-            continue; // try next one
-        }
-        // Check if pidfd
-        if (strcmp(realFile, "anon_inode:[pidfd]") == 0) {
-            errno = 0;
-            int fd = (int)strtoul(de->d_name, NULL, 10); // 10 convert file name to file descriptor in decimal
-            if (errno != 0) {
-                APPSPAWN_LOGW("Failed to convert %{public}s to integer", de->d_name);
-                continue;
-            }
-            APPSPAWN_LOGV("Found pid file descriptor %{public}d, close it", fd);
-            close(fd);
-        }
-    }
-    closedir(dir);
-    dir = NULL;
-    struct timespec closeFdEnd = {0};
-    clock_gettime(CLOCK_MONOTONIC, &closeFdEnd);
-    uint64_t diff = DiffTime(&closeFdStart, &closeFdEnd);
-    APPSPAPWN_DUMP("Close %{public}d fd timeused %{public}" PRId64 " us ", pid, diff);
-}
-
 APPSPAWN_STATIC int AppSpawnClearEnv(AppSpawnMgr *content, AppSpawningCtx *property)
 {
     APPSPAWN_CHECK(content != NULL, return 0, "Invalid appspawn content");
-    ClosePidFds(getpid());
+
     DeleteAppSpawningCtx(property);
     AppSpawnDestroyContent(&content->content);
     APPSPAWN_LOGV("clear %{public}d end", getpid());

@@ -393,12 +393,13 @@ void ProcessAppSpawnDumpMsg(const AppSpawnMsgNode *message)
     FILE *stream = NULL;
     uint32_t len = 0;
     char *ptyName = GetAppSpawnMsgExtInfo(message, "pty-name", &len);
-    if (ptyName != NULL) { //
+    if (ptyName != NULL) {
         APPSPAWN_LOGI("Dump info to file '%{public}s'", ptyName);
-        char canonicalPtyPath[PATH_MAX] = {0};
+        char canonicalPtyPath[PATH_MAX] = { 0 };
         if (realpath(ptyName, canonicalPtyPath) == NULL) {
             return;
         }
+
         stream = fopen(canonicalPtyPath, "w");
         SetDumpToStream(stream);
     } else {
