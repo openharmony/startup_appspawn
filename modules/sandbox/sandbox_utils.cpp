@@ -45,9 +45,13 @@
 
 #ifdef WITH_SELINUX
 #include "hap_restorecon.h"
-#endif
+#ifdef APPSPAWN_MOUNT_TMPSHM
+#include "policycoreutils.h"
+#endif // APPSPAWN_MOUNT_TMPSHM
+#endif // WITH_SELINUX
 
 #define MAX_MOUNT_TIME 500  // 500us
+#define DEV_SHM_DIR "/dev/shm/"
 
 using namespace std;
 using namespace OHOS;
@@ -1590,6 +1594,17 @@ int32_t SandboxUtils::SetPermissionWithParam(AppSpawningCtx *appProperty)
     return -1;
 }
 
+#ifdef APPSPAWN_MOUNT_TMPSHM
+void SandboxUtils::MountDevShmPath(std::string &sandboxPath)
+{
+    std::string sandboxDevShmPath = sandboxPath + DEV_SHM_DIR;
+    int result = mount("tmpfs", sandboxDevShmPath.c_str(), "tmpfs", MS_NOSUID | MS_NOEXEC | MS_NODEV, "size=32M");
+    if (result != 0) {
+        APPSPAWN_LOGW("Error mounting %{public}s to tmpfs, errno %{public}d", sandboxDevShmPath.c_str(), errno);
+    }
+}
+#endif
+
 int32_t SandboxUtils::SetAppSandboxProperty(AppSpawningCtx *appProperty, uint32_t sandboxNsFlags)
 {
     APPSPAWN_CHECK(appProperty != nullptr, return -1, "Invalid appspwn client");
@@ -1629,11 +1644,18 @@ int32_t SandboxUtils::SetAppSandboxProperty(AppSpawningCtx *appProperty, uint32_
     rc = SetSandboxProperty(appProperty, sandboxPackagePath);
     APPSPAWN_CHECK(rc == 0, return rc, "SetSandboxProperty failed, %{public}s", bundleName.c_str());
 
+#ifdef APPSPAWN_MOUNT_TMPSHM
+    MountDevShmPath(sandboxPackagePath);
+#endif
+
 #ifndef APPSPAWN_TEST
     rc = ChangeCurrentDir(sandboxPackagePath, bundleName, sandboxSharedStatus);
     APPSPAWN_CHECK(rc == 0, return rc, "change current dir failed");
     APPSPAWN_LOGI("Change root dir success");
-#endif
+#if defined(APPSPAWN_MOUNT_TMPSHM) && defined(WITH_SELINUX)
+    Restorecon(DEV_SHM_DIR);
+#endif // APPSPAWN_MOUNT_TMPSHM && WITH_SELINUX
+#endif // APPSPAWN_TEST
     return 0;
 }
 
