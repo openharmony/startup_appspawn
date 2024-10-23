@@ -35,8 +35,8 @@ APPSPAWN_STATIC void DeviceDebugShowKillHelp(void)
 {
     printf("\r\nusage: devicedebug kill [options] <pid>"
         "\r\noptions list:"
-        "\r\n         -h, --help         list available commands"
-        "\r\n         kill -9 -12111     send a signal to a process\r\n");
+        "\r\n         -h, --help                list available commands"
+        "\r\n         kill -<signal> <pid>      send a signal to a process\r\n");
 }
 
 APPSPAWN_STATIC char* DeviceDebugJsonStringGeneral(int pid, const char *op, cJSON *args)
