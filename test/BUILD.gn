@@ -29,6 +29,7 @@ group("unittest") {
       deps += [ "unittest/app_spawn_standard_test:AppSpawn_ut" ]
     }
     deps += [ "unittest/hnp_test:HnpTest" ]
+    deps += [ "unittest/devicedebug_test:DevicedebugTest" ]
   } else {
     testonly = true
     deps = [ "unittest/app_spawn_lite_test:unittest" ]
