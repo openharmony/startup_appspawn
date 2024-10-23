@@ -97,6 +97,7 @@ typedef struct TagAppSpawnedProcess {
 #ifdef DEBUG_BEGETCTL_BOOT
     AppSpawnMsgNode *message;
 #endif
+    bool isDebuggable;
     char name[0];
 } AppSpawnedProcess;
 
@@ -136,7 +137,7 @@ AppSpawnContent *GetAppSpawnContent(void);
  */
 typedef void (*AppTraversal)(const AppSpawnMgr *mgr, AppSpawnedProcess *appInfo, void *data);
 void TraversalSpawnedProcess(AppTraversal traversal, void *data);
-AppSpawnedProcess *AddSpawnedProcess(pid_t pid, const char *processName);
+AppSpawnedProcess *AddSpawnedProcess(pid_t pid, const char *processName, bool isDebuggable);
 AppSpawnedProcess *GetSpawnedProcess(pid_t pid);
 AppSpawnedProcess *GetSpawnedProcessByName(const char *name);
 void TerminateSpawnedProcess(AppSpawnedProcess *node);
