@@ -527,7 +527,7 @@ static void WatchChildProcessFd(AppSpawningCtx *property)
         APPSPAWN_LOGW("Invalid child process pid, skip watch");
         return;
     }
-    if (IsNWebSpawnMode((AppSpawnMgr *)GetAppSpawnContent)) {
+    if (IsNWebSpawnMode((AppSpawnMgr *)GetAppSpawnContent())) {
         APPSPAWN_LOGV("Nwebspawn don't need add pidfd");
         return;
     }
