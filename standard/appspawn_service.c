@@ -883,12 +883,12 @@ static AppSpawningCtx *GetAppSpawningCtxFromArg(AppSpawnMgr *content, int argc, 
     property->client.flags &= ~APP_COLD_START;
 
     int isNweb = IsNWebSpawnMode(content);
-    uint32_t size = atoi(argv[SHM_SIZE_INDEX]);
-    property->client.id = atoi(argv[CLIENT_ID_INDEX]);
+    uint32_t size = (uint32_t)atoi(argv[SHM_SIZE_INDEX]);
+    property->client.id = (uint32_t)atoi(argv[CLIENT_ID_INDEX]);
     uint8_t *buffer = (uint8_t *)GetMapMem(property->client.id,
         argv[PARAM_VALUE_INDEX], size, true, isNweb);
     if (buffer == NULL) {
-        APPSPAWN_LOGE("Failed to map errno %{public}u %{public}s", property->client.id, argv[PARAM_VALUE_INDEX]);
+        APPSPAWN_LOGE("Failed to map errno %{public}d %{public}s", property->client.id, argv[PARAM_VALUE_INDEX]);
         NotifyResToParent(&content->content, &property->client, APPSPAWN_SYSTEM_ERROR);
         DeleteAppSpawningCtx(property);
         return NULL;
