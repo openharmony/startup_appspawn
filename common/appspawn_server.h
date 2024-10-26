@@ -17,6 +17,7 @@
 #define APPSPAWN_SERVER_H
 #include <stdint.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include <unistd.h>
 
 #include "appspawn_utils.h"
@@ -60,6 +61,7 @@ typedef struct AppSpawnContent {
     uint32_t longProcNameLen;
     uint32_t sandboxNsFlags;
     int wdgOpened;
+    bool isLinux;
 #ifdef USE_ENCAPS
     int fdEncaps;
 #endif
