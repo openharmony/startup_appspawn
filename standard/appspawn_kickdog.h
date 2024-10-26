@@ -18,10 +18,12 @@
 
 #include <fcntl.h>
 #include <stdio.h>
-#include <signal.h>
+#include <sys/utsname.h>
 #include "loop_event.h"
 #include "appspawn_utils.h"
 #include "appspawn_server.h"
+#include "appspawn_modulemgr.h"
+#include "appspawn_manager.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -39,10 +41,10 @@ extern "C" {
 #define LINUX_APPSPAWN_WATCHDOG_KICK    "kick"
 #define HM_APPSPAWN_WATCHDOG_ON    "on,10,appspawn"
 #define HM_APPSPAWN_WATCHDOG_KICK    "kick,appspawn"
+#define HM_NWEBSPAWN_WATCHDOG_ON    "on,10,nwebspawn"
+#define HM_NWEBSPAWN_WATCHDOG_KICK    "kick,nwebspawn"
 
 #define APPSPAWN_WATCHDOG_KICKTIME    (10 * 1000)  //10s
-
-void AppSpawnKickDogStart(AppSpawnContent *content);
 
 #ifdef __cplusplus
 }

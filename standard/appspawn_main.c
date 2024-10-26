@@ -21,7 +21,6 @@
 #include "appspawn_modulemgr.h"
 #include "appspawn_manager.h"
 #include "appspawn_service.h"
-#include "appspawn_kickdog.h"
 #include "parameter.h"
 #include "securec.h"
 
@@ -137,9 +136,6 @@ int main(int argc, char *const argv[])
     }
     AppSpawnContent *content = StartSpawnService(arg, argvSize, argc, argv);
     if (content != NULL) {
-        if ((arg->moduleType == MODULE_APPSPAWN) && (arg->mode != MODE_FOR_APP_COLD_RUN)) {
-            AppSpawnKickDogStart(content);
-        }
         content->runAppSpawn(content, argc, argv);
     }
     return 0;
