@@ -84,6 +84,9 @@
                 "src-path" : "/vendor/etc/hiai",
                 "sandbox-path" : "/vendor/etc/hiai"
             }, {
+                "src-path" : "/data/local/shader_cache/cloud/common",
+                "sandbox-path" : "/data/storage/shader_cache/common"
+            }, {
                 "src-path": "/storage/media/<currentUserId>/local/files/Docs/Downloads/<PackageName>",
                 "sandbox-path": "/storage/Users/<currentUserId>/Downloads"
             }, {
