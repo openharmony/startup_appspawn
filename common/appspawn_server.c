@@ -20,6 +20,7 @@
 #include <sched.h>
 #include <signal.h>
 #include <time.h>
+#include <stdio.h>
 
 #include "appspawn_trace.h"
 #include "appspawn_utils.h"
@@ -175,6 +176,9 @@ static void NwebSpawnCloneChildProcess(AppSpawnContent *content, AppSpawnClient 
 static void AppSpawnForkChildProcess(AppSpawnContent *content, AppSpawnClient *client, pid_t *pid)
 {
     struct timespec forkStart = {0};
+#ifndef OHOS_LITE
+    enum fdsan_error_level errorLevel = fdsan_get_error_level();
+#endif
     clock_gettime(CLOCK_MONOTONIC, &forkStart);
     StartAppspawnTrace("AppspawnForkStart");
     *pid = fork();
@@ -183,6 +187,10 @@ static void AppSpawnForkChildProcess(AppSpawnContent *content, AppSpawnClient *c
         clock_gettime(CLOCK_MONOTONIC, &forkEnd);
         uint64_t diff = DiffTime(&forkStart, &forkEnd);
         APPSPAWN_CHECK_ONLY_LOG(diff < MAX_FORK_TIME, "fork time %{public}" PRId64 " us", diff);
+#ifndef OHOS_LITE
+        // Inherit the error level of the original process
+        (void)fdsan_set_error_level(errorLevel);
+#endif
         ProcessExit(AppSpawnChild(content, client));
     } else {
         FinishAppspawnTrace();
