@@ -346,6 +346,11 @@
                 "src-path": "/data/service/el1/public/update/param_service/install/system/etc/<PackageName>",
                 "sandbox-path": "/data/service/el1/public/update/param_service/install/system/etc/<PackageName>"
             }]
+        }, {
+            "name": "ohos.permission.READ_WRITE_USER_FILE",
+            "gids": ["file_manager"],
+            "mount-paths":[],
+            "mount-groups": ["Users", "user-public"]
         }],
         "spawn-flag": [{
             "name": "START_FLAGS_BACKUP",
@@ -423,8 +428,8 @@
         "name": "user-public",
         "type": "app-variable",
         "mount-paths": [{
-            "src-path": "/data/service/el1/public/storage_daemon/share/public",
-            "sandbox-path": "/storage/Share"
+            "src-path": "/mnt/data/<currentUserId>/hmdfs",
+            "sandbox-path": "/storage/hmdfs"
         }, {
             "src-path": "/mnt/data/external",
             "sandbox-path": "/storage/External"
