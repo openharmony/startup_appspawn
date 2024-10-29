@@ -738,6 +738,7 @@ static int HnpInsatllPre(HapInstallInfo *installInfo)
     if ((ret == 0) && (count > 0)) {
         data.entries = malloc(sizeof(struct EntryMapEntry) * count);
         if (data.entries == NULL) {
+            free(hnpSignMapInfos);
             return HNP_ERRNO_NOMEM;
         }
         for (i = 0; i < count; i++) {

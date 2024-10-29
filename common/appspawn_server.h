@@ -63,6 +63,7 @@ typedef struct AppSpawnContent {
 #ifdef USE_ENCAPS
     int fdEncaps;
 #endif
+    int sandboxType;
     RunMode mode;
 #ifndef OHOS_LITE
     int32_t preforkFd[2];
