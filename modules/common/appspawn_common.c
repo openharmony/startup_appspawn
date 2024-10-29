@@ -46,6 +46,7 @@
 #include "init_param.h"
 #include "parameter.h"
 #include "securec.h"
+#include "cJSON.h"
 
 #ifdef CODE_SIGNATURE_ENABLE  // for xpm
 #include "code_sign_attr_utils.h"
@@ -391,6 +392,76 @@ static void SpawnLoadSilk(const AppSpawnMgr *content, const AppSpawningCtx *prop
     LoadSilkLibrary(processName);
 }
 
+#define APP_PIDS_MAX_ENCAPS "encaps"
+#define APP_PIDS_MAX_OHOS_ENCAPS_COUNT_KEY "ohos.encaps.count"
+#define APP_PIDS_MAX_OHOS_ENCAPS_FORK_KEY "ohos.encaps.fork.count"
+#define APP_PIDS_MAX_OHOS_ENCAPS_COUNT_VALUE 1
+#define MSG_EXT_NAME_MAX_DECIMAL 10
+#define ASSICN_ENCAPS_CMD _IOW('E', 0x1A, char *)
+static int SpawnSetEncaps(AppSpawnMgr *content, AppSpawningCtx *property)
+{
+    int ret = 0;
+    char *pidMaxStr = NULL;
+    uint32_t len = 0;
+    pidMaxStr = GetAppPropertyExt(property, MSG_EXT_NAME_MAX_CHILD_PROCCESS_MAX, &len);
+    APPSPAWN_CHECK_ONLY_EXPER(pidMaxStr != NULL, return ret);
+    uint32_t max = 0;
+    if (len != 0) {
+        char *endPtr = NULL;
+        max = strtoul(pidMaxStr, &endPtr, MSG_EXT_NAME_MAX_DECIMAL);
+        if (endPtr == pidMaxStr || *endPtr != '\0') {
+            APPSPAWN_LOGE("pidMaxStr: %{public}s Data errors", endPtr);
+            return ret;
+        }
+    }
+    cJSON *encaps = cJSON_CreateObject();
+    APPSPAWN_CHECK(encaps != NULL, return ret, "Failed to create encaps json object");
+    cJSON *addGinseng = cJSON_CreateObject();
+    if (addGinseng == NULL) {
+        cJSON_Delete(encaps);
+        encaps = NULL;
+        APPSPAWN_LOGE("Failed to create addGinseng json object");
+        return ret;
+    }
+    cJSON_AddNumberToObject(encaps, APP_PIDS_MAX_OHOS_ENCAPS_COUNT_KEY,
+        APP_PIDS_MAX_OHOS_ENCAPS_COUNT_VALUE);
+    cJSON_AddNumberToObject(encaps, APP_PIDS_MAX_OHOS_ENCAPS_FORK_KEY, max);
+    cJSON_AddItemToObject(addGinseng, APP_PIDS_MAX_ENCAPS, encaps);
+    char *maxPid = cJSON_PrintUnformatted(addGinseng);
+    int fd = 0;
+    fd = open("dev/encaps", O_RDWR);
+    if (fd < 0) {
+        APPSPAWN_LOGW("Failed to open encaps fd for bundleName:%{public}s errno:%{public}d",
+            GetBundleName(property), errno);
+        goto EXIT;
+    }
+    ret = ioctl(fd, ASSICN_ENCAPS_CMD, maxPid);
+    APPSPAWN_CHECK_ONLY_LOG(ret == 0, "Encaps the setup failed ret:%{public}d fd:%{public}d maxPid: %{public}s",
+        ret, fd, maxPid);
+    close(fd);
+EXIT:
+    free(maxPid);
+    maxPid = NULL;
+    cJSON_Delete(addGinseng);
+    encaps = NULL;
+    addGinseng = NULL;
+    return ret;
+}
+
+static int SpawnSetCommonProperties(AppSpawnMgr *content, AppSpawningCtx *property)
+{
+    if (IsNWebSpawnMode(content)) {
+        return 0;
+    }
+    uint32_t len = 0;
+    char *processType = (char *)(GetAppSpawnMsgExtInfo(property->message, MSG_EXT_NAME_PROCESS_TYPE, &len));
+    if (processType != NULL && strcmp(processType, "gpu") == 0) {
+        return 0;
+    }
+    int ret = SpawnSetEncaps(content, property);
+    return ret;
+}
+
 static int SpawnSetProperties(AppSpawnMgr *content, AppSpawningCtx *property)
 {
     APPSPAWN_LOGV("Spawning: set child property");
@@ -544,6 +615,7 @@ MODULE_CONSTRUCTOR(void)
     AddAppSpawnHook(STAGE_CHILD_PRE_COLDBOOT, HOOK_PRIO_HIGHEST, SpawnInitSpawningEnv);
     AddAppSpawnHook(STAGE_CHILD_PRE_COLDBOOT, HOOK_PRIO_COMMON + 1, SpawnSetAppEnv);
     AddAppSpawnHook(STAGE_CHILD_EXECUTE, HOOK_PRIO_HIGHEST, SpawnSetIntPermission);
+    AddAppSpawnHook(STAGE_CHILD_EXECUTE, HOOK_PRIO_COMMON, SpawnSetCommonProperties);
     AddAppSpawnHook(STAGE_CHILD_EXECUTE, HOOK_PRIO_PROPERTY, SpawnSetProperties);
     AddAppSpawnHook(STAGE_CHILD_POST_RELY, HOOK_PRIO_HIGHEST, SpawnComplete);
     AddAppSpawnHook(STAGE_PARENT_POST_FORK, HOOK_PRIO_HIGHEST, CloseFdArgs);
