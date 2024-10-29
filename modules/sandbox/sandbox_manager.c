@@ -643,6 +643,42 @@ static int AppendPackageNameGids(const AppSpawnSandboxCfg *sandbox, AppSpawningC
     return 0;
 }
 
+static int SetSandboxPermissionFlag(AppSpawnSandboxCfg *sandbox, AppSpawningCtx *property)
+{
+    int32_t index = 0;
+    if (sandbox->appFullMountEnable) {
+        index = GetPermissionIndexInQueue(&sandbox->permissionQueue, FILE_CROSS_APP_MODE);
+    } else {
+        index = GetPermissionIndexInQueue(&sandbox->permissionQueue, FILE_ACCESS_COMMON_DIR_MODE);
+    }
+
+    int32_t fileMgrIndex = GetPermissionIndexInQueue(&sandbox->permissionQueue, FILE_ACCESS_MANAGER_MODE);
+    int32_t userFileIndex = GetPermissionIndexInQueue(&sandbox->permissionQueue, READ_WRITE_USER_FILE_MODE);
+    int fileMgrRes = CheckAppPermissionFlagSet(property, (uint32_t)fileMgrIndex);
+    int userFileRes = CheckAppPermissionFlagSet(property, (uint32_t)userFileIndex);
+    //If both FILE_ACCESS_MANAGER_MODE and READ_WRITE_USER_FILE_MODE exist, the value is invalid.
+    if (fileMgrRes != 0 && userFileRes != 0) {
+        APPSPAWN_LOGE("invalid msg request.");
+        return -1;
+    }
+    // If FILE_ACCESS_MANAGER_MODE and READ_WRITE_USER_FILE_MODE do not exist,set the flag bit.
+    if (index > 0 && (fileMgrIndex > 0 && userFileIndex > 0) && (fileMgrRes == 0 && userFileRes == 0)) {
+        if (SetAppPermissionFlags(property, index) != 0) {
+            return -1;
+        }
+    }
+    return 0;
+}
+
+static int AppendGids(AppSpawnSandboxCfg *sandbox, AppSpawningCtx *property)
+{
+    int ret = AppendPermissionGid(sandbox, property);
+    APPSPAWN_CHECK(ret == 0, return ret, "Failed to add gid for %{public}s", GetProcessName(property));
+    ret = AppendPackageNameGids(sandbox, property);
+    APPSPAWN_CHECK(ret == 0, return ret, "Failed to add gid for %{public}s", GetProcessName(property));
+    return ret;
+}
+
 int SpawnPrepareSandboxCfg(AppSpawnMgr *content, AppSpawningCtx *property)
 {
     APPSPAWN_CHECK_ONLY_EXPER(content != NULL, return -1);
@@ -652,25 +688,13 @@ int SpawnPrepareSandboxCfg(AppSpawnMgr *content, AppSpawningCtx *property)
         EXT_DATA_SANDBOX;
     AppSpawnSandboxCfg *sandbox = GetAppSpawnSandbox(content, type);
     APPSPAWN_CHECK(sandbox != NULL, return -1, "Failed to get sandbox for %{public}s", GetProcessName(property));
-
-    int32_t index = 0;
-    if (sandbox->appFullMountEnable) {
-        index = GetPermissionIndexInQueue(&sandbox->permissionQueue, FILE_CROSS_APP_MODE);
-    } else {
-        index = GetPermissionIndexInQueue(&sandbox->permissionQueue, FILE_ACCESS_COMMON_DIR_MODE);
+    int ret = SetSandboxPermissionFlag(sandbox, property);
+    if (ret != 0) {
+        APPSPAWN_LOGW("set sandbox permission flag failed.");
+        return APPSPAWN_SANDBOX_ERROR_SET_PERMISSION_FLAG_FAIL;
     }
-
-    int32_t fileMgrIndex = GetPermissionIndexInQueue(&sandbox->permissionQueue, FILE_ACCESS_MANAGER_MODE);
-    if (index > 0 && (CheckAppMsgFlagsSet(property, (uint32_t)fileMgrIndex) == 0)) {
-        if (SetAppPermissionFlags(property, index) != 0) {
-            return -1;
-        }
-    }
-
-    int ret = AppendPermissionGid(sandbox, property);
     APPSPAWN_CHECK(ret == 0, return ret, "Failed to add gid for %{public}s", GetProcessName(property));
-    ret = AppendPackageNameGids(sandbox, property);
-    APPSPAWN_CHECK(ret == 0, return ret, "Failed to add gid for %{public}s", GetProcessName(property));
+    ret = AppendGids(sandbox, property);
     ret = StagedMountSystemConst(sandbox, property, IsNWebSpawnMode(content));
     APPSPAWN_CHECK(ret == 0, return ret, "Failed to mount system-const for %{public}s", GetProcessName(property));
     return 0;
