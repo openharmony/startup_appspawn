@@ -516,7 +516,7 @@ APPSPAWN_STATIC int PreLoadSandboxCfg(AppSpawnMgr *content)
     OH_ListAddTail(&content->extData, &sandbox->extData.node);
 
     // load app sandbox config
-    LoadAppSandboxConfig(sandbox, content->content.mode);
+    LoadAppSandboxConfig(sandbox, MODE_FOR_APP_SPAWN);
     sandbox->maxPermissionIndex = PermissionRenumber(&sandbox->permissionQueue);
 
     content->content.sandboxNsFlags = 0;
@@ -547,6 +547,7 @@ int SpawnBuildSandboxEnv(AppSpawnMgr *content, AppSpawningCtx *property)
     ExtDataType type = CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX_TYPE) ? EXT_DATA_ISOLATED_SANDBOX :
         EXT_DATA_SANDBOX;
     AppSpawnSandboxCfg *appSandbox = GetAppSpawnSandbox(content, type);
+    content->content.sandboxType = type;
     APPSPAWN_CHECK(appSandbox != NULL, return -1, "Failed to get sandbox for %{public}s", GetProcessName(property));
     // no sandbox
     if (CheckAppMsgFlagsSet(property, APP_FLAGS_NO_SANDBOX)) {
@@ -687,6 +688,7 @@ int SpawnPrepareSandboxCfg(AppSpawnMgr *content, AppSpawningCtx *property)
     ExtDataType type = CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX_TYPE) ? EXT_DATA_ISOLATED_SANDBOX :
         EXT_DATA_SANDBOX;
     AppSpawnSandboxCfg *sandbox = GetAppSpawnSandbox(content, type);
+    content->content.sandboxType = type;
     APPSPAWN_CHECK(sandbox != NULL, return -1, "Failed to get sandbox for %{public}s", GetProcessName(property));
     int ret = SetSandboxPermissionFlag(sandbox, property);
     if (ret != 0) {
@@ -706,11 +708,8 @@ APPSPAWN_STATIC int SandboxUnmountPath(const AppSpawnMgr *content, const AppSpaw
     APPSPAWN_CHECK_ONLY_EXPER(appInfo != NULL, return -1);
     AppSpawnSandboxCfg *sandbox = NULL;
     APPSPAWN_LOGV("Sandbox process %{public}s %{public}u exit", appInfo->name, appInfo->uid);
-    if (content->content.mode == MODE_FOR_NATIVE_SPAWN) {
-        sandbox = GetAppSpawnSandbox(content, EXT_DATA_ISOLATED_SANDBOX);
-    } else {
-        sandbox = GetAppSpawnSandbox(content, EXT_DATA_SANDBOX);
-    }
+    sandbox = GetAppSpawnSandbox(content, content->content.sandboxType);
+
     return UnmountDepPaths(sandbox, appInfo->uid);
 }
 
