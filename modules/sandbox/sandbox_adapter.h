@@ -22,7 +22,7 @@
 extern "C" {
 #endif
 
-void MakeAtomicServiceDir(const SandboxContext *context, const char *path);
+void MakeAtomicServiceDir(const SandboxContext *context, const char *originPath, const char *varPackageName);
 
 #ifdef __cplusplus
 }
