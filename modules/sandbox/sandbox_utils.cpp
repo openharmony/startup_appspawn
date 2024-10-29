@@ -134,6 +134,7 @@ namespace {
     const std::string FILE_ACCESS_COMMON_DIR_MODE = "ohos.permission.FILE_ACCESS_COMMON_DIR";
     const std::string ACCESS_DLP_FILE_MODE = "ohos.permission.ACCESS_DLP_FILE";
     const std::string FILE_ACCESS_MANAGER_MODE = "ohos.permission.FILE_ACCESS_MANAGER";
+    const std::string READ_WRITE_USER_FILE_MODE = "ohos.permission.READ_WRITE_USER_FILE";
     const std::string ARK_WEB_PERSIST_PACKAGE_NAME = "persist.arkwebcore.package_name";
 
     const std::string& getArkWebPackageName()
@@ -1585,13 +1586,19 @@ int32_t SandboxUtils::SetPermissionWithParam(AppSpawningCtx *appProperty)
     } else if (appFullMountStatus == FILE_ACCESS_COMMON_DIR_STATUS) {
         index = GetPermissionIndex(nullptr, FILE_ACCESS_COMMON_DIR_MODE.c_str());
     }
-
+    int32_t userFileIndex = GetPermissionIndex(nullptr, READ_WRITE_USER_FILE_MODE.c_str());
     int32_t fileMgrIndex = GetPermissionIndex(nullptr, FILE_ACCESS_MANAGER_MODE.c_str());
-    if (index > 0 && fileMgrIndex > 0 &&
-        (CheckAppPermissionFlagSet(appProperty, static_cast<uint32_t>(fileMgrIndex)) == 0)) {
+    if ((CheckAppPermissionFlagSet(appProperty, static_cast<uint32_t>(userFileIndex)) != 0) &&
+        (CheckAppPermissionFlagSet(appProperty, static_cast<uint32_t>(fileMgrIndex)) != 0)) {
+        APPSPAWN_LOGE("invalid msg request.");
+        return -1;
+    }
+    if (index > 0 && (fileMgrIndex > 0 && userFileIndex > 0) &&
+        (CheckAppPermissionFlagSet(appProperty, static_cast<uint32_t>(userFileIndex)) == 0) &&
+        (CheckAppPermissionFlagSet(appProperty, static_cast<uint32_t>(fileMgrIndex))== 0)) {
         return SetAppPermissionFlags(appProperty, index);
     }
-    return -1;
+    return 0;
 }
 
 #ifdef APPSPAWN_MOUNT_TMPSHM
@@ -1631,6 +1638,7 @@ int32_t SandboxUtils::SetAppSandboxProperty(AppSpawningCtx *appProperty, uint32_
 
     if (SetPermissionWithParam(appProperty) != 0) {
         APPSPAWN_LOGW("Set app permission flag fail.");
+        return -1;
     }
 
     // check app sandbox switch
