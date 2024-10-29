@@ -383,7 +383,8 @@ APPSPAWN_STATIC const char *GetRealSrcPath(const SandboxContext *context, const 
         return NULL;
     }
     if (hasPackageName && CheckSpawningMsgFlagSet(context, APP_FLAGS_ATOMIC_SERVICE)) {
-        MakeAtomicServiceDir(context, originPath);
+        const char *varPackageName = strrchr(originPath, '/') ? strrchr(originPath, '/') + 1 : originPath;
+        MakeAtomicServiceDir(context, originPath, varPackageName);
     }
     return originPath;
 }

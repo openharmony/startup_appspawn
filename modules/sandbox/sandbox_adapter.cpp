@@ -20,22 +20,30 @@
 #include "hap_restorecon.h"
 #endif
 
-void MakeAtomicServiceDir(const SandboxContext *context, const char *path)
+using namespace std;
+
+void MakeAtomicServiceDir(const SandboxContext *context, const char *originPath, const char *varPackageName)
 {
-    APPSPAWN_CHECK_ONLY_EXPER(context != NULL && path != NULL, return);
-    if (access(path, F_OK) == 0) {
-        APPSPAWN_LOGV("path %{public}s already exist, no need to recreate", path);
+    APPSPAWN_CHECK_ONLY_EXPER(context != NULL && originPath != NULL && varPackageName != NULL, return);
+    AppSpawnMsgDacInfo *dacInfo = (AppSpawnMsgDacInfo *)GetSpawningMsgInfo(context, TLV_DAC_INFO);
+    APPSPAWN_CHECK(dacInfo != NULL, return, "No dac info for %{public}s", context->bundleName);
+    string path(originPath);
+    if (path.find("/mnt/share") != string::npos) {
+        path = "/data/service/el2/" + to_string(dacInfo->uid / UID_BASE) + "/share/" + string(varPackageName);
+    }
+    if (access(path.c_str(), F_OK) == 0) {
+        APPSPAWN_LOGV("path %{public}s already exist, no need to recreate", path.c_str());
         return;
     }
-    int ret = mkdir(path, S_IRWXU);
-    APPSPAWN_CHECK(ret == 0, return, "mkdir %{public}s failed, errno %{public}d", path, errno);
+    int ret = mkdir(path.c_str(), S_IRWXU);
+    APPSPAWN_CHECK(ret == 0, return, "mkdir %{public}s failed, errno %{public}d", path.c_str(), errno);
 
-    if (strstr(path, "/database") != NULL) {
-        ret = chmod(path, S_IRWXU | S_IRWXG | S_ISGID);
-    } else if (strstr(path, "/log") != NULL) {
-        ret = chmod(path, S_IRWXU | S_IRWXG);
+    if (path.find("/database") != string::npos || path.find("/data/service/el2") != string::npos) {
+        ret = chmod(path.c_str(), S_IRWXU | S_IRWXG | S_ISGID);
+    } else if (path.find("/log") != string::npos) {
+        ret = chmod(path.c_str(), S_IRWXU | S_IRWXG);
     }
-    APPSPAWN_CHECK(ret == 0, return, "chmod %{public}s failed, errno %{public}d", path, errno);
+    APPSPAWN_CHECK(ret == 0, return, "chmod %{public}s failed, errno %{public}d", path.c_str(), errno);
 
 #ifdef WITH_SELINUX
     AppSpawnMsgDomainInfo *msgDomainInfo = (AppSpawnMsgDomainInfo *)GetSpawningMsgInfo(context, TLV_DOMAIN_INFO);
@@ -49,20 +57,19 @@ void MakeAtomicServiceDir(const SandboxContext *context, const char *path)
     if (CheckAppSpawnMsgFlag(context->message, TLV_MSG_FLAGS, APP_FLAGS_DEBUGGABLE)) {
         hapFileInfo.hapFlags |= SELINUX_HAP_DEBUGGABLE;
     }
-    if ((strstr(path, "/base") != NULL) || (strstr(path, "/database") != NULL)) {
+    if ((path.find("/base") != string::npos) || (path.find("/database") != string::npos)) {
         ret = hapContext.HapFileRestorecon(hapFileInfo);
         APPSPAWN_CHECK(ret == 0, return, "set dir %{public}s selinuxLabel failed, apl %{public}s, ret %{public}d",
-            path, hapFileInfo.apl.c_str(), ret);
+            path.c_str(), hapFileInfo.apl.c_str(), ret);
     }
 #endif
-    AppSpawnMsgDacInfo *dacInfo = (AppSpawnMsgDacInfo *)GetSpawningMsgInfo(context, TLV_DAC_INFO);
-    APPSPAWN_CHECK(dacInfo != NULL, return, "No dac info for %{public}s", context->bundleName);
-    if (strstr(path, "/base") != NULL) {
-        ret = chown(path, dacInfo->uid, dacInfo->gid);
-    } else if (strstr(path, "/database") != NULL) {
-        ret = chown(path, dacInfo->uid, DecodeGid("ddms"));
-    } else if (strstr(path, "/log") != NULL) {
-        ret = chown(path, dacInfo->uid, DecodeGid("log"));
+    if (path.find("/base") != string::npos || path.find("/data/service/el2") != string::npos) {
+        ret = chown(path.c_str(), dacInfo->uid, dacInfo->gid);
+    } else if (path.find("/database") != string::npos) {
+        ret = chown(path.c_str(), dacInfo->uid, DecodeGid("ddms"));
+    } else if (path.find("/log") != string::npos) {
+        ret = chown(path.c_str(), dacInfo->uid, DecodeGid("log"));
     }
-    APPSPAWN_CHECK(ret == 0, return, "chown %{public}s failed, errno %{public}d", path, errno);
+    APPSPAWN_CHECK(ret == 0, return, "chown %{public}s failed, errno %{public}d", path.c_str(), errno);
+    return;
 }
