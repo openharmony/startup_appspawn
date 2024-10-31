@@ -112,6 +112,11 @@ APPSPAWN_STATIC int RunChildProcessor(AppSpawnContent *content, AppSpawnClient *
     Dl_namespace dlns;
     dlns_init(&dlns, "nweb_ns");
     dlns_create(&dlns, libPath.c_str());
+
+    Dl_namespace ndk;
+    dlns_get("ndk", &ndk);
+    dlns_inherit(&dlns, &ndk, "allow_all_shared_libs");
+    
     // preload libweb_engine
     webEngineHandle =
         dlopen_ns(&dlns, engineLibName.c_str(), RTLD_NOW | RTLD_GLOBAL);
