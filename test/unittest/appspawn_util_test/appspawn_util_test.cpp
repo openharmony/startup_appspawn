@@ -21,7 +21,7 @@ using namespace testing;
 using namespace testing::ext;
 
 namespace OHOS {
-class AppSpawnAppMgrTest : public testing::Test {
+class AppSpawnUtilTest : public testing::Test {
 public:
     const char* testDir = "testDir"; // 测试目录
     const char* nestedDir = "testDir/nestedDir"; // 嵌套目录
@@ -627,6 +627,7 @@ HWTEST_F(AppSpawnSandboxCoverageTest, DumpCurrentDir_05, TestSize.Level0)
     // 检查没有输出
     rmdir("empty_dir");
 }
+<<<<<<< Updated upstream
 
 HWTEST_F(AppSpawnSandboxCoverageTest, DumpCurrentDir_06, TestSize.Level0)
 {
@@ -654,4 +655,90 @@ HWTEST_F(AppSpawnSandboxCoverageTest, DumpCurrentDir_7, TestSize.Level0)
     EXPECT_NE(strstr(buffer, "Current path test_dir/sub_dir"), nullptr);
 }
 
+=======
+<<<<<<< Updated upstream
+=======
+
+// 测试用例
+HWTEST_F(AppSpawnSandboxCoverageTest, IsDeveloperModeOpen_01, TestSize.Level0)
+{
+    mockValue = "true";
+    mockReturnValue = 1;  // 模拟成功
+    EXPECT_EQ(IsDeveloperModeOpen(), 1);  // 期待返回 1
+}
+
+HWTEST_F(AppSpawnSandboxCoverageTest, IsDeveloperModeOpen_02, TestSize.Level0)
+{
+    mockValue = "false";
+    mockReturnValue = 1;  // 模拟成功
+    EXPECT_EQ(IsDeveloperModeOpen(), 0);  // 期待返回 0
+}
+
+HWTEST_F(AppSpawnSandboxCoverageTest, IsDeveloperModeOpen_03, TestSize.Level0)
+{
+    mockValue = "true";
+    mockReturnValue = -1;  // 模拟失败
+    EXPECT_EQ(IsDeveloperModeOpen(), 0);  // 期待返回 0
+}
+
+HWTEST_F(AppSpawnSandboxCoverageTest, IsDeveloperModeOpen_04, TestSize.Level0)
+{
+    mockValue = "false";
+    mockReturnValue = 0;  // 模拟未找到参数
+    EXPECT_EQ(IsDeveloperModeOpen(), 0);  // 期待返回 0
+}
+
+HWTEST_F(AppSpawnSandboxCoverageTest, IsDeveloperModeOpen_05, TestSize.Level0)
+{
+    mockValue = nullptr;  // 模拟未设置值
+    mockReturnValue = 0;  // 模拟未找到参数
+    EXPECT_EQ(IsDeveloperModeOpen(), 0);  // 期待返回 0
+}
+
+// 测试用例
+HWTEST_F(AppSpawnSandboxCoverageTest, GetSpawnTimeout_01, TestSize.Level0)
+{
+    mockValue = "30";  // 设置模拟返回值
+    mockReturnValue = 1;  // 模拟成功返回
+    EXPECT_EQ(GetSpawnTimeout(10), 30);  // 期待返回 30
+}
+
+HWTEST_F(AppSpawnSandboxCoverageTest, GetSpawnTimeout_02, TestSize.Level0)
+{
+    mockValue = "0";  // 设置模拟返回值为 "0"
+    mockReturnValue = 1;  // 模拟成功返回
+    EXPECT_EQ(GetSpawnTimeout(10), 10);  // 期待返回默认值 10
+}
+
+HWTEST_F(AppSpawnSandboxCoverageTest, GetSpawnTimeout_03, TestSize.Level0)
+{
+    mockValue = nullptr;  // 模拟未设置值
+    mockReturnValue = 0;  // 模拟未找到参数
+    EXPECT_EQ(GetSpawnTimeout(10), 10);  // 期待返回默认值 10
+}
+
+HWTEST_F(AppSpawnSandboxCoverageTest, GetSpawnTimeout_04, TestSize.Level0)
+{
+    mockValue = "abc";  // 设置模拟返回值为无效的数字
+    mockReturnValue = 1;  // 模拟成功返回
+    EXPECT_EQ(GetSpawnTimeout(10), 10);  // 期待返回默认值 10
+}
+
+HWTEST_F(AppSpawnSandboxCoverageTest, GetSpawnTimeout_05, TestSize.Level0)
+{
+    mockValue = "5";  // 设置模拟返回值小于默认值
+    mockReturnValue = 1;  // 模拟成功返回
+    EXPECT_EQ(GetSpawnTimeout(10), 10);  // 期待返回默认值 10
+}
+
+HWTEST_F(AppSpawnSandboxCoverageTest, GetSpawnTimeout_06, TestSize.Level0)
+{
+    mockValue = "20";  // 设置模拟返回值大于默认值
+    mockReturnValue = 1;  // 模拟成功返回
+    EXPECT_EQ(GetSpawnTimeout(10), 20);  // 期待返回 20
+}
+
+
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
 }  // namespace OHOS
