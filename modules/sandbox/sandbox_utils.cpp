@@ -39,6 +39,7 @@
 #include "dlp_fuse_fd.h"
 #endif
 #include "init_param.h"
+#include "init_utils.h"
 #include "parameter.h"
 #include "parameters.h"
 #include "securec.h"
@@ -57,8 +58,6 @@ namespace OHOS {
 namespace AppSpawn {
 namespace {
     constexpr int32_t OPTIONS_MAX_LEN = 256;
-    constexpr int32_t APP_LOG_DIR_GID = 1007;
-    constexpr int32_t APP_DATABASE_DIR_GID = 3012;
     constexpr int32_t FILE_ACCESS_COMMON_DIR_STATUS = 0;
     constexpr int32_t FILE_CROSS_APP_STATUS = 1;
     constexpr static mode_t FILE_MODE = 0711;
@@ -375,16 +374,22 @@ unsigned long SandboxUtils::GetMountFlagsFromConfig(const std::vector<std::strin
     return mountFlags;
 }
 
-static void MakeAtomicServiceDir(const AppSpawningCtx *appProperty, std::string path)
+static void MakeAtomicServiceDir(const AppSpawningCtx *appProperty, std::string path, std::string variablePackageName)
 {
+    AppSpawnMsgDacInfo *dacInfo = reinterpret_cast<AppSpawnMsgDacInfo *>(GetAppProperty(appProperty, TLV_DAC_INFO));
+    APPSPAWN_CHECK(dacInfo != NULL, return, "No dac info in msg app property");
+    if (path.find("/mnt/share") != std::string::npos) {
+        path = "/data/service/el2/" + std::to_string(dacInfo->uid / UID_BASE) + "/share/" + variablePackageName;
+    }
     struct stat st = {};
     if (stat(path.c_str(), &st) == 0 && S_ISDIR(st.st_mode)) {
         return;
     }
+
     int ret = mkdir(path.c_str(), S_IRWXU);
     APPSPAWN_CHECK(ret == 0, return, "mkdir %{public}s failed, errno %{public}d", path.c_str(), errno);
 
-    if (path.find("/database") != std::string::npos) {
+    if (path.find("/database") != std::string::npos || path.find("/data/service/el2") != std::string::npos) {
         ret = chmod(path.c_str(), S_IRWXU | S_IRWXG | S_ISGID);
     } else if (path.find("/log") != std::string::npos) {
         ret = chmod(path.c_str(), S_IRWXU | S_IRWXG);
@@ -399,7 +404,7 @@ static void MakeAtomicServiceDir(const AppSpawningCtx *appProperty, std::string 
     HapFileInfo hapFileInfo;
     hapFileInfo.pathNameOrig.push_back(path);
     hapFileInfo.apl = msgDomainInfo->apl;
-    hapFileInfo.packageName = GetProcessName(appProperty);
+    hapFileInfo.packageName = GetBundleName(appProperty);
     hapFileInfo.hapFlags = msgDomainInfo->hapFlags;
     if (CheckAppMsgFlagsSet(appProperty, APP_FLAGS_DEBUGGABLE)) {
         hapFileInfo.hapFlags |= SELINUX_HAP_DEBUGGABLE;
@@ -410,14 +415,12 @@ static void MakeAtomicServiceDir(const AppSpawningCtx *appProperty, std::string 
             path.c_str(), hapFileInfo.apl.c_str(), ret);
     }
 #endif
-    AppSpawnMsgDacInfo *dacInfo = reinterpret_cast<AppSpawnMsgDacInfo *>(GetAppProperty(appProperty, TLV_DAC_INFO));
-    APPSPAWN_CHECK(dacInfo != NULL, return, "No dac info in msg app property");
-    if (path.find("/base") != std::string::npos) {
+    if (path.find("/base") != std::string::npos || path.find("/data/service/el2") != std::string::npos) {
         ret = chown(path.c_str(), dacInfo->uid, dacInfo->gid);
     } else if (path.find("/database") != std::string::npos) {
-        ret = chown(path.c_str(), dacInfo->uid, APP_DATABASE_DIR_GID);
+        ret = chown(path.c_str(), dacInfo->uid, DecodeGid("ddms"));
     } else if (path.find("/log") != std::string::npos) {
-        ret = chown(path.c_str(), dacInfo->uid, APP_LOG_DIR_GID);
+        ret = chown(path.c_str(), dacInfo->uid, DecodeGid("log"));
     }
     APPSPAWN_CHECK(ret == 0, return, "chown %{public}s failed, errno %{public}d", path.c_str(), errno);
     return;
@@ -463,7 +466,7 @@ static std::string ReplaceVariablePackageName(const AppSpawningCtx *appProperty,
             variablePackageName << "+auid-" << accountId << "+" << bundleInfo->bundleName;
             std::string atomicServicePath = path;
             atomicServicePath = replace_all(atomicServicePath, g_variablePackageName, variablePackageName.str());
-            MakeAtomicServiceDir(appProperty, atomicServicePath);
+            MakeAtomicServiceDir(appProperty, atomicServicePath, variablePackageName.str());
             break;
         }
         default:
