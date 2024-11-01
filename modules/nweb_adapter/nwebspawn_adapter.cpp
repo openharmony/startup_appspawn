@@ -114,13 +114,11 @@ APPSPAWN_STATIC int RunChildProcessor(AppSpawnContent *content, AppSpawnClient *
     dlns_create(&dlns, libPath.c_str());
     Dl_namespace ndkns;
     dlns_get("ndkns", &ndkns);
-    dlns_inherit(&dlns, &ndkns, "allow_all_shared_libs");    
+    dlns_inherit(&dlns, &ndkns, "allow_all_shared_libs");
     // preload libweb_engine
-    webEngineHandle =
-        dlopen_ns(&dlns, engineLibName.c_str(), RTLD_NOW | RTLD_GLOBAL);
+    webEngineHandle = dlopen_ns(&dlns, engineLibName.c_str(), RTLD_NOW | RTLD_GLOBAL);
     // load libnweb_render
-    nwebRenderHandle =
-        dlopen_ns(&dlns, renderLibName.c_str(), RTLD_NOW | RTLD_GLOBAL);
+    nwebRenderHandle = dlopen_ns(&dlns, renderLibName.c_str(), RTLD_NOW | RTLD_GLOBAL);
 #else
     // preload libweb_engine
     const std::string engineLibPath = libPath + "/" + engineLibName;
