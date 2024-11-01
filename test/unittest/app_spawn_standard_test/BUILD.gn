@@ -70,6 +70,7 @@ ohos_unittest("AppSpawn_ut") {
   ]
   sources = [
     "${appspawn_path}/common/appspawn_server.c",
+    "${appspawn_path}/common/appspawn_trace.cpp",
     "${appspawn_path}/modules/modulemgr/appspawn_modulemgr.c",
     "${appspawn_path}/standard/appspawn_appmgr.c",
     "${appspawn_path}/standard/appspawn_kickdog.c",
