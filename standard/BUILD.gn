@@ -38,6 +38,7 @@ config("appspawn_server_config") {
 ohos_executable("appspawn") {
   sources = [
     "${appspawn_path}/common/appspawn_server.c",
+    "${appspawn_path}/common/appspawn_trace.cpp",
     "${appspawn_path}/modules/common/appspawn_dfx_dump.cpp",
     "${appspawn_path}/modules/modulemgr/appspawn_modulemgr.c",
     "${appspawn_path}/standard/appspawn_appmgr.c",
@@ -68,6 +69,7 @@ ohos_executable("appspawn") {
     "c_utils:utils",
     "config_policy:configpolicy_util",
     "hilog:libhilog",
+    "hitrace:hitrace_meter",
     "init:libbegetutil",
   ]
   if (enable_appspawn_dump_catcher) {
@@ -147,6 +149,7 @@ ohos_executable("pid_ns_init") {
 ohos_executable("cjappspawn") {
   sources = [
     "${appspawn_path}/common/appspawn_server.c",
+    "${appspawn_path}/common/appspawn_trace.cpp",
     "${appspawn_path}/modules/modulemgr/appspawn_modulemgr.c",
     "${appspawn_path}/standard/appspawn_appmgr.c",
     "${appspawn_path}/standard/appspawn_kickdog.c",
@@ -173,6 +176,7 @@ ohos_executable("cjappspawn") {
     "c_utils:utils",
     "config_policy:configpolicy_util",
     "hilog:libhilog",
+    "hitrace:hitrace_meter",
     "init:libbegetutil",
   ]
   if (appspawn_report_event) {
@@ -211,6 +215,7 @@ ohos_executable("cjappspawn") {
 ohos_executable("nativespawn") {
   sources = [
     "${appspawn_path}/common/appspawn_server.c",
+    "${appspawn_path}/common/appspawn_trace.cpp",
     "${appspawn_path}/modules/modulemgr/appspawn_modulemgr.c",
     "${appspawn_path}/standard/appspawn_appmgr.c",
     "${appspawn_path}/standard/appspawn_kickdog.c",
