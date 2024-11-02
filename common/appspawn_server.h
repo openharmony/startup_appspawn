@@ -62,9 +62,6 @@ typedef struct AppSpawnContent {
     uint32_t sandboxNsFlags;
     int wdgOpened;
     bool isLinux;
-#ifdef USE_ENCAPS
-    int fdEncaps;
-#endif
     int sandboxType;
     RunMode mode;
 #ifndef OHOS_LITE

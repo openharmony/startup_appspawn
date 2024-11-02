@@ -655,10 +655,6 @@ HWTEST_F(AppSpawnSandboxCoverageTest, DumpCurrentDir_7, TestSize.Level0)
     EXPECT_NE(strstr(buffer, "Current path test_dir/sub_dir"), nullptr);
 }
 
-=======
-<<<<<<< Updated upstream
-=======
-
 // 测试用例
 HWTEST_F(AppSpawnSandboxCoverageTest, IsDeveloperModeOpen_01, TestSize.Level0)
 {
@@ -737,8 +733,4 @@ HWTEST_F(AppSpawnSandboxCoverageTest, GetSpawnTimeout_06, TestSize.Level0)
     mockReturnValue = 1;  // 模拟成功返回
     EXPECT_EQ(GetSpawnTimeout(10), 20);  // 期待返回 20
 }
-
-
->>>>>>> Stashed changes
->>>>>>> Stashed changes
 }  // namespace OHOS

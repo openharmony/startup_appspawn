@@ -183,6 +183,12 @@ APPSPAWN_INLINE int IsSpawnServer(const AppSpawnMgr *content)
     return (content != NULL) && (content->servicePid == getpid());
 }
 
+APPSPAWN_INLINE int IsAppSpawnMode(const AppSpawnMgr *content)
+{
+    return (content != NULL) &&
+        (content->content.mode == MODE_FOR_APP_SPAWN || content->content.mode == MODE_FOR_APP_COLD_RUN);
+}
+
 APPSPAWN_INLINE int IsNWebSpawnMode(const AppSpawnMgr *content)
 {
     return (content != NULL) &&
