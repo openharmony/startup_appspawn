@@ -51,6 +51,7 @@ AppSpawnMgr *CreateAppSpawnMgr(int mode)
     appMgr->content.mode = mode;
     appMgr->content.sandboxNsFlags = 0;
     appMgr->content.wdgOpened = 0;
+    appMgr->content.isLinux = false;
     appMgr->servicePid = getpid();
     appMgr->server = NULL;
     appMgr->sigHandler = NULL;
