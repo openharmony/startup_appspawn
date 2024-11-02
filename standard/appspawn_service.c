@@ -46,9 +46,6 @@
 #ifdef APPSPAWN_HISYSEVENT
 #include "appspawn_hisysevent.h"
 #endif
-#ifdef USE_ENCAPS
-#include <sys/ioctl.h>
-#endif
 #define PARAM_BUFFER_SIZE 10
 #define PATH_SIZE 256
 #define FD_PATH_SIZE 128
@@ -63,26 +60,6 @@ static void ProcessChildResponse(const WatcherHandle taskHandle, int fd, uint32_
 static void WaitChildDied(pid_t pid);
 static void OnReceiveRequest(const TaskHandle taskHandle, const uint8_t *buffer, uint32_t buffLen);
 static void ProcessRecvMsg(AppSpawnConnection *connection, AppSpawnMsgNode *message);
-
-#ifdef USE_ENCAPS
-static int OpenDevEncaps(void)
-{
-    int fd = open("/dev/encaps", O_RDWR);
-    if (fd < 0) {
-        APPSPAWN_LOGE("AppSpawnChild SetEncapsFlag open failed");
-        return -1;
-    }
-    return fd;
-}
-
-static void CloseDevEncaps(int fd)
-{
-    if (fd < 0) {
-        return;
-    }
-    close(fd);
-}
-#endif
 
 // FD_CLOEXEC
 static inline void SetFdCtrl(int fd, int opt)
@@ -1056,9 +1033,6 @@ void AppSpawnDestroyContent(AppSpawnContent *content)
         close(content->parentToChildFd[1]);
     }
     AppSpawnMgr *appSpawnContent = (AppSpawnMgr *)content;
-#ifdef USE_ENCAPS
-    CloseDevEncaps(appSpawnContent->content.fdEncaps);
-#endif
     if (appSpawnContent->sigHandler != NULL && appSpawnContent->servicePid == getpid()) {
         LE_CloseSignalTask(LE_GetDefaultLoop(), appSpawnContent->sigHandler);
     }
@@ -1208,9 +1182,6 @@ static void AppSpawnRun(AppSpawnContent *content, int argc, char *const argv[])
         (void)LE_AddSignal(LE_GetDefaultLoop(), appSpawnContent->sigHandler, SIGTERM);
     }
 
-#ifdef USE_ENCAPS
-    appSpawnContent->content.fdEncaps = OpenDevEncaps();
-#endif
     LE_RunLoop(LE_GetDefaultLoop());
     APPSPAWN_LOGI("AppSpawnRun exit mode: %{public}d ", content->mode);
 
