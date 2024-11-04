@@ -143,7 +143,6 @@ void InitCommonEnv(void);
 int ConvertEnvValue(const char *srcEnv, char *dstEnv, int len);
 
 int EnableNewNetNamespace(void);
-void EnableCache(void);
 
 #ifndef APP_FILE_NAME
 #define APP_FILE_NAME   (strrchr((__FILE__), '/') ? strrchr((__FILE__), '/') + 1 : (__FILE__))
