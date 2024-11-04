@@ -29,7 +29,6 @@
 
 #include "appspawn_hook.h"
 #include "appspawn_manager.h"
-#include "appspawn_utils.h"
 
 #ifdef WITH_SECCOMP
 #include "seccomp_policy.h"
@@ -95,11 +94,12 @@ APPSPAWN_STATIC std::string GetArkWebRenderLibName()
 
 APPSPAWN_STATIC int RunChildProcessor(AppSpawnContent *content, AppSpawnClient *client)
 {
-    EnableCache();
     uint32_t len = 0;
     char *renderCmd = reinterpret_cast<char *>(GetAppPropertyExt(
         reinterpret_cast<AppSpawningCtx *>(client), MSG_EXT_NAME_RENDER_CMD, &len));
-    APPSPAWN_CHECK_ONLY_EXPER(renderCmd != nullptr, return -1);
+    if (renderCmd == nullptr) {
+        return -1;
+    }
     std::string renderStr(renderCmd);
     void *webEngineHandle = nullptr;
     void *nwebRenderHandle = nullptr;

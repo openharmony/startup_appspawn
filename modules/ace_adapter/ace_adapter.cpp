@@ -240,7 +240,6 @@ APPSPAWN_STATIC int RunChildByRenderCmd(const AppSpawnMgr *content, const AppSpa
 
 static int RunChildProcessor(AppSpawnContent *content, AppSpawnClient *client)
 {
-    EnableCache();
     APPSPAWN_CHECK(client != NULL && content != NULL, return -1, "Invalid client");
     AppSpawningCtx *property = reinterpret_cast<AppSpawningCtx *>(client);
     int ret = 0;
