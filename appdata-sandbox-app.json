@@ -159,6 +159,9 @@
             }, {
                 "src-path" : "/mnt/hmdfs/<currentUserId>/cloud/data/<PackageName>",
                 "sandbox-path" : "/data/storage/el2/cloud"
+            }, {
+                "src-path" : "/mnt/data/<currentUserId>/media_fuse",
+                "sandbox-path" : "/data/storage/el2/media"
             }],
             "symbol-links" : [{
                 "target-name" : "/mnt/nweb/tmp",
