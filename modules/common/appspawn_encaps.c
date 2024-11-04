@@ -184,7 +184,7 @@ static int SpawnSetJITPermissions(AppSpawnMgr *content, AppSpawningCtx *property
     return ret;
 }
 
-static int AddMembersToEncaps(AppSpawnMgr *content, AppSpawningCtx *property, CJSON *encaps)
+static int AddMembersToEncaps(AppSpawnMgr *content, AppSpawningCtx *property, cJSON *encaps)
 {
     uint32_t encapsPermissionCount = 0;
     // need set ohos.encaps.count to encaps firstly
