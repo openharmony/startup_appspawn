@@ -128,6 +128,8 @@ static inline void DumpStatus(const char *appName, pid_t pid, int status)
 static void HandleDiedPid(pid_t pid, uid_t uid, int status)
 {
     AppSpawnContent *content = GetAppSpawnContent();
+    APPSPAWN_CHECK(content != NULL, return, "Invalid content");
+
     if (pid == content->reservedPid) {
         APPSPAWN_LOGW("HandleDiedPid with reservedPid %{public}d", pid);
         content->reservedPid = 0;
@@ -940,7 +942,7 @@ static int ProcessChildFdCheck(int fd, AppSpawningCtx *property, int *pResult)
         return -1;
     }
     *pResult = result;
-    
+
     return 0;
 }
 
@@ -1510,7 +1512,7 @@ APPSPAWN_STATIC int AppspawnDevicedebugDeal(const char* op, int pid, cJSON *args
     if (strcmp(op, "kill") == 0) {
         return AppspawpnDevicedebugKill(pid, args);
     }
-    
+
     APPSPAWN_LOGE("appspawn devicedebug op:%{public}s invaild", op);
 
     return -1;
