@@ -74,15 +74,12 @@
         "app.ability.contextconstant",
         "app.ability.contextConstant_napi",
         "app.ability.UIExtensionAbility",
-        "arkui.componentutils",
-        "arkui.modifier",
         "data.dataSharePredicates",
         "hiappevent",
         "hiviewdfx.hiappevent",
         "resourceManager",
         "settings",
         "multimodalInput.inputDevice",
-        "util.json",
-        "arkui.advanced.SubHeader"
+        "util.json"
     ]
 }
