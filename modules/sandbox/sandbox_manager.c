@@ -495,7 +495,7 @@ APPSPAWN_STATIC int PreLoadIsoLatedSandboxCfg(AppSpawnMgr *content)
     APPSPAWN_CHECK_ONLY_EXPER(sandbox != NULL, return APPSPAWN_SYSTEM_ERROR);
     OH_ListAddTail(&content->extData, &sandbox->extData.node);
 
-    // load app sandbox config
+    // load isolated sandbox config
     LoadAppSandboxConfig(sandbox, MODE_FOR_NATIVE_SPAWN);
     sandbox->maxPermissionIndex = PermissionRenumber(&sandbox->permissionQueue);
 
@@ -515,8 +515,12 @@ APPSPAWN_STATIC int PreLoadSandboxCfg(AppSpawnMgr *content)
     APPSPAWN_CHECK_ONLY_EXPER(sandbox != NULL, return APPSPAWN_SYSTEM_ERROR);
     OH_ListAddTail(&content->extData, &sandbox->extData.node);
 
-    // load app sandbox config
-    LoadAppSandboxConfig(sandbox, MODE_FOR_APP_SPAWN);
+    // load app/nweb sandbox config
+    if (IsNWebSpawnMode(content)) {
+        LoadAppSandboxConfig(sandbox, MODE_FOR_NWEB_SPAWN);
+    } else {
+        LoadAppSandboxConfig(sandbox, MODE_FOR_APP_SPAWN);
+    }
     sandbox->maxPermissionIndex = PermissionRenumber(&sandbox->permissionQueue);
 
     content->content.sandboxNsFlags = 0;
