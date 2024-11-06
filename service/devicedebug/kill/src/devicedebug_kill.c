@@ -43,6 +43,7 @@ APPSPAWN_STATIC char* DeviceDebugJsonStringGeneral(int pid, const char *op, cJSO
 {
     cJSON *root = cJSON_CreateObject();
     if (root == NULL) {
+        cJSON_Delete(args);
         DEVICEDEBUG_LOGE("devicedebug json write create root object unsuccess");
         return NULL;
     }
@@ -58,20 +59,6 @@ APPSPAWN_STATIC char* DeviceDebugJsonStringGeneral(int pid, const char *op, cJSO
 
 APPSPAWN_STATIC int DeviceDebugKill(int pid, int signal)
 {
-    AppSpawnClientHandle clientHandle;
-    int ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
-    if (ret != 0) {
-        DEVICEDEBUG_LOGE("devicedebug appspawn client init unsuccess, ret=%{public}d", ret);
-        return ret;
-    }
-
-    AppSpawnReqMsgHandle reqHandle;
-    ret = AppSpawnReqMsgCreate(MSG_DEVICE_DEBUG, "devicedebug", &reqHandle);
-    if (ret != 0) {
-        DEVICEDEBUG_LOGE("devicedebug appspawn message create unsuccess, ret=%{public}d", ret);
-        return ret;
-    }
-
     cJSON *args = cJSON_CreateObject();
     if (args == NULL) {
         DEVICEDEBUG_LOGE("devicedebug json write create args object unsuccess");
@@ -80,20 +67,39 @@ APPSPAWN_STATIC int DeviceDebugKill(int pid, int signal)
     cJSON_AddNumberToObject(args, "signal", signal);
     char *jsonString = DeviceDebugJsonStringGeneral(pid, "kill", args);
     if (jsonString == NULL) {
-        cJSON_Delete(args);
         return DEVICEDEBUG_ERRNO_JSON_CREATED_FAILED;
+    }
+
+    AppSpawnReqMsgHandle reqHandle;
+    int ret = AppSpawnReqMsgCreate(MSG_DEVICE_DEBUG, "devicedebug", &reqHandle);
+    if (ret != 0) {
+        free(jsonString);
+        DEVICEDEBUG_LOGE("devicedebug appspawn message create unsuccess, ret=%{public}d", ret);
+        return ret;
     }
 
     ret = AppSpawnReqMsgAddExtInfo(reqHandle, "devicedebug", (uint8_t *)jsonString, strlen(jsonString) + 1);
     if (ret != 0) {
         DEVICEDEBUG_LOGE("devicedebug appspawn message add devicedebug[%{public}s] unsuccess, ret=%{public}d",
             jsonString, ret);
+        free(jsonString);
+        AppSpawnReqMsgFree(reqHandle);
+        return ret;
+    }
+
+    AppSpawnClientHandle clientHandle;
+    ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+    if (ret != 0) {
+        free(jsonString);
+        AppSpawnReqMsgFree(reqHandle);
+        DEVICEDEBUG_LOGE("devicedebug appspawn client init unsuccess, ret=%{public}d", ret);
         return ret;
     }
 
     AppSpawnResult result = {0};
     ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
     AppSpawnClientDestroy(clientHandle);
+    free(jsonString);
     if (ret != 0) {
         DEVICEDEBUG_LOGE("devicedebug appspawn send msg unsuccess, ret=%{public}d", ret);
         return ret;
