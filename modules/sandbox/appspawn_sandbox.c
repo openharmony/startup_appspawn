@@ -102,11 +102,11 @@ int SandboxMountPath(const MountArg *arg)
 
     int ret = mount(arg->originPath, arg->destinationPath, arg->fsType, arg->mountFlags, arg->options);
     if (ret != 0) {
-        if (arg->originPath != NULL && strstr(arg->originPath, "/data/app/el2/") != NULL) {
-            CheckDirRecursive(arg->originPath);
-        }
         APPSPAWN_LOGW("errno is: %{public}d, bind mount %{public}s => %{public}s",
             errno, arg->originPath, arg->destinationPath);
+        if (strstr(arg->originPath, "/data/app/el1/") != NULL || strstr(arg->originPath, "/data/app/el2/") != NULL) {
+            CheckDirRecursive(arg->originPath);
+        }
         return errno;
     }
     ret = mount(NULL, arg->destinationPath, NULL, arg->mountSharedFlag, NULL);
@@ -467,11 +467,13 @@ static int DoSandboxPathNodeMount(const SandboxContext *context,
     }
     CreateDemandSrc(context, sandboxNode, &args);
 
+    int ret = 0;
     if (CHECK_FLAGS_BY_INDEX(operation, MOUNT_PATH_OP_UNMOUNT)) {  // unmount this deps
         APPSPAWN_LOGV("umount2 %{public}s", args.destinationPath);
-        umount2(args.destinationPath, MNT_DETACH);
+        ret = umount2(args.destinationPath, MNT_DETACH);
+        APPSPAWN_CHECK_ONLY_LOG(ret == 0, "Failed to umount %{public}s errno %{public}d", args.destinationPath, errno);
     }
-    int ret = 0;
+
     ret = DoSandboxMountByCategory(context, sandboxNode, &args, operation);
     if (ret != 0 && sandboxNode->checkErrorFlag) {
         APPSPAWN_LOGE("Failed to mount config, section: %{public}s result: %{public}d category: %{public}d",
