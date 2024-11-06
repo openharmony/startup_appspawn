@@ -461,7 +461,6 @@ static void OnReceiveRequest(const TaskHandle taskHandle, const uint8_t *buffer,
         APPSPAWN_CHECK(ret == 0, LE_CloseStreamTask(LE_GetDefaultLoop(), taskHandle);
             return, "Failed to create time for connection");
     }
-    return;
 }
 
 static char *GetMapMem(uint32_t clientId, const char *processName, uint32_t size, bool readOnly, bool isNweb)
@@ -953,7 +952,7 @@ static void WaitChildTimeout(const TimerHandle taskHandle, void *context)
     DeleteAppSpawningCtx(property);
 }
 
-static int ProcessChildFdCheck(int fd, AppSpawningCtx *property, int *pResult)
+static int ProcessChildFdCheck(int fd, AppSpawningCtx *property)
 {
     int result = 0;
     (void)read(fd, &result, sizeof(result));
@@ -966,8 +965,7 @@ static int ProcessChildFdCheck(int fd, AppSpawningCtx *property, int *pResult)
         DeleteAppSpawningCtx(property);
         return -1;
     }
-    *pResult = result;
-    
+
     return 0;
 }
 
@@ -979,13 +977,12 @@ static void ProcessChildResponse(const WatcherHandle taskHandle, int fd, uint32_
     property->forkCtx.watcherHandle = NULL;  // delete watcher
     LE_RemoveWatcher(LE_GetDefaultLoop(), (WatcherHandle)taskHandle);
 
-    int result = 0;
-    if (ProcessChildFdCheck(fd, property, &result) != 0) {
+    if (ProcessChildFdCheck(fd, property) != 0) {
         return;
     }
 
     // success
-    bool isDebuggable = CheckAppMsgFlagsSet(property, APP_FLAGS_DEBUGGABLE) == 1 ? true : false;
+    bool isDebuggable = CheckAppMsgFlagsSet(property, APP_FLAGS_DEBUGGABLE);
     AppSpawnedProcess *appInfo = AddSpawnedProcess(property->pid, GetBundleName(property), isDebuggable);
     uint32_t len = 0;
     char *pidMaxStr = NULL;
@@ -1015,7 +1012,7 @@ static void ProcessChildResponse(const WatcherHandle taskHandle, int fd, uint32_
     ProcessMgrHookExecute(STAGE_SERVER_APP_ADD, GetAppSpawnContent(), appInfo);
     // response
     AppSpawnHookExecute(STAGE_PARENT_PRE_RELY, 0, GetAppSpawnContent(), &property->client);
-    SendResponse(property->message->connection, &property->message->msgHeader, result, property->pid);
+    SendResponse(property->message->connection, &property->message->msgHeader, 0, property->pid);
     AppSpawnHookExecute(STAGE_PARENT_POST_RELY, 0, GetAppSpawnContent(), &property->client);
 #ifdef DEBUG_BEGETCTL_BOOT
     if (IsDeveloperModeOpen()) {
@@ -1541,22 +1538,27 @@ APPSPAWN_STATIC int ProcessAppSpawnDeviceDebugMsg(AppSpawnMsgNode *message)
     cJSON *app = cJSON_GetObjectItem(json, "app");
     if (!cJSON_IsNumber(app)) {
         APPSPAWN_LOGE("appspawn devicedebug json get app fail");
+        cJSON_Delete(json);
         return -1;
     }
 
     cJSON *op = cJSON_GetObjectItem(json, "op");
     if (!cJSON_IsString(op) || op->valuestring == NULL) {
         APPSPAWN_LOGE("appspawn devicedebug json get op fail");
+        cJSON_Delete(json);
         return -1;
     }
 
     cJSON *args = cJSON_GetObjectItem(json, "args");
     if (!cJSON_IsObject(args)) {
         APPSPAWN_LOGE("appspawn devicedebug json get args fail");
+        cJSON_Delete(json);
         return -1;
     }
 
-    return AppspawnDevicedebugDeal(op->valuestring, app->valueint, args);
+    int result = AppspawnDevicedebugDeal(op->valuestring, app->valueint, args);
+    cJSON_Delete(json);
+    return result;
 }
 
 static void ProcessRecvMsg(AppSpawnConnection *connection, AppSpawnMsgNode *message)
