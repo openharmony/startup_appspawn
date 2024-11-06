@@ -29,8 +29,13 @@
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
-                    "src-path" : "/system/app",
-                    "sandbox-path" : "/system/app",
+                    "src-path" : "/system/app/appServiceFwk",
+                    "sandbox-path" : "/system/app/appServiceFwk",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/system/app/shared_bundles",
+                    "sandbox-path" : "/system/app/shared_bundles",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
@@ -384,6 +389,14 @@
                             "src-path" : "/data/app/el1/bundle/<currentUserId>/hnp/<PackageName>",
                             "sandbox-path" : "/data/app",
                             "sandbox-flags" : [ "bind", "rec" ],
+                            "check-action-status": "false"
+                        }
+                    ]}, {
+                        "flags": "PREINSTALLED_HAP",
+                        "mount-paths": [{
+                            "src-path": "/system/app",
+                            "sandbox-path": "/system/app",
+                            "sandbox-flags": [ "bind", "rec" ],
                             "check-action-status": "false"
                         }
                     ]}
