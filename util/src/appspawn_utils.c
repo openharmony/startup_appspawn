@@ -207,7 +207,7 @@ int32_t StringSplit(const char *str, const char *separator, void *context, Split
             ret = result;
         }
     }
-    if (index > 0) {
+    if ((index > 0) && (index < PATH_MAX)) {
         buffer[index] = '\0';
         TrimTail(buffer, index);
         index = 0;
