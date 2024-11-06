@@ -120,7 +120,7 @@ static int CheckKernelType(bool *isLinux)
     return 0;
 }
 
-static int SpawnKickDogStart(AppSpawnMgr *mgrContent)
+APPSPAWN_STATIC int SpawnKickDogStart(AppSpawnMgr *mgrContent)
 {
     APPSPAWN_CHECK(mgrContent != NULL, return 0, "content is null");
     APPSPAWN_CHECK((mgrContent->content.mode == MODE_FOR_APP_SPAWN) ||
