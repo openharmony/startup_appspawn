@@ -567,20 +567,20 @@ HWTEST_F(AppSpawnServiceTest, App_Spawn_Msg_009, TestSize.Level0)
         APPSPAWN_CHECK(ret == 0, break, "Failed to send msg %{public}d", ret);
 
         AppSpawnedProcess *app = GetSpawnedProcessByName(testServer->GetDefaultTestAppBundleName());
-        EXPECT_NE(app, nullptr);
+        ASSERT_NE(app, nullptr);
 
         AppSpawnReqMsgHandle reqHandle2;
         ret = AppSpawnReqMsgCreate(MSG_DEVICE_DEBUG, "devicedebug", &reqHandle2);
-        EXPECT_GT(sprintf_s(pid, 16, "%d", app->pid), 0);
+        ASSERT_GT(sprintf_s(pid, 16, "%d", app->pid), 0);
         AppSpawnReqMsgAddStringInfo(reqHandle2, "signal", "-9");
         AppSpawnReqMsgAddStringInfo(reqHandle2, "pid", pid);
         ret = AppSpawnClientSendMsg(clientHandle, reqHandle2, &result);
+        AppSpawnClientDestroy(clientHandle);
         APPSPAWN_CHECK(ret == 0 && result.result == 0, break, "Failed to send msg ret:%{public}d, result:%{public}d",
             ret, result.result);
         ASSERT_EQ(kill(app->pid, SIGKILL), 0);
     } while (0);
 
-    AppSpawnClientDestroy(clientHandle);
     ASSERT_EQ(ret, 0);
     ASSERT_EQ(result.result, -1);
 }
@@ -604,15 +604,15 @@ HWTEST_F(AppSpawnServiceTest, App_Spawn_Msg_010, TestSize.Level0)
         APPSPAWN_CHECK(ret == 0, break, "Failed to send msg %{public}d", ret);
 
         AppSpawnedProcess *app = GetSpawnedProcessByName(testServer->GetDefaultTestAppBundleName());
-        EXPECT_NE(app, nullptr);
+        ASSERT_NE(app, nullptr);
 
         AppSpawnReqMsgHandle reqHandle2;
         ret = AppSpawnReqMsgCreate(MSG_DEVICE_DEBUG, "devicedebug", &reqHandle2);
         cJSON *args = cJSON_CreateObject();
-        EXPECT_NE(args, nullptr);
+        ASSERT_NE(args, nullptr);
         cJSON_AddNumberToObject(args, "signal", 9);
         cJSON *root = cJSON_CreateObject();
-        EXPECT_NE(root, nullptr);
+        ASSERT_NE(root, nullptr);
         cJSON_AddNumberToObject(root, "app", app->pid);
         cJSON_AddStringToObject(root, "op", "kill");
         cJSON_AddItemToObject(root, "args", args);
@@ -621,11 +621,12 @@ HWTEST_F(AppSpawnServiceTest, App_Spawn_Msg_010, TestSize.Level0)
         ret = AppSpawnReqMsgAddExtInfo(reqHandle2, "devicedebug", (uint8_t *)jsonString, strlen(jsonString) + 1);
         ASSERT_EQ(ret, 0);
         ret = AppSpawnClientSendMsg(clientHandle, reqHandle2, &result);
+        AppSpawnClientDestroy(clientHandle);
+        free(jsonString);
         APPSPAWN_CHECK(ret == 0 && result.result == 0, break, "Failed to send msg ret:%{public}d, result:%{public}d",
             ret, result.result);
     } while (0);
 
-    AppSpawnClientDestroy(clientHandle);
     ASSERT_EQ(ret, 0);
     ASSERT_EQ(result.result, 0);
 }
