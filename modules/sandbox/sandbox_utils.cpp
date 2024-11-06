@@ -706,7 +706,8 @@ static uint32_t ConvertFlagStr(const std::string &flagStr)
 {
     const std::map<std::string, int> flagsMap = {{"0", 0}, {"START_FLAGS_BACKUP", 1},
                                                  {"DLP_MANAGER", 2},
-                                                 {"DEVELOPER_MODE", 17}};
+                                                 {"DEVELOPER_MODE", 17},
+                                                 {"PREINSTALLED_HAP", 29}};
 
     if (flagsMap.count(flagStr)) {
         return 1 << flagsMap.at(flagStr);
