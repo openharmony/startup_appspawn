@@ -90,9 +90,6 @@
                 "src-path" : "/system/app/SystemResources",
                 "sandbox-path" : "/data/global/systemResources"
             }, {
-                "src-path" : "/data/misc",
-                "sandbox-path" : "/data/storage/el1/bundle/misc"
-            }, {
                 "src-path" : "/data/service/el1/public/cert_manager_service/certificates/user_open",
                 "sandbox-path" : "/data/certificates/user_cacerts"
             }],
@@ -129,6 +126,9 @@
                 "src-path" : "/data/app/el1/bundle/public/<PackageName>",
                 "sandbox-path" : "/data/storage/el1/bundle",
                 "check-action-status": "true"
+            }, {
+                "src-path" : "/data/misc",
+                "sandbox-path" : "/data/storage/el1/bundle/misc"
             }, {
                 "src-path" : "/data/local/ark-cache/<PackageName>",
                 "sandbox-path" : "/data/storage/ark-cache"

@@ -677,6 +677,7 @@ int LoadAppSandboxConfig(AppSpawnSandboxCfg *sandbox, RunMode mode)
 {
     APPSPAWN_CHECK_ONLY_EXPER(sandbox != NULL, return APPSPAWN_ARG_INVALID);
     const char *sandboxName = GetSandboxNameByMode(mode);
+    APPSPAWN_LOGV("Get sandboxName %{public}s by mode %{public}d", sandboxName, mode);
     if (sandbox->depGroupNodes != NULL) {
         APPSPAWN_LOGW("Sandbox has been load");
         return 0;
