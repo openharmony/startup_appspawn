@@ -24,8 +24,11 @@
                 "src-path" : "/module_update",
                 "sandbox-path" : "/module_update"
             }, {
-                "src-path" : "/system/app",
-                "sandbox-path" : "/system/app"
+                "src-path" : "/system/app/appServiceFwk",
+                "sandbox-path" : "/system/app/appServiceFwk"
+            }, {
+                "src-path" : "/system/app/shared_bundles",
+                "sandbox-path" : "/system/app/shared_bundles"
             }, {
                 "src-path" : "/system/fonts",
                 "sandbox-path" : "/system/fonts"
@@ -389,8 +392,14 @@
             }, {
                 "src-path" : "/data/app/el1/bundle/<currentUserId>/hnp/<PackageName>",
                 "sandbox-path" : "/data/app"
-            }
-        ]}],
+            }]
+        }, {
+            "name": "PREINSTALLED_HAP",
+            "mount-paths": [{
+                "src-path": "/system/app",
+                "sandbox-path": "/system/app"
+            }]
+        }],
         "package-name": [{
             "name": "com.ohos.medialibrary.medialibrarydata",
             "mount-paths" : [{
