@@ -183,7 +183,7 @@ static int HnpGenerateSoftLink(const char *installPath, const char *hnpBasePath,
 }
 
 static int HnpInstall(const char *hnpFile, HnpInstallInfo *hnpInfo, HnpCfgInfo *hnpCfg,
-    HnpSignMapInfo *hnpSignMapInfos, int *count)
+    HnpSignMapInfo *hnpSignMapInfos, uint64_t *count)
 {
     int ret;
 
@@ -401,7 +401,7 @@ static int HnpPublicDealAfterInstall(HnpInstallInfo *hnpInfo, HnpCfgInfo *hnpCfg
     return HnpInstallInfoJsonWrite(hnpInfo->hapInstallInfo->hapPackageName, hnpCfg);
 }
 
-static int HnpReadAndInstall(char *srcFile, HnpInstallInfo *hnpInfo, HnpSignMapInfo *hnpSignMapInfos, int *count)
+static int HnpReadAndInstall(char *srcFile, HnpInstallInfo *hnpInfo, HnpSignMapInfo *hnpSignMapInfos, uint64_t *count)
 {
     int ret;
     HnpCfgInfo hnpCfg = {0};
@@ -481,7 +481,7 @@ static bool HnpFileCheck(const char *file)
 }
 
 static int HnpPackageGetAndInstall(const char *dirPath, HnpInstallInfo *hnpInfo, char *sunDir,
-    HnpSignMapInfo *hnpSignMapInfos, int *count)
+    HnpSignMapInfo *hnpSignMapInfos, uint64_t *count)
 {
     DIR *dir;
     struct dirent *entry;
@@ -537,7 +537,7 @@ static int HnpPackageGetAndInstall(const char *dirPath, HnpInstallInfo *hnpInfo,
 }
 
 static int HapReadAndInstall(const char *dstPath, HapInstallInfo *installInfo, HnpSignMapInfo *hnpSignMapInfos,
-    int *count)
+    uint64_t *count)
 {
     struct dirent *entry;
     char hnpPath[MAX_FILE_PATH_LEN];
@@ -585,7 +585,7 @@ static int HapReadAndInstall(const char *dstPath, HapInstallInfo *installInfo, H
     return 0;
 }
 
-static int HnpInstallHnpFileCountGet(char *hnpPath, int *count)
+static int HnpInstallHnpFileCountGet(char *hnpPath, uint64_t *count)
 {
     DIR *dir;
     struct dirent *entry;
@@ -636,7 +636,7 @@ static int HnpInstallHnpFileCountGet(char *hnpPath, int *count)
     return 0;
 }
 
-static int HnpInstallHapFileCountGet(const char *root, int *count)
+static int HnpInstallHapFileCountGet(const char *root, uint64_t *count)
 {
     struct dirent *entry;
     char hnpPath[MAX_FILE_PATH_LEN];
@@ -714,11 +714,11 @@ static int CheckInstallPath(char *dstPath, HapInstallInfo *installInfo)
 static int HnpInsatllPre(HapInstallInfo *installInfo)
 {
     char dstPath[MAX_FILE_PATH_LEN];
-    int count = 0;
+    uint64_t count = 0;
     HnpSignMapInfo *hnpSignMapInfos = NULL;
 #ifdef CODE_SIGNATURE_ENABLE
     struct EntryMapEntryData data = {0};
-    int i;
+    uint64_t i;
 #endif
     int ret;
 
@@ -727,7 +727,9 @@ static int HnpInsatllPre(HapInstallInfo *installInfo)
         return ret;
     }
 
-    if (count > 0) {
+    if (count >= INT32_MAX) {
+        return HNP_ERRNO_INSTALLER_HAP_FILE_COUNT_OVER;
+    } else if (count > 0) {
         hnpSignMapInfos = (HnpSignMapInfo *)malloc(sizeof(HnpSignMapInfo) * count);
         if (hnpSignMapInfos == NULL) {
             return HNP_ERRNO_NOMEM;
@@ -736,8 +738,8 @@ static int HnpInsatllPre(HapInstallInfo *installInfo)
 
     count = 0;
     ret = HapReadAndInstall(dstPath, installInfo, hnpSignMapInfos, &count);
-    HNP_LOGI("sign start hap path[%{public}s],abi[%{public}s],count=%{public}d", installInfo->hapPath, installInfo->abi,
-        count);
+    HNP_LOGI("sign start hap path[%{public}s],abi[%{public}s],count=%{public}d", installInfo->hapPath,
+        installInfo->abi, (int)count);
 #ifdef CODE_SIGNATURE_ENABLE
     if ((ret == 0) && (count > 0)) {
         data.entries = malloc(sizeof(struct EntryMapEntry) * count);
@@ -749,7 +751,7 @@ static int HnpInsatllPre(HapInstallInfo *installInfo)
             data.entries[i].key = hnpSignMapInfos[i].key;
             data.entries[i].value = hnpSignMapInfos[i].value;
         }
-        data.count = count;
+        data.count = (uint32_t)count;
         ret = EnforceCodeSignForApp(installInfo->hapPath, &data, FILE_ENTRY_ONLY);
         HNP_LOGI("sign end ret=%{public}d,last key[%{public}s],value[%{public}s]", ret, data.entries[i - 1].key,
             data.entries[i - 1].value);
