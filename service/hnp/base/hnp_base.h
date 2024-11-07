@@ -18,6 +18,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <limits.h>
 #include <stdbool.h>
 
@@ -264,7 +265,7 @@ int GetRealPath(char *srcPath, char *realPath);
 int HnpZip(const char *inputDir, zipFile zf);
 
 int HnpUnZip(const char *inputFile, const char *outputDir, const char *hnpSignKeyPrefix,
-    HnpSignMapInfo *hnpSignMapInfos, int *count);
+    HnpSignMapInfo *hnpSignMapInfos, uint64_t *count);
 
 int HnpAddFileToZip(zipFile zf, char *filename, char *buff, int size);
 
@@ -297,7 +298,7 @@ int HnpPackageInfoDelete(const char *packageName);
 
 char *HnpCurrentVersionUninstallCheck(const char *name);
 
-int HnpFileCountGet(const char *path, int *count);
+int HnpFileCountGet(const char *path, uint64_t *count);
 
 int HnpPathFileCount(const char *path);
 
