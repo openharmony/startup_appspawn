@@ -375,6 +375,10 @@ static int HnpInstallPathGet(HnpCfgInfo *hnpCfgInfo, HnpInstallInfo *hnpInfo)
         HNP_LOGE("hnp install sprintf install path unsuccess.");
         return HNP_ERRNO_BASE_SPRINTF_FAILED;
     }
+    if (strstr(hnpInfo->hnpVersionPath, "../")) {
+        HNP_LOGE("hnp version path[%{public}s], does not allow the use of ../", hnpInfo->hnpVersionPath);
+        return HNP_ERRNO_INSTALLER_GET_HNP_PATH_FAILED;
+    }
 
     return 0;
 }
