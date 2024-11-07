@@ -117,7 +117,7 @@ static int SpawnSetMaxPids(AppSpawnMgr *content, AppSpawningCtx *property, cJSON
         return APPSPAWN_PIDMGR_DEFAULT_PID_MAX;
     }
 
-    if (cJSON_AddNumberToObject(encaps, APP_OHOS_ENCAPS_COUNT_KEY, maxPidCount) == NULL) {
+    if (cJSON_AddNumberToObject(encaps, APP_OHOS_ENCAPS_FORK_KEY, maxPidCount) == NULL) {
         APPSPAWN_LOGV("Add number to object failed.(ignore)");
         return APPSPAWN_PIDMGR_DEFAULT_PID_MAX;
     }
