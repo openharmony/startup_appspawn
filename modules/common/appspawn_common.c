@@ -227,6 +227,12 @@ static int SetXpmConfig(const AppSpawnMgr *content, const AppSpawningCtx *proper
 
 static int SetUidGid(const AppSpawnMgr *content, const AppSpawningCtx *property)
 {
+    if (IsAppSpawnMode(content)) {
+        struct sched_param param = { 0 };
+        param.sched_priority = 0;
+        int ret = sched_setscheduler(0, SCHED_OTHER, &param);
+        APPSPAWN_CHECK_ONLY_LOG(ret == 0, "UpdateSchedPrio failed ret: %{public}d, %{public}d", ret, errno);
+    }
     AppSpawnMsgDacInfo *dacInfo = (AppSpawnMsgDacInfo *)GetAppProperty(property, TLV_DAC_INFO);
     APPSPAWN_CHECK(dacInfo != NULL, return APPSPAWN_TLV_NONE,
         "No tlv %{public}d in msg %{public}s", TLV_DAC_INFO, GetProcessName(property));
