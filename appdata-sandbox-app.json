@@ -469,7 +469,7 @@
             "src-path": "/data/app/el2/<currentUserId>/database/<variablePackageName>",
             "sandbox-path": "<deps-path>/database"
         }, {
-            "src-path": "/data/app/el2/<currentUserId>/log/<variablePackageName>",
+            "src-path": "/data/app/el2/<currentUserId>/log/<PackageName>",
             "sandbox-path": "<deps-path>/log"
         }, {
             "src-path": "/mnt/hmdfs/<currentUserId>/non_account/merge_view/data",
