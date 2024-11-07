@@ -362,10 +362,10 @@ static bool HnpELFFileCheck(const char *path)
 }
 
 static int HnpInstallAddSignMap(const char* hnpSignKeyPrefix, const char *key, const char *value,
-    HnpSignMapInfo *hnpSignMapInfos, uint64_t *count)
+    HnpSignMapInfo *hnpSignMapInfos, int *count)
 {
     int ret;
-    uint64_t sum = *count;
+    int sum = *count;
 
     if (HnpELFFileCheck(value) == false) {
         return 0;
@@ -387,9 +387,9 @@ static int HnpInstallAddSignMap(const char* hnpSignKeyPrefix, const char *key, c
     return 0;
 }
 
-int HnpFileCountGet(const char *path, uint64_t *count)
+int HnpFileCountGet(const char *path, int *count)
 {
-    uint64_t sum = 0;
+    int sum = 0;
 
     unzFile zipFile = unzOpen(path);
     if (zipFile == NULL) {
@@ -399,6 +399,10 @@ int HnpFileCountGet(const char *path, uint64_t *count)
 
     int ret = unzGoToFirstFile(zipFile);
     while (ret == UNZ_OK) {
+        if (sum == INT_MAX) {
+            unzClose(zipFile);
+            return HNP_ERRNO_BASE_FILE_COUNT_OVER;
+        }
         sum++;
         ret = unzGetCurrentFileInfo(zipFile, NULL, NULL, 0, NULL, 0, NULL, 0);
         if (ret != UNZ_OK) {
@@ -411,12 +415,15 @@ int HnpFileCountGet(const char *path, uint64_t *count)
     }
 
     unzClose(zipFile);
+    if (INT_MAX - sum < *count) {
+        return HNP_ERRNO_BASE_FILE_COUNT_OVER;
+    }
     *count += sum;
     return 0;
 }
 
 int HnpUnZip(const char *inputFile, const char *outputDir, const char *hnpSignKeyPrefix,
-    HnpSignMapInfo *hnpSignMapInfos, uint64_t *count)
+    HnpSignMapInfo *hnpSignMapInfos, int *count)
 {
     char fileName[MAX_FILE_PATH_LEN];
     unz_file_info fileInfo;
