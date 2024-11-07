@@ -43,9 +43,6 @@ extern "C" {
 // 0x801307 restorecon 安装目录失败
 #define HNP_ERRNO_INSTALLER_RESTORECON_HNP_PATH_FAIL       HNP_ERRNO_COMMON(HNP_MID_INSTALLER, 0x7)
 
-// 0x801308 安装包中的二进制文件过多
-#define HNP_ERRNO_INSTALLER_HAP_FILE_COUNT_OVER            HNP_ERRNO_COMMON(HNP_MID_INSTALLER, 0x8)
-
 #define HNP_DEFAULT_INSTALL_ROOT_PATH "/data/app/el1/bundle"
 #define HNP_SANDBOX_BASE_PATH "/data/service/hnp"
 
