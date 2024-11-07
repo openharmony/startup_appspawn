@@ -90,7 +90,7 @@ int AppSpawnChild(AppSpawnContent *content, AppSpawnClient *client)
 {
     APPSPAWN_CHECK(content != NULL && client != NULL, return -1, "Invalid arg for appspawn child");
     APPSPAWN_LOGI("AppSpawnChild id %{public}u flags: 0x%{public}x", client->id, client->flags);
-    StartAppspawnTrace("AppSpawnExecuteSpawningHook");
+    StartAppspawnTrace("AppSpawnExecuteClearEnvHook");
     int ret = AppSpawnExecuteClearEnvHook(content, client);
     FinishAppspawnTrace();
     APPSPAWN_CHECK_ONLY_EXPER(ret == 0,
