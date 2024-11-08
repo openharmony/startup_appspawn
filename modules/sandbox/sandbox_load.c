@@ -45,8 +45,7 @@ static const SandboxFlagInfo FLAGE_POINT_MAP[] = {
     {"0", 0},
     {"START_FLAGS_BACKUP", (unsigned long)APP_FLAGS_BACKUP_EXTENSION},
     {"DLP_MANAGER", (unsigned long)APP_FLAGS_DLP_MANAGER},
-    {"DEVELOPER_MODE", (unsigned long)APP_FLAGS_DEVELOPER_MODE},
-    {"PREINSTALLED_HAP", (unsigned long)APP_FLAGS_PRE_INSTALLED_HAP}
+    {"DEVELOPER_MODE", (unsigned long)APP_FLAGS_DEVELOPER_MODE}
 };
 
 static const SandboxFlagInfo MOUNT_MODE_MAP[] = {
