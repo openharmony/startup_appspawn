@@ -985,8 +985,12 @@ int32_t SandboxUtils::HandleFlagsPoint(const AppSpawningCtx *appProperty,
         if (flagPoint.find(g_flags) != flagPoint.end() && flagPoint[g_flags].is_string()) {
             std::string flagsStr = flagPoint[g_flags].get<std::string>();
             uint32_t flag = ConvertFlagStr(flagsStr);
-            if ((GetAppMsgFlags(appProperty) & flag) != 0) {
-                return DoAllMntPointsMount(appProperty, flagPoint, nullptr, g_flagePoint);
+            if ((GetAppMsgFlags(appProperty) & flag) == 0) {
+                continue;
+            }
+            int ret = DoAllMntPointsMount(appProperty, flagPoint, nullptr, g_flagePoint);
+            if (ret != 0) {
+                APPSPAWN_LOGE("mount flag points failed");
             }
         } else {
             APPSPAWN_LOGE("read flags config failed, app name is %{public}s", GetBundleName(appProperty));
@@ -1908,7 +1912,7 @@ static int MountInShared(const AppSpawningCtx *property, const char *rootPath, c
     }
 
     char path[PATH_MAX_LEN] = {0};
-    int ret = snprintf_s(path, PATH_MAX_LEN, PATH_MAX_LEN - 1, "%s%u/%s%s", rootPath, info->uid / UID_BASE,
+    int ret = snprintf_s(path, PATH_MAX_LEN, PATH_MAX_LEN - 1, "%s/%u/%s/%s", rootPath, info->uid / UID_BASE,
                          bundleName, target);
     if (ret <= 0) {
         return APPSPAWN_ERROR_UTILS_MEM_FAIL;
@@ -2006,7 +2010,7 @@ static void UpdateStorageDir(const AppSpawningCtx *property)
     if (res == 0) {
         char storageUserPath[PATH_MAX_LEN] = {0};
         const char *bundleName = GetBundleName(property);
-        ret = snprintf_s(storageUserPath, PATH_MAX_LEN, PATH_MAX_LEN - 1, "%s/%d/%s%s", rootPath, info->uid / UID_BASE,
+        ret = snprintf_s(storageUserPath, PATH_MAX_LEN, PATH_MAX_LEN - 1, "%s/%d/%s/%s", rootPath, info->uid / UID_BASE,
                          bundleName, userPath);
         if (ret <= 0) {
             return;
