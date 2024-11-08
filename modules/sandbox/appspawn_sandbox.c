@@ -392,6 +392,7 @@ APPSPAWN_STATIC const char *GetRealSrcPath(const SandboxContext *context, const 
 // 设置挂载参数options
 static int32_t SetMountArgsOption(const SandboxContext *context, uint32_t category, uint32_t operation, MountArg *args)
 {
+    args->options = "";
     if ((category != MOUNT_TMP_DAC_OVERRIDE) && (category != MOUNT_TMP_DAC_OVERRIDE_DELETE)) {
         return 0;
     }
@@ -412,7 +413,7 @@ static int32_t SetMountArgsOption(const SandboxContext *context, uint32_t catego
     return 0;
 }
 
-// 根据沙盒配置文件中挂载类别进行挂载挂载
+// 根据沙盒配置文件中挂载类别进行挂载
 static int DoSandboxMountByCategory(const SandboxContext *context, const PathMountNode *sandboxNode,
                                     MountArg *args, uint32_t operation)
 {
@@ -465,6 +466,7 @@ static int DoSandboxPathNodeMount(const SandboxContext *context,
             CreateSandboxDir(args.destinationPath, FILE_MODE);
         }
     }
+
     CreateDemandSrc(context, sandboxNode, &args);
 
     int ret = 0;
@@ -546,7 +548,7 @@ static bool IsUnlockStatus(uint32_t uid, const char *bundleName, size_t bundleNa
 {
     const int userIdBase = UID_BASE;
     uid = uid / userIdBase;
-    if (uid == 0) {
+    if (uid == 0) {  // uid = 0 不涉及加密目录的挂载
         return true;
     }
 
@@ -554,6 +556,7 @@ static bool IsUnlockStatus(uint32_t uid, const char *bundleName, size_t bundleNa
     const char basePath[] = "/base/";
     size_t allPathSize = strlen(rootPath) + strlen(basePath) + 1 + USER_ID_SIZE + bundleNameLen;
     char *path = (char *)malloc(sizeof(char) * allPathSize);
+    (void)memset_s(path, allPathSize, 0, allPathSize);
     APPSPAWN_CHECK(path != NULL, return true, "Failed to malloc path");
     int len = sprintf_s(path, allPathSize, "%s%u%s%s", rootPath, uid, basePath, bundleName);
     APPSPAWN_CHECK(len > 0 && ((size_t)len < allPathSize), free(path); return true, "Failed to get base path");
@@ -578,6 +581,7 @@ static void MountDir(AppSpawnMsgDacInfo *info, const char *bundleName, const cha
     size_t allPathSize = strlen(rootPath) + strlen(targetPath) + strlen(bundleName) + 2;
     allPathSize += USER_ID_SIZE;
     char *path = (char *)malloc(sizeof(char) * (allPathSize));
+    (void)memset_s(path, allPathSize, 0, allPathSize);
     APPSPAWN_CHECK(path != NULL, return, "Failed to malloc path");
     int len = sprintf_s(path, allPathSize, "%s%u/%s%s", rootPath, info->uid / userIdBase, bundleName, targetPath);
     APPSPAWN_CHECK(len > 0 && ((size_t)len < allPathSize), free(path);
@@ -596,12 +600,11 @@ static void MountDir(AppSpawnMsgDacInfo *info, const char *bundleName, const cha
     }
     if (mount(NULL, path, NULL, MS_SHARED, NULL) != 0) {
         APPSPAWN_LOGI("mount path %{public}s to shared failed, errno %{public}d", path, errno);
-        free(path);
-        return;
+    } else {
+        APPSPAWN_LOGI("mount path %{public}s to shared success", path);
     }
-    APPSPAWN_LOGI("mount path %{public}s to shared success", path);
+
     free(path);
-    return;
 }
 
 static const MountSharedTemplate MOUNT_SHARED_MAP[] = {
@@ -756,7 +759,7 @@ static int SetExpandSandboxConfig(const SandboxContext *context, const AppSpawnS
     AppSpawnMsgDomainInfo *msgDomainInfo = (AppSpawnMsgDomainInfo *)GetSpawningMsgInfo(context, TLV_DOMAIN_INFO);
     if (msgDomainInfo != NULL) {
         mountDestBundlePath = (strcmp(msgDomainInfo->apl, APL_SYSTEM_BASIC) == 0) ||
-            (strcmp(msgDomainInfo->apl, APL_SYSTEM_CORE) == 0);
+                              (strcmp(msgDomainInfo->apl, APL_SYSTEM_CORE) == 0);
     }
     if (mountDestBundlePath || (CheckSpawningMsgFlagSet(context, APP_FLAGS_ACCESS_BUNDLE_DIR) != 0)) {
         // need permission check for system app here
@@ -1009,7 +1012,6 @@ static bool IsADFPermission(AppSpawnSandboxCfg *sandbox, const AppSpawningCtx *p
     if (index > 0 && CheckAppPermissionFlagSet(property, index)) {
         return true;
     }
-
     if (GetBundleName(property) != NULL && strstr(GetBundleName(property), "com.ohos.dlpmanager") != NULL) {
         return true;
     }

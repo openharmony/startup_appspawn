@@ -1599,7 +1599,7 @@ int32_t SandboxUtils::SetPermissionWithParam(AppSpawningCtx *appProperty)
     }
     if (index > 0 && (fileMgrIndex > 0 && userFileIndex > 0) &&
         (CheckAppPermissionFlagSet(appProperty, static_cast<uint32_t>(userFileIndex)) == 0) &&
-        (CheckAppPermissionFlagSet(appProperty, static_cast<uint32_t>(fileMgrIndex))== 0)) {
+        (CheckAppPermissionFlagSet(appProperty, static_cast<uint32_t>(fileMgrIndex)) == 0)) {
         return SetAppPermissionFlags(appProperty, index);
     }
     return 0;
