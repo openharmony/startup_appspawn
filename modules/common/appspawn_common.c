@@ -62,7 +62,6 @@
 #define BITLEN32 32
 #define PID_NS_INIT_UID 100000  // reserved for pid_ns_init process, avoid app, render proc, etc.
 #define PID_NS_INIT_GID 100000
-#define PREINSTALLED_HAP_FLAG 0x01 // hapFlags 0x01: SELINUX_HAP_RESTORECON_PREINSTALLED_APP in selinux
 
 static int SetProcessName(const AppSpawnMgr *content, const AppSpawningCtx *property)
 {
@@ -360,21 +359,6 @@ static int32_t WaitForDebugger(const AppSpawningCtx *property)
     return 0;
 }
 
-static int SpawnSetPreInstalledFlag(AppSpawningCtx *property)
-{
-    AppSpawnMsgDomainInfo *msgDomainInfo = (AppSpawnMsgDomainInfo *)GetAppProperty(property, TLV_DOMAIN_INFO);
-    APPSPAWN_CHECK(msgDomainInfo != NULL, return APPSPAWN_TLV_NONE, "No domain info in req from %{public}s",
-                   GetProcessName(property));
-    if ((msgDomainInfo->hapFlags & PREINSTALLED_HAP_FLAG) != 0) {
-        int ret = SetAppSpawnMsgFlag(property->message, TLV_MSG_FLAGS, APP_FLAGS_PRE_INSTALLED_HAP);
-        if (ret != 0) {
-            APPSPAWN_LOGE("Set appspawn msg flag failed");
-            return ret;
-        }
-    }
-    return 0;
-}
-
 static int SpawnInitSpawningEnv(AppSpawnMgr *content, AppSpawningCtx *property)
 {
     APPSPAWN_LOGV("Spawning: clear env");
@@ -386,9 +370,6 @@ static int SpawnInitSpawningEnv(AppSpawnMgr *content, AppSpawningCtx *property)
     ResetParamSecurityLabel();
 
     ret = SetAppAccessToken(content, property);
-    APPSPAWN_CHECK_ONLY_EXPER(ret == 0, return ret);
-
-    ret = SpawnSetPreInstalledFlag(property);
     APPSPAWN_CHECK_ONLY_EXPER(ret == 0, return ret);
     return 0;
 }
