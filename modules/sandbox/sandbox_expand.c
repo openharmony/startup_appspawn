@@ -166,7 +166,9 @@ static int SetOverlayAppPath(const char *hapPath, void *context)
     APPSPAWN_LOGV("SetOverlayAppPath path: '%{public}s' => '%{public}s'",
         sandboxContext->buffer[0].buffer, sandboxContext->buffer[1].buffer);
 
-    (void)MakeDirRec(sandboxContext->buffer[1].buffer, FILE_MODE, 1);
+    ret = MakeDirRec(sandboxContext->buffer[1].buffer, FILE_MODE, 1);
+    APPSPAWN_CHECK(ret == 0, return ret, "Fail to mkdir dir %{public}s, ret :%{public}d",
+                   sandboxContext->buffer[1].buffer, ret);
     MountArg mountArg = {
         sandboxContext->buffer[0].buffer, sandboxContext->buffer[1].buffer, NULL, MS_REC | MS_BIND, NULL, MS_SHARED
     };

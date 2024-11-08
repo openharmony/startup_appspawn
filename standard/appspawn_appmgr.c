@@ -226,8 +226,10 @@ int KillAndWaitStatus(pid_t pid, int sig, int *exitStatus)
         APPSPAWN_LOGE("unable to kill process, pid: %{public}d ret %{public}d", pid, errno);
         return -1;
     }
-    pid_t exitPid = 0;
+
     int retry = 0;
+    pid_t exitPid = 0;
+
     while (retry * SLEEP_DURATION < EXIT_APP_TIMEOUT) {
         exitPid = waitpid(pid, exitStatus, WNOHANG);
         if (exitPid == pid) {
@@ -399,10 +401,11 @@ void ProcessAppSpawnDumpMsg(const AppSpawnMsgNode *message)
     char *ptyName = GetAppSpawnMsgExtInfo(message, "pty-name", &len);
     if (ptyName != NULL) {
         APPSPAWN_LOGI("Dump info to file '%{public}s'", ptyName);
-        char canonicalPtyPath[PATH_MAX] = {0};
+        char canonicalPtyPath[PATH_MAX] = { 0 };
         if (realpath(ptyName, canonicalPtyPath) == NULL) {
             return;
         }
+
         stream = fopen(canonicalPtyPath, "w");
         SetDumpToStream(stream);
     } else {

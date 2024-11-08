@@ -395,6 +395,7 @@ static int HnpPublicDealAfterInstall(HnpInstallInfo *hnpInfo, HnpCfgInfo *hnpCfg
     }
     if (version != NULL) {
         free(version);
+        version = NULL;
     }
     hnpCfg->isInstall = true;
 
