@@ -18,7 +18,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
 #include <limits.h>
 #include <stdbool.h>
 
@@ -256,6 +255,9 @@ enum {
 // 0x80111f 获取文件属性失败
 #define HNP_ERRNO_BASE_STAT_FAILED              HNP_ERRNO_COMMON(HNP_MID_BASE, 0x1f)
 
+// 0x801120 二进制文件过多
+#define HNP_ERRNO_BASE_FILE_COUNT_OVER          HNP_ERRNO_COMMON(HNP_MID_BASE, 0x20)
+
 int GetFileSizeByHandle(FILE *file, int *size);
 
 int ReadFileToStream(const char *filePath, char **stream, int *streamLen);
@@ -265,7 +267,7 @@ int GetRealPath(char *srcPath, char *realPath);
 int HnpZip(const char *inputDir, zipFile zf);
 
 int HnpUnZip(const char *inputFile, const char *outputDir, const char *hnpSignKeyPrefix,
-    HnpSignMapInfo *hnpSignMapInfos, uint64_t *count);
+    HnpSignMapInfo *hnpSignMapInfos, int *count);
 
 int HnpAddFileToZip(zipFile zf, char *filename, char *buff, int size);
 
@@ -298,7 +300,7 @@ int HnpPackageInfoDelete(const char *packageName);
 
 char *HnpCurrentVersionUninstallCheck(const char *name);
 
-int HnpFileCountGet(const char *path, uint64_t *count);
+int HnpFileCountGet(const char *path, int *count);
 
 int HnpPathFileCount(const char *path);
 
