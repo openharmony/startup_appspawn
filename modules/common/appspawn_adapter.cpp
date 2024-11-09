@@ -103,7 +103,7 @@ int SetSelinuxCon(const AppSpawnMgr *content, const AppSpawningCtx *property)
     HapContext hapContext;
     HapDomainInfo hapDomainInfo;
     hapDomainInfo.apl = msgDomainInfo->apl;
-    hapDomainInfo.packageName = GetProcessName(property);
+    hapDomainInfo.packageName = GetBundleName(property);
     hapDomainInfo.hapFlags = msgDomainInfo->hapFlags;
     if (CheckAppMsgFlagsSet(property, APP_FLAGS_DEBUGGABLE)) {
         hapDomainInfo.hapFlags |= SELINUX_HAP_DEBUGGABLE;
