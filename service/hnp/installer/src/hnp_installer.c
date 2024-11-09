@@ -330,6 +330,10 @@ static int HnpInstallPathGet(HnpCfgInfo *hnpCfgInfo, HnpInstallInfo *hnpInfo)
         HNP_LOGE("hnp install sprintf install path unsuccess.");
         return HNP_ERRNO_BASE_SPRINTF_FAILED;
     }
+    if (strstr(hnpInfo->hnpVersionPath, "../")) {
+        HNP_LOGE("hnp version path[%{public}s], does not allow the use of ../", hnpInfo->hnpVersionPath);
+        return HNP_ERRNO_INSTALLER_GET_HNP_PATH_FAILED;
+    }
 
     return 0;
 }
@@ -669,6 +673,7 @@ static int HnpInsatllPre(HapInstallInfo *installInfo)
     if ((ret == 0) && (count > 0)) {
         data.entries = malloc(sizeof(struct EntryMapEntry) * count);
         if (data.entries == NULL) {
+            free(hnpSignMapInfos);
             return HNP_ERRNO_NOMEM;
         }
         for (i = 0; i < count; i++) {

@@ -229,6 +229,9 @@ enum {
 // 0x80111f 获取文件属性失败
 #define HNP_ERRNO_BASE_STAT_FAILED              HNP_ERRNO_COMMON(HNP_MID_BASE, 0x1f)
 
+// 0x801120 二进制文件过多
+#define HNP_ERRNO_BASE_FILE_COUNT_OVER          HNP_ERRNO_COMMON(HNP_MID_BASE, 0x20)
+
 int GetFileSizeByHandle(FILE *file, int *size);
 
 int ReadFileToStream(const char *filePath, char **stream, int *streamLen);

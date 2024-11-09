@@ -419,6 +419,10 @@ int HnpFileCountGet(const char *path, int *count)
 
     int ret = unzGoToFirstFile(zipFile);
     while (ret == UNZ_OK) {
+        if (sum == INT_MAX) {
+            unzClose(zipFile);
+            return HNP_ERRNO_BASE_FILE_COUNT_OVER;
+        }
         sum++;
         ret = unzGetCurrentFileInfo(zipFile, NULL, NULL, 0, NULL, 0, NULL, 0);
         if (ret != UNZ_OK) {
@@ -431,6 +435,9 @@ int HnpFileCountGet(const char *path, int *count)
     }
 
     unzClose(zipFile);
+    if (INT_MAX - sum < *count) {
+        return HNP_ERRNO_BASE_FILE_COUNT_OVER;
+    }
     *count += sum;
     return 0;
 }
