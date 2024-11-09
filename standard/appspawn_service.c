@@ -66,6 +66,7 @@ static void ProcessRecvMsg(AppSpawnConnection *connection, AppSpawnMsgNode *mess
 static inline void SetFdCtrl(int fd, int opt)
 {
     int option = fcntl(fd, F_GETFD);
+    APPSPAWN_CHECK(option >= 0, return, "SetFdCtrl fcntl failed %{public}d, %{public}d", option, errno);
     int ret = fcntl(fd, F_SETFD, (unsigned int)option | (unsigned int)opt);
     if (ret < 0) {
         APPSPAWN_LOGI("Set fd %{public}d option %{public}d %{public}d result: %{public}d", fd, option, opt, errno);
@@ -609,6 +610,7 @@ static int AddChildWatcher(AppSpawningCtx *property)
 {
     uint32_t defTimeout = IsChildColdRun(property) ? COLD_CHILD_RESPONSE_TIMEOUT : WAIT_CHILD_RESPONSE_TIMEOUT;
     uint32_t timeout = GetSpawnTimeout(defTimeout);
+    APPSPAWN_LOGI("Get Spawn timeout %{public}u", timeout);
     LE_WatchInfo watchInfo = {};
     watchInfo.fd = property->forkCtx.fd[0];
     watchInfo.flags = WATCHER_ONCE;
@@ -760,6 +762,7 @@ static void ProcessPreFork(AppSpawnContent *content, AppSpawningCtx *property)
             ProcessExit(0);
             return;
         }
+
         property->client.id = client.id;
         property->client.flags = client.flags;
         property->isPrefork = true;
@@ -826,6 +829,7 @@ static bool IsSupportPrefork(AppSpawnContent *content, AppSpawnClient *client)
         return false;
     }
     if (!content->enablePerfork) {
+        APPSPAWN_LOGV("g_enablePrefork %{public}d", content->enablePerfork);
         return false;
     }
     AppSpawningCtx *property = (AppSpawningCtx *)client;
@@ -838,13 +842,14 @@ static bool IsSupportPrefork(AppSpawnContent *content, AppSpawnClient *client)
     return false;
 }
 
-static bool IsBootFinished()
+static bool IsBootFinished(void)
 {
     char buffer[32] = {0};  // 32 max
     int ret = GetParameter("bootevent.boot.completed", "false", buffer, sizeof(buffer));
     bool isBootCompleted = (ret > 0 && strcmp(buffer, "true") == 0);
     return isBootCompleted;
 }
+
 
 static int RunAppSpawnProcessMsg(AppSpawnContent *content, AppSpawnClient *client, pid_t *childPid)
 {
@@ -1094,7 +1099,6 @@ APPSPAWN_STATIC int AppSpawnColdStartApp(struct AppSpawnContent *content, AppSpa
     APPSPAWN_CHECK(len > 0, return APPSPAWN_SYSTEM_ERROR, "Invalid to format shmId ");
     len = sprintf_s(buffer[3], sizeof(buffer[3]), " %u ", property->client.id); // 3 3 index for client id
     APPSPAWN_CHECK(len > 0, return APPSPAWN_SYSTEM_ERROR, "Invalid to format shmId ");
-
 #ifndef APPSPAWN_TEST
     char *mode = IsNWebSpawnMode((AppSpawnMgr *)content) ? "nweb_cold" : "app_cold";
     // 2 2 index for dest path
@@ -1226,11 +1230,11 @@ APPSPAWN_STATIC int AppSpawnClearEnv(AppSpawnMgr *content, AppSpawningCtx *prope
     return 0;
 }
 
-static int IsEnablePerfork()
+static int IsEnablePrefork(void)
 {
     char buffer[32] = {0};
     int ret = GetParameter("persist.sys.prefork.enable", "true", buffer, sizeof(buffer));
-    APPSPAWN_LOGV("IsEnablePerfork result %{public}d, %{public}s", ret, buffer);
+    APPSPAWN_LOGV("IsEnablePrefork result %{public}d, %{public}s", ret, buffer);
     return strcmp(buffer, "true") == 0;
 }
 
@@ -1254,7 +1258,7 @@ AppSpawnContent *AppSpawnCreateContent(const char *socketName, char *longProcNam
         APPSPAWN_CHECK(ret == 0, AppSpawnDestroyContent(&appSpawnContent->content);
             return NULL, "Failed to create server");
     }
-    appSpawnContent->content.enablePerfork = IsEnablePerfork();
+    appSpawnContent->content.enablePerfork = IsEnablePrefork();
     return &appSpawnContent->content;
 }
 
@@ -1490,10 +1494,14 @@ static void ProcessSpawnRestartMsg(AppSpawnConnection *connection, AppSpawnMsgNo
     int fd = GetControlSocket(NWEBSPAWN_SOCKET_NAME);
     APPSPAWN_CHECK(fd >= 0, return, "Get fd failed %{public}d, errno %{public}d", fd, errno);
 
+    int ret = 0;
     int op = fcntl(fd, F_GETFD);
-    int ret = fcntl(fd, F_SETFD, (unsigned int)op & ~FD_CLOEXEC);
-    if (ret < 0) {
-        APPSPAWN_LOGE("Set fd failed %{public}d, %{public}d, ret %{public}d, errno %{public}d", fd, op, ret, errno);
+    APPSPAWN_CHECK_ONLY_LOG(op >= 0, "fcntl failed %{public}d", op);
+    if (op > 0) {
+        ret = fcntl(fd, F_SETFD, (unsigned int)op & ~FD_CLOEXEC);
+        if (ret < 0) {
+            APPSPAWN_LOGE("Set fd failed %{public}d, %{public}d, ret %{public}d, errno %{public}d", fd, op, ret, errno);
+        }
     }
 
     char *path = "/system/bin/appspawn";
