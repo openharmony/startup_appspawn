@@ -586,9 +586,10 @@ static char *HnpNeedUnInstallHnpVersionGet(cJSON *hnpItemArr, const char *name)
         cJSON *nameItem = cJSON_GetObjectItem(hnpItem, "name");
         cJSON *currentItem = cJSON_GetObjectItem(hnpItem, "current_version");
         cJSON *installItem = cJSON_GetObjectItem(hnpItem, "install_version");
-        if ((nameItem != NULL) && (currentItem != NULL) && (installItem != NULL) && (cJSON_IsString(nameItem)) &&
-            (cJSON_IsString(currentItem)) && (cJSON_IsString(installItem)) &&
-            (strcmp(nameItem->valuestring, name) == 0) &&
+        if ((nameItem != NULL) && (currentItem != NULL) && (installItem != NULL) &&
+            (cJSON_IsString(nameItem)) && (cJSON_IsString(currentItem)) && (cJSON_IsString(installItem)) &&
+            (nameItem->valuestring != NULL) && (strcmp(nameItem->valuestring, name) == 0) &&
+            (currentItem->valuestring != NULL) && (installItem->valuestring != NULL) &&
             (strcmp(currentItem->valuestring, installItem->valuestring) == 0)) {
             version = strdup(currentItem->valuestring);
             return version;
@@ -600,6 +601,9 @@ static char *HnpNeedUnInstallHnpVersionGet(cJSON *hnpItemArr, const char *name)
 
 char *HnpCurrentVersionGet(const char *name)
 {
+    if (name == NULL) {
+        return NULL;
+    }
     char *infoStream;
     int size;
     cJSON *hapItem = NULL;
@@ -630,7 +634,8 @@ char *HnpCurrentVersionGet(const char *name)
             cJSON *nameItem = cJSON_GetObjectItem(hnpItem, "name");
             cJSON *versionItem = cJSON_GetObjectItem(hnpItem, "current_version");
             if ((nameItem != NULL) && (versionItem != NULL) && (cJSON_IsString(nameItem)) &&
-                (cJSON_IsString(versionItem)) && (strcmp(nameItem->valuestring, name) == 0)) {
+                (cJSON_IsString(versionItem)) && (versionItem->valuestring != NULL) &&
+                (nameItem->valuestring != NULL) && (strcmp(nameItem->valuestring, name) == 0)) {
                 version = strdup(versionItem->valuestring);
                 cJSON_Delete(json);
                 return version;
@@ -644,6 +649,9 @@ char *HnpCurrentVersionGet(const char *name)
 
 char *HnpCurrentVersionUninstallCheck(const char *name)
 {
+    if (name == NULL) {
+        return NULL;
+    }
     char *infoStream;
     int size;
     cJSON *hapItem = NULL;
