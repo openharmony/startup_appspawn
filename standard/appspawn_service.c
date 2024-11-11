@@ -739,6 +739,7 @@ static void ProcessPreFork(AppSpawnContent *content, AppSpawningCtx *property)
             ProcessExit(0);
             return;
         }
+
         property->client.id = client.id;
         property->client.flags = client.flags;
         property->isPrefork = true;
@@ -782,7 +783,7 @@ static int AppSpawnProcessMsgForPrefork(AppSpawnContent *content, AppSpawnClient
 
         int option = fcntl(property->forkCtx.fd[0], F_GETFD);
         if (option > 0) {
-            ret = fcntl(property->forkCtx.fd[0], F_SETFD, option | O_NONBLOCK);
+            ret = fcntl(property->forkCtx.fd[0], F_SETFD, (unsigned int)option | O_NONBLOCK);
             APPSPAWN_CHECK_ONLY_LOG(ret == 0, "fcntl failed %{public}d,%{public}d", ret, errno);
         }
 
@@ -802,10 +803,10 @@ static bool IsSupportPrefork(AppSpawnContent *content, AppSpawnClient *client)
         return false;
     }
     if (!content->enablePerfork) {
+        APPSPAWN_LOGV("g_enablePerfork %{public}d", content->enablePerfork);
         return false;
     }
     AppSpawningCtx *property = (AppSpawningCtx *)client;
-
     if (content->mode == MODE_FOR_APP_SPAWN && !IsChildColdRun(property)
         && !CheckAppMsgFlagsSet(property, APP_FLAGS_CHILDPROCESS)) {
         return true;
@@ -813,7 +814,7 @@ static bool IsSupportPrefork(AppSpawnContent *content, AppSpawnClient *client)
     return false;
 }
 
-static bool IsBootFinished()
+static bool IsBootFinished(void)
 {
     char buffer[32] = {0};  // 32 max
     int ret = GetParameter("bootevent.boot.completed", "false", buffer, sizeof(buffer));
@@ -1207,7 +1208,7 @@ APPSPAWN_STATIC int AppSpawnClearEnv(AppSpawnMgr *content, AppSpawningCtx *prope
     return 0;
 }
 
-static int IsEnablePerfork()
+static int IsEnablePrefork()
 {
     char buffer[32] = {0};
     int ret = GetParameter("persist.sys.prefork.enable", "true", buffer, sizeof(buffer));
@@ -1235,7 +1236,7 @@ AppSpawnContent *AppSpawnCreateContent(const char *socketName, char *longProcNam
         APPSPAWN_CHECK(ret == 0, AppSpawnDestroyContent(&appSpawnContent->content);
             return NULL, "Failed to create server");
     }
-    appSpawnContent->content.enablePerfork = IsEnablePerfork();
+    appSpawnContent->content.enablePerfork = IsEnablePrefork();
     return &appSpawnContent->content;
 }
 
@@ -1274,7 +1275,6 @@ AppSpawnContent *StartSpawnService(const AppSpawnStartArg *startArg, uint32_t ar
     APPSPAWN_CHECK(LE_GetDefaultLoop() != NULL, return NULL, "Invalid default loop");
     AppSpawnContent *content = AppSpawnCreateContent(arg->socketName, argv[0], argvSize, arg->mode);
     APPSPAWN_CHECK(content != NULL, return NULL, "Failed to create content for %{public}s", arg->socketName);
-
     AppSpawnLoadAutoRunModules(arg->moduleType);  // load corresponding plugin according to startup mode
     int ret = ServerStageHookExecute(STAGE_SERVER_PRELOAD, content);   // Preload, prase the sandbox
     APPSPAWN_CHECK(ret == 0, AppSpawnDestroyContent(content);
