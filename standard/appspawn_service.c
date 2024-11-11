@@ -29,7 +29,7 @@
 #include <sys/mount.h>
 #include <unistd.h>
 #include <sys/prctl.h>
-
+#include <sched.h>
 #include "appspawn.h"
 #include "appspawn_hook.h"
 #include "appspawn_modulemgr.h"
@@ -1191,6 +1191,12 @@ static void AppSpawnRun(AppSpawnContent *content, int argc, char *const argv[])
 #ifdef USE_ENCAPS
     appSpawnContent->content.fdEncaps = OpenDevEncaps();
 #endif
+    if (IsAppSpawnMode(appSpawnContent)) {
+        struct sched_param param = { 0 };
+        param.sched_priority = 1;
+        int ret = sched_setscheduler(0, SCHED_FIFO, &param);
+        APPSPAWN_CHECK_ONLY_LOG(ret == 0, "UpdateSchedPrio failed ret: %{public}d, %{public}d", ret, errno);
+    }
     LE_RunLoop(LE_GetDefaultLoop());
     APPSPAWN_LOGI("AppSpawnRun exit mode: %{public}d ", content->mode);
 
