@@ -85,7 +85,7 @@ static int WriteEncapsInfo(int fd, AppSpawnEncapsBaseType encapsType, const char
 
 APPSPAWN_STATIC int EnableEncapsForProc(int encapsFileFd)
 {
-    uint32_t flag = OH_PROC_APP;
+    uint32_t flag = OH_PROC_HAP;
     return WriteEncapsInfo(encapsFileFd, ENCAPS_PROC_TYPE_MODE, OH_ENCAPS_DEFAULT_STR, flag);
 }
 
