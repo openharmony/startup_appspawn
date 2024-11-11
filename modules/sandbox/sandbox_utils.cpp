@@ -1918,7 +1918,13 @@ static int MountInShared(const AppSpawningCtx *property, const char *rootPath, c
         return APPSPAWN_ERROR_UTILS_MEM_FAIL;
     }
 
-    if (access(path, F_OK) == 0) {
+    char currentUserPath[PATH_MAX_LEN] = {0};
+    ret = snprintf_s(currentUserPath, PATH_MAX_LEN, PATH_MAX_LEN - 1, "%s/currentUser", path);
+    if (ret <= 0) {
+        return APPSPAWN_ERROR_UTILS_MEM_FAIL;
+    }
+
+    if (access(currentUserPath, F_OK) == 0) {
         return 0;
     }
 
@@ -1947,11 +1953,17 @@ static int SharedMountInSharefs(const AppSpawningCtx *property, const char *root
         return APPSPAWN_ARG_INVALID;
     }
 
-    if (access(target, F_OK) == 0) {
+    char currentUserPath[PATH_MAX_LEN] = {0};
+    int ret = snprintf_s(currentUserPath, PATH_MAX_LEN, PATH_MAX_LEN - 1, "%s/currentUser", target);
+    if (ret <= 0) {
+        return APPSPAWN_ERROR_UTILS_MEM_FAIL;
+    }
+
+    if (access(currentUserPath, F_OK) == 0) {
         return 0;
     }
 
-    int ret = MakeDirRec(target, DIR_MODE, 1);
+    ret = MakeDirRec(target, DIR_MODE, 1);
     if (ret != 0) {
         return APPSPAWN_SANDBOX_ERROR_MKDIR_FAIL;
     }
