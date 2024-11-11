@@ -86,15 +86,12 @@ static int SetAsanEnabledEnv(const AppSpawnMgr *content, const AppSpawningCtx *p
 
 static void SetGwpAsanEnabled(const AppSpawnMgr *content, const AppSpawningCtx *property)
 {
-    if (!(CheckAppMsgFlagsSet(property, APP_FLAGS_GWP_ENABLED_FORCE) ||
-        CheckAppMsgFlagsSet(property, APP_FLAGS_GWP_ENABLED_NORMAL))) {
+    int enforce = CheckAppMsgFlagsSet(property, APP_FLAGS_GWP_ENABLED_FORCE);
+    if (!enforce && !CheckAppMsgFlagsSet(property, APP_FLAGS_GWP_ENABLED_NORMAL)) {
         return;
     }
-    if (IsDeveloperModeOn(property)) {
-        APPSPAWN_LOGV("SetGwpAsanEnabled with flags: %{public}d",
-            CheckAppMsgFlagsSet(property, APP_FLAGS_GWP_ENABLED_FORCE));
-        may_init_gwp_asan(CheckAppMsgFlagsSet(property, APP_FLAGS_GWP_ENABLED_FORCE));
-    }
+    APPSPAWN_LOGV("SetGwpAsanEnabled with flags: %{public}d", enforce);
+    may_init_gwp_asan(enforce);
 }
 
 #ifdef ASAN_DETECTOR
