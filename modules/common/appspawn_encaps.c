@@ -67,7 +67,7 @@ static int WriteEncapsInfo(int fd, AppSpawnEncapsBaseType encapsType, const char
 
     int ret = 0;
     switch (encapsType) {
-        case ENCAPS_MAX_TYPE_MODE:
+        case ENCAPS_PROC_TYPE_MODE:
             ret = ioctl(fd, SET_ENCAPS_PROC_TYPE_CMD, &flag);
             break;
         case ENCAPS_PERMISSION_TYPE_MODE:
