@@ -287,8 +287,8 @@ static int HandleVariableReplace(const SandboxContext *context,
     return 0;
 }
 
-const char *GetSandboxRealVar(const SandboxContext *context,
-    uint32_t bufferType, const char *source, const char *prefix, const VarExtraData *extraData)
+const char *GetSandboxRealVar(const SandboxContext *context, uint32_t bufferType, const char *source,
+                              const char *prefix, const VarExtraData *extraData)
 {
     APPSPAWN_CHECK_ONLY_EXPER(context != NULL, return NULL);
     APPSPAWN_CHECK(bufferType < ARRAY_LENGTH(context->buffer), return NULL, "Invalid index for buffer");
