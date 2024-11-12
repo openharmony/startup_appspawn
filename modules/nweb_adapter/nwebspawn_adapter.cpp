@@ -118,7 +118,8 @@ APPSPAWN_STATIC int RunChildProcessor(AppSpawnContent *content, AppSpawnClient *
     // preload libweb_engine
     webEngineHandle = dlopen_ns(&dlns, engineLibName.c_str(), RTLD_NOW | RTLD_GLOBAL);
     // load libnweb_render
-    nwebRenderHandle = dlopen_ns(&dlns, renderLibName.c_str(), RTLD_NOW | RTLD_GLOBAL);
+    nwebRenderHandle =
+        dlopen_ns(&dlns, renderLibName.c_str(), RTLD_NOW | RTLD_GLOBAL);
 #else
     // preload libweb_engine
     const std::string engineLibPath = libPath + "/" + engineLibName;
