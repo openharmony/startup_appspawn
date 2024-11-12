@@ -72,10 +72,12 @@ void exit(int code)
 #define OH_PROC_APP 4
 #define SET_PROC_TYPE_CMD _IOW(OH_ENCAPS_MAGIC, OH_ENCAPS_PROC_TYPE_BASE, uint32_t)
 
-static void SetEncapsFlag(int fdEncaps, uint32_t flag)
+static void SetEncapsFlag()
 {
-    if (fdEncaps < -1) {
-        APPSPAWN_LOGE("AppSpawnChild SetEncapsFlag failed, fdEncaps < -1");
+    uint32_t flag = OH_PROC_APP;
+    int fdEncaps = open("/dev/encaps", O_RDWR);
+    if (fdEncaps < 0) {
+        APPSPAWN_LOGE("AppSpawnChild open encaps failed");
         return;
     }
     int ret = ioctl(fdEncaps, SET_PROC_TYPE_CMD, &flag);
@@ -106,7 +108,7 @@ int AppSpawnChild(AppSpawnContent *content, AppSpawnClient *client)
         APPSPAWN_LOGW("AppSpawnChild cold start fail %{public}u", client->id);
     }
 #ifdef USE_ENCAPS
-    SetEncapsFlag(content->fdEncaps, OH_PROC_APP);
+    SetEncapsFlag();
 #endif
     StartAppspawnTrace("AppSpawnExecuteSpawningHook");
     ret = AppSpawnExecuteSpawningHook(content, client);
