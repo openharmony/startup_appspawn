@@ -83,6 +83,9 @@ ohos_executable("appspawn") {
     external_deps += [ "hisysevent:libhisysevent" ]
     sources += [ "${appspawn_path}/modules/sysevent/appspawn_hisysevent.cpp" ]
   }
+  if (appspawn_use_encaps) {
+    defines += [ "USE_ENCAPS" ]
+  }
   if (build_selinux) {
     defines += [ "WITH_SELINUX" ]
     external_deps += [
