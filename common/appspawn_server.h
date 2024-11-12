@@ -60,9 +60,6 @@ typedef struct AppSpawnContent {
     uint32_t longProcNameLen;
     uint32_t sandboxNsFlags;
     int wdgOpened;
-#ifdef USE_ENCAPS
-    int fdEncaps;
-#endif
     RunMode mode;
 #ifndef OHOS_LITE
     int32_t preforkFd[2];
