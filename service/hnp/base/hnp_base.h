@@ -40,7 +40,11 @@ extern "C" {
 #endif
 
 #ifndef MAX_FILE_PATH_LEN
+#if PATH_MAX > 4096
+#define MAX_FILE_PATH_LEN PATH_MAX
+#else
 #define MAX_FILE_PATH_LEN 4096
+#endif
 #endif
 
 #define HNP_VERSION_LEN 32
