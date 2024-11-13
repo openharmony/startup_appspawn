@@ -109,6 +109,14 @@ static void StopAppSpawn(void)
         OH_ListInit(&appInfo->node);
         free(appInfo);
     }
+
+    AppSpawnContent *content = GetAppSpawnContent();
+    if (content != NULL && content->reservedPid > 0) {
+        int ret = kill(content->reservedPid, SIGKILL);
+        APPSPAWN_CHECK_ONLY_LOG(ret == 0, "kill reserved pid %{public}d failed %{public}d %{public}d",
+            content->reservedPid, ret, errno);
+        content->reservedPid = 0;
+    }
     TraversalSpawnedProcess(AppQueueDestroyProc, NULL);
     APPSPAWN_LOGI("StopAppSpawn ");
 #ifdef APPSPAWN_HISYSEVENT
