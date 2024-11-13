@@ -127,6 +127,7 @@ namespace {
     const char* g_fileSeparator = "/";
     const char* g_overlayDecollator = "|";
     const std::string g_sandBoxRootDir = "/mnt/sandbox/";
+    const std::string g_ohosGpu = "__internal__.com.ohos.gpu";
     const std::string g_ohosRender = "__internal__.com.ohos.render";
     const std::string g_sandBoxRootDirNweb = "/mnt/sandbox/com.ohos.render/";
     const std::string FILE_CROSS_APP_MODE = "ohos.permission.FILE_CROSS_APP";
@@ -1100,7 +1101,10 @@ int32_t SandboxUtils::SetRenderSandboxPropertyNweb(const AppSpawningCtx *appProp
 
     for (auto& config : SandboxUtils::GetJsonConfig(type)) {
         nlohmann::json& privateAppConfig = config[g_privatePrefix][0];
-        if (privateAppConfig.find(g_ohosRender) != privateAppConfig.end()) {
+        char *processType = (char *)(GetAppSpawnMsgExtInfo(appProperty->message, MSG_EXT_NAME_PROCESS_TYPE, NULL));
+        APPSPAWN_CHECK(processType != NULL, return -1, "Invalid processType data");
+
+        if (strcmp(processType, "render") == 0 && privateAppConfig.find(g_ohosRender) != privateAppConfig.end()) {
             int ret = DoAllMntPointsMount(appProperty, privateAppConfig[g_ohosRender][0], nullptr, g_ohosRender);
             APPSPAWN_CHECK(ret == 0, return ret, "DoAllMntPointsMount failed, %{public}s",
                 GetBundleName(appProperty));
@@ -1108,6 +1112,16 @@ int32_t SandboxUtils::SetRenderSandboxPropertyNweb(const AppSpawningCtx *appProp
             APPSPAWN_CHECK(ret == 0, return ret, "DoAllSymlinkPointslink failed, %{public}s",
                 GetBundleName(appProperty));
             ret = HandleFlagsPoint(appProperty, privateAppConfig[g_ohosRender][0]);
+            APPSPAWN_CHECK_ONLY_LOG(ret == 0, "HandleFlagsPoint for render-sandbox failed, %{public}s",
+                GetBundleName(appProperty));
+        } else if (strcmp(processType, "gpu") == 0 && privateAppConfig.find(g_ohosGpu) != privateAppConfig.end()) {
+            int ret = DoAllMntPointsMount(appProperty, privateAppConfig[g_ohosGpu][0], nullptr, g_ohosGpu);
+            APPSPAWN_CHECK(ret == 0, return ret, "DoAllMntPointsMount failed, %{public}s",
+                GetBundleName(appProperty));
+            ret = DoAllSymlinkPointslink(appProperty, privateAppConfig[g_ohosGpu][0]);
+            APPSPAWN_CHECK(ret == 0, return ret, "DoAllSymlinkPointslink failed, %{public}s",
+                GetBundleName(appProperty));
+            ret = HandleFlagsPoint(appProperty, privateAppConfig[g_ohosGpu][0]);
             APPSPAWN_CHECK_ONLY_LOG(ret == 0, "HandleFlagsPoint for render-sandbox failed, %{public}s",
                 GetBundleName(appProperty));
         }
