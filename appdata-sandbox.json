@@ -54,11 +54,6 @@
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
-                    "src-path" : "/system/lib/ld-musl-arm.so.1",
-                    "sandbox-path" : "/system/lib/ld-musl-arm.so.1",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                },{
                     "src-path" : "/system/lib/ndk",
                     "sandbox-path" : "/system/lib/ndk",
                     "sandbox-flags" : [ "bind", "rec" ],
@@ -579,8 +574,133 @@
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
-                    "src-path" : "/system/lib/ld-musl-arm.so.1",
-                    "sandbox-path" : "/system/lib/ld-musl-arm.so.1",
+                    "src-path" : "/system/app/<arkWebPackageName>",
+                    "sandbox-path" : "/system/app/<arkWebPackageName>",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/vendor/lib",
+                    "sandbox-path" : "/vendor/lib",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/data/app/el1/bundle/public/<arkWebPackageName>",
+                    "sandbox-path" : "/data/app/el1/bundle/public/<arkWebPackageName>",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/system/app/NWeb",
+                    "sandbox-path" : "/system/app/NWeb",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/module_update/ArkWebCore/app/<arkWebPackageName>",
+                    "sandbox-path" : "/module_update/ArkWebCore/app/<arkWebPackageName>",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }
+            ],
+            "symbol-links" : [{
+                    "target-name" : "/system/etc",
+                    "link-name" : "/etc",
+                    "check-action-status": "false"
+                }, {
+                    "target-name" : "/system/bin",
+                    "link-name" : "/bin",
+                    "check-action-status": "false"
+                }, {
+                    "target-name" : "/system/lib",
+                    "link-name" : "/lib",
+                    "check-action-status": "false"
+                }
+            ]
+        }],
+        "__internal__.com.ohos.gpu" : [{
+            "sandbox-root" : "/mnt/sandbox/com.ohos.render/<PackageName>",
+            "sandbox-ns-flags" : [ "pid", "net" ],
+            "mount-paths" : [{
+                    "src-path" : "/dev",
+                    "sandbox-path" : "/dev",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/proc",
+                    "sandbox-path" : "/proc",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/sys",
+                    "sandbox-path" : "/sys",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/system/fonts",
+                    "sandbox-path" : "/system/fonts",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/system/etc",
+                    "sandbox-path" : "/system/etc",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/system/etc/hosts",
+                    "sandbox-path" : "/data/service/el1/network/hosts_user/hosts",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/data/app/el1/bundle/public/<arkWebPackageName>",
+                    "sandbox-path" : "/data/storage/el1/bundle/arkwebcore",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/system/bin",
+                    "sandbox-path" : "/system/bin",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/system/lib",
+                    "sandbox-path" : "/system/lib",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/system/lib/platformsdk",
+                    "sandbox-path" : "/system/lib/platformsdk",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/system/lib/ndk",
+                    "sandbox-path" : "/system/lib/ndk",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/system/lib/module",
+                    "sandbox-path" : "/system/lib/module",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/system/lib/chipset-pub-sdk",
+                    "sandbox-path" : "/system/lib/chipset-pub-sdk",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/system/lib/chipset-sdk",
+                    "sandbox-path" : "/system/lib/chipset-sdk",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/system/lib/seccomp",
+                    "sandbox-path" : "/system/lib/seccomp",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/system/lib/extensionability",
+                    "sandbox-path" : "/system/lib/extensionability",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/system/lib/media",
+                    "sandbox-path" : "/system/lib/media",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
@@ -623,13 +743,7 @@
                     "link-name" : "/lib",
                     "check-action-status": "false"
                 }
-            ],
-            "flags-point" : [{
-                "flags": "DLP_MANAGER",
-                "sandbox-root" : "/mnt/sandbox/com.ohos.render/<PackageName>",
-                "mount-paths" : [],
-                "symbol-links" : [{}]
-            }]
+            ]
         }]
     }],
     "permission":[{
