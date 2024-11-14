@@ -6,20 +6,20 @@
 
 ### 文件
 
-| 名称 | 描述 |
-| -------- | -------- |
+| 名称      | 描述                                                                                                                                  |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------- |
 | hnp_api.h | 提供支持Native软件的安装和卸载的函数。<br/>**引用文件**：&lt;hnp_api.h&gt;<br/>**库**：libhnpapi.z.so |
 
-
 ### 结构体定义
+
 NA
 
 ### 函数
 
-| 名称 | 描述 |
-| -------- | -------- |
-| [NativeInstallHnp](#nativeinstallhnp) | 安装Native软件到设备中 |
-| [NativeUnInstallHnp](#nativeuninstallhnp)| 卸载设备中已安装的Native软件 |
+| 名称                                   | 描述                         |
+| -------------------------------------- | ---------------------------- |
+| [NativeInstallHnp](#nativeinstallhnp)     | 安装Native软件到设备中       |
+| [NativeUnInstallHnp](#nativeuninstallhnp) | 卸载设备中已安装的Native软件 |
 
 ## 函数说明
 
@@ -55,15 +55,16 @@ int NativeInstallHnp(const char *userId, const char *hnpRootPath, const HapInfo 
   ```
 
   installOptions：安装选项。其中每一位对应的选项信息枚举如下。
-  ```
+
+```
     typedef enum {
         OPTION_INDEX_FORCE = 0,  /* installed forcely */
         OPTION_INDEX_BUTT
     } HnpInstallOptionIndex;
-  ```
+```
 
 **返回：**
-
+ 
 安装成功返回0；失败返回错误码
 
 ### NativeUnInstallHnp
