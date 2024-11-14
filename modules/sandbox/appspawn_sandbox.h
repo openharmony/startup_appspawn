@@ -293,8 +293,8 @@ typedef struct TagVarExtraData {
 
 void ClearVariable(void);
 void AddDefaultVariable(void);
-const char *GetSandboxRealVar(const SandboxContext *context,
-    uint32_t bufferType, const char *source, const char *prefix, const VarExtraData *extraData);
+const char *GetSandboxRealVar(const SandboxContext *context, uint32_t bufferType, const char *source,
+                              const char *prefix, const VarExtraData *extraData);
 
 /**
  * @brief expand config

@@ -132,4 +132,5 @@ StubNode *GetStubNode(int type);
 }
 #endif
 int SetSelinuxConNweb(const AppSpawnMgr *content, const AppSpawningCtx *property);
+void InitAppCommonEnv(const AppSpawningCtx *property);
 #endif // APPSPAWN_TEST_STUB_H
