@@ -38,7 +38,7 @@ APPSPAWN_STATIC int DeviceDebugShowHelp(int argc, char *argv[])
     printf("\r\nusage: devicedebug <command> <options>\r\n"
         "\r\nThese are common devicedebug commands list:\r\n"
         "\r\n         help              list available commands"
-        "\r\n         kill              send a signal to a process\r\n");
+        "\r\n         kill              send a signal(1-64) to a process\r\n");
 
     return 0;
 }
@@ -76,7 +76,9 @@ int main(int argc, char *argv[])
     /* 检验用户命令，获取对应的处理函数 */
     cmdInfo = DeviceDebugCmdCheck(argv[DEVICEDEBUG_NUM_1]);
     if (cmdInfo == NULL) {
-        DEVICEDEBUG_LOGE("invalid cmd!. cmd:%{public}s\r\n", argv[DEVICEDEBUG_NUM_1]);
+        printf("devicedebug: '%s' is not a valid devicedebug command. See 'devicedebug help'.",
+            argv[DEVICEDEBUG_NUM_1]);
+        DeviceDebugShowHelp(argc, argv);
         return DEVICEDEBUG_ERRNO_OPERATOR_TYPE_INVALID;
     }
 
