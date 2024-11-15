@@ -65,7 +65,7 @@ typedef enum TagAppSpawnHookStage {
     STAGE_PARENT_POST_FORK = 21,
     STAGE_PARENT_PRE_RELY = 22,
     STAGE_PARENT_POST_RELY = 23,
-
+    STAGE_PARENT_UNINSTALL,
     // run in child process
     STAGE_CHILD_PRE_COLDBOOT = 30, // clear env, set token before cold boot
     STAGE_CHILD_EXECUTE,
