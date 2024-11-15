@@ -36,7 +36,7 @@ APPSPAWN_STATIC void DeviceDebugShowKillHelp(void)
     printf("\r\nusage: devicedebug kill [options] <pid>"
         "\r\noptions list:"
         "\r\n         -h, --help                list available commands"
-        "\r\n         kill -<signal> <pid>      send a signal to a process\r\n");
+        "\r\n         kill -<signal> <pid>      send a signal(1-64) to a process\r\n");
 }
 
 APPSPAWN_STATIC char* DeviceDebugJsonStringGeneral(int pid, const char *op, cJSON *args)
@@ -133,7 +133,7 @@ int DeviceDebugCmdKill(int argc, char *argv[])
 
     int signal = atoi(argv[DEVICEDEBUG_KILL_CMD_SIGNAL_INDEX] + 1);
     if (signal > SIGRTMAX || signal <= 0) {
-        DEVICEDEBUG_LOGE("signal is %{public}d > %{public}d", signal, SIGRTMAX);
+        DEVICEDEBUG_LOGE("signal is %{public}d not in [1, %{public}d]", signal, SIGRTMAX);
         DeviceDebugShowKillHelp();
         return DEVICEDEBUG_ERRNO_PARAM_INVALID;
     }
