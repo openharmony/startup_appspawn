@@ -728,6 +728,26 @@
                     "sandbox-path" : "/module_update/ArkWebCore/app/<arkWebPackageName>",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
+                }, {
+                    "src-path" : "/vendor/etc/vulkan/icd.d",
+                    "sandbox-path" : "/vendor/etc/vulkan/icd.d",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/data/local/shader_cache/local/<PackageName>",
+                    "sandbox-path" : "/data/storage/shader_cache/local",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/data/local/shader_cache/cloud/<PackageName>",
+                    "sandbox-path" : "/data/storage/shader_cache/cloud",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/data/local/shader_cache/cloud/common",
+                    "sandbox-path" : "/data/storage/shader_cache/common",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
                 }
             ],
             "symbol-links" : [{
