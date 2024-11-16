@@ -1530,12 +1530,12 @@ APPSPAWN_STATIC int AppspawpnDevicedebugKill(int pid, cJSON *args)
     AppSpawnedProcess *appInfo = GetSpawnedProcess(pid);
     if (appInfo == NULL) {
         APPSPAWN_LOGE("appspawn devicedebug get app info unsuccess, pid=%{public}d", pid);
-        return -1;
+        return APPSPAWN_DEVICEDEBUG_ERROR_APP_NOT_EXIST;
     }
 
     if (!appInfo->isDebuggable) {
         APPSPAWN_LOGE("appspawn devicedebug process is not debuggable, pid=%{public}d", pid);
-        return -1;
+        return APPSPAWN_DEVICEDEBUG_ERROR_APP_NOT_DEBUGGABLE;
     }
 
     APPSPAWN_LOGI("appspawn devicedebug debugable=%{public}d, pid=%{public}d, signal=%{public}d",
