@@ -67,7 +67,8 @@ APPSPAWN_STATIC void DevicedebugKillRetDeal(int result, int pid)
             printf("devicedebug: kill: process: %d is not debuggable app\r\n", pid);
             break;
         default:
-            printf("devicedebug: process: %d kill unsuccess, please check the hilog for the cause\r\n", pid);
+            printf("devicedebug: process: %d kill unsuccess ret=%d, please check the hilog for the cause\r\n",
+                pid, result);
             break;
     }
 }
@@ -121,7 +122,6 @@ APPSPAWN_STATIC int DeviceDebugKill(int pid, int signal)
     }
 
     if (result.result != 0) {
-        DevicedebugKillRetDeal(result.result, pid);
         return result.result;
     }
 
@@ -156,7 +156,12 @@ int DeviceDebugCmdKill(int argc, char *argv[])
     int pid = atoi(argv[DEVICEDEBUG_KILL_CMD_PID_INDEX]);
     DEVICEDEBUG_LOGI("devicedebug cmd kill start signal[%{public}d], pid[%{public}d]", signal, pid);
 
-    return DeviceDebugKill(pid, signal);
+    int ret = DeviceDebugKill(pid, signal);
+    if (ret != 0) {
+        DevicedebugKillRetDeal(ret, pid);
+    }
+
+    return ret;
 }
 
 #ifdef __cplusplus
