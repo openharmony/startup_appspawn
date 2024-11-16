@@ -131,6 +131,9 @@ typedef enum {
     APPSPAWN_SANDBOX_ERROR_MOUNT_FAIL,
     APPSPAWN_SANDBOX_ERROR_SET_PERMISSION_FLAG_FAIL,
     APPSPAWN_NODE_EXIST,
+    /* devicedebug errno */
+    APPSPAWN_DEVICEDEBUG_ERROR_APP_NOT_EXIST,
+    APPSPAWN_DEVICEDEBUG_ERROR_APP_NOT_DEBUGGABLE,
 } AppSpawnErrorCode;
 
 uint64_t DiffTime(const struct timespec *startTime, const struct timespec *endTime);
