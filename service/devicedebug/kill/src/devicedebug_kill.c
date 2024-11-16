@@ -57,6 +57,21 @@ APPSPAWN_STATIC char* DeviceDebugJsonStringGeneral(int pid, const char *op, cJSO
     return jsonString;
 }
 
+APPSPAWN_STATIC void DevicedebugKillRetDeal(int result, int pid)
+{
+    switch (result) {
+        case APPSPAWN_DEVICEDEBUG_ERROR_APP_NOT_EXIST:
+            printf("devicedebug: kill: %d: No such app process\r\n", pid);
+            break;
+        case APPSPAWN_DEVICEDEBUG_ERROR_APP_NOT_DEBUGGABLE:
+            printf("devicedebug: kill: process: %d is not debuggable app\r\n", pid);
+            break;
+        default:
+            printf("devicedebug: process: %d kill unsuccess, please check the hilog for the cause\r\n", pid);
+            break;
+    }
+}
+
 APPSPAWN_STATIC int DeviceDebugKill(int pid, int signal)
 {
     cJSON *args = cJSON_CreateObject();
@@ -106,7 +121,7 @@ APPSPAWN_STATIC int DeviceDebugKill(int pid, int signal)
     }
 
     if (result.result != 0) {
-        DEVICEDEBUG_LOGE("devicedebug appspawn kill process unsuccess, result=%{public}d", result.result);
+        DevicedebugKillRetDeal(result.result, pid);
         return result.result;
     }
 
