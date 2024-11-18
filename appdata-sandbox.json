@@ -773,6 +773,16 @@
                 }
             ]
         }],
+        "ohos.permission.ACCESS_APP_INSTALL_DIR":[{
+            "sandbox-switch": "ON",
+            "gids": [2002],
+            "mount-paths": [{
+                    "src-path": "/data/service/el1/public/bms/bundle_manager_service/app_install/<currentUserId>/",
+                    "sandbox-path": "/data/bms_app_install/",
+                    "sandbox-flags": [ "bind", "rec" ]
+                }
+            ]
+        }],
         "ohos.permission.ACCESS_PROTOCOL_DFX_DATA":[{
             "sandbox-switch": "ON",
             "gids": [1007],
