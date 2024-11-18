@@ -1519,6 +1519,19 @@ static void ProcessSpawnRestartMsg(AppSpawnConnection *connection, AppSpawnMsgNo
     APPSPAWN_LOGE("Failed to execv, ret %{public}d, errno %{public}d", ret, errno);
 }
 
+APPSPAWN_STATIC int ProcessUninstallDebugHap(AppSpawnConnection *connection, AppSpawnMsgNode *message)
+{
+    APPSPAWN_LOGI("ProcessUninstallDebugHap start");
+    APPSPAWN_CHECK(connection != NULL && message != NULL, return APPSPAWN_ARG_INVALID,
+        "ProcessUninstallDebugHap invalid param");
+
+    AppSpawningCtx *property = CreateAppSpawningCtx();
+    APPSPAWN_CHECK(property != NULL, return APPSPAWN_SYSTEM_ERROR, "create appspawn ctx failed");
+    property->message = message;
+    property->message->connection = connection;
+    return AppSpawnHookExecute(STAGE_PARENT_UNINSTALL, 0, GetAppSpawnContent(), &property->client);
+}
+
 APPSPAWN_STATIC int AppspawpnDevicedebugKill(int pid, cJSON *args)
 {
     cJSON *signal = cJSON_GetObjectItem(args, "signal");
@@ -1649,6 +1662,11 @@ static void ProcessRecvMsg(AppSpawnConnection *connection, AppSpawnMsgNode *mess
             break;
         case MSG_DEVICE_DEBUG:
             ret = ProcessAppSpawnDeviceDebugMsg(message);
+            SendResponse(connection, msg, ret, 0);
+            DeleteAppSpawnMsg(message);
+            break;
+        case MSG_UNINSTALL_DEBUG_HAP:
+            ret = ProcessUninstallDebugHap(connection, message);
             SendResponse(connection, msg, ret, 0);
             DeleteAppSpawnMsg(message);
             break;
