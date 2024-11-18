@@ -278,12 +278,14 @@ APPSPAWN_STATIC int SpawnSetEncapsPermissions(AppSpawnMgr *content, AppSpawningC
 
     int ret = EnableEncapsForProc(encapsFileFd);
     if (ret != 0) {
+        close(encapsFileFd);
         return 0;         // Can't enable encaps ability
     }
 
     char *encapsInfoStr = NULL;
     ret = SpawnBuildEncaps(content, property, &encapsInfoStr);
     if (ret != 0) {
+        close(encapsFileFd);
         APPSPAWN_LOGW("Build encaps object failed, ret: %{public}d", ret);
         return 0;        // Can't set permission encpas ability
     }

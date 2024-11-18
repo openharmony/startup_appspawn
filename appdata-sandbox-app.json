@@ -175,14 +175,8 @@
             "name": "ohos.permission.FILE_ACCESS_MANAGER",
             "sandbox-switch": "ON",
             "gids": ["file_manager", "user_data_rw"],
-            "mount-paths": [{
-                "src-path": "/storage/media/<currentUserId>/local/files/Docs",
-                "sandbox-path": "/storage/Users/<currentUserId>"
-            }, {
-                "src-path": "/storage/media/<currentUserId>/local/files/.Recent",
-                "sandbox-path": "/storage/Users/<currentUserId>/.Recent"
-            }],
-            "mount-groups": [ "user-public", "Users" ]
+            "mount-paths": [],
+            "mount-groups": [ "user-public", "file_manager_recent" ]
         }, {
             "name": "ohos.permission.READ_IMAGEVIDEO",
             "sandbox-switch": "ON",
@@ -194,18 +188,11 @@
         }, {
             "name": "ohos.permission.FILE_CROSS_APP",
             "gids": ["file_manager"],
-            "mount-paths": [{
-                "src-path": "/storage/media/<currentUserId>/local/files/Docs",
-                "sandbox-path": "/storage/Users/<currentUserId>"
-            }, {
-                "src-path": "/data/app/el1/<currentUserId>/base",
-                "sandbox-path": "/storage/Users/<currentUserId>/appdata/el1",
-                "category": "dac_override"
-            }, {
-                "src-path": "/data/app/el2/<currentUserId>/base",
-                "sandbox-path": "/storage/Users/<currentUserId>/appdata/el2",
-                "category": "dac_override"
-            }],
+            "mount-paths": [],
+            "mount-groups": [ "user-public" ]
+        }, {
+            "name": "ohos.permission.FILE_ACCESS_COMMON_DIR",
+            "mount-paths": [],
             "mount-groups": [ "user-public" ]
         }, {
             "name": "ohos.permission.ACTIVATE_THEME_PACKAGE",
@@ -452,6 +439,13 @@
         "mount-paths": [{
             "src-path": "/storage/media/<currentUserId>/local/files/Docs",
             "sandbox-path": "<deps-path>/currentUser"
+        }]
+    },  {
+        "name": "file_manager_recent",
+        "type": "app-variable",
+        "mount-paths": [{
+            "src-path": "/storage/media/<currentUserId>/local/files/.Recent",
+            "sandbox-path": "/storage/Users/<currentUserId>/.Recent"
         }]
     }, {
         "name": "el2",
