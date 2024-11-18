@@ -107,7 +107,8 @@ private:
     static int32_t DoAddGid(AppSpawningCtx *appProperty, nlohmann::json &appConfig,
                             const char* permissionName, const std::string &section);
     static int32_t CheckAppFullMountEnable();
-    static int32_t SetPermissionWithParam(AppSpawningCtx *appProperty);
+    static void UpdateMsgFlagsWithPermission(AppSpawningCtx *appProperty);
+    static int32_t UpdatePermissionFlags(AppSpawningCtx *appProperty);
     static int32_t SetSandboxProperty(AppSpawningCtx *appProperty, std::string &sandboxPackagePath);
     static int32_t ChangeCurrentDir(std::string &sandboxPackagePath, const std::string &bundleName,
                                     bool sandboxSharedStatus);
