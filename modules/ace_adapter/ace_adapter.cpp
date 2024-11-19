@@ -43,6 +43,7 @@
 using namespace OHOS::AppSpawn;
 using namespace OHOS::Global;
 
+#define SYSTEMLIB_JSON "/appspawn_systemLib.json"
 #ifdef ASAN_DETECTOR
 static const bool DEFAULT_PRELOAD_VALUE = false;
 #else
@@ -266,8 +267,41 @@ APPSPAWN_STATIC int PreLoadAppSpawn(AppSpawnMgr *content)
     return 0;
 }
 
+APPSPAWN_STATIC int DoDlopenLibs(const cJSON *root, ParseJsonContext *context)
+{
+    cJSON *systemLibs = cJSON_GetObjectItemCaseSensitive(root, "systemLib");
+    if (systemLibs == nullptr) {
+        return 0;
+    }
+
+    uint32_t libsCount = (uint32_t)cJSON_GetArraySize(systemLibs);
+    for (uint32_t i = 0; i < libsCount; ++i) {
+        const char *libName = cJSON_GetStringValue(cJSON_GetArrayItem(systemLibs, i));
+        if (libName == nullptr) {
+            continue;
+        }
+        APPSPAWN_LOGV("libName %{public}s", libName);
+        void *lib = dlopen(libName, RTLD_LAZY);
+        if (lib == nullptr) {
+            APPSPAWN_LOGE("FAILED to dlopen %{public}s %{public}s", libName, dlerror());
+        }
+    }
+    return 0;
+}
+
+APPSPAWN_STATIC int DlopenAppSpawn(AppSpawnMgr *content)
+{
+    if (!IsAppSpawnMode(content)) {
+        return 0;
+    }
+
+    (void)ParseJsonConfig("etc/appspawn", SYSTEMLIB_JSON, DoDlopenLibs, nullptr);
+    return 0;
+}
+
 MODULE_CONSTRUCTOR(void)
 {
     APPSPAWN_LOGV("Load ace module ...");
     AddPreloadHook(HOOK_PRIO_HIGHEST, PreLoadAppSpawn);
+    AddPreloadHook(HOOK_PRIO_HIGHEST, DlopenAppSpawn);
 }
