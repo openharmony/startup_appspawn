@@ -549,7 +549,7 @@ static void ProcessChildProcessFd(const WatcherHandle taskHandle, int fd, uint32
 {
     APPSPAWN_CHECK_ONLY_EXPER(context != NULL, return);
     pid_t pid = *(pid_t *)context;
-    APPSPAWN_LOGI("Kill process group with process group id %{public}d, pidFd %{public}d", pid, fd);
+    APPSPAWN_LOGI("Clear process group with pid %{public}d, pidFd %{public}d", pid, fd);
     AppSpawnedProcess *appInfo = GetSpawnedProcess(pid);
     if (appInfo == NULL) {
         APPSPAWN_LOGW("Cannot get app info by bundle name: %{public}d", pid);
