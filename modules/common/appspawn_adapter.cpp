@@ -175,22 +175,13 @@ int SetSeccompFilter(const AppSpawnMgr *content, const AppSpawningCtx *property)
 
 #ifdef SECCOMP_PRIVILEGE
     if (IsDeveloperModeOpen()) {
-        static GetPermissionFunc getPermissionFuncPtr = nullptr;
-        if (getPermissionFuncPtr == nullptr) {
-            getPermissionFuncPtr = reinterpret_cast<GetPermissionFunc>(dlsym(nullptr, GET_PERMISSION_INDEX));
-            if (getPermissionFuncPtr == nullptr) {
-                APPSPAWN_LOGE("Failed to dlsym get permission errno is %{public}d", errno);
-                return -EINVAL;
-            }
-        }
-        int32_t index = getPermissionFuncPtr(nullptr, GET_ALL_PROCESSES);
-        if (CheckAppPermissionFlagSet(property, static_cast<uint32_t>(index)) != 0) {
+        if (CheckAppMsgFlagsSet(property, APP_FLAGS_GET_ALL_PROCESSES) != 0) {
             appName = APP_PRIVILEGE;
         }
     }
 #endif
 
-    if (CheckAppSpawnMsgFlag(property->message, TLV_MSG_FLAGS, APP_FLAGS_ISOLATED_SANDBOX) != 0) {
+    if (CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX) != 0) {
         appName = IMF_EXTENTOIN_NAME;
     }
 

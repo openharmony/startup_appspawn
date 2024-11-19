@@ -648,7 +648,23 @@ static int AppendPackageNameGids(const AppSpawnSandboxCfg *sandbox, AppSpawningC
     return 0;
 }
 
-static int SetSandboxPermissionFlag(AppSpawnSandboxCfg *sandbox, AppSpawningCtx *property)
+static void UpdateMsgFlagsWithPermission(AppSpawnSandboxCfg *sandbox, AppSpawningCtx *property)
+{
+    int32_t allProcessIndex = GetPermissionIndexInQueue(&sandbox->permissionQueue, GET_ALL_PROCESSES_MODE);
+    int res = CheckAppPermissionFlagSet(property, (uint32_t)allProcessIndex);
+    if (res == 0) {
+        APPSPAWN_LOGV("Don't need set GET_ALL_PROCESSES_MODE flag");
+        return;
+    }
+
+    int ret = SetAppSpawnMsgFlag(property->message, TLV_MSG_FLAGS, APP_FLAGS_GET_ALL_PROCESSES);
+    if (ret != 0) {
+        APPSPAWN_LOGE("Set GET_ALL_PROCESSES_MODE flag failed");
+    }
+    return;
+}
+
+static int UpdatePermissionFlags(AppSpawnSandboxCfg *sandbox, AppSpawningCtx *property)
 {
     int32_t index = 0;
     if (sandbox->appFullMountEnable) {
@@ -694,13 +710,16 @@ int SpawnPrepareSandboxCfg(AppSpawnMgr *content, AppSpawningCtx *property)
     AppSpawnSandboxCfg *sandbox = GetAppSpawnSandbox(content, type);
     content->content.sandboxType = type;
     APPSPAWN_CHECK(sandbox != NULL, return -1, "Failed to get sandbox for %{public}s", GetProcessName(property));
-    int ret = SetSandboxPermissionFlag(sandbox, property);
+
+    int ret = UpdatePermissionFlags(sandbox, property);
     if (ret != 0) {
         APPSPAWN_LOGW("set sandbox permission flag failed.");
         return APPSPAWN_SANDBOX_ERROR_SET_PERMISSION_FLAG_FAIL;
     }
-    APPSPAWN_CHECK(ret == 0, return ret, "Failed to add gid for %{public}s", GetProcessName(property));
+    UpdateMsgFlagsWithPermission(sandbox, property);
+
     ret = AppendGids(sandbox, property);
+    APPSPAWN_CHECK(ret == 0, return ret, "Failed to add gid for %{public}s", GetProcessName(property));
     ret = StagedMountSystemConst(sandbox, property, IsNWebSpawnMode(content));
     APPSPAWN_CHECK(ret == 0, return ret, "Failed to mount system-const for %{public}s", GetProcessName(property));
     return 0;

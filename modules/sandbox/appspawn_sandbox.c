@@ -392,7 +392,6 @@ APPSPAWN_STATIC const char *GetRealSrcPath(const SandboxContext *context, const 
 // 设置挂载参数options
 static int32_t SetMountArgsOption(const SandboxContext *context, uint32_t category, uint32_t operation, MountArg *args)
 {
-    args->options = "";
     if ((category != MOUNT_TMP_DAC_OVERRIDE) && (category != MOUNT_TMP_DAC_OVERRIDE_DELETE)) {
         return 0;
     }
@@ -612,8 +611,129 @@ static const MountSharedTemplate MOUNT_SHARED_MAP[] = {
     {"/data/storage/el3", NULL},
     {"/data/storage/el4", NULL},
     {"/data/storage/el5", "ohos.permission.PROTECT_SCREEN_LOCK_DATA"},
-    {"/storage/Users", "ohos.permission.FILE_ACCESS_MANAGER"},
 };
+
+static int MountInShared(const AppSpawnMsgDacInfo *info, const char *rootPath, const char *src, const char *target)
+{
+    if (info == NULL) {
+        return APPSPAWN_ARG_INVALID;
+    }
+
+    char path[MAX_SANDBOX_BUFFER] = {0};
+    int ret = snprintf_s(path, MAX_SANDBOX_BUFFER, MAX_SANDBOX_BUFFER - 1, "%s/%u/app-root/%s", rootPath,
+                         info->uid / UID_BASE, target);
+    if (ret <= 0) {
+        return APPSPAWN_ERROR_UTILS_MEM_FAIL;
+    }
+
+    char currentUserPath[MAX_SANDBOX_BUFFER] = {0};
+    ret = snprintf_s(currentUserPath, MAX_SANDBOX_BUFFER, MAX_SANDBOX_BUFFER - 1, "%s/currentUser", path);
+    if (ret <= 0) {
+        return APPSPAWN_ERROR_UTILS_MEM_FAIL;
+    }
+
+    if (access(currentUserPath, F_OK) == 0) {
+        return 0;
+    }
+
+    ret = MakeDirRec(path, DIR_MODE, 1);
+    if (ret != 0) {
+        return APPSPAWN_SANDBOX_ERROR_MKDIR_FAIL;
+    }
+
+    if (mount(src, path, NULL, MS_BIND | MS_REC, NULL) != 0) {
+        APPSPAWN_LOGI("bind mount %{public}s to %{public}s failed, error %{public}d", src, path, errno);
+        return APPSPAWN_SANDBOX_ERROR_MOUNT_FAIL;
+    }
+    if (mount(NULL, path, NULL, MS_SHARED, NULL) != 0) {
+        APPSPAWN_LOGI("mount path %{public}s to shared failed, errno %{public}d", path, errno);
+        return APPSPAWN_SANDBOX_ERROR_MOUNT_FAIL;
+    }
+
+    return 0;
+}
+
+static int SharedMountInSharefs(const AppSpawnMsgDacInfo *info, const char *rootPath,
+                                const char *src, const char *target)
+{
+    char currentUserPath[MAX_SANDBOX_BUFFER] = {0};
+    int ret = snprintf_s(currentUserPath, MAX_SANDBOX_BUFFER, MAX_SANDBOX_BUFFER - 1, "%s/currentUser", target);
+    if (ret <= 0) {
+        return APPSPAWN_ERROR_UTILS_MEM_FAIL;
+    }
+
+    if (access(currentUserPath, F_OK) == 0) {
+        return 0;
+    }
+
+    ret = MakeDirRec(target, DIR_MODE, 1);
+    if (ret != 0) {
+        return APPSPAWN_SANDBOX_ERROR_MKDIR_FAIL;
+    }
+
+    char options[OPTIONS_MAX_LEN] = {0};
+    ret = snprintf_s(options, OPTIONS_MAX_LEN, OPTIONS_MAX_LEN - 1, "override_support_delete,user_id=%d",
+                     info->uid / UID_BASE);
+    if (ret <= 0) {
+        return APPSPAWN_ERROR_UTILS_MEM_FAIL;
+    }
+
+    if (mount(src, target, "sharefs", MS_NODEV, options) != 0) {
+        APPSPAWN_LOGE("sharefs mount %{public}s to %{public}s failed, error %{public}d",
+                      src, target, errno);
+        return APPSPAWN_SANDBOX_ERROR_MOUNT_FAIL;
+    }
+    if (mount(NULL, target, NULL, MS_SHARED, NULL) != 0) {
+        APPSPAWN_LOGE("mount path %{public}s to shared failed, errno %{public}d", target, errno);
+        return APPSPAWN_SANDBOX_ERROR_MOUNT_FAIL;
+    }
+
+    return 0;
+}
+
+static void UpdateStorageDir(const SandboxContext *context, AppSpawnSandboxCfg *sandbox, const AppSpawnMsgDacInfo *info)
+{
+    const char mntUser[] = "/mnt/user";
+    const char nosharefsDocs[] = "nosharefs/docs";
+    const char sharefsDocs[] = "sharefs/docs";
+    const char rootPath[] = "/mnt/sandbox";
+    const char userPath[] = "/storage/Users";
+
+    /* /mnt/user/<currentUserId>/nosharefs/Docs */
+    char nosharefsDocsDir[MAX_SANDBOX_BUFFER] = {0};
+    int ret = snprintf_s(nosharefsDocsDir, MAX_SANDBOX_BUFFER, MAX_SANDBOX_BUFFER - 1, "%s/%d/%s",
+                         mntUser, info->uid / UID_BASE, nosharefsDocs);
+    if (ret <= 0) {
+        return;
+    }
+
+    /* /mnt/user/<currentUserId>/sharefs/Docs */
+    char sharefsDocsDir[MAX_SANDBOX_BUFFER] = {0};
+    ret = snprintf_s(sharefsDocsDir, MAX_SANDBOX_BUFFER, MAX_SANDBOX_BUFFER - 1, "%s/%d/%s",
+                     mntUser, info->uid / UID_BASE, sharefsDocs);
+    if (ret <= 0) {
+        return;
+    }
+
+    int index = GetPermissionIndexInQueue(&sandbox->permissionQueue, FILE_ACCESS_MANAGER_MODE);
+    int res = CheckSpawningPermissionFlagSet(context, index);
+    if (res == 0) {
+        char storageUserPath[MAX_SANDBOX_BUFFER] = {0};
+        ret = snprintf_s(storageUserPath, MAX_SANDBOX_BUFFER, MAX_SANDBOX_BUFFER - 1, "%s/%d/app-root/%s", rootPath,
+                         info->uid / UID_BASE, userPath);
+        if (ret <= 0) {
+            return;
+        }
+        /* mount /mnt/user/<currentUserId>/sharefs/docs to /mnt/sandbox/<currentUserId>/app-root/storage/Users */
+        ret = SharedMountInSharefs(info, rootPath, sharefsDocsDir, storageUserPath);
+    } else {
+        /* mount /mnt/user/<currentUserId>/nosharefs/docs to /mnt/sandbox/<currentUserId>/app-root/storage/Users */
+        ret = MountInShared(info, rootPath, nosharefsDocsDir, userPath);
+    }
+    if (ret != 0) {
+        APPSPAWN_LOGE("Update storage dir, ret %{public}d", ret);
+    }
+}
 
 static void MountDirToShared(const SandboxContext *context, AppSpawnSandboxCfg *sandbox)
 {
@@ -625,6 +745,9 @@ static void MountDirToShared(const SandboxContext *context, AppSpawnSandboxCfg *
     if (info == NULL || context->bundleName == NULL) {
         return;
     }
+
+    UpdateStorageDir(context, sandbox, info);
+
     MountDir(info, appRootName, rootPath, nwebPath);
     MountDir(info, appRootName, rootPath, nwebTmpPath);
 
@@ -1079,7 +1202,7 @@ static int MountDepGroups(const SandboxContext *context, SandboxNameGroupNode *g
     }
 
     ret = UpdateMountPathDepsPath(context, groupNode);
-    APPSPAWN_CHECK(ret == 0, return ret, "Failed to updata deps path name groups %{public}s", groupNode->section.name);
+    APPSPAWN_CHECK(ret == 0, return ret, "Failed to update deps path name groups %{public}s", groupNode->section.name);
 
     if (groupNode->depMode == MOUNT_MODE_NOT_EXIST && CheckAndCreateDepPath(context, groupNode)) {
         return 0;
