@@ -87,6 +87,12 @@
                 "src-path" : "/data/local/shader_cache/cloud/common",
                 "sandbox-path" : "/data/storage/shader_cache/common"
             }, {
+                "src-path" : "/data/service/el0/public/for-all-app",
+                "sandbox-path" : "/data/service/el0/public/for-all-app"
+            }, {
+                "src-path" : "/data/service/el1/public/for-all-app",
+                "sandbox-path" : "/data/service/el1/public/for-all-app"
+            }, {
                 "src-path": "/storage/media/<currentUserId>/local/files/Docs/Downloads/<PackageName>",
                 "sandbox-path": "/storage/Users/<currentUserId>/Downloads"
             }, {
