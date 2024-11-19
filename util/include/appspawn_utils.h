@@ -155,7 +155,7 @@ int EnableNewNetNamespace(void);
 #endif
 
 #ifndef OHOS_LITE
-#define APPSPAWN_DOMAIN (0xD002C00 + 0x11)
+#define APPSPAWN_DOMAIN (0xD002C00 + 0x11)  // 0xD002C11
 #ifndef APPSPAWN_LABEL
 #define APPSPAWN_LABEL "APPSPAWN"
 #endif

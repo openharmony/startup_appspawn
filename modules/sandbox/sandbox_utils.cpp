@@ -135,6 +135,7 @@ namespace {
     const std::string ACCESS_DLP_FILE_MODE = "ohos.permission.ACCESS_DLP_FILE";
     const std::string FILE_ACCESS_MANAGER_MODE = "ohos.permission.FILE_ACCESS_MANAGER";
     const std::string READ_WRITE_USER_FILE_MODE = "ohos.permission.READ_WRITE_USER_FILE";
+    const std::string GET_ALL_PROCESSES_MODE = "ohos.permission.GET_ALL_PROCESSES";
     const std::string ARK_WEB_PERSIST_PACKAGE_NAME = "persist.arkwebcore.package_name";
 
     const std::string& getArkWebPackageName()
@@ -1599,7 +1600,23 @@ static inline int EnableSandboxNamespace(AppSpawningCtx *appProperty, uint32_t s
     return 0;
 }
 
-int32_t SandboxUtils::SetPermissionWithParam(AppSpawningCtx *appProperty)
+void SandboxUtils::UpdateMsgFlagsWithPermission(AppSpawningCtx *appProperty)
+{
+    int32_t processIndex = GetPermissionIndex(nullptr, GET_ALL_PROCESSES_MODE.c_str());
+    if ((CheckAppPermissionFlagSet(appProperty, static_cast<uint32_t>(processIndex)) == 0)) {
+        APPSPAWN_LOGV("Don't need set GET_ALL_PROCESSES_MODE flag");
+        return;
+    }
+
+    int ret = SetAppSpawnMsgFlag(appProperty->message, TLV_MSG_FLAGS, APP_FLAGS_GET_ALL_PROCESSES);
+    if (ret != 0) {
+        APPSPAWN_LOGV("Set GET_ALL_PROCESSES_MODE flag failed");
+    }
+
+    return;
+}
+
+int32_t SandboxUtils::UpdatePermissionFlags(AppSpawningCtx *appProperty)
 {
     int32_t index = 0;
     int32_t appFullMountStatus = CheckAppFullMountEnable();
@@ -1658,10 +1675,11 @@ int32_t SandboxUtils::SetAppSandboxProperty(AppSpawningCtx *appProperty, uint32_
     int rc = EnableSandboxNamespace(appProperty, sandboxNsFlags);
     APPSPAWN_CHECK(rc == 0, return rc, "unshare failed, packagename is %{public}s", bundleName.c_str());
 
-    if (SetPermissionWithParam(appProperty) != 0) {
+    if (UpdatePermissionFlags(appProperty) != 0) {
         APPSPAWN_LOGW("Set app permission flag fail.");
         return -1;
     }
+    UpdateMsgFlagsWithPermission(appProperty);
 
     // check app sandbox switch
     if ((CheckTotalSandboxSwitchStatus(appProperty) == false) ||
