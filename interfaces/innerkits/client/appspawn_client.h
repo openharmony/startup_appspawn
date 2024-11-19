@@ -37,6 +37,9 @@ extern "C" {
 #define RETRY_TIME (200 * 1000)     // 200 * 1000 wait 200ms CONNECT_RETRY_DELAY = 200 * 1000
 #define MAX_RETRY_SEND_COUNT 2      // 2 max retry count CONNECT_RETRY_MAX_TIMES = 2;
 
+#define NORMAL_READ_RETRY_TIME (3 * 1000 * 1000 + 500 * 1000)   // 3.5s, Exceed WAIT_CHILD_RESPONSE_TIMEOUT by 0.5s
+#define COLDRUN_READ_RETRY_TIME (5 * 1000 * 1000 + 500 * 1000)  // 5.5s, Exceed COLD_CHILD_RESPONSE_TIMEOUT by 0.5s
+
 // only used for ExternalFileManager.hap
 #define GID_FILE_ACCESS 1006
 #define GID_USER_DATA_RW 1008
