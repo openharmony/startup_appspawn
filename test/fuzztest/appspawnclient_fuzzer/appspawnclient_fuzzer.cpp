@@ -282,6 +282,10 @@ namespace OHOS {
 
     int FuzzGetPermissionByIndex(const uint8_t *data, size_t size)
     {
+        if (data == nullptr) {
+            return -1;
+        }
+
         int32_t index = *(reinterpret_cast<const int32_t*>(data));
         if (GetPermissionByIndex(nullptr, index) == nullptr) {
             return -1;
