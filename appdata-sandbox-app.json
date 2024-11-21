@@ -338,6 +338,14 @@
             "gids": ["file_manager"],
             "mount-paths":[],
             "mount-groups": ["Users", "user-public"]
+        }, {
+            "name": "ohos.permission.ACCESS_APP_INSTALL_DIR",
+            "sandbox-switch": "ON",
+            "gids": ["app_install"],
+            "mount-paths": [{
+                "src-path": "/data/service/el1/public/bms/bundle_manager_service/app_install/<currentUserId>/",
+                "sandbox-path": "/data/bms_app_install/"
+            }]
         }],
         "spawn-flag": [{
             "name": "START_FLAGS_BACKUP",
