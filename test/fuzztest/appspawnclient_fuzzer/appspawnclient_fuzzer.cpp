@@ -20,16 +20,16 @@
 namespace OHOS {
     int FuzzAppSpawnClientInit(const uint8_t *data, size_t size)
     {
-        const char *name = APPSPAWN_SERVER_NAME;
+        std::string serviceName(reinterpret_cast<const char*>(data), size);
         AppSpawnClientHandle handle = nullptr;
-        return AppSpawnClientInit(name, &handle);
+        return AppSpawnClientInit(serviceName.c_str(), &handle);
     }
 
     int FuzzAppSpawnClientDestroy(const uint8_t *data, size_t size)
     {
-        const char *name = APPSPAWN_SERVER_NAME;
+        std::string serviceName(reinterpret_cast<const char*>(data), size);
         AppSpawnClientHandle handle = nullptr;
-        if (AppSpawnClientInit(name, &handle) != 0) {
+        if (AppSpawnClientInit(serviceName.c_str(), &handle) != 0) {
             return -1;
         }
         return AppSpawnClientDestroy(handle);
@@ -277,7 +277,12 @@ namespace OHOS {
 
     int FuzzGetMaxPermissionIndex(const uint8_t *data, size_t size)
     {
-        return GetMaxPermissionIndex(nullptr);
+        std::string serviceName(reinterpret_cast<const char*>(data), size);
+        AppSpawnClientHandle handle = nullptr;
+        if (AppSpawnClientInit(serviceName.c_str(), &handle) != 0) {
+            return -1;
+        }
+        return GetMaxPermissionIndex(handle);
     }
 
     int FuzzGetPermissionByIndex(const uint8_t *data, size_t size)
