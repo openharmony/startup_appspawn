@@ -2120,6 +2120,39 @@ static int SpawnMountDirToShared(AppSpawnMgr *content, AppSpawningCtx *property)
     return 0;
 }
 
+static void UmountDir(const char *rootPath, const char *targetPath, const AppSpawnedProcessInfo *appInfo)
+{
+    size_t allPathSize = strlen(rootPath) + USER_ID_SIZE + strlen(appInfo->name) + strlen(targetPath) + 2;
+    char *path = reinterpret_cast<char *>(malloc(sizeof(char) * (allPathSize)));
+    APPSPAWN_CHECK(path != NULL, return, "Failed to malloc path");
+
+    int ret = sprintf_s(path, allPathSize, "%s%u/%s%s", rootPath, appInfo->uid / UID_BASE,
+        appInfo->name, targetPath);
+    APPSPAWN_CHECK(ret > 0 && ((size_t)ret < allPathSize), free(path);
+        return, "Failed to get sandbox path errno %{public}d", errno);
+
+    ret = umount2(path, MNT_DETACH);
+    if (ret == 0) {
+        APPSPAWN_LOGV("Umount2 sandbox path %{public}s success", path);
+    } else {
+        APPSPAWN_LOGW("Failed to umount2 sandbox path %{public}s errno %{public}d", path, errno);
+    }
+    free(path);
+}
+
+static int UmountSandboxPath(const AppSpawnMgr *content, const AppSpawnedProcessInfo *appInfo)
+{
+    APPSPAWN_CHECK(content != NULL && appInfo != NULL, return -1, "Invalid content or appInfo");
+    APPSPAWN_LOGV("UmountSandboxPath name %{public}s pid %{public}d", appInfo->name, appInfo->pid);
+    const char rootPath[] = "/mnt/sandbox/";
+    const char el1Path[] = "/data/storage/el1/bundle";
+    const char userPath[] = "/storage/Users";
+
+    UmountDir(rootPath, el1Path, appInfo);
+    UmountDir(rootPath, userPath, appInfo);
+    return 0;
+}
+
 #ifndef APPSPAWN_SANDBOX_NEW
 MODULE_CONSTRUCTOR(void)
 {
@@ -2127,5 +2160,6 @@ MODULE_CONSTRUCTOR(void)
     (void)AddServerStageHook(STAGE_SERVER_PRELOAD, HOOK_PRIO_SANDBOX, LoadAppSandboxConfig);
     (void)AddAppSpawnHook(STAGE_PARENT_PRE_FORK, HOOK_PRIO_COMMON, SpawnMountDirToShared);
     (void)AddAppSpawnHook(STAGE_CHILD_EXECUTE, HOOK_PRIO_SANDBOX, SetAppSandboxProperty);
+    (void)AddProcessMgrHook(STAGE_SERVER_APP_DIED, HOOK_PRIO_SANDBOX, UmountSandboxPath);
 }
 #endif
