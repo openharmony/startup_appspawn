@@ -278,6 +278,11 @@
                     "sandbox-path" : "/data/storage/el2/cloud",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
+                }, {
+                    "src-path" : "/mnt/data/<currentUserId>/media_fuse",
+                    "sandbox-path" : "/data/storage/el2/media",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
                 }
             ],
             "symbol-links" : [{
