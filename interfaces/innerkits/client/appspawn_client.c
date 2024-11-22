@@ -152,15 +152,28 @@ APPSPAWN_STATIC int UpdateSocketTimeout(uint32_t timeout, int socketFd)
     return ret;
 }
 
-static int ReadMessage(int socketFd, uint32_t sendMsgId, uint8_t *buf, int len, AppSpawnResult *result)
+static int ReadMessage(int socketFd, uint8_t *buf, int len, AppSpawnReqMsgNode *reqNode, AppSpawnResult *result)
 {
+    struct timespec readStart = { 0 };
+    clock_gettime(CLOCK_MONOTONIC, &readStart);
     ssize_t rLen = TEMP_FAILURE_RETRY(read(socketFd, buf, len));
+    if (rLen == -1 && errno == EAGAIN) {
+        struct timespec readEnd = { 0 };
+        clock_gettime(CLOCK_MONOTONIC, &readEnd);
+        uint64_t diff = DiffTime(&readStart, &readEnd);
+        uint64_t timeout = reqNode->isAsan ? COLDRUN_READ_RETRY_TIME : NORMAL_READ_RETRY_TIME;
+        // If difftime is greater than timeout, it is considered that system hibernation or a time jump has occurred
+        if (diff > timeout) {
+            APPSPAWN_LOGW("Read message again from fd %{public}d, difftime %{public}" PRId64 " us", socketFd, diff);
+            rLen = TEMP_FAILURE_RETRY(read(socketFd, buf, len));
+        }
+    }
     APPSPAWN_CHECK(rLen >= 0, return APPSPAWN_TIMEOUT,
         "Read message from fd %{public}d rLen %{public}zd errno: %{public}d", socketFd, rLen, errno);
     if ((size_t)rLen >= sizeof(AppSpawnResponseMsg)) {
         AppSpawnResponseMsg *msg = (AppSpawnResponseMsg *)(buf);
-        APPSPAWN_CHECK_ONLY_LOG(sendMsgId == msg->msgHdr.msgId,
-            "Invalid msg recvd %{public}u %{public}u", sendMsgId, msg->msgHdr.msgId);
+        APPSPAWN_CHECK_ONLY_LOG(reqNode->msg->msgId == msg->msgHdr.msgId,
+            "Invalid msg recvd %{public}u %{public}u", reqNode->msg->msgId, msg->msgHdr.msgId);
         return memcpy_s(result, sizeof(AppSpawnResult), &msg->result, sizeof(msg->result));
     }
     return APPSPAWN_TIMEOUT;
@@ -274,8 +287,7 @@ static int ClientSendMsg(AppSpawnReqMsgMgr *reqMgr, AppSpawnReqMsgNode *reqNode,
         }
         int ret = HandleMsgSend(reqMgr, reqMgr->socketId, reqNode);
         if (ret == 0) {
-            ret = ReadMessage(reqMgr->socketId, reqNode->msg->msgId,
-                reqMgr->recvBlock.buffer, reqMgr->recvBlock.blockSize, result);
+            ret = ReadMessage(reqMgr->socketId, reqMgr->recvBlock.buffer, reqMgr->recvBlock.blockSize, reqNode, result);
         }
         if (ret == 0) {
             if (isColdRun && reqMgr->timeout < ASAN_TIMEOUT) {
