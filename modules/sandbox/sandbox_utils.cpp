@@ -1889,8 +1889,143 @@ static const MountSharedTemplate MOUNT_SHARED_MAP[] = {
     {"/data/storage/el3", nullptr},
     {"/data/storage/el4", nullptr},
     {"/data/storage/el5", "ohos.permission.PROTECT_SCREEN_LOCK_DATA"},
-    {"/storage/Users", "ohos.permission.FILE_ACCESS_MANAGER"},
 };
+
+#define PATH_MAX_LEN 256
+static int MountInShared(const AppSpawningCtx *property, const char *rootPath, const char *src, const char *target)
+{
+    AppDacInfo *info = reinterpret_cast<AppDacInfo *>(GetAppProperty(property, TLV_DAC_INFO));
+    const char *bundleName = GetBundleName(property);
+    if (info == NULL || bundleName == NULL) {
+        return APPSPAWN_ARG_INVALID;
+    }
+
+    char path[PATH_MAX_LEN] = {0};
+    int ret = snprintf_s(path, PATH_MAX_LEN, PATH_MAX_LEN - 1, "%s/%u/%s/%s", rootPath, info->uid / UID_BASE,
+                         bundleName, target);
+    if (ret <= 0) {
+        return APPSPAWN_ERROR_UTILS_MEM_FAIL;
+    }
+
+    char currentUserPath[PATH_MAX_LEN] = {0};
+    ret = snprintf_s(currentUserPath, PATH_MAX_LEN, PATH_MAX_LEN - 1, "%s/currentUser", path);
+    if (ret <= 0) {
+        return APPSPAWN_ERROR_UTILS_MEM_FAIL;
+    }
+
+    if (access(currentUserPath, F_OK) == 0) {
+        return 0;
+    }
+
+    ret = MakeDirRec(path, DIR_MODE, 1);
+    if (ret != 0) {
+        return APPSPAWN_SANDBOX_ERROR_MKDIR_FAIL;
+    }
+
+    if (mount(src, path, nullptr, MS_BIND | MS_REC, nullptr) != 0) {
+        APPSPAWN_LOGI("bind mount %{public}s to %{public}s failed, error %{public}d", src, path, errno);
+        return APPSPAWN_SANDBOX_ERROR_MOUNT_FAIL;
+    }
+    if (mount(nullptr, path, nullptr, MS_SHARED, nullptr) != 0) {
+        APPSPAWN_LOGI("mount path %{public}s to shared failed, errno %{public}d", path, errno);
+        return APPSPAWN_SANDBOX_ERROR_MOUNT_FAIL;
+    }
+
+    return 0;
+}
+
+static int SharedMountInSharefs(const AppSpawningCtx *property, const char *rootPath,
+                                const char *src, const char *target)
+{
+    AppDacInfo *info = reinterpret_cast<AppDacInfo *>(GetAppProperty(property, TLV_DAC_INFO));
+    if (info == NULL) {
+        return APPSPAWN_ARG_INVALID;
+    }
+
+    char currentUserPath[PATH_MAX_LEN] = {0};
+    int ret = snprintf_s(currentUserPath, PATH_MAX_LEN, PATH_MAX_LEN - 1, "%s/currentUser", target);
+    if (ret <= 0) {
+        return APPSPAWN_ERROR_UTILS_MEM_FAIL;
+    }
+
+    if (access(currentUserPath, F_OK) == 0) {
+        return 0;
+    }
+
+    ret = MakeDirRec(target, DIR_MODE, 1);
+    if (ret != 0) {
+        return APPSPAWN_SANDBOX_ERROR_MKDIR_FAIL;
+    }
+
+    char options[PATH_MAX_LEN] = {0};
+    ret = snprintf_s(options, PATH_MAX_LEN, PATH_MAX_LEN - 1, "override_support_delete,user_id=%d",
+                     info->uid / UID_BASE);
+    if (ret <= 0) {
+        return APPSPAWN_ERROR_UTILS_MEM_FAIL;
+    }
+
+    if (mount(src, target, "sharefs", MS_NODEV, options) != 0) {
+        APPSPAWN_LOGE("sharefs mount %{public}s to %{public}s failed, error %{public}d",
+                      src, target, errno);
+        return APPSPAWN_SANDBOX_ERROR_MOUNT_FAIL;
+    }
+    if (mount(nullptr, target, nullptr, MS_SHARED, nullptr) != 0) {
+        APPSPAWN_LOGE("mount path %{public}s to shared failed, errno %{public}d", target, errno);
+        return APPSPAWN_SANDBOX_ERROR_MOUNT_FAIL;
+    }
+
+    return 0;
+}
+
+static void UpdateStorageDir(const AppSpawningCtx *property)
+{
+    const char mntUser[] = "/mnt/user";
+    const char nosharefsDocs[] = "nosharefs/docs";
+    const char sharefsDocs[] = "sharefs/docs";
+    const char rootPath[] = "/mnt/sandbox";
+    const char userPath[] = "/storage/Users";
+
+    AppDacInfo *info = reinterpret_cast<AppDacInfo *>(GetAppProperty(property, TLV_DAC_INFO));
+    if (info == nullptr) {
+        return;
+    }
+
+    /* /mnt/user/<currentUserId>/nosharefs/Docs */
+    char nosharefsDocsDir[PATH_MAX_LEN] = {0};
+    int ret = snprintf_s(nosharefsDocsDir, PATH_MAX_LEN, PATH_MAX_LEN - 1, "%s/%d/%s",
+                         mntUser, info->uid / UID_BASE, nosharefsDocs);
+    if (ret <= 0) {
+        return;
+    }
+
+    /* /mnt/user/<currentUserId>/sharefs/Docs */
+    char sharefsDocsDir[PATH_MAX_LEN] = {0};
+    ret = snprintf_s(sharefsDocsDir, PATH_MAX_LEN, PATH_MAX_LEN - 1, "%s/%d/%s",
+                     mntUser, info->uid / UID_BASE, sharefsDocs);
+    if (ret <= 0) {
+        return;
+    }
+
+    int index = GetPermissionIndex(nullptr, "ohos.permission.FILE_ACCESS_MANAGER");
+    int res = CheckAppPermissionFlagSet(property, static_cast<uint32_t>(index));
+    if (res == 0) {
+        char storageUserPath[PATH_MAX_LEN] = {0};
+        const char *bundleName = GetBundleName(property);
+        ret = snprintf_s(storageUserPath, PATH_MAX_LEN, PATH_MAX_LEN - 1, "%s/%d/%s/%s", rootPath, info->uid / UID_BASE,
+                         bundleName, userPath);
+        if (ret <= 0) {
+            return;
+        }
+        /* mount /mnt/user/<currentUserId>/sharefs/docs to /mnt/sandbox/<currentUserId>/<bundleName>/storage/Users */
+        ret = SharedMountInSharefs(property, rootPath, sharefsDocsDir, storageUserPath);
+    } else {
+        /* mount /mnt/user/<currentUserId>/nosharefs/docs to /mnt/sandbox/<currentUserId>/<bundleName>/storage/Users */
+        ret = MountInShared(property, rootPath, nosharefsDocsDir, userPath);
+    }
+    if (ret != 0) {
+        APPSPAWN_LOGE("Update storage dir, ret %{public}d", ret);
+    }
+}
 
 static void MountDirToShared(const AppSpawningCtx *property)
 {
@@ -1902,6 +2037,8 @@ static void MountDirToShared(const AppSpawningCtx *property)
     if (info == NULL || bundleName == NULL) {
         return;
     }
+
+    UpdateStorageDir(property);
 
     string sourcePath = "/data/app/el1/bundle/public/" + string(bundleName);
     MountDir(property, rootPath, sourcePath.c_str(), el1Path);
