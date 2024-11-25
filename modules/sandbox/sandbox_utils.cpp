@@ -2001,7 +2001,7 @@ static int SharedMountInSharefs(const AppSpawningCtx *property, const char *root
     }
 
     char options[PATH_MAX_LEN] = {0};
-    ret = snprintf_s(options, PATH_MAX_LEN, PATH_MAX_LEN - 1, "override_support_delete,user_id=%d",
+    ret = snprintf_s(options, PATH_MAX_LEN, PATH_MAX_LEN - 1, "override_support_delete,user_id=%u",
                      info->uid / UID_BASE);
     if (ret <= 0) {
         return APPSPAWN_ERROR_UTILS_MEM_FAIL;
@@ -2035,7 +2035,7 @@ static void UpdateStorageDir(const AppSpawningCtx *property)
 
     /* /mnt/user/<currentUserId>/nosharefs/Docs */
     char nosharefsDocsDir[PATH_MAX_LEN] = {0};
-    int ret = snprintf_s(nosharefsDocsDir, PATH_MAX_LEN, PATH_MAX_LEN - 1, "%s/%d/%s",
+    int ret = snprintf_s(nosharefsDocsDir, PATH_MAX_LEN, PATH_MAX_LEN - 1, "%s/%u/%s",
                          mntUser, info->uid / UID_BASE, nosharefsDocs);
     if (ret <= 0) {
         return;
@@ -2043,7 +2043,7 @@ static void UpdateStorageDir(const AppSpawningCtx *property)
 
     /* /mnt/user/<currentUserId>/sharefs/Docs */
     char sharefsDocsDir[PATH_MAX_LEN] = {0};
-    ret = snprintf_s(sharefsDocsDir, PATH_MAX_LEN, PATH_MAX_LEN - 1, "%s/%d/%s",
+    ret = snprintf_s(sharefsDocsDir, PATH_MAX_LEN, PATH_MAX_LEN - 1, "%s/%u/%s",
                      mntUser, info->uid / UID_BASE, sharefsDocs);
     if (ret <= 0) {
         return;
@@ -2054,7 +2054,7 @@ static void UpdateStorageDir(const AppSpawningCtx *property)
     if (res == 0) {
         char storageUserPath[PATH_MAX_LEN] = {0};
         const char *bundleName = GetBundleName(property);
-        ret = snprintf_s(storageUserPath, PATH_MAX_LEN, PATH_MAX_LEN - 1, "%s/%d/%s/%s", rootPath, info->uid / UID_BASE,
+        ret = snprintf_s(storageUserPath, PATH_MAX_LEN, PATH_MAX_LEN - 1, "%s/%u/%s/%s", rootPath, info->uid / UID_BASE,
                          bundleName, userPath);
         if (ret <= 0) {
             return;
