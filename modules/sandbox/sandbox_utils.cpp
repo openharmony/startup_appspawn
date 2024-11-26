@@ -270,12 +270,12 @@ int32_t SandboxUtils::DoAppSandboxMountOnce(const char *originPath, const char *
     int ret = 0;
     // to mount fs and bind mount files or directory
     struct timespec mountStart = {0};
-    clock_gettime(CLOCK_MONOTONIC, &mountStart);
+    clock_gettime(CLOCK_MONOTONIC_COARSE, &mountStart);
     APPSPAWN_LOGV("Bind mount %{public}s to %{public}s '%{public}s' '%{public}lu' '%{public}s' '%{public}u'",
         originPath, destinationPath, fsType, mountFlags, options, mountSharedFlag);
     ret = mount(originPath, destinationPath, fsType, mountFlags, options);
     struct timespec mountEnd = {0};
-    clock_gettime(CLOCK_MONOTONIC, &mountEnd);
+    clock_gettime(CLOCK_MONOTONIC_COARSE, &mountEnd);
     uint64_t diff = DiffTime(&mountStart, &mountEnd);
     APPSPAWN_CHECK_ONLY_LOG(diff < MAX_MOUNT_TIME, "mount %{public}s time %{public}" PRId64 " us", originPath, diff);
     if (ret != 0) {
