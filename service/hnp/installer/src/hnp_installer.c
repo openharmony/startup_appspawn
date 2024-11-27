@@ -641,10 +641,16 @@ static int HnpInstallHapFileCountGet(const char *root, int *count)
 {
     struct dirent *entry;
     char hnpPath[MAX_FILE_PATH_LEN];
+    char realPath[MAX_FILE_PATH_LEN] = {0};
 
-    DIR *dir = opendir(root);
+    if ((realpath(root, realPath) == NULL) || (strnlen(realPath, MAX_FILE_PATH_LEN) >= MAX_FILE_PATH_LEN)) {
+        HNP_LOGE("hnp root path:%{public}s invalid", root);
+        return HNP_ERRNO_BASE_PARAMS_INVALID;
+    }
+
+    DIR *dir = opendir(realPath);
     if (dir == NULL) {
-        HNP_LOGE("hnp install opendir:%{public}s unsuccess, errno=%{public}d", root, errno);
+        HNP_LOGE("hnp install opendir:%{public}s unsuccess, errno=%{public}d", realPath, errno);
         return HNP_ERRNO_BASE_DIR_OPEN_FAILED;
     }
 
@@ -652,7 +658,7 @@ static int HnpInstallHapFileCountGet(const char *root, int *count)
         if ((strcmp(entry->d_name, "public") != 0) && (strcmp(entry->d_name, "private") != 0)) {
             continue;
         }
-        if (sprintf_s(hnpPath, MAX_FILE_PATH_LEN, "%s/%s", root, entry->d_name) < 0) {
+        if (sprintf_s(hnpPath, MAX_FILE_PATH_LEN, "%s/%s", realPath, entry->d_name) < 0) {
             HNP_LOGE("hnp install private base path sprintf unsuccess.");
             closedir(dir);
             return HNP_ERRNO_BASE_SPRINTF_FAILED;

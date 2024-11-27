@@ -257,6 +257,11 @@ static int HnpHapJsonWrite(cJSON *json)
         return HNP_ERRNO_BASE_FILE_OPEN_FAILED;
     }
     char *jsonStr = cJSON_Print(json);
+    if (jsonStr == NULL) {
+        HNP_LOGE("get json str unsuccess!");
+        (void)fclose(fp);
+        return HNP_ERRNO_BASE_PARAMS_INVALID;
+    }
     size_t jsonStrSize = strlen(jsonStr);
     size_t writeLen = fwrite(jsonStr, sizeof(char), jsonStrSize, fp);
     (void)fclose(fp);
@@ -478,6 +483,12 @@ int HnpPackageInfoGet(const char *packageName, HnpPackageInfo **packageInfoOut, 
         hnpExist = HnpOtherPackageInstallCheck(name->valuestring, version->valuestring, hapIndex, json);
         // 当卸载当前版本未被其他hap使用或者存在安装版本的时候，需要卸载对应的当前版本或者安装版本
         if (!hnpExist || strcmp(installVersion->valuestring, "none") != 0) {
+            if (sum >= MAX_PACKAGE_HNP_NUM - 1) {
+                HNP_LOGE("package info num over limit");
+                cJSON_Delete(json);
+                return HNP_ERRNO_BASE_FILE_COUNT_OVER;
+            }
+
             if ((strcpy_s(packageInfos[sum].name, MAX_FILE_PATH_LEN, name->valuestring) != EOK) ||
                 (strcpy_s(packageInfos[sum].currentVersion, HNP_VERSION_LEN, version->valuestring) != EOK) ||
                 (strcpy_s(packageInfos[sum].installVersion, HNP_VERSION_LEN, installVersion->valuestring) != EOK)) {
