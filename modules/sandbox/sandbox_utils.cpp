@@ -2146,10 +2146,8 @@ static int UmountSandboxPath(const AppSpawnMgr *content, const AppSpawnedProcess
     APPSPAWN_LOGV("UmountSandboxPath name %{public}s pid %{public}d", appInfo->name, appInfo->pid);
     const char rootPath[] = "/mnt/sandbox/";
     const char el1Path[] = "/data/storage/el1/bundle";
-    const char userPath[] = "/storage/Users";
 
     UmountDir(rootPath, el1Path, appInfo);
-    UmountDir(rootPath, userPath, appInfo);
     return 0;
 }
 
