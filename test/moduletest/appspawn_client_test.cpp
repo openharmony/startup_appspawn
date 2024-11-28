@@ -120,5 +120,45 @@ HWTEST_F(AppSpawnClientTest, AppSpawn_Client_test002, TestSize.Level0)
     AppSpawnClientDestroy(clientHandle);
 }
 
+HWTEST_F(AppSpawnClientTest, AppSpawn_Client_test003, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = CreateClient(APPSPAWN_SERVER_NAME);
+    ASSERT_EQ(clientHandle != NULL, 1);
+
+    AppSpawnReqMsgHandle reqHandle = 0;
+    int ret = AppSpawnReqMsgCreate(MSG_UNINSTALL_DEBUG_HAP, "test.uninstall", &reqHandle);
+    ASSERT_EQ(ret, 0);
+
+    ret = AppSpawnReqMsgSetBundleInfo(reqHandle, 100, "test.uninstall");
+    ASSERT_EQ(ret, 0);
+
+    AppSpawnResult result = {};
+    ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
+    if (ret == 0 && result.pid > 0) {
+        kill(result.pid, SIGKILL);
+    }
+    AppSpawnClientDestroy(clientHandle);
+}
+
+HWTEST_F(AppSpawnClientTest, AppSpawn_Client_test004, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = CreateClient(APPSPAWN_SERVER_NAME);
+    ASSERT_EQ(clientHandle != NULL, 1);
+
+    AppSpawnReqMsgHandle reqHandle = 0;
+    int ret = AppSpawnReqMsgCreate(MSG_UNINSTALL_DEBUG_HAP, "test.uninstall", &reqHandle);
+    ASSERT_EQ(ret, 0);
+
+    ret = AppSpawnReqMsgAddStringInfo(reqHandle, MSG_EXT_NAME_USERID, "100");
+    ASSERT_EQ(ret, 0);
+
+    AppSpawnResult result = {};
+    ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
+    if (ret == 0 && result.pid > 0) {
+        kill(result.pid, SIGKILL);
+    }
+    AppSpawnClientDestroy(clientHandle);
+}
+
 }  // namespace AppSpawn
 }  // namespace OHOS
