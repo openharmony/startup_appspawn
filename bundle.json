@@ -25,7 +25,8 @@
             "appspawn_use_encaps",
             "appspawn_mount_tmpshm",
             "appspawn_seccomp_privilege",
-            "appspawn_support_prefork"
+            "appspawn_support_prefork",
+            "appspawn_support_code_signature"
         ],
         "rom": "296KB",
         "ram": "13125KB",
