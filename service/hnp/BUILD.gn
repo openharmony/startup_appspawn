@@ -33,11 +33,15 @@ if (!defined(ohos_lite)) {
     external_deps = [
       "bounds_checking_function:libsec_shared",
       "cJSON:cjson",
-      "code_signature:libcode_sign_utils",
       "hilog:libhilog",
       "selinux_adapter:librestorecon",
       "zlib:shared_libz",
     ]
+
+    if (appspawn_support_code_signature) {
+      external_deps += [ "code_signature:libcode_sign_utils" ]
+    }
+
     defines = []
     if (defined(global_parts_info) &&
         defined(global_parts_info.security_code_signature)) {
