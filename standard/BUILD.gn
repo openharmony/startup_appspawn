@@ -75,6 +75,7 @@ ohos_executable("appspawn") {
     "cJSON:cjson",
     "c_utils:utils",
     "config_policy:configpolicy_util",
+    "ffrt:libffrt",
     "hilog:libhilog",
     "hitrace:hitrace_meter",
     "init:libbegetutil",
@@ -131,6 +132,7 @@ ohos_shared_library("appspawn_helper") {
     "-fstack-protector-all",
   ]
   external_deps = [
+    "ffrt:libffrt",
     "hilog:libhilog",
     "init:libbegetutil",
   ]
@@ -185,6 +187,7 @@ ohos_executable("cjappspawn") {
     "cJSON:cjson",
     "c_utils:utils",
     "config_policy:configpolicy_util",
+    "ffrt:libffrt",
     "hilog:libhilog",
     "hitrace:hitrace_meter",
     "init:libbegetutil",
@@ -256,6 +259,7 @@ ohos_executable("nativespawn") {
     "cJSON:cjson",
     "c_utils:utils",
     "config_policy:configpolicy_util",
+    "ffrt:libffrt",
     "hilog:libhilog",
     "hitrace:hitrace_meter",
     "init:libbegetutil",

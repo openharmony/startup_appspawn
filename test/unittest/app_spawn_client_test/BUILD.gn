@@ -87,6 +87,7 @@ ohos_unittest("AppSpawn_client_ut") {
     "cJSON:cjson",
     "c_utils:utils",
     "config_policy:configpolicy_util",
+    "ffrt:libffrt",
     "hilog:libhilog",
     "hitrace:hitrace_meter",
     "init:libbegetutil",
