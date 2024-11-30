@@ -259,7 +259,7 @@ int ProcessMgrHookExecute(AppSpawnHookStage stage, const AppSpawnContent *conten
 {
     APPSPAWN_CHECK(content != NULL && appInfo != NULL,
         return APPSPAWN_ARG_INVALID, "Invalid hook");
-    APPSPAWN_CHECK((stage >= STAGE_SERVER_APP_ADD) && (stage <= STAGE_SERVER_APP_DIED),
+    APPSPAWN_CHECK((stage >= STAGE_SERVER_APP_ADD) && (stage <= STAGE_SERVER_APP_UMOUNT),
         return APPSPAWN_ARG_INVALID, "Invalid stage %{public}d", (int)stage);
 
     AppSpawnAppArg arg;
@@ -279,7 +279,7 @@ static int ProcessMgrHookRun(const HOOK_INFO *hookInfo, void *executionContext)
 int AddProcessMgrHook(AppSpawnHookStage stage, int prio, ProcessChangeHook hook)
 {
     APPSPAWN_CHECK(hook != NULL, return APPSPAWN_ARG_INVALID, "Invalid hook");
-    APPSPAWN_CHECK((stage >= STAGE_SERVER_APP_ADD) && (stage <= STAGE_SERVER_APP_DIED),
+    APPSPAWN_CHECK((stage >= STAGE_SERVER_APP_ADD) && (stage <= STAGE_SERVER_APP_UMOUNT),
         return APPSPAWN_ARG_INVALID, "Invalid stage %{public}d", (int)stage);
     HOOK_INFO info;
     info.stage = stage;
