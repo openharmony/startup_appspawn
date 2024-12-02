@@ -26,6 +26,7 @@
 #include "appspawn_utils.h"
 #ifndef OHOS_LITE
 #include "appspawn_manager.h"
+#include "ffrt_inner.h"
 #endif
 
 #define MAX_FORK_TIME (30 * 1000)   // 30ms
@@ -120,6 +121,7 @@ int AppSpawnChild(AppSpawnContent *content, AppSpawnClient *client)
 static int CloneAppSpawn(void *arg)
 {
     APPSPAWN_CHECK(arg != NULL, return -1, "Invalid content for appspawn");
+    ffrt_child_init();
     AppSpawnForkArg *forkArg = (AppSpawnForkArg *)arg;
     ProcessExit(AppSpawnChild(forkArg->content, forkArg->client));
     return 0;
