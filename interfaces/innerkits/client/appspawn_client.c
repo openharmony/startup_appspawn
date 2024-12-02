@@ -35,6 +35,7 @@
 #include "parameter.h"
 #include "securec.h"
 
+#define USER_LOCK_STATUS_SIZE 8
 static pthread_mutex_t g_mutex = PTHREAD_MUTEX_INITIALIZER;
 static AppSpawnReqMsgMgr *g_clientInstance[CLIENT_MAX] = {NULL};
 
@@ -369,4 +370,38 @@ int AppSpawnClientSendMsg(AppSpawnClientHandle handle, AppSpawnReqMsgHandle reqH
         reqNode->reqId, result->result, result->pid);
     AppSpawnReqMsgFree(reqHandle);
     return ret;
+}
+
+int AppSpawnClientSendUserLockStatus(uint32_t userId, bool isLocked)
+{
+    AppSpawnReqMsgHandle reqHandle;
+    int ret = AppSpawnReqMsgCreate(MSG_LOCK_STATUS, "storage_manager", &reqHandle);
+    APPSPAWN_CHECK(ret == 0, return ret, "Failed to create appspawn req msg, ret = %{public}d", ret);
+
+    char lockstatus[USER_LOCK_STATUS_SIZE] = {0};
+    ret = snprintf_s(lockstatus, USER_LOCK_STATUS_SIZE, USER_LOCK_STATUS_SIZE - 1, "%u:%d", userId, isLocked);
+    APPSPAWN_CHECK(ret > 0, return ret, "Failed to build lockstatus req msg, ret = %{public}d", ret);
+    APPSPAWN_LOGI("Send lockstatus msg to appspawn %{public}s", lockstatus);
+
+    ret = AppSpawnReqMsgAddStringInfo(reqHandle, "lockstatus", lockstatus);
+    APPSPAWN_CHECK(ret == 0, AppSpawnReqMsgFree(reqHandle);
+        return ret, "Failed to add lockstatus message, ret=%{public}d", ret);
+
+    AppSpawnClientHandle clientHandle;
+    ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+    APPSPAWN_CHECK(ret == 0, AppSpawnReqMsgFree(reqHandle);
+        return ret, "Appspawn client failed to init, ret=%{public}d", ret);
+
+    AppSpawnResult result = {0};
+    ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
+    AppSpawnClientDestroy(clientHandle);
+    APPSPAWN_CHECK(ret == 0, AppSpawnReqMsgFree(reqHandle);
+        return ret, "Send msg to appspawn failed, ret=%{public}d", ret);
+
+    if (result.result != 0) {
+        APPSPAWN_LOGE("Appspawn failed to handle message, result=%{public}d", result.result);
+        return result.result;
+    }
+    APPSPAWN_LOGI("Send lockstatus msg to appspawn success");
+    return 0;
 }
