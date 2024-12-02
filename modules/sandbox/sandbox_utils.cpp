@@ -57,6 +57,8 @@
 using namespace std;
 using namespace OHOS;
 
+static map<string, int> g_mountInfo;
+
 namespace OHOS {
 namespace AppSpawn {
 namespace {
@@ -1821,6 +1823,8 @@ int32_t SetAppSandboxProperty(AppSpawnMgr *content, AppSpawningCtx *property)
 {
     APPSPAWN_CHECK(property != nullptr, return -1, "Invalid appspwn client");
     APPSPAWN_CHECK(content != nullptr, return -1, "Invalid appspwn content");
+    // clear g_mountInfo in the child process
+    g_mountInfo.clear();
     int ret = 0;
     // no sandbox
     if (CheckAppMsgFlagsSet(property, APP_FLAGS_NO_SANDBOX)) {
@@ -1899,6 +1903,9 @@ static void MountDir(const AppSpawningCtx *property, const char *rootPath, const
     int len = sprintf_s(path, allPathSize, "%s%u/%s%s", rootPath, info->uid / userIdBase, bundleName, targetPath);
     APPSPAWN_CHECK(len > 0 && ((size_t)len < allPathSize), free(path);
         return, "Failed to get sandbox path");
+    if (srcPath != nullptr) {
+        g_mountInfo[string(bundleName)]++;
+    }
 
     if (access(path, F_OK) == 0 && srcPath == nullptr) {
         free(path);
@@ -2120,6 +2127,49 @@ static int SpawnMountDirToShared(AppSpawnMgr *content, AppSpawningCtx *property)
     return 0;
 }
 
+static void UmountDir(const char *rootPath, const char *targetPath, const AppSpawnedProcessInfo *appInfo)
+{
+    size_t allPathSize = strlen(rootPath) + USER_ID_SIZE + strlen(appInfo->name) + strlen(targetPath) + 2;
+    char *path = reinterpret_cast<char *>(malloc(sizeof(char) * (allPathSize)));
+    APPSPAWN_CHECK(path != NULL, return, "Failed to malloc path");
+
+    int ret = sprintf_s(path, allPathSize, "%s%u/%s%s", rootPath, appInfo->uid / UID_BASE,
+        appInfo->name, targetPath);
+    APPSPAWN_CHECK(ret > 0 && ((size_t)ret < allPathSize), free(path);
+        return, "Failed to get sandbox path errno %{public}d", errno);
+
+    ret = umount2(path, MNT_DETACH);
+    if (ret == 0) {
+        APPSPAWN_LOGV("Umount2 sandbox path %{public}s success", path);
+    } else {
+        APPSPAWN_LOGW("Failed to umount2 sandbox path %{public}s errno %{public}d", path, errno);
+    }
+    free(path);
+}
+
+static int UmountSandboxPath(const AppSpawnMgr *content, const AppSpawnedProcessInfo *appInfo)
+{
+    APPSPAWN_CHECK(content != NULL && appInfo != NULL && appInfo->name != NULL,
+        return -1, "Invalid content or appInfo");
+    APPSPAWN_LOGV("UmountSandboxPath name %{public}s pid %{public}d", appInfo->name, appInfo->pid);
+    const char rootPath[] = "/mnt/sandbox/";
+    const char el1Path[] = "/data/storage/el1/bundle";
+
+    if (g_mountInfo.find(string(appInfo->name)) == g_mountInfo.end()) {
+        return 0;
+    }
+    g_mountInfo[string(appInfo->name)]--;
+    if (g_mountInfo[string(appInfo->name)] == 0) {
+        APPSPAWN_LOGV("no app %{public}s use it, need umount", appInfo->name);
+        g_mountInfo.erase(string(appInfo->name));
+        UmountDir(rootPath, el1Path, appInfo);
+    } else {
+        APPSPAWN_LOGV("app %{public}s use it mount times %{public}d, not need umount",
+            appInfo->name, g_mountInfo[string(appInfo->name)]);
+    }
+    return 0;
+}
+
 #ifndef APPSPAWN_SANDBOX_NEW
 MODULE_CONSTRUCTOR(void)
 {
@@ -2127,5 +2177,6 @@ MODULE_CONSTRUCTOR(void)
     (void)AddServerStageHook(STAGE_SERVER_PRELOAD, HOOK_PRIO_SANDBOX, LoadAppSandboxConfig);
     (void)AddAppSpawnHook(STAGE_PARENT_PRE_FORK, HOOK_PRIO_COMMON, SpawnMountDirToShared);
     (void)AddAppSpawnHook(STAGE_CHILD_EXECUTE, HOOK_PRIO_SANDBOX, SetAppSandboxProperty);
+    (void)AddProcessMgrHook(STAGE_SERVER_APP_UMOUNT, HOOK_PRIO_SANDBOX, UmountSandboxPath);
 }
 #endif

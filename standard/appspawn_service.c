@@ -155,6 +155,7 @@ static void HandleDiedPid(pid_t pid, uid_t uid, int status)
     APPSPAWN_CHECK_ONLY_LOG(appInfo->uid == uid, "Invalid uid %{public}u %{public}u", appInfo->uid, uid);
     DumpStatus(appInfo->name, pid, status);
     ProcessMgrHookExecute(STAGE_SERVER_APP_DIED, GetAppSpawnContent(), appInfo);
+    ProcessMgrHookExecute(STAGE_SERVER_APP_UMOUNT, GetAppSpawnContent(), appInfo);
 
     // if current process of death is nwebspawn, restart appspawn
     if (strcmp(appInfo->name, NWEBSPAWN_SERVER_NAME) == 0) {
