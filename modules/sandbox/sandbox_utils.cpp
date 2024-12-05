@@ -274,7 +274,7 @@ int32_t SandboxUtils::DoAppSandboxMountOnce(const char *originPath, const char *
     struct timespec mountStart = {0};
     clock_gettime(CLOCK_MONOTONIC_COARSE, &mountStart);
     APPSPAWN_LOGV("Bind mount %{public}s to %{public}s '%{public}s' '%{public}lu' '%{public}s' '%{public}u'",
-        originPath, destinationPath, fsType, mountFlags, options, mountSharedFlag);
+                  originPath, destinationPath, fsType, mountFlags, options, mountSharedFlag);
     ret = mount(originPath, destinationPath, fsType, mountFlags, options);
     struct timespec mountEnd = {0};
     clock_gettime(CLOCK_MONOTONIC_COARSE, &mountEnd);
@@ -1954,12 +1954,14 @@ static int MountInShared(const AppSpawningCtx *property, const char *rootPath, c
     int ret = snprintf_s(path, PATH_MAX_LEN, PATH_MAX_LEN - 1, "%s/%u/%s/%s", rootPath, info->uid / UID_BASE,
                          bundleName, target);
     if (ret <= 0) {
+        APPSPAWN_LOGE("snprintf_s path failed, errno %{public}d", errno);
         return APPSPAWN_ERROR_UTILS_MEM_FAIL;
     }
 
     char currentUserPath[PATH_MAX_LEN] = {0};
     ret = snprintf_s(currentUserPath, PATH_MAX_LEN, PATH_MAX_LEN - 1, "%s/currentUser", path);
     if (ret <= 0) {
+        APPSPAWN_LOGE("snprintf_s currentUserPath failed, errno %{public}d", errno);
         return APPSPAWN_ERROR_UTILS_MEM_FAIL;
     }
 
@@ -1995,6 +1997,7 @@ static int SharedMountInSharefs(const AppSpawningCtx *property, const char *root
     char currentUserPath[PATH_MAX_LEN] = {0};
     int ret = snprintf_s(currentUserPath, PATH_MAX_LEN, PATH_MAX_LEN - 1, "%s/currentUser", target);
     if (ret <= 0) {
+        APPSPAWN_LOGE("snprintf_s currentUserPath failed, errno %{public}d", errno);
         return APPSPAWN_ERROR_UTILS_MEM_FAIL;
     }
 
@@ -2011,6 +2014,7 @@ static int SharedMountInSharefs(const AppSpawningCtx *property, const char *root
     ret = snprintf_s(options, PATH_MAX_LEN, PATH_MAX_LEN - 1, "override_support_delete,user_id=%u",
                      info->uid / UID_BASE);
     if (ret <= 0) {
+        APPSPAWN_LOGE("snprintf_s options failed, errno %{public}d", errno);
         return APPSPAWN_ERROR_UTILS_MEM_FAIL;
     }
 
@@ -2045,6 +2049,7 @@ static void UpdateStorageDir(const AppSpawningCtx *property)
     int ret = snprintf_s(nosharefsDocsDir, PATH_MAX_LEN, PATH_MAX_LEN - 1, "%s/%u/%s",
                          mntUser, info->uid / UID_BASE, nosharefsDocs);
     if (ret <= 0) {
+        APPSPAWN_LOGE("snprintf_s nosharefsDocsDir failed, errno %{public}d", errno);
         return;
     }
 
@@ -2053,6 +2058,7 @@ static void UpdateStorageDir(const AppSpawningCtx *property)
     ret = snprintf_s(sharefsDocsDir, PATH_MAX_LEN, PATH_MAX_LEN - 1, "%s/%u/%s",
                      mntUser, info->uid / UID_BASE, sharefsDocs);
     if (ret <= 0) {
+        APPSPAWN_LOGE("snprintf_s sharefsDocsDir failed, errno %{public}d", errno);
         return;
     }
 
@@ -2064,6 +2070,7 @@ static void UpdateStorageDir(const AppSpawningCtx *property)
         ret = snprintf_s(storageUserPath, PATH_MAX_LEN, PATH_MAX_LEN - 1, "%s/%u/%s/%s", rootPath, info->uid / UID_BASE,
                          bundleName, userPath);
         if (ret <= 0) {
+            APPSPAWN_LOGE("snprintf_s storageUserPath failed, errno %{public}d", errno);
             return;
         }
         /* mount /mnt/user/<currentUserId>/sharefs/docs to /mnt/sandbox/<currentUserId>/<bundleName>/storage/Users */
@@ -2075,6 +2082,7 @@ static void UpdateStorageDir(const AppSpawningCtx *property)
     if (ret != 0) {
         APPSPAWN_LOGE("Update storage dir, ret %{public}d", ret);
     }
+    APPSPAWN_LOGI("Update %{public}s storage dir success", res == 0 ? "sharefs dir" : "no sharefs dir");
 }
 
 static void MountDirToShared(const AppSpawningCtx *property)
@@ -2088,14 +2096,14 @@ static void MountDirToShared(const AppSpawningCtx *property)
         return;
     }
 
-    UpdateStorageDir(property);
-
     string sourcePath = "/data/app/el1/bundle/public/" + string(bundleName);
     MountDir(property, rootPath, sourcePath.c_str(), el1Path);
     size_t bundleNameLen = strlen(bundleName);
     if (IsUnlockStatus(info->uid, bundleName, bundleNameLen)) {
         return;
     }
+
+    UpdateStorageDir(property);
 
     int length = sizeof(MOUNT_SHARED_MAP) / sizeof(MOUNT_SHARED_MAP[0]);
     for (int i = 0; i < length; i++) {
