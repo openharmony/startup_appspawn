@@ -631,7 +631,7 @@ HWTEST_F(HnpInstallerTest, Hnp_Install_007, TestSize.Level0)
         char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12};
         int argc = sizeof(argv) / sizeof(argv[0]);
 
-        EXPECT_EQ(HnpCmdInstall(argc, argv), HNP_ERRNO_BASE_DIR_OPEN_FAILED);
+        EXPECT_EQ(HnpCmdInstall(argc, argv), HNP_ERRNO_BASE_PARAMS_INVALID);
     }
     { // dst dir path is invalid
         char arg3[] = "-u";
