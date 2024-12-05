@@ -791,6 +791,11 @@
                     "sandbox-flags": [ "bind", "rec" ]
                 },
                 {
+                    "src-path": "/mnt/user/<currentUserId>/nosharefs/docs",
+                    "sandbox-path": "/storage/Users",
+                    "sandbox-flags": [ "bind", "rec" ]
+                },
+                {
                     "src-path": "/mnt/data/<currentUserId>/hmdfs",
                     "sandbox-path": "/storage/hmdfs",
                     "sandbox-flags": [ "bind", "rec" ]
@@ -813,12 +818,38 @@
                     "src-path": "/mnt/data/external",
                     "sandbox-path": "/storage/External",
                     "sandbox-flags": [ "bind", "rec" ]
+                },
+                {
+                    "src-path": "/mnt/user/<currentUserId>/sharefs/docs",
+                    "sandbox-path": "/mnt/storage/Users",
+                    "sandbox-flags": [ "bind", "rec" ]
+                },
+                {
+                    "src-path": "/mnt/sandbox/<currentUserId>/<PackageName>/mnt/storage/Users",
+                    "sandbox-path": "/storage/Users",
+                    "sandbox-flags-customized": [ "MS_NODEV"],
+                    "dac-override-sensitive": "true",
+                    "fs-type": "sharefs",
+                    "options": "override"
                 }
             ]
         }],
         "ohos.permission.FILE_ACCESS_COMMON_DIR":[{
             "sandbox-switch": "ON",
-            "mount-paths": []
+            "mount-paths": [{
+                    "src-path": "/mnt/user/<currentUserId>/sharefs/docs",
+                    "sandbox-path": "/mnt/storage/Users",
+                    "sandbox-flags": [ "bind", "rec" ]
+                },
+                {
+                    "src-path": "/mnt/sandbox/<currentUserId>/<PackageName>/mnt/storage/Users",
+                    "sandbox-path": "/storage/Users",
+                    "sandbox-flags-customized": [ "MS_NODEV"],
+                    "dac-override-sensitive": "true",
+                    "fs-type": "sharefs",
+                    "options": "override"
+                }
+            ]
         }],
         "ohos.permission.ACTIVATE_THEME_PACKAGE":[{
             "sandbox-switch": "ON",
