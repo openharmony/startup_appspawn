@@ -59,6 +59,7 @@
 
 #define PROVISION_TYPE_DEBUG "debug"
 #define DEVICE_NULL_STR "/dev/null"
+#define PROCESS_START_TIME_ENV "PROCESS_START_TIME"
 #define BITLEN32 32
 #define PID_NS_INIT_UID 100000  // reserved for pid_ns_init process, avoid app, render proc, etc.
 #define PID_NS_INIT_GID 100000
@@ -546,6 +547,20 @@ APPSPAWN_STATIC int SetFdEnv(AppSpawnMgr *content, AppSpawningCtx *property)
     return 0;
 }
 
+APPSPAWN_STATIC int RecordStartTime(AppSpawnMgr *content, AppSpawningCtx *property)
+{
+    struct timespec ts;
+    int ret = clock_gettime(CLOCK_MONOTONIC, &ts);
+    APPSPAWN_CHECK(ret == 0, return 0, "clock_gettime failed %{public}d,%{public}d", ret, errno);
+    long long startTime = (ts.tv_sec * 1000LL) + (ts.tv_nsec / 1000000);
+    char timeChar[32];
+    ret = snprintf_s(timeChar, sizeof(timeChar), sizeof(timeChar) - 1, "%lld", startTime);
+    APPSPAWN_CHECK(ret > 0, return 0, "failed to snprintf_s %{public}d,%{public}d", ret, errno);
+    ret = setenv(PROCESS_START_TIME_ENV, timeChar, 1);
+    APPSPAWN_CHECK_ONLY_LOG(ret == 0, "set env failed %{public}d,%{public}d", ret, errno);
+    return 0;
+}
+
 MODULE_CONSTRUCTOR(void)
 {
     APPSPAWN_LOGV("Load common module ...");
@@ -560,4 +575,5 @@ MODULE_CONSTRUCTOR(void)
     AddAppSpawnHook(STAGE_CHILD_POST_RELY, HOOK_PRIO_HIGHEST, SpawnComplete);
     AddAppSpawnHook(STAGE_PARENT_POST_FORK, HOOK_PRIO_HIGHEST, CloseFdArgs);
     AddAppSpawnHook(STAGE_CHILD_PRE_COLDBOOT, HOOK_PRIO_HIGHEST, SetFdEnv);
+    AddAppSpawnHook(STAGE_CHILD_PRE_RUN, HOOK_PRIO_HIGHEST, RecordStartTime);
 }
