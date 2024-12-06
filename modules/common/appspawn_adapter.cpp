@@ -106,11 +106,13 @@ int SetSelinuxCon(const AppSpawnMgr *content, const AppSpawningCtx *property)
         reinterpret_cast<AppSpawnMsgDomainInfo *>(GetAppProperty(property, TLV_DOMAIN_INFO));
     APPSPAWN_CHECK(msgDomainInfo != NULL, return APPSPAWN_TLV_NONE,
         "No domain info in req form %{public}s", GetProcessName(property));
+    AppDacInfo *appInfo = reinterpret_cast<AppDacInfo *>(GetAppProperty(property, TLV_DAC_INFO));
     HapContext hapContext;
     HapDomainInfo hapDomainInfo;
     hapDomainInfo.apl = msgDomainInfo->apl;
     hapDomainInfo.packageName = GetBundleName(property);
     hapDomainInfo.hapFlags = msgDomainInfo->hapFlags;
+    hapDomainInfo.uid = appInfo == NULL ? 0 : appInfo->uid; //The value of 0 is invalid. Its purpose is to initialize.
     if (CheckAppMsgFlagsSet(property, APP_FLAGS_DEBUGGABLE)) {
         hapDomainInfo.hapFlags |= SELINUX_HAP_DEBUGGABLE;
     }
