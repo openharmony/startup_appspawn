@@ -112,8 +112,7 @@ int SetSelinuxCon(const AppSpawnMgr *content, const AppSpawningCtx *property)
     hapDomainInfo.apl = msgDomainInfo->apl;
     hapDomainInfo.packageName = GetBundleName(property);
     hapDomainInfo.hapFlags = msgDomainInfo->hapFlags;
-    // This default value 0 is invalid. Its purpose is simply to initialize the hapDomainInfo.uid.  
-    hapDomainInfo.uid = appInfo == NULL ? 0 : appInfo->uid;
+    hapDomainInfo.uid = appInfo == NULL ? 0 : appInfo->uid; //The value of 0 is invalid. Its purpose is to initialize.
     if (CheckAppMsgFlagsSet(property, APP_FLAGS_DEBUGGABLE)) {
         hapDomainInfo.hapFlags |= SELINUX_HAP_DEBUGGABLE;
     }
