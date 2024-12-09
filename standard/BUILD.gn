@@ -66,6 +66,7 @@ ohos_executable("appspawn") {
   }
 
   external_deps = [
+    "cJSON:cjson",
     "c_utils:utils",
     "config_policy:configpolicy_util",
     "hilog:libhilog",
@@ -176,6 +177,7 @@ ohos_executable("cjappspawn") {
   }
 
   external_deps = [
+    "cJSON:cjson",
     "c_utils:utils",
     "config_policy:configpolicy_util",
     "hilog:libhilog",
@@ -242,6 +244,7 @@ ohos_executable("nativespawn") {
   }
 
   external_deps = [
+    "cJSON:cjson",
     "c_utils:utils",
     "config_policy:configpolicy_util",
     "hilog:libhilog",
