@@ -178,7 +178,10 @@
             "name": "ohos.permission.FILE_ACCESS_MANAGER",
             "sandbox-switch": "ON",
             "gids": ["file_manager", "user_data_rw"],
-            "mount-paths": [],
+            "mount-paths": [{
+                "src-path": "/mnt/user/<currentUserId>/nosharefs/docs",
+                "sandbox-path": "/storage/Users"
+            }],
             "mount-groups": [ "user-public", "file_manager_recent" ]
         }, {
             "name": "ohos.permission.READ_IMAGEVIDEO",
@@ -192,11 +195,11 @@
             "name": "ohos.permission.FILE_CROSS_APP",
             "gids": ["file_manager"],
             "mount-paths": [],
-            "mount-groups": [ "user-public" ]
+            "mount-groups": [ "user-public", "storage_users" ]
         }, {
             "name": "ohos.permission.FILE_ACCESS_COMMON_DIR",
             "mount-paths": [],
-            "mount-groups": [ "user-public" ]
+            "mount-groups": [ "user-public", "storage_users" ]
         }, {
             "name": "ohos.permission.ACTIVATE_THEME_PACKAGE",
             "gids": ["wallpaper"],
@@ -451,12 +454,23 @@
             "src-path": "/storage/media/<currentUserId>/local/files/Docs",
             "sandbox-path": "<deps-path>/currentUser"
         }]
-    },  {
+    }, {
         "name": "file_manager_recent",
         "type": "app-variable",
         "mount-paths": [{
             "src-path": "/storage/media/<currentUserId>/local/files/.Recent",
             "sandbox-path": "/storage/Users/<currentUserId>/.Recent"
+        }]
+    }, {
+        "name": "storage_users",
+        "type": "app-variable",
+        "mount-paths": [{
+            "src-path": "/mnt/user/<currentUserId>/sharefs/docs",
+            "sandbox-path": "/mnt/storage/Users"
+        }, {
+            "src-path": "/mnt/sandbox/<currentUserId>/app-root/mnt/storage/Users",
+            "sandbox-path": "/storage/Users",
+            "category": "dac_override_delete"
         }]
     }, {
         "name": "el2",

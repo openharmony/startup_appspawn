@@ -659,6 +659,7 @@ static int SharedMountInSharefs(const AppSpawnMsgDacInfo *info, const char *root
     char currentUserPath[MAX_SANDBOX_BUFFER] = {0};
     int ret = snprintf_s(currentUserPath, MAX_SANDBOX_BUFFER, MAX_SANDBOX_BUFFER - 1, "%s/currentUser", target);
     if (ret <= 0) {
+        APPSPAWN_LOGE("snprintf_s currentUserPath failed, errno %{public}d", errno);
         return APPSPAWN_ERROR_UTILS_MEM_FAIL;
     }
 
@@ -675,6 +676,7 @@ static int SharedMountInSharefs(const AppSpawnMsgDacInfo *info, const char *root
     ret = snprintf_s(options, OPTIONS_MAX_LEN, OPTIONS_MAX_LEN - 1, "override_support_delete,user_id=%d",
                      info->uid / UID_BASE);
     if (ret <= 0) {
+        APPSPAWN_LOGE("snprintf_s options failed, errno %{public}d", errno);
         return APPSPAWN_ERROR_UTILS_MEM_FAIL;
     }
 
@@ -704,6 +706,7 @@ static void UpdateStorageDir(const SandboxContext *context, AppSpawnSandboxCfg *
     int ret = snprintf_s(nosharefsDocsDir, MAX_SANDBOX_BUFFER, MAX_SANDBOX_BUFFER - 1, "%s/%d/%s",
                          mntUser, info->uid / UID_BASE, nosharefsDocs);
     if (ret <= 0) {
+        APPSPAWN_LOGE("snprintf_s nosharefsDocsDir failed, errno %{public}d", errno);
         return;
     }
 
@@ -712,6 +715,7 @@ static void UpdateStorageDir(const SandboxContext *context, AppSpawnSandboxCfg *
     ret = snprintf_s(sharefsDocsDir, MAX_SANDBOX_BUFFER, MAX_SANDBOX_BUFFER - 1, "%s/%d/%s",
                      mntUser, info->uid / UID_BASE, sharefsDocs);
     if (ret <= 0) {
+        APPSPAWN_LOGE("snprintf_s sharefsDocsDir failed, errno %{public}d", errno);
         return;
     }
 
@@ -722,6 +726,7 @@ static void UpdateStorageDir(const SandboxContext *context, AppSpawnSandboxCfg *
         ret = snprintf_s(storageUserPath, MAX_SANDBOX_BUFFER, MAX_SANDBOX_BUFFER - 1, "%s/%d/app-root/%s", rootPath,
                          info->uid / UID_BASE, userPath);
         if (ret <= 0) {
+            APPSPAWN_LOGE("snprintf_s storageUserPath failed, errno %{public}d", errno);
             return;
         }
         /* mount /mnt/user/<currentUserId>/sharefs/docs to /mnt/sandbox/<currentUserId>/app-root/storage/Users */
@@ -733,6 +738,7 @@ static void UpdateStorageDir(const SandboxContext *context, AppSpawnSandboxCfg *
     if (ret != 0) {
         APPSPAWN_LOGE("Update storage dir, ret %{public}d", ret);
     }
+    APPSPAWN_LOGI("Update %{public}s storage dir success", res == 0 ? "sharefs dir" : "no sharefs dir");
 }
 
 static void MountDirToShared(const SandboxContext *context, AppSpawnSandboxCfg *sandbox)
@@ -746,14 +752,14 @@ static void MountDirToShared(const SandboxContext *context, AppSpawnSandboxCfg *
         return;
     }
 
-    UpdateStorageDir(context, sandbox, info);
-
     MountDir(info, appRootName, rootPath, nwebPath);
     MountDir(info, appRootName, rootPath, nwebTmpPath);
 
     if (IsUnlockStatus(info->uid, context->bundleName, strlen(context->bundleName))) {
         return;
     }
+
+    UpdateStorageDir(context, sandbox, info);
 
     int length = sizeof(MOUNT_SHARED_MAP) / sizeof(MOUNT_SHARED_MAP[0]);
     for (int i = 0; i < length; i++) {
