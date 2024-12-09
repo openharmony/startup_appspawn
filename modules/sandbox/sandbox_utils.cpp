@@ -43,6 +43,9 @@
 #include "parameter.h"
 #include "parameters.h"
 #include "securec.h"
+#ifdef APPSPAWN_HISYSEVENT
+#include "hisysevent_adapter.h"
+#endif
 
 #ifdef WITH_SELINUX
 #include "hap_restorecon.h"
