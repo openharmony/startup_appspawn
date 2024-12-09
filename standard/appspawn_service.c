@@ -45,6 +45,7 @@
 #include "cJSON.h"
 #ifdef APPSPAWN_HISYSEVENT
 #include "appspawn_hisysevent.h"
+#include "hisysevent_adapter.h"
 #endif
 #define PARAM_BUFFER_SIZE 10
 #define PATH_SIZE 256
@@ -929,9 +930,13 @@ static uint32_t g_crashTimes = 0;
 static void WaitChildDied(pid_t pid)
 {
     AppSpawningCtx *property = GetAppSpawningCtxByPid(pid);
-    if (property != NULL && property->state == APP_STATE_SPAWNING) {
+    if (property != NULL && property->message != NULL && property->state == APP_STATE_SPAWNING) {
+        const char *processName = GetProcessName(property);
         APPSPAWN_LOGI("Child process %{public}s fail \'child crash \'pid %{public}d appId: %{public}d",
-            GetProcessName(property), property->pid, property->client.id);
+            processName, property->pid, property->client.id);
+#ifdef APPSPAWN_HISYSEVENT
+        ReportSpawnChildProcessFail(processName, ERR_APPSPAWN_CHILD_CRASH);
+#endif
         if (property->client.id == g_lastDiedAppId + 1) {
             g_crashTimes++;
         } else {
@@ -944,6 +949,9 @@ static void WaitChildDied(pid_t pid)
 
         if (g_crashTimes >= MAX_CRASH_TIME) {
             APPSPAWN_LOGW("Continuous failures in spawning the app, restart appspawn");
+#ifdef APPSPAWN_HISYSEVENT
+            ReportSpawnChildProcessFail(processName, ERR_APPSPAWN_MAX_FAILURES_EXCEEDED);
+#endif
             StopAppSpawn();
         }
     }
@@ -960,6 +968,9 @@ static void WaitChildTimeout(const TimerHandle taskHandle, void *context)
 #endif
         kill(property->pid, SIGKILL);
     }
+#ifdef APPSPAWN_HISYSEVENT
+    ReportSpawnChildProcessFail(GetProcessName(property), ERR_APPSPAWN_SPAWN_TIMEOUT);
+#endif
     SendResponse(property->message->connection, &property->message->msgHeader, APPSPAWN_SPAWN_TIMEOUT, 0);
     DeleteAppSpawningCtx(property);
 }
@@ -973,6 +984,9 @@ static int ProcessChildFdCheck(int fd, AppSpawningCtx *property)
     APPSPAWN_CHECK(property->message != NULL, return -1, "Invalid message in ctx %{public}d", property->client.id);
 
     if (result != 0) {
+#ifdef APPSPAWN_HISYSEVENT
+        ReportSpawnChildProcessFail(GetProcessName(property), ERR_APPSPAWN_SPAWN_FAIL);
+#endif
         SendResponse(property->message->connection, &property->message->msgHeader, result, property->pid);
         DeleteAppSpawningCtx(property);
         return -1;
@@ -1007,6 +1021,17 @@ static void ProcessChildResponse(const WatcherHandle taskHandle, int fd, uint32_
         clock_gettime(CLOCK_MONOTONIC, &appInfo->spawnEnd);
         // add max info
     }
+
+#ifdef APPSPAWN_HISYSEVENT
+    //add process spawn duration into hisysevent,(ms)
+    uint32_t spawnProcessDuration = (appInfo->spawnEnd.tv_sec - appInfo->spawnStart.tv_sec) * (APPSPAWN_USEC_TO_NSEC) +
+        (uint32_t)((appInfo->spawnEnd.tv_nsec - appInfo->spawnStart.tv_nsec)/(APPSPAWN_MSEC_TO_NSEC));
+    AppSpawnMgr *appspawnMgr = GetAppSpawnMgr();
+    if (appspawnMgr != NULL) {
+        AddStatisticEventInfo(appspawnMgr->hisyseventInfo, spawnProcessDuration, IsBootFinished());
+    }
+#endif
+
     WatchChildProcessFd(property);
     ProcessMgrHookExecute(STAGE_SERVER_APP_ADD, GetAppSpawnContent(), appInfo);
     // response
@@ -1254,6 +1279,9 @@ AppSpawnContent *AppSpawnCreateContent(const char *socketName, char *longProcNam
 
     AppSpawnMgr *appSpawnContent = CreateAppSpawnMgr(mode);
     APPSPAWN_CHECK(appSpawnContent != NULL, return NULL, "Failed to alloc memory for appspawn");
+#ifdef APPSPAWN_HISYSEVENT
+    appSpawnContent->hisyseventInfo = InitHisyseventTimer();
+#endif
     appSpawnContent->content.longProcName = longProcName;
     appSpawnContent->content.longProcNameLen = nameLen;
     appSpawnContent->content.notifyResToParent = NotifyResToParent;
