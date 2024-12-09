@@ -56,11 +56,14 @@ if (!defined(ohos_lite)) {
     external_deps = [
       "bounds_checking_function:libsec_shared",
       "cJSON:cjson",
-      "code_signature:libcode_sign_utils",
       "hilog:libhilog",
       "init:libbegetutil",
       "selinux_adapter:librestorecon",
       "zlib:shared_libz",
     ]
+
+    if (appspawn_support_code_signature) {
+      external_deps += [ "code_signature:libcode_sign_utils" ]
+    }
   }
 }
