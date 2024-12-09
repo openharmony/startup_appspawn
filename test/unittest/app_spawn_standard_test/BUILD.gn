@@ -535,6 +535,7 @@ ohos_unittest("AppSpawn_common_ut") {
     sources += [
       "${appspawn_path}/modules/sysevent/appspawn_hisysevent.cpp",
       "${appspawn_path}/modules/sysevent/event_reporter.cpp",
+      "${appspawn_path}/modules/sysevent/hisysevent_adapter.cpp",
     ]
   }
 
