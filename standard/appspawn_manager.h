@@ -27,6 +27,9 @@
 #include "appspawn_utils.h"
 #include "list.h"
 #include "loop_event.h"
+#ifdef APPSPAWN_HISYSEVENT
+#include "hisysevent_adapter.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -120,6 +123,9 @@ typedef struct TagAppSpawnMgr {
     struct timespec perLoadEnd;
     struct ListNode extData;
     struct SpawnTime spawnTime;
+#ifdef APPSPAWN_HISYSEVENT
+    AppSpawnHisyseventInfo *hisyseventInfo;
+#endif
 } AppSpawnMgr;
 
 /**
