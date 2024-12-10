@@ -44,7 +44,8 @@ if (!defined(ohos_lite)) {
 
     defines = []
     if (defined(global_parts_info) &&
-        defined(global_parts_info.security_code_signature)) {
+        defined(global_parts_info.security_code_signature) &&
+        appspawn_support_code_signature) {
       defines += [ "CODE_SIGNATURE_ENABLE" ]
     }
     install_enable = true
