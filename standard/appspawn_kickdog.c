@@ -66,8 +66,6 @@ static const char *GetProcContent(bool isLinux, bool isOpen, int mode)
 
 static void DealSpawnWatchdog(AppSpawnContent *content, bool isOpen)
 {
-    APPSPAWN_LOGI("%{public}s %{public}s watchdog begin",
-        (content->mode == MODE_FOR_NWEB_SPAWN) ? "Nwebspawn" : "Appspawn", isOpen ? "enable" : "kick");
     int result = 0;
     const char *procFile = GetProcFile(content->isLinux);
     const char *procContent = GetProcContent(content->isLinux, isOpen, content->mode);
