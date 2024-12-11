@@ -620,13 +620,13 @@ static int AddChildWatcher(AppSpawningCtx *property)
 {
     uint32_t defTimeout = IsChildColdRun(property) ? COLD_CHILD_RESPONSE_TIMEOUT : WAIT_CHILD_RESPONSE_TIMEOUT;
     uint32_t timeout = GetSpawnTimeout(defTimeout);
-    APPSPAWN_LOGI("Get Spawn timeout %{public}u", timeout);
     LE_WatchInfo watchInfo = {};
     watchInfo.fd = property->forkCtx.fd[0];
     watchInfo.flags = WATCHER_ONCE;
     watchInfo.events = EVENT_READ;
     watchInfo.processEvent = ProcessChildResponse;
     LE_STATUS status = LE_StartWatcher(LE_GetDefaultLoop(), &property->forkCtx.watcherHandle, &watchInfo, property);
+    APPSPAWN_LOGI("AddChildWatcher with timeout %{public}u fd %{public}d", timeout, watchInfo.fd);
     APPSPAWN_CHECK(status == LE_SUCCESS,
         return APPSPAWN_SYSTEM_ERROR, "Failed to watch child %{public}d", property->pid);
     status = LE_CreateTimer(LE_GetDefaultLoop(), &property->forkCtx.timer, WaitChildTimeout, property);
