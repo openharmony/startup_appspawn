@@ -244,7 +244,7 @@
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
-                    "src-path" : "/data/service/el1/<currentUserId>/distributeddata/utd",
+                    "src-path" : "/data/service/el1/<currentUserId>/utdtypes/utd",
                     "sandbox-path" : "/data/utd",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
