@@ -323,6 +323,7 @@ void DeleteAppSpawningCtx(AppSpawningCtx *property)
         property->forkCtx.timer = NULL;
     }
     if (property->forkCtx.watcherHandle) {
+        APPSPAWN_LOGI("start clear watcher handle");
         LE_RemoveWatcher(LE_GetDefaultLoop(), property->forkCtx.watcherHandle);
         property->forkCtx.watcherHandle = NULL;
     }
