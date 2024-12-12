@@ -51,8 +51,11 @@
 #define PATH_SIZE 256
 #define FD_PATH_SIZE 128
 #define MAX_MEM_SIZE (4 * 1024)
-#define APPSPAWN_MSG_USER_CHECK_COUNT 3
+#define APPSPAWN_MSG_USER_CHECK_COUNT 4
 #define PREFORK_PROCESS "apppool"
+#define USER_ID_MIN_VALUE 100
+#define USER_ID_MAX_VALUE 10736
+#define LOCK_STATUS_PARAM_SIZE 64
 #ifndef PIDFD_NONBLOCK
 #define PIDFD_NONBLOCK O_NONBLOCK
 #endif
@@ -338,6 +341,7 @@ APPSPAWN_STATIC bool OnConnectionUserCheck(uid_t uid)
         0, // root 0
         3350, // app_fwk_update 3350
         5523, // foundation 5523
+        1090, //storage_manager 1090
     };
 
     for (int i = 0; i < APPSPAWN_MSG_USER_CHECK_COUNT; i++) {
@@ -1649,6 +1653,35 @@ APPSPAWN_STATIC int ProcessAppSpawnDeviceDebugMsg(AppSpawnMsgNode *message)
     return result;
 }
 
+static void ProcessAppSpawnLockStatusMsg(AppSpawnMsgNode *message)
+{
+    APPSPAWN_CHECK_ONLY_EXPER(message != NULL, return);
+    uint32_t len = 0;
+    char *lockstatus = (char *)GetAppSpawnMsgExtInfo(message, "lockstatus", &len);
+    APPSPAWN_CHECK(lockstatus != NULL, return, "failed to get lockstatus");
+    APPSPAWN_LOGI("appspawn get lockstatus %{public}s from storage_manager", lockstatus);
+    char *userLockStatus = NULL;
+    // userLockStatus format example:  100:0  100代表userid，0代表data分区加解密状态（0：解密状态 1：加密状态）
+    char *userIdStr = strtok_r(lockstatus, ":", &userLockStatus);
+    APPSPAWN_CHECK(userIdStr != NULL && userLockStatus != NULL, return,
+        "lockstatus not satisfied format, failed to get userLockStatus");
+    int userId = atoi(userIdStr);
+    if (userId < USER_ID_MIN_VALUE || userId > USER_ID_MAX_VALUE) {
+        APPSPAWN_LOGE("userId err %{public}s", userIdStr);
+        return;
+    }
+    if (strcmp(userLockStatus, "0") != 0 && strcmp(userLockStatus, "1") != 0) {
+        APPSPAWN_LOGE("userLockStatus err %{public}s", userLockStatus);
+        return;
+    }
+    char lockStatusParam[LOCK_STATUS_PARAM_SIZE] = {0};
+    int ret = snprintf_s(lockStatusParam, sizeof(lockStatusParam), sizeof(lockStatusParam) - 1,
+        "startup.appspawn.lockstatus_%d", userId);
+    APPSPAWN_CHECK(ret > 0, return, "get lock status param failed, errno %{public}d", errno);
+    ret = SetParameter(lockStatusParam, userLockStatus);
+    APPSPAWN_CHECK(ret == 0, return, "failed to set lockstatus param value ret %{public}d", ret);
+}
+
 static void ProcessRecvMsg(AppSpawnConnection *connection, AppSpawnMsgNode *message)
 {
     AppSpawnMsg *msg = &message->msgHeader;
@@ -1700,6 +1733,11 @@ static void ProcessRecvMsg(AppSpawnConnection *connection, AppSpawnMsgNode *mess
             break;
         case MSG_UNINSTALL_DEBUG_HAP:
             ProcessUninstallDebugHap(connection, message);
+            break;
+        case MSG_LOCK_STATUS:
+            ProcessAppSpawnLockStatusMsg(message);
+            SendResponse(connection, msg, 0, 0);
+            DeleteAppSpawnMsg(message);
             break;
         default:
             SendResponse(connection, msg, APPSPAWN_MSG_INVALID, 0);
