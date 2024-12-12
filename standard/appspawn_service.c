@@ -1102,9 +1102,9 @@ void AppSpawnDestroyContent(AppSpawnContent *content)
         LE_CloseStreamTask(LE_GetDefaultLoop(), appSpawnContent->server);
         appSpawnContent->server = NULL;
     }
+    DeleteAppSpawnMgr(appSpawnContent);
     LE_StopLoop(LE_GetDefaultLoop());
     LE_CloseLoop(LE_GetDefaultLoop());
-    DeleteAppSpawnMgr(appSpawnContent);
 }
 
 APPSPAWN_STATIC int AppSpawnColdStartApp(struct AppSpawnContent *content, AppSpawnClient *client)
