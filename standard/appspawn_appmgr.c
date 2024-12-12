@@ -288,6 +288,7 @@ AppSpawningCtx *CreateAppSpawningCtx(void)
     property->forkCtx.timer = NULL;
     property->forkCtx.fd[0] = -1;
     property->forkCtx.fd[1] = -1;
+    property->isPrefork = false;
     property->forkCtx.childMsg = NULL;
     property->message = NULL;
     property->pid = 0;
