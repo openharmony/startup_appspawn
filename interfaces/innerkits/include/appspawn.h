@@ -19,6 +19,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <unistd.h>
 
 #ifdef __cplusplus
@@ -97,6 +98,15 @@ int AppSpawnClientDestroy(AppSpawnClientHandle handle);
  */
 int AppSpawnClientSendMsg(AppSpawnClientHandle handle, AppSpawnReqMsgHandle reqHandle, AppSpawnResult *result);
 
+/**
+ * @brief send client user lock status request
+ *
+ * @param userId user id
+ * @param isLocked lock status
+ * @return if succeed return 0,else return other value
+ */
+int AppSpawnClientSendUserLockStatus(uint32_t userId, bool isLocked);
+
 typedef enum {
     MSG_APP_SPAWN = 0,
     MSG_GET_RENDER_TERMINATION_STATUS,
@@ -108,6 +118,7 @@ typedef enum {
     MSG_RESTART_SPAWNER,
     MSG_DEVICE_DEBUG,
     MSG_UNINSTALL_DEBUG_HAP,
+    MSG_LOCK_STATUS,
     MAX_TYPE_INVALID
 } AppSpawnMsgType;
 

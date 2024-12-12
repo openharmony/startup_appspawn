@@ -47,6 +47,8 @@
 
 #define USER_ID_SIZE 16
 #define DIR_MODE     0711
+#define LOCK_STATUS_PARAM_SIZE     64
+#define LOCK_STATUS_SIZE     16
 #define DEV_SHM_DIR "/dev/shm/"
 
 static inline void SetMountPathOperation(uint32_t *operation, uint32_t index)
@@ -543,7 +545,7 @@ static int DoSandboxNodeMount(const SandboxContext *context, const SandboxSectio
     return 0;
 }
 
-static bool IsUnlockStatus(uint32_t uid, const char *bundleName, size_t bundleNameLen)
+static bool IsUnlockStatus(uint32_t uid)
 {
     const int userIdBase = UID_BASE;
     uid = uid / userIdBase;
@@ -551,22 +553,16 @@ static bool IsUnlockStatus(uint32_t uid, const char *bundleName, size_t bundleNa
         return true;
     }
 
-    const char rootPath[] = "/data/app/el2/";
-    const char basePath[] = "/base/";
-    size_t allPathSize = strlen(rootPath) + strlen(basePath) + 1 + USER_ID_SIZE + bundleNameLen;
-    char *path = (char *)malloc(sizeof(char) * allPathSize);
-    (void)memset_s(path, allPathSize, 0, allPathSize);
-    APPSPAWN_CHECK(path != NULL, return true, "Failed to malloc path");
-    int len = sprintf_s(path, allPathSize, "%s%u%s%s", rootPath, uid, basePath, bundleName);
-    APPSPAWN_CHECK(len > 0 && ((size_t)len < allPathSize), free(path); return true, "Failed to get base path");
-
-    if (access(path, F_OK) == 0) {
-        APPSPAWN_LOGI("this is unlock status");
-        free(path);
+    char lockStatusParam[LOCK_STATUS_PARAM_SIZE] = {0};
+    char userLockStatus[LOCK_STATUS_SIZE] = {0};
+    int ret = snprintf_s(lockStatusParam, sizeof(lockStatusParam), sizeof(lockStatusParam) - 1,
+        "startup.appspawn.lockstatus_%u", uid);
+    APPSPAWN_CHECK(ret > 0, return false, "get lock status param failed, errno %{public}d", errno);
+    ret = GetParameter(lockStatusParam, "1", userLockStatus, sizeof(userLockStatus));
+    APPSPAWN_LOGI("get param %{public}s %{public}s", lockStatusParam, userLockStatus);
+    if (ret > 0 && (strcmp(userLockStatus, "0") == 0)) {     // 0：解密状态  1：加密状态
         return true;
     }
-    free(path);
-    APPSPAWN_LOGI("this is lock status");
     return false;
 }
 
@@ -755,7 +751,7 @@ static void MountDirToShared(const SandboxContext *context, AppSpawnSandboxCfg *
     MountDir(info, appRootName, rootPath, nwebPath);
     MountDir(info, appRootName, rootPath, nwebTmpPath);
 
-    if (IsUnlockStatus(info->uid, context->bundleName, strlen(context->bundleName))) {
+    if (IsUnlockStatus(info->uid)) {
         return;
     }
 
