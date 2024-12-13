@@ -155,10 +155,10 @@ static int AddJITPermissionToEncaps(cJSON *extInfoJson, cJSON *encaps, uint32_t 
         return APPSPAWN_ARG_INVALID;
     }
 
-    // If permissionName is obtained, it needs to be written in the format of ["permissionName: "true""] in the encaps
+    // If permissionName is obtained, it needs to be written in the format of ["permissionName: 1"] in the encaps
     for (int i = 0; i < count; i++) {
         char *permissionName = cJSON_GetStringValue(cJSON_GetArrayItem(permissions, i));
-        if (cJSON_AddStringToObject(encaps, permissionName, "true") == NULL) {
+        if (cJSON_AddNumberToObject(encaps, permissionName, 1) == NULL) {
             APPSPAWN_LOGV("Add permission to object failed.(ignore)");
             return APPSPAWN_ERROR_UTILS_ADD_JSON_FAIL;
         }
