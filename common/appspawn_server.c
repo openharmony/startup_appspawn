@@ -121,6 +121,7 @@ int AppSpawnChild(AppSpawnContent *content, AppSpawnClient *client)
 static int CloneAppSpawn(void *arg)
 {
     APPSPAWN_CHECK(arg != NULL, return -1, "Invalid content for appspawn");
+    APPSPAWN_LOGI("CloneNwebSpawn done.");
     ffrt_child_init();
     AppSpawnForkArg *forkArg = (AppSpawnForkArg *)arg;
     ProcessExit(AppSpawnChild(forkArg->content, forkArg->client));
