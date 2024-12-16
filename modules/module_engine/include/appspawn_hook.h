@@ -59,6 +59,7 @@ typedef enum TagAppSpawnHookStage {
     // 应用状态处理
     STAGE_SERVER_APP_ADD,
     STAGE_SERVER_APP_DIED,
+    STAGE_SERVER_APP_UMOUNT,
     // run before fork
     STAGE_PARENT_PRE_FORK = 20,
     STAGE_PARENT_POST_FORK = 21,
