@@ -1024,17 +1024,18 @@ static void ProcessChildResponse(const WatcherHandle taskHandle, int fd, uint32_
 #endif
         clock_gettime(CLOCK_MONOTONIC, &appInfo->spawnEnd);
         // add max info
-    }
 
 #ifdef APPSPAWN_HISYSEVENT
-    //add process spawn duration into hisysevent,(ms)
-    uint32_t spawnProcessDuration = (appInfo->spawnEnd.tv_sec - appInfo->spawnStart.tv_sec) * (APPSPAWN_USEC_TO_NSEC) +
-        (uint32_t)((appInfo->spawnEnd.tv_nsec - appInfo->spawnStart.tv_nsec)/(APPSPAWN_MSEC_TO_NSEC));
-    AppSpawnMgr *appspawnMgr = GetAppSpawnMgr();
-    if (appspawnMgr != NULL) {
-        AddStatisticEventInfo(appspawnMgr->hisyseventInfo, spawnProcessDuration, IsBootFinished());
-    }
+        //add process spawn duration into hisysevent,(ms)
+        uint32_t spawnProcessDuration = (uint32_t)((appInfo->spawnEnd.tv_sec - appInfo->spawnStart.tv_sec) *
+            (APPSPAWN_USEC_TO_NSEC)) +(uint32_t)((appInfo->spawnEnd.tv_nsec - appInfo->spawnStart.tv_nsec) /
+            (APPSPAWN_MSEC_TO_NSEC));
+        AppSpawnMgr *appspawnMgr = GetAppSpawnMgr();
+        if (appspawnMgr != NULL) {
+            AddStatisticEventInfo(appspawnMgr->hisyseventInfo, spawnProcessDuration, IsBootFinished());
+        }
 #endif
+    }
 
     WatchChildProcessFd(property);
     ProcessMgrHookExecute(STAGE_SERVER_APP_ADD, GetAppSpawnContent(), appInfo);
