@@ -615,7 +615,7 @@
                     "check-action-status": "false"
                 }, {
                     "src-path" : "/vendor/etc/vulkan/icd.d",
-                    "sandbox-path" : "/system/etc/vulkan/icd.d",
+                    "sandbox-path" : "/vendor/etc/vulkan/icd.d",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
