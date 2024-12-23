@@ -111,7 +111,10 @@ static uint32_t SpawnGetMaxPids(AppSpawnMgr *content, AppSpawningCtx *property)
 /* set ohos.encaps.fork.count to encaps */
 static int SpawnSetMaxPids(AppSpawnMgr *content, AppSpawningCtx *property, cJSON *encaps)
 {
-    uint32_t maxPidCount = SpawnGetMaxPids(content, property);
+    uint32_t maxPidCount = 0;
+    if (GetAppSpawnMsgType(property) != MSG_SPAWN_NATIVE_PROCESS) {
+        maxPidCount = SpawnGetMaxPids(content, property);
+    }
     if (maxPidCount == 0 || maxPidCount > OH_APP_MAX_PIDS_NUM) {
         APPSPAWN_LOGV("Don't need to set pid max count. Use default pid max");
         return APPSPAWN_PIDMGR_DEFAULT_PID_MAX;
