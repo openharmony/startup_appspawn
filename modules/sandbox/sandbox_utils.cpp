@@ -263,10 +263,33 @@ static void CheckAndCreatFile(const char *file)
     return;
 }
 
+static void CheckMountStatus(const std::string &path)
+{
+    std::ifstream file("/proc/self/mountinfo");
+    if (!file.is_open()) {
+        APPSPAWN_LOGE("Failed to open /proc/self/mountinfo errno %{public}d", errno);
+        return;
+    }
+
+    bool flag = false;
+    std::string line;
+    while (std::getline(file, line)) {
+        if (line.find(path) != std::string::npos) {
+            flag = true;
+            APPSPAWN_LOGI("Current mountinfo %{public}s", line.c_str());
+        }
+    }
+    file.close();
+    APPSPAWN_CHECK_ONLY_LOG(flag, "Mountinfo not contains %{public}s", path.c_str());
+}
+
 int32_t SandboxUtils::DoAppSandboxMountOnce(const char *originPath, const char *destinationPath,
                                             const char *fsType, unsigned long mountFlags,
                                             const char *options, mode_t mountSharedFlag)
 {
+    if (originPath == nullptr || destinationPath == nullptr || originPath[0] == '\0' || destinationPath[0] == '\0') {
+        return 0;
+    }
     if (originPath != nullptr && strstr(originPath, "system/etc/hosts") != nullptr) {
         CheckAndCreatFile(destinationPath);
     } else {
@@ -295,8 +318,14 @@ int32_t SandboxUtils::DoAppSandboxMountOnce(const char *originPath, const char *
     }
 
     ret = mount(nullptr, destinationPath, nullptr, mountSharedFlag, nullptr);
-    APPSPAWN_CHECK(ret == 0, return ret, "errno is: %{public}d, private mount to %{public}s '%{public}u' failed",
-        errno, destinationPath, mountSharedFlag);
+    if (ret != 0) {
+        APPSPAWN_LOGI("errno is: %{public}d, private mount to %{public}s '%{public}u' failed",
+            errno, destinationPath, mountSharedFlag);
+        if (errno == EINVAL) {
+            CheckMountStatus(destinationPath);
+        }
+        return ret;
+    }
     return 0;
 }
 
