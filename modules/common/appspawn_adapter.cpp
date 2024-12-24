@@ -82,6 +82,33 @@ int SetSelinuxConNweb(const AppSpawnMgr *content, const AppSpawningCtx *property
     return 0;
 }
 
+#ifdef WITH_SELINUX
+void SetHapDomainInfo(HapDomainInfo *hapDomainInfo, const AppSpawningCtx *property,
+    AppSpawnMsgDomainInfo *msgDomainInfo, AppDacInfo *appInfo)
+{
+    hapDomainInfo->apl = msgDomainInfo->apl;
+    hapDomainInfo->packageName = GetBundleName(property);
+    hapDomainInfo->hapFlags = msgDomainInfo->hapFlags;
+    //The value of 0 is invalid. Its purpose is to initialize.
+    hapDomainInfo->uid = appInfo == nullptr ? 0 : appInfo->uid;
+    if (CheckAppMsgFlagsSet(property, APP_FLAGS_DEBUGGABLE)) {
+        hapDomainInfo->hapFlags |= SELINUX_HAP_DEBUGGABLE;
+    }
+    if (CheckAppMsgFlagsSet(property, APP_FLAGS_DLP_MANAGER)) {
+        hapDomainInfo->hapFlags |= SELINUX_HAP_DLP;
+    }
+    if (CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX)) {
+        hapDomainInfo->hapFlags |= SELINUX_HAP_INPUT_ISOLATE;
+    }
+    if (CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SELINUX_LABEL)) {
+        uint32_t len = 0;
+        std::string extensionType =
+            reinterpret_cast<char *>(GetAppPropertyExt(property, MSG_EXT_NAME_EXTENSION_TYPE, &len));
+        hapDomainInfo->extensionType = extensionType;
+    }
+}
+#endif
+
 int SetSelinuxCon(const AppSpawnMgr *content, const AppSpawningCtx *property)
 {
 #ifdef WITH_SELINUX
@@ -109,19 +136,7 @@ int SetSelinuxCon(const AppSpawnMgr *content, const AppSpawningCtx *property)
     AppDacInfo *appInfo = reinterpret_cast<AppDacInfo *>(GetAppProperty(property, TLV_DAC_INFO));
     HapContext hapContext;
     HapDomainInfo hapDomainInfo;
-    hapDomainInfo.apl = msgDomainInfo->apl;
-    hapDomainInfo.packageName = GetBundleName(property);
-    hapDomainInfo.hapFlags = msgDomainInfo->hapFlags;
-    hapDomainInfo.uid = appInfo == NULL ? 0 : appInfo->uid; //The value of 0 is invalid. Its purpose is to initialize.
-    if (CheckAppMsgFlagsSet(property, APP_FLAGS_DEBUGGABLE)) {
-        hapDomainInfo.hapFlags |= SELINUX_HAP_DEBUGGABLE;
-    }
-    if (CheckAppMsgFlagsSet(property, APP_FLAGS_DLP_MANAGER)) {
-        hapDomainInfo.hapFlags |= SELINUX_HAP_DLP;
-    }
-    if (CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX)) {
-        hapDomainInfo.hapFlags |= SELINUX_HAP_INPUT_ISOLATE;
-    }
+    SetHapDomainInfo(&hapDomainInfo, property, msgDomainInfo, appInfo);
     int32_t ret = hapContext.HapDomainSetcontext(hapDomainInfo);
     if (CheckAppMsgFlagsSet(property, APP_FLAGS_ASANENABLED)) {
         ret = 0;
