@@ -132,6 +132,7 @@ namespace {
     const char *g_sandBoxNsFlags = "sandbox-ns-flags";
     const char* g_fileSeparator = "/";
     const char* g_overlayDecollator = "|";
+    const char *CREATE_SANDBOX_PATH = "create-sandbox-path";
     const std::string g_sandBoxRootDir = "/mnt/sandbox/";
     const std::string g_ohosGpu = "__internal__.com.ohos.gpu";
     const std::string g_ohosRender = "__internal__.com.ohos.render";
@@ -826,6 +827,19 @@ static bool CheckMountFlag(const AppSpawningCtx *appProperty, const std::string 
     return false;
 }
 
+static bool GetCreateSandboxPath(nlohmann::json &json)
+{
+    std::string value = g_statusCheck;
+    APPSPAWN_CHECK(json != nullptr && json.is_object(), return true, "json is not object.");
+    bool isRet = json.find(CREATE_SANDBOX_PATH) != json.end() && json.at(CREATE_SANDBOX_PATH).is_string();
+    if (isRet) {
+        value = json.at(CREATE_SANDBOX_PATH).get<std::string>();
+        APPSPAWN_LOGV("Find create-sandbox-path: %{public}s successful.", value.c_str());
+        return g_statusCheck == value;
+    }
+    return true;
+}
+
 int SandboxUtils::DoAllMntPointsMount(const AppSpawningCtx *appProperty,
                                       nlohmann::json &appConfig, const char *typeName, const std::string &section)
 {
@@ -856,7 +870,9 @@ int SandboxUtils::DoAllMntPointsMount(const AppSpawningCtx *appProperty,
 
         /* if app mount failed for special strategy, we need deal with common mount config */
         int ret = HandleSpecialAppMount(appProperty, srcPath, sandboxPath, mountConfig.fsType, mountFlags);
-        if (ret < 0) {
+        bool createSandboxPath = true;
+        createSandboxPath = GetCreateSandboxPath(mntPoint);
+        if (ret < 0 && (createSandboxPath || access(srcPath.c_str(), F_OK) == 0)) {
             ret = DoAppSandboxMountOnce(srcPath.c_str(), sandboxPath.c_str(), mountConfig.fsType.c_str(),
                                         mountFlags, mountConfig.optionsPoint.c_str(), mountSharedFlag);
         }
