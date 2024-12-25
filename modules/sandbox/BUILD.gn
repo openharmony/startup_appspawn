@@ -97,7 +97,6 @@ if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
       "hilog:libhilog",
       "hitrace:hitrace_meter",
       "init:libbegetutil",
-      "json:nlohmann_json_static",
     ]
     if (build_selinux) {
       defines += [ "WITH_SELINUX" ]
