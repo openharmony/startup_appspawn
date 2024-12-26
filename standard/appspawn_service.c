@@ -47,6 +47,7 @@
 #ifdef APPSPAWN_HISYSEVENT
 #include "appspawn_hisysevent.h"
 #endif
+
 #define PARAM_BUFFER_SIZE 10
 #define PATH_SIZE 256
 #define FD_PATH_SIZE 128
@@ -110,6 +111,14 @@ static void StopAppSpawn(void)
         OH_ListInit(&appInfo->node);
         free(appInfo);
     }
+
+    AppSpawnContent *content = GetAppSpawnContent();
+    if (content != NULL && content->reservedPid > 0) {
+        int ret = kill(content->reservedPid, SIGKILL);
+        APPSPAWN_CHECK_ONLY_LOG(ret == 0, "kill reserved pid %{public}d failed %{public}d %{public}d",
+            content->reservedPid, ret, errno);
+        content->reservedPid = 0;
+    }
     TraversalSpawnedProcess(AppQueueDestroyProc, NULL);
     APPSPAWN_LOGI("StopAppSpawn ");
 #ifdef APPSPAWN_HISYSEVENT
@@ -131,6 +140,8 @@ static inline void DumpStatus(const char *appName, pid_t pid, int status)
 static void HandleDiedPid(pid_t pid, uid_t uid, int status)
 {
     AppSpawnContent *content = GetAppSpawnContent();
+    APPSPAWN_CHECK(content != NULL, return, "Invalid content");
+
     if (pid == content->reservedPid) {
         APPSPAWN_LOGW("HandleDiedPid with reservedPid %{public}d", pid);
         content->reservedPid = 0;
@@ -1244,7 +1255,7 @@ APPSPAWN_STATIC int AppSpawnClearEnv(AppSpawnMgr *content, AppSpawningCtx *prope
     return 0;
 }
 
-static int IsEnablePrefork()
+static int IsEnablePrefork(void)
 {
     char buffer[32] = {0};
     int ret = GetParameter("persist.sys.prefork.enable", "true", buffer, sizeof(buffer));
