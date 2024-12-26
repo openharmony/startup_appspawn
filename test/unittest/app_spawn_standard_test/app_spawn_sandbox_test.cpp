@@ -1348,6 +1348,84 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_45, TestSize.Level0)
     EXPECT_EQ(ret, 0);
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_45 end";
 }
+
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_46, TestSize.Level0)
+{
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_46 start";
+    g_testHelper.SetTestUid(1000);  // 1000 test
+    g_testHelper.SetTestGid(1000);  // 1000 test
+    g_testHelper.SetProcessName("com.example.myapplication");
+    g_testHelper.SetTestApl("apl123");
+    g_testHelper.SetTestMsgFlags(4);  // 4 is test parameter
+    AppSpawningCtx *appProperty = GetTestAppProperty();
+
+    std::string mJsconfig1 = "{ \
+        \"sandbox-root\" : \"/mnt/sandbox/<currentUserId>/<PackageName>\", \
+        \"mount-paths\" : [{ \
+            \"src-path\" : \"/data/service/el1/public/themes/<currentUserId>/a/app/\", \
+            \"sandbox-path\" : \"/data/themes/a/app\", \
+            \"sandbox-flags\" : [ \"bind\", \"rec\" ], \
+            \"check-action-status\": \"false\" \
+        }] \
+    }";
+    nlohmann::json j_config1 = nlohmann::json::parse(mJsconfig1.c_str());
+    int ret = OHOS::AppSpawn::SandboxUtils::DoAllMntPointsMount(appProperty, j_config1, nullptr);
+    EXPECT_EQ(ret, 0);
+
+    std::string mJsconfig2 = "{ \
+        \"sandbox-root\" : \"/mnt/sandbox/<currentUserId>/<PackageName>\", \
+        \"mount-paths\" : [{ \
+            \"src-path\" : \"/data/service/el1/public/themes/<currentUserId>/a/app/createSandboxPath01\", \
+            \"sandbox-path\" : \"/data/themes/a/app/createSandboxPath01\", \
+            \"sandbox-flags\" : [ \"bind\", \"rec\" ], \
+            \"check-action-status\": \"false\", \
+            \"create-sandbox-path\": \"true\" \
+        }] \
+    }";
+    nlohmann::json j_config2 = nlohmann::json::parse(mJsconfig2.c_str());
+    ret = OHOS::AppSpawn::SandboxUtils::DoAllMntPointsMount(appProperty, j_config2, nullptr);
+    DeleteAppSpawningCtx(appProperty);
+    EXPECT_EQ(ret, 0);
+}
+
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_47, TestSize.Level0)
+{
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_47 start";
+    g_testHelper.SetTestUid(1000);  // 1000 test
+    g_testHelper.SetTestGid(1000);  // 1000 test
+    g_testHelper.SetProcessName("com.example.myapplication");
+    g_testHelper.SetTestApl("apl123");
+    g_testHelper.SetTestMsgFlags(4);  // 4 is test parameter
+    AppSpawningCtx *appProperty = GetTestAppProperty();
+
+    std::string mJsconfig1 = "{ \
+        \"sandbox-root\" : \"/mnt/sandbox/<currentUserId>/<PackageName>\", \
+        \"mount-paths\" : [{ \
+            \"src-path\" : \"/data/service/el1/public/themes/<currentUserId>/a/app/\", \
+            \"sandbox-path\" : \"/data/themes/a/app\", \
+            \"sandbox-flags\" : [ \"bind\", \"rec\" ], \
+            \"check-action-status\": \"false\" \
+        }] \
+    }";
+    nlohmann::json j_config1 = nlohmann::json::parse(mJsconfig1.c_str());
+    int ret = OHOS::AppSpawn::SandboxUtils::DoAllMntPointsMount(appProperty, j_config1, nullptr);
+    EXPECT_EQ(ret, 0);
+
+    std::string mJsconfig2 = "{ \
+        \"sandbox-root\" : \"/mnt/sandbox/<currentUserId>/<PackageName>\", \
+        \"mount-paths\" : [{ \
+            \"src-path\" : \"/data/service/el1/public/themes/<currentUserId>/a/app/createSandboxPath01\", \
+            \"sandbox-path\" : \"/data/themes/a/app/createSandboxPath01\", \
+            \"sandbox-flags\" : [ \"bind\", \"rec\" ], \
+            \"check-action-status\": \"false\", \
+            \"create-sandbox-path\": \"false\" \
+        }] \
+    }";
+    nlohmann::json j_config2 = nlohmann::json::parse(mJsconfig2.c_str());
+    ret = OHOS::AppSpawn::SandboxUtils::DoAllMntPointsMount(appProperty, j_config2, nullptr);
+    DeleteAppSpawningCtx(appProperty);
+    EXPECT_EQ(ret, 0);
+}
 /**
  * @brief 测试app extension
  *
