@@ -499,6 +499,11 @@
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
+                    "src-path" : "/data/service/el1/public/for-all-app",
+                    "sandbox-path" : "/data/service/el1/public/for-all-app",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
                     "src-path" : "/system/app/<arkWebPackageName>",
                     "sandbox-path" : "/system/app/<arkWebPackageName>",
                     "sandbox-flags" : [ "bind", "rec" ],
