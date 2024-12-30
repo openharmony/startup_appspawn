@@ -1926,6 +1926,11 @@ static bool IsUnlockStatus(uint32_t uid)
     return false;
 }
 
+static string GetMountInfoKey(uint32_t userId, const char *bundleName)
+{
+    return std::to_string(userId) + "-" + std::string(bundleName);
+}
+
 static void MountDir(const AppSpawningCtx *property, const char *rootPath, const char *srcPath, const char *targetPath)
 {
     const int userIdBase = 200000;
@@ -1943,7 +1948,8 @@ static void MountDir(const AppSpawningCtx *property, const char *rootPath, const
     APPSPAWN_CHECK(len > 0 && ((size_t)len < allPathSize), free(path);
         return, "Failed to get sandbox path");
     if (srcPath != nullptr) {
-        g_mountInfo[string(bundleName)]++;
+        string key = GetMountInfoKey(info->uid / userIdBase, bundleName);
+        g_mountInfo[key]++;
     }
 
     if (access(path, F_OK) == 0 && srcPath == nullptr) {
@@ -2188,7 +2194,7 @@ static void UmountDir(const char *rootPath, const char *targetPath, const AppSpa
 
     ret = umount2(path, MNT_DETACH);
     if (ret == 0) {
-        APPSPAWN_LOGV("Umount2 sandbox path %{public}s success", path);
+        APPSPAWN_LOGI("Umount2 sandbox path %{public}s success", path);
     } else {
         APPSPAWN_LOGW("Failed to umount2 sandbox path %{public}s errno %{public}d", path, errno);
     }
@@ -2199,21 +2205,26 @@ static int UmountSandboxPath(const AppSpawnMgr *content, const AppSpawnedProcess
 {
     APPSPAWN_CHECK(content != NULL && appInfo != NULL && appInfo->name != NULL,
         return -1, "Invalid content or appInfo");
+    if (IsNWebSpawnMode(content)) {
+        return 0;
+    }
     APPSPAWN_LOGV("UmountSandboxPath name %{public}s pid %{public}d", appInfo->name, appInfo->pid);
     const char rootPath[] = "/mnt/sandbox/";
     const char el1Path[] = "/data/storage/el1/bundle";
 
-    if (g_mountInfo.find(string(appInfo->name)) == g_mountInfo.end()) {
+    uint32_t userId = appInfo->uid / UID_BASE;
+    string key = GetMountInfoKey(userId, appInfo->name);
+    if (g_mountInfo.find(key) == g_mountInfo.end()) {
         return 0;
     }
-    g_mountInfo[string(appInfo->name)]--;
-    if (g_mountInfo[string(appInfo->name)] == 0) {
-        APPSPAWN_LOGV("no app %{public}s use it, need umount", appInfo->name);
-        g_mountInfo.erase(string(appInfo->name));
+    g_mountInfo[key]--;
+    if (g_mountInfo[key] == 0) {
+        APPSPAWN_LOGV("no app %{public}s use it in userId %{public}u, need umount", appInfo->name, userId);
         UmountDir(rootPath, el1Path, appInfo);
+        g_mountInfo.erase(key);
     } else {
-        APPSPAWN_LOGV("app %{public}s use it mount times %{public}d, not need umount",
-            appInfo->name, g_mountInfo[string(appInfo->name)]);
+        APPSPAWN_LOGV("app %{public}s use it mount times %{public}d in userId %{public}u, not need umount",
+            appInfo->name, g_mountInfo[key], userId);
     }
     return 0;
 }
