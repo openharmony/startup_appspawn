@@ -133,10 +133,10 @@
                 "src-path" : "/data/misc",
                 "sandbox-path" : "/data/storage/el1/bundle/misc"
             }, {
-                "src-path" : "/data/local/ark-cache/<PackageName>",
+                "src-path" : "/data/app/el1/public/aot_compiler/ark_cache/<PackageName>",
                 "sandbox-path" : "/data/storage/ark-cache"
             }, {
-                "src-path" : "/data/local/ark-profile/<currentUserId>/<PackageName>",
+                "src-path" : "/data/app/el1/<currentUserId>/aot_compiler/ark_profile/<PackageName>",
                 "sandbox-path" : "/data/storage/ark-profile"
             }, {
                 "src-path" : "/data/local/shader_cache/local/<PackageName>",
