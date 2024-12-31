@@ -92,6 +92,9 @@
             }, {
                 "sandbox-path" : "/data/data/hiai",
                 "src-path" : "/data/data/hiai"
+            },{
+                "sandbox-path" : "/chip_prod/etc/passthrough",
+                "src-path" : "/chip_prod/etc/passthrough"
             }],
             "mount-files": [{
                 "src-path" : "/system/<lib>/ld-musl-arm.so.1",
