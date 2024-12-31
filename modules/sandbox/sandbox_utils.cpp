@@ -827,15 +827,16 @@ static bool CheckMountFlag(const AppSpawningCtx *appProperty, const std::string 
     return false;
 }
 
-static bool GetCreateSandboxPath(nlohmann::json &json)
+static bool GetCreateSandboxPath(nlohmann::json &json, std::string srcPath)
 {
-    std::string value = g_statusCheck;
     APPSPAWN_CHECK(json != nullptr && json.is_object(), return true, "json is not object.");
     bool isRet = json.find(CREATE_SANDBOX_PATH) != json.end() && json.at(CREATE_SANDBOX_PATH).is_string();
     if (isRet) {
-        value = json.at(CREATE_SANDBOX_PATH).get<std::string>();
+        std::string value = json.at(CREATE_SANDBOX_PATH).get<std::string>();
         APPSPAWN_LOGV("Find create-sandbox-path: %{public}s successful.", value.c_str());
-        return g_statusCheck == value;
+        if (value == "false" && access(srcPath.c_str(), F_OK) != 0) {
+            return false;
+        }
     }
     return true;
 }
@@ -862,6 +863,9 @@ int SandboxUtils::DoAllMntPointsMount(const AppSpawningCtx *appProperty,
         }
 
         std::string srcPath = ConvertToRealPath(appProperty, mntPoint[g_srcPath].get<std::string>());
+        if (!GetCreateSandboxPath(mntPoint, srcPath)) {
+            continue;
+        }
         std::string sandboxPath = GetSandboxPath(appProperty, mntPoint, section, sandboxRoot);
         SandboxMountConfig mountConfig = {0};
         GetSandboxMountConfig(appProperty, section, mntPoint, mountConfig);
@@ -870,9 +874,7 @@ int SandboxUtils::DoAllMntPointsMount(const AppSpawningCtx *appProperty,
 
         /* if app mount failed for special strategy, we need deal with common mount config */
         int ret = HandleSpecialAppMount(appProperty, srcPath, sandboxPath, mountConfig.fsType, mountFlags);
-        bool createSandboxPath = true;
-        createSandboxPath = GetCreateSandboxPath(mntPoint);
-        if (ret < 0 && (createSandboxPath || access(srcPath.c_str(), F_OK) == 0)) {
+        if (ret < 0) {
             ret = DoAppSandboxMountOnce(srcPath.c_str(), sandboxPath.c_str(), mountConfig.fsType.c_str(),
                                         mountFlags, mountConfig.optionsPoint.c_str(), mountSharedFlag);
         }
@@ -1868,6 +1870,24 @@ int LoadAppSandboxConfig(AppSpawnMgr *content)
     return 0;
 }
 
+static bool NeedNetworkIsolated(AppSpawningCtx *property)
+{
+    int developerMode = IsDeveloperModeOpen();
+    if (CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX) && !developerMode) {
+        return true;
+    }
+
+    if (CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_NETWORK)) {
+        std::string extensionType =
+            OHOS::AppSpawn::SandboxUtils::GetExtraInfoByType(property, MSG_EXT_NAME_EXTENSION_TYPE);
+        if (extensionType.length() == 0 || !developerMode) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 int32_t SetAppSandboxProperty(AppSpawnMgr *content, AppSpawningCtx *property)
 {
     APPSPAWN_CHECK(property != nullptr, return -1, "Invalid appspwn client");
@@ -1886,10 +1906,11 @@ int32_t SetAppSandboxProperty(AppSpawnMgr *content, AppSpawningCtx *property)
         }
     }
     uint32_t sandboxNsFlags = CLONE_NEWNS;
-    if (!IsDeveloperModeOpen() && (CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX) ||
-        CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_NETWORK))) {
+
+    if (NeedNetworkIsolated(property)) {
         sandboxNsFlags |= content->content.sandboxNsFlags & CLONE_NEWNET ? CLONE_NEWNET : 0;
     }
+
     APPSPAWN_LOGV("SetAppSandboxProperty sandboxNsFlags 0x%{public}x", sandboxNsFlags);
 
     if (IsNWebSpawnMode(content)) {

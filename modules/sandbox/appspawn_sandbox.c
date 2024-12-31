@@ -188,6 +188,24 @@ void DeleteSandboxContext(SandboxContext *context)
     free(context);
 }
 
+static bool NeedNetworkIsolated(SandboxContext *context, const AppSpawningCtx *property)
+{
+    int developerMode = IsDeveloperModeOpen();
+    if (CheckSpawningMsgFlagSet(context, APP_FLAGS_ISOLATED_SANDBOX) && !developerMode) {
+        return true;
+    }
+
+    if (CheckSpawningMsgFlagSet(context, APP_FLAGS_ISOLATED_NETWORK)) {
+        uint32_t len = 0;
+        char *extensionType = GetAppPropertyExt(property, MSG_EXT_NAME_EXTENSION_TYPE, &len);
+        if (extensionType == NULL || extensionType[0] == '\0' || !developerMode) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 static int InitSandboxContext(SandboxContext *context,
     const AppSpawnSandboxCfg *sandbox, const AppSpawningCtx *property, int nwebspawn)
 {
@@ -210,8 +228,8 @@ static int InitSandboxContext(SandboxContext *context,
     context->message = property->message;
 
     context->sandboxNsFlags = CLONE_NEWNS;
-    if (!IsDeveloperModeOpen() && (CheckSpawningMsgFlagSet(context, APP_FLAGS_ISOLATED_SANDBOX) ||
-        CheckSpawningMsgFlagSet(context, APP_FLAGS_ISOLATED_NETWORK))) {
+
+    if (NeedNetworkIsolated(context, property)) {
         context->sandboxNsFlags |= sandbox->sandboxNsFlags & CLONE_NEWNET ? CLONE_NEWNET : 0;
     }
 
