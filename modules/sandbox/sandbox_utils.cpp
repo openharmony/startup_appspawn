@@ -1919,8 +1919,8 @@ static bool IsUnlockStatus(uint32_t uid)
     string lockStatusParam = "startup.appspawn.lockstatus_" + to_string(uid);
     char userLockStatus[LOCK_STATUS_SIZE] = {0};
     int ret = GetParameter(lockStatusParam.c_str(), "1", userLockStatus, sizeof(userLockStatus));
-    APPSPAWN_LOGI("get param %{public}s %{public}s", lockStatusParam.c_str(), userLockStatus);
-    if (ret > 0 && (strcmp(userLockStatus, "0") == 0)) {   // 0：解密状态  1：加密状态
+    APPSPAWN_LOGI("get param %{public}s %{public}s %{public}d", lockStatusParam.c_str(), userLockStatus, ret);
+    if (ret > 0 && (strcmp(userLockStatus, "0") == 0)) {   // 0:unlock 1:lock
         return true;
     }
     return false;
