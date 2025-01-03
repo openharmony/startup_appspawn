@@ -36,6 +36,7 @@
 #include "appspawn_manager.h"
 #include "appspawn_msg.h"
 #include "appspawn_server.h"
+#include "appspawn_trace.h"
 #include "appspawn_utils.h"
 #include "init_socket.h"
 #include "init_utils.h"
@@ -457,7 +458,9 @@ static void OnReceiveRequest(const TaskHandle taskHandle, const uint8_t *buffer,
         // decode msg
         ret = DecodeAppSpawnMsg(message);
         APPSPAWN_CHECK_ONLY_EXPER(ret == 0, break);
+        StartAppspawnTrace("ProcessRecvMsg");
         (void)ProcessRecvMsg(connection, message);
+        FinishAppspawnTrace();
         message = NULL;
         currLen += buffLen - reminder;
     } while (reminder > 0);
@@ -624,6 +627,7 @@ static int AddChildWatcher(AppSpawningCtx *property)
 {
     uint32_t defTimeout = IsChildColdRun(property) ? COLD_CHILD_RESPONSE_TIMEOUT : WAIT_CHILD_RESPONSE_TIMEOUT;
     uint32_t timeout = GetSpawnTimeout(defTimeout);
+
     LE_WatchInfo watchInfo = {};
     watchInfo.fd = property->forkCtx.fd[0];
     watchInfo.flags = WATCHER_ONCE;

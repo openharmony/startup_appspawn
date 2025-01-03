@@ -88,8 +88,8 @@ typedef struct {
     AppSpawnHisysevent manualEvent; // bootFinished
 } AppSpawnHisyseventInfo;
 
-AppSpawnHisyseventInfo *InitHisyseventTimer();
-AppSpawnHisyseventInfo *GetAppSpawnHisyseventInfo();
+AppSpawnHisyseventInfo *InitHisyseventTimer(void);
+AppSpawnHisyseventInfo *GetAppSpawnHisyseventInfo(void);
 void AddStatisticEventInfo(AppSpawnHisyseventInfo *hisyseventInfo, uint32_t duration, bool stage);
 void DeleteHisyseventInfo(AppSpawnHisyseventInfo *hisyseventInfo);
 
