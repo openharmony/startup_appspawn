@@ -74,12 +74,12 @@
                 "dlp_permission_service",
                 "ffrt"
             ],
-	    "third_party": [
+            "third_party": [
                 "bounds_checking_function",
                 "zlib",
                 "selinux",
                 "cJSON"
-	    ]
+            ]
         },
         "build": {
             "sub_component": [

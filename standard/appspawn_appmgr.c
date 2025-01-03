@@ -235,7 +235,6 @@ int KillAndWaitStatus(pid_t pid, int sig, int *exitStatus)
 
     int retry = 0;
     pid_t exitPid = 0;
-
     while (retry * SLEEP_DURATION < EXIT_APP_TIMEOUT) {
         exitPid = waitpid(pid, exitStatus, WNOHANG);
         if (exitPid == pid) {
