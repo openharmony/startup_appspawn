@@ -13,7 +13,7 @@
                 "sandbox-path" : "/dev"
             }, {
                 "src-path" : "/proc",
-                "sandbox-path" : "/proc"  
+                "sandbox-path" : "/proc"
             }, {
                 "src-path" : "/sys",
                 "sandbox-path" : "/sys"
@@ -61,7 +61,7 @@
                 "sandbox-path" : "/vendor/<lib>"
             }, {
                 "src-path" : "/vendor/etc/vulkan",
-                "sandbox-path" : "/vendor/etc/vulkan" 
+                "sandbox-path" : "/vendor/etc/vulkan"
             }, {
                 "src-path" : "/vendor/etc/silk",
                 "sandbox-path" : "/vendor/etc/silk" 
@@ -96,8 +96,8 @@
                 "src-path" : "/data/service/el1/public/cert_manager_service/certificates/user_open",
                 "sandbox-path" : "/data/certificates/user_cacerts"
             },{
-                "sandbox-path" : "/chip_prod/etc/passthrough",
-                "src-path" : "/chip_prod/etc/passthrough"
+                "src-path" : "/chip_prod/etc/passthrough",
+                "sandbox-path" : "/chip_prod/etc/passthrough"
             }],
             "mount-files": [{
                 "src-path" : "/system/etc/hosts",
@@ -338,7 +338,7 @@
             }]
         }, {
             "name": "ohos.permission.RECEIVE_UPDATE_MESSAGE",
-              "mount-paths": [{
+            "mount-paths": [{
                 "src-path": "/data/service/el1/public/update/param_service/install/system/etc/<PackageName>",
                 "sandbox-path": "/data/service/el1/public/update/param_service/install/system/etc/<PackageName>"
             }]

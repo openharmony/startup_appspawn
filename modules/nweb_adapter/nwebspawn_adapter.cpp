@@ -109,17 +109,15 @@ APPSPAWN_STATIC int RunChildProcessor(AppSpawnContent *content, AppSpawnClient *
     const std::string renderLibName = GetArkWebRenderLibName();
 
 #ifdef __MUSL__
-    Dl_namespace dlns;
+    Dl_namespace dlns, ndkns;
     dlns_init(&dlns, "nweb_ns");
     dlns_create(&dlns, libPath.c_str());
-    Dl_namespace ndkns;
     dlns_get("ndk", &ndkns);
     dlns_inherit(&dlns, &ndkns, "allow_all_shared_libs");
     // preload libweb_engine
     webEngineHandle = dlopen_ns(&dlns, engineLibName.c_str(), RTLD_NOW | RTLD_GLOBAL);
     // load libnweb_render
-    nwebRenderHandle =
-        dlopen_ns(&dlns, renderLibName.c_str(), RTLD_NOW | RTLD_GLOBAL);
+    nwebRenderHandle = dlopen_ns(&dlns, renderLibName.c_str(), RTLD_NOW | RTLD_GLOBAL);
 #else
     // preload libweb_engine
     const std::string engineLibPath = libPath + "/" + engineLibName;

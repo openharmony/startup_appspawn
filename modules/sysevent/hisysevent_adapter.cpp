@@ -85,7 +85,7 @@ static int CreateHisysTimerLoop(AppSpawnHisyseventInfo *hisyseventInfo)
     return ret;
 }
 
-AppSpawnHisyseventInfo *GetAppSpawnHisyseventInfo()
+AppSpawnHisyseventInfo *GetAppSpawnHisyseventInfo(void)
 {
     AppSpawnHisyseventInfo *hisyseventInfo =
         static_cast<AppSpawnHisyseventInfo *>(malloc(sizeof(AppSpawnHisyseventInfo)));
@@ -108,7 +108,7 @@ void DeleteHisyseventInfo(AppSpawnHisyseventInfo *hisyseventInfo)
     hisyseventInfo = NULL;
 }
 
-AppSpawnHisyseventInfo *InitHisyseventTimer()
+AppSpawnHisyseventInfo *InitHisyseventTimer(void)
 {
     AppSpawnHisyseventInfo *hisyseventInfo = GetAppSpawnHisyseventInfo();
     APPSPAWN_CHECK(hisyseventInfo != NULL, return NULL, "fail to init hisyseventInfo");
