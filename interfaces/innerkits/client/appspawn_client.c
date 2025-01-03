@@ -374,14 +374,14 @@ int AppSpawnClientSendMsg(AppSpawnClientHandle handle, AppSpawnReqMsgHandle reqH
 
 int AppSpawnClientSendUserLockStatus(uint32_t userId, bool isLocked)
 {
-    AppSpawnReqMsgHandle reqHandle;
-    int ret = AppSpawnReqMsgCreate(MSG_LOCK_STATUS, "storage_manager", &reqHandle);
-    APPSPAWN_CHECK(ret == 0, return ret, "Failed to create appspawn req msg, ret = %{public}d", ret);
-
     char lockstatus[USER_LOCK_STATUS_SIZE] = {0};
-    ret = snprintf_s(lockstatus, USER_LOCK_STATUS_SIZE, USER_LOCK_STATUS_SIZE - 1, "%u:%d", userId, isLocked);
+    int ret = snprintf_s(lockstatus, USER_LOCK_STATUS_SIZE, USER_LOCK_STATUS_SIZE - 1, "%u:%d", userId, isLocked);
     APPSPAWN_CHECK(ret > 0, return ret, "Failed to build lockstatus req msg, ret = %{public}d", ret);
     APPSPAWN_LOGI("Send lockstatus msg to appspawn %{public}s", lockstatus);
+
+    AppSpawnReqMsgHandle reqHandle;
+    ret = AppSpawnReqMsgCreate(MSG_LOCK_STATUS, "storage_manager", &reqHandle);
+    APPSPAWN_CHECK(ret == 0, return ret, "Failed to create appspawn req msg, ret = %{public}d", ret);
 
     ret = AppSpawnReqMsgAddStringInfo(reqHandle, "lockstatus", lockstatus);
     APPSPAWN_CHECK(ret == 0, AppSpawnReqMsgFree(reqHandle);
