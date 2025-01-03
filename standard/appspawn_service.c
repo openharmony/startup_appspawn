@@ -1662,7 +1662,7 @@ static void ProcessAppSpawnLockStatusMsg(AppSpawnMsgNode *message)
     APPSPAWN_CHECK(lockstatus != NULL, return, "failed to get lockstatus");
     APPSPAWN_LOGI("appspawn get lockstatus %{public}s from storage_manager", lockstatus);
     char *userLockStatus = NULL;
-    // userLockStatus format example:  100:0  100代表userid，0代表data分区加解密状态（0：解密状态 1：加密状态）
+    // userLockStatus format example:  100:0  100 for userid 0:unlock 1:lock
     char *userIdStr = strtok_r(lockstatus, ":", &userLockStatus);
     APPSPAWN_CHECK(userIdStr != NULL && userLockStatus != NULL, return,
         "lockstatus not satisfied format, failed to get userLockStatus");
