@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022-2023 Huawei Device Co., Ltd.
+ * Copyright (C) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -35,6 +35,7 @@
 #include "appspawn_service.h"
 #include "appspawn_utils.h"
 #include "config_policy_utils.h"
+#include "sandbox_shared_mount.h"
 #ifdef WITH_DLP
 #include "dlp_fuse_fd.h"
 #endif
@@ -60,8 +61,6 @@
 
 using namespace std;
 using namespace OHOS;
-
-static map<string, int> g_mountInfo;
 
 namespace OHOS {
 namespace AppSpawn {
@@ -1893,7 +1892,8 @@ int32_t SetAppSandboxProperty(AppSpawnMgr *content, AppSpawningCtx *property)
     APPSPAWN_CHECK(property != nullptr, return -1, "Invalid appspwn client");
     APPSPAWN_CHECK(content != nullptr, return -1, "Invalid appspwn content");
     // clear g_mountInfo in the child process
-    g_mountInfo.clear();
+    std::map<std::string, int>* mapPtr = static_cast<std::map<std::string, int>*>(GetEl1BundleMountCount());
+    mapPtr->clear();
     int ret = 0;
     // no sandbox
     if (CheckAppMsgFlagsSet(property, APP_FLAGS_NO_SANDBOX)) {
@@ -1929,274 +1929,12 @@ int32_t SetAppSandboxProperty(AppSpawnMgr *content, AppSpawningCtx *property)
 #define USER_ID_SIZE 16
 #define DIR_MODE 0711
 
-#ifndef APPSPAWN_SANDBOX_NEW
-static bool IsUnlockStatus(uint32_t uid)
-{
-    const int userIdBase = 200000;
-    uid = uid / userIdBase;
-    if (uid == 0) {
-        return true;
-    }
-    string lockStatusParam = "startup.appspawn.lockstatus_" + to_string(uid);
-    char userLockStatus[LOCK_STATUS_SIZE] = {0};
-    int ret = GetParameter(lockStatusParam.c_str(), "1", userLockStatus, sizeof(userLockStatus));
-    APPSPAWN_LOGI("get param %{public}s %{public}s %{public}d", lockStatusParam.c_str(), userLockStatus, ret);
-    if (ret > 0 && (strcmp(userLockStatus, "0") == 0)) {   // 0:unlock 1:lock
-        return true;
-    }
-    return false;
-}
-
-static string GetMountInfoKey(uint32_t userId, const char *bundleName)
-{
-    return std::to_string(userId) + "-" + std::string(bundleName);
-}
-
-static void MountDir(const AppSpawningCtx *property, const char *rootPath, const char *srcPath, const char *targetPath)
-{
-    const int userIdBase = 200000;
-    AppDacInfo *info = reinterpret_cast<AppDacInfo *>(GetAppProperty(property, TLV_DAC_INFO));
-    const char *bundleName = GetBundleName(property);
-    if (info == NULL || bundleName == NULL) {
-        return;
-    }
-
-    size_t allPathSize = strlen(rootPath) + strlen(targetPath) + strlen(bundleName) + 2;
-    allPathSize += USER_ID_SIZE;
-    char *path = reinterpret_cast<char *>(malloc(sizeof(char) * (allPathSize)));
-    APPSPAWN_CHECK(path != NULL, return, "Failed to malloc path");
-    int len = sprintf_s(path, allPathSize, "%s%u/%s%s", rootPath, info->uid / userIdBase, bundleName, targetPath);
-    APPSPAWN_CHECK(len > 0 && ((size_t)len < allPathSize), free(path);
-        return, "Failed to get sandbox path");
-    if (srcPath != nullptr) {
-        string key = GetMountInfoKey(info->uid / userIdBase, bundleName);
-        g_mountInfo[key]++;
-    }
-
-    if (access(path, F_OK) == 0 && srcPath == nullptr) {
-        free(path);
-        return;
-    }
-
-    MakeDirRec(path, DIR_MODE, 1);
-    const char *sourcePath = (srcPath == nullptr) ? path : srcPath;
-    if (srcPath != nullptr) {
-        int ret = umount2(path, MNT_DETACH);
-        APPSPAWN_CHECK_ONLY_LOG(ret == 0, "Failed to umount path %{public}s, errno %{public}d", path, errno);
-    }
-
-    if (mount(sourcePath, path, nullptr, MS_BIND | MS_REC, nullptr) != 0) {
-        APPSPAWN_LOGI("bind mount %{public}s to %{public}s failed, error %{public}d", sourcePath, path, errno);
-        free(path);
-        return;
-    }
-    if (mount(nullptr, path, nullptr, MS_SHARED, nullptr) != 0) {
-        APPSPAWN_LOGI("mount path %{public}s to shared failed, errno %{public}d", path, errno);
-        free(path);
-        return;
-    }
-    APPSPAWN_LOGI("mount path %{public}s to shared success", path);
-    free(path);
-    return;
-}
-
-static const MountSharedTemplate MOUNT_SHARED_MAP[] = {
-    {"/data/storage/el2", nullptr},
-    {"/data/storage/el3", nullptr},
-    {"/data/storage/el4", nullptr},
-    {"/data/storage/el5", "ohos.permission.PROTECT_SCREEN_LOCK_DATA"},
-};
-
-#define PATH_MAX_LEN 256
-static int MountInShared(const AppSpawningCtx *property, const char *rootPath, const char *src, const char *target)
-{
-    AppDacInfo *info = reinterpret_cast<AppDacInfo *>(GetAppProperty(property, TLV_DAC_INFO));
-    const char *bundleName = GetBundleName(property);
-    if (info == NULL || bundleName == NULL) {
-        return APPSPAWN_ARG_INVALID;
-    }
-
-    char path[PATH_MAX_LEN] = {0};
-    int ret = snprintf_s(path, PATH_MAX_LEN, PATH_MAX_LEN - 1, "%s/%u/%s/%s", rootPath, info->uid / UID_BASE,
-                         bundleName, target);
-    if (ret <= 0) {
-        APPSPAWN_LOGE("snprintf_s path failed, errno %{public}d", errno);
-        return APPSPAWN_ERROR_UTILS_MEM_FAIL;
-    }
-
-    char currentUserPath[PATH_MAX_LEN] = {0};
-    ret = snprintf_s(currentUserPath, PATH_MAX_LEN, PATH_MAX_LEN - 1, "%s/currentUser", path);
-    if (ret <= 0) {
-        APPSPAWN_LOGE("snprintf_s currentUserPath failed, errno %{public}d", errno);
-        return APPSPAWN_ERROR_UTILS_MEM_FAIL;
-    }
-
-    if (access(currentUserPath, F_OK) == 0) {
-        return 0;
-    }
-
-    ret = MakeDirRec(path, DIR_MODE, 1);
-    if (ret != 0) {
-        return APPSPAWN_SANDBOX_ERROR_MKDIR_FAIL;
-    }
-
-    if (mount(src, path, nullptr, MS_BIND | MS_REC, nullptr) != 0) {
-        APPSPAWN_LOGI("bind mount %{public}s to %{public}s failed, error %{public}d", src, path, errno);
-        return APPSPAWN_SANDBOX_ERROR_MOUNT_FAIL;
-    }
-    if (mount(nullptr, path, nullptr, MS_SHARED, nullptr) != 0) {
-        APPSPAWN_LOGI("mount path %{public}s to shared failed, errno %{public}d", path, errno);
-        return APPSPAWN_SANDBOX_ERROR_MOUNT_FAIL;
-    }
-
-    return 0;
-}
-
-static int SharedMountInSharefs(const AppSpawningCtx *property, const char *rootPath,
-                                const char *src, const char *target)
-{
-    AppDacInfo *info = reinterpret_cast<AppDacInfo *>(GetAppProperty(property, TLV_DAC_INFO));
-    if (info == NULL) {
-        return APPSPAWN_ARG_INVALID;
-    }
-
-    char currentUserPath[PATH_MAX_LEN] = {0};
-    int ret = snprintf_s(currentUserPath, PATH_MAX_LEN, PATH_MAX_LEN - 1, "%s/currentUser", target);
-    if (ret <= 0) {
-        APPSPAWN_LOGE("snprintf_s currentUserPath failed, errno %{public}d", errno);
-        return APPSPAWN_ERROR_UTILS_MEM_FAIL;
-    }
-
-    if (access(currentUserPath, F_OK) == 0) {
-        return 0;
-    }
-
-    ret = MakeDirRec(target, DIR_MODE, 1);
-    if (ret != 0) {
-        return APPSPAWN_SANDBOX_ERROR_MKDIR_FAIL;
-    }
-
-    char options[PATH_MAX_LEN] = {0};
-    ret = snprintf_s(options, PATH_MAX_LEN, PATH_MAX_LEN - 1, "override_support_delete,user_id=%u",
-                     info->uid / UID_BASE);
-    if (ret <= 0) {
-        APPSPAWN_LOGE("snprintf_s options failed, errno %{public}d", errno);
-        return APPSPAWN_ERROR_UTILS_MEM_FAIL;
-    }
-
-    if (mount(src, target, "sharefs", MS_NODEV, options) != 0) {
-        APPSPAWN_LOGE("sharefs mount %{public}s to %{public}s failed, error %{public}d",
-                      src, target, errno);
-        return APPSPAWN_SANDBOX_ERROR_MOUNT_FAIL;
-    }
-    if (mount(nullptr, target, nullptr, MS_SHARED, nullptr) != 0) {
-        APPSPAWN_LOGE("mount path %{public}s to shared failed, errno %{public}d", target, errno);
-        return APPSPAWN_SANDBOX_ERROR_MOUNT_FAIL;
-    }
-
-    return 0;
-}
-
-static void UpdateStorageDir(const AppSpawningCtx *property)
-{
-    const char mntUser[] = "/mnt/user";
-    const char nosharefsDocs[] = "nosharefs/docs";
-    const char sharefsDocs[] = "sharefs/docs";
-    const char rootPath[] = "/mnt/sandbox";
-    const char userPath[] = "/storage/Users";
-
-    AppDacInfo *info = reinterpret_cast<AppDacInfo *>(GetAppProperty(property, TLV_DAC_INFO));
-    if (info == nullptr) {
-        return;
-    }
-
-    /* /mnt/user/<currentUserId>/nosharefs/Docs */
-    char nosharefsDocsDir[PATH_MAX_LEN] = {0};
-    int ret = snprintf_s(nosharefsDocsDir, PATH_MAX_LEN, PATH_MAX_LEN - 1, "%s/%u/%s",
-                         mntUser, info->uid / UID_BASE, nosharefsDocs);
-    if (ret <= 0) {
-        APPSPAWN_LOGE("snprintf_s nosharefsDocsDir failed, errno %{public}d", errno);
-        return;
-    }
-
-    /* /mnt/user/<currentUserId>/sharefs/Docs */
-    char sharefsDocsDir[PATH_MAX_LEN] = {0};
-    ret = snprintf_s(sharefsDocsDir, PATH_MAX_LEN, PATH_MAX_LEN - 1, "%s/%u/%s",
-                     mntUser, info->uid / UID_BASE, sharefsDocs);
-    if (ret <= 0) {
-        APPSPAWN_LOGE("snprintf_s sharefsDocsDir failed, errno %{public}d", errno);
-        return;
-    }
-
-    int index = GetPermissionIndex(nullptr, "ohos.permission.FILE_ACCESS_MANAGER");
-    int res = CheckAppPermissionFlagSet(property, static_cast<uint32_t>(index));
-    if (res == 0) {
-        char storageUserPath[PATH_MAX_LEN] = {0};
-        const char *bundleName = GetBundleName(property);
-        ret = snprintf_s(storageUserPath, PATH_MAX_LEN, PATH_MAX_LEN - 1, "%s/%u/%s/%s", rootPath, info->uid / UID_BASE,
-                         bundleName, userPath);
-        if (ret <= 0) {
-            APPSPAWN_LOGE("snprintf_s storageUserPath failed, errno %{public}d", errno);
-            return;
-        }
-        /* mount /mnt/user/<currentUserId>/sharefs/docs to /mnt/sandbox/<currentUserId>/<bundleName>/storage/Users */
-        ret = SharedMountInSharefs(property, rootPath, sharefsDocsDir, storageUserPath);
-    } else {
-        /* mount /mnt/user/<currentUserId>/nosharefs/docs to /mnt/sandbox/<currentUserId>/<bundleName>/storage/Users */
-        ret = MountInShared(property, rootPath, nosharefsDocsDir, userPath);
-    }
-    if (ret != 0) {
-        APPSPAWN_LOGE("Update storage dir, ret %{public}d", ret);
-    }
-    APPSPAWN_LOGI("Update %{public}s storage dir success", res == 0 ? "sharefs dir" : "no sharefs dir");
-}
-
-static void MountDirToShared(const AppSpawningCtx *property)
-{
-    const char rootPath[] = "/mnt/sandbox/";
-    const char el1Path[] = "/data/storage/el1/bundle";
-    const char lockSuffix[] = "_locked";
-    AppDacInfo *info = reinterpret_cast<AppDacInfo *>(GetAppProperty(property, TLV_DAC_INFO));
-    const char *bundleName = GetBundleName(property);
-    if (info == NULL || bundleName == NULL) {
-        return;
-    }
-
-    string sourcePath = "/data/app/el1/bundle/public/" + string(bundleName);
-    MountDir(property, rootPath, sourcePath.c_str(), el1Path);
-    if (IsUnlockStatus(info->uid)) {
-        return;
-    }
-
-    UpdateStorageDir(property);
-
-    int length = sizeof(MOUNT_SHARED_MAP) / sizeof(MOUNT_SHARED_MAP[0]);
-    for (int i = 0; i < length; i++) {
-        if (MOUNT_SHARED_MAP[i].permission == nullptr) {
-            MountDir(property, rootPath, nullptr, MOUNT_SHARED_MAP[i].sandboxPath);
-        } else {
-            int index = GetPermissionIndex(nullptr, MOUNT_SHARED_MAP[i].permission);
-            APPSPAWN_LOGV("mount dir on lock mountPermissionFlags %{public}d", index);
-            if (CheckAppPermissionFlagSet(property, static_cast<uint32_t>(index))) {
-                MountDir(property, rootPath, nullptr, MOUNT_SHARED_MAP[i].sandboxPath);
-            }
-        }
-    }
-
-    std::string lockSbxPathStamp = rootPath + to_string(info->uid / UID_BASE) + "/";
-    lockSbxPathStamp += CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX_TYPE) ? "isolated/" : "";
-    lockSbxPathStamp += bundleName;
-    lockSbxPathStamp += lockSuffix;
-    OHOS::AppSpawn::MakeDirRecursive(lockSbxPathStamp.c_str(), OHOS::AppSpawn::FILE_MODE);
-}
-#endif
-
 static int SpawnMountDirToShared(AppSpawnMgr *content, AppSpawningCtx *property)
 {
 #ifndef APPSPAWN_SANDBOX_NEW
     if (!IsNWebSpawnMode(content)) {
         // mount dynamic directory
-        MountDirToShared(property);
+        MountToShared(content, property);
     }
 #endif
     return 0;
@@ -2234,18 +1972,19 @@ static int UmountSandboxPath(const AppSpawnMgr *content, const AppSpawnedProcess
     const char el1Path[] = "/data/storage/el1/bundle";
 
     uint32_t userId = appInfo->uid / UID_BASE;
-    string key = GetMountInfoKey(userId, appInfo->name);
-    if (g_mountInfo.find(key) == g_mountInfo.end()) {
+    std::string key = std::to_string(userId) + "-" + std::string(appInfo->name);
+    map<string, int> *el1BundleCountMap = static_cast<std::map<std::string, int>*>(GetEl1BundleMountCount());
+    if (el1BundleCountMap->find(key) == el1BundleCountMap->end()) {
         return 0;
     }
-    g_mountInfo[key]--;
-    if (g_mountInfo[key] == 0) {
+    (*el1BundleCountMap)[key]--;
+    if ((*el1BundleCountMap)[key] == 0) {
         APPSPAWN_LOGV("no app %{public}s use it in userId %{public}u, need umount", appInfo->name, userId);
         UmountDir(rootPath, el1Path, appInfo);
-        g_mountInfo.erase(key);
+        el1BundleCountMap->erase(key);
     } else {
         APPSPAWN_LOGV("app %{public}s use it mount times %{public}d in userId %{public}u, not need umount",
-            appInfo->name, g_mountInfo[key], userId);
+            appInfo->name, (*el1BundleCountMap)[key], userId);
     }
     return 0;
 }

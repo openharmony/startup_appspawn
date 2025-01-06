@@ -1,0 +1,38 @@
+{
+    "msg-type": 0,
+    "msg-flags": [1, 2, 14],
+    "process-name" : "ohos.samples.etsclock",
+    "pid": 328018,
+    "dac-info" : {
+            "uid" : 20010043,
+            "gid" : 20010043,
+            "gid-table" : [20010043],
+            "user-name" : ""
+    },
+    "access-token": {
+            "accessTokenIdEx": 537854093
+    },
+    "permission": [
+            "ohos.permission.PROTECT_SCREEN_LOCK_DATA"
+    ],
+    "internet-permission": {
+            "set-allow-internet": 0,
+            "allow-internet": 0
+    },
+    "bundle-info": {
+            "bundle-index": 0,
+            "bundle-name": "ohos.samples.etsclock"
+    },
+    "owner-id": "",
+    "render-cmd": "1234567890",
+    "domain-info": {
+            "hap-flags": 0,
+            "apl": "normal"
+    },
+    "ext-info": [
+            {
+                    "name": "DataGroup",
+                    "value": "[{\"gid\": \"1002\", \"dir\": \"data/app/el2/100/group/49c016e6-065a-abd1-5867-b1f91114f840\", \"dataGroupId\": \"43200\", \"uuid\": \"49c016e6-065a-abd1-5867-b1f91114f840\"}, {\"gid\": \"1002\", \"dir\": \"data/app/el2/100/group/49c016e6-065a-abd1-5867-b1f91114f840\", \"dataGroupId\": \"43200\", \"uuid\": \"49c016e6-065a-abd1-5867-b1f91114f840\"}, {\"gid\": \"1002\", \"dir\": \"data/app/el3/100/group/49c016e6-065a-abd1-5867-b1f91114f840\", \"dataGroupId\": \"43200\", \"uuid\": \"49c016e6-065a-abd1-5867-b1f91114f840\"}, {\"gid\": \"1002\", \"dir\": \"data/app/el4/100/group/49c016e6-065a-abd1-5867-b1f91114f840\", \"dataGroupId\": \"43200\", \"uuid\": \"49c016e6-065a-abd1-5867-b1f91114f840\"}, { \"gid\": \"1002\", \"dir\": \"data/app/el5/100/group/49c016e6-065a-abd1-5867-b1f91114f840\", \"dataGroupId\": \"43200\", \"uuid\": \"49c016e6-065a-abd1-5867-b1f91114f840\"}]"
+            }
+    ]
+}
