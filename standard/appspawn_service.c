@@ -1685,6 +1685,11 @@ static void ProcessAppSpawnLockStatusMsg(AppSpawnMsgNode *message)
     APPSPAWN_CHECK(ret > 0, return, "get lock status param failed, errno %{public}d", errno);
     ret = SetParameter(lockStatusParam, userLockStatus);
     APPSPAWN_CHECK(ret == 0, return, "failed to set lockstatus param value ret %{public}d", ret);
+#ifndef APPSPAWN_SANDBOX_NEW
+    if (strcmp(userLockStatus, "0") == 0) {
+        ServerStageHookExecute(STAGE_SERVER_LOCK, GetAppSpawnContent());
+    }
+#endif
 }
 
 static void ProcessRecvMsg(AppSpawnConnection *connection, AppSpawnMsgNode *message)
