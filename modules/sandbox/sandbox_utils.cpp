@@ -98,6 +98,7 @@ namespace {
     const std::string g_groupList_key_dataGroupId = "dataGroupId";
     const std::string g_groupList_key_gid = "gid";
     const std::string g_groupList_key_dir = "dir";
+    const std::string g_groupList_key_uuid = "uuid";
     const std::string HSPLIST_SOCKET_TYPE = "HspList";
     const std::string OVERLAY_SOCKET_TYPE = "Overlay";
     const std::string DATA_GROUP_SOCKET_TYPE = "DataGroup";
@@ -1380,24 +1381,40 @@ int32_t SandboxUtils::MountAllGroup(const AppSpawningCtx *appProperty, std::stri
         APPSPAWN_CHECK(dataGroupIds[i].is_string() && gids[i].is_string() && dirs[i].is_string(),
             return -1, "MountAllGroup: element type error");
 
-        std::string libPhysicalPath = dirs[i];
-        APPSPAWN_CHECK(!CheckPath(libPhysicalPath), return -1, "MountAllGroup: path error");
+        std::string srcPath = dirs[i];
+        APPSPAWN_CHECK(!CheckPath(srcPath), return -1, "MountAllGroup: path error");
 
-        size_t lastPathSplitPos = libPhysicalPath.find_last_of(g_fileSeparator);
+        size_t lastPathSplitPos = srcPath.find_last_of(g_fileSeparator);
         APPSPAWN_CHECK(lastPathSplitPos != std::string::npos, return -1, "MountAllGroup: path error");
+        std::string dataGroupUuid = srcPath.substr(lastPathSplitPos + 1);
 
-        std::string dataGroupUuid = libPhysicalPath.substr(lastPathSplitPos + 1);
-        std::string mntPath = sandboxPackagePath + g_sandboxGroupPath + dataGroupUuid;
+        uint32_t elxValue = GetElxInfoFromDir(srcPath.c_str());
+        APPSPAWN_CHECK((elxValue >= EL2 && elxValue < ELX_MAX), return -1, "Get elx value failed");
+        
+        const DataGroupSandboxPathTemplate *templateItem = GetDataGroupArgTemplate(elxValue);
+        APPSPAWN_CHECK(templateItem != nullptr, return -1, "Get data group arg template failed");
+
+        // If permission isn't null, need check permission flag
+        if (templateItem->permission != nullptr) {
+            int index = GetPermissionIndex(nullptr, templateItem->permission);
+            APPSPAWN_LOGV("mount dir no lock mount permission flag %{public}d", index);
+            if (CheckAppPermissionFlagSet(appProperty, static_cast<uint32_t>(index)) == 0) {
+                continue;
+            }
+        }
+
+        std::string mntPath = sandboxPackagePath + templateItem->sandboxPath + dataGroupUuid;
         mode_t mountFlags = MS_REC | MS_BIND;
         mode_t mountSharedFlag = MS_SLAVE;
         if (CheckAppMsgFlagsSet(appProperty, APP_FLAGS_ISOLATED_SANDBOX)) {
             mountSharedFlag |= MS_REMOUNT | MS_NODEV | MS_RDONLY | MS_BIND;
         }
-        ret = DoAppSandboxMountOnce(libPhysicalPath.c_str(), mntPath.c_str(), "", mountFlags, nullptr,
-            mountSharedFlag);
-        APPSPAWN_CHECK(ret == 0, return ret, "mount library failed %{public}d", ret);
+        ret = DoAppSandboxMountOnce(srcPath.c_str(), mntPath.c_str(), "", mountFlags, nullptr, mountSharedFlag);
+        if (ret != 0) {
+            APPSPAWN_LOGE("mount el%{public}d datagroup failed", elxValue);
+        }
     }
-    return ret;
+    return 0;
 }
 
 int32_t SandboxUtils::DoSandboxRootFolderCreate(const AppSpawningCtx *appProperty,
@@ -1893,6 +1910,10 @@ int32_t SetAppSandboxProperty(AppSpawnMgr *content, AppSpawningCtx *property)
     APPSPAWN_CHECK(content != nullptr, return -1, "Invalid appspwn content");
     // clear g_mountInfo in the child process
     std::map<std::string, int>* mapPtr = static_cast<std::map<std::string, int>*>(GetEl1BundleMountCount());
+    if (mapPtr == nullptr) {
+        APPSPAWN_LOGE("Get el1 bundle mount count failed");
+        return APPSPAWN_ARG_INVALID;
+    }
     mapPtr->clear();
     int ret = 0;
     // no sandbox
@@ -1974,7 +1995,7 @@ static int UmountSandboxPath(const AppSpawnMgr *content, const AppSpawnedProcess
     uint32_t userId = appInfo->uid / UID_BASE;
     std::string key = std::to_string(userId) + "-" + std::string(appInfo->name);
     map<string, int> *el1BundleCountMap = static_cast<std::map<std::string, int>*>(GetEl1BundleMountCount());
-    if (el1BundleCountMap->find(key) == el1BundleCountMap->end()) {
+    if (el1BundleCountMap == nullptr || el1BundleCountMap->find(key) == el1BundleCountMap->end()) {
         return 0;
     }
     (*el1BundleCountMap)[key]--;

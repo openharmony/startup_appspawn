@@ -56,6 +56,7 @@ typedef struct TagAppSpawnExtData {
 typedef enum TagAppSpawnHookStage {
     // 服务状态处理
     STAGE_SERVER_PRELOAD  = 10,
+    STAGE_SERVER_LOCK,
     STAGE_SERVER_EXIT,
     // 应用状态处理
     STAGE_SERVER_APP_ADD,
