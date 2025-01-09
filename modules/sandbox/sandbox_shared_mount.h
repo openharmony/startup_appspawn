@@ -42,7 +42,7 @@ enum {
 typedef struct DataGroupSandboxPathTemplate {
     const char *elxName;
     uint32_t category;
-    const char *sandboxPath;;
+    const char *sandboxPath;
     const char *permission;
 } DataGroupSandboxPathTemplate;
 
