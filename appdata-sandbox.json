@@ -634,34 +634,8 @@
                     "sandbox-flags": [ "bind", "rec" ]
                 },
                 {
-                    "src-path": "/storage/media/<currentUserId>/local/files/Docs",
-                    "sandbox-path": "/storage/Users/<currentUserId>",
-                    "sandbox-flags": [ "bind", "rec" ]
-                },
-                {
                     "src-path": "/storage/media/<currentUserId>/local/files/.Recent",
                     "sandbox-path": "/storage/Users/<currentUserId>/.Recent",
-                    "sandbox-flags": [ "bind", "rec" ]
-                },
-                {
-                    "src-path": "/data/app/el1/<currentUserId>/base",
-                    "sandbox-path": "/storage/Users/<currentUserId>/appdata/el1/base",
-                    "sandbox-flags-customized": ["MS_NODEV"],
-                    "dac-override-sensitive": "true",
-                    "fs-type": "sharefs",
-                    "options": "override"
-                },
-                {
-                    "src-path": "/data/app/el2/<currentUserId>/base",
-                    "sandbox-path": "/storage/Users/<currentUserId>/appdata/el2/base",
-                    "sandbox-flags-customized": ["MS_NODEV"],
-                    "dac-override-sensitive": "true",
-                    "fs-type": "sharefs",
-                    "options": "override"
-                },
-                {
-                    "src-path": "/mnt/hmdfs/<currentUserId>/account/merge_view/data",
-                    "sandbox-path": "/storage/Users/<currentUserId>/appdata/el2/distributedfiles",
                     "sandbox-flags": [ "bind", "rec" ]
                 },
                 {
@@ -683,34 +657,7 @@
         }],
         "ohos.permission.FILE_CROSS_APP":[{
             "sandbox-switch": "ON",
-            "gids": [1006],
             "mount-paths": [{
-                    "src-path": "/storage/media/<currentUserId>/local/files/Docs",
-                    "sandbox-path": "/storage/Users/<currentUserId>",
-                    "sandbox-flags": [ "bind", "rec" ]
-                },
-                {
-                    "src-path": "/data/app/el1/<currentUserId>/base",
-                    "sandbox-path": "/storage/Users/<currentUserId>/appdata/el1",
-                    "sandbox-flags-customized": ["MS_NODEV"],
-                    "dac-override-sensitive": "true",
-                    "fs-type": "sharefs",
-                    "options": "override"
-                },
-                {
-                    "src-path": "/data/app/el2/<currentUserId>/base",
-                    "sandbox-path": "/storage/Users/<currentUserId>/appdata/el2",
-                    "sandbox-flags-customized": ["MS_NODEV"],
-                    "dac-override-sensitive": "true",
-                    "fs-type": "sharefs",
-                    "options": "override"
-                },
-                {
-                    "src-path": "/data/service/el1/public/storage_daemon/share/public",
-                    "sandbox-path": "/storage/Share",
-                    "sandbox-flags": [ "bind", "rec" ]
-                },
-                {
                     "src-path": "/mnt/data/external",
                     "sandbox-path": "/storage/External",
                     "sandbox-flags": [ "bind", "rec" ]
@@ -719,15 +666,7 @@
         }],
         "ohos.permission.FILE_ACCESS_COMMON_DIR":[{
             "sandbox-switch": "ON",
-            "mount-paths": [{
-                    "src-path": "/storage/media/<currentUserId>/local/files/Docs",
-                    "sandbox-path": "/storage/Users/currentUser",
-                    "sandbox-flags": [ "MS_NODEV" ],
-                    "dac-override-sensitive": "true",
-                    "fs-type": "sharefs",
-                    "options": "override"
-                }
-            ]
+            "mount-paths": []
         }],
         "ohos.permission.ACTIVATE_THEME_PACKAGE":[{
             "sandbox-switch": "ON",
