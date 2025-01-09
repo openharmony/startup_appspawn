@@ -395,8 +395,7 @@ int AppSpawnClientSendUserLockStatus(uint32_t userId, bool isLocked)
     AppSpawnResult result = {0};
     ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
     AppSpawnClientDestroy(clientHandle);
-    APPSPAWN_CHECK(ret == 0, AppSpawnReqMsgFree(reqHandle);
-        return ret, "Send msg to appspawn failed, ret=%{public}d", ret);
+    APPSPAWN_CHECK(ret == 0, return ret, "Send msg to appspawn failed, ret=%{public}d", ret);
 
     if (result.result != 0) {
         APPSPAWN_LOGE("Appspawn failed to handle message, result=%{public}d", result.result);
