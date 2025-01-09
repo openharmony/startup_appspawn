@@ -1365,28 +1365,17 @@ int32_t SandboxUtils::MountAllGroup(const AppSpawningCtx *appProperty, std::stri
     }
 
     nlohmann::json groups = nlohmann::json::parse(dataGroupInfo.c_str(), nullptr, false);
-    APPSPAWN_CHECK(!groups.is_discarded() && groups.contains(g_groupList_key_dataGroupId)
-        && groups.contains(g_groupList_key_gid) && groups.contains(g_groupList_key_dir), return -1,
-            "MountAllGroup: json parse failed");
+    if (groups.is_discarded() && groups.contains(g_groupList_key_dataGroupId) && groups.contains(g_groupList_key_dir) &&
+        groups.contains(g_groupList_key_gid) && groups.contains(g_groupList_key_uuid)) {
+        APPSPAWN_LOGE("dataGroupJson is discarded");
+        return APPSPAWN_ARG_INVALID;
+    }
 
-    nlohmann::json& dataGroupIds = groups[g_groupList_key_dataGroupId];
-    nlohmann::json& gids = groups[g_groupList_key_gid];
-    nlohmann::json& dirs = groups[g_groupList_key_dir];
-    APPSPAWN_CHECK(dataGroupIds.is_array() && gids.is_array() && dirs.is_array() && dataGroupIds.size() == gids.size()
-        && dataGroupIds.size() == dirs.size(), return -1, "MountAllGroup: value is not arrary or sizes are not same");
-    APPSPAWN_LOGI("MountAllGroup: app = %{public}s, cnt = %{public}lu",
-        GetBundleName(appProperty), static_cast<unsigned long>(dataGroupIds.size()));
-    for (uint32_t i = 0; i < dataGroupIds.size(); i++) {
+    for (auto& item : groups) {
         // elements in json arrary can be different type
-        APPSPAWN_CHECK(dataGroupIds[i].is_string() && gids[i].is_string() && dirs[i].is_string(),
-            return -1, "MountAllGroup: element type error");
-
-        std::string srcPath = dirs[i];
+        APPSPAWN_CHECK(IsValidDataGroupItem(item), return -1, "MountAllGroup: data group item error");
+        std::string srcPath = item[g_groupList_key_dir];
         APPSPAWN_CHECK(!CheckPath(srcPath), return -1, "MountAllGroup: path error");
-
-        size_t lastPathSplitPos = srcPath.find_last_of(g_fileSeparator);
-        APPSPAWN_CHECK(lastPathSplitPos != std::string::npos, return -1, "MountAllGroup: path error");
-        std::string dataGroupUuid = srcPath.substr(lastPathSplitPos + 1);
 
         uint32_t elxValue = GetElxInfoFromDir(srcPath.c_str());
         APPSPAWN_CHECK((elxValue >= EL2 && elxValue < ELX_MAX), return -1, "Get elx value failed");
@@ -1402,7 +1391,7 @@ int32_t SandboxUtils::MountAllGroup(const AppSpawningCtx *appProperty, std::stri
                 continue;
             }
         }
-
+        std::string dataGroupUuid = item[g_groupList_key_uuid];
         std::string mntPath = sandboxPackagePath + templateItem->sandboxPath + dataGroupUuid;
         mode_t mountFlags = MS_REC | MS_BIND;
         mode_t mountSharedFlag = MS_SLAVE;
