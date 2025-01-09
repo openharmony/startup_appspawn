@@ -207,7 +207,7 @@ static int MountEl1Bundle(const AppSpawningCtx *property, const AppDacInfo *info
     }
 
     ret = umount2(targetPath, MNT_DETACH);
-    if (ret < 0) {
+    if (ret != 0) {
         APPSPAWN_LOGE("umount2 %{public}s  failed, errno %{public}d", targetPath, errno);
     }
 
@@ -245,7 +245,7 @@ static int MountWithFileMgr(const AppSpawningCtx *property, const AppDacInfo *in
     ret = snprintf_s(storageUserPath, PATH_MAX_LEN, PATH_MAX_LEN - 1, "/mnt/sandbox/%d/%s/storage/Users",
                      info->uid / UID_BASE, bundleName);
     if (ret <= 0) {
-        APPSPAWN_LOGE("snprintf nosharefsDocsDir failed, errno %{public}d", errno);
+        APPSPAWN_LOGE("snprintf storageUserPath failed, errno %{public}d", errno);
         return APPSPAWN_ERROR_UTILS_MEM_FAIL;
     }
 
@@ -293,7 +293,7 @@ static int MountWithOther(const AppSpawningCtx *property, const AppDacInfo *info
     ret = snprintf_s(storageUserPath, PATH_MAX_LEN, PATH_MAX_LEN - 1, "/mnt/sandbox/%d/%s/storage/Users",
                      info->uid / UID_BASE, bundleName);
     if (ret <= 0) {
-        APPSPAWN_LOGE("snprintf nosharefsDocsDir failed, errno %{public}d", errno);
+        APPSPAWN_LOGE("snprintf storageUserPath failed, errno %{public}d", errno);
         return APPSPAWN_ERROR_UTILS_MEM_FAIL;
     }
 
@@ -410,6 +410,161 @@ static void MountSharedMap(const AppSpawningCtx *property, const AppDacInfo *inf
     APPSPAWN_LOGI("mount shared map success");
 }
 
+static inline bool CheckPath(const std::string& name)
+{
+    return !name.empty() && name != "." && name != ".." && name.find("/") == std::string::npos;
+}
+
+static int AddDataGroupItemToQueue(AppSpawnMgr *content, const std::string &srcPath, const std::string &destPath,
+                                   const std::string &dataGroupUuid)
+{
+    DataGroupCtx *dataGroupNode = (DataGroupCtx *)calloc(1, sizeof(DataGroupCtx));
+    APPSPAWN_CHECK(dataGroupNode != nullptr, return APPSPAWN_ERROR_UTILS_MEM_FAIL, "Calloc dataGroupNode failed");
+    if (strcpy_s(dataGroupNode->srcPath.path, PATH_MAX_LEN - 1, srcPath.c_str()) != EOK ||
+        strcpy_s(dataGroupNode->destPath.path, PATH_MAX_LEN - 1, destPath.c_str()) != EOK ||
+        strcpy_s(dataGroupNode->dataGroupUuid, UUID_MAX_LEN, dataGroupUuid.c_str()) != EOK) {
+        APPSPAWN_LOGE("strcpy dataGroupNode->srcPath failed");
+        free(dataGroupNode);
+        return APPSPAWN_ERROR_UTILS_MEM_FAIL;
+    }
+    dataGroupNode->srcPath.pathLen = strlen(dataGroupNode->srcPath.path);
+    dataGroupNode->destPath.pathLen = strlen(dataGroupNode->destPath.path);
+    OH_ListInit(&dataGroupNode->node);
+    OH_ListAddTail(&content->dataGroupCtxQueue, &dataGroupNode->node);
+    return 0;
+}
+
+static std::string GetExtraInfoByType(const AppSpawningCtx *appPropery, const std::string &type)
+{
+    uint32_t len = 0;
+    char *info = reinterpret_cast<char *>(GetAppPropertyExt(appPropery, type.c_str(), &len));
+    if (info == nullptr) {
+        return "";
+    }
+    return std::string(info, len);
+}
+
+static void DumpDataGroupCtxQueue(const ListNode *front)
+{
+    if (front == nullptr) {
+        return;
+    }
+
+    uint32_t count = 0;
+    ListNode *node = front->next;
+    while (node != front) {
+        DataGroupCtx *dataGroupNode = (DataGroupCtx *)ListEntry(node, DataGroupCtx, node);
+        count++;
+        APPSPAWN_LOGV("      ************************************** %{public}d", count);
+        APPSPAWN_LOGV("      srcPath: %{public}s", dataGroupNode->srcPath.path);
+        APPSPAWN_LOGV("      destPath: %{public}s", dataGroupNode->destPath.path);
+        APPSPAWN_LOGV("      uuid: %{public}s", dataGroupNode->dataGroupUuid);
+        node = node->next;
+    }
+}
+
+static int ParseDataGroupList(AppSpawnMgr *content, const AppSpawningCtx *property, AppDacInfo *info,
+                              AppSpawnMsgBundleInfo *bundleInfo)
+{
+    int ret = 0;
+    std::string dataGroupList = GetExtraInfoByType(property, DATA_GROUP_SOCKET_TYPE);
+    if (dataGroupList.length() == 0) {
+        APPSPAWN_LOGE("dataGroupList is empty");
+        return APPSPAWN_ARG_INVALID;
+    }
+
+    nlohmann::json dataGroupJson = nlohmann::json::parse(dataGroupList.c_str(), nullptr, false);
+    APPSPAWN_CHECK(!dataGroupJson.is_discarded() && dataGroupJson.contains(GROUPLIST_KEY_DATAGROUPID) &&
+        dataGroupJson.contains(GROUPLIST_KEY_GID) && dataGroupJson.contains(GROUPLIST_KEY_DIR), return -1,
+            "MountAllGroup: json parse failed");
+
+    nlohmann::json& dataGroupIds = dataGroupJson[GROUPLIST_KEY_DATAGROUPID];
+    nlohmann::json& gids = dataGroupJson[GROUPLIST_KEY_GID];
+    nlohmann::json& dirs = dataGroupJson[GROUPLIST_KEY_DIR];
+    APPSPAWN_CHECK(dataGroupIds.is_array() && gids.is_array() && dirs.is_array() && dataGroupIds.size() == gids.size()
+        && dataGroupIds.size() == dirs.size(), return -1, "MountAllGroup: value is not arrary or sizes are not same");
+    for (uint32_t i = 0; i < dataGroupIds.size(); i++) {
+        // elements in json arrary can be different type
+        APPSPAWN_CHECK(dataGroupIds[i].is_string() && gids[i].is_string() && dirs[i].is_string(),
+            return -1, "MountAllGroup: element type error");
+
+        std::string srcPath = dirs[i];
+        APPSPAWN_CHECK(!CheckPath(srcPath), return -1, "MountAllGroup: path error");
+
+        size_t lastPathSplitPos = srcPath.find_last_of("/");
+        APPSPAWN_CHECK(lastPathSplitPos != std::string::npos, return -1, "MountAllGroup: path error");
+        std::string dataGroupUuid = srcPath.substr(lastPathSplitPos + 1);
+
+
+        uint32_t elxValue = GetElxInfoFromDir(srcPath.c_str());
+        APPSPAWN_CHECK((elxValue >= EL2 && elxValue < ELX_MAX), return -1, "Get elx value failed");
+        
+        const DataGroupSandboxPathTemplate *templateItem = GetDataGroupArgTemplate(elxValue);
+        APPSPAWN_CHECK(templateItem != nullptr, return -1, "Get data group arg template failed");
+
+        // If permission isn't null, need check permission flag
+        if (templateItem->permission != nullptr) {
+            int index = GetPermissionIndex(nullptr, templateItem->permission);
+            APPSPAWN_LOGV("mount dir no lock mount permission flag %{public}d", index);
+            if (CheckAppPermissionFlagSet(property, static_cast<uint32_t>(index)) == 0) {
+                continue;
+            }
+        }
+
+        // sandboxPath: /mnt/sandbox/<currentUserId>/<bundleName>/data/storage/el<x>/group
+        std::string sandboxPath = "/mnt/sandbox/" + std::to_string(info->uid / UID_BASE) + "/" + bundleInfo->bundleName
+                                 + templateItem->sandboxPath;
+
+        ret = AddDataGroupItemToQueue(content, srcPath, sandboxPath, dataGroupUuid);
+        if (ret != 0) {
+            APPSPAWN_LOGE("Add datagroup item to dataGroupCtxQueue failed, el%{public}d", elxValue);
+            OH_ListRemoveAll(&content->dataGroupCtxQueue, nullptr);
+            return -1;
+        }
+    }
+
+    DumpDataGroupCtxQueue(&content->dataGroupCtxQueue);
+    return ret;
+}
+
+int UpdateDataGroupDirs(AppSpawnMgr *content)
+{
+    if (content == nullptr) {
+        return APPSPAWN_ARG_INVALID;
+    }
+
+    ListNode *node = content->dataGroupCtxQueue.next;
+    while (node != &content->dataGroupCtxQueue) {
+        DataGroupCtx *dataGroupNode = (DataGroupCtx *)ListEntry(node, DataGroupCtx, node);
+        char sandboxPath[PATH_MAX_LEN] = {0};
+        int ret = snprintf_s(sandboxPath, PATH_MAX_LEN, PATH_MAX_LEN - 1, "%s/%s", dataGroupNode->destPath.path,
+                             dataGroupNode->dataGroupUuid);
+        if (ret <= 0) {
+            APPSPAWN_LOGE("snprintf_s sandboxPath: %{public}s failed, errno %{public}d",
+                          dataGroupNode->destPath.path, errno);
+            return APPSPAWN_ERROR_UTILS_MEM_FAIL;
+        }
+
+        SharedMountArgs args = {
+            .srcPath = dataGroupNode->srcPath.path,
+            .destPath = sandboxPath,
+            .fsType = nullptr,
+            .mountFlags = MS_BIND | MS_REC,
+            .options = nullptr,
+            .mountSharedFlag = MS_SHARED
+        };
+        ret = DoSharedMount(&args);
+        if (ret != 0) {
+            APPSPAWN_LOGE("Shared mount %{public}s to %{public}s failed, errno %{public}d", args.srcPath,
+                          sandboxPath, ret);
+            return APPSPAWN_SANDBOX_ERROR_MOUNT_FAIL;
+        }
+        node = node->next;
+    }
+    OH_ListRemoveAll(&content->dataGroupCtxQueue, NULL);
+    return 0;
+}
+
 static void MountDirToShared(AppSpawnMgr *content, const AppSpawningCtx *property)
 {
     if (property == nullptr) {
@@ -436,6 +591,7 @@ static void MountDirToShared(AppSpawnMgr *content, const AppSpawningCtx *propert
     GetMountInfo(sharedMounts, info, std::string(bundleInfo->bundleName));
     MountSharedMap(property, info, bundleInfo->bundleName, sharedMounts);
     MountStorageUsers(property, info, bundleInfo->bundleName, sharedMounts);
+    ParseDataGroupList(content, property, info, bundleInfo);
 
     struct timespec checkEnd = {0};
     clock_gettime(CLOCK_MONOTONIC, &checkEnd);
@@ -461,3 +617,11 @@ int MountToShared(AppSpawnMgr *content, const AppSpawningCtx *property)
 #endif
     return 0;
 }
+
+MODULE_CONSTRUCTOR(void)
+{
+#ifndef APPSPAWN_SANDBOX_NEW
+    (void)AddServerStageHook(STAGE_SERVER_LOCK, HOOK_PRIO_COMMON, UpdateDataGroupDirs);
+#endif
+}
+
