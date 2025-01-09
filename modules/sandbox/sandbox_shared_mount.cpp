@@ -474,27 +474,16 @@ static int ParseDataGroupList(AppSpawnMgr *content, const AppSpawningCtx *proper
     }
 
     nlohmann::json dataGroupJson = nlohmann::json::parse(dataGroupList.c_str(), nullptr, false);
-    APPSPAWN_CHECK(!dataGroupJson.is_discarded() && dataGroupJson.contains(GROUPLIST_KEY_DATAGROUPID) &&
-        dataGroupJson.contains(GROUPLIST_KEY_GID) && dataGroupJson.contains(GROUPLIST_KEY_DIR), return -1,
-            "MountAllGroup: json parse failed");
-
-    nlohmann::json& dataGroupIds = dataGroupJson[GROUPLIST_KEY_DATAGROUPID];
-    nlohmann::json& gids = dataGroupJson[GROUPLIST_KEY_GID];
-    nlohmann::json& dirs = dataGroupJson[GROUPLIST_KEY_DIR];
-    APPSPAWN_CHECK(dataGroupIds.is_array() && gids.is_array() && dirs.is_array() && dataGroupIds.size() == gids.size()
-        && dataGroupIds.size() == dirs.size(), return -1, "MountAllGroup: value is not arrary or sizes are not same");
-    for (uint32_t i = 0; i < dataGroupIds.size(); i++) {
-        // elements in json arrary can be different type
-        APPSPAWN_CHECK(dataGroupIds[i].is_string() && gids[i].is_string() && dirs[i].is_string(),
-            return -1, "MountAllGroup: element type error");
-
-        std::string srcPath = dirs[i];
-        APPSPAWN_CHECK(!CheckPath(srcPath), return -1, "MountAllGroup: path error");
-
-        size_t lastPathSplitPos = srcPath.find_last_of("/");
-        APPSPAWN_CHECK(lastPathSplitPos != std::string::npos, return -1, "MountAllGroup: path error");
-        std::string dataGroupUuid = srcPath.substr(lastPathSplitPos + 1);
-
+    if (dataGroupJson.is_discarded() && dataGroupJson.contains(GROUPLIST_KEY_DATAGROUPID) &&
+        dataGroupJson.contains(GROUPLIST_KEY_GID) && dataGroupJson.contains(GROUPLIST_KEY_DIR) &&
+        dataGroupJson.contains(GROUPLIST_KEY_UUID)) {
+        APPSPAWN_LOGE("dataGroupJson is discarded");
+        return APPSPAWN_ARG_INVALID;
+    }
+    for (auto &item : dataGroupJson) {
+        APPSPAWN_CHECK(IsValidDataGroupItem(item), return -1, "Element is not a valid data group item");
+        std::string srcPath = item[GROUPLIST_KEY_DIR];
+        APPSPAWN_CHECK(!CheckPath(srcPath), return -1, "src path %{public}s is invalid", srcPath.c_str());
 
         uint32_t elxValue = GetElxInfoFromDir(srcPath.c_str());
         APPSPAWN_CHECK((elxValue >= EL2 && elxValue < ELX_MAX), return -1, "Get elx value failed");
@@ -515,7 +504,7 @@ static int ParseDataGroupList(AppSpawnMgr *content, const AppSpawningCtx *proper
         std::string sandboxPath = "/mnt/sandbox/" + std::to_string(info->uid / UID_BASE) + "/" + bundleInfo->bundleName
                                  + templateItem->sandboxPath;
 
-        ret = AddDataGroupItemToQueue(content, srcPath, sandboxPath, dataGroupUuid);
+        ret = AddDataGroupItemToQueue(content, srcPath, sandboxPath, item[GROUPLIST_KEY_UUID]);
         if (ret != 0) {
             APPSPAWN_LOGE("Add datagroup item to dataGroupCtxQueue failed, el%{public}d", elxValue);
             OH_ListRemoveAll(&content->dataGroupCtxQueue, nullptr);
