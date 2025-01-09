@@ -1162,12 +1162,20 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_40, TestSize.Level0)
     g_testHelper.SetTestApl("normal");
     g_testHelper.SetTestMsgFlags(0x100);
     std::string sandboxPrefix = "/mnt/sandbox/100/testBundle";
-    char dataGroupInfoListStr[] = "{ \
-        \"dataGroupId\":[\"1234abcd5678efgh\", \"abcduiop1234\"], \
-        \"dir\":[\"/data/app/el2/100/group/091a68a9-2cc9-4279-8849-28631b598975\", \
-                    \"/data/app/el2/100/group/ce876162-fe69-45d3-aa8e-411a047af564\"], \
-        \"gid\":[\"20100001\", \"20100002\"] \
-    }";
+    char dataGroupInfoListStr[] = R"([
+        {
+            "gid": "1002",
+            "dir": "data/app/el2/100/group/49c016e6-065a-abd1-5867-b1f91114f840",
+            "dataGroupId": "43200",
+            "uuid": "49c016e6-065a-abd1-5867-b1f91114f840"
+        },
+        {
+            "gid": "1002",
+            "dir": "data/app/el2/100/group/49c016e6-065a-abd1-5867-b1f91114f840",
+            "dataGroupId": "43200",
+            "uuid": "49c016e6-065a-abd1-5867-b1f91114f840"
+        }
+    ])";
     AppSpawningCtx *appProperty = GetTestAppPropertyWithExtInfo("DataGroup", dataGroupInfoListStr);
     int ret = OHOS::AppSpawn::SandboxUtils::MountAllGroup(appProperty, sandboxPrefix);
     DeleteAppSpawningCtx(appProperty);
