@@ -34,7 +34,7 @@ static int OpenAndWriteToProc(const char *procName, const char *writeStr, size_t
     if (writeResult != (int)writeLen) {
         APPSPAWN_LOGE("write %{public}s fail,result:%{public}d", writeStr, writeResult);
     } else {
-        APPSPAWN_LOGI("write %{public}s success", writeStr);
+        APPSPAWN_LOGV("write %{public}s success", writeStr);
     }
 
     close(procFd);
@@ -73,8 +73,9 @@ static void DealSpawnWatchdog(AppSpawnContent *content, bool isOpen)
     if (isOpen) {
         content->wdgOpened = (result != -1);
     }
-    APPSPAWN_LOGI("%{public}s %{public}s watchdog end, result:%{public}d",
-        (content->mode == MODE_FOR_NWEB_SPAWN) ? "Nwebspawn" : "Appspawn", isOpen ? "enable" : "kick", result);
+    APPSPAWN_LOGI("procFile: %{public}s procContent: %{public}s %{public}s %{public}s watchdog end, result:%{public}d",
+        procFile, procContent, (content->mode == MODE_FOR_NWEB_SPAWN) ?
+            "Nwebspawn" : "Appspawn", isOpen ? "enable" : "kick", result);
 }
 
 static void ProcessTimerHandle(const TimerHandle taskHandle, void *context)
