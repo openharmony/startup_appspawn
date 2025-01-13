@@ -315,6 +315,7 @@ HWTEST_F(AppSpawnModuleInterfaceTest, App_Spawn_DumpCurrentDir_001, TestSize.Lev
     DumpCurrentDir(path, 0, APPSPAWN_BASE_DIR "/test_appspawn/");
     DumpCurrentDir(nullptr, sizeof(path), APPSPAWN_BASE_DIR "/test_appspawn/");
     DumpCurrentDir(nullptr, sizeof(path), nullptr);
+    EXPECT_NE(path, nullptr);
 }
 
 static int TestParseAppSandboxConfig(const cJSON *root, ParseJsonContext *context)
