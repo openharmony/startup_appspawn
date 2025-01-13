@@ -138,6 +138,8 @@ APPSPAWN_STATIC void LoadExtendCJLib(void)
     void *aceAbilityLib = dlopen(acelibdir, RTLD_NOW | RTLD_LOCAL);
     APPSPAWN_CHECK(aceAbilityLib != nullptr, return, "Fail to dlopen %{public}s, [%{public}s]", acelibdir, dlerror());
     APPSPAWN_LOGI("LoadExtendLib: Success to dlopen %{public}s", acelibdir);
+
+    OHOS::AppExecFwk::MainThread::PreloadExtensionPlugin();
 }
 
 APPSPAWN_STATIC int BuildFdInfoMap(const AppSpawnMsgNode *message, std::map<std::string, int> &fdMap, int isColdRun)
