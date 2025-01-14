@@ -56,12 +56,14 @@ public:
 
 HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_001, TestSize.Level0)
 {
-    SetSelinuxConNweb(nullptr, nullptr);
+    int ret = SetSelinuxConNweb(nullptr, nullptr);
+    EXPECT_EQ(ret, 0);
 }
 
 HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_002, TestSize.Level0)
 {
-    SetAppAccessToken(nullptr, nullptr);
+    int ret = SetAppAccessToken(nullptr, nullptr);
+    EXPECT_NE(ret, 0);
 }
 
 HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_003, TestSize.Level0)
