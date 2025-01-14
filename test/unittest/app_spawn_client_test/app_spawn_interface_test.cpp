@@ -584,6 +584,7 @@ HWTEST_F(AppSpawnInterfaceTest, App_Spawn_Interface_ClientSocket_001, TestSize.L
     socketId = CreateClientSocket(CLIENT_MAX, 2);
     CloseClientSocket(socketId);
     CloseClientSocket(-1);
+    EXPECT_NE(socketId, 0);
 }
 
 HWTEST_F(AppSpawnInterfaceTest, App_Spawn_Interface_GetSpawnTimeout_001, TestSize.Level0)
