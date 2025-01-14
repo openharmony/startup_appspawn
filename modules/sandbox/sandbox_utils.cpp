@@ -1618,7 +1618,7 @@ int32_t SandboxUtils::SetSandboxProperty(AppSpawningCtx *appProperty, std::strin
     ret = SetBundleResourceAppSandboxProperty(appProperty, sandboxPackagePath);
     APPSPAWN_CHECK(ret == 0, return ret, "SetBundleResourceAppSandboxProperty failed, packagename is %{public}s",
                    bundleName.c_str());
-    APPSPAWN_LOGI("Set appsandbox property success");
+    APPSPAWN_LOGV("Set appsandbox property success");
     return ret;
 }
 
@@ -1757,7 +1757,7 @@ int32_t SandboxUtils::SetAppSandboxProperty(AppSpawningCtx *appProperty, uint32_
 #ifndef APPSPAWN_TEST
     rc = ChangeCurrentDir(sandboxPackagePath, bundleName, sandboxSharedStatus);
     APPSPAWN_CHECK(rc == 0, return rc, "change current dir failed");
-    APPSPAWN_LOGI("Change root dir success");
+    APPSPAWN_LOGV("Change root dir success");
 #if defined(APPSPAWN_MOUNT_TMPSHM) && defined(WITH_SELINUX)
     Restorecon(DEV_SHM_DIR);
 #endif // APPSPAWN_MOUNT_TMPSHM && WITH_SELINUX
