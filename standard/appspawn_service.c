@@ -51,7 +51,7 @@
 #define PARAM_BUFFER_SIZE 10
 #define PATH_SIZE 256
 #define FD_PATH_SIZE 128
-#define MAX_MEM_SIZE (4 * 1024)
+#define MAX_MEM_SIZE (64 * 1024)
 #define APPSPAWN_MSG_USER_CHECK_COUNT 4
 #define PREFORK_PROCESS "apppool"
 #define USER_ID_MIN_VALUE 100
