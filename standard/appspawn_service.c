@@ -1254,7 +1254,7 @@ APPSPAWN_STATIC int AppSpawnClearEnv(AppSpawnMgr *content, AppSpawningCtx *prope
 static int IsEnablePrefork(void)
 {
     char buffer[32] = {0};
-    int ret = GetParameter("persist.sys.prefork.enable", "true", buffer, sizeof(buffer));
+    int ret = GetParameter("persist.sys.prefork.enable", "false", buffer, sizeof(buffer));
     APPSPAWN_LOGV("IsEnablePerfork result %{public}d, %{public}s", ret, buffer);
     return strcmp(buffer, "true") == 0;
 }
