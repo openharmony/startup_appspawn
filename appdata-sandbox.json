@@ -666,6 +666,10 @@
             "sandbox-switch": "ON",
             "gids": [1006, 1008],
             "mount-paths": [{
+                    "src-path": "/mnt/user/<currentUserId>/nosharefs/docs",
+                    "sandbox-path": "/storage/Users",
+                    "sandbox-flags": [ "bind", "rec" ]
+                },{
                     "src-path": "/data/service/el1/public/storage_daemon/share/public",
                     "sandbox-path": "/storage/Share",
                     "sandbox-flags": [ "bind", "rec" ]
@@ -678,11 +682,6 @@
                 {
                     "src-path": "/storage/media/<currentUserId>/local/files/.Recent",
                     "sandbox-path": "/storage/Users/<currentUserId>/.Recent",
-                    "sandbox-flags": [ "bind", "rec" ]
-                },
-                {
-                    "src-path": "/mnt/user/<currentUserId>/nosharefs/docs",
-                    "sandbox-path": "/storage/Users",
                     "sandbox-flags": [ "bind", "rec" ]
                 },
                 {
