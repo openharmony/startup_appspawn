@@ -1547,7 +1547,7 @@ int32_t SandboxUtils::SetSandboxProperty(AppSpawningCtx *appProperty, std::strin
     ret = SetBundleResourceAppSandboxProperty(appProperty, sandboxPackagePath);
     APPSPAWN_CHECK(ret == 0, return ret, "SetBundleResourceAppSandboxProperty failed, packagename is %{public}s",
                    bundleName.c_str());
-    APPSPAWN_LOGI("Set appsandbox property success");
+    APPSPAWN_LOGV("Set appsandbox property success");
     return ret;
 }
 
@@ -1647,7 +1647,7 @@ int32_t SandboxUtils::SetAppSandboxProperty(AppSpawningCtx *appProperty, uint32_
 #ifndef APPSPAWN_TEST
     rc = ChangeCurrentDir(sandboxPackagePath, bundleName, sandboxSharedStatus);
     APPSPAWN_CHECK(rc == 0, return rc, "change current dir failed");
-    APPSPAWN_LOGI("Change root dir success");
+    APPSPAWN_LOGV("Change root dir success");
 #endif
     return 0;
 }
@@ -1820,12 +1820,12 @@ static bool IsUnlockStatus(uint32_t uid, const char *bundleName, size_t bundleNa
         return true, "Failed to get base path");
 
     if (access(path, F_OK) == 0) {
-        APPSPAWN_LOGI("this is unlock status");
+        APPSPAWN_LOGI("bundleName:%{public}s this is unlock status", bundleName);
         free(path);
         return true;
     }
     free(path);
-    APPSPAWN_LOGI("this is lock status");
+    APPSPAWN_LOGI("bundleName:%{public}s this is lock status", bundleName);
     return false;
 }
 
