@@ -51,7 +51,6 @@
 #define PARAM_BUFFER_SIZE 10
 #define PATH_SIZE 256
 #define FD_PATH_SIZE 128
-#define MAX_MEM_SIZE (4 * 1024)
 #define APPSPAWN_MSG_USER_CHECK_COUNT 4
 #define PREFORK_PROCESS "apppool"
 #define USER_ID_MIN_VALUE 100
@@ -670,7 +669,25 @@ static bool IsSupportRunHnp()
     return false;
 }
 
-static int WritePreforkMsg(AppSpawningCtx *property)
+static void ClearMMAP(int clientId, uint32_t memSize)
+{
+    char path[PATH_MAX] = {0};
+    int ret = snprintf_s(path, sizeof(path), sizeof(path) - 1, APPSPAWN_MSG_DIR "appspawn/prefork_%d", clientId);
+    APPSPAWN_LOGV("prefork unlink %{public}s ret :%{public}d", path, ret);
+    if (ret > 0 && access(path, F_OK) == 0) {
+        ret =  unlink(path);
+        APPSPAWN_CHECK_ONLY_LOG(ret == 0, "prefork unlink result %{public}d %{public}d", ret, errno);
+    }
+
+    AppSpawnContent *content = GetAppSpawnContent();
+    if (content != NULL && content->propertyBuffer != NULL) {
+        ret = munmap(content->propertyBuffer, memSize);
+        APPSPAWN_CHECK_ONLY_LOG(ret == 0, "munmap failed %{public}d", ret);
+        content->propertyBuffer = NULL;
+    }
+}
+
+static int WritePreforkMsg(AppSpawningCtx *property, uint32_t memSize)
 {
     AppSpawnContent *content = GetAppSpawnContent();
     if (content == NULL || content->propertyBuffer == NULL) {
@@ -678,22 +695,28 @@ static int WritePreforkMsg(AppSpawningCtx *property)
         return  -1;
     }
 
-    int ret = memcpy_s(content->propertyBuffer, MAX_MEM_SIZE, &property->message->msgHeader, sizeof(AppSpawnMsg));
-    APPSPAWN_CHECK(ret == 0, goto fail, "memcpys_s msgHeader failed");
-    ret = memcpy_s((char *)content->propertyBuffer + sizeof(AppSpawnMsg), MAX_MEM_SIZE - sizeof(AppSpawnMsg),
-        property->message->buffer, property->message->msgHeader.msgLen - sizeof(AppSpawnMsg));
-    APPSPAWN_CHECK(ret == 0, goto fail, "memcpys_s AppSpawnMsg failed");
-    return ret;
+    int ret = memcpy_s(content->propertyBuffer, memSize, &property->message->msgHeader, sizeof(AppSpawnMsg));
+    if (ret != 0) {
+        APPSPAWN_LOGE("memcpys_s msgHeader failed");
+        ClearMMAP(property->client.id, memSize);
+        return ret;
+    }
 
-fail:
-    munmap((char *)content->propertyBuffer, MAX_MEM_SIZE);
+    ret = memcpy_s((char *)content->propertyBuffer + sizeof(AppSpawnMsg), memSize - sizeof(AppSpawnMsg),
+        property->message->buffer, property->message->msgHeader.msgLen - sizeof(AppSpawnMsg));
+    if (ret != 0) {
+        APPSPAWN_LOGE("memcpys_s AppSpawnMsg failed");
+        ClearMMAP(property->client.id, memSize);
+        return ret;
+    }
+    munmap((char *)content->propertyBuffer, memSize);
     content->propertyBuffer = NULL;
     return ret;
 }
 
-static int GetAppSpawnMsg(AppSpawningCtx *property)
+static int GetAppSpawnMsg(AppSpawningCtx *property, uint32_t memSize)
 {
-    uint8_t *buffer = (uint8_t *)GetMapMem(property->client.id, "prefork", MAX_MEM_SIZE, true, false);
+    uint8_t *buffer = (uint8_t *)GetMapMem(property->client.id, "prefork", memSize, true, false);
     if (buffer == NULL) {
         APPSPAWN_LOGE("prefork buffer is null can not write propery");
         return  -1;
@@ -701,7 +724,7 @@ static int GetAppSpawnMsg(AppSpawningCtx *property)
     uint32_t msgRecvLen = 0;
     uint32_t remainLen = 0;
     property->forkCtx.childMsg = (char *)buffer;
-    property->forkCtx.msgSize = MAX_MEM_SIZE;
+    property->forkCtx.msgSize = memSize;
     AppSpawnMsgNode *message = NULL;
     int ret = GetAppSpawnMsgFromBuffer(buffer, ((AppSpawnMsg *)buffer)->msgLen, &message, &msgRecvLen, &remainLen);
     // release map
@@ -712,25 +735,6 @@ static int GetAppSpawnMsg(AppSpawningCtx *property)
         return 0;
     }
     return -1;
-}
-
-static void ClearMMAP(int clientId)
-{
-    char path[PATH_MAX] = {0};
-    int ret = snprintf_s(path, sizeof(path), sizeof(path) - 1, APPSPAWN_MSG_DIR "appspawn/prefork_%d", clientId);
-    APPSPAWN_LOGV("prefork unlink %{public}s ret :%{public}d", path, ret);
-    if (ret > 0) {
-        errno = 0;
-        ret =  unlink(path);
-        APPSPAWN_LOGV("prefork unlink result %{public}d %{public}d", ret, errno);
-    }
-
-    AppSpawnContent *content = GetAppSpawnContent();
-    if (content != NULL && content->propertyBuffer != NULL) {
-        ret = munmap(content->propertyBuffer, MAX_MEM_SIZE);
-        APPSPAWN_CHECK_ONLY_LOG(ret == 0, "munmap failed %{public}d", ret);
-        content->propertyBuffer = NULL;
-    }
 }
 
 static int SetPreforkProcessName(AppSpawnContent *content)
@@ -773,28 +777,30 @@ static void ProcessPreFork(AppSpawnContent *content, AppSpawningCtx *property)
         (void)close(property->forkCtx.fd[1]);
         int isRet = SetPreforkProcessName(content);
         APPSPAWN_LOGV("prefork process start wait read msg with set processname %{public}d", isRet);
-        AppSpawnClient client = {0, 0};
-        int infoSize = read(content->parentToChildFd[0], &client, sizeof(AppSpawnClient));
-        if (infoSize != sizeof(AppSpawnClient)) {
+        AppSpawnPreforkMsg preforkMsg = {0, 0, 0};
+        int infoSize = read(content->parentToChildFd[0], &preforkMsg, sizeof(AppSpawnPreforkMsg));
+        if (infoSize != sizeof(AppSpawnPreforkMsg) || preforkMsg.msgLen > MAX_MSG_TOTAL_LENGTH ||
+            preforkMsg.msgLen < sizeof(AppSpawnMsg)) {
             APPSPAWN_LOGE("prefork process read msg failed %{public}d,%{public}d", infoSize, errno);
             ProcessExit(0);
             return;
         }
 
-        property->client.id = client.id;
-        property->client.flags = client.flags;
+        property->client.id = preforkMsg.id;
+        property->client.flags = preforkMsg.flags;
         property->isPrefork = true;
         property->forkCtx.fd[0] = content->preforkFd[0];
         property->forkCtx.fd[1] = content->preforkFd[1];
         property->state = APP_STATE_SPAWNING;
-        if (GetAppSpawnMsg(property) == -1) {
+        const uint32_t memSize = (preforkMsg.msgLen / MAX_MSG_BLOCK_LEN + 1) * MAX_MSG_BLOCK_LEN;
+        if (GetAppSpawnMsg(property, memSize) == -1) {
             APPSPAWN_LOGE("prefork child read GetAppSpawnMsg failed");
-            ClearMMAP(property->client.id);
+            ClearMMAP(property->client.id, memSize);
             content->notifyResToParent(content, &property->client, APPSPAWN_MSG_INVALID);
             ProcessExit(0);
             return;
         }
-        ClearMMAP(property->client.id);
+        ClearMMAP(property->client.id, memSize);
         // Inherit the error level of the original process
         (void)fdsan_set_error_level(errorLevel);
         ProcessExit(AppSpawnChild(content, &property->client));
@@ -803,38 +809,57 @@ static void ProcessPreFork(AppSpawnContent *content, AppSpawningCtx *property)
     }
 }
 
+static int NormalSpawnChild(AppSpawnContent *content, AppSpawnClient *client, pid_t *childPid)
+{
+    APPSPAWN_CHECK(client != NULL, return APPSPAWN_ARG_INVALID, "client is null");
+    int ret = InitForkContext((AppSpawningCtx *)client);
+    APPSPAWN_CHECK(ret == 0, return ret, "init fork context failed");
+    return AppSpawnProcessMsg(content, client, childPid);
+}
+
 static int AppSpawnProcessMsgForPrefork(AppSpawnContent *content, AppSpawnClient *client, pid_t *childPid)
 {
     int ret = 0;
     AppSpawningCtx *property = (AppSpawningCtx *)client;
-
     if (content->reservedPid <= 0) {
-        APPSPAWN_CHECK(client != NULL, return ret, "client is null");
-        ret = InitForkContext((AppSpawningCtx *)client);
-        APPSPAWN_CHECK(ret == 0, return ret, "init fork context failed");
-        ret = AppSpawnProcessMsg(content, client, childPid);
+        ret = NormalSpawnChild(content, client, childPid);
     } else {
-        APPSPAWN_CHECK_ONLY_EXPER(content->propertyBuffer == NULL, ClearMMAP(client->id));
-        content->propertyBuffer = GetMapMem(property->client.id, "prefork", MAX_MEM_SIZE, false, false);
-        APPSPAWN_CHECK(content->propertyBuffer != NULL, return -1, "GetPreforkMem failed");
-        ret = WritePreforkMsg(property);
-        APPSPAWN_CHECK(ret == 0, return ret, "WritePreforkMsg failed");
-
+        const uint32_t memSize = (property->message->msgHeader.msgLen / MAX_MSG_BLOCK_LEN + 1) *
+            MAX_MSG_BLOCK_LEN;
+        content->propertyBuffer = GetMapMem(property->client.id, "prefork", memSize, false, false);
+        if (content->propertyBuffer == NULL) {
+            ClearMMAP(property->client.id, memSize);
+            return NormalSpawnChild(content, client, childPid);
+        }
+        ret = WritePreforkMsg(property, memSize);
+        if (ret != 0) {
+            ClearMMAP(property->client.id, memSize);
+            return NormalSpawnChild(content, client, childPid);
+        }
         *childPid = content->reservedPid;
         property->forkCtx.fd[0] = content->preforkFd[0];
         property->forkCtx.fd[1] = content->preforkFd[1];
-
         int option = fcntl(property->forkCtx.fd[0], F_GETFD);
         if (option > 0) {
             ret = fcntl(property->forkCtx.fd[0], F_SETFD, (unsigned int)option | O_NONBLOCK);
             APPSPAWN_CHECK_ONLY_LOG(ret == 0, "fcntl failed %{public}d,%{public}d", ret, errno);
         }
+        AppSpawnPreforkMsg *preforkMsg = (AppSpawnPreforkMsg *)calloc(1, sizeof(AppSpawnPreforkMsg));
+        if (preforkMsg == NULL) {
+            APPSPAWN_LOGE("calloc failed");
+            ClearMMAP(property->client.id, memSize);
+            return NormalSpawnChild(content, client, childPid);
+        }
 
-        ssize_t writesize = write(content->parentToChildFd[1], client, sizeof(AppSpawnClient)) ;
-        APPSPAWN_CHECK(writesize == sizeof(AppSpawnClient), kill(*childPid, SIGKILL);
+        preforkMsg->id = client->id;
+        preforkMsg->flags = client->flags;
+        preforkMsg->msgLen = property->message->msgHeader.msgLen;
+        ssize_t writesize = write(content->parentToChildFd[1], preforkMsg, sizeof(AppSpawnPreforkMsg)) ;
+        APPSPAWN_CHECK(writesize == sizeof(AppSpawnPreforkMsg), kill(*childPid, SIGKILL);
             *childPid = 0;
             ret = -1,
             "write msg to child failed %{public}d", errno);
+        free(preforkMsg);
     }
     ProcessPreFork(content, property);
     return ret;
@@ -876,10 +901,7 @@ static int RunAppSpawnProcessMsg(AppSpawnContent *content, AppSpawnClient *clien
     if (IsBootFinished() && IsSupportPrefork(content, client)) {
         ret = AppSpawnProcessMsgForPrefork(content, client, childPid);
     } else {
-        APPSPAWN_CHECK(client != NULL, return ret, "client is null");
-        ret = InitForkContext((AppSpawningCtx *)client);
-        APPSPAWN_CHECK(ret == 0, return ret, "init fork context failed");
-        ret = AppSpawnProcessMsg(content, client, childPid);
+        ret = NormalSpawnChild(content, client, childPid);
     }
     return ret;
 }
