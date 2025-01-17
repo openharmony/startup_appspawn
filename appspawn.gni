@@ -34,6 +34,7 @@ declare_args() {
   appspawn_seccomp_privilege = false
   appspawn_support_prefork = true
   appspawn_support_code_signature = true
+  appspawn_allow_internet_permission = false
 }
 
 if (!defined(global_parts_info) ||
