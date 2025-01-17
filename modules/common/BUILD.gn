@@ -81,6 +81,10 @@ ohos_shared_library("appspawn_common") {
     defines += [ "APPSPAWN_SANDBOX_NEW" ]
   }
 
+  if (appspawn_allow_internet_permission) {
+    defines += [ "APPSPAWN_ALLOW_INTERNET_PERMISSION" ]
+  }
+
   subsystem_name = "${subsystem_name}"
   part_name = "${part_name}"
   install_enable = true
