@@ -219,7 +219,9 @@ int SetInternetPermission(const AppSpawningCtx *property)
         "No tlv internet permission info in req form %{public}s", GetProcessName(property));
     APPSPAWN_LOGV("Set internet permission %{public}d %{public}d", info->setAllowInternet, info->allowInternet);
     if (info->setAllowInternet == 1 && info->allowInternet == 0) {
+#ifndef APPSPAWN_ALLOW_INTERNET_PERMISSION
         DisallowInternet();
+#endif
     }
     return 0;
 }
