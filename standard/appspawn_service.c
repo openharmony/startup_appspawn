@@ -673,7 +673,7 @@ static void ClearMMAP(int clientId, uint32_t memSize)
 {
     char path[PATH_MAX] = {0};
     int ret = snprintf_s(path, sizeof(path), sizeof(path) - 1, APPSPAWN_MSG_DIR "appspawn/prefork_%d", clientId);
-    APPSPAWN_LOGV("prefork unlink %{public}s ret :%{public}d", path, ret);
+    APPSPAWN_CHECK_ONLY_LOG(ret > 0, "snprintf failed with %{public}d %{public}d", ret, errno);
     if (ret > 0 && access(path, F_OK) == 0) {
         ret =  unlink(path);
         APPSPAWN_CHECK_ONLY_LOG(ret == 0, "prefork unlink result %{public}d %{public}d", ret, errno);
@@ -682,7 +682,7 @@ static void ClearMMAP(int clientId, uint32_t memSize)
     AppSpawnContent *content = GetAppSpawnContent();
     if (content != NULL && content->propertyBuffer != NULL) {
         ret = munmap(content->propertyBuffer, memSize);
-        APPSPAWN_CHECK_ONLY_LOG(ret == 0, "munmap failed %{public}d", ret);
+        APPSPAWN_CHECK_ONLY_LOG(ret == 0, "munmap failed %{public}d %{public}d", ret, errno);
         content->propertyBuffer = NULL;
     }
 }
@@ -709,7 +709,8 @@ static int WritePreforkMsg(AppSpawningCtx *property, uint32_t memSize)
         ClearMMAP(property->client.id, memSize);
         return ret;
     }
-    munmap((char *)content->propertyBuffer, memSize);
+    ret = munmap((char *)content->propertyBuffer, memSize);
+    APPSPAWN_CHECK_ONLY_LOG(ret == 0, "munmap failed %{public}d,%{public}d", ret, errno);
     content->propertyBuffer = NULL;
     return ret;
 }
@@ -777,7 +778,7 @@ static void ProcessPreFork(AppSpawnContent *content, AppSpawningCtx *property)
         (void)close(property->forkCtx.fd[1]);
         int isRet = SetPreforkProcessName(content);
         APPSPAWN_LOGV("prefork process start wait read msg with set processname %{public}d", isRet);
-        AppSpawnPreforkMsg preforkMsg = {0, 0, 0};
+        AppSpawnPreforkMsg preforkMsg = {0};
         int infoSize = read(content->parentToChildFd[0], &preforkMsg, sizeof(AppSpawnPreforkMsg));
         if (infoSize != sizeof(AppSpawnPreforkMsg) || preforkMsg.msgLen > MAX_MSG_TOTAL_LENGTH ||
             preforkMsg.msgLen < sizeof(AppSpawnMsg)) {
