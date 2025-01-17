@@ -26,7 +26,8 @@
             "appspawn_mount_tmpshm",
             "appspawn_seccomp_privilege",
             "appspawn_support_prefork",
-            "appspawn_support_code_signature"
+            "appspawn_support_code_signature",
+            "appspawn_allow_internet_permission"
         ],
         "rom": "296KB",
         "ram": "13125KB",
