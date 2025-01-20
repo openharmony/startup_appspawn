@@ -345,10 +345,11 @@ int GetAppSpawnMsgFromBuffer(const uint8_t *buffer, uint32_t bufferLen,
     return 0;
 }
 
-static inline void DumpMsgFlags(const char *info, const AppSpawnMsgFlags *msgFlags)
+static inline void DumpMsgFlags(const char *processName, const char *info, const AppSpawnMsgFlags *msgFlags)
 {
     for (uint32_t i = 0; i < msgFlags->count; i++) {
-        APPSPAPWN_DUMP("%{public}s flags: 0x%{public}x", info, msgFlags->flags[i]);
+        APPSPAPWN_DUMP("processName: %{public}s %{public}d %{public}s flags: 0x%{public}x",
+            processName, i, info, msgFlags->flags[i]);
     }
 }
 
@@ -374,9 +375,10 @@ void DumpAppSpawnMsg(const AppSpawnMsgNode *message)
         message->msgHeader.msgId, message->msgHeader.msgLen, message->tlvCount, message->msgHeader.processName);
 
     AppSpawnMsgFlags *msgFlags = (AppSpawnMsgFlags *)GetAppSpawnMsgInfo(message, TLV_MSG_FLAGS);
-    APPSPAWN_ONLY_EXPER(msgFlags != NULL, DumpMsgFlags("App flags", msgFlags));
+    APPSPAWN_ONLY_EXPER(msgFlags != NULL, DumpMsgFlags(message->msgHeader.processName, "App flags", msgFlags));
     msgFlags = (AppSpawnMsgFlags *)GetAppSpawnMsgInfo(message, TLV_PERMISSION);
-    APPSPAWN_ONLY_EXPER(msgFlags != NULL, DumpMsgFlags("App permission bits", msgFlags));
+    APPSPAWN_ONLY_EXPER(msgFlags != NULL,
+        DumpMsgFlags(message->msgHeader.processName, "App permission bits", msgFlags));
 
     AppSpawnMsgDacInfo *dacInfo = (AppSpawnMsgDacInfo *)GetAppSpawnMsgInfo(message, TLV_DAC_INFO);
     if (dacInfo != NULL) {
@@ -396,11 +398,11 @@ void DumpAppSpawnMsg(const AppSpawnMsgNode *message)
         APPSPAPWN_DUMP("App domain info hap: 0x%{public}x apl: \"%{public}s\"", domainInfo->hapFlags, domainInfo->apl));
 
     AppSpawnMsgOwnerId *owner = (AppSpawnMsgOwnerId *)GetAppSpawnMsgInfo(message, TLV_OWNER_INFO);
-    APPSPAWN_ONLY_EXPER(owner != NULL, APPSPAPWN_DUMP("App owner info: \"%{public}s\" ", owner->ownerId));
+    APPSPAWN_ONLY_EXPER(owner != NULL, APPSPAWN_LOGV("App owner info: \"%{public}s\" ", owner->ownerId));
 
     AppSpawnMsgInternetInfo *info = (AppSpawnMsgInternetInfo *)GetAppSpawnMsgInfo(message, TLV_INTERNET_INFO);
     APPSPAWN_ONLY_EXPER(info != NULL,
-        APPSPAPWN_DUMP("App internet permission info [%{public}d %{public}d]",
+        APPSPAWN_LOGV("App internet permission info [%{public}d %{public}d]",
         info->setAllowInternet, info->allowInternet));
 
     for (uint32_t i = TLV_MAX; i < TLV_MAX + message->tlvCount; i++) {
