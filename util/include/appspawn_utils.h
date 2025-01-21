@@ -45,10 +45,10 @@ extern "C" {
 #endif
 #if defined(__MUSL__)
 #define APPSPAWN_SOCKET_DIR APPSPAWN_BASE_DIR "/dev/unix/socket/"
-#define APPSPAWN_MSG_DIR APPSPAWN_BASE_DIR "/mnt/startup/"
+#define APPSPAWN_MSG_DIR APPSPAWN_BASE_DIR "/data/service/el1/startup/"
 #else
 #define APPSPAWN_SOCKET_DIR APPSPAWN_BASE_DIR "/dev/socket/"
-#define APPSPAWN_MSG_DIR APPSPAWN_BASE_DIR "/mnt/startup/"
+#define APPSPAWN_MSG_DIR APPSPAWN_BASE_DIR "/data/service/el1/startup/"
 #endif
 
 #define DEVICE_VIRTUAL_NET_IO_FLAGS "/sys/devices/virtual/net/lo/flags"
