@@ -56,6 +56,12 @@ typedef struct AppSpawnClient {
     uint32_t flags;  // Save negotiated flags
 } AppSpawnClient;
 
+typedef struct AppSpawnPreforkMsg {
+    uint32_t id;
+    uint32_t flags;  // Save negotiated flags
+    uint32_t msgLen;
+} AppSpawnPreforkMsg;
+
 typedef struct AppSpawnContent {
     char *longProcName;
     uint32_t longProcNameLen;
