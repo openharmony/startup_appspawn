@@ -12,7 +12,7 @@
 
 ### 结构体定义
 
-NA
+NA。
 
 ### 函数
 
@@ -35,11 +35,11 @@ int NativeInstallHnp(const char *userId, const char *hnpRootPath, const HapInfo 
 
   参数：
 
-  userId：用户ID；
+  userId：用户ID。
 
-  hapPath：hap包所在路径。用于签名校验
+  hapPath：hap包所在路径。用于签名校验。
 
-  hnpRootPath：hnp安装包存放路径；
+  hnpRootPath：hnp安装包存放路径。
 
   hapInfo：hap应用软件信息，结构如下。
   ```
@@ -65,7 +65,7 @@ int NativeInstallHnp(const char *userId, const char *hnpRootPath, const HapInfo 
 
 **返回：**
  
-安装成功返回0；失败返回错误码
+安装成功返回0；失败返回错误码。
 
 ### NativeUnInstallHnp
 
@@ -85,4 +85,4 @@ int NativeUnInstallHnp(const char *userId, const char *packageName);
 
 **返回：**
 
-卸载成功返回0；失败返回错误码
+卸载成功返回0；失败返回错误码。
