@@ -242,7 +242,7 @@ static int MountWithFileMgr(const AppSpawningCtx *property, const AppDacInfo *in
 
     /* /mnt/sandbox/<currentUser/<bundleName>/storage/Users */
     char storageUserPath[PATH_MAX_LEN] = {0};
-    ret = snprintf_s(storageUserPath, PATH_MAX_LEN, PATH_MAX_LEN - 1, "/mnt/sandbox/%d/%s/storage/Users",
+    ret = snprintf_s(storageUserPath, PATH_MAX_LEN, PATH_MAX_LEN - 1, "/mnt/sandbox/%u/%s/storage/Users",
                      info->uid / UID_BASE, bundleName);
     if (ret <= 0) {
         APPSPAWN_LOGE("snprintf storageUserPath failed, errno %{public}d", errno);
@@ -290,7 +290,7 @@ static int MountWithOther(const AppSpawningCtx *property, const AppDacInfo *info
 
     /* /mnt/sandbox/<currentUser/<bundleName>/storage/Users */
     char storageUserPath[PATH_MAX_LEN] = {0};
-    ret = snprintf_s(storageUserPath, PATH_MAX_LEN, PATH_MAX_LEN - 1, "/mnt/sandbox/%d/%s/storage/Users",
+    ret = snprintf_s(storageUserPath, PATH_MAX_LEN, PATH_MAX_LEN - 1, "/mnt/sandbox/%u/%s/storage/Users",
                      info->uid / UID_BASE, bundleName);
     if (ret <= 0) {
         APPSPAWN_LOGE("snprintf storageUserPath failed, errno %{public}d", errno);
@@ -358,7 +358,7 @@ static int MountSharedMapItem(const AppSpawningCtx *property, const AppDacInfo *
 {
     /* /mnt/sandbox/<currentUserId>/<bundleName>/data/storage/el<x> */
     char sandboxPath[PATH_MAX_LEN] = {0};
-    int ret = snprintf_s(sandboxPath, PATH_MAX_LEN, PATH_MAX_LEN - 1, "/mnt/sandbox/%d/%s%s",
+    int ret = snprintf_s(sandboxPath, PATH_MAX_LEN, PATH_MAX_LEN - 1, "/mnt/sandbox/%u/%s%s",
                          info->uid / UID_BASE, bundleName, sandboxPathItem);
     if (ret <= 0) {
         APPSPAWN_LOGE("snprintf sandboxPath failed, errno %{public}d", errno);
@@ -485,7 +485,7 @@ static int ParseDataGroupList(AppSpawnMgr *content, const AppSpawningCtx *proper
         std::string srcPath = item[GROUPLIST_KEY_DIR];
         APPSPAWN_CHECK(!CheckPath(srcPath), return -1, "src path %{public}s is invalid", srcPath.c_str());
 
-        uint32_t elxValue = GetElxInfoFromDir(srcPath.c_str());
+        int elxValue = GetElxInfoFromDir(srcPath.c_str());
         APPSPAWN_CHECK((elxValue >= EL2 && elxValue < ELX_MAX), return -1, "Get elx value failed");
         
         const DataGroupSandboxPathTemplate *templateItem = GetDataGroupArgTemplate(elxValue);
