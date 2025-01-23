@@ -279,11 +279,12 @@ APPSPAWN_STATIC int DoDlopenLibs(const cJSON *root, ParseJsonContext *context)
     uint32_t libsCount = (uint32_t)cJSON_GetArraySize(systemLibs);
     for (uint32_t i = 0; i < libsCount; ++i) {
         const char *libName = cJSON_GetStringValue(cJSON_GetArrayItem(systemLibs, i));
-        if (libName == nullptr) {
+        char reaLibPath[PATH_MAX] = {0};
+        if (libName == nullptr || realpath(libName, reaLibPath) == nullptr) {
             continue;
         }
-        APPSPAWN_LOGV("libName %{public}s", libName);
-        void *lib = dlopen(libName, RTLD_LAZY);
+        APPSPAWN_LOGV("reaLibPath %{public}s", reaLibPath);
+        void *lib = dlopen(reaLibPath, RTLD_LAZY);
         if (lib == nullptr) {
             APPSPAWN_LOGE("FAILED to dlopen %{public}s %{public}s", libName, dlerror());
         }
