@@ -219,6 +219,37 @@ static void MakeDirRecursive(const std::string &path, mode_t mode)
     } while (index < size);
 }
 
+static void MakeDirRecursiveWithClock(const std::string &path, mode_t mode)
+{
+    size_t size = path.size();
+    if (size == 0) {
+        return;
+    }
+#ifdef APPSPAWN_HISYSEVENT
+    struct timespec startClock = {0};
+    clock_gettime(CLOCK_MONOTONIC, &startClock);
+#endif
+    size_t index = 0;
+    do {
+        size_t pathIndex = path.find_first_of('/', index);
+        index = pathIndex == std::string::npos ? size : pathIndex + 1;
+        std::string dir = path.substr(0, index);
+#ifndef APPSPAWN_TEST
+        APPSPAWN_CHECK(!(access(dir.c_str(), F_OK) < 0 && mkdir(dir.c_str(), mode) < 0),
+            return, "errno is %{public}d, mkdir %{public}s failed", errno, dir.c_str());
+#endif
+    } while (index < size);
+
+#ifdef APPSPAWN_HISYSEVENT
+    struct timespec endClock = {0};
+    clock_gettime(CLOCK_MONOTONIC, &endClock);
+    uint64_t diff = DiffTime(&startClock, &endClock);
+
+    APPSPAWN_CHECK_ONLY_EXPER(diff < FUNC_REPORT_DURATION,
+        ReportAbnormalDuration("MakeDirRecursive", diff));
+#endif
+}
+
 static bool CheckDirRecursive(const std::string &path)
 {
     size_t size = path.size();
@@ -282,6 +313,9 @@ int32_t SandboxUtils::DoAppSandboxMountOnce(const char *originPath, const char *
     clock_gettime(CLOCK_MONOTONIC, &mountEnd);
     uint64_t diff = DiffTime(&mountStart, &mountEnd);
     APPSPAWN_CHECK_ONLY_LOG(diff < MAX_MOUNT_TIME, "mount %{public}s time %{public}" PRId64 " us", originPath, diff);
+#ifdef APPSPAWN_HISYSEVENT
+    APPSPAWN_CHECK_ONLY_EXPER(diff < FUNC_REPORT_DURATION, ReportAbnormalDuration("MOUNT", diff));
+#endif
     if (ret != 0) {
         APPSPAWN_LOGI("errno is: %{public}d, bind mount %{public}s to %{public}s", errno, originPath, destinationPath);
         std::string originPathStr = originPath == nullptr ? "" : originPath;
@@ -840,6 +874,10 @@ int SandboxUtils::DoAllMntPointsMount(const AppSpawningCtx *appProperty,
             if (actionStatus == g_statusCheck) {
                 APPSPAWN_LOGE("DoAppSandboxMountOnce section %{public}s failed, %{public}s",
                     section.c_str(), sandboxPath.c_str());
+#ifdef APPSPAWN_HISYSEVENT
+                ReportMountFail(bundleName.c_str(), srcPath.c_str(), sandboxPath.c_str(), errno);
+                ret = APPSPAWN_SANDBOX_MOUNT_FAIL;
+#endif
                 return ret;
             }
         }
@@ -1584,9 +1622,19 @@ int32_t SandboxUtils::ChangeCurrentDir(std::string &sandboxPackagePath, const st
     return ret;
 }
 
-static inline int EnableSandboxNamespace(AppSpawningCtx *appProperty, uint32_t sandboxNsFlags)
+static int EnableSandboxNamespace(AppSpawningCtx *appProperty, uint32_t sandboxNsFlags)
 {
+#ifdef APPSPAWN_HISYSEVENT
+    struct timespec startClock = {0};
+    clock_gettime(CLOCK_MONOTONIC, &startClock);
+#endif
     int rc = unshare(sandboxNsFlags);
+#ifdef APPSPAWN_HISYSEVENT
+    struct timespec endClock = {0};
+    clock_gettime(CLOCK_MONOTONIC, &endClock);
+    uint64_t diff = DiffTime(&startClock, &endClock);
+    APPSPAWN_CHECK_ONLY_EXPER(diff < FUNC_REPORT_DURATION, ReportAbnormalDuration("unshare", diff));
+#endif
     APPSPAWN_CHECK(rc == 0, return rc, "unshare failed, packagename is %{public}s", GetBundleName(appProperty));
 
     if ((sandboxNsFlags & CLONE_NEWNET) == CLONE_NEWNET) {
@@ -1632,16 +1680,14 @@ int32_t SandboxUtils::SetAppSandboxProperty(AppSpawningCtx *appProperty, uint32_
         ACCESS_DLP_FILE_MODE.c_str()))) != 0);
     sandboxPackagePath += CheckAppMsgFlagsSet(appProperty, APP_FLAGS_ISOLATED_SANDBOX_TYPE) ? "isolated/" : "";
     sandboxPackagePath += bundleName;
-    MakeDirRecursive(sandboxPackagePath.c_str(), FILE_MODE);
+    MakeDirRecursiveWithClock(sandboxPackagePath.c_str(), FILE_MODE);
 
     // add pid to a new mnt namespace
     int rc = EnableSandboxNamespace(appProperty, sandboxNsFlags);
     APPSPAWN_CHECK(rc == 0, return rc, "unshare failed, packagename is %{public}s", bundleName.c_str());
-
     if (SetPermissionWithParam(appProperty) != 0) {
         APPSPAWN_LOGW("Set app permission flag fail.");
     }
-
     // check app sandbox switch
     if ((CheckTotalSandboxSwitchStatus(appProperty) == false) ||
         (CheckAppSandboxSwitchStatus(appProperty) == false)) {
@@ -1671,7 +1717,7 @@ int32_t SandboxUtils::SetAppSandboxPropertyNweb(AppSpawningCtx *appProperty, uin
     const std::string bundleName = GetBundleName(appProperty);
     bool sandboxSharedStatus = GetSandboxPrivateSharedStatus(bundleName, appProperty);
     sandboxPackagePath += bundleName;
-    MakeDirRecursive(sandboxPackagePath.c_str(), FILE_MODE);
+    MakeDirRecursiveWithClock(sandboxPackagePath.c_str(), FILE_MODE);
 
     // add pid to a new mnt namespace
     int rc = EnableSandboxNamespace(appProperty, sandboxNsFlags);
