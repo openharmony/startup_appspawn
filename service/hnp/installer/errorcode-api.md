@@ -12,7 +12,7 @@ params is invalid.
 
 **错误描述**
 
-参数非法
+参数非法。
 
 **可能原因**
 
@@ -20,7 +20,7 @@ params is invalid.
 
 **处理步骤**
 
-检查传入的参数是否正确
+检查传入的参数是否正确。
 
 
 ## 0x2002 fork子进程失败
@@ -63,7 +63,7 @@ wait pid unsuccess.
 
 **错误信息**
 
-native package install/uninstall not in developer mode。
+native package install/uninstall not in developer mode.
 
 **错误描述**
 
@@ -71,11 +71,11 @@ native package install/uninstall not in developer mode。
 
 **可能原因**
 
-当前为非开发者模式
+当前为非开发者模式。
 
 **处理步骤**
 
-打开开发者模式进行接口请求
+打开开发者模式进行接口请求。
 
 ## 0x2005 创建管道失败
 
@@ -85,7 +85,7 @@ pipe fd unsuccess.
 
 **错误描述**
 
-创建pipe管道失败
+创建pipe管道失败。
 
 **可能原因**
 
@@ -107,11 +107,11 @@ read stream unsuccess.
 
 **可能原因**
 
-系统禁止管道输出
+系统禁止管道输出。
 
 **处理步骤**
 
-查看权限
+查看权限。
 
 ## 0x2007 获取返回码失败
 
@@ -125,7 +125,7 @@ get return unsuccess.
 
 **可能原因**
 
-输出影响
+输出影响。
 
 **处理步骤**
 
@@ -143,7 +143,7 @@ mem move unsuccess.
 
 **可能原因**
 
-系统内部原因
+系统内部原因。
 
 **处理步骤**
 
