@@ -1415,7 +1415,7 @@ int32_t SandboxUtils::MountAllGroup(const AppSpawningCtx *appProperty, std::stri
         std::string srcPath = item[g_groupList_key_dir];
         APPSPAWN_CHECK(!CheckPath(srcPath), return -1, "MountAllGroup: path error");
 
-        uint32_t elxValue = GetElxInfoFromDir(srcPath.c_str());
+        int elxValue = GetElxInfoFromDir(srcPath.c_str());
         APPSPAWN_CHECK((elxValue >= EL2 && elxValue < ELX_MAX), return -1, "Get elx value failed");
         
         const DataGroupSandboxPathTemplate *templateItem = GetDataGroupArgTemplate(elxValue);
