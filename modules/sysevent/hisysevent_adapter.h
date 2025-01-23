@@ -73,6 +73,7 @@ typedef enum {
     ERR_APPSPAWN_SPAWN_FAIL = ERR_APPSPAWN_BASE + 0x0381,
     ERR_APPSPAWN_SPAWN_TIMEOUT,
     ERR_APPSPAWN_CHILD_CRASH,
+    ERR_APPSPAWN_CHILD_MOUNT_FAILED,
     ERR_APPSPAWN_MAX_FAILURES_EXCEEDED,
 } AppSpawnHisysErrorCode;
 
@@ -88,12 +89,23 @@ typedef struct {
     AppSpawnHisysevent manualEvent; // bootFinished
 } AppSpawnHisyseventInfo;
 
+#define FUNC_REPORT_DURATION (20 * 1000)
+#define SPAWN_DURATION (120 * 1000)
+#define SPAWN_COLDRUN_DURATION (5 * 1000 * 1000)
+
+#define UNLOCK_SUCCESS "UNLOCK_SUCCESS"
+#define LOCK_SUCCESS "LOCK_SUCCESS"
+#define APPSPAWN_MAX_FAILURES_EXCEEDED "APPSPAWN_MAX_FAILURES_EXCEEDED"
 AppSpawnHisyseventInfo *InitHisyseventTimer(void);
 AppSpawnHisyseventInfo *GetAppSpawnHisyseventInfo(void);
 void AddStatisticEventInfo(AppSpawnHisyseventInfo *hisyseventInfo, uint32_t duration, bool stage);
 void DeleteHisyseventInfo(AppSpawnHisyseventInfo *hisyseventInfo);
 
-void ReportSpawnChildProcessFail(const char* processName, int32_t errorCode);
+void ReportSpawnChildProcessFail(const char* processName, int32_t errorCode, int32_t spawnResult);
+void ReportMountFail(const char* bundleName, const char* srcPath, const char* targetPath,
+    int32_t spawnResult);
+void ReportKeyEvent(const char *eventName);
+void ReportAbnormalDuration(const char* funcName, uint64_t duration);
 void ReportSpawnStatisticDuration(const TimerHandle taskHandle, void* content);
 
 #ifdef __cplusplus

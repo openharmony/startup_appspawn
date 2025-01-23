@@ -17,6 +17,13 @@ SPAWN_CHILD_PROCESS_FAIL:
   __BASE: {type: FAULT, level: CRITICAL, desc: Spawn Child Process Fail}
   PROCESS_NAME: {type: STRING, desc: Process Name}
   ERROR_CODE: {type: INT32, desc: Error Code}
+  SRC_PATH : {type: STRING, desc: Source Path For Mount Failed}
+  TARGET_PATH: {type: STRING, desc: Target Path For Mount Failed}
+  SPAWN_RESULT : {type: INT32, desc: Process Spawn Result}
+
+SPAWN_KEY_EVENT:
+  __BASE: {type: BEHAVIOR, level: CRITICAL, desc: Spawn Key Event Finish}
+  EVENT_NAME: {type: STRING, desc: Event Name}
 
 SPAWN_PROCESS_DURATION:
   __BASE: {type: STATISTIC, level: CRITICAL, desc: Boot Process Duration}
@@ -25,3 +32,8 @@ SPAWN_PROCESS_DURATION:
   TOTALDURATION: {type: INT64, desc: Total Spawn Process Duration}
   EVENTCOUNT: {type: INT64, desc: Total Spawn Process Count}
   STAGE: {type: STRING, desc: Boot Stage Or BootFinished Stage}
+
+SPAWN_ABNORMAL_DURATION:
+  __BASE: {type: BEHAVIOR, level: CRITICAL, desc: Scene Duration}
+  SCENE_NAME: {type: STRING, desc: Scene Name}
+  DURATION: {type: INT64, desc: Scene Duration}

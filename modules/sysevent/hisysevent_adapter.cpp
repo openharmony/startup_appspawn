@@ -19,13 +19,28 @@
 
 using namespace OHOS::HiviewDFX;
 namespace {
-// event
-constexpr const char* SPAWN_PROCESS_DURATION = "SPAWN_PROCESS_DURATION";
+// fail event
 constexpr const char* SPAWN_CHILD_PROCESS_FAIL = "SPAWN_CHILD_PROCESS_FAIL";
+
+// behavior event
+constexpr const char* SPAWN_KEY_EVENT = "SPAWN_KEY_EVENT";
+constexpr const char* SPAWN_ABNORMAL_DURATION = "SPAWN_ABNORMAL_DURATION";
+
+// statistic event
+constexpr const char* SPAWN_PROCESS_DURATION = "SPAWN_PROCESS_DURATION";
 
 // param
 constexpr const char* PROCESS_NAME = "PROCESS_NAME";
 constexpr const char* ERROR_CODE = "ERROR_CODE";
+constexpr const char* SPAWN_RESULT = "SPAWN_RESULT";
+constexpr const char* SRC_PATH = "SRC_PATH";
+constexpr const char* TARGET_PATH = "TARGET_PATH";
+
+constexpr const char* EVENT_NAME = "EVENT_NAME";
+
+constexpr const char* SCENE_NAME = "SCENE_NAME";
+constexpr const char* DURATION = "DURATION";
+
 constexpr const char* MAXDURATION = "MAXDURATION";
 constexpr const char* MINDURATION = "MINDURATION";
 constexpr const char* TOTALDURATION = "TOTALDURATION";
@@ -121,14 +136,60 @@ AppSpawnHisyseventInfo *InitHisyseventTimer(void)
     return hisyseventInfo;
 }
 
-void ReportSpawnChildProcessFail(const char* processName, int32_t errorCode)
+void ReportSpawnChildProcessFail(const char* processName, int32_t errorCode, int32_t spawnResult)
 {
+    if (spawnResult == APPSPAWN_SANDBOX_MOUNT_FAIL) {
+        return;
+    }
     int ret = HiSysEventWrite(HiSysEvent::Domain::APPSPAWN, SPAWN_CHILD_PROCESS_FAIL,
         HiSysEvent::EventType::FAULT,
         PROCESS_NAME, processName,
-        ERROR_CODE, errorCode);
+        ERROR_CODE, errorCode,
+        SPAWN_RESULT, spawnResult);
     if (ret != 0) {
-        APPSPAWN_LOGE("HiSysEventWrite error, ret: %{public}d", ret);
+        APPSPAWN_LOGE("ReportSpawnChildProcessFail error, ret: %{public}d", ret);
+    }
+}
+
+void ReportMountFail(const char* bundleName, const char* srcPath, const char* targetPath,
+    int32_t spawnResult)
+{
+    if (srcPath == nullptr || (strstr(srcPath, "data/app/el1/") == nullptr &&
+        strstr(srcPath, "data/app/el2/") == nullptr)) {
+        return;
+    }
+    int ret = HiSysEventWrite(HiSysEvent::Domain::APPSPAWN, SPAWN_CHILD_PROCESS_FAIL,
+        HiSysEvent::EventType::FAULT,
+        PROCESS_NAME, bundleName,
+        ERROR_CODE, ERR_APPSPAWN_CHILD_MOUNT_FAILED,
+        SRC_PATH, srcPath,
+        TARGET_PATH, targetPath,
+        SPAWN_RESULT, spawnResult);
+    if (ret != 0) {
+        APPSPAWN_LOGE("ReportMountFail error, ret: %{public}d", ret);
+    }
+}
+
+void ReportKeyEvent(const char *eventName)
+{
+    int ret = HiSysEventWrite(HiSysEvent::Domain::APPSPAWN, SPAWN_KEY_EVENT,
+        HiSysEvent::EventType::BEHAVIOR,
+        EVENT_NAME, eventName);
+    if (ret != 0) {
+        APPSPAWN_LOGE("ReportKeyEvent error, ret: %{public}d", ret);
+    }
+}
+
+void ReportAbnormalDuration(const char* scene, uint64_t duration)
+{
+    APPSPAWN_LOGI("ReportAbnormalDuration %{public}d with %{public}s  %{public}" PRId64 " us",
+        getpid(), scene, duration);
+    int ret = HiSysEventWrite(HiSysEvent::Domain::APPSPAWN, SPAWN_ABNORMAL_DURATION,
+        HiSysEvent::EventType::BEHAVIOR,
+        SCENE_NAME, scene,
+        DURATION, duration);
+    if (ret != 0) {
+        APPSPAWN_LOGE("ReportAbnormalDuration error, ret: %{public}d", ret);
     }
 }
 
@@ -142,7 +203,7 @@ void ReportSpawnProcessDuration(AppSpawnHisysevent *hisysevent, const char* stag
         EVENTCOUNT, hisysevent->eventCount,
         STAGE, stage);
     if (ret != 0) {
-        APPSPAWN_LOGE("HiSysEventWrite error, ret: %{public}d", ret);
+        APPSPAWN_LOGE("ReportSpawnProcessDuration error, ret: %{public}d", ret);
     }
 }
 
