@@ -943,7 +943,7 @@ static void WaitChildDied(pid_t pid)
         APPSPAWN_LOGI("Child process %{public}s fail \'child crash \'pid %{public}d appId: %{public}d",
             processName, property->pid, property->client.id);
 #ifdef APPSPAWN_HISYSEVENT
-        ReportSpawnChildProcessFail(processName, ERR_APPSPAWN_CHILD_CRASH);
+        ReportSpawnChildProcessFail(processName, ERR_APPSPAWN_CHILD_CRASH, APPSPAWN_CHILD_CRASH);
 #endif
         if (property->client.id == g_lastDiedAppId + 1) {
             g_crashTimes++;
@@ -958,7 +958,7 @@ static void WaitChildDied(pid_t pid)
         if (g_crashTimes >= MAX_CRASH_TIME) {
             APPSPAWN_LOGW("Continuous failures in spawning the app, restart appspawn");
 #ifdef APPSPAWN_HISYSEVENT
-            ReportSpawnChildProcessFail(processName, ERR_APPSPAWN_MAX_FAILURES_EXCEEDED);
+            ReportKeyEvent(APPSPAWN_MAX_FAILURES_EXCEEDED);
 #endif
             StopAppSpawn();
         }
@@ -977,7 +977,7 @@ static void WaitChildTimeout(const TimerHandle taskHandle, void *context)
         kill(property->pid, SIGKILL);
     }
 #ifdef APPSPAWN_HISYSEVENT
-    ReportSpawnChildProcessFail(GetProcessName(property), ERR_APPSPAWN_SPAWN_TIMEOUT);
+    ReportSpawnChildProcessFail(GetProcessName(property), ERR_APPSPAWN_SPAWN_TIMEOUT, APPSPAWN_SPAWN_TIMEOUT);
 #endif
     SendResponse(property->message->connection, &property->message->msgHeader, APPSPAWN_SPAWN_TIMEOUT, 0);
     DeleteAppSpawningCtx(property);
@@ -993,7 +993,7 @@ static int ProcessChildFdCheck(int fd, AppSpawningCtx *property)
 
     if (result != 0) {
 #ifdef APPSPAWN_HISYSEVENT
-        ReportSpawnChildProcessFail(GetProcessName(property), ERR_APPSPAWN_SPAWN_FAIL);
+        ReportSpawnChildProcessFail(GetProcessName(property), ERR_APPSPAWN_SPAWN_FAIL, result);
 #endif
         SendResponse(property->message->connection, &property->message->msgHeader, result, property->pid);
         DeleteAppSpawningCtx(property);
@@ -1038,6 +1038,11 @@ static void ProcessChildResponse(const WatcherHandle taskHandle, int fd, uint32_
         if (appspawnMgr != NULL) {
             AddStatisticEventInfo(appspawnMgr->hisyseventInfo, spawnProcessDuration, IsBootFinished());
         }
+#ifndef ASAN_DETECTOR
+        uint64_t diff = DiffTime(&appInfo->spawnStart, &appInfo->spawnEnd);
+        APPSPAWN_CHECK_ONLY_EXPER(diff < (IsChildColdRun(property) ? SPAWN_COLDRUN_DURATION : SPAWN_DURATION),
+            ReportAbnormalDuration("SPAWNCHILD", diff));
+#endif
 #endif
     }
 
@@ -1685,6 +1690,9 @@ static void ProcessAppSpawnLockStatusMsg(AppSpawnMsgNode *message)
     APPSPAWN_CHECK(ret > 0, return, "get lock status param failed, errno %{public}d", errno);
     ret = SetParameter(lockStatusParam, userLockStatus);
     APPSPAWN_CHECK(ret == 0, return, "failed to set lockstatus param value ret %{public}d", ret);
+#ifdef APPSPAWN_HISYSEVENT
+    ReportKeyEvent(strcmp(userLockStatus, "0") == 0 ? UNLOCK_SUCCESS : LOCK_SUCCESS);
+#endif
 #ifndef APPSPAWN_SANDBOX_NEW
     if (strcmp(userLockStatus, "0") == 0) {
         ServerStageHookExecute(STAGE_SERVER_LOCK, GetAppSpawnContent());
