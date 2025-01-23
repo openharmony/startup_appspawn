@@ -608,4 +608,32 @@ HWTEST_F(AppSpawnInterfaceTest, App_Spawn_Interface_NWeb, TestSize.Level0)
     EXPECT_GE(pid, 0);
 }
 
+/**
+ * @brief 测试接口：SpawnListenFdSet
+ *
+ */
+HWTEST_F(AppSpawnInterfaceTest, App_SpawnListenFdSet_001, TestSize.Level0)
+{
+    int ret = SpawnListenFdSet(-1);
+    EXPECT_EQ(ret, APPSPAWN_ARG_INVALID);
+
+    int pipefd[2];
+    EXPECT_EQ(pipe(pipefd), 0);
+
+    ret = SpawnListenFdSet(pipefd[1]);
+    EXPECT_EQ(ret, 0);
+    
+    close(pipefd[0]);
+    close(pipefd[1]);
+}
+
+/**
+ * @brief 测试接口：SpawnListenCloseSet
+ *
+ */
+HWTEST_F(AppSpawnInterfaceTest, App_SpawnListenCloseSet_001, TestSize.Level0)
+{
+    int ret = SpawnListenCloseSet();
+    EXPECT_EQ(ret, 0);
+}
 }  // namespace OHOS
