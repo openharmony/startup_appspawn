@@ -1780,6 +1780,7 @@ APPSPAWN_STATIC void ProcessObserveProcessSignalMsg(AppSpawnConnection *connecti
 
     AppSpawnContent *content = GetAppSpawnContent();
     content->signalFd = fd;
+    connection->receiverCtx.fdCount = 0;
     SendResponse(connection, &message->msgHeader, 0, 0);
     DeleteAppSpawnMsg(message);
 }
