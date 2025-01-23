@@ -641,6 +641,108 @@ HWTEST_F(AppSpawnServiceTest, App_Spawn_Msg_010, TestSize.Level0)
     ASSERT_EQ(result.result, 0);
 }
 
+HWTEST_F(AppSpawnServiceTest, App_Spawn_Msg_011, TestSize.Level0)
+{
+    int ret = 0;
+    AppSpawnClientHandle clientHandle = nullptr;
+    AppSpawnResult result = {};
+    do {
+        int pipefd[2]; // 2 pipe fd
+        char buffer[1024]; //1024 1k
+        APPSPAWN_CHECK(pipe(pipefd) == 0, break, "Failed to pipe fd errno:%{public}d", errno);
+        ret = SpawnListenFdSet(pipefd[0]);
+
+        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", APPSPAWN_SERVER_NAME);
+        AppSpawnReqMsgHandle reqHandle = testServer->CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+
+        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_DEBUGGABLE);
+        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_NATIVEDEBUG);
+        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_BUNDLE_RESOURCES);
+        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_ACCESS_BUNDLE_DIR);
+
+        ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to send msg %{public}d", ret);
+        AppSpawnClientDestroy(clientHandle);
+        sleep(1); // wait child process stand up
+
+        AppSpawnedProcess *app = GetSpawnedProcessByName(testServer->GetDefaultTestAppBundleName());
+        ASSERT_NE(app, nullptr);
+        char commamd[16]; // command len 16
+        APPSPAWN_CHECK(sprintf_s(commamd, 16, "kill -9 %d", app->pid) > 0, break, "sprintf command unsuccess");
+        system(commamd);
+
+        bool isFind = false;
+        int count = 0;
+        while (count < 10) {
+            if (read(pipefd[1], buffer, sizeof(buffer)) <= 0) {
+                count++;
+                continue;
+            }
+            if (strstr(buffer, std::to_string(app->pid).c_str()) != NULL) {
+                isFind = true;
+                break;
+            }
+            count++;
+        }
+        close(pipefd[0]);
+        close(pipefd[1]);
+        ASSERT_EQ(isFind, false);
+        SpawnListenCloseSet();
+    } while (0);
+}
+
+HWTEST_F(AppSpawnServiceTest, App_Spawn_Msg_012, TestSize.Level0)
+{
+    int ret = 0;
+    AppSpawnClientHandle clientHandle = nullptr;
+    AppSpawnResult result = {};
+    do {
+        int pipefd[2]; // 2 pipe fd
+        char buffer[1024]; //1024 1k
+        APPSPAWN_CHECK(pipe(pipefd) == 0, break, "Failed to pipe fd errno:%{public}d", errno);
+        ret = SpawnListenFdSet(pipefd[1]);
+
+        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", APPSPAWN_SERVER_NAME);
+        AppSpawnReqMsgHandle reqHandle = testServer->CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+
+        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_DEBUGGABLE);
+        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_NATIVEDEBUG);
+        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_BUNDLE_RESOURCES);
+        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_ACCESS_BUNDLE_DIR);
+
+        ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to send msg %{public}d", ret);
+        AppSpawnClientDestroy(clientHandle);
+        sleep(1); // wait child process stand up
+
+        AppSpawnedProcess *app = GetSpawnedProcessByName(testServer->GetDefaultTestAppBundleName());
+        ASSERT_NE(app, nullptr);
+        char commamd[16]; // command len 16
+        APPSPAWN_CHECK(sprintf_s(commamd, 16, "kill -9 %d", app->pid) > 0, break, "sprintf command unsuccess");
+        system(commamd);
+
+        bool isFind = false;
+        int count = 0;
+        while (count < 10) {
+            if (read(pipefd[0], buffer, sizeof(buffer)) <= 0) {
+                count++;
+                continue;
+            }
+            if (strstr(buffer, std::to_string(app->pid).c_str()) != NULL) {
+                isFind = true;
+                break;
+            }
+            count++;
+        }
+        close(pipefd[0]);
+        close(pipefd[1]);
+        ASSERT_EQ(isFind, false);
+        SpawnListenCloseSet();
+    } while (0);
+}
+
 /**
  * @brief 必须最后一个，kill nwebspawn，appspawn的线程结束
  *

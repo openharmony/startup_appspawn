@@ -64,6 +64,7 @@ typedef struct AppSpawnContent {
     bool isLinux;
     int sandboxType;
     RunMode mode;
+    int signalFd;
 #ifndef OHOS_LITE
     int32_t preforkFd[2];
     int32_t parentToChildFd[2];
