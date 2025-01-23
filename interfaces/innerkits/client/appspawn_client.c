@@ -284,6 +284,11 @@ static int ClientSendMsg(AppSpawnReqMsgMgr *reqMgr, AppSpawnReqMsgNode *reqNode,
                 continue;
             }
         }
+        if (reqNode->msg->msgType != MSG_OBSERVE_PROCESS_SIGNAL_STATUS) {
+            pthread_mutex_lock(&g_spawnListenMutex);
+            SpawnListen(reqMgr, reqNode->msg->processName);
+            pthread_mutex_unlock(&g_spawnListenMutex);
+        }
         if (isColdRun && reqMgr->timeout < ASAN_TIMEOUT) {
             UpdateSocketTimeout(ASAN_TIMEOUT, reqMgr->socketId);
         }
@@ -298,11 +303,6 @@ static int ClientSendMsg(AppSpawnReqMsgMgr *reqMgr, AppSpawnReqMsgNode *reqNode,
         if (ret == 0) {
             if (isColdRun && reqMgr->timeout < ASAN_TIMEOUT) {
                 UpdateSocketTimeout(reqMgr->timeout, reqMgr->socketId);
-            }
-            if (reqNode->msg->msgType != MSG_OBSERVE_PROCESS_SIGNAL_STATUS) {
-                pthread_mutex_lock(&g_spawnListenMutex);
-                SpawnListen(reqMgr, reqNode->msg->processName);
-                pthread_mutex_unlock(&g_spawnListenMutex);
             }
             return 0;
         }

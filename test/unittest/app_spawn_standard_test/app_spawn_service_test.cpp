@@ -738,7 +738,7 @@ HWTEST_F(AppSpawnServiceTest, App_Spawn_Msg_012, TestSize.Level0)
         }
         close(pipefd[0]);
         close(pipefd[1]);
-        ASSERT_EQ(isFind, false);
+        ASSERT_EQ(isFind, true);
         SpawnListenCloseSet();
     } while (0);
 }
