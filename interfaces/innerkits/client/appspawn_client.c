@@ -327,8 +327,7 @@ APPSPAWN_STATIC void SpawnListen(AppSpawnReqMsgMgr *reqMgr, const char *processN
     APPSPAWN_CHECK((type == CLIENT_FOR_APPSPAWN), return, "Invalid type");
     APPSPAWN_CHECK(processName != NULL, return, "Invalid process name");
 
-    APPSPAWN_LOGI("Spawn Listen start type:%{public}d,fd:%{public}d,start:%{public}d", type, g_spawnListenFd,
-        g_spawnListenStart);
+    APPSPAWN_LOGI("Spawn Listen start type:%{public}d,fd:%{public}d", type, g_spawnListenFd);
 
     AppSpawnReqMsgHandle reqHandle;
     int ret = AppSpawnReqMsgCreate(MSG_OBSERVE_PROCESS_SIGNAL_STATUS, processName, &reqHandle);
