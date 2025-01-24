@@ -119,7 +119,7 @@
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
-                    "src-path" : "/data/app/el2/<currentUserId>/log/<PackageName>",
+                    "src-path" : "/data/app/el2/<currentUserId>/log/<variablePackageName>",
                     "sandbox-path" : "/data/storage/el2/log",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
