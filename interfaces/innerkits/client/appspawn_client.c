@@ -344,8 +344,7 @@ APPSPAWN_STATIC void SpawnListen(AppSpawnReqMsgMgr *reqMgr, const char *processN
     APPSPAWN_CHECK(result.result == 0, return, "Appspawn failed to handle message, result=%{public}d", result.result);
 
     g_spawnListenStart = true;
-    APPSPAWN_LOGI("Spawn Listen client type[%{public}d]] Send fd[%{public}d] success", type, g_spawnListenFd);
-    return;
+    APPSPAWN_LOGI("Spawn Listen client type[%{public}d] Send fd[%{public}d] success", type, g_spawnListenFd);
 }
 
 int AppSpawnClientInit(const char *serviceName, AppSpawnClientHandle *handle)

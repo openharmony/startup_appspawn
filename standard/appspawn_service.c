@@ -130,14 +130,44 @@ static void StopAppSpawn(void)
     LE_StopLoop(LE_GetDefaultLoop());
 }
 
-static inline void DumpStatus(const char *appName, pid_t pid, int status)
+static inline void DumpStatus(const char *appName, pid_t pid, int status, int *signal)
 {
     if (WIFSIGNALED(status)) {
-        APPSPAWN_LOGW("%{public}s with pid %{public}d exit with signal:%{public}d", appName, pid, WTERMSIG(status));
+        *signal = WTERMSIG(status);
+        APPSPAWN_LOGW("%{public}s with pid %{public}d exit with signal:%{public}d", appName, pid, *signal);
     }
     if (WIFEXITED(status)) {
-        APPSPAWN_LOGW("%{public}s with pid %{public}d exit with code:%{public}d", appName, pid, WEXITSTATUS(status));
+        *signal = WEXITSTATUS(status);
+        APPSPAWN_LOGW("%{public}s with pid %{public}d exit with code:%{public}d", appName, pid, *signal);
     }
+}
+
+APPSPAWN_STATIC void WriteSignalInfoToFd(pid_t pid, uid_t uid, int signal)
+{
+    AppSpawnContent *content = GetAppSpawnContent();
+    APPSPAWN_CHECK(content->signalFd > 0, return, "Invalid signal fd[%{public}d]", content->signalFd);
+    APPSPAWN_CHECK(pid > 0, return, "Invalid pid[%{public}d]", pid);
+    APPSPAWN_CHECK(uid > 0, return, "Invalid uid[%{public}d]", uid);
+
+    cJSON *root = cJSON_CreateObject();
+    if (root == NULL) {
+        APPSPAWN_LOGE("signal json write create root object unsuccess");
+        return;
+    }
+    cJSON_AddNumberToObject(root, "pid", pid);
+    cJSON_AddNumberToObject(root, "uid", uid);
+    cJSON_AddNumberToObject(root, "signal", signal);
+    char *jsonString = cJSON_Print(root);
+    cJSON_Delete(root);
+
+    int ret = write(content->signalFd, jsonString, strlen(jsonString) + 1);
+    if (ret < 0) {
+        free(jsonString);
+        APPSPAWN_LOGE("Spawn Listen failed to write signal info to fd errno %{public}d", errno);
+        return;
+    }
+    APPSPAWN_LOGI("Spawn Listen successfully write signal info[%{public}s] to fd", jsonString);
+    free(jsonString);
 }
 
 static void HandleDiedPid(pid_t pid, uid_t uid, int status)
@@ -149,16 +179,18 @@ static void HandleDiedPid(pid_t pid, uid_t uid, int status)
         APPSPAWN_LOGW("HandleDiedPid with reservedPid %{public}d", pid);
         content->reservedPid = 0;
     }
+    int signal = 0;
     AppSpawnedProcess *appInfo = GetSpawnedProcess(pid);
     if (appInfo == NULL) { // If an exception occurs during app spawning, kill pid, return failed
         WaitChildDied(pid);
-        DumpStatus("unknown", pid, status);
+        DumpStatus("unknown", pid, status, &signal);
         return;
     }
 
     appInfo->exitStatus = status;
     APPSPAWN_CHECK_ONLY_LOG(appInfo->uid == uid, "Invalid uid %{public}u %{public}u", appInfo->uid, uid);
-    DumpStatus(appInfo->name, pid, status);
+    DumpStatus(appInfo->name, pid, status, &signal);
+    WriteSignalInfoToFd(pid, appInfo->uid, signal);
     ProcessMgrHookExecute(STAGE_SERVER_APP_DIED, GetAppSpawnContent(), appInfo);
     ProcessMgrHookExecute(STAGE_SERVER_APP_UMOUNT, GetAppSpawnContent(), appInfo);
 
@@ -174,40 +206,6 @@ static void HandleDiedPid(pid_t pid, uid_t uid, int status)
     TerminateSpawnedProcess(appInfo);
 }
 
-APPSPAWN_STATIC void WriteSignalInfoToFd(pid_t pid, int status)
-{
-    AppSpawnContent *content = GetAppSpawnContent();
-    APPSPAWN_CHECK(content->signalFd > 0, return, "Invalid signal fd[%{public}d]", content->signalFd);
-    APPSPAWN_CHECK(pid > 0, return, "Invalid pid[%{public}d]", pid);
-
-    int signal = 0;
-    if (WIFSIGNALED(status)) {
-        signal =  WTERMSIG(status);
-    }
-    if (WIFEXITED(status)) {
-        signal = WEXITSTATUS(status);
-    }
-
-    cJSON *root = cJSON_CreateObject();
-    if (root == NULL) {
-        APPSPAWN_LOGE("signal json write create root object unsuccess");
-        return;
-    }
-    cJSON_AddNumberToObject(root, "pid", pid);
-    cJSON_AddNumberToObject(root, "signal", signal);
-    char *jsonString = cJSON_Print(root);
-    cJSON_Delete(root);
-
-    int ret = write(content->signalFd, jsonString, strlen(jsonString) + 1);
-    if (ret < 0) {
-        free(jsonString);
-        APPSPAWN_LOGE("Spawn Listen failed to write signal info to fd errno %{public}d", errno);
-        return;
-    }
-    APPSPAWN_LOGI("Spawn Listen successfully write signal info[%{public}s] to fd", jsonString);
-    free(jsonString);
-}
-
 APPSPAWN_STATIC void ProcessSignal(const struct signalfd_siginfo *siginfo)
 {
     APPSPAWN_LOGI("ProcessSignal signum %{public}d %{public}d", siginfo->ssi_signo, siginfo->ssi_pid);
@@ -219,7 +217,6 @@ APPSPAWN_STATIC void ProcessSignal(const struct signalfd_siginfo *siginfo)
                 APPSPAWN_CHECK(WIFSIGNALED(status) || WIFEXITED(status), return,
                     "ProcessSignal with wrong status:%{public}d", status);
                 HandleDiedPid(pid, siginfo->ssi_uid, status);
-                WriteSignalInfoToFd(pid, status);
             }
 #if (defined(CJAPP_SPAWN) || defined(NATIVE_SPAWN))
             if (OH_ListGetCnt(&GetAppSpawnMgr()->appQueue) == 0) {
