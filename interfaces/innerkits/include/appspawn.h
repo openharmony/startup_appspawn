@@ -351,7 +351,6 @@ const char *GetPermissionByIndex(AppSpawnClientHandle handle, int32_t index);
  */
 int SpawnListenFdSet(int fd);
 
-
 /**
  * @brief close the listener for child process exit
  *
