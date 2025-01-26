@@ -415,6 +415,22 @@ static inline bool CheckPath(const std::string& name)
     return !name.empty() && name != "." && name != ".." && name.find("/") == std::string::npos;
 }
 
+static int DataGroupCtxNodeCompare(ListNode *node, void *data)
+{
+    DataGroupCtx *existingNode = (DataGroupCtx *)ListEntry(node, DataGroupCtx, node);
+    DataGroupCtx *newNode = (DataGroupCtx *)data;
+    if (existingNode == nullptr || newNode == nullptr) {
+        APPSPAWN_LOGE("Invalid param");
+        return APPSPAWN_ARG_INVALID;
+    }
+
+    // compare src path and sandbox path
+    bool isSrcPathEqual = (strcmp(existingNode->srcPath.path, newNode->srcPath.path) == 0);
+    bool isDestPathEqual = (strcmp(existingNode->destPath.path, newNode->destPath.path) == 0);
+
+    return (isSrcPathEqual && isDestPathEqual) ? 0 : 1;
+}
+
 static int AddDataGroupItemToQueue(AppSpawnMgr *content, const std::string &srcPath, const std::string &destPath,
                                    const std::string &dataGroupUuid)
 {
@@ -429,6 +445,11 @@ static int AddDataGroupItemToQueue(AppSpawnMgr *content, const std::string &srcP
     }
     dataGroupNode->srcPath.pathLen = strlen(dataGroupNode->srcPath.path);
     dataGroupNode->destPath.pathLen = strlen(dataGroupNode->destPath.path);
+    ListNode *node = OH_ListFind(&content->dataGroupCtxQueue, (void*)dataGroupNode, DataGroupCtxNodeCompare);
+    if (node != nullptr) {
+        APPSPAWN_LOGI("DataGroupCtxNode %{public}s is exist", dataGroupNode->srcPath.path);
+        return 0;
+    }
     OH_ListInit(&dataGroupNode->node);
     OH_ListAddTail(&content->dataGroupCtxQueue, &dataGroupNode->node);
     return 0;
