@@ -129,14 +129,46 @@ static void StopAppSpawn(void)
     LE_StopLoop(LE_GetDefaultLoop());
 }
 
-static inline void DumpStatus(const char *appName, pid_t pid, int status)
+static inline void DumpStatus(const char *appName, pid_t pid, int status, int *signal)
 {
     if (WIFSIGNALED(status)) {
-        APPSPAWN_LOGW("%{public}s with pid %{public}d exit with signal:%{public}d", appName, pid, WTERMSIG(status));
+        *signal = WTERMSIG(status);
+        APPSPAWN_LOGW("%{public}s with pid %{public}d exit with signal:%{public}d", appName, pid, *signal);
     }
     if (WIFEXITED(status)) {
-        APPSPAWN_LOGW("%{public}s with pid %{public}d exit with code:%{public}d", appName, pid, WEXITSTATUS(status));
+        *signal = WEXITSTATUS(status);
+        APPSPAWN_LOGW("%{public}s with pid %{public}d exit with code:%{public}d", appName, pid, *signal);
     }
+}
+
+APPSPAWN_STATIC void WriteSignalInfoToFd(AppSpawnedProcess *appInfo, int signal)
+{
+    AppSpawnContent *content = GetAppSpawnContent();
+    APPSPAWN_CHECK(content->signalFd > 0, return, "Invalid signal fd[%{public}d]", content->signalFd);
+    APPSPAWN_CHECK(appInfo->pid > 0, return, "Invalid pid[%{public}d]", appInfo->pid);
+    APPSPAWN_CHECK(appInfo->uid > 0, return, "Invalid uid[%{public}d]", appInfo->uid);
+    APPSPAWN_CHECK(appInfo->name != NULL, return, "Invalid name[%{public}s]", appInfo->name);
+
+    cJSON *root = cJSON_CreateObject();
+    if (root == NULL) {
+        APPSPAWN_LOGE("signal json write create root object unsuccess");
+        return;
+    }
+    cJSON_AddNumberToObject(root, "pid", appInfo->pid);
+    cJSON_AddNumberToObject(root, "uid", appInfo->uid);
+    cJSON_AddNumberToObject(root, "signal", signal);
+    cJSON_AddStringToObject(root, "bundleName", appInfo->name);
+    char *jsonString = cJSON_Print(root);
+    cJSON_Delete(root);
+
+    int ret = write(content->signalFd, jsonString, strlen(jsonString) + 1);
+    if (ret < 0) {
+        free(jsonString);
+        APPSPAWN_LOGE("Spawn Listen failed to write signal info to fd errno %{public}d", errno);
+        return;
+    }
+    APPSPAWN_LOGI("Spawn Listen successfully write signal info[%{public}s] to fd", jsonString);
+    free(jsonString);
 }
 
 static void HandleDiedPid(pid_t pid, uid_t uid, int status)
@@ -148,16 +180,18 @@ static void HandleDiedPid(pid_t pid, uid_t uid, int status)
         APPSPAWN_LOGW("HandleDiedPid with reservedPid %{public}d", pid);
         content->reservedPid = 0;
     }
+    int signal = 0;
     AppSpawnedProcess *appInfo = GetSpawnedProcess(pid);
     if (appInfo == NULL) { // If an exception occurs during app spawning, kill pid, return failed
         WaitChildDied(pid);
-        DumpStatus("unknown", pid, status);
+        DumpStatus("unknown", pid, status, &signal);
         return;
     }
 
     appInfo->exitStatus = status;
     APPSPAWN_CHECK_ONLY_LOG(appInfo->uid == uid, "Invalid uid %{public}u %{public}u", appInfo->uid, uid);
-    DumpStatus(appInfo->name, pid, status);
+    DumpStatus(appInfo->name, pid, status, &signal);
+    WriteSignalInfoToFd(appInfo, signal);
     ProcessMgrHookExecute(STAGE_SERVER_APP_DIED, GetAppSpawnContent(), appInfo);
     ProcessMgrHookExecute(STAGE_SERVER_APP_UMOUNT, GetAppSpawnContent(), appInfo);
 
@@ -1723,6 +1757,64 @@ static void ProcessAppSpawnLockStatusMsg(AppSpawnMsgNode *message)
 #endif
 }
 
+APPSPAWN_STATIC int AppSpawnReqMsgFdGet(AppSpawnConnection *connection, AppSpawnMsgNode *message,
+    const char *fdName, int *fd)
+{
+    APPSPAWN_CHECK_ONLY_EXPER(message != NULL && message->buffer != NULL && connection != NULL, return -1);
+    APPSPAWN_CHECK_ONLY_EXPER(message->tlvOffset != NULL, return -1);
+    int findFdIndex = 0;
+    AppSpawnMsgReceiverCtx recvCtx = connection->receiverCtx;
+    APPSPAWN_CHECK(recvCtx.fds != NULL && recvCtx.fdCount > 0, return 0,
+        "no need get fd info %{public}d, %{public}d", recvCtx.fds != NULL, recvCtx.fdCount);
+
+    for (uint32_t index = TLV_MAX; index < (TLV_MAX + message->tlvCount); index++) {
+        if (message->tlvOffset[index] == INVALID_OFFSET) {
+            return APPSPAWN_SYSTEM_ERROR;
+        }
+        uint8_t *data = message->buffer + message->tlvOffset[index];
+        if (((AppSpawnTlv *)data)->tlvType != TLV_MAX) {
+            continue;
+        }
+        AppSpawnTlvExt *tlv = (AppSpawnTlvExt *)data;
+        if (strcmp(tlv->tlvName, MSG_EXT_NAME_APP_FD) != 0) {
+            continue;
+        }
+        APPSPAWN_CHECK(findFdIndex < recvCtx.fdCount && recvCtx.fds[findFdIndex] > 0, return -1,
+            "check get fd args failed %{public}d, %{public}d, %{public}d",
+            findFdIndex, recvCtx.fdCount, recvCtx.fds[findFdIndex]);
+
+        if (strcmp((const char *)(data + sizeof(AppSpawnTlvExt)), fdName) == 0 && recvCtx.fds[findFdIndex] > 0) {
+            *fd = recvCtx.fds[findFdIndex];
+            APPSPAWN_LOGI("Spawn Listen fd %{public}s get success %{public}d", fdName, recvCtx.fds[findFdIndex]);
+            break;
+        }
+        findFdIndex++;
+        if (findFdIndex >= recvCtx.fdCount) {
+            break;
+        }
+    }
+    return 0;
+}
+
+APPSPAWN_STATIC void ProcessObserveProcessSignalMsg(AppSpawnConnection *connection, AppSpawnMsgNode *message)
+{
+    APPSPAWN_CHECK_ONLY_EXPER(message != NULL, return);
+    int fd = 0;
+    int ret = AppSpawnReqMsgFdGet(connection, message, SPAWN_LISTEN_FD_NAME, &fd);
+    if (fd <= 0 || ret != 0) {
+        APPSPAWN_LOGE("Spawn Listen appspawn signal fd get unsuccess");
+        SendResponse(connection, &message->msgHeader, APPSPAWN_SYSTEM_ERROR, 0);
+        DeleteAppSpawnMsg(message);
+        return;
+    }
+
+    AppSpawnContent *content = GetAppSpawnContent();
+    content->signalFd = fd;
+    connection->receiverCtx.fdCount = 0;
+    SendResponse(connection, &message->msgHeader, 0, 0);
+    DeleteAppSpawnMsg(message);
+}
+
 static void ProcessRecvMsg(AppSpawnConnection *connection, AppSpawnMsgNode *message)
 {
     AppSpawnMsg *msg = &message->msgHeader;
@@ -1779,6 +1871,9 @@ static void ProcessRecvMsg(AppSpawnConnection *connection, AppSpawnMsgNode *mess
             ProcessAppSpawnLockStatusMsg(message);
             SendResponse(connection, msg, 0, 0);
             DeleteAppSpawnMsg(message);
+            break;
+        case MSG_OBSERVE_PROCESS_SIGNAL_STATUS:
+            ProcessObserveProcessSignalMsg(connection, message);
             break;
         default:
             SendResponse(connection, msg, APPSPAWN_MSG_INVALID, 0);
