@@ -141,13 +141,12 @@ static inline void DumpStatus(const char *appName, pid_t pid, int status, int *s
     }
 }
 
-APPSPAWN_STATIC void WriteSignalInfoToFd(AppSpawnedProcess *appInfo, int signal)
+APPSPAWN_STATIC void WriteSignalInfoToFd(AppSpawnedProcess *appInfo, AppSpawnContent *content, int signal)
 {
-    AppSpawnContent *content = GetAppSpawnContent();
     APPSPAWN_CHECK(content->signalFd > 0, return, "Invalid signal fd[%{public}d]", content->signalFd);
     APPSPAWN_CHECK(appInfo->pid > 0, return, "Invalid pid[%{public}d]", appInfo->pid);
     APPSPAWN_CHECK(appInfo->uid > 0, return, "Invalid uid[%{public}d]", appInfo->uid);
-    APPSPAWN_CHECK(appInfo->name != NULL, return, "Invalid name[%{public}s]", appInfo->name);
+    APPSPAWN_CHECK(appInfo->name != NULL, return, "Invalid name");
 
     cJSON *root = cJSON_CreateObject();
     if (root == NULL) {
@@ -191,7 +190,7 @@ static void HandleDiedPid(pid_t pid, uid_t uid, int status)
     appInfo->exitStatus = status;
     APPSPAWN_CHECK_ONLY_LOG(appInfo->uid == uid, "Invalid uid %{public}u %{public}u", appInfo->uid, uid);
     DumpStatus(appInfo->name, pid, status, &signal);
-    WriteSignalInfoToFd(appInfo, signal);
+    WriteSignalInfoToFd(appInfo, content, signal);
     ProcessMgrHookExecute(STAGE_SERVER_APP_DIED, GetAppSpawnContent(), appInfo);
     ProcessMgrHookExecute(STAGE_SERVER_APP_UMOUNT, GetAppSpawnContent(), appInfo);
 
@@ -1809,6 +1808,7 @@ APPSPAWN_STATIC void ProcessObserveProcessSignalMsg(AppSpawnConnection *connecti
     }
 
     AppSpawnContent *content = GetAppSpawnContent();
+    APPSPAWN_CHECK(content != NULL, return, "Spawn Listen appspawn content is null");
     content->signalFd = fd;
     connection->receiverCtx.fdCount = 0;
     SendResponse(connection, &message->msgHeader, 0, 0);
