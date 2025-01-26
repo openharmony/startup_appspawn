@@ -119,6 +119,7 @@ typedef enum {
     MSG_DEVICE_DEBUG,
     MSG_UNINSTALL_DEBUG_HAP,
     MSG_LOCK_STATUS,
+    MSG_OBSERVE_PROCESS_SIGNAL_STATUS,
     MAX_TYPE_INVALID
 } AppSpawnMsgType;
 
@@ -341,6 +342,21 @@ int32_t GetMaxPermissionIndex(AppSpawnClientHandle handle);
  * @return const char* permission name
  */
 const char *GetPermissionByIndex(AppSpawnClientHandle handle, int32_t index);
+
+/**
+ * @brief set up a pipe fd to capture the exit reason of a child process
+ *
+ * @param fd fd for write signal info
+ * @return if succeed return 0,else return other value
+ */
+int SpawnListenFdSet(int fd);
+
+/**
+ * @brief close the listener for child process exit
+ *
+ * @return if succeed return 0,else return other value
+ */
+int SpawnListenCloseSet(void);
 
 #ifdef __cplusplus
 }

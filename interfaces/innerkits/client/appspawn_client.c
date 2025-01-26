@@ -38,6 +38,11 @@
 #define USER_LOCK_STATUS_SIZE 8
 static pthread_mutex_t g_mutex = PTHREAD_MUTEX_INITIALIZER;
 static AppSpawnReqMsgMgr *g_clientInstance[CLIENT_MAX] = {NULL};
+static pthread_mutex_t g_spawnListenMutex = PTHREAD_MUTEX_INITIALIZER;
+static int g_spawnListenFd = 0;
+static bool g_spawnListenStart = false;
+
+APPSPAWN_STATIC void SpawnListen(AppSpawnReqMsgMgr *reqMgr, const char *processName);
 
 static uint32_t GetDefaultTimeout(uint32_t def)
 {
@@ -279,6 +284,11 @@ static int ClientSendMsg(AppSpawnReqMsgMgr *reqMgr, AppSpawnReqMsgNode *reqNode,
                 continue;
             }
         }
+        if (reqNode->msg->msgType != MSG_OBSERVE_PROCESS_SIGNAL_STATUS) {
+            pthread_mutex_lock(&g_spawnListenMutex);
+            SpawnListen(reqMgr, reqNode->msg->processName);
+            pthread_mutex_unlock(&g_spawnListenMutex);
+        }
         if (isColdRun && reqMgr->timeout < ASAN_TIMEOUT) {
             UpdateSocketTimeout(ASAN_TIMEOUT, reqMgr->socketId);
         }
@@ -305,6 +315,35 @@ static int ClientSendMsg(AppSpawnReqMsgMgr *reqMgr, AppSpawnReqMsgNode *reqNode,
         retryCount++;
     }
     return APPSPAWN_TIMEOUT;
+}
+
+APPSPAWN_STATIC void SpawnListen(AppSpawnReqMsgMgr *reqMgr, const char *processName)
+{
+    AppSpawnClientType type = reqMgr->type;
+    if (g_spawnListenFd <= 0 || g_spawnListenStart) {
+        APPSPAWN_LOGV("Spawn Listen fail,fd:%{public}d,start:%{public}d", g_spawnListenFd, g_spawnListenStart);
+        return;
+    }
+    APPSPAWN_CHECK((type == CLIENT_FOR_APPSPAWN), return, "Invalid type");
+    APPSPAWN_CHECK(processName != NULL, return, "Invalid process name");
+
+    APPSPAWN_LOGI("Spawn Listen start type:%{public}d,fd:%{public}d", type, g_spawnListenFd);
+
+    AppSpawnReqMsgHandle reqHandle;
+    int ret = AppSpawnReqMsgCreate(MSG_OBSERVE_PROCESS_SIGNAL_STATUS, processName, &reqHandle);
+    APPSPAWN_CHECK(ret == 0, return, "Failed to create type:%{public}d req msg, ret = %{public}d", type, ret);
+
+    ret = AppSpawnReqMsgAddFd(reqHandle, SPAWN_LISTEN_FD_NAME, g_spawnListenFd);
+    APPSPAWN_CHECK(ret == 0, AppSpawnReqMsgFree(reqHandle);
+        return, "Failed to add info message, ret=%{public}d", ret);
+
+    AppSpawnResult result = {0};
+    ret = ClientSendMsg(reqMgr, (AppSpawnReqMsgNode *)reqHandle, &result);
+    APPSPAWN_CHECK(ret == 0, return, "Send msg to type:%{public}d failed, ret=%{public}d", type, ret);
+    APPSPAWN_CHECK(result.result == 0, return, "Appspawn failed to handle message, result=%{public}d", result.result);
+
+    g_spawnListenStart = true;
+    APPSPAWN_LOGI("Spawn Listen client type[%{public}d] Send fd[%{public}d] success", type, g_spawnListenFd);
 }
 
 int AppSpawnClientInit(const char *serviceName, AppSpawnClientHandle *handle)
@@ -402,5 +441,25 @@ int AppSpawnClientSendUserLockStatus(uint32_t userId, bool isLocked)
         return result.result;
     }
     APPSPAWN_LOGI("Send lockstatus msg to appspawn success");
+    return 0;
+}
+
+int SpawnListenFdSet(int fd)
+{
+    if (fd <= 0) {
+        APPSPAWN_LOGE("Spawn Listen fd set[%{public}d] failed", fd);
+        return APPSPAWN_ARG_INVALID;
+    }
+    g_spawnListenFd = fd;
+    APPSPAWN_LOGI("Spawn Listen fd set[%{public}d] success", fd);
+    return 0;
+}
+
+int SpawnListenCloseSet(void)
+{
+    pthread_mutex_lock(&g_spawnListenMutex);
+    g_spawnListenStart = false;
+    pthread_mutex_unlock(&g_spawnListenMutex);
+    APPSPAWN_LOGI("Spawn Listen close set success");
     return 0;
 }
