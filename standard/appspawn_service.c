@@ -142,21 +142,23 @@ static inline void DumpStatus(const char *appName, pid_t pid, int status, int *s
     }
 }
 
-APPSPAWN_STATIC void WriteSignalInfoToFd(pid_t pid, uid_t uid, int signal)
+APPSPAWN_STATIC void WriteSignalInfoToFd(AppSpawnedProcess *appInfo, int signal)
 {
     AppSpawnContent *content = GetAppSpawnContent();
     APPSPAWN_CHECK(content->signalFd > 0, return, "Invalid signal fd[%{public}d]", content->signalFd);
-    APPSPAWN_CHECK(pid > 0, return, "Invalid pid[%{public}d]", pid);
-    APPSPAWN_CHECK(uid > 0, return, "Invalid uid[%{public}d]", uid);
+    APPSPAWN_CHECK(appInfo->pid > 0, return, "Invalid pid[%{public}d]", appInfo->pid);
+    APPSPAWN_CHECK(appInfo->uid > 0, return, "Invalid uid[%{public}d]", appInfo->uid);
+    APPSPAWN_CHECK(appInfo->name != NULL, return, "Invalid name[%{public}s]", appInfo->name);
 
     cJSON *root = cJSON_CreateObject();
     if (root == NULL) {
         APPSPAWN_LOGE("signal json write create root object unsuccess");
         return;
     }
-    cJSON_AddNumberToObject(root, "pid", pid);
-    cJSON_AddNumberToObject(root, "uid", uid);
+    cJSON_AddNumberToObject(root, "pid", appInfo->pid);
+    cJSON_AddNumberToObject(root, "uid", appInfo->uid);
     cJSON_AddNumberToObject(root, "signal", signal);
+    cJSON_AddStringToObject(root, "bundleName", appInfo->name);
     char *jsonString = cJSON_Print(root);
     cJSON_Delete(root);
 
@@ -190,7 +192,7 @@ static void HandleDiedPid(pid_t pid, uid_t uid, int status)
     appInfo->exitStatus = status;
     APPSPAWN_CHECK_ONLY_LOG(appInfo->uid == uid, "Invalid uid %{public}u %{public}u", appInfo->uid, uid);
     DumpStatus(appInfo->name, pid, status, &signal);
-    WriteSignalInfoToFd(pid, appInfo->uid, signal);
+    WriteSignalInfoToFd(appInfo, signal);
     ProcessMgrHookExecute(STAGE_SERVER_APP_DIED, GetAppSpawnContent(), appInfo);
     ProcessMgrHookExecute(STAGE_SERVER_APP_UMOUNT, GetAppSpawnContent(), appInfo);
 
