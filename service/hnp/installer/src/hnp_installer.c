@@ -63,8 +63,8 @@ static int HnpGenerateSoftLinkAllByJson(const char *installPath, const char *dst
     }
 
     for (unsigned int i = 0; i < hnpCfg->linkNum; i++) {
-        if (strstr(currentLink->source, "../") || strstr(currentLink->target, "../")) {
-            HNP_LOGE("hnp json link source[%{public}s],target[%{public}s],does not allow the use of ../",
+        if (strstr(currentLink->source, "..") || strstr(currentLink->target, "..")) {
+            HNP_LOGE("hnp json link source[%{public}s],target[%{public}s],does not allow the use of ..",
                 currentLink->source, currentLink->target);
             return HNP_ERRNO_INSTALLER_GET_HNP_PATH_FAILED;
         }
@@ -375,8 +375,8 @@ static int HnpInstallPathGet(HnpCfgInfo *hnpCfgInfo, HnpInstallInfo *hnpInfo)
         HNP_LOGE("hnp install sprintf install path unsuccess.");
         return HNP_ERRNO_BASE_SPRINTF_FAILED;
     }
-    if (strstr(hnpInfo->hnpVersionPath, "../")) {
-        HNP_LOGE("hnp version path[%{public}s], does not allow the use of ../", hnpInfo->hnpVersionPath);
+    if (strstr(hnpInfo->hnpVersionPath, "..")) {
+        HNP_LOGE("hnp version path[%{public}s], does not allow the use of ..", hnpInfo->hnpVersionPath);
         return HNP_ERRNO_INSTALLER_GET_HNP_PATH_FAILED;
     }
 
