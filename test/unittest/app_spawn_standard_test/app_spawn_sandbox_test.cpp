@@ -28,6 +28,7 @@
 
 #include "app_spawn_stub.h"
 #include "app_spawn_test_helper.h"
+#include "sandbox_shared_mount.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -1549,5 +1550,479 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_009, TestSize.Level
 
     DeleteAppSpawningCtx(spawningCtx);
     AppSpawnClientDestroy(clientHandle);
+}
+
+/**
+ * @tc.name: App_Spawn_Sandbox_Shared_Mount_01
+ * @tc.desc: [IsValidDataGroupItem] input valid param
+ * @tc.type: FUNC
+ * @tc.author:
+ */
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_01, TestSize.Level0)
+{
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_01 start";
+    char dataGroupInfoListStr[] = R"(
+        {
+            "gid": "1002",
+            "dir": "/data/app/el2/100/group/49c016e6-065a-abd1-5867-b1f91114f840",
+            "dataGroupId": "43200",
+            "uuid": "49c016e6-065a-abd1-5867-b1f91114f840"
+        }
+    )";
+    nlohmann::json j_config = nlohmann::json::parse(dataGroupInfoListStr);
+    bool ret = IsValidDataGroupItem(j_config);
+    EXPECT_TRUE(ret);
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_01 end";
+}
+
+/**
+ * @tc.name: App_Spawn_Sandbox_Shared_Mount_02
+ * @tc.desc: [IsValidDataGroupItem] input valid param in json array
+ * @tc.type: FUNC
+ * @tc.author:
+ */
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_02, TestSize.Level0)
+{
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_02 start";
+    char dataGroupInfoListStr[] = R"([
+        {
+            "gid": "1002",
+            "dir": "/data/app/el2/100/group/49c016e6-065a-abd1-5867-b1f91114f840",
+            "dataGroupId": "43200",
+            "uuid": "49c016e6-065a-abd1-5867-b1f91114f840"
+        },
+        {
+            "gid": "1002",
+            "dir": "/data/app/el2/100/group/49c016e6-065a-abd1-5867-b1f91114f840",
+            "dataGroupId": "43200",
+            "uuid": "49c016e6-065a-abd1-5867-b1f91114f840"
+        }
+    ])";
+    nlohmann::json j_config = nlohmann::json::parse(dataGroupInfoListStr);
+    bool ret = false;
+    for (auto& item : j_config) {
+        ret = IsValidDataGroupItem(item);
+        if (ret != true) {
+            break;
+        }
+    }
+    EXPECT_TRUE(ret);
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_02 end";
+}
+
+/**
+ * @tc.name: App_Spawn_Sandbox_Shared_Mount_03
+ * @tc.desc: [IsValidDataGroupItem] input valid param, datagroupId is not string type
+ * @tc.type: FUNC
+ * @tc.author:
+ */
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_03, TestSize.Level0)
+{
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_03 start";
+    char dataGroupInfoListStr[] = R"(
+        {
+            "gid": "1002",
+            "dir": "/data/app/el2/100/group/49c016e6-065a-abd1-5867-b1f91114f840",
+            "dataGroupId": 43200,
+            "uuid": "49c016e6-065a-abd1-5867-b1f91114f840"
+        }
+    )";
+    nlohmann::json j_config = nlohmann::json::parse(dataGroupInfoListStr);
+    bool ret = IsValidDataGroupItem(j_config);
+    EXPECT_FALSE(ret);
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_03 end";
+}
+
+/**
+ * @tc.name: App_Spawn_Sandbox_Shared_Mount_04
+ * @tc.desc: [IsValidDataGroupItem] input valid param, gid is not string type
+ * @tc.type: FUNC
+ * @tc.author:
+ */
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_04, TestSize.Level0)
+{
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_04 start";
+    char dataGroupInfoListStr[] = R"(
+        {
+            "gid": 1002,
+            "dir": "/data/app/el2/100/group/49c016e6-065a-abd1-5867-b1f91114f840",
+            "dataGroupId": "43200",
+            "uuid": "49c016e6-065a-abd1-5867-b1f91114f840"
+        }
+    )";
+    nlohmann::json j_config = nlohmann::json::parse(dataGroupInfoListStr);
+    bool ret = IsValidDataGroupItem(j_config);
+    EXPECT_FALSE(ret);
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_04 end";
+}
+
+/**
+ * @tc.name: App_Spawn_Sandbox_Shared_Mount_05
+ * @tc.desc: [IsValidDataGroupItem] input valid param, dir is not string type
+ * @tc.type: FUNC
+ * @tc.author:
+ */
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_05, TestSize.Level0)
+{
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_05 start";
+    char dataGroupInfoListStr[] = R"(
+        {
+            "gid": "1002",
+            "dir": 100,
+            "dataGroupId": "43200",
+            "uuid": "49c016e6-065a-abd1-5867-b1f91114f840"
+        }
+    )";
+    nlohmann::json j_config = nlohmann::json::parse(dataGroupInfoListStr);
+    bool ret = IsValidDataGroupItem(j_config);
+    EXPECT_FALSE(ret);
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_05 end";
+}
+
+/**
+ * @tc.name: App_Spawn_Sandbox_Shared_Mount_06
+ * @tc.desc: [IsValidDataGroupItem] input valid param, uuid is not string type
+ * @tc.type: FUNC
+ * @tc.author:
+ */
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_06, TestSize.Level0)
+{
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_06 start";
+    char dataGroupInfoListStr[] = R"(
+        {
+            "gid": "1002",
+            "dir": "/data/app/el2/100/group/49c016e6-065a-abd1-5867-b1f91114f840",
+            "dataGroupId": "43200",
+            "uuid": 124
+        }
+    )";
+    nlohmann::json j_config = nlohmann::json::parse(dataGroupInfoListStr);
+    bool ret = IsValidDataGroupItem(j_config);
+    EXPECT_FALSE(ret);
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_06 end";
+}
+
+/**
+ * @tc.name: App_Spawn_Sandbox_Shared_Mount_07
+ * @tc.desc: [IsValidDataGroupItem] input valid param, datagroupId and gid is not string type
+ * @tc.type: FUNC
+ * @tc.author:
+ */
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_07, TestSize.Level0)
+{
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_07 start";
+    char dataGroupInfoListStr[] = R"(
+        {
+            "gid": 1002,
+            "dir": "/data/app/el2/100/group/49c016e6-065a-abd1-5867-b1f91114f840",
+            "dataGroupId": 43200,
+            "uuid": "49c016e6-065a-abd1-5867-b1f91114f840"
+        }
+    )";
+    nlohmann::json j_config = nlohmann::json::parse(dataGroupInfoListStr);
+    bool ret = IsValidDataGroupItem(j_config);
+    EXPECT_FALSE(ret);
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_07 end";
+}
+
+/**
+ * @tc.name: App_Spawn_Sandbox_Shared_Mount_08
+ * @tc.desc: [IsValidDataGroupItem] input valid param, datagroupId and dir is not string type
+ * @tc.type: FUNC
+ * @tc.author:
+ */
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_08, TestSize.Level0)
+{
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_08 start";
+    char dataGroupInfoListStr[] = R"(
+        {
+            "gid": "1002",
+            "dir": 100,
+            "dataGroupId": 43200,
+            "uuid": "49c016e6-065a-abd1-5867-b1f91114f840"
+        }
+    )";
+    nlohmann::json j_config = nlohmann::json::parse(dataGroupInfoListStr);
+    bool ret = IsValidDataGroupItem(j_config);
+    EXPECT_FALSE(ret);
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_08 end";
+}
+
+/**
+ * @tc.name: App_Spawn_Sandbox_Shared_Mount_09
+ * @tc.desc: [IsValidDataGroupItem] input valid param, datagroupId and uuid is not string type
+ * @tc.type: FUNC
+ * @tc.author:
+ */
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_09, TestSize.Level0)
+{
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_09 start";
+    char dataGroupInfoListStr[] = R"(
+        {
+            "gid": "1002",
+            "dir": "/data/app/el2/100/group/49c016e6-065a-abd1-5867-b1f91114f840",
+            "dataGroupId": 43200,
+            "uuid": 124
+        }
+    )";
+    nlohmann::json j_config = nlohmann::json::parse(dataGroupInfoListStr);
+    bool ret = IsValidDataGroupItem(j_config);
+    EXPECT_FALSE(ret);
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_09 end";
+}
+
+/**
+ * @tc.name: App_Spawn_Sandbox_Shared_Mount_10
+ * @tc.desc: [IsValidDataGroupItem] input valid param, gid and dir is not string type
+ * @tc.type: FUNC
+ * @tc.author:
+ */
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_10, TestSize.Level0)
+{
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_10 start";
+    char dataGroupInfoListStr[] = R"(
+        {
+            "gid": 1002,
+            "dir": 100,
+            "dataGroupId": "43200",
+            "uuid": "49c016e6-065a-abd1-5867-b1f91114f840"
+        }
+    )";
+    nlohmann::json j_config = nlohmann::json::parse(dataGroupInfoListStr);
+    bool ret = IsValidDataGroupItem(j_config);
+    EXPECT_FALSE(ret);
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_10 end";
+}
+
+/**
+ * @tc.name: App_Spawn_Sandbox_Shared_Mount_11
+ * @tc.desc: [IsValidDataGroupItem] input valid param, gid and uuid is not string type
+ * @tc.type: FUNC
+ * @tc.author:
+ */
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_11, TestSize.Level0)
+{
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_11 start";
+    char dataGroupInfoListStr[] = R"(
+        {
+            "gid": 1002,
+            "dir": "/data/app/el2/100/group/49c016e6-065a-abd1-5867-b1f91114f840",
+            "dataGroupId": "43200",
+            "uuid": 124
+        }
+    )";
+    nlohmann::json j_config = nlohmann::json::parse(dataGroupInfoListStr);
+    bool ret = IsValidDataGroupItem(j_config);
+    EXPECT_FALSE(ret);
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_11 end";
+}
+
+/**
+ * @tc.name: App_Spawn_Sandbox_Shared_Mount_12
+ * @tc.desc: [IsValidDataGroupItem] input valid param, dir and uuid is not string type
+ * @tc.type: FUNC
+ * @tc.author:
+ */
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_12, TestSize.Level0)
+{
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_12 start";
+    char dataGroupInfoListStr[] = R"(
+        {
+            "gid": "1002",
+            "dir": 100,
+            "dataGroupId": "43200",
+            "uuid": 124
+        }
+    )";
+    nlohmann::json j_config = nlohmann::json::parse(dataGroupInfoListStr);
+    bool ret = IsValidDataGroupItem(j_config);
+    EXPECT_FALSE(ret);
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_12 end";
+}
+
+/**
+ * @tc.name: App_Spawn_Sandbox_Shared_Mount_13
+ * @tc.desc: [GetElxInfoFromDir] input valid, the directory contains el2.
+ * @tc.type: FUNC
+ * @tc.author:
+ */
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_13, TestSize.Level0)
+{
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_13 start";
+    std::string str = "/data/storage/el2/group/";
+    int res = GetElxInfoFromDir(str.c_str());
+    EXPECT_EQ(res, EL2);
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_13 end";
+}
+
+/**
+ * @tc.name: App_Spawn_Sandbox_Shared_Mount_14
+ * @tc.desc: [GetElxInfoFromDir] input valid, the directory contains el3.
+ * @tc.type: FUNC
+ * @tc.author:
+ */
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_14, TestSize.Level0)
+{
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_14 start";
+    std::string str = "/data/storage/el3/group/";
+    int res = GetElxInfoFromDir(str.c_str());
+    EXPECT_EQ(res, EL3);
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_14 end";
+}
+
+/**
+ * @tc.name: App_Spawn_Sandbox_Shared_Mount_15
+ * @tc.desc: [GetElxInfoFromDir] input valid, the directory contains el4.
+ * @tc.type: FUNC
+ * @tc.author:
+ */
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_15, TestSize.Level0)
+{
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_15 start";
+    std::string str = "/data/storage/el4/group/";
+    int res = GetElxInfoFromDir(str.c_str());
+    EXPECT_EQ(res, EL4);
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_15 end";
+}
+
+/**
+ * @tc.name: App_Spawn_Sandbox_Shared_Mount_16
+ * @tc.desc: [GetElxInfoFromDir] input valid, the directory contains el5.
+ * @tc.type: FUNC
+ * @tc.author:
+ */
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_16, TestSize.Level0)
+{
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_16 start";
+    std::string str = "/data/storage/el5/group/";
+    int res = GetElxInfoFromDir(str.c_str());
+    EXPECT_EQ(res, EL5);
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_16 end";
+}
+
+/**
+ * @tc.name: App_Spawn_Sandbox_Shared_Mount_17
+ * @tc.desc: [GetElxInfoFromDir] input invalid, the directory don't contains el2~el5, contains el0.
+ * @tc.type: FUNC
+ * @tc.author:
+ */
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_17, TestSize.Level0)
+{
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_17 start";
+    std::string str = "/data/storage/el0/group/";
+    int res = GetElxInfoFromDir(str.c_str());
+    EXPECT_EQ(res, ELX_MAX);
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_17 end";
+}
+
+/**
+ * @tc.name: App_Spawn_Sandbox_Shared_Mount_18
+ * @tc.desc: [GetElxInfoFromDir] input invalid, the directory don't contains el2~el5, contains el6.
+ * @tc.type: FUNC
+ * @tc.author:
+ */
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_18, TestSize.Level0)
+{
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_18 start";
+    std::string str = "/data/storage/el6/group/";
+    int res = GetElxInfoFromDir(str.c_str());
+    EXPECT_EQ(res, ELX_MAX);
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_18 end";
+}
+
+/**
+ * @tc.name: App_Spawn_Sandbox_Shared_Mount_19
+ * @tc.desc: [GetElxInfoFromDir] input invalid, the directory don't contains el2~el5, param is null.
+ * @tc.type: FUNC
+ * @tc.author:
+ */
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_19, TestSize.Level0)
+{
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_19 start";
+    int res = GetElxInfoFromDir(nullptr);
+    EXPECT_EQ(res, ELX_MAX);
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_19 end";
+}
+
+/**
+ * @tc.name: App_Spawn_Sandbox_Shared_Mount_20
+ * @tc.desc: [GetDataGroupArgTemplate] input invalid, the category is between el2 and el5, category is EL2.
+ * @tc.type: FUNC
+ * @tc.author:
+ */
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_20, TestSize.Level0)
+{
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_20 start";
+    const DataGroupSandboxPathTemplate *templateItem = GetDataGroupArgTemplate(EL2);
+    ASSERT_EQ(templateItem != nullptr, 1);
+    int res = strcmp(templateItem->elxName, "el2");
+    EXPECT_EQ(res, 0);
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_20 end";
+}
+
+/**
+ * @tc.name: App_Spawn_Sandbox_Shared_Mount_21
+ * @tc.desc: [GetDataGroupArgTemplate] input invalid, the category is between el2 and el5, category is EL3.
+ * @tc.type: FUNC
+ * @tc.author:
+ */
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_21, TestSize.Level0)
+{
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_21 start";
+    const DataGroupSandboxPathTemplate *templateItem = GetDataGroupArgTemplate(EL3);
+    ASSERT_EQ(templateItem != nullptr, 1);
+    int res = strcmp(templateItem->elxName, "el3");
+    EXPECT_EQ(res, 0);
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_21 end";
+}
+
+/**
+ * @tc.name: App_Spawn_Sandbox_Shared_Mount_22
+ * @tc.desc: [GetDataGroupArgTemplate] input invalid, the category is between el2 and el5, category is EL4.
+ * @tc.type: FUNC
+ * @tc.author:
+ */
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_22, TestSize.Level0)
+{
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_22 start";
+    const DataGroupSandboxPathTemplate *templateItem = GetDataGroupArgTemplate(EL4);
+    ASSERT_EQ(templateItem != nullptr, 1);
+    int res = strcmp(templateItem->elxName, "el4");
+    EXPECT_EQ(res, 0);
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_22 end";
+}
+
+/**
+ * @tc.name: App_Spawn_Sandbox_Shared_Mount_23
+ * @tc.desc: [GetDataGroupArgTemplate] input invalid, the category is between el2 and el5, category is EL5.
+ * @tc.type: FUNC
+ * @tc.author:
+ */
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_23, TestSize.Level0)
+{
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_23 start";
+    const DataGroupSandboxPathTemplate *templateItem = GetDataGroupArgTemplate(EL5);
+    ASSERT_EQ(templateItem != nullptr, 1);
+    int res = strcmp(templateItem->elxName, "el5");
+    EXPECT_EQ(res, 0);
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_23 end";
+}
+
+/**
+ * @tc.name: App_Spawn_Sandbox_Shared_Mount_24
+ * @tc.desc: [GetDataGroupArgTemplate] input invalid, the category is between el2 and el5, category is 6.
+ * @tc.type: FUNC
+ * @tc.author:
+ */
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_24, TestSize.Level0)
+{
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_24 start";
+    const DataGroupSandboxPathTemplate *templateItem = GetDataGroupArgTemplate(6);
+    int res = -1;
+    if (templateItem == nullptr) {
+        res = 0;
+    }
+    EXPECT_EQ(res, 0);
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_24 end";
 }
 }  // namespace OHOS
