@@ -202,6 +202,10 @@ int SetSeccompFilter(const AppSpawnMgr *content, const AppSpawningCtx *property)
         appName = IMF_EXTENTOIN_NAME;
     }
 
+    if (CheckAppMsgFlagsSet(property, APP_FLAGS_ATOMIC_SERVICE) != 0) {
+        appName = APP_ATOMIC;
+    }
+
     if (!SetSeccompPolicyWithName(type, appName)) {
         APPSPAWN_LOGE("Failed to set %{public}s seccomp filter and exit %{public}d", appName, errno);
         return -EINVAL;
