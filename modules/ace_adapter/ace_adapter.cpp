@@ -131,6 +131,18 @@ static void LoadExtendLib(void)
     APPSPAWN_LOGI("LoadExtendLib: End preload JS VM");
 }
 
+APPSPAWN_STATIC void PreloadCJLibs(void)
+{
+    const char* cjEnvLibName = "libcj_environment.z.so";
+    const char* cjEnvInitName = "OHOS_InitSpawnEnv";
+    void* cjEnvLib = dlopen(cjEnvLibName, RTLD_NOW | RTLD_LOCAL);
+    APPSPAWN_CHECK(cjEnvLib != nullptr, return, "Failed to dlopen %{public}s, [%{public}s]", cjEnvLibName, dlerror());
+    auto symbol = dlsym(cjEnvLib, cjEnvInitName);
+    APPSPAWN_CHECK(symbol != nullptr, return, "Failed to dlsym %{public}s, [%{public}s]", cjEnvInitName, dlerror());
+    auto initSpawnEnv = reinterpret_cast<void (*)()>(symbol);
+    initSpawnEnv();
+}
+
 APPSPAWN_STATIC void LoadExtendCJLib(void)
 {
     const char *acelibdir = OHOS::Ace::AceForwardCompatibility::GetAceLibName();
@@ -140,6 +152,8 @@ APPSPAWN_STATIC void LoadExtendCJLib(void)
     APPSPAWN_LOGI("LoadExtendLib: Success to dlopen %{public}s", acelibdir);
 
     OHOS::AppExecFwk::MainThread::PreloadExtensionPlugin();
+
+    PreloadCJLibs();
 }
 
 APPSPAWN_STATIC int BuildFdInfoMap(const AppSpawnMsgNode *message, std::map<std::string, int> &fdMap, int isColdRun)
