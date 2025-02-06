@@ -767,7 +767,7 @@ static void ProcessPreFork(AppSpawnContent *content, AppSpawningCtx *property)
         (void)close(property->forkCtx.fd[0]);
         (void)close(property->forkCtx.fd[1]);
         int isRet = SetPreforkProcessName(content);
-        APPSPAWN_LOGI("prefork process start wait read msg with set processname %{public}d", isRet);
+        APPSPAWN_LOGV("prefork process start wait read msg with set processname %{public}d", isRet);
         AppSpawnClient client = {0, 0};
         int infoSize = read(content->parentToChildFd[0], &client, sizeof(AppSpawnClient));
         if (infoSize != sizeof(AppSpawnClient)) {
@@ -886,7 +886,7 @@ static void ProcessSpawnReqMsg(AppSpawnConnection *connection, AppSpawnMsgNode *
         if (IsSupportRunHnp()) {
             SetAppSpawnMsgFlag(message, TLV_MSG_FLAGS, APP_FLAGS_DEVELOPER_MODE);
         } else {
-            APPSPAWN_LOGI("Not support execute hnp file!");
+            APPSPAWN_LOGV("Not support execute hnp file!");
         }
     }
 
@@ -1254,7 +1254,7 @@ APPSPAWN_STATIC int AppSpawnClearEnv(AppSpawnMgr *content, AppSpawningCtx *prope
 static int IsEnablePrefork(void)
 {
     char buffer[32] = {0};
-    int ret = GetParameter("persist.sys.prefork.enable", "true", buffer, sizeof(buffer));
+    int ret = GetParameter("persist.sys.prefork.enable", "false", buffer, sizeof(buffer));
     APPSPAWN_LOGV("IsEnablePerfork result %{public}d, %{public}s", ret, buffer);
     return strcmp(buffer, "true") == 0;
 }
