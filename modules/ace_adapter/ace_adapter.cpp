@@ -138,7 +138,11 @@ APPSPAWN_STATIC void PreloadCJLibs(void)
     void* cjEnvLib = dlopen(cjEnvLibName, RTLD_NOW | RTLD_LOCAL);
     APPSPAWN_CHECK(cjEnvLib != nullptr, return, "Failed to dlopen %{public}s, [%{public}s]", cjEnvLibName, dlerror());
     auto symbol = dlsym(cjEnvLib, cjEnvInitName);
-    APPSPAWN_CHECK(symbol != nullptr, return, "Failed to dlsym %{public}s, [%{public}s]", cjEnvInitName, dlerror());
+    if (!symbol) {
+        dlclose(cjEnvLib);
+        APPSPAWN_LOGE("Failed to dlsym %{public}s, [%{public}s]", cjEnvInitName, dlerror());
+        return;
+    }
     auto initSpawnEnv = reinterpret_cast<void (*)()>(symbol);
     initSpawnEnv();
 }
