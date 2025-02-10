@@ -307,7 +307,7 @@ HWTEST_F(AppSpawnAppMgrTest, App_Spawn_AppSpawnMsgNode_001, TestSize.Level0)
     EXPECT_NE(0, ret);  // check fail
 
     // delete
-    DeleteAppSpawnMsg(msgNode);
+    DeleteAppSpawnMsg(&msgNode);
     DeleteAppSpawnMsg(nullptr);
 
     // get from buffer
@@ -327,7 +327,7 @@ HWTEST_F(AppSpawnAppMgrTest, App_Spawn_AppSpawnMsgNode_001, TestSize.Level0)
                 ret = GetAppSpawnMsgFromBuffer(inputBuffer[i], buffer.size(),
                     &outMsg, inputMsgLen[j], inputReminder[k]);
                 EXPECT_EQ(ret == 0, result[i * inputCount * inputCount + j * inputCount + k]);  // check fail
-                DeleteAppSpawnMsg(outMsg);
+                DeleteAppSpawnMsg(&outMsg);
             }
         }
     }
@@ -394,7 +394,7 @@ HWTEST_F(AppSpawnAppMgrTest, App_Spawn_AppSpawnMsgNode_002, TestSize.Level0)
     EXPECT_EQ(msgLen, msgRecvLen);
     EXPECT_EQ(memcmp(buffer.data() + sizeof(AppSpawnMsg), outMsg->buffer, msgLen - sizeof(AppSpawnMsg)), 0);
     EXPECT_EQ(sizeof(AppSpawnMsg), reminder);
-    DeleteAppSpawnMsg(outMsg);
+    DeleteAppSpawnMsg(&outMsg);
 }
 
 HWTEST_F(AppSpawnAppMgrTest, App_Spawn_AppSpawnMsgNode_003, TestSize.Level0)
@@ -423,7 +423,7 @@ HWTEST_F(AppSpawnAppMgrTest, App_Spawn_AppSpawnMsgNode_003, TestSize.Level0)
     EXPECT_EQ(0, ret);
     ret = CheckAppSpawnMsg(outMsg);
     EXPECT_EQ(0, ret);
-    DeleteAppSpawnMsg(outMsg);
+    DeleteAppSpawnMsg(&outMsg);
 }
 
 HWTEST_F(AppSpawnAppMgrTest, App_Spawn_AppSpawnMsgNode_004, TestSize.Level0)
@@ -449,7 +449,7 @@ HWTEST_F(AppSpawnAppMgrTest, App_Spawn_AppSpawnMsgNode_004, TestSize.Level0)
     EXPECT_EQ(0, ret);
     ret = CheckAppSpawnMsg(outMsg);
     EXPECT_NE(0, ret);
-    DeleteAppSpawnMsg(outMsg);
+    DeleteAppSpawnMsg(&outMsg);
 }
 
 static int AddRenderTerminationTlv(uint8_t *buffer, uint32_t bufferLen, uint32_t &realLen, uint32_t &tlvCount)
@@ -514,7 +514,7 @@ HWTEST_F(AppSpawnAppMgrTest, App_Spawn_AppSpawnMsgNode_005, TestSize.Level0)
 
     ret = ProcessTerminationStatusMsg(nullptr, nullptr);
     EXPECT_NE(0, ret);
-    DeleteAppSpawnMsg(outMsg);
+    DeleteAppSpawnMsg(&outMsg);
 
     DeleteAppSpawnMgr(mgr);
 }
@@ -550,7 +550,7 @@ HWTEST_F(AppSpawnAppMgrTest, App_Spawn_AppSpawnMsgNode_006, TestSize.Level0)
     ret = ProcessTerminationStatusMsg(outMsg, &result);
     EXPECT_EQ(0, ret);
 
-    DeleteAppSpawnMsg(outMsg);
+    DeleteAppSpawnMsg(&outMsg);
     DeleteAppSpawnMgr(mgr);
 }
 
@@ -582,7 +582,7 @@ HWTEST_F(AppSpawnAppMgrTest, App_Spawn_AppSpawnMsgNode_007, TestSize.Level0)
     ret = ProcessTerminationStatusMsg(outMsg, &result);
     EXPECT_EQ(0, ret);
 
-    DeleteAppSpawnMsg(outMsg);
+    DeleteAppSpawnMsg(&outMsg);
     DeleteAppSpawnMgr(mgr);
 }
 
@@ -615,10 +615,26 @@ HWTEST_F(AppSpawnAppMgrTest, App_Spawn_AppSpawnMsgNode_008, TestSize.Level0)
     outMsg->tlvOffset = nullptr;
     ProcessAppSpawnDumpMsg(outMsg);
 
-    DeleteAppSpawnMsg(outMsg);
+    DeleteAppSpawnMsg(&outMsg);
     DeleteAppSpawnMgr(mgr);
 }
 
+HWTEST_F(AppSpawnAppMgrTest, App_Spawn_AppSpawnMsgNode_009, TestSize.Level0)
+{
+    AppSpawnMsgNode *msgNode = CreateAppSpawnMsg();
+    msgNode->buffer = static_cast<uint8_t *>(malloc(255));;
+    msgNode->tlvOffset = static_cast<uint32_t *>(malloc(128));
+    EXPECT_EQ(msgNode != nullptr, 1);
+    DeleteAppSpawnMsg(&msgNode);
+    EXPECT_EQ(msgNode, NULL);
+    DeleteAppSpawnMsg(&msgNode);
+    EXPECT_EQ(msgNode, NULL);
+    msgNode = CreateAppSpawnMsg();
+    EXPECT_NE(msgNode, NULL);
+    DeleteAppSpawnMsg(&msgNode);
+    EXPECT_EQ(msgNode, NULL);
+    DeleteAppSpawnMsg(nullptr);
+}
 /**
  * @brief 消息内容操作接口
  *
@@ -658,7 +674,7 @@ HWTEST_F(AppSpawnAppMgrTest, App_Spawn_AppSpawnMsg_001, TestSize.Level0)
         void *info = GetAppSpawnMsgInfo(nullptr, i);
         EXPECT_EQ(info == nullptr, 1);
     }
-    DeleteAppSpawnMsg(outMsg);
+    DeleteAppSpawnMsg(&outMsg);
     DeleteAppSpawnMgr(mgr);
 }
 
@@ -725,7 +741,7 @@ HWTEST_F(AppSpawnAppMgrTest, App_Spawn_AppSpawnMsg_002, TestSize.Level0)
         void *info = GetAppSpawnMsgExtInfo(nullptr, inputName[i], &len);
         EXPECT_EQ(info == nullptr, 1);
     }
-    DeleteAppSpawnMsg(outMsg);
+    DeleteAppSpawnMsg(&outMsg);
     DeleteAppSpawnMgr(mgr);
 }
 
@@ -780,7 +796,7 @@ HWTEST_F(AppSpawnAppMgrTest, App_Spawn_AppSpawnMsg_003, TestSize.Level0)
             EXPECT_EQ(0, ret);
         }
     }
-    DeleteAppSpawnMsg(outMsg);
+    DeleteAppSpawnMsg(&outMsg);
     DeleteAppSpawnMgr(mgr);
 }
 
@@ -810,7 +826,7 @@ HWTEST_F(AppSpawnAppMgrTest, App_Spawn_AppSpawnMsg_004, TestSize.Level0)
     // dump msg
     DumpAppSpawnMsg(outMsg);
     DumpAppSpawnMsg(nullptr);
-    DeleteAppSpawnMsg(outMsg);
+    DeleteAppSpawnMsg(&outMsg);
     DeleteAppSpawnMgr(mgr);
 }
 

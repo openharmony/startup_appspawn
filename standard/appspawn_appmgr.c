@@ -320,7 +320,7 @@ void DeleteAppSpawningCtx(AppSpawningCtx *property)
     APPSPAWN_CHECK_ONLY_EXPER(property != NULL, return);
     APPSPAWN_LOGV("DeleteAppSpawningCtx");
 
-    DeleteAppSpawnMsg(property->message);
+    DeleteAppSpawnMsg(&property->message);
 
     OH_ListRemove(&property->node);
     if (property->forkCtx.timer) {
