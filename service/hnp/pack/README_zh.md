@@ -125,5 +125,5 @@ Native包管理功能模块提供了对Native软件的打包、安装、卸载�
   ```
     1. 对hnpsample软件进行打包，由于hnpsample目录下存在hnp.json文件，不需要指定软件名和版本号。因此命令如下：
     hnpcli pack -i ./hnpsample -o ./out
-    2. 命令返回成功，则在out目录下生成hnpsample.hnp文件
+    2. 命令返回成功，则在out目录下生成hnpsample.hnp文件。
   ```
