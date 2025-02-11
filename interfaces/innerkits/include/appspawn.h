@@ -107,6 +107,7 @@ typedef enum {
     MSG_UPDATE_MOUNT_POINTS,
     MSG_RESTART_SPAWNER,
     MSG_DEVICE_DEBUG,
+    MSG_UNINSTALL_DEBUG_HAP,
     MAX_TYPE_INVALID
 } AppSpawnMsgType;
 
@@ -276,6 +277,7 @@ int AppSpawnClientAddPermission(AppSpawnClientHandle handle, AppSpawnReqMsgHandl
 #define MSG_EXT_NAME_PROCESS_TYPE "ProcessType"
 #define MSG_EXT_NAME_MAX_CHILD_PROCCESS_MAX "MaxChildProcess"
 #define MSG_EXT_NAME_APP_FD "AppFd"
+#define MSG_EXT_NAME_USERID "uid"
 #define MSG_EXT_NAME_JIT_PERMISSIONS "JITPermissions"
 
 int AppSpawnReqMsgAddExtInfo(AppSpawnReqMsgHandle reqHandle, const char *name, const uint8_t *value, uint32_t valueLen);
