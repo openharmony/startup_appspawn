@@ -41,7 +41,7 @@ The cmd operate required arg is miss.
 
 **处理步骤**
 
-检查传入的参数是否正确以及完整。可通过命令hnpcli help查询正确的参数格式
+检查传入的参数是否正确以及完整。可通过命令hnpcli help查询正确的参数格式。
 
 ## 0x801101 打开文件失败
 
