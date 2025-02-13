@@ -187,7 +187,7 @@ void ProcessAppSpawnDumpMsg(const AppSpawnMsgNode *message);
 int ProcessTerminationStatusMsg(const AppSpawnMsgNode *message, AppSpawnResult *result);
 
 AppSpawnMsgNode *CreateAppSpawnMsg(void);
-void DeleteAppSpawnMsg(AppSpawnMsgNode *msgNode);
+void DeleteAppSpawnMsg(AppSpawnMsgNode **msgNode);
 int CheckAppSpawnMsg(const AppSpawnMsgNode *message);
 int DecodeAppSpawnMsg(AppSpawnMsgNode *message);
 int GetAppSpawnMsgFromBuffer(const uint8_t *buffer, uint32_t bufferLen,
