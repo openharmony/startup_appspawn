@@ -12,7 +12,7 @@
 
 ### 结构体定义
 
-NA。
+NA.
 
 ### 函数
 
@@ -79,9 +79,9 @@ int NativeUnInstallHnp(const char *userId, const char *packageName);
 
   参数：
 
-  userId：用户ID；
+  userId：用户ID。
 
-  packageName：hap应用软件包名；
+  packageName：hap应用软件包名。
 
 **返回：**
 

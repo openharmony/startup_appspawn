@@ -226,7 +226,6 @@ static int InitSandboxContext(SandboxContext *context,
         context->sandboxShared = packageNode->section.sandboxShared;
     }
     context->message = property->message;
-
     context->sandboxNsFlags = CLONE_NEWNS;
 
     if (NeedNetworkIsolated(context, property)) {
@@ -591,24 +590,23 @@ static void MountDir(AppSpawnMsgDacInfo *info, const char *bundleName, const cha
     }
 
     const int userIdBase = UID_BASE;
-    size_t allPathSize = strlen(rootPath) + strlen(targetPath) + strlen(bundleName) + 2;
-    allPathSize += USER_ID_SIZE;
-    char *path = (char *)malloc(sizeof(char) * (allPathSize));
-    (void)memset_s(path, allPathSize, 0, allPathSize);
-    APPSPAWN_CHECK(path != NULL, return, "Failed to malloc path");
-    int len = sprintf_s(path, allPathSize, "%s%u/%s%s", rootPath, info->uid / userIdBase, bundleName, targetPath);
-    APPSPAWN_CHECK(len > 0 && ((size_t)len < allPathSize), free(path);
-        return, "Failed to get sandbox path");
-
-    if (access(path, F_OK) == 0) {
-        free(path);
+    char path[MAX_SANDBOX_BUFFER] = {0};
+    int ret = snprintf_s(path, MAX_SANDBOX_BUFFER, MAX_SANDBOX_BUFFER - 1, "%s%u/%s%s", rootPath,
+                         info->uid / userIdBase, bundleName, targetPath);
+    if (ret <= 0) {
+        APPSPAWN_LOGE("snprintf_s path failed, errno %{public}d", errno);
         return;
     }
 
-    MakeDirRec(path, DIR_MODE, 1);
+    if (access(path, F_OK) == 0) {
+        return;
+    }
+
+    ret = MakeDirRec(path, DIR_MODE, 1);
+    APPSPAWN_CHECK(ret == 0, return, "mkdir %{public}s failed, ret %{public}d", path, ret);
+
     if (mount(path, path, NULL, MS_BIND | MS_REC, NULL) != 0) {
         APPSPAWN_LOGI("bind mount %{public}s failed, error %{public}d", path, errno);
-        free(path);
         return;
     }
     if (mount(NULL, path, NULL, MS_SHARED, NULL) != 0) {
@@ -616,8 +614,6 @@ static void MountDir(AppSpawnMsgDacInfo *info, const char *bundleName, const cha
     } else {
         APPSPAWN_LOGI("mount path %{public}s to shared success", path);
     }
-
-    free(path);
 }
 
 static const MountSharedTemplate MOUNT_SHARED_MAP[] = {
@@ -637,12 +633,14 @@ static int MountInShared(const AppSpawnMsgDacInfo *info, const char *rootPath, c
     int ret = snprintf_s(path, MAX_SANDBOX_BUFFER, MAX_SANDBOX_BUFFER - 1, "%s/%u/app-root/%s", rootPath,
                          info->uid / UID_BASE, target);
     if (ret <= 0) {
+        APPSPAWN_LOGE("snprintf_s path failed, errno %{public}d", errno);
         return APPSPAWN_ERROR_UTILS_MEM_FAIL;
     }
 
     char currentUserPath[MAX_SANDBOX_BUFFER] = {0};
     ret = snprintf_s(currentUserPath, MAX_SANDBOX_BUFFER, MAX_SANDBOX_BUFFER - 1, "%s/currentUser", path);
     if (ret <= 0) {
+        APPSPAWN_LOGE("snprintf_s currentUserPath failed, errno %{public}d", errno);
         return APPSPAWN_ERROR_UTILS_MEM_FAIL;
     }
 
@@ -652,6 +650,7 @@ static int MountInShared(const AppSpawnMsgDacInfo *info, const char *rootPath, c
 
     ret = MakeDirRec(path, DIR_MODE, 1);
     if (ret != 0) {
+        APPSPAWN_LOGE("mkdir %{public}s failed, ret %{public}d", path, ret);
         return APPSPAWN_SANDBOX_ERROR_MKDIR_FAIL;
     }
 
@@ -683,6 +682,7 @@ static int SharedMountInSharefs(const AppSpawnMsgDacInfo *info, const char *root
 
     ret = MakeDirRec(target, DIR_MODE, 1);
     if (ret != 0) {
+        APPSPAWN_LOGE("mkdir %{public}s failed, ret %{public}d", target, ret);
         return APPSPAWN_SANDBOX_ERROR_MKDIR_FAIL;
     }
 
@@ -766,14 +766,14 @@ static void MountDirToShared(const SandboxContext *context, AppSpawnSandboxCfg *
         return;
     }
 
+    UpdateStorageDir(context, sandbox, info);
+
     MountDir(info, appRootName, rootPath, nwebPath);
     MountDir(info, appRootName, rootPath, nwebTmpPath);
 
     if (IsUnlockStatus(info->uid)) {
         return;
     }
-
-    UpdateStorageDir(context, sandbox, info);
 
     int length = sizeof(MOUNT_SHARED_MAP) / sizeof(MOUNT_SHARED_MAP[0]);
     for (int i = 0; i < length; i++) {
