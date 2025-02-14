@@ -192,16 +192,19 @@ int SetSeccompFilter(const AppSpawnMgr *content, const AppSpawningCtx *property)
 
 #ifdef SECCOMP_PRIVILEGE
     if (IsDeveloperModeOpen()) {
+        // Enable high permission seccomp policy for hishell in developer mode.
         if (CheckAppMsgFlagsSet(property, APP_FLAGS_GET_ALL_PROCESSES) != 0) {
             appName = APP_PRIVILEGE;
         }
     }
 #endif
 
+    // Set seccomp policy for input method security mode.
     if (CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX) != 0) {
         appName = IMF_EXTENTOIN_NAME;
     }
 
+    // Set seccomp policy for atomic service process.
     if (CheckAppMsgFlagsSet(property, APP_FLAGS_ATOMIC_SERVICE) != 0) {
         appName = APP_ATOMIC;
     }
