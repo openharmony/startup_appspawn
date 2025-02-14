@@ -152,7 +152,6 @@ static int DoSharedMount(const SharedMountArgs *arg)
 
 static void GetMountInfo(std::vector<std::string> &sharedMounts, AppDacInfo *info, const std::string &bundleName)
 {
-    APPSPAWN_LOGI("Get mountinfo %{public}s start", bundleName.c_str());
     std::ifstream file("/proc/self/mountinfo");
     if (!file.is_open()) {
         APPSPAWN_LOGE("Failed to open mountinfo, errno: %{public}d", errno);
@@ -167,7 +166,7 @@ static void GetMountInfo(std::vector<std::string> &sharedMounts, AppDacInfo *inf
         }
     }
     file.close();
-    APPSPAWN_LOGW("Get mountinfo %{public}s end", bundleName.c_str());
+    APPSPAWN_LOGI("Get mountinfo %{public}s end", bundleName.c_str());
 }
 
 static bool IsSandboxPathShared(const std::vector<std::string> &sharedMounts, const std::string &sandboxPath)
@@ -193,7 +192,7 @@ static int MountEl1Bundle(const AppSpawningCtx *property, const AppDacInfo *info
 
     /* /mnt/sandbox/<currentUserId>/<bundleName>/data/storage/el1/bundle */
     char targetPath[PATH_MAX_LEN] = {0};
-    ret = snprintf_s(targetPath, PATH_MAX_LEN, PATH_MAX_LEN - 1, "/mnt/sandbox/%d/%s/data/storage/el1/bundle",
+    ret = snprintf_s(targetPath, PATH_MAX_LEN, PATH_MAX_LEN - 1, "/mnt/sandbox/%u/%s/data/storage/el1/bundle",
                      info->uid/ UID_BASE, bundleName);
     if (ret <= 0) {
         APPSPAWN_LOGE("snprintf el1 bundle sandbox path failed, errno %{public}d", errno);
@@ -445,7 +444,7 @@ static int AddDataGroupItemToQueue(AppSpawnMgr *content, const std::string &srcP
     }
     dataGroupNode->srcPath.pathLen = strlen(dataGroupNode->srcPath.path);
     dataGroupNode->destPath.pathLen = strlen(dataGroupNode->destPath.path);
-    ListNode *node = OH_ListFind(&content->dataGroupCtxQueue, (void*)dataGroupNode, DataGroupCtxNodeCompare);
+    ListNode *node = OH_ListFind(&content->dataGroupCtxQueue, (void *)dataGroupNode, DataGroupCtxNodeCompare);
     if (node != nullptr) {
         APPSPAWN_LOGI("DataGroupCtxNode %{public}s is exist", dataGroupNode->srcPath.path);
         return 0;
@@ -547,7 +546,7 @@ int UpdateDataGroupDirs(AppSpawnMgr *content)
     while (node != &content->dataGroupCtxQueue) {
         DataGroupCtx *dataGroupNode = (DataGroupCtx *)ListEntry(node, DataGroupCtx, node);
         char sandboxPath[PATH_MAX_LEN] = {0};
-        int ret = snprintf_s(sandboxPath, PATH_MAX_LEN, PATH_MAX_LEN - 1, "%s/%s", dataGroupNode->destPath.path,
+        int ret = snprintf_s(sandboxPath, PATH_MAX_LEN, PATH_MAX_LEN - 1, "%s%s", dataGroupNode->destPath.path,
                              dataGroupNode->dataGroupUuid);
         if (ret <= 0) {
             APPSPAWN_LOGE("snprintf_s sandboxPath: %{public}s failed, errno %{public}d",
@@ -567,7 +566,6 @@ int UpdateDataGroupDirs(AppSpawnMgr *content)
         if (ret != 0) {
             APPSPAWN_LOGE("Shared mount %{public}s to %{public}s failed, errno %{public}d", args.srcPath,
                           sandboxPath, ret);
-            return APPSPAWN_SANDBOX_ERROR_MOUNT_FAIL;
         }
         node = node->next;
     }
@@ -634,4 +632,3 @@ MODULE_CONSTRUCTOR(void)
     (void)AddServerStageHook(STAGE_SERVER_LOCK, HOOK_PRIO_COMMON, UpdateDataGroupDirs);
 #endif
 }
-

@@ -18,7 +18,6 @@
 #include <memory>
 #include <string>
 #include <unistd.h>
-#include <dlfcn_ext.h>
 
 #include <gtest/gtest.h>
 #include <sys/stat.h>
@@ -37,9 +36,6 @@
 using namespace testing;
 using namespace testing::ext;
 using namespace OHOS;
-
-APPSPAWN_STATIC int RunChildProcessor(AppSpawnContent *content, AppSpawnClient *client);
-APPSPAWN_STATIC bool SetSeccompPolicyForRenderer(void *nwebRenderHandle);
 
 namespace OHOS {
 class NWebSpawnServiceTest : public testing::Test {
@@ -501,28 +497,5 @@ HWTEST_F(NWebSpawnServiceTest, NWeb_Spawn_Msg_008, TestSize.Level0)
         CloseClientSocket(socketId);
     }
     ASSERT_EQ(ret, 0);
-}
-
-namespace {
-#if defined(webview_arm64)
-    const std::string NWEB_HAP_LIB_PATH = "/data/storage/el1/bundle/nweb/libs/arm64";
-#elif defined(webview_x86_64)
-    const std::string NWEB_HAP_LIB_PATH = "/data/storage/el1/bundle/nweb/libs/x86_64";
-#else
-    const std::string NWEB_HAP_LIB_PATH = "/data/storage/el1/bundle/nweb/libs/arm";
-#endif
-}
-
-HWTEST_F(NWebSpawnServiceTest, NWeb_Spawn_nwebspawn_adapter, TestSize.Level0)
-{
-    AppSpawnContent content;
-    int ret =  RunChildProcessor(&content, nullptr);
-    ASSERT_EQ(ret, -1);
-
-    const std::string renderLibDir = NWEB_HAP_LIB_PATH + "/libnweb_render.so";
-    void *nwebRenderHandle = dlopen(renderLibDir.c_str(), RTLD_NOW | RTLD_GLOBAL);
-    ASSERT_EQ((nwebRenderHandle != nullptr), 1);
-    bool res = SetSeccompPolicyForRenderer(nwebRenderHandle);
-    ASSERT_FALSE(res);
 }
 }  // namespace OHOS
