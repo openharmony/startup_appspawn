@@ -34,12 +34,6 @@
 #include "seccomp_policy.h"
 #endif
 
-#ifndef APPSPAWN_TEST
-#define APPSPAWN_STATIC static
-#else
-#define APPSPAWN_STATIC
-#endif
-
 namespace {
 #if defined(webview_arm64)
     const std::string ARK_WEB_CORE_HAP_LIB_PATH =
@@ -57,7 +51,7 @@ namespace {
     const std::string WEB_RENDER_LIB_NAME = "libnweb_render.so";
 }  // namespace
 
-APPSPAWN_STATIC bool SetSeccompPolicyForRenderer(void *nwebRenderHandle)
+static bool SetSeccompPolicyForRenderer(void *nwebRenderHandle)
 {
 #ifdef WITH_SECCOMP
     if (IsEnableSeccomp()) {

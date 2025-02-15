@@ -20,7 +20,7 @@
 
   Native软件包安装就是将从应用市场下载解压出来的hnp包安装到鸿蒙PC设备上。当前提供接口调用以及hnp命令行两种方式进行安装。
 
-  1） hnp帮助命令 hnp -h。
+1） hnp帮助命令 hnp -h：
   ```
     usage:hnp <command> <args> [-u <user id>][-p <hap package name>][-i <hap install path>][-f][-s <hap source path>][-a <system abi>]
 
@@ -141,7 +141,7 @@ b. 强制安装会将已安装的软件先卸载掉之后再安装当前新的�
 c. 批量安装应用的hnp软件时如果中间安装出错，则直接退出安装流程返回，之前已安装的软件继续保留。
 
 
-3） 接口调用安装。
+3） 接口调用安装：
 
   安装接口原型：
   ```
@@ -172,7 +172,7 @@ c. 批量安装应用的hnp软件时如果中间安装出错，则直接退出�
 
   Native软件包卸载就是将已安装到系统上的Native软件进行卸载。当期望卸载的软件正在运行时，则卸载失败。当前提供接口调用以及命令行两种方式进行卸载。
 
-  1） hnp命令行卸载：
+1） hnp命令行卸载：
   ```
     hnp uninstall -u [系统用户ID] -p [hap包名]
   ```
@@ -187,13 +187,13 @@ c. 批量安装应用的hnp软件时如果中间安装出错，则直接退出�
     baidu应用下hnp软件卸载：
     hnp uninstall -u 100 -p baidu
 
-    卸载之前已经安装的baidu应用下所有hnp软件。100为安装所在的系统用户ID。
+    卸载之前已经安装的baidu应用下所有hnp软件，100为安装所在的系统用户ID。
     执行成功观察点：
     观察点1：之前baidu应用安装的时候分别安装了公有和私有的hnpsample软件，所以本次卸载需要观察以下之前安装的软件目录“hnpsample.org”是否已删除。
     公有软件：
-    /data/app/el1/bundle/100/hnppublic/hnpsample.org。
+    /data/app/el1/bundle/100/hnppublic/hnpsample.org
     私有软件：
-    /data/app/el1/bundle/100/hnp/baidu/hnpsample.org。
+    /data/app/el1/bundle/100/hnp/baidu/hnpsample.org
 
     观察点2：查看/data/service/el1/startup/hnp_info.json安装管理文件中对应baidu这一hap节点信息是否删除。
   ```
@@ -203,7 +203,7 @@ a. 如果公有hnp软件被其它应用所共有，则卸载本应用不会删�
 
 b. 公有hnp软件卸载前会判断该软件是否正在运行，如果正在运行则会卸载失败。私有hnp软件因为其所属应用已经卸载，不存在正在使用的情况，因此私有软件不用校验是否正在运行。
 
-2） 接口调用卸载。
+2） 接口调用卸载：
 
   卸载接口原型：
   ```
