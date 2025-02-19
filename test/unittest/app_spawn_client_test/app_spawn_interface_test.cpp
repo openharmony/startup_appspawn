@@ -637,4 +637,20 @@ HWTEST_F(AppSpawnInterfaceTest, App_SpawnListenCloseSet_001, TestSize.Level0)
     int ret = SpawnListenCloseSet();
     EXPECT_EQ(ret, 0);
 }
+
+/**
+ * @brief 测试接口：AppSpawnClientSendUserLockStatus
+ *
+ */
+HWTEST_F(AppSpawnInterfaceTest, AppSpawnClientSendUserLockStatus_001, TestSize.Level0)
+{
+    int ret = AppSpawnClientSendUserLockStatus(0, true);
+    EXPECT_NE(ret, 0);
+    ret = AppSpawnClientSendUserLockStatus(0, false);
+    EXPECT_NE(ret, 0);
+    ret = AppSpawnClientSendUserLockStatus(100, true);
+    EXPECT_NE(ret, 0);
+    ret = AppSpawnClientSendUserLockStatus(100, false);
+    EXPECT_NE(ret, 0);
+}
 }  // namespace OHOS
