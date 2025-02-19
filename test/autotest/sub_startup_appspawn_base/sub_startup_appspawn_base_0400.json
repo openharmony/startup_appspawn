@@ -1,0 +1,14 @@
+{
+  "description": "Config for OpenHarmony devicetest test cases",
+  "environment": [
+    {
+      "type": "device"
+    }
+  ],
+  "driver": {
+    "type": "DeviceTest",
+    "py_file": [
+      "SUB_STARTUP_APPSPAWN_BASE/SubStartupAppspawnBase0400.py"
+    ]
+  }
+}
