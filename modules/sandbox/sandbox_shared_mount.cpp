@@ -150,34 +150,14 @@ static int DoSharedMount(const SharedMountArgs *arg)
     return 0;
 }
 
-static void GetMountInfo(std::vector<std::string> &sharedMounts, AppDacInfo *info, const std::string &bundleName)
+static bool SetSandboxPathShared(const std::string &sandboxPath)
 {
-    std::ifstream file("/proc/self/mountinfo");
-    if (!file.is_open()) {
-        APPSPAWN_LOGE("Failed to open mountinfo, errno: %{public}d", errno);
-        return;
+    int ret = mount(nullptr, sandboxPath.c_str(), nullptr, MS_SHARED, nullptr);
+    if (ret != 0) {
+        APPSPAWN_LOGW("Need to mount %{public}s to shared, errno %{public}d", sandboxPath.c_str(), errno);
+        return false;
     }
-
-    std::string line;
-    while (std::getline(file, line)) {
-        if ((line.find(info->uid / UID_BASE) != std::string::npos) && (line.find(bundleName) != std::string::npos) &&
-            (line.find("shared:") != std::string::npos)) {
-            sharedMounts.push_back(line);
-        }
-    }
-    file.close();
-    APPSPAWN_LOGI("Get mountinfo %{public}s end", bundleName.c_str());
-}
-
-static bool IsSandboxPathShared(const std::vector<std::string> &sharedMounts, const std::string &sandboxPath)
-{
-    std::regex mountPoint(sandboxPath);
-    for (const auto &sharedMount : sharedMounts) {
-        if (std::regex_search(sharedMount, mountPoint)) {
-            return true;
-        }
-    }
-    return false;
+    return true;
 }
 
 static int MountEl1Bundle(const AppSpawningCtx *property, const AppDacInfo *info, const char *bundleName)
@@ -227,8 +207,7 @@ static int MountEl1Bundle(const AppSpawningCtx *property, const AppDacInfo *info
     return ret;
 }
 
-static int MountWithFileMgr(const AppSpawningCtx *property, const AppDacInfo *info, const char *bundleName,
-                            std::vector<std::string> &sharedMounts)
+static int MountWithFileMgr(const AppSpawningCtx *property, const AppDacInfo *info, const char *bundleName)
 {
     /* /mnt/user/<currentUserId>/nosharefs/docs */
     char nosharefsDocsDir[PATH_MAX_LEN] = {0};
@@ -249,7 +228,7 @@ static int MountWithFileMgr(const AppSpawningCtx *property, const AppDacInfo *in
     }
 
     // Check whether the directory is a shared mount point
-    if (IsSandboxPathShared(sharedMounts, storageUserPath)) {
+    if (SetSandboxPathShared(storageUserPath)) {
         APPSPAWN_LOGI("shared mountpoint is exist");
         return 0;
     }
@@ -275,8 +254,7 @@ static int MountWithFileMgr(const AppSpawningCtx *property, const AppDacInfo *in
     return ret;
 }
 
-static int MountWithOther(const AppSpawningCtx *property, const AppDacInfo *info, const char *bundleName,
-                          std::vector<std::string> &sharedMounts)
+static int MountWithOther(const AppSpawningCtx *property, const AppDacInfo *info, const char *bundleName)
 {
     /* /mnt/user/<currentUserId>/sharefs/docs */
     char sharefsDocsDir[PATH_MAX_LEN] = {0};
@@ -297,7 +275,7 @@ static int MountWithOther(const AppSpawningCtx *property, const AppDacInfo *info
     }
 
     // Check whether the directory is a shared mount point
-    if (IsSandboxPathShared(sharedMounts, storageUserPath)) {
+    if (SetSandboxPathShared(storageUserPath)) {
         APPSPAWN_LOGI("shared mountpoint is exist");
         return 0;
     }
@@ -331,18 +309,17 @@ static int MountWithOther(const AppSpawningCtx *property, const AppDacInfo *info
     return ret;
 }
 
-static void MountStorageUsers(const AppSpawningCtx *property, const AppDacInfo *info, const char *bundleName,
-                              std::vector<std::string> &sharedMounts)
+static void MountStorageUsers(const AppSpawningCtx *property, const AppDacInfo *info, const char *bundleName)
 {
     int ret = 0;
     int index = GetPermissionIndex(nullptr, "ohos.permission.FILE_ACCESS_MANAGER");
     int checkRes = CheckAppPermissionFlagSet(property, static_cast<uint32_t>(index));
     if (checkRes == 0) {
         /* mount /mnt/user/<currentUserId>/sharefs/docs to /mnt/sandbox/<currentUserId>/<bundleName>/storage/Users */
-        ret = MountWithOther(property, info, bundleName, sharedMounts);
+        ret = MountWithOther(property, info, bundleName);
     } else {
         /* mount /mnt/user/<currentUserId>/nosharefs/docs to /mnt/sandbox/<currentUserId>/<bundleName>/storage/Users */
-        ret = MountWithFileMgr(property, info, bundleName, sharedMounts);
+        ret = MountWithFileMgr(property, info, bundleName);
     }
     if (ret != 0) {
         APPSPAWN_LOGE("Update %{public}s storage dir failed, ret %{public}d",
@@ -353,7 +330,7 @@ static void MountStorageUsers(const AppSpawningCtx *property, const AppDacInfo *
 }
 
 static int MountSharedMapItem(const AppSpawningCtx *property, const AppDacInfo *info, const char *bundleName,
-                              const char *sandboxPathItem, std::vector<std::string> &sharedMounts)
+                              const char *sandboxPathItem)
 {
     /* /mnt/sandbox/<currentUserId>/<bundleName>/data/storage/el<x> */
     char sandboxPath[PATH_MAX_LEN] = {0};
@@ -365,7 +342,7 @@ static int MountSharedMapItem(const AppSpawningCtx *property, const AppDacInfo *
     }
 
     // Check whether the directory is a shared mount point
-    if (IsSandboxPathShared(sharedMounts, sandboxPath)) {
+    if (SetSandboxPathShared(sandboxPath)) {
         APPSPAWN_LOGI("shared mountpoint is exist");
         return 0;
     }
@@ -391,18 +368,17 @@ static int MountSharedMapItem(const AppSpawningCtx *property, const AppDacInfo *
     return ret;
 }
 
-static void MountSharedMap(const AppSpawningCtx *property, const AppDacInfo *info, const char *bundleName,
-                           std::vector<std::string> &sharedMounts)
+static void MountSharedMap(const AppSpawningCtx *property, const AppDacInfo *info, const char *bundleName)
 {
     int length = sizeof(MOUNT_SHARED_MAP) / sizeof(MOUNT_SHARED_MAP[0]);
     for (int i = 0; i < length; i++) {
         if (MOUNT_SHARED_MAP[i].permission == nullptr) {
-            MountSharedMapItem(property, info, bundleName, MOUNT_SHARED_MAP[i].sandboxPath, sharedMounts);
+            MountSharedMapItem(property, info, bundleName, MOUNT_SHARED_MAP[i].sandboxPath);
         } else {
             int index = GetPermissionIndex(nullptr, MOUNT_SHARED_MAP[i].permission);
             APPSPAWN_LOGV("mount dir on lock mountPermissionFlags %{public}d", index);
             if (CheckAppPermissionFlagSet(property, static_cast<uint32_t>(index))) {
-                MountSharedMapItem(property, info, bundleName, MOUNT_SHARED_MAP[i].sandboxPath, sharedMounts);
+                MountSharedMapItem(property, info, bundleName, MOUNT_SHARED_MAP[i].sandboxPath);
             }
         }
     }
@@ -592,19 +568,9 @@ static void MountDirToShared(AppSpawnMgr *content, const AppSpawningCtx *propert
         return;
     }
 
-    struct timespec checkStart = {0};
-    clock_gettime(CLOCK_MONOTONIC, &checkStart);
-
-    std::vector<std::string> sharedMounts;
-    GetMountInfo(sharedMounts, info, std::string(bundleInfo->bundleName));
-    MountSharedMap(property, info, bundleInfo->bundleName, sharedMounts);
-    MountStorageUsers(property, info, bundleInfo->bundleName, sharedMounts);
+    MountSharedMap(property, info, bundleInfo->bundleName);
+    MountStorageUsers(property, info, bundleInfo->bundleName);
     ParseDataGroupList(content, property, info, bundleInfo);
-
-    struct timespec checkEnd = {0};
-    clock_gettime(CLOCK_MONOTONIC, &checkEnd);
-    uint64_t diff = DiffTime(&checkStart, &checkEnd);
-    APPSPAWN_LOGI("Check %{public}s mount status use time %{public}" PRId64" us", bundleInfo->bundleName, diff);
 
     std::string lockSbxPathStamp = "/mnt/sandbox/" + std::to_string(info->uid / UID_BASE) + "/";
     lockSbxPathStamp += CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX_TYPE) ? "isolated/" : "";
