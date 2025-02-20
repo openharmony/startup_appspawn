@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 # Copyright (c) 2025 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -44,9 +46,9 @@ class SubStartupAppspawnAppclone0300(TestCase):
 
     def build_shell_command(i, path, bundle_name, j):
         if bundle_name == "com.example.intaketest":
-            result01 = self.driver.shell("ls /data/app/el%d/100/%s/%s" % (i, path, bundle_name))
+            result01 = self.driver.shell("ls ../data/app/el%d/100/%s/%s" % (i, path, bundle_name))
         elif bundle_name == "com.example.intaketest%d" % j:
-            result01 = self.driver.shell("ls /data/app/el%d/100/%s/+clone-%d+com.example.intaketest"
+            result01 = self.driver.shell("ls ../data/app/el%d/100/%s/+clone-%d+com.example.intaketest"
                                          % (i, path, j))
         return None
 
@@ -92,7 +94,7 @@ class SubStartupAppspawnAppclone0300(TestCase):
             for j in range(1, 6):
                 for bundle_name, pid in pid_bundlename_dict.items():
                     result01 = build_shell_command(i, "base", bundle_name, j)
-                    result02 = self.driver.shell("ls /proc/%d/root/data/storage/el%d/%s" % (pid, i, "base"))
+                    result02 = self.driver.shell("ls ../proc/%d/root/data/storage/el%d/%s" % (pid, i, "base"))
                     self.driver.Assert.equal(result01, result02)
 
     def teardown(self):
