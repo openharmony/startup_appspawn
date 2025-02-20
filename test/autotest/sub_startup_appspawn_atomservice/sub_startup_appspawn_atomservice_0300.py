@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 # Copyright (c) 2025 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -55,8 +57,8 @@ class SubStartupAppspawnAtomservice0300(TestCase):
 
         for path in ["base", "database"]:
             for i in range(1, 5):
-                result1 = self.driver.shell("ls /proc/%d/root/data/storage/el%d/%s" % (pid, i, path))
-                result2 = self.driver.shell("ls /data/app/el%d/100/%s/%s" % (i, path, bundle_name_start))
+                result1 = self.driver.shell("ls ../proc/%d/root/data/storage/el%d/%s" % (pid, i, path))
+                result2 = self.driver.shell("ls ../data/app/el%d/100/%s/%s" % (i, path, bundle_name_start))
                 self.driver.Assert.equal(result1, result2)
 
     def teardown(self):

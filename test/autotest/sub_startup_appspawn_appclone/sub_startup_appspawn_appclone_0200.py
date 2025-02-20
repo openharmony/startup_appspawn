@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 # Copyright (c) 2025 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -56,15 +58,15 @@ class SubStartupAppspawnAppclone0200(TestCase):
         self.driver.touch(BY.text("安装克隆应用"))
         self.driver.touch(BY.text("startAbilityByAppIndex"))
         Step("步骤4：分身应用的源目录新建123.txt")
-        self.driver.shell("touch /data/app/el2/100/database/com.ohos.mytest/abc.txt")
+        self.driver.shell("touch ../data/app/el2/100/database/com.ohos.mytest/abc.txt")
         Step("步骤5：主应用沙盒路径是否存在abc.txt")
         cpid = self.driver.System.get_pid("com.ohos.mytest")
-        result1 = self.driver.shell("ls /proc/%d/root/data/storage/el2/database" % cpid)
+        result1 = self.driver.shell("ls ../proc/%d/root/data/storage/el2/database" % cpid)
         Step("步骤6：预期结果校验")
         self.driver.Assert.contains(result1, "abc.txt")
         Step("步骤7：分身应用沙盒路径是否存在abc.txt")
         pid = self.driver.System.get_pid("com.ohos.mytest1")
-        result2 = self.driver.shell("ls /proc/%d/root/data/storage/el2/database" % pid)
+        result2 = self.driver.shell("ls ../proc/%d/root/data/storage/el2/database" % pid)
         Step("步骤6：预期结果校验")
         if ("abc.txt" in result2):
             raise AssertionError()

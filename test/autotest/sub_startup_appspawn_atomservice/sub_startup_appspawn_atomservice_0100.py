@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 # Copyright (c) 2025 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -79,7 +81,7 @@ class SubStartupAppspawnAtomservice0100(TestCase):
         self.driver.Assert.equal(mnt_has_dir_login, True)
 
         for i in range(1, 5):
-            hap_detail = self.driver.shell("ls -lZ /data/app/el%d/100/%s" % (i, "base")).split("\n")
+            hap_detail = self.driver.shell("ls -lZ ../data/app/el%d/100/%s" % (i, "base")).split("\n")
             for hap in hap_detail[1:-2]:
                 if hap.split()[-1] == bundle_name:
                     hap_info01 = hap
@@ -88,7 +90,7 @@ class SubStartupAppspawnAtomservice0100(TestCase):
             for index in range(2, 5):
                 self.driver.Assert.equal(hap_info01.split()[index], hap_info02.split()[index])
 
-        hap_detail = self.driver.shell("ls -lZ /mnt/share/100").split("\n")
+        hap_detail = self.driver.shell("ls -lZ ../mnt/share/100").split("\n")
         for hap in hap_detail[1:-2]:
             if hap.split()[-1] == bundle_name:
                 hap_info01 = hap
