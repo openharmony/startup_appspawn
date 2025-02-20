@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 # Copyright (c) 2025 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -73,7 +75,7 @@ class SubStartupAppspawnAppclone0400(TestCase):
                 self.driver.touch(BY.text("IntakeTest%d" % (i - 1)))
             self.driver.go_home()
 
-        self.driver.shell("touch /data/app/el2/100/base/%s/test.txt" % bundle_name)
+        self.driver.shell("touch ../data/app/el2/100/base/%s/test.txt" % bundle_name)
         has_file01 = self.driver.Storage.has_file("/data/app/el2/100/base/%s/test.txt" % bundle_name)
         self.driver.Assert.equal(has_file01, True)
         for i in range(1, 6):
