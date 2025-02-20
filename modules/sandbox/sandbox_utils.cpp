@@ -1958,7 +1958,7 @@ static int SharedMountInSharefs(const AppSpawningCtx *property, const char *root
     }
 
     char options[PATH_MAX_LEN] = {0};
-    ret = snprintf_s(options, PATH_MAX_LEN, PATH_MAX_LEN - 1, "override_support_delete,user_id=%d",
+    ret = snprintf_s(options, PATH_MAX_LEN, PATH_MAX_LEN - 1, "override_support_delete,user_id=%u",
                      info->uid / UID_BASE);
     if (ret <= 0) {
         return APPSPAWN_ERROR_UTILS_MEM_FAIL;
