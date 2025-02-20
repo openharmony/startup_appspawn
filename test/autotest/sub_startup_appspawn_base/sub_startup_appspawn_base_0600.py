@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 # Copyright (c) 2025 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -68,9 +70,9 @@ class SubStartupAppspawnBase0600(TestCase):
         for i, txt in dict01.items():
             pid = self.driver.System.get_pid(i)
             if i == clone_bundle_name:
-                self.driver.shell("touch /data/app/el2/100/base/+clone-1+%s/%s" % (bundle_name, txt))
+                self.driver.shell("touch ../data/app/el2/100/base/+clone-1+%s/%s" % (bundle_name, txt))
             else:
-                self.driver.shell("touch /data/app/el2/100/base/%s/%s" % (i, txt))
+                self.driver.shell("touch ../data/app/el2/100/base/%s/%s" % (i, txt))
             result = self.driver.Storage.has_file("/proc/%d/root/data/storage/el2/base/%s" % (pid, txt))
             self.driver.Assert.equal(result, True)
 
