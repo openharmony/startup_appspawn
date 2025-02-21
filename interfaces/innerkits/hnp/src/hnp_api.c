@@ -164,11 +164,6 @@ int NativeInstallHnp(const char *userId, const char *hnpRootPath,  const HapInfo
     char *apcEnv[MAX_ENV_NUM] = {0};
     int index = 0;
 
-    if (!IsDeveloperModeOpen()) {
-        HNPAPI_LOG("\r\n [HNP API] native package install not in developer mode");
-        return HNP_API_NOT_IN_DEVELOPER_MODE;
-    }
-
     if ((userId == NULL) || (hnpRootPath == NULL) || (hapInfo == NULL)) {
         return HNP_API_ERRNO_PARAM_INVALID;
     }
@@ -206,11 +201,6 @@ int NativeUnInstallHnp(const char *userId, const char *packageName)
     char *argv[MAX_ARGV_NUM] = {0};
     char *apcEnv[MAX_ENV_NUM] = {0};
     int index = 0;
-
-    if (!IsDeveloperModeOpen()) {
-        HNPAPI_LOG("\r\n [HNP API] native package uninstall not in developer mode");
-        return HNP_API_NOT_IN_DEVELOPER_MODE;
-    }
 
     if ((userId == NULL) || (packageName == NULL)) {
         return HNP_API_ERRNO_PARAM_INVALID;
