@@ -54,6 +54,9 @@ AppSpawnMgr *CreateAppSpawnMgr(int mode)
     appMgr->servicePid = getpid();
     appMgr->server = NULL;
     appMgr->sigHandler = NULL;
+#ifdef APPSPAWN_HISYSEVENT
+    appMgr->hisyseventInfo = NULL;
+#endif
     OH_ListInit(&appMgr->appQueue);
     OH_ListInit(&appMgr->diedQueue);
     OH_ListInit(&appMgr->appSpawnQueue);
@@ -97,6 +100,9 @@ void DeleteAppSpawnMgr(AppSpawnMgr *mgr)
     OH_ListRemoveAll(&mgr->diedQueue, NULL);
     OH_ListRemoveAll(&mgr->appSpawnQueue, SpawningQueueDestroy);
     OH_ListRemoveAll(&mgr->extData, ExtDataDestroy);
+#ifdef APPSPAWN_HISYSEVENT
+    DeleteHisyseventInfo(mgr->hisyseventInfo);
+#endif
 
     APPSPAWN_LOGV("DeleteAppSpawnMgr %{public}d %{public}d", mgr->servicePid, getpid());
     free(mgr);
