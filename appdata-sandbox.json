@@ -49,51 +49,6 @@
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
-                    "src-path" : "/system/lib/platformsdk",
-                    "sandbox-path" : "/system/lib/platformsdk",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/system/lib/ld-musl-arm.so.1",
-                    "sandbox-path" : "/system/lib/ld-musl-arm.so.1",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                },{
-                    "src-path" : "/system/lib/ndk",
-                    "sandbox-path" : "/system/lib/ndk",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/system/lib/module",
-                    "sandbox-path" : "/system/lib/module",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/system/lib/chipset-pub-sdk",
-                    "sandbox-path" : "/system/lib/chipset-pub-sdk",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/system/lib/chipset-sdk",
-                    "sandbox-path" : "/system/lib/chipset-sdk",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/system/lib/seccomp",
-                    "sandbox-path" : "/system/lib/seccomp",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/system/lib/extensionability",
-                    "sandbox-path" : "/system/lib/extensionability",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/system/lib/media",
-                    "sandbox-path" : "/system/lib/media",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
                     "src-path" : "/system/data",
                     "sandbox-path" : "/system/data",
                     "sandbox-flags" : [ "bind", "rec" ],
@@ -523,51 +478,6 @@
                 }, {
                     "src-path" : "/system/lib",
                     "sandbox-path" : "/system/lib",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/system/lib/platformsdk",
-                    "sandbox-path" : "/system/lib/platformsdk",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/system/lib/ndk",
-                    "sandbox-path" : "/system/lib/ndk",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/system/lib/module",
-                    "sandbox-path" : "/system/lib/module",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/system/lib/chipset-pub-sdk",
-                    "sandbox-path" : "/system/lib/chipset-pub-sdk",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/system/lib/chipset-sdk",
-                    "sandbox-path" : "/system/lib/chipset-sdk",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/system/lib/seccomp",
-                    "sandbox-path" : "/system/lib/seccomp",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/system/lib/extensionability",
-                    "sandbox-path" : "/system/lib/extensionability",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/system/lib/media",
-                    "sandbox-path" : "/system/lib/media",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/system/lib/ld-musl-arm.so.1",
-                    "sandbox-path" : "/system/lib/ld-musl-arm.so.1",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {

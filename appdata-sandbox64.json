@@ -2,56 +2,11 @@
     "common" : [{
         "top-sandbox-switch": "ON",
         "app-base" : [{
-            "sandbox-root" : "/mnt/sandbox/<PackageName>",
+            "sandbox-root" : "/mnt/sandbox/<currentUserId>/<PackageName>",
             "sandbox-ns-flags" : [ "net" ],
             "mount-paths" : [{
-                    "src-path" : "/system/lib",
-                    "sandbox-path" : "/system/lib",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/system/lib64/platformsdk",
-                    "sandbox-path" : "/system/lib64/platformsdk",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/system/lib64/ndk",
-                    "sandbox-path" : "/system/lib64/ndk",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/system/lib64/module",
-                    "sandbox-path" : "/system/lib64/module",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/system/lib64/chipset-pub-sdk",
-                    "sandbox-path" : "/system/lib64/chipset-pub-sdk",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/system/lib64/chipset-sdk",
-                    "sandbox-path" : "/system/lib64/chipset-sdk",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/system/lib64/seccomp",
-                    "sandbox-path" : "/system/lib64/seccomp",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/system/lib64/extensionability",
-                    "sandbox-path" : "/system/lib64/extensionability",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/system/lib64/media",
-                    "sandbox-path" : "/system/lib64/media",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/system/lib/ld-musl-aarch64.so.1",
-                    "sandbox-path" : "/system/lib/ld-musl-aarch64.so.1",
+                    "src-path" : "/system/lib64",
+                    "sandbox-path" : "/system/lib64",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
@@ -79,7 +34,7 @@
             ]
         }],
         "app-resources" : [{
-            "sandbox-root" : "/mnt/sandbox/<PackageName>",
+            "sandbox-root" : "/mnt/sandbox/<currentUserId>/<PackageName>",
             "mount-paths" : [],
             "flags-point" : [],
             "symbol-links" : []
@@ -90,53 +45,8 @@
             "sandbox-root" : "/mnt/sandbox/com.ohos.render/<PackageName>",
             "sandbox-ns-flags" : [ "pid", "net" ],
             "mount-paths" : [{
-                    "src-path" : "/system/lib",
-                    "sandbox-path" : "/system/lib",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                },{
-                    "src-path" : "/system/lib64/platformsdk",
-                    "sandbox-path" : "/system/lib64/platformsdk",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/system/lib64/ndk",
-                    "sandbox-path" : "/system/lib64/ndk",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/system/lib64/module",
-                    "sandbox-path" : "/system/lib64/module",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/system/lib64/chipset-pub-sdk",
-                    "sandbox-path" : "/system/lib64/chipset-pub-sdk",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/system/lib64/chipset-sdk",
-                    "sandbox-path" : "/system/lib64/chipset-sdk",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/system/lib64/seccomp",
-                    "sandbox-path" : "/system/lib64/seccomp",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/system/lib64/extensionability",
-                    "sandbox-path" : "/system/lib64/extensionability",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/system/lib64/media",
-                    "sandbox-path" : "/system/lib64/media",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/system/lib/ld-musl-aarch64.so.1",
-                    "sandbox-path" : "/system/lib/ld-musl-aarch64.so.1",
+                    "src-path" : "/system/lib64",
+                    "sandbox-path" : "/system/lib64",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {

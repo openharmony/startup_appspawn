@@ -194,7 +194,6 @@ static int InitSandboxContext(SandboxContext *context,
         context->sandboxShared = packageNode->section.sandboxShared;
     }
     context->message = property->message;
-
     context->sandboxNsFlags = CLONE_NEWNS;
     if ((CheckSpawningMsgFlagSet(context, APP_FLAGS_ISOLATED_SANDBOX) && !IsDeveloperModeOpen()) ||
         CheckSpawningMsgFlagSet(context, APP_FLAGS_ISOLATED_NETWORK)) {
