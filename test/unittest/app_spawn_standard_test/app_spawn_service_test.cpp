@@ -790,7 +790,7 @@ HWTEST_F(AppSpawnServiceTest, App_Spawn_InitCommonEnv_001, TestSize.Level0)
         env = getenv("PATH");
         EXPECT_NE(env, nullptr);
         if (env != nullptr) {
-            EXPECT_NE((uint64_t)strstr(env, "/data/app/bin:/data/service/hnp/bin"), 0);
+            EXPECT_NE(strstr(env, "/data/app/bin:/data/service/hnp/bin"), nullptr);
         }
     }
     env = getenv("HOME");

@@ -322,7 +322,7 @@ int32_t SandboxUtils::DoAppSandboxMountOnce(const char *originPath, const char *
     if (originPath == nullptr || destinationPath == nullptr || originPath[0] == '\0' || destinationPath[0] == '\0') {
         return 0;
     }
-    if (originPath != nullptr && strstr(originPath, "system/etc/hosts") != nullptr) {
+    if (strstr(originPath, "system/etc/hosts") != nullptr) {
         CheckAndCreatFile(destinationPath);
     } else {
         MakeDirRecursive(destinationPath, FILE_MODE);
@@ -333,7 +333,7 @@ int32_t SandboxUtils::DoAppSandboxMountOnce(const char *originPath, const char *
     struct timespec mountStart = {0};
     clock_gettime(CLOCK_MONOTONIC_COARSE, &mountStart);
     APPSPAWN_LOGV("Bind mount %{public}s to %{public}s '%{public}s' '%{public}lu' '%{public}s' '%{public}u'",
-                  originPath, destinationPath, fsType, mountFlags, options, mountSharedFlag);
+        originPath, destinationPath, fsType, mountFlags, options, mountSharedFlag);
     ret = mount(originPath, destinationPath, fsType, mountFlags, options);
     struct timespec mountEnd = {0};
     clock_gettime(CLOCK_MONOTONIC_COARSE, &mountEnd);
