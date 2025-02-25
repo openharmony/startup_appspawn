@@ -96,8 +96,8 @@ typedef struct {
 #define UNLOCK_SUCCESS "UNLOCK_SUCCESS"
 #define LOCK_SUCCESS "LOCK_SUCCESS"
 #define APPSPAWN_MAX_FAILURES_EXCEEDED "APPSPAWN_MAX_FAILURES_EXCEEDED"
-AppSpawnHisyseventInfo *InitHisyseventTimer();
-AppSpawnHisyseventInfo *GetAppSpawnHisyseventInfo();
+AppSpawnHisyseventInfo *InitHisyseventTimer(void);
+AppSpawnHisyseventInfo *GetAppSpawnHisyseventInfo(void);
 void AddStatisticEventInfo(AppSpawnHisyseventInfo *hisyseventInfo, uint32_t duration, bool stage);
 void DeleteHisyseventInfo(AppSpawnHisyseventInfo *hisyseventInfo);
 
