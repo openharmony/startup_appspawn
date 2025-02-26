@@ -53,6 +53,7 @@
 #endif
 
 #define MAX_MOUNT_TIME 500  // 500us
+#define LOCK_STATUS_SIZE 16
 
 using namespace std;
 using namespace OHOS;
@@ -1859,7 +1860,7 @@ int32_t SetAppSandboxProperty(AppSpawnMgr *content, AppSpawningCtx *property)
 #define DIR_MODE 0711
 
 #ifndef APPSPAWN_SANDBOX_NEW
-static bool IsUnlockStatus(uint32_t uid, const char *bundleName, size_t bundleNameLen)
+static bool IsUnlockStatus(uint32_t uid)
 {
     const int userIdBase = 200000;
     uid = uid / userIdBase;
@@ -1867,22 +1868,14 @@ static bool IsUnlockStatus(uint32_t uid, const char *bundleName, size_t bundleNa
         return true;
     }
 
-    const char rootPath[] = "/data/app/el2/";
-    const char basePath[] = "/base/";
-    size_t allPathSize = strlen(rootPath) + strlen(basePath) + 1 + USER_ID_SIZE + bundleNameLen;
-    char *path = reinterpret_cast<char *>(malloc(sizeof(char) * allPathSize));
-    APPSPAWN_CHECK(path != NULL, return true, "Failed to malloc path");
-    int len = sprintf_s(path, allPathSize, "%s%u%s%s", rootPath, uid, basePath, bundleName);
-    APPSPAWN_CHECK(len > 0 && ((size_t)len < allPathSize), free(path);
-        return true, "Failed to get base path");
+    string lockStatusParam = "startup.appspawn.lockstatus_" + to_string(uid);
+    char userLockStatus[LOCK_STATUS_SIZE] = {0};
+    int ret = GetParameter(lockStatusParam.c_str(), "1", userLockStatus, sizeof(userLockStatus));
+    APPSPAWN_LOGI("get param %{public}s %{public}s", lockStatusParam.c_str(), userLockStatus);
 
-    if (access(path, F_OK) == 0) {
-        APPSPAWN_LOGI("bundleName:%{public}s this is unlock status", bundleName);
-        free(path);
+    if (ret > 0 && (strcmp(userLockStatus, "0") == 0)) {   // 0:unlock  1:lock
         return true;
     }
-    free(path);
-    APPSPAWN_LOGI("bundleName:%{public}s this is lock status", bundleName);
     return false;
 }
 
@@ -2091,9 +2084,7 @@ static void MountDirToShared(const AppSpawningCtx *property)
 
     string sourcePath = "/data/app/el1/bundle/public/" + string(bundleName);
     MountDir(property, rootPath, sourcePath.c_str(), el1Path);
-
-    size_t bundleNameLen = strlen(bundleName);
-    if (IsUnlockStatus(info->uid, bundleName, bundleNameLen)) {
+    if (IsUnlockStatus(info->uid)) {
         return;
     }
 
@@ -2121,8 +2112,10 @@ static void MountDirToShared(const AppSpawningCtx *property)
 static int SpawnMountDirToShared(AppSpawnMgr *content, AppSpawningCtx *property)
 {
 #ifndef APPSPAWN_SANDBOX_NEW
-    // mount dynamic directory
-    MountDirToShared(property);
+    if (!IsNWebSpawnMode(content)) {
+        // mount dynamic directory
+        MountDirToShared(property);
+    }
 #endif
     return 0;
 }
