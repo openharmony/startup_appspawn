@@ -199,6 +199,13 @@ int SetSeccompFilter(const AppSpawnMgr *content, const AppSpawningCtx *property)
     }
 #endif
 
+#ifdef CUSTOM_SANDBOX
+    // Set seccomp policy for custom process.
+    if (CheckAppMsgFlagsSet(property, APP_FLAGS_CUSTOM_SANDBOX) != 0) {
+        appName = APP_CUSTOM;
+    }
+#endif
+
     // Set seccomp policy for input method security mode.
     if (CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX) != 0) {
         appName = IMF_EXTENTOIN_NAME;
@@ -213,7 +220,7 @@ int SetSeccompFilter(const AppSpawnMgr *content, const AppSpawningCtx *property)
         APPSPAWN_LOGE("Failed to set %{public}s seccomp filter and exit %{public}d", appName, errno);
         return -EINVAL;
     }
-    APPSPAWN_LOGV("SetSeccompFilter success for %{public}s", GetProcessName(property));
+    APPSPAWN_LOGV("SetSeccompPolicyWithName success for %{public}s", appName);
 #endif
     return 0;
 }
