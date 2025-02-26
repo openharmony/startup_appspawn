@@ -29,6 +29,7 @@
 #include <sys/types.h>
 
 #include "hilog/log.h"
+#include "appspawn_error.h"
 
 #ifdef __cplusplus
 extern "C" {
