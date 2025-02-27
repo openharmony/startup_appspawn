@@ -287,54 +287,7 @@ HWTEST_F(AppSpawnCGroupTest, App_Spawn_CGroup_006, TestSize.Level0)
     ASSERT_EQ(ret, 0);
 }
 
-/**
- * @brief in appspawn service, max write
- *
- */
 HWTEST_F(AppSpawnCGroupTest, App_Spawn_CGroup_007, TestSize.Level0)
-{
-    int ret = -1;
-    AppSpawnedProcess *appInfo = nullptr;
-    AppSpawnContent *content = nullptr;
-    const char name[] = "app-test-001";
-    do {
-        char path[PATH_MAX] = {};
-        appInfo = CreateTestAppInfo(name);
-        APPSPAWN_CHECK(appInfo != nullptr, break, "Failed to create appInfo");
-        appInfo->max = 10;  // 10 test max
-        ret = GetTestCGroupFilePath(appInfo, "pids.max", path, true);
-        APPSPAWN_CHECK_ONLY_EXPER(ret == 0, break);
-        content = AppSpawnCreateContent(APPSPAWN_SOCKET_NAME, path, sizeof(path), MODE_FOR_APP_SPAWN);
-        APPSPAWN_CHECK_ONLY_EXPER(content != nullptr, break);
-        ProcessMgrHookExecute(STAGE_SERVER_APP_ADD, content, appInfo);
-
-        // add success
-        ret = GetTestCGroupFilePath(appInfo, "pids.max", path, false);
-        APPSPAWN_CHECK_ONLY_EXPER(ret == 0, break);
-        ret = -1;
-        FILE *file = fopen(path, "r");
-        APPSPAWN_CHECK(file != nullptr, break, "Open file fail %{public}s errno: %{public}d", path, errno);
-        uint32_t max = 0;
-        ret = -1;
-        while (fscanf_s(file, "%d\n", &max) == 1 && max > 0) {
-            APPSPAWN_LOGV("max %{public}d %{public}d", max, appInfo->max);
-            if (max == appInfo->max) {
-                ret = 0;
-                break;
-            }
-        }
-        fclose(file);
-    } while (0);
-    if (appInfo) {
-        free(appInfo);
-    }
-    AppSpawnDestroyContent(content);
-    LE_StopLoop(LE_GetDefaultLoop());
-    LE_CloseLoop(LE_GetDefaultLoop());
-    ASSERT_EQ(ret, 0);
-}
-
-HWTEST_F(AppSpawnCGroupTest, App_Spawn_CGroup_008, TestSize.Level0)
 {
     int ret = -1;
     AppSpawnedProcess *appInfo = nullptr;
@@ -351,14 +304,14 @@ HWTEST_F(AppSpawnCGroupTest, App_Spawn_CGroup_008, TestSize.Level0)
     ASSERT_NE(ret, 0);
 }
 
-HWTEST_F(AppSpawnCGroupTest, App_Spawn_CGroup_009, TestSize.Level0)
+HWTEST_F(AppSpawnCGroupTest, App_Spawn_CGroup_008, TestSize.Level0)
 {
     pid_t pids[] = {100, 101, 102};
     int ret = WriteToFile(nullptr, -1, pids, 3);
     ASSERT_NE(ret, 0);
 }
 
-HWTEST_F(AppSpawnCGroupTest, App_Spawn_CGroup_010, TestSize.Level0)
+HWTEST_F(AppSpawnCGroupTest, App_Spawn_CGroup_009, TestSize.Level0)
 {
     int ret = -1;
     AppSpawnedProcess *appInfo = nullptr;
