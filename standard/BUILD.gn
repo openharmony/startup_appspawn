@@ -195,14 +195,7 @@ ohos_executable("cjappspawn") {
     "hitrace:hitrace_meter",
     "init:libbegetutil",
   ]
-  if (appspawn_report_event) {
-    defines += [ "APPSPAWN_HISYSEVENT" ]
-    external_deps += [ "hisysevent:libhisysevent" ]
-    sources += [
-      "${appspawn_path}/modules/sysevent/appspawn_hisysevent.cpp",
-      "${appspawn_path}/modules/sysevent/hisysevent_adapter.cpp",
-    ]
-  }
+
   if (build_selinux) {
     defines += [ "WITH_SELINUX" ]
     external_deps += [
@@ -270,14 +263,7 @@ ohos_executable("nativespawn") {
     "hitrace:hitrace_meter",
     "init:libbegetutil",
   ]
-  if (appspawn_report_event) {
-    defines += [ "APPSPAWN_HISYSEVENT" ]
-    external_deps += [ "hisysevent:libhisysevent" ]
-    sources += [
-      "${appspawn_path}/modules/sysevent/appspawn_hisysevent.cpp",
-      "${appspawn_path}/modules/sysevent/hisysevent_adapter.cpp",
-    ]
-  }
+
   if (build_selinux) {
     defines += [ "WITH_SELINUX" ]
     external_deps += [
