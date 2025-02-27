@@ -227,7 +227,6 @@ static int InitSandboxContext(SandboxContext *context,
     }
     context->message = property->message;
     context->sandboxNsFlags = CLONE_NEWNS;
-
     if (NeedNetworkIsolated(context, property)) {
         context->sandboxNsFlags |= sandbox->sandboxNsFlags & CLONE_NEWNET ? CLONE_NEWNET : 0;
     }

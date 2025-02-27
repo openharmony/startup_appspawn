@@ -1084,7 +1084,6 @@ static void ProcessChildResponse(const WatcherHandle taskHandle, int fd, uint32_
         }
 #endif
         clock_gettime(CLOCK_MONOTONIC, &appInfo->spawnEnd);
-        // add max info
 
 #ifdef APPSPAWN_HISYSEVENT
         //add process spawn duration into hisysevent,(ms)
@@ -1671,7 +1670,6 @@ APPSPAWN_STATIC int AppspawnDevicedebugDeal(const char* op, int pid, cJSON *args
     if (strcmp(op, "kill") == 0) {
         return AppspawpnDevicedebugKill(pid, args);
     }
-
     APPSPAWN_LOGE("appspawn devicedebug op:%{public}s invaild", op);
 
     return -1;
