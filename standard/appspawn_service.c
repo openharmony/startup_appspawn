@@ -1573,7 +1573,6 @@ APPSPAWN_STATIC int AppspawnDevicedebugDeal(const char* op, int pid, cJSON *args
     if (strcmp(op, "kill") == 0) {
         return AppspawpnDevicedebugKill(pid, args);
     }
-    
     APPSPAWN_LOGE("appspawn devicedebug op:%{public}s invaild", op);
 
     return -1;

@@ -30,8 +30,6 @@
 #include "appspawn_manager.h"
 #include "appspawn_utils.h"
 #include "securec.h"
-#include "cJSON.h"
-#include <sys/ioctl.h>
 
 APPSPAWN_STATIC int GetCgroupPath(const AppSpawnedProcessInfo *appInfo, char *buffer, uint32_t buffLen)
 {
@@ -66,57 +64,6 @@ APPSPAWN_STATIC int WriteToFile(const char *path, int truncated, pid_t pids[], u
     }
     close(fd);
     return ret;
-}
-
-#define APP_PIDS_MAX_ENCAPS "encaps"
-#define APP_PIDS_MAX_OHOS_ENCAPS_COUNT_KEY "ohos.encaps.count"
-#define APP_PIDS_MAX_OHOS_ENCAPS_FORK_KEV "ohos.encaps.fork"
-#define APP_PIDS_MAX_OHOS_ENCAPS_FORK_DFX_KEY "ohos.encaps.fork.dfx"
-#define APP_PIDS_MAX_OHOS_ENCAPS_FORK_WEBDFX_KEY "ohos.encaps.fork.webdfx"
-#define APP_PIDS_MAX_OHOS_ENCAPS_COUNT_VALUE 3
-#define APP_PIDS_MAX_OHOS_ENCAPS_FORK_DFX_AND_WEBDFX_VALUE 5
-#define APP_ENABLE_ENCAPS 1
-#define ASSICN_ENCAPS_CMD _lOW('E', 0x1A, char *)
-static int WritePidMax(const char *path, uint32_t max)
-{
-#if APP_ENABLE_ENCAPS == 0
-    cJSON *encaps = cJSON_CreateObject();
-    cJSON_AddNumberToObject(encaps, APP_PIDS_MAX_OHOS_ENCAPS_COUNT_KEY,
-        APP_PIDS_MAX_OHOS_ENCAPS_COUNT_VALUE);
-    cJSON_AddNumberToObject(encaps, APP_PIDS_MAX_OHOS_ENCAPS_FORK_KEV, max);
-    cJSON_AddNumberToObject(encaps, APP_PIDS_MAX_OHOS_ENCAPS_FORK_DFX_KEY,
-        APP_PIDS_MAX_OHOS_ENCAPS_FORK_DFX_AND_WEBDFX_VALUE);
-    cJSON_AddNumberToObject(encaps, APP_PIDS_MAX_OHOS_ENCAPS_FORK_WEBDFX_KEY,
-        APP_PIDS_MAX_OHOS_ENCAPS_FORK_DFX_AND_WEBDFX_VALUE);
-    cJSON *addGinseng = cJSON_CreateObject();
-    cJSON_AddItemToObject(addGinseng, APP_PIDS_MAX_ENCAPS, encaps);
-    char *maxPid = cJSON_PrintUnformatted(addGinseng);
-    int ret = 0;
-    int fd = 0;
-    fd = open("dev/encaps", O_RDWR);
-    ret = ioctl(fd, ASSICN_ENCAPS_CMD, maxPid);
-    close(fd);
-    free(maxPid);
-    cJSON_Delete(addGinseng);
-    cJSON_Delete(encaps);
-    return ret;
-#else
-    char value[32] = {0}; // 32 max len
-    int fd = open(path, O_RDWR | O_TRUNC);
-    APPSPAWN_CHECK(fd >= 0, return -1,
-        "Failed to open file errno: %{public}d path: %{public}s", errno, path);
-    int ret = 0;
-    do {
-        ret = snprintf_s(value, sizeof(value), sizeof(value) - 1, "%u\n", max);
-        APPSPAWN_CHECK(ret > 0, break, "Failed to snprintf_s errno: %{public}d", errno);
-        ret = write(fd, value, strlen(value));
-        APPSPAWN_CHECK(ret > 0, break,
-            "Failed to write file errno: %{public}d path: %{public}s %{public}s %{public}d", errno, path, value, ret);
-        ret = 0;
-    } while (0);
-    close(fd);
-    return ret;
-#endif
 }
 
 static void SetForkDenied(const AppSpawnedProcessInfo *appInfo)
@@ -205,18 +152,10 @@ static int ProcessMgrAddApp(const AppSpawnMgr *content, const AppSpawnedProcessI
     int ret = GetCgroupPath(appInfo, path, sizeof(path));
     APPSPAWN_CHECK(ret == 0, return -1, "Failed to get real path errno: %{public}d", errno);
     (void)CreateSandboxDir(path, 0755);  // 0755 default mode
-    uint32_t pathLen = strlen(path);
     ret = strcat_s(path, sizeof(path), "cgroup.procs");
     APPSPAWN_CHECK(ret == 0, return ret, "Failed to strcat_s errno: %{public}d", errno);
     ret = WriteToFile(path, 0, (pid_t *)&appInfo->pid, 1);
     APPSPAWN_CHECK(ret == 0, return ret, "write pid to cgroup.procs fail %{public}s", path);
-    if (appInfo->max != 0) {
-        path[pathLen] = '\0';
-        ret = strcat_s(path, sizeof(path), "pids.max");
-        APPSPAWN_CHECK(ret == 0, return ret, "Failed to strcat_s errno: %{public}d", errno);
-        ret = WritePidMax(path, appInfo->max);
-        APPSPAWN_CHECK(ret == 0, return ret, "write max to pids.max fail %{public}s", path);
-    }
     APPSPAWN_LOGV("Add app %{public}d to cgroup %{public}s success", appInfo->pid, path);
     return 0;
 }
