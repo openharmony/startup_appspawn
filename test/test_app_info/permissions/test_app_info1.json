@@ -1,0 +1,42 @@
+{
+    "msg-type": 0,
+    "msg-flags": [1, 2, 14],
+    "process-name" : "com.example.myapplication",
+    "pid": 328018,
+    "dac-info" : {
+            "uid" : 20010043,
+            "gid" : 20010043,
+            "gid-table" : [20010043],
+            "user-name" : ""
+    },
+    "access-token": {
+            "accessTokenIdEx": 537854093
+    },
+    "permission": [
+            "ohos.permission.READ_IMAGEVIDEO"
+    ],
+    "internet-permission": {
+            "set-allow-internet": 0,
+            "allow-internet": 0
+    },
+    "bundle-info": {
+            "bundle-index": 0,
+            "bundle-name": "com.example.myapplication"
+    },
+    "owner-id": "",
+    "render-cmd": "1234567890",
+    "domain-info": {
+            "hap-flags": 0,
+            "apl": "normal"
+    },
+    "ext-info": [
+            {
+                    "name": "Permissions",
+                    "value": "{\"name\":\"Permissions\",\"ohos.encaps.count\":0,\"permissions\":[{\"ohos.permission.bool\":true},{\"ohos.permission.int\":3225},{\"ohos.permission.string\":\"test\"},{\"ohos.permission.array\":[1,2,3,4,5]}]}"
+            },
+            {
+                "name": "MaxChildProcess",
+                "value": "128"
+            }
+    ]
+}
