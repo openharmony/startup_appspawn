@@ -331,7 +331,7 @@
                             "src-path": "/data/app/el2/<currentUserId>/base/<PackageName>/.backup",
                             "sandbox-path": "/data/storage/el2/backup",
                             "sandbox-flags": [ "bind", "rec" ],
-                            "check-action-status": "true"
+                            "check-action-status": "false"
                         }, {
                             "src-path" : "/data/app/el1/<currentUserId>/base/<PackageName>/.backup",
                             "sandbox-path" : "/data/storage/el1/backup",
