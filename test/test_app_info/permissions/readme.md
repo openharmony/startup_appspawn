@@ -1,0 +1,7 @@
+# 测试用例
+| 用例编号 | 模块 | 预置条件 | 测试步骤 | 测试类型 | 预期结果 | 实际结果 |
+| :---- | :---- | :---- | :---- | :---- | :---- | :---- |
+| 1 | appspawn | 1、编译AppSpawnTest测试二进制文件。<br/>2.打开debug级别的日志：hilog -b D | 1、将AppSpawnTest与test_app_info1.json推送到设备data目录下。<br/>2、进入data目录，通过命令chmod +x AppSpawnTest增加可执行权限。<br/>3、重新打开一个窗口，执行hilog \| grep appspawn_encaps.c，在原窗口的data目录下执行命令./AppSpawnTest --file test_app_info1.json | demo | 日志信息中有校验报错日志 | pass |
+| 2 | appspawn | 1、编译AppSpawnTest测试二进制文件。<br/>2.打开debug级别的日志：hilog -b D | 1、将AppSpawnTest与test_app_info2.json推送到设备data目录下。<br/>2、进入data目录，通过命令chmod +x AppSpawnTest增加可执行权限。<br/>3、重新打开一个窗口，执行hilog \| grep appspawn_encaps.c，在原窗口的data目录下执行命令./AppSpawnTest --file test_app_info2.json | demo | 日志信息中有校验报错日志 | pass |
+| 3 | appspawn | 1、编译AppSpawnTest测试二进制文件。<br/>2.打开debug级别的日志：hilog -b D | 1、将AppSpawnTest与test_app_info3.json推送到设备data目录下。<br/>2、进入data目录，通过命令chmod +x AppSpawnTest增加可执行权限。<br/>3、重新打开一个窗口，执行hilog \| grep appspawn_encaps.c，在原窗口的data目录下执行命令./AppSpawnTest --file test_app_info3.json | demo | 日志信息中有校验报错日志 | pass |
+| 4 | appspawn | 1、编译AppSpawnTest测试二进制文件。<br/>2.打开debug级别的日志：hilog -b D | 1、将AppSpawnTest与test_app_info4.json推送到设备data目录下。<br/>2、进入data目录，通过命令chmod +x AppSpawnTest增加可执行权限。<br/>3、重新打开一个窗口，执行hilog \| grep appspawn_encaps.c，在原窗口的data目录下执行命令./AppSpawnTest --file test_app_info4.json | demo | 日志中有设置permission权限打印，但是设置失败 | pass |
