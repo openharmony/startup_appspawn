@@ -141,7 +141,63 @@ static inline cJSON *GetJsonObjFromExtInfo(const AppSpawningCtx *property, const
     return extInfoJson;
 }
 
-static int AddJITPermissionToEncaps(cJSON *extInfoJson, cJSON *encaps, uint32_t *permissionCount)
+APPSPAWN_STATIC int AddPermissionArrayToItem(cJSON *encaps, const char *key, cJSON *permissionItemArr)
+{
+    cJSON *arrayItem = permissionItemArr->child;
+    cJSON *newArray = cJSON_CreateArray();
+    if (newArray == NULL) {
+        return APPSPAWN_ERROR_UTILS_CREATE_JSON_FAIL;
+    }
+    if (!cJSON_AddItemToObject(encaps, key, newArray)) {
+        cJSON_Delete(newArray);
+        return APPSPAWN_ERROR_UTILS_ADD_JSON_FAIL;
+    }
+
+    while (arrayItem) {
+        cJSON *newItem = NULL;
+        if (cJSON_IsNumber(arrayItem)) {
+            newItem = cJSON_CreateNumber(arrayItem->valueint);
+        } else if (cJSON_IsString(arrayItem)) {
+            newItem = cJSON_CreateString(arrayItem->valuestring);
+        } else if (cJSON_IsBool(arrayItem)) {
+            newItem = cJSON_CreateBool(arrayItem->valueint);
+        }
+
+        if (newItem == NULL || !cJSON_AddItemToArray(newArray, newItem)) {
+            cJSON_Delete(newItem);
+            return APPSPAWN_ERROR_UTILS_ADD_JSON_FAIL;
+        }
+        arrayItem = arrayItem->next;
+    }
+
+    return 0;
+}
+
+APPSPAWN_STATIC int AddPermissionItemToEncaps(cJSON *encaps, cJSON *permissionItem)
+{
+    const char *key = permissionItem->string;
+    if (cJSON_IsNumber(permissionItem)) {
+        if (!cJSON_AddNumberToObject(encaps, key, permissionItem->valueint)) {
+            return APPSPAWN_ERROR_UTILS_ADD_JSON_FAIL;
+        }
+    } else if (cJSON_IsString(permissionItem)) {
+        if (!cJSON_AddStringToObject(encaps, key, permissionItem->valuestring)) {
+            return APPSPAWN_ERROR_UTILS_ADD_JSON_FAIL;
+        }
+    } else if (cJSON_IsBool(permissionItem)) {
+        if (!cJSON_AddBoolToObject(encaps, key, permissionItem->valueint)) {
+            return APPSPAWN_ERROR_UTILS_ADD_JSON_FAIL;
+        }
+    } else if (cJSON_IsArray(permissionItem)) {
+        if (AddPermissionArrayToItem(encaps, key, permissionItem) != 0) {
+            return APPSPAWN_ERROR_UTILS_ADD_JSON_FAIL;
+        }
+    }
+
+    return 0;
+}
+
+APPSPAWN_STATIC int AddPermissionToEncaps(cJSON *extInfoJson, cJSON *encaps, uint32_t *permissionCount)
 {
     // Get ohos.encaps.count
     cJSON *countJson = cJSON_GetObjectItem(extInfoJson, "ohos.encaps.count");
@@ -158,10 +214,25 @@ static int AddJITPermissionToEncaps(cJSON *extInfoJson, cJSON *encaps, uint32_t 
         return APPSPAWN_ARG_INVALID;
     }
 
-    // If permissionName is obtained, it needs to be written in the format of ["permissionName: 1"] in the encaps
+    // If permissionName and permissionValue are obtained, they need to be written
+    // in the {"permissionName1":"permissionValue1", "permissionName2":"permissionValue2", ...} in the encaps.
     for (int i = 0; i < count; i++) {
-        char *permissionName = cJSON_GetStringValue(cJSON_GetArrayItem(permissions, i));
-        if (cJSON_AddNumberToObject(encaps, permissionName, 1) == NULL) {
+        // get single permission, such as {"permissionName1":"permissionValue1"}
+        cJSON *permission = cJSON_GetArrayItem(permissions, i);
+        if (permission == NULL) {
+            APPSPAWN_LOGE("encaps get single permission failed.");
+            return APPSPAWN_ERROR_UTILS_DECODE_JSON_FAIL;
+        }
+
+        // only one object in {}. So we only need to get first object.
+        // such as key:"permissionName1", value:"permissionValue1"
+        cJSON *permissionItem = permission->child;
+        if (permissionItem == NULL) {
+            APPSPAWN_LOGE("encaps get permission item failed.");
+            return APPSPAWN_ERROR_UTILS_DECODE_JSON_FAIL;
+        }
+
+        if (AddPermissionItemToEncaps(encaps, permissionItem) != 0) {
             APPSPAWN_LOGV("Add permission to object failed.(ignore)");
             return APPSPAWN_ERROR_UTILS_ADD_JSON_FAIL;
         }
@@ -171,14 +242,14 @@ static int AddJITPermissionToEncaps(cJSON *extInfoJson, cJSON *encaps, uint32_t 
     return 0;
 }
 
-static int SpawnSetJITPermissions(AppSpawnMgr *content, AppSpawningCtx *property, cJSON *encaps, uint32_t *count)
+static int SpawnSetPermissions(AppSpawnMgr *content, AppSpawningCtx *property, cJSON *encaps, uint32_t *count)
 {
     cJSON *extInfoJson = GetJsonObjFromExtInfo(property, MSG_EXT_NAME_JIT_PERMISSIONS);
     if (extInfoJson == NULL) {
         return APPSPAWN_ARG_INVALID;
     }
 
-    int ret = AddJITPermissionToEncaps(extInfoJson, encaps, count);
+    int ret = AddPermissionToEncaps(extInfoJson, encaps, count);
     if (ret != 0) {
         APPSPAWN_LOGW("Add permission to object failed.(ignore), ret: %{public}d", ret);
     }
@@ -204,7 +275,7 @@ static int AddMembersToEncaps(AppSpawnMgr *content, AppSpawningCtx *property, cJ
     }
 
     uint32_t count = 0;
-    ret = SpawnSetJITPermissions(content, property, encaps, &count);
+    ret = SpawnSetPermissions(content, property, encaps, &count);
     if (ret != 0) {
         APPSPAWN_LOGV("Can't set JIT permission to encaps object.(ignore), ret: %{public}d", ret);
     } else {

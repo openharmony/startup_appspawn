@@ -291,7 +291,7 @@ int AppSpawnClientAddPermission(AppSpawnClientHandle handle, AppSpawnReqMsgHandl
 #define MSG_EXT_NAME_PROCESS_TYPE "ProcessType"
 #define MSG_EXT_NAME_MAX_CHILD_PROCCESS_MAX "MaxChildProcess"
 #define MSG_EXT_NAME_APP_FD "AppFd"
-#define MSG_EXT_NAME_JIT_PERMISSIONS "JITPermissions"
+#define MSG_EXT_NAME_JIT_PERMISSIONS "Permissions"
 #define MSG_EXT_NAME_USERID "uid"
 #define MSG_EXT_NAME_EXTENSION_TYPE "ExtensionType"
 
