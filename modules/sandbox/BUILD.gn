@@ -72,6 +72,7 @@ if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
       "${appspawn_innerkits_path}/permission/appspawn_mount_permission.c",
       "${appspawn_path}/common/appspawn_trace.cpp",
       "appspawn_permission.c",
+      "sandbox_shared_mount.cpp",
       "sandbox_utils.cpp",
     ]
 

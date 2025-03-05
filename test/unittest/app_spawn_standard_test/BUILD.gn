@@ -140,6 +140,7 @@ ohos_unittest("AppSpawn_ut") {
     defines += [ "APPSPAWN_SANDBOX_NEW" ]
   } else {
     sources += [
+      "${appspawn_path}/modules/sandbox/sandbox_shared_mount.cpp",
       "${appspawn_path}/modules/sandbox/sandbox_utils.cpp",
       "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_sandbox_test.cpp",
     ]
@@ -316,7 +317,10 @@ ohos_unittest("AppSpawn_coldrun_ut") {
   if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
     defines += [ "APPSPAWN_SANDBOX_NEW" ]
   } else {
-    sources += [ "${appspawn_path}/modules/sandbox/sandbox_utils.cpp" ]
+    sources += [
+      "${appspawn_path}/modules/sandbox/sandbox_shared_mount.cpp",
+      "${appspawn_path}/modules/sandbox/sandbox_utils.cpp",
+    ]
   }
 
   configs = [ "${appspawn_path}:appspawn_config" ]
@@ -490,7 +494,10 @@ ohos_unittest("AppSpawn_common_ut") {
   if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
     defines += [ "APPSPAWN_SANDBOX_NEW" ]
   } else {
-    sources += [ "${appspawn_path}/modules/sandbox/sandbox_utils.cpp" ]
+    sources += [
+      "${appspawn_path}/modules/sandbox/sandbox_shared_mount.cpp",
+      "${appspawn_path}/modules/sandbox/sandbox_utils.cpp",
+    ]
   }
 
   configs = [ "${appspawn_path}:appspawn_config" ]

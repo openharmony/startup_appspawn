@@ -72,7 +72,7 @@ static void ProcessRecvMsg(AppSpawnConnection *connection, AppSpawnMsgNode *mess
 static inline void SetFdCtrl(int fd, int opt)
 {
     int option = fcntl(fd, F_GETFD);
-    APPSPAWN_CHECK(option >= 0, return, "SetFdCtrl fcntl failed %{public}d,%{public}d", option, errno);
+    APPSPAWN_CHECK(option >= 0, return, "SetFdCtrl fcntl failed %{public}d, %{public}d", option, errno);
     int ret = fcntl(fd, F_SETFD, (unsigned int)option | (unsigned int)opt);
     if (ret < 0) {
         APPSPAWN_LOGI("Set fd %{public}d option %{public}d %{public}d result: %{public}d", fd, option, opt, errno);
@@ -1017,30 +1017,19 @@ static void LogProcessSpawnDuration(AppSpawnedProcess *appInfo, AppSpawningCtx *
 }
 #endif
 
-#define MSG_EXT_NAME_MAX_DECIMAL 10
-#define MSG_EXT_NAME 1
 static void ProcessChildResponse(const WatcherHandle taskHandle, int fd, uint32_t *events, const void *context)
 {
     AppSpawningCtx *property = (AppSpawningCtx *)context;
     property->forkCtx.watcherHandle = NULL;  // delete watcher
     LE_RemoveWatcher(LE_GetDefaultLoop(), (WatcherHandle)taskHandle);
     APPSPAWN_CHECK_ONLY_EXPER(ProcessChildFdCheck(fd, property) == 0, return);
+
     // success
     bool isDebuggable = CheckAppMsgFlagsSet(property, APP_FLAGS_DEBUGGABLE);
     AppSpawnedProcess *appInfo = AddSpawnedProcess(property->pid, GetBundleName(property), isDebuggable);
-    uint32_t len = 0;
-    char *pidMaxStr = GetAppPropertyExt(property, MSG_EXT_NAME_MAX_CHILD_PROCCESS_MAX, &len);
-    uint32_t pidMax = 0;
-    if (pidMaxStr != NULL && len != 0) {
-        pidMax = strtoul(pidMaxStr, NULL, MSG_EXT_NAME_MAX_DECIMAL);
-    }
-#if MSG_EXT_NAME != 0
-    pidMax = 0;
-#endif
     if (appInfo) {
         AppSpawnMsgDacInfo *dacInfo = GetAppProperty(property, TLV_DAC_INFO);
         appInfo->uid = dacInfo != NULL ? dacInfo->uid : 0;
-        appInfo->max = pidMax;
         appInfo->spawnStart.tv_sec = property->spawnStart.tv_sec;
         appInfo->spawnStart.tv_nsec = property->spawnStart.tv_nsec;
 #ifdef DEBUG_BEGETCTL_BOOT
@@ -1049,8 +1038,9 @@ static void ProcessChildResponse(const WatcherHandle taskHandle, int fd, uint32_
         }
 #endif
         clock_gettime(CLOCK_MONOTONIC, &appInfo->spawnEnd);
+
 #ifdef APPSPAWN_HISYSEVENT
-        //add process spawn duration into hisysevent,(ms)
+        // add process spawn duration into hisysevent,(ms)
         LogProcessSpawnDuration(appInfo, property);
 #endif
     }
@@ -1156,9 +1146,9 @@ static int AppSpawnColdStartApp(struct AppSpawnContent *content, AppSpawnClient 
     APPSPAWN_CHECK(len > 0, return APPSPAWN_SYSTEM_ERROR, "Invalid to format shmId ");
     len = sprintf_s(buffer[3], sizeof(buffer[3]), " %u ", property->client.id); // 3 3 index for client id
     APPSPAWN_CHECK(len > 0, return APPSPAWN_SYSTEM_ERROR, "Invalid to format shmId ");
+
 #ifndef APPSPAWN_TEST
     char *mode = IsNWebSpawnMode((AppSpawnMgr *)content) ? "nweb_cold" : "app_cold";
-    // 2 2 index for dest path
     const char *const formatCmds[] = {
         path, "-mode", mode, "-fd", buffer[0], buffer[1], buffer[2],
         "-param", GetProcessName(property), buffer[3], NULL
@@ -1652,6 +1642,14 @@ static void ProcessAppSpawnLockStatusMsg(AppSpawnMsgNode *message)
     APPSPAWN_CHECK(ret > 0, return, "get lock status param failed, errno %{public}d", errno);
     ret = SetParameter(lockStatusParam, userLockStatus);
     APPSPAWN_CHECK(ret == 0, return, "failed to set lockstatus param value ret %{public}d", ret);
+#ifdef APPSPAWN_HISYSEVENT
+    ReportKeyEvent(strcmp(userLockStatus, "0") == 0 ? UNLOCK_SUCCESS : LOCK_SUCCESS);
+#endif
+#ifndef APPSPAWN_SANDBOX_NEW
+    if (strcmp(userLockStatus, "0") == 0) {
+        ServerStageHookExecute(STAGE_SERVER_LOCK, GetAppSpawnContent());
+    }
+#endif
 }
 
 static void ProcessRecvMsg(AppSpawnConnection *connection, AppSpawnMsgNode *message)

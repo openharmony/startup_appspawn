@@ -60,6 +60,9 @@ AppSpawnMgr *CreateAppSpawnMgr(int mode)
     OH_ListInit(&appMgr->appQueue);
     OH_ListInit(&appMgr->diedQueue);
     OH_ListInit(&appMgr->appSpawnQueue);
+#ifndef APPSPAWN_SANDBOX_NEW
+    OH_ListInit(&appMgr->dataGroupCtxQueue);
+#endif
     appMgr->diedAppCount = 0;
     OH_ListInit(&appMgr->extData);
     g_appSpawnMgr = appMgr;
@@ -100,6 +103,9 @@ void DeleteAppSpawnMgr(AppSpawnMgr *mgr)
     OH_ListRemoveAll(&mgr->diedQueue, NULL);
     OH_ListRemoveAll(&mgr->appSpawnQueue, SpawningQueueDestroy);
     OH_ListRemoveAll(&mgr->extData, ExtDataDestroy);
+#ifndef APPSPAWN_SANDBOX_NEW
+    OH_ListRemoveAll(&mgr->dataGroupCtxQueue, NULL);
+#endif
 #ifdef APPSPAWN_HISYSEVENT
     DeleteHisyseventInfo(mgr->hisyseventInfo);
 #endif
@@ -368,9 +374,9 @@ void AppSpawningCtxTraversal(ProcessTraversal traversal, void *data)
 static int DumpAppSpawnQueue(ListNode *node, void *data)
 {
     AppSpawningCtx *property = ListEntry(node, AppSpawningCtx, node);
-    APPSPAPWN_DUMP("app property id: %{public}u flags: %{public}x",
+    APPSPAWN_DUMP("app property id: %{public}u flags: %{public}x",
         property->client.id, property->client.flags);
-    APPSPAPWN_DUMP("app property state: %{public}d", property->state);
+    APPSPAWN_DUMP("app property state: %{public}d", property->state);
 
     DumpAppSpawnMsg(property->message);
     return 0;
@@ -380,8 +386,8 @@ static int DumpAppQueue(ListNode *node, void *data)
 {
     AppSpawnedProcess *appInfo = ListEntry(node, AppSpawnedProcess, node);
     uint64_t diff = DiffTime(&appInfo->spawnStart, &appInfo->spawnEnd);
-    APPSPAPWN_DUMP("App info uid: %{public}u pid: %{public}x", appInfo->uid, appInfo->pid);
-    APPSPAPWN_DUMP("App info name: %{public}s exitStatus: 0x%{public}x spawn time: %{public}" PRIu64 " us ",
+    APPSPAWN_DUMP("App info uid: %{public}u pid: %{public}x", appInfo->uid, appInfo->pid);
+    APPSPAWN_DUMP("App info name: %{public}s exitStatus: 0x%{public}x spawn time: %{public}" PRIu64 " us ",
         appInfo->name, appInfo->exitStatus, diff);
     return 0;
 }
@@ -413,16 +419,16 @@ void ProcessAppSpawnDumpMsg(const AppSpawnMsgNode *message)
     } else {
         SetDumpToStream(stdout);
     }
-    APPSPAPWN_DUMP("Dump appspawn info start ... ");
-    APPSPAPWN_DUMP("APP spawning queue: ");
+    APPSPAWN_DUMP("Dump appspawn info start ... ");
+    APPSPAWN_DUMP("APP spawning queue: ");
     OH_ListTraversal((ListNode *)&g_appSpawnMgr->appSpawnQueue, NULL, DumpAppSpawnQueue, 0);
-    APPSPAPWN_DUMP("APP queue: ");
+    APPSPAWN_DUMP("APP queue: ");
     OH_ListTraversal((ListNode *)&g_appSpawnMgr->appQueue, "App queue", DumpAppQueue, 0);
-    APPSPAPWN_DUMP("APP died queue: ");
+    APPSPAWN_DUMP("APP died queue: ");
     OH_ListTraversal((ListNode *)&g_appSpawnMgr->diedQueue, "App died queue", DumpAppQueue, 0);
-    APPSPAPWN_DUMP("Ext data: ");
+    APPSPAWN_DUMP("Ext data: ");
     OH_ListTraversal((ListNode *)&g_appSpawnMgr->extData, "Ext data", DumpExtData, 0);
-    APPSPAPWN_DUMP("Dump appspawn info finish ");
+    APPSPAWN_DUMP("Dump appspawn info finish ");
     if (stream != NULL) {
         (void)fflush(stream);
         fclose(stream);

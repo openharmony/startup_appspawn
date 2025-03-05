@@ -165,24 +165,24 @@ void DumpSandboxMountNode(const SandboxMountNode *sandboxNode, uint32_t index)
         case SANDBOX_TAG_MOUNT_PATH:
         case SANDBOX_TAG_MOUNT_FILE: {
             PathMountNode *pathNode = (PathMountNode *)sandboxNode;
-            APPSPAPWN_DUMP("        ****************************** %{public}u", index);
-            APPSPAPWN_DUMP("        sandbox node source: %{public}s", pathNode->source ? pathNode->source : "null");
-            APPSPAPWN_DUMP("        sandbox node target: %{public}s", pathNode->target ? pathNode->target : "null");
+            APPSPAWN_DUMP("        ****************************** %{public}u", index);
+            APPSPAWN_DUMP("        sandbox node source: %{public}s", pathNode->source ? pathNode->source : "null");
+            APPSPAWN_DUMP("        sandbox node target: %{public}s", pathNode->target ? pathNode->target : "null");
             DumpMountPathMountNode(pathNode);
-            APPSPAPWN_DUMP("        sandbox node apl: %{public}s",
+            APPSPAWN_DUMP("        sandbox node apl: %{public}s",
                 pathNode->appAplName ? pathNode->appAplName : "null");
-            APPSPAPWN_DUMP("        sandbox node checkErrorFlag: %{public}s",
+            APPSPAWN_DUMP("        sandbox node checkErrorFlag: %{public}s",
                 pathNode->checkErrorFlag ? "true" : "false");
             break;
         }
         case SANDBOX_TAG_SYMLINK: {
             SymbolLinkNode *linkNode = (SymbolLinkNode *)sandboxNode;
-            APPSPAPWN_DUMP("        ***********************************");
-            APPSPAPWN_DUMP("        sandbox node target: %{public}s", linkNode->target ? linkNode->target : "null");
-            APPSPAPWN_DUMP("        sandbox node linkName: %{public}s",
+            APPSPAWN_DUMP("        ***********************************");
+            APPSPAWN_DUMP("        sandbox node target: %{public}s", linkNode->target ? linkNode->target : "null");
+            APPSPAWN_DUMP("        sandbox node linkName: %{public}s",
                 linkNode->linkName ? linkNode->linkName : "null");
-            APPSPAPWN_DUMP("        sandbox node destMode: %{public}x", linkNode->destMode);
-            APPSPAPWN_DUMP("        sandbox node checkErrorFlag: %{public}s",
+            APPSPAWN_DUMP("        sandbox node destMode: %{public}x", linkNode->destMode);
+            APPSPAWN_DUMP("        sandbox node checkErrorFlag: %{public}s",
                 linkNode->checkErrorFlag ? "true" : "false");
             break;
         }
@@ -255,20 +255,20 @@ static void DumpSandboxQueue(const ListNode *front,
 
 static void DumpSandboxSection(const SandboxSection *section)
 {
-    APPSPAPWN_DUMP("    sandboxSwitch %{public}s", section->sandboxSwitch ? "true" : "false");
-    APPSPAPWN_DUMP("    sandboxShared %{public}s", section->sandboxShared ? "true" : "false");
-    APPSPAPWN_DUMP("    gidCount: %{public}u", section->gidCount);
+    APPSPAWN_DUMP("    sandboxSwitch %{public}s", section->sandboxSwitch ? "true" : "false");
+    APPSPAWN_DUMP("    sandboxShared %{public}s", section->sandboxShared ? "true" : "false");
+    APPSPAWN_DUMP("    gidCount: %{public}u", section->gidCount);
     for (uint32_t index = 0; index < section->gidCount; index++) {
-        APPSPAPWN_DUMP("        gidTable[%{public}u]: %{public}u", index, section->gidTable[index]);
+        APPSPAWN_DUMP("        gidTable[%{public}u]: %{public}u", index, section->gidTable[index]);
     }
-    APPSPAPWN_DUMP("    mount group count: %{public}u", section->number);
+    APPSPAWN_DUMP("    mount group count: %{public}u", section->number);
     for (uint32_t i = 0; i < section->number; i++) {
         if (section->nameGroups[i]) {
             SandboxNameGroupNode *groupNode = (SandboxNameGroupNode *)section->nameGroups[i];
-            APPSPAPWN_DUMP("        name[%{public}d] %{public}s", i, groupNode->section.name);
+            APPSPAWN_DUMP("        name[%{public}d] %{public}s", i, groupNode->section.name);
         }
     }
-    APPSPAPWN_DUMP("    mount-paths: ");
+    APPSPAWN_DUMP("    mount-paths: ");
     DumpSandboxQueue(&section->front, DumpSandboxMountNode);
 }
 
@@ -385,29 +385,29 @@ void DeleteAppSpawnSandbox(AppSpawnSandboxCfg *sandbox)
 static void DumpSandboxPermission(const SandboxMountNode *node, uint32_t index)
 {
     SandboxPermissionNode *permissionNode = (SandboxPermissionNode *)node;
-    APPSPAPWN_DUMP("    ========================================= ");
-    APPSPAPWN_DUMP("    Section %{public}s", permissionNode->section.name);
-    APPSPAPWN_DUMP("    Section permission index %{public}d", permissionNode->permissionIndex);
+    APPSPAWN_DUMP("    ========================================= ");
+    APPSPAWN_DUMP("    Section %{public}s", permissionNode->section.name);
+    APPSPAWN_DUMP("    Section permission index %{public}d", permissionNode->permissionIndex);
     DumpSandboxSection(&permissionNode->section);
 }
 
 static void DumpSandboxSectionNode(const SandboxMountNode *node, uint32_t index)
 {
     SandboxSection *section = (SandboxSection *)node;
-    APPSPAPWN_DUMP("    ========================================= ");
-    APPSPAPWN_DUMP("    Section %{public}s", section->name);
+    APPSPAWN_DUMP("    ========================================= ");
+    APPSPAWN_DUMP("    Section %{public}s", section->name);
     DumpSandboxSection(section);
 }
 
 static void DumpSandboxNameGroupNode(const SandboxMountNode *node, uint32_t index)
 {
     SandboxNameGroupNode *nameGroupNode = (SandboxNameGroupNode *)node;
-    APPSPAPWN_DUMP("    ========================================= ");
-    APPSPAPWN_DUMP("    Section %{public}s", nameGroupNode->section.name);
-    APPSPAPWN_DUMP("    Section dep mode %{public}s",
+    APPSPAWN_DUMP("    ========================================= ");
+    APPSPAWN_DUMP("    Section %{public}s", nameGroupNode->section.name);
+    APPSPAWN_DUMP("    Section dep mode %{public}s",
         nameGroupNode->depMode == MOUNT_MODE_ALWAYS ? "always" : "not-exists");
     if (nameGroupNode->depNode != NULL) {
-        APPSPAPWN_DUMP("    mount-paths-deps: ");
+        APPSPAWN_DUMP("    mount-paths-deps: ");
         DumpMountPathMountNode(nameGroupNode->depNode);
     }
     DumpSandboxSection(&nameGroupNode->section);
@@ -469,12 +469,12 @@ AppSpawnSandboxCfg *CreateAppSpawnSandbox(void)
 void DumpAppSpawnSandboxCfg(AppSpawnSandboxCfg *sandbox)
 {
     APPSPAWN_CHECK_ONLY_EXPER(sandbox != NULL, return);
-    APPSPAPWN_DUMP("Sandbox root path: %{public}s", sandbox->rootPath);
-    APPSPAPWN_DUMP("Sandbox sandboxNsFlags: %{public}x ", sandbox->sandboxNsFlags);
-    APPSPAPWN_DUMP("Sandbox topSandboxSwitch: %{public}s", sandbox->topSandboxSwitch ? "true" : "false");
-    APPSPAPWN_DUMP("Sandbox appFullMountEnable: %{public}s", sandbox->appFullMountEnable ? "true" : "false");
-    APPSPAPWN_DUMP("Sandbox pidNamespaceSupport: %{public}s", sandbox->pidNamespaceSupport ? "true" : "false");
-    APPSPAPWN_DUMP("Sandbox common info: ");
+    APPSPAWN_DUMP("Sandbox root path: %{public}s", sandbox->rootPath);
+    APPSPAWN_DUMP("Sandbox sandboxNsFlags: %{public}x ", sandbox->sandboxNsFlags);
+    APPSPAWN_DUMP("Sandbox topSandboxSwitch: %{public}s", sandbox->topSandboxSwitch ? "true" : "false");
+    APPSPAWN_DUMP("Sandbox appFullMountEnable: %{public}s", sandbox->appFullMountEnable ? "true" : "false");
+    APPSPAWN_DUMP("Sandbox pidNamespaceSupport: %{public}s", sandbox->pidNamespaceSupport ? "true" : "false");
+    APPSPAWN_DUMP("Sandbox common info: ");
     DumpSandboxQueue(&sandbox->requiredQueue.front, DumpSandboxSectionNode);
     DumpSandboxQueue(&sandbox->packageNameQueue.front, DumpSandboxSectionNode);
     DumpSandboxQueue(&sandbox->permissionQueue.front, DumpSandboxPermission);
