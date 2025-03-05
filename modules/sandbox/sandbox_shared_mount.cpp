@@ -68,9 +68,7 @@ int GetElxInfoFromDir(const char *path)
             return DATA_GROUP_SANDBOX_PATH_MAP[i].category;
         }
     }
-    if (ret == 0) {
-        APPSPAWN_LOGE("Get elx info from dir failed, path %{public}s", path);
-    }
+    APPSPAWN_LOGE("Get elx info from dir failed, path %{public}s", path);
     return ret;
 }
 
@@ -423,6 +421,8 @@ static int AddDataGroupItemToQueue(AppSpawnMgr *content, const std::string &srcP
     ListNode *node = OH_ListFind(&content->dataGroupCtxQueue, (void *)dataGroupNode, DataGroupCtxNodeCompare);
     if (node != nullptr) {
         APPSPAWN_LOGI("DataGroupCtxNode %{public}s is exist", dataGroupNode->srcPath.path);
+        free(dataGroupNode);
+        dataGroupNode = nullptr;
         return 0;
     }
     OH_ListInit(&dataGroupNode->node);
