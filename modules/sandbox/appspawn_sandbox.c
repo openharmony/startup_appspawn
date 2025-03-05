@@ -36,6 +36,8 @@
 #include "init_utils.h"
 #include "parameter.h"
 #include "securec.h"
+#define LOCK_STATUS_PARAM_SIZE     64
+#define LOCK_STATUS_SIZE     16
 
 static inline void SetMountPathOperation(uint32_t *operation, uint32_t index)
 {
