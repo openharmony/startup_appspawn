@@ -113,6 +113,7 @@ void SetSystemEnv(void);
 void RunAppSandbox(const char *ptyName);
 HOOK_MGR *GetAppSpawnHookMgr(void);
 int SpawnKickDogStart(AppSpawnMgr *mgrContent);
+int AddPermissionToEncaps(cJSON *extInfoJson, cJSON *encaps, uint32_t *permissionCount);
 #define STUB_NEED_CHECK 0x01
 typedef int (*ExecvFunc)(const char *pathname, char *const argv[]);
 enum {
