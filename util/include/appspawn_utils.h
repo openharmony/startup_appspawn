@@ -176,7 +176,7 @@ int EnableNewNetNamespace(void);
 #define APPSPAWN_LOGF(fmt, ...) \
     HILOG_FATAL(LOG_CORE, "[%{public}s:%{public}d]" fmt, (APP_FILE_NAME), (__LINE__), ##__VA_ARGS__)
 
-#define APPSPAPWN_DUMP(fmt, ...) \
+#define APPSPAWN_DUMP(fmt, ...) \
     do { \
         HILOG_INFO(LOG_CORE, fmt, ##__VA_ARGS__); \
         AppSpawnDump(fmt "\n", ##__VA_ARGS__); \
