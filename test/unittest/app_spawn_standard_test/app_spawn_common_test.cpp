@@ -22,6 +22,7 @@
 #include <gtest/gtest.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <cJSON.h>
 
 #include "appspawn_modulemgr.h"
 #include "appspawn_server.h"
@@ -647,6 +648,99 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_031, TestSize.Level0)
     DeleteAppSpawnMgr(mgr);
     ASSERT_EQ(ret, 0);
     AppSpawnClientInit(nullptr, nullptr);
+}
+
+HWTEST_F(AppSpawnCommonTest, App_Spawn_Encaps_001, TestSize.Level0)
+{
+    const char encapsJsonStr[] = "{\"name\":\"Permissions\",\"ohos.encaps.count\":0,\"permissions\":"
+        "[{\"ohos.permission.bool\":true},{\"ohos.permission.int\":3225},{\"ohos.permission.string\":\"test\"},"
+        "{\"ohos.permission.array\":[1,2,3,4,5]}]}";
+
+    cJSON *encapsJson = cJSON_Parse(encapsJsonStr);
+    uint32_t permissionCount = 0;
+    int ret = AddPermissionToEncaps(encapsJson, NULL, &permissionCount);
+    EXPECT_EQ(ret, APPSPAWN_ARG_INVALID);
+
+    cJSON_Delete(encapsJson);
+}
+
+HWTEST_F(AppSpawnCommonTest, App_Spawn_Encaps_002, TestSize.Level0)
+{
+    const char encapsJsonStr[] = "{\"name\":\"Permissions\",\"ohos.encaps.count\":4,\"permissions\":"
+        "[{\"ohos.permission.bool\":true},{\"ohos.permission.int\":3225},{\"ohos.permission.string\":\"test\"},"
+        "{\"ohos.permission.array\":[1,2,3,4,5]}]}";
+
+    cJSON *encapsJson = cJSON_Parse(encapsJsonStr);
+    uint32_t permissionCount = 0;
+    int ret = AddPermissionToEncaps(encapsJson, NULL, &permissionCount);
+    EXPECT_EQ(ret, APPSPAWN_ERROR_UTILS_ADD_JSON_FAIL);
+
+    cJSON_Delete(encapsJson);
+}
+
+HWTEST_F(AppSpawnCommonTest, App_Spawn_Encaps_003, TestSize.Level0)
+{
+    const char encapsJsonStr[] = "{\"name\":\"Permissions\",\"ohos.encaps.count\":5,\"permissions\":"
+        "[{\"ohos.permission.bool\":true},{\"ohos.permission.int\":3225},{\"ohos.permission.string\":\"test\"},"
+        "{\"ohos.permission.array\":[1,2,3,4,5]}]}";
+
+    cJSON *encapsOut = cJSON_CreateObject();
+    EXPECT_NE(encapsOut, nullptr);
+    cJSON *encapsJson = cJSON_Parse(encapsJsonStr);
+    uint32_t permissionCount = 0;
+
+    cJSON *permissions = cJSON_GetObjectItemCaseSensitive(encapsJson, "permissions");
+    EXPECT_NE(permissions, nullptr);
+    cJSON *emptyItem = cJSON_CreateObject();
+    cJSON_AddItemToArray(permissions, emptyItem);
+
+    int ret = AddPermissionToEncaps(encapsJson, encapsOut, &permissionCount);
+    EXPECT_EQ(ret, APPSPAWN_ERROR_UTILS_DECODE_JSON_FAIL);
+
+    cJSON_Delete(encapsJson);
+    cJSON_Delete(encapsOut);
+}
+
+HWTEST_F(AppSpawnCommonTest, App_Spawn_Encaps_004, TestSize.Level0)
+{
+    const char encapsJsonStr[] = "{\"name\":\"Permissions\",\"ohos.encaps.count\":4,\"permissions\":"
+        "[{\"ohos.permission.bool\":true},{\"ohos.permission.int\":3225},{\"ohos.permission.string\":\"test\"},"
+        "{\"ohos.permission.array\":[1,2,3,4,5]}]}";
+
+    cJSON *encapsOut = cJSON_CreateObject();
+    EXPECT_NE(encapsOut, nullptr);
+    cJSON *encapsJson = cJSON_Parse(encapsJsonStr);
+    uint32_t permissionCount = 0;
+
+    cJSON *permissions = cJSON_GetObjectItemCaseSensitive(encapsJson, "permissions");
+    EXPECT_NE(permissions, nullptr);
+    cJSON *permission = cJSON_GetArrayItem(permissions, 0);
+    EXPECT_NE(permission, nullptr);
+    permission->child = nullptr;
+    int ret = AddPermissionToEncaps(encapsJson, encapsOut, &permissionCount);
+    EXPECT_EQ(ret, APPSPAWN_ERROR_UTILS_DECODE_JSON_FAIL);
+
+    cJSON_Delete(encapsJson);
+    cJSON_Delete(encapsOut);
+}
+
+HWTEST_F(AppSpawnCommonTest, App_Spawn_Encaps_005, TestSize.Level0)
+{
+    const char encapsJsonStr[] = "{\"name\":\"Permissions\",\"ohos.encaps.count\":4,\"permissions\":"
+        "[{\"ohos.permission.bool\":true},{\"ohos.permission.int\":3225},{\"ohos.permission.string\":\"test\"},"
+        "{\"ohos.permission.array\":[1,2,3,4,5]}]}";
+
+    cJSON *encapsOut = cJSON_CreateObject();
+    EXPECT_NE(encapsOut, nullptr);
+    cJSON *encapsJson = cJSON_Parse(encapsJsonStr);
+    uint32_t permissionCount = 0;
+
+    int ret = AddPermissionToEncaps(encapsJson, encapsOut, &permissionCount);
+    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(permissionCount, 4);
+
+    cJSON_Delete(encapsJson);
+    cJSON_Delete(encapsOut);
 }
 
 HWTEST_F(AppSpawnCommonTest, App_Spawn_SetFdEnv, TestSize.Level0)
