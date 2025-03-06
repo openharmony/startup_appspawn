@@ -119,6 +119,11 @@
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
+                    "src-path" : "/system/framework",
+                    "sandbox-path" : "/system/framework",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
                     "src-path" : "/system/etc/hosts",
                     "sandbox-path" : "/data/service/el1/network/hosts_user/hosts",
                     "sandbox-flags" : [ "bind", "rec" ],
@@ -511,6 +516,11 @@
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
+                    "src-path" : "/system/framework",
+                    "sandbox-path" : "/system/framework",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
                     "src-path" : "/system/etc/hosts",
                     "sandbox-path" : "/data/service/el1/network/hosts_user/hosts",
                     "sandbox-flags" : [ "bind", "rec" ],
@@ -740,7 +750,7 @@
                     "src-path": "/data/service/el1/public/themes/<currentUserId>/a/system",
                     "sandbox-path": "/data/themes/a/system",
                     "sandbox-flags": [ "bind", "rec" ]
-                }, 
+                },
                 {
                     "src-path": "/data/service/el1/public/themes/<currentUserId>/b/system",
                     "sandbox-path": "/data/themes/b/system",
