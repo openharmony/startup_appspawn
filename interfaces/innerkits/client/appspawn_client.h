@@ -31,14 +31,15 @@ extern "C" {
 #define ASAN_TIMEOUT 60
 #else
 #define TIMEOUT_DEF 2
-#define ASAN_TIMEOUT 5
+#define ASAN_TIMEOUT 10
 #endif
 
 #define RETRY_TIME (200 * 1000)     // 200 * 1000 wait 200ms CONNECT_RETRY_DELAY = 200 * 1000
 #define MAX_RETRY_SEND_COUNT 2      // 2 max retry count CONNECT_RETRY_MAX_TIMES = 2;
 
 #define NORMAL_READ_RETRY_TIME (3 * 1000 * 1000 + 500 * 1000)   // 3.5s, Exceed WAIT_CHILD_RESPONSE_TIMEOUT by 0.5s
-#define COLDRUN_READ_RETRY_TIME (5 * 1000 * 1000 + 500 * 1000)  // 5.5s, Exceed COLD_CHILD_RESPONSE_TIMEOUT by 0.5s
+// Exceed COLD_CHILD_RESPONSE_TIMEOUT by 0.5s
+#define COLDRUN_READ_RETRY_TIME (ASAN_TIMEOUT * 1000 * 1000 + 500 * 1000)
 
 // only used for ExternalFileManager.hap
 #define GID_FILE_ACCESS 1006
