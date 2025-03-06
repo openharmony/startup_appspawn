@@ -62,6 +62,9 @@ ohos_shared_library("appspawn_common") {
     if (appspawn_seccomp_privilege) {
       cflags += [ "-DSECCOMP_PRIVILEGE" ]
     }
+    if (appspawn_custom_sandbox) {
+      cflags += [ "-DCUSTOM_SANDBOX" ]
+    }
     external_deps += [ "init:seccomp" ]
   }
 

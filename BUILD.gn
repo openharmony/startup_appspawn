@@ -32,6 +32,9 @@ config("appspawn_config") {
     if (appspawn_seccomp_privilege) {
       cflags += [ "-DSECCOMP_PRIVILEGE" ]
     }
+    if (appspawn_custom_sandbox) {
+      cflags += [ "-DCUSTOM_SANDBOX" ]
+    }
   }
 }
 
