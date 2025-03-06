@@ -348,7 +348,7 @@ int GetAppSpawnMsgFromBuffer(const uint8_t *buffer, uint32_t bufferLen,
 static inline void DumpMsgFlags(const char *processName, const char *info, const AppSpawnMsgFlags *msgFlags)
 {
     for (uint32_t i = 0; i < msgFlags->count; i++) {
-        APPSPAPWN_DUMP("processName: %{public}s %{public}d %{public}s flags: 0x%{public}x",
+        APPSPAWN_DUMP("processName: %{public}s %{public}d %{public}s flags: 0x%{public}x",
             processName, i, info, msgFlags->flags[i]);
     }
 }
@@ -356,7 +356,7 @@ static inline void DumpMsgFlags(const char *processName, const char *info, const
 static inline void DumpMsgExtInfo(const AppSpawnTlv *tlv)
 {
     if (tlv->tlvType != TLV_MAX) {
-        APPSPAPWN_DUMP("App tlv info: [%{public}d %{public}d]", tlv->tlvType, tlv->tlvLen);
+        APPSPAWN_DUMP("App tlv info: [%{public}d %{public}d]", tlv->tlvType, tlv->tlvLen);
         return;
     }
     AppSpawnTlvExt *tlvExt = (AppSpawnTlvExt *)(tlv);
@@ -364,14 +364,14 @@ static inline void DumpMsgExtInfo(const AppSpawnTlv *tlv)
         APPSPAWN_LOGV("App extend info name: %{public}s len: %{public}u value: '%{public}s'",
             tlvExt->tlvName, tlvExt->dataLen, (char *)(tlvExt + 1));
     } else {
-        APPSPAPWN_DUMP("App extend info name: %{public}s len: %{public}u", tlvExt->tlvName, tlvExt->dataLen);
+        APPSPAWN_DUMP("App extend info name: %{public}s len: %{public}u", tlvExt->tlvName, tlvExt->dataLen);
     }
 }
 
 void DumpAppSpawnMsg(const AppSpawnMsgNode *message)
 {
     APPSPAWN_CHECK_ONLY_EXPER(message != NULL, return);
-    APPSPAPWN_DUMP("App spawn msg msgId: %{public}u msgLen: %{public}u tlvCount: %{public}u processName: %{public}s",
+    APPSPAWN_DUMP("App spawn msg msgId: %{public}u msgLen: %{public}u tlvCount: %{public}u processName: %{public}s",
         message->msgHeader.msgId, message->msgHeader.msgLen, message->tlvCount, message->msgHeader.processName);
 
     AppSpawnMsgFlags *msgFlags = (AppSpawnMsgFlags *)GetAppSpawnMsgInfo(message, TLV_MSG_FLAGS);
@@ -382,20 +382,20 @@ void DumpAppSpawnMsg(const AppSpawnMsgNode *message)
 
     AppSpawnMsgDacInfo *dacInfo = (AppSpawnMsgDacInfo *)GetAppSpawnMsgInfo(message, TLV_DAC_INFO);
     if (dacInfo != NULL) {
-        APPSPAPWN_DUMP("App dac info uid: %{public}d gid: %{public}d count: %{public}d",
+        APPSPAWN_DUMP("App dac info uid: %{public}d gid: %{public}d count: %{public}d",
             dacInfo->uid, dacInfo->gid, dacInfo->gidCount);
         for (uint32_t i = 0; i < dacInfo->gidCount; i++) {
-            APPSPAPWN_DUMP("gid group[%{public}d]: %{public}d", i, dacInfo->gidTable[i]);
+            APPSPAWN_DUMP("gid group[%{public}d]: %{public}d", i, dacInfo->gidTable[i]);
         }
     }
     AppSpawnMsgBundleInfo *bundleInfo = (AppSpawnMsgBundleInfo *)GetAppSpawnMsgInfo(message, TLV_BUNDLE_INFO);
     APPSPAWN_ONLY_EXPER(bundleInfo != NULL,
-        APPSPAPWN_DUMP("App bundle info name: \"%{public}s\" index: %{public}d",
+        APPSPAWN_DUMP("App bundle info name: \"%{public}s\" index: %{public}d",
         bundleInfo->bundleName, bundleInfo->bundleIndex));
 
     AppSpawnMsgDomainInfo *domainInfo = (AppSpawnMsgDomainInfo *)GetAppSpawnMsgInfo(message, TLV_DOMAIN_INFO);
     APPSPAWN_ONLY_EXPER(domainInfo != NULL,
-        APPSPAPWN_DUMP("App domain info hap: 0x%{public}x apl: \"%{public}s\"", domainInfo->hapFlags, domainInfo->apl));
+        APPSPAWN_DUMP("App domain info hap: 0x%{public}x apl: \"%{public}s\"", domainInfo->hapFlags, domainInfo->apl));
 
     AppSpawnMgr *mgr = GetAppSpawnMgr();
     if (mgr == NULL || ((mgr->flags & APP_DEVELOPER_MODE) != APP_DEVELOPER_MODE)) {

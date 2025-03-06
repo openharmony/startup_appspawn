@@ -53,6 +53,8 @@ extern "C" {
 #define APP_STATE_IDLE 1
 #define APP_STATE_SPAWNING 2
 #define APPSPAWN_MAX_TIME 3000000
+#define UUID_MAX_LEN 37
+#define PATH_MAX_LEN 256
 
 #define APPSPAWN_INLINE __attribute__((always_inline)) inline
 
@@ -109,6 +111,21 @@ typedef struct SpawnTime {
     int maxAppspawnTime;
 } SpawnTime;
 
+#ifndef APPSPAWN_SANDBOX_NEW
+typedef struct TagPathBuffer {
+    uint32_t pathLen;
+    char path[PATH_MAX_LEN];
+} PathBuffer;
+
+typedef struct TagDataGroupCtx {
+    struct ListNode node;
+    int gid;
+    char dataGroupUuid[UUID_MAX_LEN];
+    PathBuffer srcPath;
+    PathBuffer destPath;
+} DataGroupCtx;
+#endif
+
 typedef struct TagAppSpawnMgr {
     AppSpawnContent content;
     TaskHandle server;
@@ -123,6 +140,9 @@ typedef struct TagAppSpawnMgr {
     struct timespec perLoadEnd;
     struct ListNode extData;
     struct SpawnTime spawnTime;
+#ifndef APPSPAWN_SANDBOX_NEW
+    struct ListNode dataGroupCtxQueue;
+#endif
 #ifdef APPSPAWN_HISYSEVENT
     AppSpawnHisyseventInfo *hisyseventInfo;
 #endif

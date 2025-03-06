@@ -76,9 +76,7 @@ ohos_executable("appspawn") {
   if (enable_appspawn_dump_catcher) {
     external_deps += [ "faultloggerd:libdfx_dumpcatcher" ]
   }
-  if (appspawn_use_encaps) {
-    defines += [ "USE_ENCAPS" ]
-  }
+
   if (appspawn_report_event) {
     defines += [ "APPSPAWN_HISYSEVENT" ]
     external_deps += [ "hisysevent:libhisysevent" ]
@@ -87,11 +85,6 @@ ohos_executable("appspawn") {
       "${appspawn_path}/modules/sysevent/hisysevent_adapter.cpp",
     ]
   }
-
-  if (appspawn_use_encaps) {
-    defines += [ "USE_ENCAPS" ]
-  }
-
   if (build_selinux) {
     defines += [ "WITH_SELINUX" ]
     external_deps += [

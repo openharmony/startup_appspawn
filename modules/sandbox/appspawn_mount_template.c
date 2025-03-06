@@ -159,7 +159,7 @@ static void DumpMode(const char *info, mode_t mode)
     APPSPAWN_CHECK_ONLY_EXPER(info != NULL, return);
     char buffer[64] = {0};  // 64 to show flags
     DumpSandboxFlags(buffer, sizeof(buffer), mode, PATH_MODE_MAP, ARRAY_LENGTH(PATH_MODE_MAP));
-    APPSPAPWN_DUMP("%{public}s[0x%{public}x] %{public}s", info, (uint32_t)(mode), buffer);
+    APPSPAWN_DUMP("%{public}s[0x%{public}x] %{public}s", info, (uint32_t)(mode), buffer);
 }
 
 static void DumpMountFlags(const char *info, unsigned long mountFlags)
@@ -167,7 +167,7 @@ static void DumpMountFlags(const char *info, unsigned long mountFlags)
     APPSPAWN_CHECK_ONLY_EXPER(info != NULL, return);
     char buffer[128] = {0};  // 64 to show flags
     DumpSandboxFlags(buffer, sizeof(buffer), mountFlags, MOUNT_FLAGS_MAP, ARRAY_LENGTH(MOUNT_FLAGS_MAP));
-    APPSPAPWN_DUMP("%{public}s[0x%{public}x] %{public}s", info, (uint32_t)(mountFlags), buffer);
+    APPSPAWN_DUMP("%{public}s[0x%{public}x] %{public}s", info, (uint32_t)(mountFlags), buffer);
 }
 
 void DumpMountPathMountNode(const PathMountNode *pathNode)
@@ -176,13 +176,13 @@ void DumpMountPathMountNode(const PathMountNode *pathNode)
     if (tmp == NULL) {
         return;
     }
-    APPSPAPWN_DUMP("        sandbox node category: %{public}u(%{public}s)", tmp->category, tmp->name);
+    APPSPAWN_DUMP("        sandbox node category: %{public}u(%{public}s)", tmp->category, tmp->name);
     DumpMountFlags("        sandbox node mountFlags: ", tmp->mountFlags);
-    APPSPAPWN_DUMP("        sandbox node mountSharedFlag: %{public}s",
+    APPSPAWN_DUMP("        sandbox node mountSharedFlag: %{public}s",
         tmp->mountSharedFlag == MS_SLAVE ? "MS_SLAVE" : "MS_SHARED");
-    APPSPAPWN_DUMP("        sandbox node options: %{public}s", tmp->options ? tmp->options : "null");
-    APPSPAPWN_DUMP("        sandbox node fsType: %{public}s", tmp->fsType ? tmp->fsType : "null");
+    APPSPAWN_DUMP("        sandbox node options: %{public}s", tmp->options ? tmp->options : "null");
+    APPSPAWN_DUMP("        sandbox node fsType: %{public}s", tmp->fsType ? tmp->fsType : "null");
     DumpMode("        sandbox node destMode: ", pathNode->destMode);
-    APPSPAPWN_DUMP("        sandbox node config mountSharedFlag: %{public}s",
+    APPSPAWN_DUMP("        sandbox node config mountSharedFlag: %{public}s",
         pathNode->mountSharedFlag ? "MS_SHARED" : "MS_SLAVE");
 }
