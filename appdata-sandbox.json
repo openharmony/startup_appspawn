@@ -978,6 +978,16 @@
                     "check-action-status": "false"
                 }
             ]
+        }],
+        "ohos.permission.ACCESS_APP_CLONE_DIR":[{
+            "sandbox-switch": "ON",
+            "gids":[2002],
+            "mount-paths": [{
+                "src-path": "/data/service/el1/public/bms/bundle_manager_service/app_install/<currentUserId>/app_clone",
+                "sandbox-path": "/data/bms_app_clone/",
+                "sandbox-flags": ["bind", "rec"]
+                }
+            ]
         }]
     }]
 }
