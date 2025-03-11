@@ -15,7 +15,7 @@ import("//base/startup/appspawn/appspawn.gni")
 import("//build/test.gni")
 
 ohos_unittest("AppSpawn_client_ut") {
-  module_out_path = "${module_output_path}"
+  module_out_path = "appspawn/appspawn"
   deps = []
   if (appspawn_unittest_coverage) {
     cflags = [ "--coverage" ]
