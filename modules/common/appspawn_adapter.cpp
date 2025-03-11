@@ -100,6 +100,11 @@ void SetHapDomainInfo(HapDomainInfo *hapDomainInfo, const AppSpawningCtx *proper
     if (CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX)) {
         hapDomainInfo->hapFlags |= SELINUX_HAP_INPUT_ISOLATE;
     }
+#ifdef CUSTOM_SANDBOX
+    if (CheckAppMsgFlagsSet(property, APP_FLAGS_CUSTOM_SANDBOX)) {
+        hapDomainInfo->hapFlags |= SELINUX_HAP_CUSTOM_SANDBOX;
+    }
+#endif
     if (CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SELINUX_LABEL)) {
         uint32_t len = 0;
         std::string extensionType =
