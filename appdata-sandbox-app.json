@@ -184,6 +184,9 @@
             "mount-paths": [{
                 "src-path": "/mnt/user/<currentUserId>/nosharefs/docs",
                 "sandbox-path": "/storage/Users"
+            }, {
+                "src-path": "/mnt/data/<currentUserId>/userExternal",
+                "sandbox-path": "/storage/userExternal"
             }],
             "mount-groups": [ "user-public", "file_manager_recent" ]
         }, {
