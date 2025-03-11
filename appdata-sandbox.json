@@ -688,6 +688,11 @@
                     "src-path": "/mnt/data/<currentUserId>/hmdfs",
                     "sandbox-path": "/storage/hmdfs",
                     "sandbox-flags": [ "bind", "rec" ]
+                },
+                {
+                    "src-path": "/mnt/data/<currentUserId>/userExternal",
+                    "sandbox-path": "/storage/userExternal",
+                    "sandbox-flags": [ "bind", "rec" ]
                 }
             ]
         }],
