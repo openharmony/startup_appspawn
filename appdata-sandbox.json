@@ -99,16 +99,6 @@
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
-                    "src-path" : "/vendor/etc/vulkan",
-                    "sandbox-path" : "/vendor/etc/vulkan",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/vendor/etc/passthrough",
-                    "sandbox-path" : "/vendor/etc/passthrough",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
                     "src-path" : "/mnt/sandbox/<currentUserId>/<PackageName>/data/storage/el2",
                     "sandbox-path" : "/data/storage/el2",
                     "sandbox-flags" : [ "bind", "rec" ],
@@ -234,8 +224,18 @@
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
+                    "src-path" : "/chip_prod/etc/passthrough",
+                    "sandbox-path" : "/chip_prod/etc/passthrough",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
                     "src-path" : "/mnt/hmdfs/<currentUserId>/cloud/data/<PackageName>",
                     "sandbox-path" : "/data/storage/el2/cloud",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/vendor/etc/vulkan",
+                    "sandbox-path" : "/vendor/etc/vulkan",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
@@ -244,8 +244,8 @@
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
-                    "src-path" : "/chip_prod/etc/passthrough",
-                    "sandbox-path" : "/chip_prod/etc/passthrough",
+                    "src-path" : "/vendor/etc/passthrough",
+                    "sandbox-path" : "/vendor/etc/passthrough",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }
