@@ -15,7 +15,7 @@ import("//base/startup/appspawn/appspawn.gni")
 import("//build/test.gni")
 
 ohos_unittest("AppSpawn_ut") {
-  module_out_path = "${module_output_path}"
+  module_out_path = "appspawn/appspawn"
   if (appspawn_unittest_coverage) {
     cflags = [ "--coverage" ]
     ldflags = [ "--coverage" ]
@@ -218,7 +218,7 @@ ohos_unittest("AppSpawn_ut") {
 }
 
 ohos_unittest("AppSpawn_coldrun_ut") {
-  module_out_path = "${module_output_path}"
+  module_out_path = "appspawn/appspawn"
   if (appspawn_unittest_coverage) {
     cflags = [ "--coverage" ]
     ldflags = [ "--coverage" ]
@@ -407,7 +407,7 @@ ohos_unittest("AppSpawn_coldrun_ut") {
 }
 
 ohos_unittest("AppSpawn_common_ut") {
-  module_out_path = "${module_output_path}"
+  module_out_path = "appspawn/appspawn"
   if (appspawn_unittest_coverage) {
     cflags = [ "--coverage" ]
     ldflags = [ "--coverage" ]

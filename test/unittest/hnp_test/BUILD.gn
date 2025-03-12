@@ -15,7 +15,7 @@ import("//build/test.gni")
 
 if (!defined(ohos_lite)) {
   ohos_unittest("HnpTest") {
-    module_out_path = "${module_output_path}"
+    module_out_path = "appspawn/appspawn"
     cflags = [
       "-Wno-implicit-fallthrough",
       "-Wno-unused-function",
