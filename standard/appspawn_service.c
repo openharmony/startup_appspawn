@@ -167,7 +167,7 @@ APPSPAWN_STATIC void WriteSignalInfoToFd(AppSpawnedProcess *appInfo, AppSpawnCon
         APPSPAWN_LOGE("Spawn Listen failed to write signal info to fd errno %{public}d", errno);
         return;
     }
-    APPSPAWN_LOGI("Spawn Listen successfully write signal info[%{public}s] to fd", jsonString);
+    APPSPAWN_LOGV("Spawn Listen successfully write signal info[%{public}s] to fd", jsonString);
     free(jsonString);
 }
 
@@ -667,7 +667,7 @@ static int AddChildWatcher(AppSpawningCtx *property)
     watchInfo.events = EVENT_READ;
     watchInfo.processEvent = ProcessChildResponse;
     LE_STATUS status = LE_StartWatcher(LE_GetDefaultLoop(), &property->forkCtx.watcherHandle, &watchInfo, property);
-    APPSPAWN_LOGI("AddChildWatcher with timeout %{public}u fd %{public}d", timeout, watchInfo.fd);
+    APPSPAWN_LOGV("AddChildWatcher with timeout %{public}u fd %{public}d", timeout, watchInfo.fd);
     APPSPAWN_CHECK(status == LE_SUCCESS,
         return APPSPAWN_SYSTEM_ERROR, "Failed to watch child %{public}d", property->pid);
     status = LE_CreateTimer(LE_GetDefaultLoop(), &property->forkCtx.timer, WaitChildTimeout, property);
