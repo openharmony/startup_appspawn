@@ -73,8 +73,8 @@ static void DealSpawnWatchdog(AppSpawnContent *content, bool isOpen)
     if (isOpen) {
         content->wdgOpened = (result != -1);
     }
-    APPSPAWN_LOGI("procFile: %{public}s procContent: %{public}s %{public}s %{public}s watchdog end, result:%{public}d",
-        procFile, procContent, (content->mode == MODE_FOR_NWEB_SPAWN) ?
+    APPSPAWN_LOGI("%{public}s %{public}s %{public}s watchdog end,result:%{public}d",
+        content->isLinux ? "Linux" : "Hm", (content->mode == MODE_FOR_NWEB_SPAWN) ?
             "Nwebspawn" : "Appspawn", isOpen ? "enable" : "kick", result);
 }
 

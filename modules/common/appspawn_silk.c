@@ -115,9 +115,9 @@ static void FreeAllSilkConfig(void)
 void LoadSilkLibrary(const char *packageName)
 {
     APPSPAWN_CHECK(g_silkConfig.configItems != NULL, return,
-                   "Load silk library failed for configItems is NULL");
+                   "ConfigItems is NULL");
     APPSPAWN_CHECK(packageName != NULL, FreeAllSilkConfig(); return,
-                   "Load silk library failed for packageName is NULL");
+                   "PackageName is NULL");
     char **appName = NULL;
     void *handle = NULL;
     for (int i = 0; i < g_silkConfig.configCursor; i++) {
