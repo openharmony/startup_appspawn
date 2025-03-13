@@ -198,6 +198,14 @@
                 "sandbox-path": "/storage/Share/.thumbs/Photo"
             }]
         }, {
+            "name": "ohos.permission.GET_EDM_CONFIG",
+            "sandbox-switch": "ON",
+            "mount-paths": [{
+                "src-path": "/data/service/el1/public/edm/config/system",
+                "sandbox-path": "/data/ecust/system",
+                "sandbox-flags": [ "bind", "rec" ]
+            }]
+        }, {
             "name": "ohos.permission.FILE_CROSS_APP",
             "gids": ["file_manager"],
             "mount-paths": [],

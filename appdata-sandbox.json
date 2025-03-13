@@ -706,6 +706,15 @@
                 }
             ]
         }],
+        "ohos.permission.GET_EDM_CONFIG":[{
+            "sandbox-switch": "ON",
+            "mount-paths": [{
+                    "src-path": "/data/service/el1/public/edm/config/system",
+                    "sandbox-path": "/data/ecust/system",
+                    "sandbox-flags": [ "bind", "rec" ]
+                }
+            ]
+        }],
         "ohos.permission.FILE_CROSS_APP":[{
             "sandbox-switch": "ON",
             "mount-paths": [{
