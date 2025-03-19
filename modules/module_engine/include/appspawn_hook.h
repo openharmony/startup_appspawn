@@ -38,9 +38,13 @@ typedef struct AppSpawnClient AppSpawnClient;
 typedef struct TagAppSpawnedProcess AppSpawnedProcessInfo;
 
 typedef enum {
-    EXT_DATA_SANDBOX,
+    EXT_DATA_APP_SANDBOX,        // 加载appdata-sandbox-app.json配置文件
     EXT_DATA_NAMESPACE,
-    EXT_DATA_ISOLATED_SANDBOX,
+    EXT_DATA_ISOLATED_SANDBOX,   // 加载appdata-sandbox-isolated-new.json配置文件
+    EXT_DATA_RENDER_SANDBOX,     // 加载appdata-sandbox-render.json配置文件
+    EXT_DATA_GPU_SANDBOX,        // 加载appdata-sandbox-gpu.json配置文件
+    EXT_DATA_DEBUG_HAP_SANDBOX,  // 加载appdata-sandbox-debug.json配置文件
+    EXT_DATA_COUNT,
 } ExtDataType;
 
 struct TagAppSpawnExtData;

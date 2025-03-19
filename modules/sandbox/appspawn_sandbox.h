@@ -61,18 +61,18 @@ extern "C" {
 #define MOUNT_MODE_ALWAYS 1     // "always"
 #define MOUNT_MODE_NOT_EXIST 2  // "not-exists"
 
-#define MOUNT_PATH_OP_NONE    ((uint32_t)-1)
-#define MOUNT_PATH_OP_SYMLINK SANDBOX_TAG_INVALID
-#define MOUNT_PATH_OP_UNMOUNT    (SANDBOX_TAG_INVALID + 1)
-#define MOUNT_PATH_OP_ONLY_SANDBOX    (SANDBOX_TAG_INVALID + 2)
-#define MOUNT_PATH_OP_REPLACE_BY_SANDBOX    (SANDBOX_TAG_INVALID + 3)
-#define MOUNT_PATH_OP_REPLACE_BY_SRC    (SANDBOX_TAG_INVALID + 4)
-#define FILE_CROSS_APP_MODE "ohos.permission.FILE_CROSS_APP"
-#define FILE_ACCESS_COMMON_DIR_MODE "ohos.permission.FILE_ACCESS_COMMON_DIR"
-#define ACCESS_DLP_FILE_MODE "ohos.permission.ACCESS_DLP_FILE"
-#define FILE_ACCESS_MANAGER_MODE "ohos.permission.FILE_ACCESS_MANAGER"
-#define READ_WRITE_USER_FILE_MODE "ohos.permission.READ_WRITE_USER_FILE"
-#define GET_ALL_PROCESSES_MODE "ohos.permission.GET_ALL_PROCESSES"
+#define MOUNT_PATH_OP_NONE                   ((uint32_t)-1)
+#define MOUNT_PATH_OP_SYMLINK                SANDBOX_TAG_INVALID
+#define MOUNT_PATH_OP_UNMOUNT                (SANDBOX_TAG_INVALID + 1)
+#define MOUNT_PATH_OP_ONLY_SANDBOX           (SANDBOX_TAG_INVALID + 2)
+#define MOUNT_PATH_OP_REPLACE_BY_SANDBOX     (SANDBOX_TAG_INVALID + 3)
+#define MOUNT_PATH_OP_REPLACE_BY_SRC         (SANDBOX_TAG_INVALID + 4)
+#define FILE_CROSS_APP_MODE                  "ohos.permission.FILE_CROSS_APP"
+#define FILE_ACCESS_COMMON_DIR_MODE          "ohos.permission.FILE_ACCESS_COMMON_DIR"
+#define ACCESS_DLP_FILE_MODE                 "ohos.permission.ACCESS_DLP_FILE"
+#define FILE_ACCESS_MANAGER_MODE             "ohos.permission.FILE_ACCESS_MANAGER"
+#define READ_WRITE_USER_FILE_MODE            "ohos.permission.READ_WRITE_USER_FILE"
+#define GET_ALL_PROCESSES_MODE               "ohos.permission.GET_ALL_PROCESSES"
 
 typedef enum SandboxTag {
     SANDBOX_TAG_MOUNT_PATH = 0,
@@ -234,8 +234,15 @@ typedef struct {
 AppSpawnSandboxCfg *CreateAppSpawnSandbox(ExtDataType type);
 AppSpawnSandboxCfg *GetAppSpawnSandbox(const AppSpawnMgr *content, ExtDataType type);
 void DeleteAppSpawnSandbox(AppSpawnSandboxCfg *sandbox);
-int LoadAppSandboxConfig(AppSpawnSandboxCfg *sandbox, RunMode mode);
+int LoadAppSandboxConfig(AppSpawnSandboxCfg *sandbox, ExtDataType type);
 void DumpAppSpawnSandboxCfg(AppSpawnSandboxCfg *sandbox);
+
+/**
+ * @brief Init sandbox context
+ *
+ */
+int InitSandboxContext(SandboxContext *context, const AppSpawnSandboxCfg *sandbox,
+                       const AppSpawningCtx *property, int nwebspawn);
 
 /**
  * @brief SandboxSection op
@@ -261,10 +268,17 @@ void AddSandboxMountNode(SandboxMountNode *node, SandboxSection *section);
 PathMountNode *GetPathMountNode(const SandboxSection *section, int type, const char *source, const char *target);
 SymbolLinkNode *GetSymbolLinkNode(const SandboxSection *section, const char *target, const char *linkName);
 
+__attribute__((always_inline)) inline void SetMountPathOperation(uint32_t *operation, uint32_t index)
+{
+    *operation |= (1 << index);
+}
+
 /**
  * @brief sandbox mount interface
  *
  */
+int MountSandboxConfig(const SandboxContext *context, const AppSpawnSandboxCfg *sandbox,
+                       const SandboxSection *section, uint32_t op);
 int MountSandboxConfigs(AppSpawnSandboxCfg *sandbox, const AppSpawningCtx *property, int nwebspawn);
 int StagedMountSystemConst(AppSpawnSandboxCfg *sandbox, const AppSpawningCtx *property, int nwebspawn);
 int StagedMountPreUnShare(const SandboxContext *context, AppSpawnSandboxCfg *sandbox);
@@ -312,11 +326,25 @@ int ProcessExpandAppSandboxConfig(const SandboxContext *context,
 void AddDefaultExpandAppSandboxConfigHandle(void);
 void ClearExpandAppSandboxConfigHandle(void);
 
-__attribute__((always_inline)) inline void *GetSpawningMsgInfo(const SandboxContext *context, uint32_t type)
+__attribute__((always_inline)) inline void *GetSandboxCtxMsgInfo(const SandboxContext *context, uint32_t type)
 {
     APPSPAWN_CHECK(context->message != NULL,
         return NULL, "Invalid property for type %{public}u", type);
     return GetAppSpawnMsgInfo(context->message, type);
+}
+
+__attribute__((always_inline)) inline bool CheckSandboxCtxMsgFlagSet(const SandboxContext *context, uint32_t index)
+{
+    APPSPAWN_CHECK(context->message != NULL, return false, "Invalid property for type %{public}d", TLV_MSG_FLAGS);
+    return CheckAppSpawnMsgFlag(context->message, TLV_MSG_FLAGS, index);
+}
+
+__attribute__((always_inline)) inline bool CheckSandboxCtxPermissionFlagSet(
+    const SandboxContext *context, uint32_t index)
+{
+    APPSPAWN_CHECK(context != NULL && context->message != NULL,
+        return false, "Invalid property for type %{public}d", TLV_PERMISSION);
+    return CheckAppSpawnMsgFlag(context->message, TLV_PERMISSION, index);
 }
 
 /**
