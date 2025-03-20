@@ -36,8 +36,18 @@ void ProcessMgrRemoveApp(const char* processName, int pid, int uid, int status)
         pname = std::string(processName, strlen(processName));
     }
 
-    HiSysEventWrite(HiSysEvent::Domain::STARTUP, KEY_PROCESS_EXIT, HiSysEvent::EventType::BEHAVIOR,
-        KEY_NAME, pname, KEY_PID, pid, KEY_UID, uid, KEY_STATUS, status);
+    int signal = 0;
+    if (WIFSIGNALED(status)) {
+        signal = WTERMSIG(status);
+    }
+    if (WIFEXITED(status)) {
+        signal = WEXITSTATUS(status);
+    }
+
+    if (signal != 0) {
+        HiSysEventWrite(HiSysEvent::Domain::APPSPAWN, KEY_PROCESS_EXIT, HiSysEvent::EventType::BEHAVIOR,
+            KEY_NAME, pname, KEY_PID, pid, KEY_UID, uid, KEY_STATUS, status);
+    }
 }
 }  // namespace system
 }  // namespace OHOS
