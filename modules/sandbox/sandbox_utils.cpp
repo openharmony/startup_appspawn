@@ -86,6 +86,7 @@ namespace {
     const std::string g_packageNameIndex = "<PackageName_index>";
     const std::string g_variablePackageName = "<variablePackageName>";
     const std::string g_arkWebPackageName = "<arkWebPackageName>";
+    const std::string g_hostUserId = "<hostUserId>";
     const std::string g_sandBoxDir = "/mnt/sandbox/";
     const std::string g_statusCheck = "true";
     const std::string g_sbxSwitchCheck = "ON";
@@ -551,6 +552,20 @@ static std::string ReplaceVariablePackageName(const AppSpawningCtx *appProperty,
     return tmpSandboxPath;
 }
 
+static std::string ReplaceHostUserId(const AppSpawningCtx *appProperty, const std::string &path)
+{
+    std::string tmpSandboxPath = path;
+    int32_t uid = 0;
+    const char *userId =
+        (const char *)(GetAppSpawnMsgExtInfo(appProperty->message, MSG_EXT_NAME_PARENT_UID, NULL));
+    if (userId != nullptr) {
+        uid = atoi(userId);
+    }
+    tmpSandboxPath = replace_all(tmpSandboxPath, g_hostUserId, std::to_string(uid / UID_BASE));
+    APPSPAWN_LOGV("tmpSandboxPath %{public}s", tmpSandboxPath.c_str());
+    return tmpSandboxPath;
+}
+
 string SandboxUtils::ConvertToRealPath(const AppSpawningCtx *appProperty, std::string path)
 {
     AppSpawnMsgBundleInfo *info =
@@ -573,6 +588,10 @@ string SandboxUtils::ConvertToRealPath(const AppSpawningCtx *appProperty, std::s
 
     if (path.find(g_userId) != std::string::npos) {
         path = replace_all(path, g_userId, std::to_string(dacInfo->uid / UID_BASE));
+    }
+
+    if (path.find(g_hostUserId) != std::string::npos) {
+        path = ReplaceHostUserId(appProperty, path);
     }
 
     if (path.find(g_variablePackageName) != std::string::npos) {
