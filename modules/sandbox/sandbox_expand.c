@@ -95,7 +95,7 @@ APPSPAWN_STATIC int MountAllGroup(const SandboxContext *context, const cJSON *gr
     cJSON *gids = cJSON_GetObjectItemCaseSensitive(groups, "gid");
     cJSON *dirs = cJSON_GetObjectItemCaseSensitive(groups, "dir");
     APPSPAWN_CHECK(dataGroupIds != NULL && cJSON_IsArray(dataGroupIds),
-        return -1, "MountAllGroup: invalid dataGroupIds");
+        return 0, "MountAllGroup: invalid dataGroupIds");
     APPSPAWN_CHECK(gids != NULL && cJSON_IsArray(gids), return -1, "MountAllGroup: invalid gids");
     APPSPAWN_CHECK(dirs != NULL && cJSON_IsArray(dirs), return -1, "MountAllGroup: invalid dirs");
     int count = cJSON_GetArraySize(dataGroupIds);
@@ -118,9 +118,11 @@ APPSPAWN_STATIC int MountAllGroup(const SandboxContext *context, const cJSON *gr
         CreateSandboxDir(context->buffer[0].buffer, FILE_MODE);
         MountArg mountArg = {libPhysicalPath, context->buffer[0].buffer, NULL, mountFlags, NULL, mountSharedFlag};
         ret = SandboxMountPath(&mountArg);
-        APPSPAWN_CHECK(ret == 0, return ret, "mount library failed %{public}d", ret);
+        if (ret != 0) {
+            APPSPAWN_LOGV("mount datagroup failed");
+        }
     }
-    return ret;
+    return 0;
 }
 
 typedef struct {

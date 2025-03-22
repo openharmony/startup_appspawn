@@ -31,17 +31,19 @@ extern "C" {
 #define APP_SANDBOX_FILE_NAME "/appdata-sandbox.json"
 #endif
 
-#define WEB_SANDBOX_FILE_NAME "/appdata-sandbox-nweb.json"
-#define ISOLATED_SANDBOX_FILE_NAME "/appdata-sandbox-isolated-new.json"
+#define RENDER_SANDBOX_FILE_NAME      "/appdata-sandbox-render.json"
+#define GPU_SANDBOX_FILE_NAME         "/appdata-sandbox-gpu.json"
+#define ISOLATED_SANDBOX_FILE_NAME    "/appdata-sandbox-isolated-new.json"
+#define DEBUG_SANDBOX_FILE_NAME       "/appdata-sandbox-debug.json"
 
 typedef struct TagSandboxQueue SandboxQueue;
 typedef struct TagPermissionNode SandboxPermissionNode;
 
 int32_t AddSandboxPermissionNode(const char *name, SandboxQueue *queue);
 int32_t DeleteSandboxPermissions(SandboxQueue *queue);
-int32_t GetPermissionIndexInQueue(SandboxQueue *queue, const char *permission);
-const SandboxPermissionNode *GetPermissionNodeInQueue(SandboxQueue *queue, const char *permission);
-const SandboxPermissionNode *GetPermissionNodeInQueueByIndex(SandboxQueue *queue, int32_t index);
+int32_t GetPermissionIndexInQueue(const SandboxQueue *queue, const char *permission);
+const SandboxPermissionNode *GetPermissionNodeInQueue(const SandboxQueue *queue, const char *permission);
+const SandboxPermissionNode *GetPermissionNodeInQueueByIndex(const SandboxQueue *queue, int32_t index);
 int32_t PermissionRenumber(SandboxQueue *queue);
 
 #ifdef __cplusplus

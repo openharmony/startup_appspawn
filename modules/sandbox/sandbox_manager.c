@@ -482,21 +482,21 @@ void DumpAppSpawnSandboxCfg(AppSpawnSandboxCfg *sandbox)
     DumpSandboxQueue(&sandbox->nameGroupsQueue.front, DumpSandboxNameGroupNode);
 }
 
-APPSPAWN_STATIC int PreLoadIsoLatedSandboxCfg(AppSpawnMgr *content)
+static int PreLoadSandboxCfgByType(AppSpawnMgr *content, ExtDataType type)
 {
-    if (IsNWebSpawnMode(content)) {
-        return 0;
+    if (type >= EXT_DATA_COUNT || type < EXT_DATA_APP_SANDBOX) {
+        return APPSPAWN_ARG_INVALID;
     }
 
-    AppSpawnSandboxCfg *sandbox = GetAppSpawnSandbox(content, EXT_DATA_ISOLATED_SANDBOX);
-    APPSPAWN_CHECK(sandbox == NULL, return 0, "Isolated sandbox has been load");
+    AppSpawnSandboxCfg *sandbox = GetAppSpawnSandbox(content, type);
+    APPSPAWN_CHECK(sandbox == NULL, return 0, "type %{public}d sandbox has been load", type);
 
-    sandbox = CreateAppSpawnSandbox(EXT_DATA_ISOLATED_SANDBOX);
+    sandbox = CreateAppSpawnSandbox(type);
     APPSPAWN_CHECK_ONLY_EXPER(sandbox != NULL, return APPSPAWN_SYSTEM_ERROR);
     OH_ListAddTail(&content->extData, &sandbox->extData.node);
 
-    // load isolated sandbox config
-    LoadAppSandboxConfig(sandbox, MODE_FOR_NATIVE_SPAWN);
+    // load sandbox config by type
+    LoadAppSandboxConfig(sandbox, type);
     sandbox->maxPermissionIndex = PermissionRenumber(&sandbox->permissionQueue);
 
     content->content.sandboxNsFlags = 0;
@@ -506,26 +506,47 @@ APPSPAWN_STATIC int PreLoadIsoLatedSandboxCfg(AppSpawnMgr *content)
     return 0;
 }
 
-APPSPAWN_STATIC int PreLoadSandboxCfg(AppSpawnMgr *content)
+APPSPAWN_STATIC int PreLoadDebugSandboxCfg(AppSpawnMgr *content)
 {
-    AppSpawnSandboxCfg *sandbox = GetAppSpawnSandbox(content, EXT_DATA_SANDBOX);
-    APPSPAWN_CHECK(sandbox == NULL, return 0, "Sandbox has been load");
-
-    sandbox = CreateAppSpawnSandbox(EXT_DATA_SANDBOX);
-    APPSPAWN_CHECK_ONLY_EXPER(sandbox != NULL, return APPSPAWN_SYSTEM_ERROR);
-    OH_ListAddTail(&content->extData, &sandbox->extData.node);
-
-    // load app/nweb sandbox config
     if (IsNWebSpawnMode(content)) {
-        LoadAppSandboxConfig(sandbox, MODE_FOR_NWEB_SPAWN);
-    } else {
-        LoadAppSandboxConfig(sandbox, MODE_FOR_APP_SPAWN);
+        return 0;
     }
-    sandbox->maxPermissionIndex = PermissionRenumber(&sandbox->permissionQueue);
 
-    content->content.sandboxNsFlags = 0;
-    if (IsNWebSpawnMode(content) || sandbox->pidNamespaceSupport) {
-        content->content.sandboxNsFlags = sandbox->sandboxNsFlags;
+    int ret = PreLoadSandboxCfgByType(content, EXT_DATA_DEBUG_HAP_SANDBOX);
+    APPSPAWN_CHECK(ret == 0, return ret, "debug hap sandbox cfg preload failed");
+    return 0;
+}
+
+APPSPAWN_STATIC int PreLoadIsoLatedSandboxCfg(AppSpawnMgr *content)
+{
+    if (IsNWebSpawnMode(content)) {
+        return 0;
+    }
+
+    int ret = PreLoadSandboxCfgByType(content, EXT_DATA_ISOLATED_SANDBOX);
+    APPSPAWN_CHECK(ret == 0, return ret, "isolated sandbox cfg preload failed");
+    return 0;
+}
+
+APPSPAWN_STATIC int PreLoadAppSandboxCfg(AppSpawnMgr *content)
+{
+    if (IsNWebSpawnMode(content)) {
+        return 0;
+    }
+
+    int ret = PreLoadSandboxCfgByType(content, EXT_DATA_APP_SANDBOX);
+    APPSPAWN_CHECK(ret == 0, return ret, "app sandbox cfg preload failed");
+    return 0;
+}
+
+APPSPAWN_STATIC int PreLoadNWebSandboxCfg(AppSpawnMgr *content)
+{
+    if (IsNWebSpawnMode(content)) {
+        int ret = PreLoadSandboxCfgByType(content, EXT_DATA_RENDER_SANDBOX);
+        APPSPAWN_CHECK(ret == 0, return ret, "render sandbox cfg preload failed");
+
+        ret = PreLoadSandboxCfgByType(content, EXT_DATA_GPU_SANDBOX);
+        APPSPAWN_CHECK(ret == 0, return ret, "gpu sandbox cfg preload failed");
     }
     return 0;
 }
@@ -540,28 +561,62 @@ APPSPAWN_STATIC int IsolatedSandboxHandleServerExit(AppSpawnMgr *content)
 
 APPSPAWN_STATIC int SandboxHandleServerExit(AppSpawnMgr *content)
 {
-    AppSpawnSandboxCfg *sandbox = GetAppSpawnSandbox(content, EXT_DATA_SANDBOX);
+    AppSpawnSandboxCfg *sandbox = GetAppSpawnSandbox(content, EXT_DATA_APP_SANDBOX);
     APPSPAWN_CHECK(sandbox != NULL, return 0, "Sandbox not load");
 
     return 0;
 }
 
+static ExtDataType GetSandboxType(AppSpawnMgr *content, AppSpawningCtx *property)
+{
+    ExtDataType type = EXT_DATA_APP_SANDBOX;
+    if (IsNWebSpawnMode(content)) {
+        char *processType = (char *)GetAppPropertyExt(property, MSG_EXT_NAME_PROCESS_TYPE, NULL);
+        APPSPAWN_CHECK(processType != NULL, return type, "Invalid processType data");
+        if (strcmp(processType, "render") == 0) {
+            type = EXT_DATA_RENDER_SANDBOX;
+        } else if (strcmp(processType, "gpu") == 0) {
+            type = EXT_DATA_GPU_SANDBOX;
+        }
+    } else {
+        type = CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX_TYPE) ? EXT_DATA_ISOLATED_SANDBOX :
+                                                                                EXT_DATA_APP_SANDBOX;
+    }
+    return type;
+}
+
+/**
+ * @brief 构建沙箱环境有以下条件
+ * 1.如果是孵化普通hap，ExtDataType为EXT_DATA_APP_SANDBOX
+ * 2.如果是孵化普通hap并且hap中携带APP_FLAGS_ISOLATED_SANDBOX_TYPE标志位，ExtDataType为EXT_DATA_ISOLATED_SANDBOX
+ * 3.如果孵化的是render进程，ExtDataType为EXT_DATA_RENDER_SANDBOX
+ * 4.如果孵化的是gpu进程，ExtDataType为EXT_DATA_GPU_SANDBOX
+ * 5.如果孵化应用进程时携带了APP_FLAG_DEBUGABLE标记位并开启了开发者模式，需要增量配置ExtDataType为EXT_DATA_DEBUG_HAP_SANDBOX
+
+ * @param content appspawn global content
+ * @param property app property
+ * @return int
+ */
+
 int SpawnBuildSandboxEnv(AppSpawnMgr *content, AppSpawningCtx *property)
 {
-    ExtDataType type = CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX_TYPE) ? EXT_DATA_ISOLATED_SANDBOX :
-        EXT_DATA_SANDBOX;
-    AppSpawnSandboxCfg *appSandbox = GetAppSpawnSandbox(content, type);
-    content->content.sandboxType = type;
-    APPSPAWN_CHECK(appSandbox != NULL, return -1, "Failed to get sandbox for %{public}s", GetProcessName(property));
-    // no sandbox
+    // Don't build sandbox env
     if (CheckAppMsgFlagsSet(property, APP_FLAGS_NO_SANDBOX)) {
         return 0;
     }
+
+    ExtDataType type = GetSandboxType(content, property);
+    AppSpawnSandboxCfg *appSandbox = GetAppSpawnSandbox(content, type);
+    APPSPAWN_CHECK(appSandbox != NULL, return APPSPAWN_SANDBOX_INVALID, "Failed to get sandbox for %{public}s",
+                   GetProcessName(property));
+    content->content.sandboxType = type;
+
     // CLONE_NEWPID 0x20000000
     // CLONE_NEWNET 0x40000000
     if ((content->content.sandboxNsFlags & CLONE_NEWPID) == CLONE_NEWPID) {
         int ret = getprocpid();
         if (ret < 0) {
+            APPSPAWN_LOGE("getprocpid failed, ret: %{public}d errno: %{public}d", ret, errno);
             return ret;
         }
     }
@@ -706,7 +761,7 @@ int SpawnPrepareSandboxCfg(AppSpawnMgr *content, AppSpawningCtx *property)
     APPSPAWN_CHECK_ONLY_EXPER(property != NULL, return -1);
     APPSPAWN_LOGV("Prepare sandbox config %{public}s", GetProcessName(property));
     ExtDataType type = CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX_TYPE) ? EXT_DATA_ISOLATED_SANDBOX :
-        EXT_DATA_SANDBOX;
+        EXT_DATA_APP_SANDBOX;
     AppSpawnSandboxCfg *sandbox = GetAppSpawnSandbox(content, type);
     content->content.sandboxType = type;
     APPSPAWN_CHECK(sandbox != NULL, return -1, "Failed to get sandbox for %{public}s", GetProcessName(property));
@@ -740,8 +795,10 @@ APPSPAWN_STATIC int SandboxUnmountPath(const AppSpawnMgr *content, const AppSpaw
 MODULE_CONSTRUCTOR(void)
 {
     APPSPAWN_LOGV("Load sandbox module ...");
-    (void)AddServerStageHook(STAGE_SERVER_PRELOAD, HOOK_PRIO_SANDBOX, PreLoadSandboxCfg);
+    (void)AddServerStageHook(STAGE_SERVER_PRELOAD, HOOK_PRIO_SANDBOX, PreLoadAppSandboxCfg);
     (void)AddServerStageHook(STAGE_SERVER_PRELOAD, HOOK_PRIO_SANDBOX, PreLoadIsoLatedSandboxCfg);
+    (void)AddServerStageHook(STAGE_SERVER_PRELOAD, HOOK_PRIO_SANDBOX, PreLoadNWebSandboxCfg);
+    (void)AddServerStageHook(STAGE_SERVER_PRELOAD, HOOK_PRIO_SANDBOX, PreLoadDebugSandboxCfg);
     (void)AddServerStageHook(STAGE_SERVER_EXIT, HOOK_PRIO_SANDBOX, SandboxHandleServerExit);
     (void)AddServerStageHook(STAGE_SERVER_EXIT, HOOK_PRIO_SANDBOX, IsolatedSandboxHandleServerExit);
     (void)AddAppSpawnHook(STAGE_PARENT_PRE_FORK, HOOK_PRIO_SANDBOX, SpawnPrepareSandboxCfg);

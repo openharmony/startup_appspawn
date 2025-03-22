@@ -25,13 +25,12 @@ struct ListNode g_sandboxVarList = {&g_sandboxVarList, &g_sandboxVarList};
 static int VarPackageNameIndexReplace(const SandboxContext *context,
     const char *buffer, uint32_t bufferLen, uint32_t *realLen, const VarExtraData *extraData)
 {
-    AppSpawnMsgBundleInfo *bundleInfo = (
-        AppSpawnMsgBundleInfo *)GetSpawningMsgInfo(context, TLV_BUNDLE_INFO);
+    AppSpawnMsgBundleInfo *bundleInfo = (AppSpawnMsgBundleInfo *)GetSandboxCtxMsgInfo(context, TLV_BUNDLE_INFO);
     APPSPAWN_CHECK(bundleInfo != NULL, return APPSPAWN_TLV_NONE,
         "No bundle info in msg %{public}s", context->bundleName);
     int len = 0;
     if (bundleInfo->bundleIndex > 0) {
-        len = sprintf_s((char *)buffer, bufferLen, "%s_%d", bundleInfo->bundleName, bundleInfo->bundleIndex);
+        len = sprintf_s((char *)buffer, bufferLen, "%d_%s", bundleInfo->bundleIndex, bundleInfo->bundleName);
     } else {
         len = sprintf_s((char *)buffer, bufferLen, "%s", bundleInfo->bundleName);
     }
@@ -54,7 +53,7 @@ APPSPAWN_STATIC int VarPackageNameReplace(const SandboxContext *context,
 static int VarCurrentUseIdReplace(const SandboxContext *context,
     const char *buffer, uint32_t bufferLen, uint32_t *realLen, const VarExtraData *extraData)
 {
-    AppSpawnMsgDacInfo *info = (AppSpawnMsgDacInfo *)GetSpawningMsgInfo(context, TLV_DAC_INFO);
+    AppSpawnMsgDacInfo *info = (AppSpawnMsgDacInfo *)GetSandboxCtxMsgInfo(context, TLV_DAC_INFO);
     APPSPAWN_CHECK(info != NULL, return APPSPAWN_TLV_NONE,
         "No tlv %{public}d in msg %{public}s", TLV_DAC_INFO, context->bundleName);
     int len = 0;
@@ -160,7 +159,7 @@ static int ReplaceVariableForpackageName(const SandboxContext *context,
     const char *buffer, uint32_t bufferLen, uint32_t *realLen, const VarExtraData *extraData)
 {
     APPSPAWN_CHECK(context != NULL, return -1, "Invalid context");
-    AppSpawnMsgBundleInfo *bundleInfo = (AppSpawnMsgBundleInfo *)GetSpawningMsgInfo(context, TLV_BUNDLE_INFO);
+    AppSpawnMsgBundleInfo *bundleInfo = (AppSpawnMsgBundleInfo *)GetSandboxCtxMsgInfo(context, TLV_BUNDLE_INFO);
     APPSPAWN_CHECK(bundleInfo != NULL, return APPSPAWN_TLV_NONE,
         "No bundle info in msg %{public}s", context->bundleName);
 

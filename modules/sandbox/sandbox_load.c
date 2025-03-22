@@ -663,22 +663,39 @@ APPSPAWN_STATIC int ParseAppSandboxConfig(const cJSON *root, ParseJsonContext *c
     return ret;
 }
 
-APPSPAWN_STATIC const char *GetSandboxNameByMode(RunMode mode)
+APPSPAWN_STATIC const char *GetSandboxNameByType(ExtDataType type)
 {
-    if (mode == MODE_FOR_NATIVE_SPAWN) {
-        return ISOLATED_SANDBOX_FILE_NAME;
+    if (type >= EXT_DATA_COUNT || type < EXT_DATA_APP_SANDBOX) {
+        return NULL;
     }
-    if (mode == MODE_FOR_NWEB_SPAWN || mode == MODE_FOR_NWEB_COLD_RUN) {
-        return WEB_SANDBOX_FILE_NAME;
+    const char *fileName = NULL;
+    switch (type) {
+        case EXT_DATA_APP_SANDBOX:
+            fileName = APP_SANDBOX_FILE_NAME;
+            break;
+        case EXT_DATA_ISOLATED_SANDBOX:
+            fileName = ISOLATED_SANDBOX_FILE_NAME;
+            break;
+        case EXT_DATA_RENDER_SANDBOX:
+            fileName = RENDER_SANDBOX_FILE_NAME;
+            break;
+        case EXT_DATA_GPU_SANDBOX:
+            fileName = GPU_SANDBOX_FILE_NAME;
+            break;
+        case EXT_DATA_DEBUG_HAP_SANDBOX:
+            fileName = DEBUG_SANDBOX_FILE_NAME;
+            break;
+        default:
+            break;
     }
-    return APP_SANDBOX_FILE_NAME;
+    return fileName;
 }
 
-int LoadAppSandboxConfig(AppSpawnSandboxCfg *sandbox, RunMode mode)
+int LoadAppSandboxConfig(AppSpawnSandboxCfg *sandbox, ExtDataType type)
 {
     APPSPAWN_CHECK_ONLY_EXPER(sandbox != NULL, return APPSPAWN_ARG_INVALID);
-    const char *sandboxName = GetSandboxNameByMode(mode);
-    APPSPAWN_LOGV("Get sandboxName %{public}s by mode %{public}d", sandboxName, mode);
+    const char *sandboxName = GetSandboxNameByType(type);
+    APPSPAWN_LOGV("Get sandboxName %{public}s by type %{public}d", sandboxName, type);
     if (sandbox->depGroupNodes != NULL) {
         APPSPAWN_LOGW("Sandbox has been load");
         return 0;
