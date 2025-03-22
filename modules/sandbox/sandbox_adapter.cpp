@@ -25,7 +25,7 @@ using namespace std;
 void MakeAtomicServiceDir(const SandboxContext *context, const char *originPath, const char *varPackageName)
 {
     APPSPAWN_CHECK_ONLY_EXPER(context != NULL && originPath != NULL && varPackageName != NULL, return);
-    AppSpawnMsgDacInfo *dacInfo = (AppSpawnMsgDacInfo *)GetSpawningMsgInfo(context, TLV_DAC_INFO);
+    AppSpawnMsgDacInfo *dacInfo = (AppSpawnMsgDacInfo *)GetSandboxCtxMsgInfo(context, TLV_DAC_INFO);
     APPSPAWN_CHECK(dacInfo != NULL, return, "No dac info for %{public}s", context->bundleName);
     string path(originPath);
     if (path.find("/mnt/share") != string::npos) {
@@ -46,7 +46,7 @@ void MakeAtomicServiceDir(const SandboxContext *context, const char *originPath,
     APPSPAWN_CHECK(ret == 0, return, "chmod %{public}s failed, errno %{public}d", path.c_str(), errno);
 
 #ifdef WITH_SELINUX
-    AppSpawnMsgDomainInfo *msgDomainInfo = (AppSpawnMsgDomainInfo *)GetSpawningMsgInfo(context, TLV_DOMAIN_INFO);
+    AppSpawnMsgDomainInfo *msgDomainInfo = (AppSpawnMsgDomainInfo *)GetSandboxCtxMsgInfo(context, TLV_DOMAIN_INFO);
     APPSPAWN_CHECK(msgDomainInfo != NULL, return, "No domain info for %{public}s", context->bundleName);
     HapContext hapContext;
     HapFileInfo hapFileInfo;

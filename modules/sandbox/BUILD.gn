@@ -22,6 +22,7 @@ if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
       "appspawn_sandbox.c",
       "sandbox_adapter.cpp",
       "sandbox_cfgvar.c",
+      "sandbox_debug_mode.c",
       "sandbox_expand.c",
       "sandbox_load.c",
       "sandbox_manager.c",

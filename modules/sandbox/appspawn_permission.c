@@ -117,7 +117,7 @@ int32_t PermissionRenumber(SandboxQueue *queue)
     return index + 1;
 }
 
-const SandboxPermissionNode *GetPermissionNodeInQueue(SandboxQueue *queue, const char *permission)
+const SandboxPermissionNode *GetPermissionNodeInQueue(const SandboxQueue *queue, const char *permission)
 {
     if (queue == NULL || permission == NULL) {
         return NULL;
@@ -129,7 +129,7 @@ const SandboxPermissionNode *GetPermissionNodeInQueue(SandboxQueue *queue, const
     return (SandboxPermissionNode *)ListEntry(node, SandboxMountNode, node);
 }
 
-const SandboxPermissionNode *GetPermissionNodeInQueueByIndex(SandboxQueue *queue, int32_t index)
+const SandboxPermissionNode *GetPermissionNodeInQueueByIndex(const SandboxQueue *queue, int32_t index)
 {
     if (queue == NULL) {
         return NULL;
@@ -141,7 +141,7 @@ const SandboxPermissionNode *GetPermissionNodeInQueueByIndex(SandboxQueue *queue
     return (SandboxPermissionNode *)ListEntry(node, SandboxMountNode, node);
 }
 
-int32_t GetPermissionIndexInQueue(SandboxQueue *queue, const char *permission)
+int32_t GetPermissionIndexInQueue(const SandboxQueue *queue, const char *permission)
 {
     APPSPAWN_CHECK_ONLY_EXPER(queue != NULL && permission != NULL, return INVALID_PERMISSION_INDEX);
     const SandboxPermissionNode *permissionNode = GetPermissionNodeInQueue(queue, permission);

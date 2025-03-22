@@ -51,24 +51,6 @@
 #define LOCK_STATUS_SIZE     16
 #define DEV_SHM_DIR "/dev/shm/"
 
-static inline void SetMountPathOperation(uint32_t *operation, uint32_t index)
-{
-    *operation |= (1 << index);
-}
-
-static inline bool CheckSpawningMsgFlagSet(const SandboxContext *context, uint32_t index)
-{
-    APPSPAWN_CHECK(context->message != NULL, return false, "Invalid property for type %{public}u", TLV_MSG_FLAGS);
-    return CheckAppSpawnMsgFlag(context->message, TLV_MSG_FLAGS, index);
-}
-
-APPSPAWN_STATIC inline bool CheckSpawningPermissionFlagSet(const SandboxContext *context, uint32_t index)
-{
-    APPSPAWN_CHECK(context != NULL && context->message != NULL,
-        return NULL, "Invalid property for type %{public}u", TLV_PERMISSION);
-    return CheckAppSpawnMsgFlag(context->message, TLV_PERMISSION, index);
-}
-
 APPSPAWN_STATIC bool CheckDirRecursive(const char *path)
 {
     char buffer[PATH_MAX] = {0};
@@ -191,11 +173,11 @@ void DeleteSandboxContext(SandboxContext *context)
 static bool NeedNetworkIsolated(SandboxContext *context, const AppSpawningCtx *property)
 {
     int developerMode = IsDeveloperModeOpen();
-    if (CheckSpawningMsgFlagSet(context, APP_FLAGS_ISOLATED_SANDBOX) && !developerMode) {
+    if (CheckSandboxCtxMsgFlagSet(context, APP_FLAGS_ISOLATED_SANDBOX) && !developerMode) {
         return true;
     }
 
-    if (CheckSpawningMsgFlagSet(context, APP_FLAGS_ISOLATED_NETWORK)) {
+    if (CheckSandboxCtxMsgFlagSet(context, APP_FLAGS_ISOLATED_NETWORK)) {
         uint32_t len = 0;
         char *extensionType = GetAppPropertyExt(property, MSG_EXT_NAME_EXTENSION_TYPE, &len);
         if (extensionType == NULL || extensionType[0] == '\0' || !developerMode) {
@@ -206,14 +188,17 @@ static bool NeedNetworkIsolated(SandboxContext *context, const AppSpawningCtx *p
     return false;
 }
 
-static int InitSandboxContext(SandboxContext *context,
-    const AppSpawnSandboxCfg *sandbox, const AppSpawningCtx *property, int nwebspawn)
+int InitSandboxContext(SandboxContext *context, const AppSpawnSandboxCfg *sandbox,
+                       const AppSpawningCtx *property, int nwebspawn)
 {
     AppSpawnMsgFlags *msgFlags = (AppSpawnMsgFlags *)GetAppProperty(property, TLV_MSG_FLAGS);
     APPSPAWN_CHECK(msgFlags != NULL, return APPSPAWN_TLV_NONE,
         "No msg flags in msg %{public}s", GetProcessName(property));
     context->nwebspawn = nwebspawn;
     context->bundleName = GetBundleName(property);
+    if (context->bundleName == NULL) {
+        context->bundleName = GetProcessName(property);
+    }
     context->bundleHasWps = strstr(context->bundleName, "wps") != NULL;
     context->dlpBundle = strcmp(GetProcessName(property), "com.ohos.dlpmanager") == 0;
     context->appFullMountEnable = sandbox->appFullMountEnable;
@@ -299,7 +284,7 @@ APPSPAWN_STATIC int CheckSandboxMountNode(const SandboxContext *context,
         }
     }
     // check apl
-    AppSpawnMsgDomainInfo *msgDomainInfo = (AppSpawnMsgDomainInfo *)GetSpawningMsgInfo(context, TLV_DOMAIN_INFO);
+    AppSpawnMsgDomainInfo *msgDomainInfo = (AppSpawnMsgDomainInfo *)GetSandboxCtxMsgInfo(context, TLV_DOMAIN_INFO);
     if (msgDomainInfo != NULL && sandboxNode->appAplName != NULL) {
         if (!strcmp(sandboxNode->appAplName, msgDomainInfo->apl)) {
             APPSPAWN_LOGW("Invalid mount app apl %{public}s %{public}s section %{public}s",
@@ -312,7 +297,7 @@ APPSPAWN_STATIC int CheckSandboxMountNode(const SandboxContext *context,
 
 static int32_t SandboxMountFusePath(const SandboxContext *context, const MountArg *args)
 {
-    AppSpawnMsgDacInfo *info = (AppSpawnMsgDacInfo *)GetSpawningMsgInfo(context, TLV_DAC_INFO);
+    AppSpawnMsgDacInfo *info = (AppSpawnMsgDacInfo *)GetSandboxCtxMsgInfo(context, TLV_DAC_INFO);
     APPSPAWN_CHECK(info != NULL, return APPSPAWN_TLV_NONE,
         "No tlv %{public}d in msg %{public}s", TLV_DAC_INFO, context->bundleName);
 
@@ -374,7 +359,7 @@ APPSPAWN_STATIC void CreateDemandSrc(const SandboxContext *context, const PathMo
         return;
     }
     CheckAndCreateSandboxFile(args->originPath);
-    AppSpawnMsgDacInfo *info = (AppSpawnMsgDacInfo *)GetSpawningMsgInfo(context, TLV_DAC_INFO);
+    AppSpawnMsgDacInfo *info = (AppSpawnMsgDacInfo *)GetSandboxCtxMsgInfo(context, TLV_DAC_INFO);
     APPSPAWN_CHECK(info != NULL, return,
         "No tlv %{public}d in msg %{public}s", TLV_DAC_INFO, context->bundleName);
 
@@ -401,7 +386,7 @@ APPSPAWN_STATIC const char *GetRealSrcPath(const SandboxContext *context, const 
     if (originPath == NULL) {
         return NULL;
     }
-    if (hasPackageName && CheckSpawningMsgFlagSet(context, APP_FLAGS_ATOMIC_SERVICE)) {
+    if (hasPackageName && CheckSandboxCtxMsgFlagSet(context, APP_FLAGS_ATOMIC_SERVICE)) {
         const char *varPackageName = strrchr(originPath, '/') ? strrchr(originPath, '/') + 1 : originPath;
         MakeAtomicServiceDir(context, originPath, varPackageName);
     }
@@ -415,7 +400,7 @@ static int32_t SetMountArgsOption(const SandboxContext *context, uint32_t catego
         return 0;
     }
 
-    AppSpawnMsgDacInfo *info = (AppSpawnMsgDacInfo *)GetSpawningMsgInfo(context, TLV_DAC_INFO);
+    AppSpawnMsgDacInfo *info = (AppSpawnMsgDacInfo *)GetSandboxCtxMsgInfo(context, TLV_DAC_INFO);
     if (info == NULL) {
         APPSPAWN_LOGE("Get msg dac info failed");
         return APPSPAWN_ARG_INVALID;
@@ -734,7 +719,7 @@ static void UpdateStorageDir(const SandboxContext *context, AppSpawnSandboxCfg *
     }
 
     int index = GetPermissionIndexInQueue(&sandbox->permissionQueue, FILE_ACCESS_MANAGER_MODE);
-    int res = CheckSpawningPermissionFlagSet(context, index);
+    int res = CheckSandboxCtxPermissionFlagSet(context, index);
     if (res == 0) {
         char storageUserPath[MAX_SANDBOX_BUFFER] = {0};
         ret = snprintf_s(storageUserPath, MAX_SANDBOX_BUFFER, MAX_SANDBOX_BUFFER - 1, "%s/%d/app-root/%s", rootPath,
@@ -761,7 +746,7 @@ static void MountDirToShared(const SandboxContext *context, AppSpawnSandboxCfg *
     const char nwebPath[] = "/mnt/nweb";
     const char nwebTmpPath[] = "/mnt/nweb/tmp";
     const char appRootName[] = "app-root";
-    AppSpawnMsgDacInfo *info = (AppSpawnMsgDacInfo *)GetSpawningMsgInfo(context, TLV_DAC_INFO);
+    AppSpawnMsgDacInfo *info = (AppSpawnMsgDacInfo *)GetSandboxCtxMsgInfo(context, TLV_DAC_INFO);
     if (info == NULL || context->bundleName == NULL) {
         return;
     }
@@ -782,14 +767,14 @@ static void MountDirToShared(const SandboxContext *context, AppSpawnSandboxCfg *
         } else {
             int index = GetPermissionIndexInQueue(&sandbox->permissionQueue, MOUNT_SHARED_MAP[i].permission);
             APPSPAWN_LOGV("mount dir on lock mountPermissionFlags %{public}d", index);
-            if (CheckSpawningPermissionFlagSet(context, index)) {
+            if (CheckSandboxCtxPermissionFlagSet(context, index)) {
                 MountDir(info, context->bundleName, rootPath, MOUNT_SHARED_MAP[i].sandboxPath);
             }
         }
     }
     char lockSbxPathStamp[MAX_SANDBOX_BUFFER] = { 0 };
     int ret = 0;
-    if (CheckSpawningMsgFlagSet(context, APP_FLAGS_ISOLATED_SANDBOX_TYPE) != 0) {
+    if (CheckSandboxCtxMsgFlagSet(context, APP_FLAGS_ISOLATED_SANDBOX_TYPE) != 0) {
         ret = snprintf_s(lockSbxPathStamp, MAX_SANDBOX_BUFFER, MAX_SANDBOX_BUFFER - 1, "%s%d/isolated/%s_locked",
                          rootPath, info->uid / UID_BASE, context->bundleName);
     } else {
@@ -855,8 +840,8 @@ static bool CheckAndCreateDepPath(const SandboxContext *context, const SandboxNa
     return false;
 }
 
-static int MountSandboxConfig(const SandboxContext *context,
-    const AppSpawnSandboxCfg *sandbox, const SandboxSection *section, uint32_t op)
+int MountSandboxConfig(const SandboxContext *context, const AppSpawnSandboxCfg *sandbox,
+                       const SandboxSection *section, uint32_t op)
 {
     uint32_t operation = (op != MOUNT_PATH_OP_NONE) ? op : 0;
     SetMountPathOperation(&operation, section->sandboxNode.type);
@@ -899,12 +884,12 @@ static int SetExpandSandboxConfig(const SandboxContext *context, const AppSpawnS
         "Set DataGroup config fail result: %{public}d, app: %{public}s", ret, context->bundleName);
 
     bool mountDestBundlePath = false;
-    AppSpawnMsgDomainInfo *msgDomainInfo = (AppSpawnMsgDomainInfo *)GetSpawningMsgInfo(context, TLV_DOMAIN_INFO);
+    AppSpawnMsgDomainInfo *msgDomainInfo = (AppSpawnMsgDomainInfo *)GetSandboxCtxMsgInfo(context, TLV_DOMAIN_INFO);
     if (msgDomainInfo != NULL) {
         mountDestBundlePath = (strcmp(msgDomainInfo->apl, APL_SYSTEM_BASIC) == 0) ||
                               (strcmp(msgDomainInfo->apl, APL_SYSTEM_CORE) == 0);
     }
-    if (mountDestBundlePath || (CheckSpawningMsgFlagSet(context, APP_FLAGS_ACCESS_BUNDLE_DIR) != 0)) {
+    if (mountDestBundlePath || (CheckSandboxCtxMsgFlagSet(context, APP_FLAGS_ACCESS_BUNDLE_DIR) != 0)) {
         // need permission check for system app here
         const char *destBundlesPath = GetSandboxRealVar(context,
             BUFFER_FOR_TARGET, "/data/bundles/", context->rootPath, NULL);
@@ -933,7 +918,7 @@ static int SetSandboxSpawnFlagsConfig(const SandboxContext *context, const AppSp
     while (node != &sandbox->spawnFlagsQueue.front) {
         SandboxFlagsNode *sandboxNode = (SandboxFlagsNode *)ListEntry(node, SandboxMountNode, node);
         // match flags point
-        if (sandboxNode->flagIndex == 0 || !CheckSpawningMsgFlagSet(context, sandboxNode->flagIndex)) {
+        if (sandboxNode->flagIndex == 0 || !CheckSandboxCtxMsgFlagSet(context, sandboxNode->flagIndex)) {
             node = node->next;
             continue;
         }
@@ -951,7 +936,7 @@ static int SetSandboxPermissionConfig(const SandboxContext *context, const AppSp
     ListNode *node = sandbox->permissionQueue.front.next;
     while (node != &sandbox->permissionQueue.front) {
         SandboxPermissionNode *permissionNode = (SandboxPermissionNode *)ListEntry(node, SandboxMountNode, node);
-        if (!CheckSpawningPermissionFlagSet(context, permissionNode->permissionIndex)) {
+        if (!CheckSandboxCtxPermissionFlagSet(context, permissionNode->permissionIndex)) {
             node = node->next;
             continue;
         }
@@ -967,7 +952,7 @@ static int SetSandboxPermissionConfig(const SandboxContext *context, const AppSp
 
 static int SetOverlayAppSandboxConfig(const SandboxContext *context, const AppSpawnSandboxCfg *sandbox)
 {
-    if (!CheckSpawningMsgFlagSet(context, APP_FLAGS_OVERLAY)) {
+    if (!CheckSandboxCtxMsgFlagSet(context, APP_FLAGS_OVERLAY)) {
         return 0;
     }
     int ret = ProcessExpandAppSandboxConfig(context, sandbox, "Overlay");
@@ -977,7 +962,7 @@ static int SetOverlayAppSandboxConfig(const SandboxContext *context, const AppSp
 
 static int SetBundleResourceSandboxConfig(const SandboxContext *context, const AppSpawnSandboxCfg *sandbox)
 {
-    if (!CheckSpawningMsgFlagSet(context, APP_FLAGS_BUNDLE_RESOURCES)) {
+    if (!CheckSandboxCtxMsgFlagSet(context, APP_FLAGS_BUNDLE_RESOURCES)) {
         return 0;
     }
     const char *destPath = GetSandboxRealVar(context,
@@ -1283,7 +1268,7 @@ static int SetSpawnFlagsDepGroups(const SandboxContext *context, AppSpawnSandbox
     while (node != &sandbox->spawnFlagsQueue.front) {
         SandboxFlagsNode *sandboxNode = (SandboxFlagsNode *)ListEntry(node, SandboxMountNode, node);
         // match flags point
-        if (sandboxNode->flagIndex == 0 || !CheckSpawningMsgFlagSet(context, sandboxNode->flagIndex)) {
+        if (sandboxNode->flagIndex == 0 || !CheckSandboxCtxMsgFlagSet(context, sandboxNode->flagIndex)) {
             node = node->next;
             continue;
         }
@@ -1333,7 +1318,7 @@ static int SetPermissionDepGroups(const SandboxContext *context, AppSpawnSandbox
     while (node != &sandbox->permissionQueue.front) {
         SandboxPermissionNode *permissionNode = (SandboxPermissionNode *)ListEntry(node, SandboxMountNode, node);
         // match flags point
-        if (!CheckSpawningPermissionFlagSet(context, permissionNode->permissionIndex)) {
+        if (!CheckSandboxCtxPermissionFlagSet(context, permissionNode->permissionIndex)) {
             node = node->next;
             continue;
         }

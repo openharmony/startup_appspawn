@@ -105,7 +105,8 @@ static PermissionManager *GetPermissionMgrByType(AppSpawnClientType type)
 static int LoadPermissionConfig(PermissionManager *mgr)
 {
     int ret = ParseJsonConfig("etc/sandbox",
-        mgr->type == CLIENT_FOR_APPSPAWN ? APP_SANDBOX_FILE_NAME : WEB_SANDBOX_FILE_NAME, ParseAppSandboxConfig, mgr);
+                              mgr->type == CLIENT_FOR_APPSPAWN ? APP_SANDBOX_FILE_NAME : RENDER_SANDBOX_FILE_NAME,
+                              ParseAppSandboxConfig, mgr);
     APPSPAWN_CHECK(ret == 0, return 0, "Load sandbox fail %{public}d", ret);
     mgr->maxPermissionIndex = PermissionRenumber(&mgr->permissionQueue);
     return 0;
