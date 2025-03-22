@@ -38,6 +38,7 @@ extern "C" {
 
 #define PARAMETER_PACKAGE_NAME "<PackageName>"
 #define PARAMETER_USER_ID "<currentUserId>"
+#define PARAMETER_HOST_USER_ID "<hostUserId>"
 #define PARAMETER_PACKAGE_INDEX "<PackageName_index>"
 #define ARK_WEB_PERSIST_PACKAGE_NAME "persist.arkwebcore.package_name"
 #define PARAMETER_ARK_WEB_PACKAGE_INDEX "<arkWebPackageName>"

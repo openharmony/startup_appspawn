@@ -154,17 +154,17 @@
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
-                    "src-path" : "/data/local/shader_cache/local/<PackageName>",
+                    "src-path" : "/data/app/el1/<currentUserId>/shader_cache/<variablePackageName>",
                     "sandbox-path" : "/data/storage/shader_cache/local",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
-                    "src-path" : "/data/local/shader_cache/cloud/<PackageName>",
+                    "src-path" : "/data/app/el1/public/shader_cache/cloud/<PackageName>",
                     "sandbox-path" : "/data/storage/shader_cache/cloud",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
-                    "src-path" : "/data/local/shader_cache/cloud/common",
+                    "src-path" : "/data/app/el1/public/shader_cache/cloud/common",
                     "sandbox-path" : "/data/storage/shader_cache/common",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
@@ -629,17 +629,17 @@
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
-                    "src-path" : "/data/local/shader_cache/local/<PackageName>",
+                    "src-path" : "/data/app/el1/<hostUserId>/shader_cache/<variablePackageName>",
                     "sandbox-path" : "/data/storage/shader_cache/local",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
-                    "src-path" : "/data/local/shader_cache/cloud/<PackageName>",
+                    "src-path" : "/data/app/el1/public/shader_cache/cloud/<PackageName>",
                     "sandbox-path" : "/data/storage/shader_cache/cloud",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
-                    "src-path" : "/data/local/shader_cache/cloud/common",
+                    "src-path" : "/data/app/el1/public/shader_cache/cloud/common",
                     "sandbox-path" : "/data/storage/shader_cache/common",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
@@ -845,8 +845,12 @@
         "ohos.permission.ACCESS_SHADER_CACHE_DIR":[{
             "sandbox-switch": "ON",
             "mount-paths": [{
-                    "src-path": "/data/local/shader_cache",
-                    "sandbox-path": "/data/storage/shader_caches",
+                    "src-path": "/data/service/el1/public/shader_cache/local",
+                    "sandbox-path": "/data/storage/shader_caches/local",
+                    "sandbox-flags": [ "bind", "rec" ]
+                }, {
+                    "src-path": "/data/app/el1/public/shader_cache/cloud",
+                    "sandbox-path": "/data/storage/shader_caches/cloud",
                     "sandbox-flags": [ "bind", "rec" ]
                 }
             ]
