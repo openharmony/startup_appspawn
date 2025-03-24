@@ -310,6 +310,35 @@ HWTEST_F(NWebSpawnServiceTest, NWeb_Spawn_Msg_003, TestSize.Level0)
     ASSERT_EQ(ret, 0);
 }
 
+int AddProcessTypeExtTlv(uint8_t *buffer, uint32_t bufferLen, uint32_t &realLen, uint32_t &tlvCount)
+{
+    const char *testData = "render";
+    uint32_t currLen = 0;
+    AppSpawnTlvExt tlv = {};
+    tlv.tlvType = TLV_MAX;
+    int ret = strcpy_s(tlv.tlvName, sizeof(tlv.tlvName), "ProcessType");
+    APPSPAWN_CHECK(ret == 0, return -1, "Failed to strcpy");
+    tlv.dataLen = strlen(testData) + 1;
+    tlv.tlvLen = sizeof(AppSpawnTlvExt) + APPSPAWN_ALIGN(tlv.dataLen);
+
+    ret = memcpy_s(buffer, bufferLen, &tlv, sizeof(tlv));
+    if (ret != 0) {
+        APPSPAWN_LOGE("Failed to memcpy_s bufferSize");
+        return -1;
+    }
+
+    ret = memcpy_s(buffer + sizeof(tlv), bufferLen - sizeof(tlv), testData, tlv.dataLen + 1);
+    if (ret != 0) {
+        APPSPAWN_LOGE("Failed to memcpy_s bufferSize");
+        return -1;
+    }
+
+    currLen += tlv.tlvLen;
+    tlvCount++;
+    realLen = currLen;
+    return 0;
+}
+
 /**
  * @brief 测试小包发送，随机获取发送大小，发送数据。消息20时，按33发送
  *
@@ -324,7 +353,8 @@ HWTEST_F(NWebSpawnServiceTest, NWeb_Spawn_Msg_004, TestSize.Level0)
 
         std::vector<uint8_t> buffer(1024, 0);  // 1024 1k
         uint32_t msgLen = 0;
-        ret = testServer->CreateSendMsg(buffer, MSG_APP_SPAWN, msgLen, {AppSpawnTestHelper::AddBaseTlv});
+        ret = testServer->CreateSendMsg(buffer, MSG_APP_SPAWN, msgLen,
+            {AppSpawnTestHelper::AddBaseTlv, AddProcessTypeExtTlv});
         APPSPAWN_CHECK(ret == 0, break, "Failed to create msg %{public}s", testServer->GetDefaultTestAppBundleName());
 
         // 分片发送
@@ -379,9 +409,11 @@ HWTEST_F(NWebSpawnServiceTest, NWeb_Spawn_Msg_005, TestSize.Level0)
         std::vector<uint8_t> buffer2(1024);  // 1024
         uint32_t msgLen1 = 0;
         uint32_t msgLen2 = 0;
-        ret = testServer->CreateSendMsg(buffer1, MSG_APP_SPAWN, msgLen1, {AppSpawnTestHelper::AddBaseTlv});
+        ret = testServer->CreateSendMsg(buffer1, MSG_APP_SPAWN, msgLen1,
+            {AppSpawnTestHelper::AddBaseTlv, AddProcessTypeExtTlv});
         APPSPAWN_CHECK(ret == 0, break, "Failed to create msg %{public}s", testServer->GetDefaultTestAppBundleName());
-        ret = testServer->CreateSendMsg(buffer2, MSG_APP_SPAWN, msgLen2, {AppSpawnTestHelper::AddBaseTlv});
+        ret = testServer->CreateSendMsg(buffer2, MSG_APP_SPAWN, msgLen2,
+            {AppSpawnTestHelper::AddBaseTlv, AddProcessTypeExtTlv});
         APPSPAWN_CHECK(ret == 0, break, "Failed to create msg %{public}s", testServer->GetDefaultTestAppBundleName());
 
         buffer1.insert(buffer1.begin() + msgLen1, buffer2.begin(), buffer2.end());
