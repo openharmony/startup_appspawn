@@ -1655,7 +1655,7 @@ APPSPAWN_STATIC int AppspawpnDevicedebugKill(int pid, cJSON *args)
     }
 
     APPSPAWN_LOGI("appspawn devicedebug debugable=%{public}d, pid=%{public}d, signal=%{public}d",
-        appInfo->isDebuggable, pid, signal->valueint);
+        appInfo->isDebuggable, pid, (int)signal->valueint);
 
     if (kill(pid, signal->valueint) != 0) {
         APPSPAWN_LOGE("appspawn devicedebug unable to kill process, pid: %{public}d ret %{public}d", pid, errno);
