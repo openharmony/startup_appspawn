@@ -13,6 +13,13 @@
 
 domain: APPSPAWN
 
+PROCESS_EXIT:
+  __BASE: {type: BEHAVIOR, level: CRITICAL, tag: Stability, desc: process exit reason}
+  PROCESS_NAME: {type: STRING, desc: process name}
+  PID: {type: UINT32, desc: process id}
+  UID: {type: UINT32, desc: user id}
+  STATUS: {type: INT32, desc: exit code or signal number}
+
 SPAWN_CHILD_PROCESS_FAIL:
   __BASE: {type: FAULT, level: CRITICAL, desc: Spawn Child Process Fail}
   PROCESS_NAME: {type: STRING, desc: Process Name}
