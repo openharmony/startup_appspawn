@@ -390,8 +390,8 @@ static int DumpAppQueue(ListNode *node, void *data)
 {
     AppSpawnedProcess *appInfo = ListEntry(node, AppSpawnedProcess, node);
     uint64_t diff = DiffTime(&appInfo->spawnStart, &appInfo->spawnEnd);
-    APPSPAWN_DUMP("App info uid: %{public}u pid: %{public}x", appInfo->uid, appInfo->pid);
-    APPSPAWN_DUMP("App info name: %{public}s exitStatus: 0x%{public}x spawn time: %{public}" PRIu64 " us ",
+    APPSPAWN_DUMP("AppInfoUid:%{public}u pid:%{public}x", appInfo->uid, appInfo->pid);
+    APPSPAWN_DUMP("AppInfoName:%{public}s exitStatus:0x%{public}x spawn time:%{public}" PRIu64 " us ",
         appInfo->name, appInfo->exitStatus, diff);
     return 0;
 }

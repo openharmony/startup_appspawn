@@ -227,7 +227,7 @@ static int MountWithFileMgr(const AppSpawningCtx *property, const AppDacInfo *in
 
     // Check whether the directory is a shared mount point
     if (SetSandboxPathShared(storageUserPath)) {
-        APPSPAWN_LOGI("shared mountpoint is exist");
+        APPSPAWN_LOGV("shared mountpoint is exist");
         return 0;
     }
 
@@ -274,7 +274,7 @@ static int MountWithOther(const AppSpawningCtx *property, const AppDacInfo *info
 
     // Check whether the directory is a shared mount point
     if (SetSandboxPathShared(storageUserPath)) {
-        APPSPAWN_LOGI("shared mountpoint is exist");
+        APPSPAWN_LOGV("shared mountpoint is exist");
         return 0;
     }
 
@@ -341,7 +341,7 @@ static int MountSharedMapItem(const AppSpawningCtx *property, const AppDacInfo *
 
     // Check whether the directory is a shared mount point
     if (SetSandboxPathShared(sandboxPath)) {
-        APPSPAWN_LOGI("shared mountpoint is exist");
+        APPSPAWN_LOGV("shared mountpoint is exist");
         return 0;
     }
 
