@@ -41,7 +41,7 @@ static void NotifyResToParent(struct AppSpawnContent *content, AppSpawnClient *c
 
 void ProcessExit(int code)
 {
-    APPSPAWN_LOGI("App exit code: %{public}d", code);
+    APPSPAWN_LOGI("ExitCode:%{public}d", code);
 #ifdef OHOS_LITE
     _exit(0x7f); // 0x7f user exit
 #else

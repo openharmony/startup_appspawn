@@ -365,7 +365,7 @@ static inline void DumpMsgExtInfo(const AppSpawnTlv *tlv)
         APPSPAWN_LOGV("App extend info name: %{public}s len: %{public}u value: '%{public}s'",
             tlvExt->tlvName, tlvExt->dataLen, (char *)(tlvExt + 1));
     } else {
-        APPSPAWN_DUMP("App extend info name: %{public}s len: %{public}u", tlvExt->tlvName, tlvExt->dataLen);
+        APPSPAWN_DUMP("AppExtendName:%{public}s len:%{public}u", tlvExt->tlvName, tlvExt->dataLen);
     }
 }
 
@@ -376,7 +376,7 @@ void DumpAppSpawnMsg(const AppSpawnMsgNode *message)
         message->msgHeader.msgId, message->msgHeader.msgLen, message->tlvCount, message->msgHeader.processName);
 
     AppSpawnMsgFlags *msgFlags = (AppSpawnMsgFlags *)GetAppSpawnMsgInfo(message, TLV_MSG_FLAGS);
-    APPSPAWN_ONLY_EXPER(msgFlags != NULL, DumpMsgFlags(message->msgHeader.processName, "App flags", msgFlags));
+    APPSPAWN_ONLY_EXPER(msgFlags != NULL, DumpMsgFlags(message->msgHeader.processName, "App", msgFlags));
     msgFlags = (AppSpawnMsgFlags *)GetAppSpawnMsgInfo(message, TLV_PERMISSION);
     APPSPAWN_ONLY_EXPER(msgFlags != NULL,
         DumpMsgFlags(message->msgHeader.processName, "App permission bits", msgFlags));
@@ -391,12 +391,12 @@ void DumpAppSpawnMsg(const AppSpawnMsgNode *message)
     }
     AppSpawnMsgBundleInfo *bundleInfo = (AppSpawnMsgBundleInfo *)GetAppSpawnMsgInfo(message, TLV_BUNDLE_INFO);
     APPSPAWN_ONLY_EXPER(bundleInfo != NULL,
-        APPSPAWN_DUMP("App bundle info name: \"%{public}s\" index: %{public}d",
+        APPSPAWN_DUMP("App BundleName:\"%{public}s\" index: %{public}d",
         bundleInfo->bundleName, bundleInfo->bundleIndex));
 
     AppSpawnMsgDomainInfo *domainInfo = (AppSpawnMsgDomainInfo *)GetAppSpawnMsgInfo(message, TLV_DOMAIN_INFO);
     APPSPAWN_ONLY_EXPER(domainInfo != NULL,
-        APPSPAWN_DUMP("App domain info hap: 0x%{public}x apl: \"%{public}s\"", domainInfo->hapFlags, domainInfo->apl));
+        APPSPAWN_DUMP("App DomainHap:0x%{public}x apl:\"%{public}s\"", domainInfo->hapFlags, domainInfo->apl));
 
     AppSpawnMgr *mgr = GetAppSpawnMgr();
     if (mgr == NULL || ((mgr->flags & APP_DEVELOPER_MODE) != APP_DEVELOPER_MODE)) {
@@ -404,7 +404,7 @@ void DumpAppSpawnMsg(const AppSpawnMsgNode *message)
     }
 
     AppSpawnMsgOwnerId *owner = (AppSpawnMsgOwnerId *)GetAppSpawnMsgInfo(message, TLV_OWNER_INFO);
-    APPSPAWN_ONLY_EXPER(owner != NULL, APPSPAWN_LOGV("App owner info: \"%{public}s\" ", owner->ownerId));
+    APPSPAWN_ONLY_EXPER(owner != NULL, APPSPAWN_LOGV("App OwnerId:\"%{public}s\"", owner->ownerId));
 
     AppSpawnMsgInternetInfo *info = (AppSpawnMsgInternetInfo *)GetAppSpawnMsgInfo(message, TLV_INTERNET_INFO);
     APPSPAWN_ONLY_EXPER(info != NULL,
