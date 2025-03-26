@@ -91,7 +91,6 @@ static void SetGwpAsanEnabled(const AppSpawnMgr *content, const AppSpawningCtx *
     may_init_gwp_asan(enforce);
 }
 
-#ifdef ASAN_DETECTOR
 #define WRAP_VALUE_MAX_LENGTH 96
 static int CheckSupportColdStart(const char *bundleName)
 {
@@ -107,7 +106,6 @@ static int CheckSupportColdStart(const char *bundleName)
     APPSPAWN_LOGI("Asan: GetParameter %{public}s the value is %{public}s.", wrapBundleNameKey, wrapBundleNameValue);
     return 0;
 }
-#endif
 
 static int AsanSpawnGetSpawningFlag(AppSpawnMgr *content, AppSpawningCtx *property)
 {
@@ -140,6 +138,11 @@ static int AsanSpawnInitSpawningEnv(AppSpawnMgr *content, AppSpawningCtx *proper
         return 0;
     }
 #ifndef ASAN_DETECTOR
+    if (CheckSupportColdStart(GetBundleName(property)) == 0) {
+        setenv("LD_PRELOAD", "/system/lib64/libclang_rt.hwasan.so", 1);
+        setenv("HWASAN_OPTIONS", "include=/system/etc/asan.options", 1);
+        property->client.flags |= APP_COLD_START;
+    }
     int ret = SetAsanEnabledEnv(content, property);
     if (ret == 0) {
         APPSPAWN_LOGI("SetAsanEnabledEnv cold start app %{public}s", GetProcessName(property));
