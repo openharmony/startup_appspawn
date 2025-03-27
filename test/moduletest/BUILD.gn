@@ -57,7 +57,7 @@ ohos_executable("AppSpawnTest") {
 }
 
 ohos_moduletest("AppSpawnModuleTest") {
-  module_out_path = "${module_output_path}"
+  module_out_path = "appspawn/appspawn"
 
   sources = [
     "${appspawn_path}/test/moduletest/appspawn_client_test.cpp",
