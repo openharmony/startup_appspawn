@@ -102,6 +102,7 @@ void SetDeveloperMode(bool mode);
 int LoadPermission(AppSpawnClientType type);
 void DeletePermission(AppSpawnClientType type);
 int SetProcessName(const AppSpawnMgr *content, const AppSpawningCtx *property);
+int SetIsolateDirForCustomSandbox(const AppSpawningCtx *property);
 int SetFdEnv(AppSpawnMgr *content, AppSpawningCtx *property);
 int PreLoadEnablePidNs(AppSpawnMgr *content);
 int NsInitFunc();
