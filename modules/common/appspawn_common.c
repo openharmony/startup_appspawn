@@ -64,6 +64,11 @@
 #define PID_NS_INIT_UID 100000  // reserved for pid_ns_init process, avoid app, render proc, etc.
 #define PID_NS_INIT_GID 100000
 #define PREINSTALLED_HAP_FLAG 0x01 // hapFlags 0x01: SELINUX_HAP_RESTORECON_PREINSTALLED_APP in selinux
+#define ISOLATE_PATH_NUM 2
+#define ISOLATE_PATH_SIZE 4096
+#define HM_DEC_IOCTL_BASE 's'
+#define HM_ADD_ISOLATE_DIR 16
+#define ADD_ISOLATE_DIR_CMD _IOWR(HM_DEC_IOCTL_BASE, HM_ADD_ISOLATE_DIR, CustomSandboxIsolateDirInfo)
 
 static int SetProcessName(const AppSpawnMgr *content, const AppSpawningCtx *property)
 {
@@ -376,6 +381,48 @@ static int SpawnSetPreInstalledFlag(AppSpawningCtx *property)
     return 0;
 }
 
+typedef struct {
+    char isolatePath[ISOLATE_PATH_NUM][ISOLATE_PATH_SIZE];
+    int pathNum;
+} CustomSandboxIsolateDirInfo;
+
+APPSPAWN_STATIC int SetIsolateDirForCustomSandbox(const AppSpawningCtx *property)
+{
+#ifdef CUSTOM_SANDBOX
+    const char *bundleName = GetBundleName(property);
+    APPSPAWN_CHECK(bundleName != NULL, return -1, "Can not get bundle name");
+
+    AppSpawnMsgDacInfo *dacInfo = (AppSpawnMsgDacInfo *)GetAppProperty(property, TLV_DAC_INFO);
+    APPSPAWN_CHECK(dacInfo != NULL, return APPSPAWN_TLV_NONE,
+        "No tlv %{public}d in msg %{public}s", TLV_DOMAIN_INFO, bundleName);
+
+    int ret = 0;
+    CustomSandboxIsolateDirInfo isolateDirInfo = {0};
+    ret = snprintf_s(isolateDirInfo.isolatePath[0], ISOLATE_PATH_SIZE, ISOLATE_PATH_SIZE - 1, "%s/%u/%s/%s",
+                     "/data/app/el2", dacInfo->uid / UID_BASE, "base", bundleName);
+    APPSPAWN_CHECK(ret >= 0, return ret, "snprintf_s el2 path failed, errno %{public}d", errno);
+    ret = snprintf_s(isolateDirInfo.isolatePath[1], ISOLATE_PATH_SIZE, ISOLATE_PATH_SIZE - 1, "%s/%u/%s",
+                     "/storage/media", dacInfo->uid / UID_BASE, "local/files/Docs");
+    APPSPAWN_CHECK(ret >= 0, return ret, "snprintf_s storage path failed, errno %{public}d", errno);
+    isolateDirInfo.pathNum = ISOLATE_PATH_NUM;
+
+    for (uint32_t i = 0; i < isolateDirInfo.pathNum; i++) {
+        APPSPAWN_LOGV("isolate path[%{public}d]: %{public}s", i, isolateDirInfo.isolatePath[i]);
+    }
+
+    int fd = open("/dev/dec", O_RDWR);
+    APPSPAWN_CHECK(fd >= 0, return fd, "open dec file fail, errno %{public}d", errno);
+
+    ret = ioctl(fd, ADD_ISOLATE_DIR_CMD, &isolateDirInfo);
+    APPSPAWN_CHECK(ret == 0, close(fd);
+                   return ret, "ioctl ADD_ISOLATE_DIR_CMD fail, errno %{public}d", errno);
+
+    APPSPAWN_LOGI("ioctl ADD_ISOLATE_DIR_CMD success");
+    close(fd);
+#endif
+    return 0;
+}
+
 static int SpawnInitSpawningEnv(AppSpawnMgr *content, AppSpawningCtx *property)
 {
     APPSPAWN_LOGV("Spawning: clear env");
@@ -388,6 +435,13 @@ static int SpawnInitSpawningEnv(AppSpawnMgr *content, AppSpawningCtx *property)
 
     ret = SetAppAccessToken(content, property);
     APPSPAWN_CHECK_ONLY_EXPER(ret == 0, return ret);
+
+    // set isolate dir for custom sandbox by ioctl
+    if ((IsAppSpawnMode(content) || IsNativeSpawnMode(content)) &&
+        CheckAppMsgFlagsSet(property, APP_FLAGS_CUSTOM_SANDBOX)) {
+        ret = SetIsolateDirForCustomSandbox(property);
+        APPSPAWN_CHECK_ONLY_LOG(ret == 0, "Failed to set isolate dir for custom sandbox, ret %{public}d", ret);
+    }
 
     ret = SpawnSetPreInstalledFlag(property);
     APPSPAWN_CHECK_ONLY_EXPER(ret == 0, return ret);
