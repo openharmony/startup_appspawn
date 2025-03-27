@@ -406,10 +406,6 @@ APPSPAWN_STATIC int SetIsolateDirForCustomSandbox(const AppSpawningCtx *property
     APPSPAWN_CHECK(ret >= 0, return ret, "snprintf_s storage path failed, errno %{public}d", errno);
     isolateDirInfo.pathNum = ISOLATE_PATH_NUM;
 
-    for (uint32_t i = 0; i < isolateDirInfo.pathNum; i++) {
-        APPSPAWN_LOGV("isolate path[%{public}d]: %{public}s", i, isolateDirInfo.isolatePath[i]);
-    }
-
     int fd = open("/dev/dec", O_RDWR);
     APPSPAWN_CHECK(fd >= 0, return fd, "open dec file fail, errno %{public}d", errno);
 
