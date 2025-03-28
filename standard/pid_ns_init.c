@@ -18,7 +18,7 @@
 
 int main()
 {
-    signal(SIGCHLD, SIG_IGN);
+    (void)signal(SIGCHLD, SIG_IGN);
     while (1) {
         pause();
     }
