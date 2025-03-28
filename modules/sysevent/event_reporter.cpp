@@ -45,8 +45,11 @@ void ProcessMgrRemoveApp(const char* processName, int pid, int uid, int status)
     }
 
     if (signal != 0) {
-        HiSysEventWrite(HiSysEvent::Domain::APPSPAWN, KEY_PROCESS_EXIT, HiSysEvent::EventType::BEHAVIOR,
+        int ret = HiSysEventWrite(HiSysEvent::Domain::APPSPAWN, KEY_PROCESS_EXIT, HiSysEvent::EventType::BEHAVIOR,
             KEY_NAME, pname, KEY_PID, pid, KEY_UID, uid, KEY_STATUS, status);
+        if (ret != 0) {
+            APPSPAWN_LOGE("ProcessMgrRemoveApp error, ret: %{public}d", ret);
+        }
     }
 }
 }  // namespace system
