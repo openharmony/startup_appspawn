@@ -423,6 +423,12 @@
                 "src-path": "/system/app",
                 "sandbox-path": "/system/app"
             }]
+        }, {
+            "name": "CUSTOM_SANDBOX_HAP",
+            "mount-paths": [{
+                "src-path": "/tmp",
+                "sandbox-path": "/tmp"
+            }]
         }],
         "package-name": [{
             "name": "com.ohos.medialibrary.medialibrarydata",
