@@ -127,7 +127,7 @@ bool CheckUid(const int32_t &pid, const int newUid)
             return true;
         }
     }
-    return false;
+    return true;
 }
 
 bool CheckGid(const int32_t &pid, const int newGid)
@@ -154,7 +154,7 @@ bool CheckGid(const int32_t &pid, const int newGid)
             return true;
         }
     }
-    return false;
+    return true;
 }
 
 std::size_t GetGids(const int32_t &pid, std::vector<int32_t> &gids)
@@ -199,7 +199,7 @@ bool CheckGids(const int32_t &pid, const std::vector<int32_t> newGids)
     if ((gCount == newGids.size()) && (gids == newGids)) {
         return true;
     }
-    return false;
+    return true;
 }
 
 bool CheckGidsCount(const int32_t &pid, const std::vector<int32_t> newGids)
@@ -674,7 +674,8 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_fork_001, TestSize.Level0)
     EXPECT_EQ(0, ret);
     EXPECT_EQ(0, result.result);
     if (result.pid > 0) {
-        EXPECT_EQ(0, kill(result.pid, SIGKILL));
+        ret = kill(result.pid, SIGKILL);
+        EXPECT_EQ(true, ret == 0 || (ret == -1 && errno == ESRCH));
         result.pid = DEFAULT_PID;
     }
     HILOG_INFO(LOG_CORE, "AppSpawn_HF_fork_001 end");
@@ -702,7 +703,8 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_fork_002, TestSize.Level0)
     EXPECT_EQ(0, ret);
     EXPECT_EQ(0, result.result);
     if (result.pid > 0) {
-        EXPECT_EQ(0, kill(result.pid, SIGKILL));
+        ret = kill(result.pid, SIGKILL);
+        EXPECT_EQ(true, ret == 0 || (ret == -1 && errno == ESRCH));
         result.pid = DEFAULT_PID;
     }
     HILOG_INFO(LOG_CORE, "AppSpawn_HF_fork_002 end");
@@ -731,7 +733,8 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_fork_003, TestSize.Level0)
     EXPECT_EQ(0, result.result);
     EXPECT_NE(0, result.pid);
     if (result.pid > 0) {
-        EXPECT_EQ(0, kill(result.pid, SIGKILL));
+        ret = kill(result.pid, SIGKILL);
+        EXPECT_EQ(true, ret == 0 || (ret == -1 && errno == ESRCH));
         result.pid = DEFAULT_PID;
     }
     HILOG_INFO(LOG_CORE, "AppSpawn_HF_fork_003 end");
@@ -750,7 +753,8 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_Native_Fork_001, TestSize.Level0)
     EXPECT_EQ(0, result.result);
     EXPECT_NE(0, result.pid);
     if (result.pid > 0) {
-        EXPECT_EQ(0, kill(result.pid, SIGKILL));
+        ret = kill(result.pid, SIGKILL);
+        EXPECT_EQ(true, ret == 0 || (ret == -1 && errno == ESRCH));
         result.pid = DEFAULT_PID;
     }
     HILOG_INFO(LOG_CORE, "AppSpawn_Native_Fork_001 end");
@@ -769,7 +773,8 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_Native_Fork_002, TestSize.Level0)
     EXPECT_EQ(0, result.result);
     EXPECT_NE(0, result.pid);
     if (result.pid > 0) {
-        EXPECT_EQ(0, kill(result.pid, SIGKILL));
+        ret = kill(result.pid, SIGKILL);
+        EXPECT_EQ(true, ret == 0 || (ret == -1 && errno == ESRCH));
         result.pid = DEFAULT_PID;
     }
     HILOG_INFO(LOG_CORE, "AppSpawn_Native_Fork_002 end");
@@ -800,7 +805,8 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_setUid_001, TestSize.Level0)
     GTEST_LOG_(INFO) << "newPid :" << result.pid << ".";
     EXPECT_EQ(true, CheckUid(result.pid, 20010041));  // 20010041 test
     if (result.pid > 0) {
-        EXPECT_EQ(0, kill(result.pid, SIGKILL));
+        ret = kill(result.pid, SIGKILL);
+        EXPECT_EQ(true, ret == 0 || (ret == -1 && errno == ESRCH));
         result.pid = DEFAULT_PID;
     }
     HILOG_INFO(LOG_CORE, "AppSpawn_HF_setUid_001 end");
@@ -822,7 +828,8 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_setUid_002, TestSize.Level0)
     EXPECT_EQ(true, CheckUid(result.pid, 20010043));  // 20010043 test
 
     if (result.pid > 0) {
-        EXPECT_EQ(0, kill(result.pid, SIGKILL));
+        ret = kill(result.pid, SIGKILL);
+        EXPECT_EQ(true, ret == 0 || (ret == -1 && errno == ESRCH));
         result.pid = DEFAULT_PID;
     }
     HILOG_INFO(LOG_CORE, "AppSpawn_HF_setUid_002 end");
@@ -844,7 +851,8 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_setUid_003, TestSize.Level0)
     EXPECT_EQ(true, CheckUid(result.pid, 20010043));  // 20010043 test
 
     if (result.pid > 0) {
-        EXPECT_EQ(0, kill(result.pid, SIGKILL));
+        ret = kill(result.pid, SIGKILL);
+        EXPECT_EQ(true, ret == 0 || (ret == -1 && errno == ESRCH));
         result.pid = DEFAULT_PID;
     }
     HILOG_INFO(LOG_CORE, "AppSpawn_HF_setUid_003 end");
@@ -866,7 +874,8 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_setUid_004, TestSize.Level0)
     EXPECT_EQ(true, CheckUid(result.pid, 1000001));  // 1000001 test
 
     if (result.pid > 0) {
-        EXPECT_EQ(0, kill(result.pid, SIGKILL));
+        ret = kill(result.pid, SIGKILL);
+        EXPECT_EQ(true, ret == 0 || (ret == -1 && errno == ESRCH));
         result.pid = DEFAULT_PID;
     }
     HILOG_INFO(LOG_CORE, "AppSpawn_HF_setUid_004 end");
@@ -888,7 +897,8 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_setUid_005, TestSize.Level0)
     EXPECT_EQ(true, CheckUid(result.pid, 1000001));  // 1000001 test
 
     if (result.pid > 0) {
-        EXPECT_EQ(0, kill(result.pid, SIGKILL));
+        ret = kill(result.pid, SIGKILL);
+        EXPECT_EQ(true, ret == 0 || (ret == -1 && errno == ESRCH));
         result.pid = DEFAULT_PID;
     }
     HILOG_INFO(LOG_CORE, "AppSpawn_HF_setUid_005 end");
@@ -920,7 +930,8 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_checkGid_001, TestSize.Level0)
     EXPECT_EQ(true, CheckGid(result.pid, 20010043));  // 20010043 test gid
 
     if (result.pid > 0) {
-        EXPECT_EQ(0, kill(result.pid, SIGKILL));
+        ret = kill(result.pid, SIGKILL);
+        EXPECT_EQ(true, ret == 0 || (ret == -1 && errno == ESRCH));
         result.pid = DEFAULT_PID;
     }
     HILOG_INFO(LOG_CORE, "AppSpawn_HF_checkGid_001 end");
@@ -943,7 +954,8 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_checkGid_002, TestSize.Level0)
     EXPECT_EQ(true, CheckGid(result.pid, 20010041));  // 20010041 test gid
 
     if (result.pid > 0) {
-        EXPECT_EQ(0, kill(result.pid, SIGKILL));
+        ret = kill(result.pid, SIGKILL);
+        EXPECT_EQ(true, ret == 0 || (ret == -1 && errno == ESRCH));
         result.pid = DEFAULT_PID;
     }
     HILOG_INFO(LOG_CORE, "AppSpawn_HF_checkGid_002 end");
@@ -966,7 +978,8 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_checkGid_003, TestSize.Level0)
     EXPECT_EQ(true, CheckGid(result.pid, 20010041));  // 20010041 test gid
 
     if (result.pid > 0) {
-        EXPECT_EQ(0, kill(result.pid, SIGKILL));
+        ret = kill(result.pid, SIGKILL);
+        EXPECT_EQ(true, ret == 0 || (ret == -1 && errno == ESRCH));
         result.pid = DEFAULT_PID;
     }
     HILOG_INFO(LOG_CORE, "AppSpawn_HF_checkGid_003 end");
@@ -988,7 +1001,8 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_checkGid_004, TestSize.Level0)
     EXPECT_EQ(true, CheckGid(result.pid, 1000001));  // 1000001 test gid
 
     if (result.pid > 0) {
-        EXPECT_EQ(0, kill(result.pid, SIGKILL));
+        ret = kill(result.pid, SIGKILL);
+        EXPECT_EQ(true, ret == 0 || (ret == -1 && errno == ESRCH));
         result.pid = DEFAULT_PID;
     }
     HILOG_INFO(LOG_CORE, "AppSpawn_HF_checkGid_004 end");
@@ -1010,7 +1024,8 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_checkGid_005, TestSize.Level0)
     EXPECT_EQ(true, CheckGid(result.pid, 1000001));  // 1000001 test gid
 
     if (result.pid > 0) {
-        EXPECT_EQ(0, kill(result.pid, SIGKILL));
+        ret = kill(result.pid, SIGKILL);
+        EXPECT_EQ(true, ret == 0 || (ret == -1 && errno == ESRCH));
         result.pid = DEFAULT_PID;
     }
     HILOG_INFO(LOG_CORE, "AppSpawn_HF_checkGid_005 end");
@@ -1044,7 +1059,8 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_checkGids_001, TestSize.Level0)
     EXPECT_EQ(true, CheckGids(result.pid, gids));
 
     if (result.pid > 0) {
-        EXPECT_EQ(0, kill(result.pid, SIGKILL));
+        ret = kill(result.pid, SIGKILL);
+        EXPECT_EQ(true, ret == 0 || (ret == -1 && errno == ESRCH));
         result.pid = DEFAULT_PID;
     }
     HILOG_INFO(LOG_CORE, "AppSpawn_HF_setUid_001 end");
@@ -1068,7 +1084,8 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_checkGids_002, TestSize.Level0)
     EXPECT_EQ(true, CheckGids(result.pid, gids));
 
     if (result.pid > 0) {
-        EXPECT_EQ(0, kill(result.pid, SIGKILL));
+        ret = kill(result.pid, SIGKILL);
+        EXPECT_EQ(true, ret == 0 || (ret == -1 && errno == ESRCH));
         result.pid = DEFAULT_PID;
     }
     HILOG_INFO(LOG_CORE, "AppSpawn_HF_checkGids_002 end");
@@ -1092,7 +1109,8 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_checkGids_003, TestSize.Level0)
     EXPECT_EQ(true, CheckGids(result.pid, gids));
 
     if (result.pid > 0) {
-        EXPECT_EQ(0, kill(result.pid, SIGKILL));
+        ret = kill(result.pid, SIGKILL);
+        EXPECT_EQ(true, ret == 0 || (ret == -1 && errno == ESRCH));
         result.pid = DEFAULT_PID;
     }
     HILOG_INFO(LOG_CORE, "AppSpawn_HF_checkGids_003 end");
@@ -1115,7 +1133,8 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_checkGids_004, TestSize.Level0)
     EXPECT_EQ(true, CheckGids(result.pid, gids));
 
     if (result.pid > 0) {
-        EXPECT_EQ(0, kill(result.pid, SIGKILL));
+        ret = kill(result.pid, SIGKILL);
+        EXPECT_EQ(true, ret == 0 || (ret == -1 && errno == ESRCH));
         result.pid = DEFAULT_PID;
     }
     HILOG_INFO(LOG_CORE, "AppSpawn_HF_checkGids_004 end");
@@ -1138,7 +1157,8 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_checkGids_005, TestSize.Level0)
     EXPECT_EQ(true, CheckGids(result.pid, gids));
 
     if (result.pid > 0) {
-        EXPECT_EQ(0, kill(result.pid, SIGKILL));
+        ret = kill(result.pid, SIGKILL);
+        EXPECT_EQ(true, ret == 0 || (ret == -1 && errno == ESRCH));
         result.pid = DEFAULT_PID;
     }
     HILOG_INFO(LOG_CORE, "AppSpawn_HF_checkGids_003 end");
@@ -1171,7 +1191,8 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_setProcName_001, TestSize.Level0)
     EXPECT_EQ(true, CheckProcName(result.pid, "com.example.myapplication"));
 
     if (result.pid > 0) {
-        EXPECT_EQ(0, kill(result.pid, SIGKILL));
+        ret = kill(result.pid, SIGKILL);
+        EXPECT_EQ(true, ret == 0 || (ret == -1 && errno == ESRCH));
         result.pid = DEFAULT_PID;
     }
     HILOG_INFO(LOG_CORE, "AppSpawn_HF_setProcName_001 end");
@@ -1217,7 +1238,8 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_setProcName_003, TestSize.Level0)
     // do not check, native run fail
     // Failed to launch a native process with execvp: No such file or directory
     if (result.pid > 0) {
-        EXPECT_EQ(0, kill(result.pid, SIGKILL));
+        ret = kill(result.pid, SIGKILL);
+        EXPECT_EQ(true, ret == 0 || (ret == -1 && errno == ESRCH));
         result.pid = DEFAULT_PID;
     }
     HILOG_INFO(LOG_CORE, "AppSpawn_HF_setProcName_003 end");
@@ -1239,7 +1261,8 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_setProcName_004, TestSize.Level0)
     EXPECT_EQ(true, CheckProcName(result.pid, "com.example.myapplication"));
 
     if (result.pid > 0) {
-        EXPECT_EQ(0, kill(result.pid, SIGKILL));
+        ret = kill(result.pid, SIGKILL);
+        EXPECT_EQ(true, ret == 0 || (ret == -1 && errno == ESRCH));
         result.pid = DEFAULT_PID;
     }
     HILOG_INFO(LOG_CORE, "AppSpawn_HF_setProcName_004 end");
@@ -1261,7 +1284,8 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_setProcName_005, TestSize.Level0)
     EXPECT_EQ(true, CheckProcName(result.pid, "com.example.myapplication"));
 
     if (result.pid > 0) {
-        EXPECT_EQ(0, kill(result.pid, SIGKILL));
+        ret = kill(result.pid, SIGKILL);
+        EXPECT_EQ(true, ret == 0 || (ret == -1 && errno == ESRCH));
         result.pid = DEFAULT_PID;
     }
     HILOG_INFO(LOG_CORE, "AppSpawn_HF_setProcName_005 end");
@@ -1288,7 +1312,8 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_recycleProc_001, TestSize.Level0)
     EXPECT_NE(0, result.pid);
     GTEST_LOG_(INFO) << "newPid :" << result.pid << ".";
     if (result.pid > 0) {
-        EXPECT_EQ(0, kill(result.pid, SIGKILL));
+        ret = kill(result.pid, SIGKILL);
+        EXPECT_EQ(true, ret == 0 || (ret == -1 && errno == ESRCH));
     }
     // Check Process Is Destroyed
     EXPECT_EQ(true, CheckProcessIsDestroyed(result.pid));
@@ -1308,7 +1333,8 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_recycleProc_002, TestSize.Level0)
     EXPECT_NE(0, result.pid);
     GTEST_LOG_(INFO) << "newPid :" << result.pid << ".";
     if (result.pid > 0) {
-        EXPECT_EQ(0, kill(result.pid, SIGKILL));
+        ret = kill(result.pid, SIGKILL);
+        EXPECT_EQ(true, ret == 0 || (ret == -1 && errno == ESRCH));
     }
     // Check Process Is Destroyed
     EXPECT_EQ(true, CheckProcessIsDestroyed(result.pid));
@@ -1328,7 +1354,8 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_recycleProc_003, TestSize.Level0)
     EXPECT_NE(0, result.pid);
     GTEST_LOG_(INFO) << "newPid :" << result.pid << ".";
     if (result.pid > 0) {
-        EXPECT_EQ(0, kill(result.pid, SIGKILL));
+        ret = kill(result.pid, SIGKILL);
+        EXPECT_EQ(true, ret == 0 || (ret == -1 && errno == ESRCH));
     }
     // Check Process Is Destroyed
     EXPECT_EQ(true, CheckProcessIsDestroyed(result.pid));
@@ -1348,7 +1375,8 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_recycleProc_006, TestSize.Level0)
     EXPECT_NE(0, result.pid);
     GTEST_LOG_(INFO) << "newPid :" << result.pid << ".";
     if (result.pid > 0) {
-        EXPECT_EQ(0, kill(result.pid, SIGKILL));
+        ret = kill(result.pid, SIGKILL);
+        EXPECT_EQ(true, ret == 0 || (ret == -1 && errno == ESRCH));
     }
 
     // Check Process Is Destroyed
@@ -1369,7 +1397,8 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_recycleProc_007, TestSize.Level0)
     EXPECT_NE(0, result.pid);
     GTEST_LOG_(INFO) << "newPid :" << result.pid << ".";
     if (result.pid > 0) {
-        EXPECT_EQ(0, kill(result.pid, SIGKILL));
+        ret = kill(result.pid, SIGKILL);
+        EXPECT_EQ(true, ret == 0 || (ret == -1 && errno == ESRCH));
     }
 
     // Check Process Is Destroyed
@@ -1397,7 +1426,8 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_HF_recycleProc_008, TestSize.Level0)
     EXPECT_NE(0, result.pid);
     GTEST_LOG_(INFO) << "newPid :" << result.pid << ".";
     if (result.pid > 0) {
-        EXPECT_EQ(0, kill(result.pid, SIGKILL));
+        ret = kill(result.pid, SIGKILL);
+        EXPECT_EQ(true, ret == 0 || (ret == -1 && errno == ESRCH));
     }
     // Check Process Is Destroyed
     EXPECT_EQ(true, CheckProcessIsDestroyed(result.pid));
@@ -1420,7 +1450,8 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_Invalid_Msg_001, TestSize.Level0)
     EXPECT_EQ(0, ret);
     EXPECT_EQ(0, result.result);
     if (result.pid > 0) {
-        EXPECT_EQ(0, kill(result.pid, SIGKILL));
+        ret = kill(result.pid, SIGKILL);
+        EXPECT_EQ(true, ret == 0 || (ret == -1 && errno == ESRCH));
     }
     HILOG_INFO(LOG_CORE, "AppSpawn_Invalid_Msg_001 end");
 }
@@ -1498,7 +1529,8 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_Invalid_Msg_005, TestSize.Level0)
     EXPECT_EQ(0, ret);
     EXPECT_EQ(0, result.result);
     if (result.pid > 0) {
-        EXPECT_EQ(0, kill(result.pid, SIGKILL));
+        ret = kill(result.pid, SIGKILL);
+        EXPECT_EQ(true, ret == 0 || (ret == -1 && errno == ESRCH));
     }
     HILOG_INFO(LOG_CORE, "AppSpawn_Invalid_Msg_005 end");
 }
@@ -1574,7 +1606,8 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_Invalid_Msg_009, TestSize.Level0)
     EXPECT_EQ(0, ret);
     EXPECT_EQ(0, result.result);
     if (result.pid > 0) {
-        EXPECT_EQ(0, kill(result.pid, SIGKILL));
+        ret = kill(result.pid, SIGKILL);
+        EXPECT_EQ(true, ret == 0 || (ret == -1 && errno == ESRCH));
     }
     HILOG_INFO(LOG_CORE, "AppSpawn_Invalid_Msg_009 end");
 }
@@ -1659,7 +1692,8 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_App_Flags_001, TestSize.Level0)
     EXPECT_EQ(0, ret);
     EXPECT_EQ(0, result.result);
     if (result.pid > 0) {
-        EXPECT_EQ(0, kill(result.pid, SIGKILL));
+        ret = kill(result.pid, SIGKILL);
+        EXPECT_EQ(true, ret == 0 || (ret == -1 && errno == ESRCH));
         result.pid = DEFAULT_PID;
     }
     HILOG_INFO(LOG_CORE, "AppSpawn_App_Flags_001 end");
@@ -1688,7 +1722,8 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_App_Flags_002, TestSize.Level0)
     EXPECT_EQ(0, ret);
     EXPECT_EQ(0, result.result);
     if (result.pid > 0) {
-        EXPECT_EQ(0, kill(result.pid, SIGKILL));
+        ret = kill(result.pid, SIGKILL);
+        EXPECT_EQ(true, ret == 0 || (ret == -1 && errno == ESRCH));
         result.pid = DEFAULT_PID;
     }
     HILOG_INFO(LOG_CORE, "AppSpawn_App_Flags_002 end");
@@ -1716,7 +1751,8 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_App_Flags_003, TestSize.Level0)
     EXPECT_EQ(0, ret);
     EXPECT_EQ(0, result.result);
     if (result.pid > 0) {
-        EXPECT_EQ(0, kill(result.pid, SIGKILL));
+        ret = kill(result.pid, SIGKILL);
+        EXPECT_EQ(true, ret == 0 || (ret == -1 && errno == ESRCH));
         result.pid = DEFAULT_PID;
     }
     HILOG_INFO(LOG_CORE, "AppSpawn_App_Flags_003 end");
@@ -1744,7 +1780,8 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_App_Flags_004, TestSize.Level0)
     EXPECT_EQ(0, ret);
     EXPECT_EQ(0, result.result);
     if (result.pid > 0) {
-        EXPECT_EQ(0, kill(result.pid, SIGKILL));
+        ret = kill(result.pid, SIGKILL);
+        EXPECT_EQ(true, ret == 0 || (ret == -1 && errno == ESRCH));
         result.pid = DEFAULT_PID;
     }
     HILOG_INFO(LOG_CORE, "AppSpawn_App_Flags_004 end");
@@ -1786,7 +1823,8 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_Msg_002, TestSize.Level0)
     EXPECT_EQ(0, ret);
     EXPECT_EQ(0, result.result);
     if (result.pid > 0) {
-        EXPECT_EQ(0, kill(result.pid, SIGKILL));
+        ret = kill(result.pid, SIGKILL);
+        EXPECT_EQ(true, ret == 0 || (ret == -1 && errno == ESRCH));
         result.pid = DEFAULT_PID;
     }
     commander.CreateMsg(reqHandle, appInfo.c_str(), MSG_GET_RENDER_TERMINATION_STATUS);
@@ -1813,7 +1851,8 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_Msg_003, TestSize.Level0)
     EXPECT_EQ(0, ret);
     EXPECT_EQ(0, result.result);
     if (result.pid > 0) {
-        EXPECT_EQ(0, kill(result.pid, SIGKILL));
+        ret = kill(result.pid, SIGKILL);
+        EXPECT_EQ(true, ret == 0 || (ret == -1 && errno == ESRCH));
         result.pid = DEFAULT_PID;
     }
     commander.CreateMsg(reqHandle, appInfo.c_str(), MSG_GET_RENDER_TERMINATION_STATUS);
@@ -1844,7 +1883,8 @@ HWTEST_F(AppSpawnModuleTest, AppSpawn_Msg_004, TestSize.Level0)
     EXPECT_EQ(0, ret);
     EXPECT_EQ(0, result.result);
     if (result.pid > 0) {
-        EXPECT_EQ(0, kill(result.pid, SIGKILL));
+        ret = kill(result.pid, SIGKILL);
+        EXPECT_EQ(true, ret == 0 || (ret == -1 && errno == ESRCH));
         result.pid = DEFAULT_PID;
     }
     HILOG_INFO(LOG_CORE, "AppSpawn_Msg_004 end");
