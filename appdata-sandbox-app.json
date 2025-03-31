@@ -72,7 +72,7 @@
                 "src-path" : "/vendor/etc/hiai",
                 "sandbox-path" : "/vendor/etc/hiai"
             }, {
-                "src-path" : "/data/local/shader_cache/cloud/common",
+                "src-path" : "/data/app/el1/public/shader_cache/cloud/common",
                 "sandbox-path" : "/data/storage/shader_cache/common"
             }, {
                 "src-path" : "/data/service/el0/public/for-all-app",
@@ -142,10 +142,10 @@
                 "src-path" : "/data/app/el1/<currentUserId>/aot_compiler/ark_profile/<PackageName>",
                 "sandbox-path" : "/data/storage/ark-profile"
             }, {
-                "src-path" : "/data/local/shader_cache/local/<PackageName>",
+                "src-path" : "/data/app/el1/<currentUserId>/shader_cache/<variablePackageName>",
                 "sandbox-path" : "/data/storage/shader_cache/local"
             }, {
-                "src-path" : "/data/local/shader_cache/cloud/<PackageName>",
+                "src-path" : "/data/app/el1/public/shader_cache/cloud/<PackageName>",
                 "sandbox-path" : "/data/storage/shader_cache/cloud"
             }, {
                 "src-path" : "/data/service/el1/public/themes/<currentUserId>/a/app",
@@ -269,8 +269,11 @@
         }, {
             "name": "ohos.permission.ACCESS_SHADER_CACHE_DIR",
             "mount-paths": [{
-                "src-path": "/data/local/shader_cache",
-                "sandbox-path": "/data/storage/shader_caches"
+                "src-path": "/data/service/el1/public/shader_cache/local",
+                "sandbox-path": "/data/storage/shader_caches/local"
+            }, {
+                "src-path": "/data/app/el1/public/shader_cache/cloud",
+                "sandbox-path": "/data/storage/shader_caches/cloud"
             }]
         }, {
             "name": "ohos.permission.ACCESS_HIVIEWX",
