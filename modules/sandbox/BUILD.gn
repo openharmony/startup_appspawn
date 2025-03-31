@@ -26,6 +26,7 @@ if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
       "sandbox_expand.c",
       "sandbox_load.c",
       "sandbox_manager.c",
+      "sandbox_shared.c",
     ]
 
     include_dirs = [

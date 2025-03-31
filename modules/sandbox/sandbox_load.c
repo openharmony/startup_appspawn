@@ -503,6 +503,23 @@ static int ParsePermissionConfig(AppSpawnSandboxCfg *sandbox, const char *name, 
     return 0;
 }
 
+static int AddSpawnerPermissionNode(AppSpawnSandboxCfg *sandbox)
+{
+    uint32_t permissionCount = ARRAY_LENGTH(g_spawnerPermissionList);
+    for (uint32_t i = 0; i < permissionCount; i++) {
+        SandboxPermissionNode *node =
+            (SandboxPermissionNode *)GetSandboxSection(&sandbox->permissionQueue, g_spawnerPermissionList[i]);
+        if (node == NULL) {
+            node = CreateSandboxPermissionNode(g_spawnerPermissionList[i]);
+        }
+        APPSPAWN_CHECK_ONLY_EXPER(node != NULL, return -1);
+
+        // success, insert section
+        AddSandboxSection(&node->section, &sandbox->permissionQueue);
+    }
+    return 0;
+}
+
 static SandboxNameGroupNode *ParseNameGroup(AppSpawnSandboxCfg *sandbox, const cJSON *groupConfig)
 {
     char *name = GetStringFromJsonObj(groupConfig, "name");
@@ -648,9 +665,12 @@ APPSPAWN_STATIC int ParseAppSandboxConfig(const cJSON *root, ParseJsonContext *c
     // conditional
     cJSON *json = cJSON_GetObjectItemCaseSensitive(root, "conditional");
     if (json != NULL) {
-        // permission
+        // sandbox permission
         cJSON *config = cJSON_GetObjectItemCaseSensitive(json, "permission");
         ret = ParseConditionalConfig(sandbox, config, "permission", ParsePermissionConfig);
+        APPSPAWN_CHECK_ONLY_EXPER(ret == 0, return ret);
+        // sandbox permission
+        ret = AddSpawnerPermissionNode(sandbox);
         APPSPAWN_CHECK_ONLY_EXPER(ret == 0, return ret);
         // spawn-flag
         config = cJSON_GetObjectItemCaseSensitive(json, "spawn-flag");

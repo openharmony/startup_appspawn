@@ -143,6 +143,7 @@ ohos_unittest("AppSpawn_ut") {
 
   if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
     sources += [
+      "${appspawn_path}/modules/sandbox/sandbox_shared.c",
       "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_sandbox_new_mount_test.cpp",
       "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_sandbox_new_test.cpp",
     ]
@@ -337,6 +338,7 @@ ohos_unittest("AppSpawn_coldrun_ut") {
 
   if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
     defines += [ "APPSPAWN_SANDBOX_NEW" ]
+    sources += [ "${appspawn_path}/modules/sandbox/sandbox_shared.c" ]
   } else {
     sources += [
       "${appspawn_path}/modules/sandbox/sandbox_shared_mount.cpp",
@@ -523,6 +525,7 @@ ohos_unittest("AppSpawn_common_ut") {
 
   if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
     defines += [ "APPSPAWN_SANDBOX_NEW" ]
+    sources += [ "${appspawn_path}/modules/sandbox/sandbox_shared.c" ]
   } else {
     sources += [
       "${appspawn_path}/modules/sandbox/sandbox_shared_mount.cpp",

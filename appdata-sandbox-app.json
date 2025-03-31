@@ -133,6 +133,9 @@
                 "sandbox-path" : "/data/storage/el1/bundle",
                 "check-action-status": "true"
             }, {
+                "src-path" : "/data/app/el1/bundle/public/<arkWebPackageName>",
+                "sandbox-path" : "/data/storage/el1/bundle/arkwebcore"
+            }, {
                 "src-path" : "/data/misc",
                 "sandbox-path" : "/data/storage/el1/bundle/misc"
             }, {
@@ -157,9 +160,6 @@
                 "src-path" : "/data/service/el1/<currentUserId>/utdtypes/utd",
                 "sandbox-path" : "/data/utd"
             }, {
-                "src-path" : "/data/app/el1/bundle/public/<arkWebPackageName>",
-                "sandbox-path" : "/mnt/nweb/tmp"
-            }, {
                 "src-path" : "/mnt/hmdfs/<currentUserId>",
                 "sandbox-path" : "/mnt/hmdfs/<currentUserId>"
             }, {
@@ -168,10 +168,6 @@
             }, {
                 "src-path" : "/mnt/data/<currentUserId>/media_fuse",
                 "sandbox-path" : "/data/storage/el2/media"
-            }],
-            "symbol-links" : [{
-                "target-name" : "/mnt/nweb/tmp",
-                "link-name" : "/data/storage/el1/bundle/arkwebcore"
             }],
             "mount-groups": ["el2", "el3", "el4"]
         }

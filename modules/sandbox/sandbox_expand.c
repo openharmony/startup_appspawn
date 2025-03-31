@@ -18,20 +18,16 @@
 #include <sys/syscall.h>
 #include <sys/types.h>
 
+#include "securec.h"
 #include "appspawn_msg.h"
 #include "appspawn_sandbox.h"
 #include "appspawn_utils.h"
 #include "json_utils.h"
-#include "securec.h"
+#include "appspawn_permission.h"
+#include "sandbox_shared.h"
 
-#define SANDBOX_GROUP_PATH "/data/storage/el2/group/"
 #define SANDBOX_INSTALL_PATH "/data/storage/el1/bundle/"
 #define SANDBOX_OVERLAY_PATH "/data/storage/overlay/"
-
-static inline bool CheckPath(const char *name)
-{
-    return name != NULL && strcmp(name, ".") != 0 && strcmp(name, "..") != 0 && strstr(name, "/") == NULL;
-}
 
 APPSPAWN_STATIC int MountAllHsp(const SandboxContext *context, const cJSON *hsps)
 {
@@ -75,52 +71,58 @@ APPSPAWN_STATIC int MountAllHsp(const SandboxContext *context, const cJSON *hsps
     return ret;
 }
 
-static inline char *GetLastPath(const char *libPhysicalPath)
+APPSPAWN_STATIC int MountAllGroup(const SandboxContext *context, const AppSpawnSandboxCfg *appSandbox,
+                                  const cJSON *groups)
 {
-    char *tmp = GetLastStr(libPhysicalPath, "/");
-    return tmp + 1;
-}
-
-APPSPAWN_STATIC int MountAllGroup(const SandboxContext *context, const cJSON *groups)
-{
-    APPSPAWN_CHECK(context != NULL && groups != NULL, return -1, "Invalid context or group");
+    APPSPAWN_CHECK(context != NULL && groups != NULL && appSandbox != NULL, return APPSPAWN_SANDBOX_INVALID,
+                   "Invalid context or group");
     mode_t mountFlags = MS_REC | MS_BIND;
     mode_t mountSharedFlag = MS_SLAVE;
     if (CheckAppSpawnMsgFlag(context->message, TLV_MSG_FLAGS, APP_FLAGS_ISOLATED_SANDBOX)) {
-        APPSPAWN_LOGV("MountAllGroup falsg is isolated");
+        APPSPAWN_LOGV("Data group flags is isolated");
         mountSharedFlag |= MS_REMOUNT | MS_NODEV | MS_RDONLY | MS_BIND;
     }
     int ret = 0;
-    cJSON *dataGroupIds = cJSON_GetObjectItemCaseSensitive(groups, "dataGroupId");
-    cJSON *gids = cJSON_GetObjectItemCaseSensitive(groups, "gid");
-    cJSON *dirs = cJSON_GetObjectItemCaseSensitive(groups, "dir");
-    APPSPAWN_CHECK(dataGroupIds != NULL && cJSON_IsArray(dataGroupIds),
-        return 0, "MountAllGroup: invalid dataGroupIds");
-    APPSPAWN_CHECK(gids != NULL && cJSON_IsArray(gids), return -1, "MountAllGroup: invalid gids");
-    APPSPAWN_CHECK(dirs != NULL && cJSON_IsArray(dirs), return -1, "MountAllGroup: invalid dirs");
-    int count = cJSON_GetArraySize(dataGroupIds);
-    APPSPAWN_CHECK(count == cJSON_GetArraySize(gids), return -1, "MountAllGroup: sizes are not same");
-    APPSPAWN_CHECK(count == cJSON_GetArraySize(dirs), return -1, "MountAllGroup: sizes are not same");
+    // Iterate through the array (assuming groups is an array)
+    cJSON *item = NULL;
+    cJSON_ArrayForEach(item, groups) {
+        // Check if the item is valid
+        APPSPAWN_CHECK(IsValidDataGroupItem(item), return APPSPAWN_ARG_INVALID,
+                       "Element is not a valid data group item");
 
-    APPSPAWN_LOGI("MountAllGroup: app: %{public}s, count: %{public}d", context->bundleName, count);
-    for (int i = 0; i < count; i++) {
-        cJSON *dirJson = cJSON_GetArrayItem(dirs, i);
-        APPSPAWN_CHECK(dirJson != NULL && cJSON_IsString(dirJson), return -1, "MountAllGroup: invalid dirJson");
-        const char *libPhysicalPath = cJSON_GetStringValue(dirJson);
-        APPSPAWN_CHECK(!CheckPath(libPhysicalPath), return -1, "MountAllGroup: path error");
-
-        char *dataGroupUuid = GetLastPath(libPhysicalPath);
-        int len = sprintf_s(context->buffer[0].buffer, context->buffer[0].bufferLen, "%s%s%s",
-            context->rootPath, SANDBOX_GROUP_PATH, dataGroupUuid);
-        APPSPAWN_CHECK(len > 0, return -1, "Failed to format install path");
-        APPSPAWN_LOGV("MountAllGroup src: '%{public}s' =>'%{public}s'", libPhysicalPath, context->buffer[0].buffer);
-
-        CreateSandboxDir(context->buffer[0].buffer, FILE_MODE);
-        MountArg mountArg = {libPhysicalPath, context->buffer[0].buffer, NULL, mountFlags, NULL, mountSharedFlag};
-        ret = SandboxMountPath(&mountArg);
-        if (ret != 0) {
-            APPSPAWN_LOGV("mount datagroup failed");
+        cJSON *dirItem = cJSON_GetObjectItemCaseSensitive(item, "dir");
+        cJSON *uuidItem = cJSON_GetObjectItemCaseSensitive(item, "uuid");
+        if (dirItem == NULL || !cJSON_IsString(dirItem) || uuidItem == NULL || !cJSON_IsString(uuidItem)) {
+            APPSPAWN_LOGE("Data group element is invalid");
+            return APPSPAWN_ARG_INVALID;
         }
+
+        const char *srcPath = dirItem->valuestring;
+        APPSPAWN_CHECK(!CheckPath(srcPath), return APPSPAWN_ARG_INVALID, "src path %{public}s is invalid", srcPath);
+
+        int elxValue = GetElxInfoFromDir(srcPath);
+        APPSPAWN_CHECK((elxValue >= EL2 && elxValue < ELX_MAX), return APPSPAWN_ARG_INVALID, "Get elx value failed");
+        
+        const DataGroupSandboxPathTemplate *templateItem = GetDataGroupArgTemplate(elxValue);
+        APPSPAWN_CHECK(templateItem != NULL, return APPSPAWN_ARG_INVALID, "Get data group arg template failed");
+
+        // If permission isn't null, need check permission flag
+        if (templateItem->permission != NULL) {
+            int index = GetPermissionIndexInQueue(&appSandbox->permissionQueue, templateItem->permission);
+            APPSPAWN_LOGV("mount dir no lock mount permission flag %{public}d", index);
+            if (!CheckSandboxCtxPermissionFlagSet(context, (uint32_t)index)) {
+                continue;
+            }
+        }
+        (void)memset_s(context->buffer[0].buffer, context->buffer[0].bufferLen, 0, context->buffer[0].bufferLen);
+        int len = snprintf_s(context->buffer[0].buffer, context->buffer[0].bufferLen, context->buffer[0].bufferLen - 1,
+                             "%s%s%s", context->rootPath, templateItem->sandboxPath, uuidItem->valuestring);
+        APPSPAWN_CHECK(len > 0, return APPSPAWN_ERROR_UTILS_MEM_FAIL, "Get data group arg template failed");
+        ret = CreateSandboxDir(context->buffer[0].buffer, FILE_MODE);
+        APPSPAWN_CHECK(ret == 0, return APPSPAWN_ERROR_UTILS_MEM_FAIL, "Mkdir sandbox dir failed");
+        MountArg mountArg = {srcPath, context->buffer[0].buffer, NULL, mountFlags, NULL, mountSharedFlag};
+        ret = SandboxMountPath(&mountArg);
+        APPSPAWN_CHECK_ONLY_LOG(ret == 0, "mount datagroup failed");
     }
     return 0;
 }
@@ -210,7 +212,7 @@ static inline cJSON *GetJsonObjFromProperty(const SandboxContext *context, const
     return root;
 }
 
-static int ProcessHSPListConfig(const SandboxContext *context, const AppSpawnSandboxCfg *appSandBox, const char *name)
+static int ProcessHSPListConfig(const SandboxContext *context, const AppSpawnSandboxCfg *appSandbox, const char *name)
 {
     cJSON *root = GetJsonObjFromProperty(context, name);
     APPSPAWN_CHECK_ONLY_EXPER(root != NULL, return 0);
@@ -219,17 +221,17 @@ static int ProcessHSPListConfig(const SandboxContext *context, const AppSpawnSan
     return ret;
 }
 
-static int ProcessDataGroupConfig(const SandboxContext *context, const AppSpawnSandboxCfg *appSandBox, const char *name)
+static int ProcessDataGroupConfig(const SandboxContext *context, const AppSpawnSandboxCfg *appSandbox, const char *name)
 {
     cJSON *root = GetJsonObjFromProperty(context, name);
     APPSPAWN_CHECK_ONLY_EXPER(root != NULL, return 0);
-    int ret = MountAllGroup(context, root);
+    int ret = MountAllGroup(context, appSandbox, root);
     cJSON_Delete(root);
     return ret;
 }
 
 static int ProcessOverlayAppConfig(const SandboxContext *context,
-    const AppSpawnSandboxCfg *appSandBox, const char *name)
+    const AppSpawnSandboxCfg *appSandbox, const char *name)
 {
     uint32_t size = 0;
     char *extInfo = (char *)GetAppSpawnMsgExtInfo(context->message, name, &size);
@@ -284,14 +286,14 @@ int RegisterExpandSandboxCfgHandler(const char *name, int prio, ProcessExpandSan
     return 0;
 }
 
-int ProcessExpandAppSandboxConfig(const SandboxContext *context, const AppSpawnSandboxCfg *appSandBox, const char *name)
+int ProcessExpandAppSandboxConfig(const SandboxContext *context, const AppSpawnSandboxCfg *appSandbox, const char *name)
 {
-    APPSPAWN_CHECK_ONLY_EXPER(context != NULL && appSandBox != NULL, return APPSPAWN_ARG_INVALID);
+    APPSPAWN_CHECK_ONLY_EXPER(context != NULL && appSandbox != NULL, return APPSPAWN_ARG_INVALID);
     APPSPAWN_CHECK_ONLY_EXPER(name != NULL, return APPSPAWN_ARG_INVALID);
     APPSPAWN_LOGV("ProcessExpandAppSandboxConfig %{public}s.", name);
     const AppSandboxExpandAppCfgNode *node = GetAppSandboxExpandAppCfg(name);
     if (node != NULL && node->cfgHandle != NULL) {
-        return node->cfgHandle(context, appSandBox, name);
+        return node->cfgHandle(context, appSandbox, name);
     }
     return 0;
 }
