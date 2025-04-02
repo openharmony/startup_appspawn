@@ -64,11 +64,11 @@ APPSPAWN_STATIC void DeleteAppSpawnNamespace(AppSpawnNamespace *namespace)
     OH_ListInit(&namespace->extData.node);
 
     if (namespace->nsInitPidFd > 0) {
-        close(namespace->nsInitPidFd);
+        fdsan_close_with_tag(namespace->nsInitPidFd, APPSPAWN_DOMAIN);
         namespace->nsInitPidFd = -1;
     }
     if (namespace->nsSelfPidFd > 0) {
-        close(namespace->nsSelfPidFd);
+        fdsan_close_with_tag(namespace->nsSelfPidFd, APPSPAWN_DOMAIN);
         namespace->nsSelfPidFd = -1;
     }
     free(namespace);
@@ -171,6 +171,7 @@ APPSPAWN_STATIC int GetNsPidFd(pid_t pid)
         APPSPAWN_LOGE("open ns pid:%{public}d failed, err:%{public}s", pid, strerror(errno));
         return -1;
     }
+    fdsan_exchange_owner_tag(nsFd, 0, APPSPAWN_DOMAIN);
     return nsFd;
 }
 
