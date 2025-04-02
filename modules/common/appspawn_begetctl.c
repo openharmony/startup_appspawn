@@ -52,10 +52,11 @@ APPSPAWN_STATIC void RunAppSandbox(const char *ptyName)
     int fd = open(realPath, O_RDWR);
     free(realPath);
     APPSPAWN_CHECK(fd >= 0, _exit(1), "Failed open %{public}s, err=%{public}d", ptyName, errno);
+    fdsan_exchange_owner_tag(fd, 0, APPSPAWN_DOMAIN);
     (void)dup2(fd, STDIN_FILENO);
     (void)dup2(fd, STDOUT_FILENO);
     (void)dup2(fd, STDERR_FILENO); // Redirect fd to 0, 1, 2
-    (void)close(fd);
+    fdsan_close_with_tag(fd, APPSPAWN_DOMAIN);
 
     char *argv[] = { (char *)"/bin/sh", NULL };
     APPSPAWN_CHECK_ONLY_LOG(execv(argv[0], argv) == 0,

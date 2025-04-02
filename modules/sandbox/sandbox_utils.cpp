@@ -291,7 +291,8 @@ static void CheckAndCreatFile(const char *file)
     if (fd < 0) {
         APPSPAWN_LOGW("failed create %{public}s, err=%{public}d", file, errno);
     } else {
-        close(fd);
+        fdsan_exchange_owner_tag(fd, 0, APPSPAWN_DOMAIN);
+        fdsan_close_with_tag(fd, APPSPAWN_DOMAIN);
     }
     return;
 }
@@ -745,6 +746,7 @@ static int32_t DoDlpAppMountStrategy(const AppSpawningCtx *appProperty,
 
     int fd = open("/dev/fuse", O_RDWR);
     APPSPAWN_CHECK(fd != -1, return -EINVAL, "open /dev/fuse failed, errno is %{public}d", errno);
+    fdsan_exchange_owner_tag(fd, 0, APPSPAWN_DOMAIN);
 
     char options[OPTIONS_MAX_LEN];
     (void)sprintf_s(options, sizeof(options), "fd=%d,"
@@ -761,12 +763,14 @@ static int32_t DoDlpAppMountStrategy(const AppSpawningCtx *appProperty,
     APPSPAWN_LOGV("Bind mount %{public}s to %{public}s '%{public}s' '%{public}lu' '%{public}s'",
         srcPath.c_str(), sandboxPath.c_str(), fsType.c_str(), mountFlags, options);
     ret = mount(srcPath.c_str(), sandboxPath.c_str(), fsType.c_str(), mountFlags, options);
-    APPSPAWN_CHECK(ret == 0, close(fd);
+    APPSPAWN_CHECK(ret == 0,  fdsan_close_with_tag(fd, APPSPAWN_DOMAIN);
+        fd = -1;
         return ret, "DoDlpAppMountStrategy failed, bind mount %{public}s to %{public}s failed %{public}d",
         srcPath.c_str(), sandboxPath.c_str(), errno);
 
     ret = mount(nullptr, sandboxPath.c_str(), nullptr, MS_SHARED, nullptr);
-    APPSPAWN_CHECK(ret == 0, close(fd);
+    APPSPAWN_CHECK(ret == 0, fdsan_close_with_tag(fd, APPSPAWN_DOMAIN);
+        fd = -1;
         return ret, "errno is: %{public}d, private mount to %{public}s failed", errno, sandboxPath.c_str());
 #endif
     /* set DLP_FUSE_FD  */

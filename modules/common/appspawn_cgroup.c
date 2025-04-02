@@ -52,6 +52,7 @@ APPSPAWN_STATIC int WriteToFile(const char *path, int truncated, pid_t pids[], u
     int fd = open(path, O_RDWR | (truncated ? O_TRUNC : O_APPEND));
     APPSPAWN_CHECK(fd >= 0, return APPSPAWN_SYSTEM_ERROR,
         "Failed to open file errno: %{public}d path: %{public}s", errno, path);
+    fdsan_exchange_owner_tag(fd, 0, APPSPAWN_DOMAIN);
     int ret = 0;
     for (uint32_t i = 0; i < count; i++) {
         APPSPAWN_LOGV(" WriteToFile pid %{public}d ", pids[i]);
@@ -62,7 +63,7 @@ APPSPAWN_STATIC int WriteToFile(const char *path, int truncated, pid_t pids[], u
             "Failed to write file errno: %{public}d path: %{public}s %{public}s", errno, path, pidName);
         ret = 0;
     }
-    close(fd);
+    fdsan_close_with_tag(fd, APPSPAWN_DOMAIN);
     return ret;
 }
 
@@ -78,6 +79,7 @@ static void SetForkDenied(const AppSpawnedProcessInfo *appInfo)
         APPSPAWN_LOGW("SetForkDenied %{public}d open failed ", appInfo->pid);
         return;
     }
+    fdsan_exchange_owner_tag(fd, 0, APPSPAWN_DOMAIN);
     do {
         ret = write(fd, "1", 1);
         APPSPAWN_CHECK(ret >= 0, break,
@@ -85,7 +87,7 @@ static void SetForkDenied(const AppSpawnedProcessInfo *appInfo)
         fsync(fd);
         APPSPAWN_LOGI("SetForkDenied success, cgroup's owner:%{public}d", appInfo->pid);
     } while (0);
-    close(fd);
+    fdsan_close_with_tag(fd, APPSPAWN_DOMAIN);
 }
 
 static void KillProcessesByCGroup(const char *path, AppSpawnMgr *content, const AppSpawnedProcessInfo *appInfo)

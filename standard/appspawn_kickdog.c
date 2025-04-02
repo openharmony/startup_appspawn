@@ -29,6 +29,7 @@ static int OpenAndWriteToProc(const char *procName, const char *writeStr, size_t
         APPSPAWN_LOGE("open %{public}s fail,errno:%{public}d", procName, errno);
         return procFd;
     }
+    fdsan_exchange_owner_tag(procFd, 0, APPSPAWN_DOMAIN);
 
     int writeResult = write(procFd, writeStr, writeLen);
     if (writeResult != (int)writeLen) {
@@ -37,7 +38,7 @@ static int OpenAndWriteToProc(const char *procName, const char *writeStr, size_t
         APPSPAWN_LOGV("write %{public}s success", writeStr);
     }
 
-    close(procFd);
+    fdsan_close_with_tag(procFd, APPSPAWN_DOMAIN);
     return writeResult;
 }
 

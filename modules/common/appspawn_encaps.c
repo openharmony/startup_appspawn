@@ -349,17 +349,18 @@ APPSPAWN_STATIC int SpawnSetEncapsPermissions(AppSpawnMgr *content, AppSpawningC
     if (encapsFileFd <= 0) {
         return 0;         // Not support encaps ability
     }
+    fdsan_exchange_owner_tag(encapsFileFd, 0, APPSPAWN_DOMAIN);
 
     int ret = EnableEncapsForProc(encapsFileFd);
     if (ret != 0) {
-        close(encapsFileFd);
+        fdsan_close_with_tag(encapsFileFd, APPSPAWN_DOMAIN);
         return 0;         // Can't enable encaps ability
     }
 
     char *encapsInfoStr = NULL;
     ret = SpawnBuildEncaps(content, property, &encapsInfoStr);
     if (ret != 0) {
-        close(encapsFileFd);
+        fdsan_close_with_tag(encapsFileFd, APPSPAWN_DOMAIN);
         APPSPAWN_LOGW("Build encaps object failed, ret: %{public}d", ret);
         return 0;        // Can't set permission encpas ability
     }
@@ -369,7 +370,7 @@ APPSPAWN_STATIC int SpawnSetEncapsPermissions(AppSpawnMgr *content, AppSpawningC
     if (encapsInfoStr != NULL) {
         free(encapsInfoStr);
     }
-    close(encapsFileFd);
+    fdsan_close_with_tag(encapsFileFd, APPSPAWN_DOMAIN);
 
     return 0;
 }

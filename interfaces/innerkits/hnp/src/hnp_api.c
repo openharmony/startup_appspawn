@@ -105,16 +105,18 @@ static int StartHnpProcess(char *const argv[], char *const apcEnv[])
         HNPAPI_LOG("\r\n [HNP API] pipe fd unsuccess!\r\n");
         return HNP_API_ERRNO_PIPE_CREATED_FAILED;
     }
+    fdsan_exchange_owner_tag(fd[0], 0, APPSPAWN_DOMAIN);
+    fdsan_exchange_owner_tag(fd[1], 0, APPSPAWN_DOMAIN);
 
     pid = vfork();
     if (pid < 0) {
         HNPAPI_LOG("\r\n [HNP API] fork unsuccess!\r\n");
         return HNP_API_ERRNO_FORK_FAILED;
     } else if (pid == 0) {
-        close(fd[0]);
+        fdsan_close_with_tag(fd[0], APPSPAWN_DOMAIN);
         // 将子进程的stdout重定向到管道的写端
         dup2(fd[1], STDOUT_FILENO);
-        close(fd[1]);
+        fdsan_close_with_tag(fd[1], APPSPAWN_DOMAIN);
 
         ret = execve("/system/bin/hnp", argv, apcEnv);
         if (ret < 0) {
@@ -125,14 +127,14 @@ static int StartHnpProcess(char *const argv[], char *const apcEnv[])
     }
 
     HNPAPI_LOG("\r\n [HNP API] this is fork father! chid=%{public}d\r\n", pid);
-    close(fd[1]);
+    fdsan_close_with_tag(fd[1], APPSPAWN_DOMAIN);
     if (waitpid(pid, &status, 0) == -1) {
-        close(fd[0]);
+        fdsan_close_with_tag(fd[0], APPSPAWN_DOMAIN);
         HNPAPI_LOG("\r\n [HNP API] wait pid unsuccess!\r\n");
         return HNP_API_WAIT_PID_FAILED;
     }
     ret = HnpCmdApiReturnGet(fd[0], &exitVal);
-    close(fd[0]);
+    fdsan_close_with_tag(fd[0], APPSPAWN_DOMAIN);
     if (ret != 0) {
         HNPAPI_LOG("\r\n [HNP API] get api return value unsuccess!\r\n");
         return ret;
