@@ -17,13 +17,14 @@
 #define _GNU_SOURCE
 #include <sched.h>
 
+#include "securec.h"
 #include "appspawn_manager.h"
 #include "appspawn_permission.h"
 #include "appspawn_sandbox.h"
 #include "appspawn_utils.h"
 #include "modulemgr.h"
 #include "parameter.h"
-#include "securec.h"
+#include "sandbox_shared.h"
 
 static void FreePathMountNode(SandboxMountNode *node)
 {
@@ -500,7 +501,7 @@ static int PreLoadSandboxCfgByType(AppSpawnMgr *content, ExtDataType type)
     sandbox->maxPermissionIndex = PermissionRenumber(&sandbox->permissionQueue);
 
     content->content.sandboxNsFlags = 0;
-    if (sandbox->pidNamespaceSupport) {
+    if (IsNWebSpawnMode(content) || sandbox->pidNamespaceSupport) {
         content->content.sandboxNsFlags = sandbox->sandboxNsFlags;
     }
     return 0;
@@ -586,19 +587,15 @@ static ExtDataType GetSandboxType(AppSpawnMgr *content, AppSpawningCtx *property
 }
 
 /**
- * @brief ¹¹½¨É³Ïä»·¾³ÓÐÒÔÏÂÌõ¼þ
- * 1.Èç¹ûÊÇ·õ»¯ÆÕÍ¨hap£¬ExtDataTypeÎªEXT_DATA_APP_SANDBOX
- * 2.Èç¹ûÊÇ·õ»¯ÆÕÍ¨hap²¢ÇÒhapÖÐÐ¯´øAPP_FLAGS_ISOLATED_SANDBOX_TYPE±êÖ¾Î»£¬ExtDataTypeÎªEXT_DATA_ISOLATED_SANDBOX
- * 3.Èç¹û·õ»¯µÄÊÇrender½ø³Ì£¬ExtDataTypeÎªEXT_DATA_RENDER_SANDBOX
- * 4.Èç¹û·õ»¯µÄÊÇgpu½ø³Ì£¬ExtDataTypeÎªEXT_DATA_GPU_SANDBOX
- * 5.Èç¹û·õ»¯Ó¦ÓÃ½ø³ÌÊ±Ð¯´øÁËAPP_FLAG_DEBUGABLE±ê¼ÇÎ»²¢¿ªÆôÁË¿ª·¢ÕßÄ£Ê½£¬ÐèÒªÔöÁ¿ÅäÖÃExtDataTypeÎªEXT_DATA_DEBUG_HAP_SANDBOX
-
- * @param content appspawn global content
- * @param property app property
- * @return int
+ * æž„å»ºæ²™ç®±çŽ¯å¢ƒæœ‰ä»¥ä¸‹æ¡ä»¶
+ * 1.å¦‚æžœæ˜¯å­µåŒ–æ™®é€šhapï¼ŒExtDataTypeä¸ºEXT_DATA_APP_SANDBOX
+ * 2.å¦‚æžœæ˜¯å­µåŒ–æ™®é€šhapä¸”hapä¸­æºå¸¦APP_FLAGS_ISOLATED_SANDBOX_TYPEæ ‡å¿—ä½ï¼ŒExtDataTypeä¸ºEXT_DATA_ISOLATED_SANDBOX
+ * 3.å¦‚æžœæ˜¯å­µåŒ–renderè¿›ç¨‹ï¼ŒExtDataTypeä¸ºEXT_DATA_RENDER_SANDBOX
+ * 4.å¦‚æžœæ˜¯å­µåŒ–gpuè¿›ç¨‹ï¼ŒExtDataTypeä¸ºEXT_DATA_GPU_SANDBOX
+ * 5.å¦‚æžœå­µåŒ–hapè¿‡ç¨‹ä¸­ï¼Œæºå¸¦APP_FLAG_DEBUGABLEæ ‡å¿—ä½åŒæ—¶å¼€å¯äº†å¼€å‘è€…æ¨¡å¼ï¼Œéœ€å¢žé‡é…ç½®ExtDataTypeä¸ºEXT_DATA_DEBUG_HAP_SANDBOX
  */
 
-int SpawnBuildSandboxEnv(AppSpawnMgr *content, AppSpawningCtx *property)
+static int SpawnBuildSandboxEnv(AppSpawnMgr *content, AppSpawningCtx *property)
 {
     // Don't build sandbox env
     if (CheckAppMsgFlagsSet(property, APP_FLAGS_NO_SANDBOX)) {
@@ -760,11 +757,10 @@ int SpawnPrepareSandboxCfg(AppSpawnMgr *content, AppSpawningCtx *property)
     APPSPAWN_CHECK_ONLY_EXPER(content != NULL, return -1);
     APPSPAWN_CHECK_ONLY_EXPER(property != NULL, return -1);
     APPSPAWN_LOGV("Prepare sandbox config %{public}s", GetProcessName(property));
-    ExtDataType type = CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX_TYPE) ? EXT_DATA_ISOLATED_SANDBOX :
-        EXT_DATA_APP_SANDBOX;
+    ExtDataType type = GetSandboxType(content, property);
     AppSpawnSandboxCfg *sandbox = GetAppSpawnSandbox(content, type);
-    content->content.sandboxType = type;
     APPSPAWN_CHECK(sandbox != NULL, return -1, "Failed to get sandbox for %{public}s", GetProcessName(property));
+    content->content.sandboxType = type;
 
     int ret = UpdatePermissionFlags(sandbox, property);
     if (ret != 0) {
@@ -778,6 +774,26 @@ int SpawnPrepareSandboxCfg(AppSpawnMgr *content, AppSpawningCtx *property)
     ret = StagedMountSystemConst(sandbox, property, IsNWebSpawnMode(content));
     APPSPAWN_CHECK(ret == 0, return ret, "Failed to mount system-const for %{public}s", GetProcessName(property));
     return 0;
+}
+
+static int SpawnMountDirToShared(AppSpawnMgr *content, AppSpawningCtx *property)
+{
+    ExtDataType type = GetSandboxType(content, property);
+    AppSpawnSandboxCfg *appSandbox = GetAppSpawnSandbox(content, type);
+    APPSPAWN_CHECK(appSandbox != NULL, return APPSPAWN_SANDBOX_INVALID,
+                   "Failed to get sandbox cfg for %{public}s", GetProcessName(property));
+    content->content.sandboxType = type;
+
+    SandboxContext *context = GetSandboxContext();  // need free after mount
+    APPSPAWN_CHECK_ONLY_EXPER(context != NULL, return APPSPAWN_SYSTEM_ERROR);
+    int ret = InitSandboxContext(context, appSandbox, property, IsNWebSpawnMode(content));  // need free after mount
+    APPSPAWN_CHECK_ONLY_EXPER(ret == 0, DeleteSandboxContext(context);
+                                        return ret);
+
+    ret = MountDirsToShared(content, context, appSandbox);
+    APPSPAWN_CHECK_ONLY_LOG(ret == 0, "Failed to mount dirs to shared");
+    DeleteSandboxContext(context);
+    return ret;
 }
 
 APPSPAWN_STATIC int SandboxUnmountPath(const AppSpawnMgr *content, const AppSpawnedProcessInfo *appInfo)
@@ -802,6 +818,7 @@ MODULE_CONSTRUCTOR(void)
     (void)AddServerStageHook(STAGE_SERVER_EXIT, HOOK_PRIO_SANDBOX, SandboxHandleServerExit);
     (void)AddServerStageHook(STAGE_SERVER_EXIT, HOOK_PRIO_SANDBOX, IsolatedSandboxHandleServerExit);
     (void)AddAppSpawnHook(STAGE_PARENT_PRE_FORK, HOOK_PRIO_SANDBOX, SpawnPrepareSandboxCfg);
+    (void)AddAppSpawnHook(STAGE_PARENT_PRE_FORK, HOOK_PRIO_SANDBOX, SpawnMountDirToShared);
     (void)AddAppSpawnHook(STAGE_CHILD_EXECUTE, HOOK_PRIO_SANDBOX, SpawnBuildSandboxEnv);
     (void)AddProcessMgrHook(STAGE_SERVER_APP_DIED, 0, SandboxUnmountPath);
 }

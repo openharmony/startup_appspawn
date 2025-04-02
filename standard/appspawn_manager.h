@@ -111,7 +111,6 @@ typedef struct SpawnTime {
     int maxAppspawnTime;
 } SpawnTime;
 
-#ifndef APPSPAWN_SANDBOX_NEW
 typedef struct TagPathBuffer {
     uint32_t pathLen;
     char path[PATH_MAX_LEN];
@@ -124,7 +123,6 @@ typedef struct TagDataGroupCtx {
     PathBuffer srcPath;
     PathBuffer destPath;
 } DataGroupCtx;
-#endif
 
 typedef struct TagAppSpawnMgr {
     AppSpawnContent content;
@@ -140,9 +138,7 @@ typedef struct TagAppSpawnMgr {
     struct timespec perLoadEnd;
     struct ListNode extData;
     struct SpawnTime spawnTime;
-#ifndef APPSPAWN_SANDBOX_NEW
     struct ListNode dataGroupCtxQueue;
-#endif
 #ifdef APPSPAWN_HISYSEVENT
     AppSpawnHisyseventInfo *hisyseventInfo;
 #endif
