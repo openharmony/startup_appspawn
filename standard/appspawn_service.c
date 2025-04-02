@@ -1132,7 +1132,7 @@ static int CreateAppSpawnServer(TaskHandle *server, const char *socketName)
 {
     char path[128] = {0};  // 128 max path
     int ret = snprintf_s(path, sizeof(path), sizeof(path) - 1, "%s%s", APPSPAWN_SOCKET_DIR, socketName);
-    APPSPAWN_CHECK(ret >= 0, return -1, "Failed to snprintf_s %{public}d", ret);
+    APPSPAWN_CHECK(ret > 0, return -1, "Failed to snprintf_s %{public}d", ret);
     int socketId = GetControlSocket(socketName);
     APPSPAWN_LOGI("get socket form env %{public}s socketId %{public}d", socketName, socketId);
 
@@ -1748,11 +1748,9 @@ static void ProcessAppSpawnLockStatusMsg(AppSpawnMsgNode *message)
 #ifdef APPSPAWN_HISYSEVENT
     ReportKeyEvent(strcmp(userLockStatus, "0") == 0 ? UNLOCK_SUCCESS : LOCK_SUCCESS);
 #endif
-#ifndef APPSPAWN_SANDBOX_NEW
     if (strcmp(userLockStatus, "0") == 0) {
         ServerStageHookExecute(STAGE_SERVER_LOCK, GetAppSpawnContent());
     }
-#endif
 }
 
 APPSPAWN_STATIC int AppSpawnReqMsgFdGet(AppSpawnConnection *connection, AppSpawnMsgNode *message,

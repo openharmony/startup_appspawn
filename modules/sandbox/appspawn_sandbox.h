@@ -44,13 +44,13 @@ extern "C" {
 #define PARAMETER_ARK_WEB_PACKAGE_INDEX "<arkWebPackageName>"
 #define SHAREFS_OPTION_USER ",user_id="
 
-#define FILE_MODE 0711
-#define MAX_SANDBOX_BUFFER 256
-#define OPTIONS_MAX_LEN 256
-#define APP_FLAGS_SECTION 0x80000000
-#define BASIC_MOUNT_FLAGS (MS_REC | MS_BIND)
-#define INVALID_UID ((uint32_t)-1)
-#define PARAM_BUFFER_SIZE 128
+#define FILE_MODE                   0711
+#define MAX_SANDBOX_BUFFER          256
+#define OPTIONS_MAX_LEN             256
+#define APP_FLAGS_SECTION           0x80000000
+#define BASIC_MOUNT_FLAGS           (MS_REC | MS_BIND)
+#define INVALID_UID                 ((uint32_t)-1)
+#define PARAM_BUFFER_SIZE           128
 
 #ifdef APPSPAWN_64
 #define APPSPAWN_LIB_NAME "lib64"
@@ -410,6 +410,11 @@ __attribute__((always_inline)) inline int IsPathEmpty(const char *path)
         return 1;
     }
     return 0;
+}
+
+__attribute__((always_inline)) inline bool CheckPath(const char *name)
+{
+    return name != NULL && strcmp(name, ".") != 0 && strcmp(name, "..") != 0 && strstr(name, "/") == NULL;
 }
 
 #ifdef __cplusplus

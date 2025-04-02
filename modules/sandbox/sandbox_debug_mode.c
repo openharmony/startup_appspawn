@@ -25,8 +25,8 @@
 #include "appspawn_utils.h"
 #include "modulemgr.h"
 
-#define DEBUG_MNT_TMP_ROOT     "/mnt/debugtmp"
-#define DEBUG_MNT_SHAREFS_ROOT "/mnt/debug"
+#define DEBUG_MNT_TMP_ROOT     "/mnt/debugtmp/"
+#define DEBUG_MNT_SHAREFS_ROOT "/mnt/debug/"
 #define DEBUG_HAP_DIR          "debug_hap"
 
 typedef struct TagRemoveDebugDirInfo {
@@ -63,7 +63,7 @@ static int RemoveDebugBaseConfig(SandboxSection *section, const char *debugRootP
         char targetPath[PATH_MAX_LEN] = {0};
         ret = snprintf_s(targetPath, PATH_MAX_LEN, PATH_MAX_LEN - 1, "%s%s", debugRootPath,
                          ((PathMountNode *)sandboxNode)->target);
-        APPSPAWN_CHECK(ret >= 0, return APPSPAWN_ERROR_UTILS_MEM_FAIL,
+        APPSPAWN_CHECK(ret > 0, return APPSPAWN_ERROR_UTILS_MEM_FAIL,
                        "snprintf_s targetPath failed, errno: %{public}d", errno);
         UmountAndRmdirDir(targetPath);
         node = node->next;
@@ -106,27 +106,27 @@ static int ConvertUserIdPath(const AppSpawningCtx *property, char *debugRootPath
     if (userId == NULL) {
         AppSpawnMsgDacInfo *dacInfo = (AppSpawnMsgDacInfo *)GetAppProperty(property, TLV_DAC_INFO);
         APPSPAWN_CHECK(dacInfo != NULL, return APPSPAWN_TLV_NONE, "No tlv %{public}d in msg", TLV_DAC_INFO);
-        ret = snprintf_s(debugRootPath, PATH_MAX_LEN, PATH_MAX_LEN - 1, "%s%d", DEBUG_MNT_SHAREFS_ROOT,
+        ret = snprintf_s(debugRootPath, PATH_MAX_LEN, PATH_MAX_LEN - 1, "%s%d/", DEBUG_MNT_SHAREFS_ROOT,
                          dacInfo->uid / UID_BASE);
-        APPSPAWN_CHECK(ret >= 0, return APPSPAWN_ERROR_UTILS_MEM_FAIL,
+        APPSPAWN_CHECK(ret > 0, return APPSPAWN_ERROR_UTILS_MEM_FAIL,
                        "snprintf_s debugRootPath failed, errno: %{public}d", errno);
-        ret = snprintf_s(debugTmpRootPath, PATH_MAX_LEN, PATH_MAX_LEN - 1, "%s%d", DEBUG_MNT_TMP_ROOT,
+        ret = snprintf_s(debugTmpRootPath, PATH_MAX_LEN, PATH_MAX_LEN - 1, "%s%d/", DEBUG_MNT_TMP_ROOT,
                          dacInfo->uid / UID_BASE);
-        APPSPAWN_CHECK(ret >= 0, return APPSPAWN_ERROR_UTILS_MEM_FAIL,
+        APPSPAWN_CHECK(ret > 0, return APPSPAWN_ERROR_UTILS_MEM_FAIL,
                        "snprintf_s debugTmpRootPath failed, errno: %{public}d", errno);
     } else {
-        ret = snprintf_s(debugRootPath, PATH_MAX_LEN, PATH_MAX_LEN - 1, "%s%s", DEBUG_MNT_SHAREFS_ROOT, uid);
-        APPSPAWN_CHECK(ret >= 0, return APPSPAWN_ERROR_UTILS_MEM_FAIL,
+        ret = snprintf_s(debugRootPath, PATH_MAX_LEN, PATH_MAX_LEN - 1, "%s%s/", DEBUG_MNT_SHAREFS_ROOT, userId);
+        APPSPAWN_CHECK(ret > 0, return APPSPAWN_ERROR_UTILS_MEM_FAIL,
                        "snprintf_s debugRootPath failed, errno: %{public}d", errno);
-        ret = snprintf_s(debugTmpRootPath, PATH_MAX_LEN, PATH_MAX_LEN - 1, "%s%s", DEBUG_MNT_TMP_ROOT, uid);
-        APPSPAWN_CHECK(ret >= 0, return APPSPAWN_ERROR_UTILS_MEM_FAIL,
+        ret = snprintf_s(debugTmpRootPath, PATH_MAX_LEN, PATH_MAX_LEN - 1, "%s%s/", DEBUG_MNT_TMP_ROOT, userId);
+        APPSPAWN_CHECK(ret > 0, return APPSPAWN_ERROR_UTILS_MEM_FAIL,
                        "snprintf_s debugTmpRootPath failed, errno: %{public}d", errno);
     }
-    return ret;
+    return 0;
 }
 
-static int UnintallPrivateDirs(const AppSpawnMgr *content, const AppSpawningCtx *property,
-                               RemoveDebugDirInfo *removeDebugDirInfo)
+static int UninstallPrivateDirs(const AppSpawnMgr *content, const AppSpawningCtx *property,
+                                RemoveDebugDirInfo *removeDebugDirInfo)
 {
     AppSpawnMsgDacInfo *dacInfo = (AppSpawnMsgDacInfo *)GetAppProperty(property, TLV_DAC_INFO);
     APPSPAWN_CHECK(dacInfo != NULL, return APPSPAWN_TLV_NONE, "No tlv %{public}d in msg", TLV_DAC_INFO);
@@ -134,13 +134,13 @@ static int UnintallPrivateDirs(const AppSpawnMgr *content, const AppSpawningCtx 
     char uidPath[PATH_MAX_LEN] = {0};
     /* snprintf_s /mnt/debugtmp/<uid> */
     int ret = snprintf_s(uidPath, PATH_MAX_LEN, PATH_MAX_LEN - 1, "%s%d/", DEBUG_MNT_TMP_ROOT, dacInfo->uid / UID_BASE);
-    APPSPAWN_CHECK(ret >= 0, return APPSPAWN_ERROR_UTILS_MEM_FAIL,
+    APPSPAWN_CHECK(ret > 0, return APPSPAWN_ERROR_UTILS_MEM_FAIL,
                    "snprintf_s /mnt/debugtmp/<uid> failed, errno: %{public}d", errno);
 
     /* snprintf_s /mnt/debugtmp/<userId>/debug_hap/<variablePackageName> */
     ret = snprintf_s(removeDebugDirInfo->debugTmpPath, PATH_MAX_LEN, PATH_MAX_LEN - 1, "%s%s",
                      removeDebugDirInfo->debugTmpPath, removeDebugDirInfo->context->rootPath + strlen(uidPath));
-    APPSPAWN_CHECK(ret >= 0, return APPSPAWN_ERROR_UTILS_MEM_FAIL,
+    APPSPAWN_CHECK(ret > 0, return APPSPAWN_ERROR_UTILS_MEM_FAIL,
         "snprintf_s /mnt/debugtmp/<userId>/debug_hap/<variablePackageName> failed, errno: %{public}d", errno);
 
     ret = RemoveDebugAppVarConfig(removeDebugDirInfo->sandboxCfg, removeDebugDirInfo->debugTmpPath);
@@ -153,20 +153,20 @@ static int UnintallPrivateDirs(const AppSpawnMgr *content, const AppSpawningCtx 
     /* umount and remove dir /mnt/debug/<userId>/debug_hap/<variablePackageName> */
     ret = snprintf_s(removeDebugDirInfo->debugPath, PATH_MAX_LEN, PATH_MAX_LEN - 1, "%s%s/",
         removeDebugDirInfo->debugPath, removeDebugDirInfo->context->rootPath + strlen(uidPath));
-    APPSPAWN_CHECK(ret >= 0, return APPSPAWN_ERROR_UTILS_MEM_FAIL,
+    APPSPAWN_CHECK(ret > 0, return APPSPAWN_ERROR_UTILS_MEM_FAIL,
         "snprintf_s /mnt/debug/<userId>/debug_hap/<variablePackageName> failed, errno: %{public}d", errno);
     UmountAndRmdirDir(removeDebugDirInfo->debugPath);
 
     return 0;
 }
 
-static int UnintallAllDirs(const AppSpawnMgr *content, const AppSpawningCtx *property,
-                           RemoveDebugDirInfo *removeDebugDirInfo)
+static int UninstallAllDirs(const AppSpawnMgr *content, const AppSpawningCtx *property,
+                            RemoveDebugDirInfo *removeDebugDirInfo)
 {
     /* snprintf_s /mnt/debugtmp/<uid>/debug_hap */
     int ret = snprintf_s(removeDebugDirInfo->debugTmpPath + strlen(removeDebugDirInfo->debugTmpPath), PATH_MAX_LEN,
                          PATH_MAX_LEN - 1, "%s/", "debug_hap");
-    APPSPAWN_CHECK(ret >= 0, return APPSPAWN_ERROR_UTILS_MEM_FAIL,
+    APPSPAWN_CHECK(ret > 0, return APPSPAWN_ERROR_UTILS_MEM_FAIL,
                    "snprintf_s /mnt/debugtmp/<uid>/debug_hap failed, errno: %{public}d", errno);
 
     char debugTmpPackagePath[PATH_MAX_LEN] = {0};
@@ -185,15 +185,17 @@ static int UnintallAllDirs(const AppSpawnMgr *content, const AppSpawningCtx *pro
         /* snprintf_s /mnt/debugtmp/<uid>/debug_hap/<variablePackageName> */
         ret = snprintf_s(debugTmpPackagePath, PATH_MAX_LEN, PATH_MAX_LEN - 1, "%s%s",
                          removeDebugDirInfo->debugTmpPath, entry->d_name);
-        APPSPAWN_CHECK(ret >= 0, closedir(dir); return APPSPAWN_ERROR_UTILS_MEM_FAIL,
+        APPSPAWN_CHECK(ret > 0, closedir(dir); return APPSPAWN_ERROR_UTILS_MEM_FAIL,
             "snprintf_s /mnt/debugtmp/<uid>/debug_hap/<variablePackageName> failed, errno: %{public}d", errno);
 
         ret = RemoveDebugAppVarConfig(removeDebugDirInfo->sandboxCfg, debugTmpPackagePath);
-        APPSPAWN_CHECK(ret == 0, closedir(dir); return ret, "Failed to remove app variable config");
+        APPSPAWN_CHECK(ret == 0, closedir(dir);
+                                 return ret, "Failed to remove app variable config");
 
         ret = RemoveDebugPermissionConfig(removeDebugDirInfo->context, removeDebugDirInfo->sandboxCfg,
                                           debugTmpPackagePath);
-        APPSPAWN_CHECK(ret == 0, closedir(dir); return ret, "Failed to remove debug permission config");
+        APPSPAWN_CHECK(ret == 0, closedir(dir);
+                                 return ret, "Failed to remove debug permission config");
 
         /**
          * umount and remove dir /mnt/debug/<uid>/debug_hap/<variablePackageName>
@@ -201,7 +203,7 @@ static int UnintallAllDirs(const AppSpawnMgr *content, const AppSpawningCtx *pro
          */
         ret = snprintf_s(debugPackagePath, PATH_MAX_LEN, PATH_MAX_LEN - 1, "%s%s", DEBUG_MNT_SHAREFS_ROOT,
                          debugTmpPackagePath + strlen(DEBUG_MNT_TMP_ROOT));
-        APPSPAWN_CHECK(ret >= 0, closedir(dir); return APPSPAWN_ERROR_UTILS_MEM_FAIL,
+        APPSPAWN_CHECK(ret > 0, closedir(dir); return APPSPAWN_ERROR_UTILS_MEM_FAIL,
             "snprintf_s /mnt/debug/<uid>/debug_hap/<variablePackageName> failed, errno: %{public}d", errno);
         UmountAndRmdirDir(debugPackagePath);
     }
@@ -220,15 +222,16 @@ static int UninstallDebugSandbox(AppSpawnMgr *content, AppSpawningCtx *property)
     APPSPAWN_CHECK(ret == 0, return ret, "Failed to convert userid path");
 
     AppSpawnSandboxCfg *sandboxCfg = GetAppSpawnSandbox(content, EXT_DATA_DEBUG_HAP_SANDBOX);
-    APPSPAWN_CHECK_ONLY_EXPER(sandboxCfg != NULL, return APPSPAWN_SANDBOX_INVALID,
+    APPSPAWN_CHECK(sandboxCfg != NULL, return APPSPAWN_SANDBOX_INVALID,
                               "Failed to get sandbox for %{public}s", GetProcessName(property));
 
     SandboxContext *context = GetSandboxContext();   // Need free after mounting each time
-    APPSPAWN_CHECK(ret == 0, return ret, "Failed to convert userid path");
+    APPSPAWN_CHECK_ONLY_EXPER(context != NULL, return APPSPAWN_ERROR_UTILS_MEM_FAIL);
     ret = InitDebugSandboxContext(context, sandboxCfg, property, IsNWebSpawnMode(content));
-    APPSPAWN_CHECK_ONLY_EXPER(ret == 0, DeleteSandboxContext(context); return ret);
+    APPSPAWN_CHECK_ONLY_EXPER(ret == 0, DeleteSandboxContext(context);
+                                        return ret);
 
-    RemoveDebugDirInfo removeDebugdirInfo = {
+    RemoveDebugDirInfo removeDebugDirInfo = {
         .debugPath = debugRootPath,
         .debugTmpPath = debugTmpRootPath,
         .context = context,
@@ -236,9 +239,9 @@ static int UninstallDebugSandbox(AppSpawnMgr *content, AppSpawningCtx *property)
     };
     // If the message request carries package name information, it is necessary to obtain the actual package name
     if (GetBundleName(property) != NULL) {
-        ret = UnintallPrivateDirs(content, property, &removeDebugdirInfo);
+        ret = UninstallPrivateDirs(content, property, &removeDebugDirInfo);
     } else {  // Traverse directories from debugTmpRootPath directory
-        ret = UnintallAllDirs(content, property, &removeDebugdirInfo);
+        ret = UninstallAllDirs(content, property, &removeDebugDirInfo);
     }
     APPSPAWN_CHECK_ONLY_LOG(ret == 0, "Failed to uninstall debug hap dir, ret: %{public}d", ret);
 
@@ -276,13 +279,12 @@ static int SetDebugPermissionConfig(const SandboxContext *context, const AppSpaw
 
         APPSPAWN_LOGV("SetSandboxPermissionConfig permission %{public}d %{public}s",
                       permissionNode->permissionIndex, permissionNode->section.name);
-        uint32_t operation = MOUNT_PATH_OP_UNMOUNT;
+        uint32_t operation = MOUNT_PATH_OP_NONE;
         if (CheckSandboxCtxMsgFlagSet(context, APP_FLAGS_ATOMIC_SERVICE)) {
             SetMountPathOperation(&operation, MOUNT_PATH_OP_UNMOUNT);
         }
-        int ret = MountSandboxConfig(context, sandbox, section, operation);
-        APPSPAWN_CHECK(ret == 0, return ret, "Set debug app-variable config fail result: %{public}d, app: %{public}s",
-                       ret, context->bundleName);
+        int ret = MountSandboxConfig(context, sandbox, &permissionNode->section, operation);
+        APPSPAWN_CHECK_ONLY_EXPER(ret == 0, return ret);
         node = node->next;
     }
     return 0;
@@ -302,7 +304,7 @@ static int SetDebugAutomicTmpRootPath(SandboxContext *context, const AppSpawning
     APPSPAWN_CHECK(ret > 0, return APPSPAWN_ERROR_UTILS_MEM_FAIL, "snprintf_s debugAutomicRootPath failed");
     context->rootPath = strdup(debugAutomicRootPath);
     if (context->rootPath == NULL) {
-        APPSPAWN_LOGE("Failed to strdup root path, rootPath: %{public}s', errno: %{public}d", context->rootPath, errno);
+        DeleteSandboxContext(context);
         return APPSPAWN_SYSTEM_ERROR;
     }
     APPSPAWN_LOGI("Set automic sandbox root: %{public}s", context->rootPath);
@@ -312,7 +314,7 @@ static int SetDebugAutomicTmpRootPath(SandboxContext *context, const AppSpawning
 static int InitDebugSandboxContext(SandboxContext *context, const AppSpawnSandboxCfg *sandbox,
                                    const AppSpawningCtx *property, int nwebspawn)
 {
-    if (GetBundleName(property) != NULL) {
+    if (GetBundleName(property) == NULL) {
         APPSPAWN_LOGI("No need init sandbox context");
         return 0;
     }
@@ -335,7 +337,7 @@ static int MountDebugTmpConfig(const SandboxContext *context, const AppSpawnSand
 
 static int MountDebugDirBySharefs(const SandboxContext *context, const AppSpawnSandboxCfg *sandbox)
 {
-    if (context->rootPath = NULL) {
+    if (context->rootPath == NULL) {
         APPSPAWN_LOGE("sandbox root is null");
         return APPSPAWN_SANDBOX_INVALID;
     }
@@ -398,7 +400,8 @@ static int InstallDebugSandbox(AppSpawnMgr *content, AppSpawningCtx *property)
     SandboxContext *context = GetSandboxContext();   // Need free after mounting each time
     APPSPAWN_CHECK_ONLY_EXPER(context != NULL, return APPSPAWN_SYSTEM_ERROR);
     int ret = InitDebugSandboxContext(context, sandboxCfg, property, IsNWebSpawnMode(content));
-    APPSPAWN_CHECK_ONLY_EXPER(context != NULL, DeleteSandboxContext(context); return ret);
+    APPSPAWN_CHECK_ONLY_EXPER(ret == 0, DeleteSandboxContext(context);
+                                        return ret);
 
     do {
         ret = MountDebugTmpConfig(context, sandboxCfg);
