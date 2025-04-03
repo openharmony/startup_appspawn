@@ -21,6 +21,9 @@
                 "src-path" : "/system/etc",
                 "sandbox-path" : "/system/etc"
             }, {
+                "src-path": "/system/framework",
+                "sandbox-path": "/system/framework"
+            }, {
                 "src-path" : "/system/bin",
                 "sandbox-path" : "/system/bin"
             }, {
