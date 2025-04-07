@@ -562,7 +562,7 @@ AppSpawningCtx *AppSpawnTestHelper::GetAppProperty(AppSpawnClientHandle handle, 
             block->buffer + bufferStart, block->currentIndex - bufferStart);
         if (ret != 0) {
             AppSpawnReqMsgFree(reqHandle);
-            DeleteAppSpawnMsg(msgNode);
+            DeleteAppSpawnMsg(&msgNode);
             return nullptr;
         }
         currIndex += block->currentIndex - bufferStart;
@@ -576,10 +576,10 @@ AppSpawningCtx *AppSpawnTestHelper::GetAppProperty(AppSpawnClientHandle handle, 
     // delete reqHandle
     AppSpawnReqMsgFree(reqHandle);
     int ret = DecodeAppSpawnMsg(msgNode);
-    APPSPAWN_CHECK(ret == 0, DeleteAppSpawnMsg(msgNode);
+    APPSPAWN_CHECK(ret == 0, DeleteAppSpawnMsg(&msgNode);
         return nullptr, "Decode msg fail");
     AppSpawningCtx *property = CreateAppSpawningCtx();
-    APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, DeleteAppSpawnMsg(msgNode);
+    APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, DeleteAppSpawnMsg(&msgNode);
         return nullptr);
     property->message = msgNode;
     SetDefaultTestData();
