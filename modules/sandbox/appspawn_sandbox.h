@@ -48,6 +48,7 @@ extern "C" {
 #define MAX_SANDBOX_BUFFER          256
 #define OPTIONS_MAX_LEN             256
 #define APP_FLAGS_SECTION           0x80000000
+#define FILE_MANAGER_GID            1006
 #define BASIC_MOUNT_FLAGS           (MS_REC | MS_BIND)
 #define INVALID_UID                 ((uint32_t)-1)
 #define PARAM_BUFFER_SIZE           128
