@@ -228,7 +228,7 @@ static PathMountNode *DecodeMountPathConfig(const SandboxSection *section, const
     sandboxNode->destMode = GetChmodFromJson(config);
     sandboxNode->mountSharedFlag = GetBoolValueFromJsonObj(config, "mount-shared-flag", false);
     sandboxNode->checkErrorFlag = GetBoolValueFromJsonObj(config, "check-action-status", false);
-
+    sandboxNode->createSandboxPath = GetBoolValueFromJsonObj(config, "create-sandbox-path", true);
     sandboxNode->category = GetMountCategory(GetStringFromJsonObj(config, "category"));
     const char *value = GetStringFromJsonObj(config, "app-apl-name");
     if (value != NULL) {
