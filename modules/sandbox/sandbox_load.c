@@ -723,19 +723,14 @@ int LoadAppSandboxConfig(AppSpawnSandboxCfg *sandbox, ExtDataType type)
     }
     ParseJsonContext context = {};
     context.sandboxCfg = sandbox;
-    int ret = ParseJsonConfig("etc/sandbox", sandboxName, ParseAppSandboxConfig, &context);
-    if (ret == APPSPAWN_SANDBOX_NONE) {
-        APPSPAWN_LOGW("No sandbox config");
-        ret = 0;
-    }
-    APPSPAWN_CHECK_ONLY_EXPER(ret == 0, return ret);
+    (void)ParseJsonConfig("etc/sandbox", sandboxName, ParseAppSandboxConfig, &context);
     sandbox->pidNamespaceSupport = AppSandboxPidNsIsSupport();
     sandbox->appFullMountEnable = CheckAppFullMountEnable();
     APPSPAWN_LOGI("Sandbox pidNamespaceSupport: %{public}d appFullMountEnable: %{public}d",
         sandbox->pidNamespaceSupport, sandbox->appFullMountEnable);
 
     uint32_t depNodeCount = sandbox->depNodeCount;
-    APPSPAWN_CHECK_ONLY_EXPER(depNodeCount > 0, return ret);
+    APPSPAWN_CHECK_ONLY_EXPER(depNodeCount > 0, return 0);
 
     sandbox->depGroupNodes = (SandboxNameGroupNode **)calloc(1, sizeof(SandboxNameGroupNode *) * depNodeCount);
     APPSPAWN_CHECK(sandbox->depGroupNodes != NULL, return APPSPAWN_SYSTEM_ERROR, "Failed alloc memory ");

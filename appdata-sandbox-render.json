@@ -30,12 +30,6 @@
                 "src-path" : "/system/lib64",
                 "sandbox-path" : "/system/lib64"
             }, {
-                "src-path" : "/data/app/el1/bundle/public/<arkWebPackageName>",
-                "sandbox-path" : "/data/storage/el1/bundle/arkwebcore"
-            }, {
-                "src-path" : "/system/app/<arkWebPackageName>",
-                "sandbox-path" : "/system/app/<arkWebPackageName>"
-            }, {
                 "src-path" : "/vendor/<lib>",
                 "sandbox-path" : "/vendor/<lib>",
                 "sandbox-flags" : [ "bind", "rec" ],
@@ -43,9 +37,6 @@
             }, {
                 "src-path" : "/system/app/NWeb",
                 "sandbox-path" : "/system/app/NWeb"
-            }, {
-                "src-path" : "/module_update/ArkWebCore/app/<arkWebPackageName>",
-                "sandbox-path" : "/module_update/ArkWebCore/app/<arkWebPackageName>"
             }],
             "symbol-links" : [{
                     "target-name" : "/system/etc",
@@ -72,7 +63,16 @@
             "mount-groups" : []
         },
         "app-variable": {
-            "mount-groups": []
+            "mount-path": [{
+                "src-path" : "/data/app/el1/bundle/public/<arkWebPackageName>",
+                "sandbox-path" : "/data/storage/el1/bundle/arkwebcore"
+            }, {
+                "src-path" : "/system/app/<arkWebPackageName>",
+                "sandbox-path" : "/system/app/<arkWebPackageName>"
+            }, {
+                "src-path" : "/module_update/ArkWebCore/app/<arkWebPackageName>",
+                "sandbox-path" : "/module_update/ArkWebCore/app/<arkWebPackageName>"
+            }]
         }
     }
 }
