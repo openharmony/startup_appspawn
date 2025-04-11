@@ -716,8 +716,12 @@ static void UpdateMsgFlagsWithPermission(AppSpawnSandboxCfg *sandbox, AppSpawnin
     return;
 }
 
-static int UpdatePermissionFlags(AppSpawnSandboxCfg *sandbox, AppSpawningCtx *property)
+static int UpdatePermissionFlags(AppSpawnMgr *content, AppSpawnSandboxCfg *sandbox, AppSpawningCtx *property)
 {
+    if (IsNWebSpawnMode(content)) {
+        return 0;
+    }
+
     int32_t index = 0;
     if (sandbox->appFullMountEnable) {
         index = GetPermissionIndexInQueue(&sandbox->permissionQueue, FILE_CROSS_APP_MODE);
@@ -762,7 +766,7 @@ int SpawnPrepareSandboxCfg(AppSpawnMgr *content, AppSpawningCtx *property)
     APPSPAWN_CHECK(sandbox != NULL, return -1, "Failed to get sandbox for %{public}s", GetProcessName(property));
     content->content.sandboxType = type;
 
-    int ret = UpdatePermissionFlags(sandbox, property);
+    int ret = UpdatePermissionFlags(content, sandbox, property);
     if (ret != 0) {
         APPSPAWN_LOGW("set sandbox permission flag failed.");
         return APPSPAWN_SANDBOX_ERROR_SET_PERMISSION_FLAG_FAIL;
