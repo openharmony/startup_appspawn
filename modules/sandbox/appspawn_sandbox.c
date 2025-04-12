@@ -272,6 +272,12 @@ APPSPAWN_STATIC int CheckSandboxMountNode(const SandboxContext *context,
         APPSPAWN_LOGW("Invalid mount config section %{public}s", section->name);
         return 0;
     }
+
+    if (sandboxNode->createSandboxPath == 0 && access(sandboxNode->source, F_OK) != 0) {
+        APPSPAWN_LOGW("Invalid mount config source %{public}s", sandboxNode->source);
+        return 0;
+    }
+
     // special handle wps and don't use /data/app/xxx/<Package> config
     if (CHECK_FLAGS_BY_INDEX(operation, SANDBOX_TAG_SPAWN_FLAGS)) {  // flags-point
         if (context->bundleHasWps &&
