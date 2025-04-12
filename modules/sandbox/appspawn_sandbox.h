@@ -124,10 +124,11 @@ typedef struct {
 
 typedef struct TagPathMountNode {
     SandboxMountNode sandboxNode;
-    char *source;                  // source 目录，一般是全局的fs 目录
-    char *target;                  // 沙盒化后的目录
-    mode_t destMode;               // "dest-mode": "S_IRUSR | S_IWOTH | S_IRWXU "  默认值：0
-    uint32_t mountSharedFlag : 1;  // "mount-shared-flag" : "true", 默认值：false
+    char *source;                   // source 目录，一般是全局的fs 目录
+    char *target;                   // 沙盒化后的目录
+    mode_t destMode;                // "dest-mode": "S_IRUSR | S_IWOTH | S_IRWXU "  默认值：0
+    uint32_t mountSharedFlag : 1;   // "mount-shared-flag" : "true", 默认值：false
+    uint32_t createSandboxPath : 1; // "create-sandbox-path" : "true", 默认值 : true
     uint32_t createDemand : 1;
     uint32_t checkErrorFlag : 1;
     uint32_t category;
