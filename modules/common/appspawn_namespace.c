@@ -32,7 +32,7 @@
 #define PID_NS_INIT_UID 100000  // reserved for pid_ns_init process, avoid app, render proc, etc.
 #define PID_NS_INIT_GID 100000
 
-typedef struct {
+typedef struct TagAppSpawnNamespace {
     AppSpawnExtData extData;
     int nsSelfPidFd;  // ns pid fd of appspawn
     int nsInitPidFd;  // ns pid fd of pid_ns_init
@@ -64,11 +64,11 @@ APPSPAWN_STATIC void DeleteAppSpawnNamespace(AppSpawnNamespace *namespace)
     OH_ListInit(&namespace->extData.node);
 
     if (namespace->nsInitPidFd > 0) {
-        fdsan_close_with_tag(namespace->nsInitPidFd, APPSPAWN_DOMAIN);
+        close(namespace->nsInitPidFd);
         namespace->nsInitPidFd = -1;
     }
     if (namespace->nsSelfPidFd > 0) {
-        fdsan_close_with_tag(namespace->nsSelfPidFd, APPSPAWN_DOMAIN);
+        close(namespace->nsSelfPidFd);
         namespace->nsSelfPidFd = -1;
     }
     free(namespace);
@@ -171,7 +171,6 @@ APPSPAWN_STATIC int GetNsPidFd(pid_t pid)
         APPSPAWN_LOGE("open ns pid:%{public}d failed, err:%{public}s", pid, strerror(errno));
         return -1;
     }
-    fdsan_exchange_owner_tag(nsFd, 0, APPSPAWN_DOMAIN);
     return nsFd;
 }
 

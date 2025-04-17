@@ -527,12 +527,11 @@ static char *GetMapMem(uint32_t clientId, const char *processName, uint32_t size
     }
     int fd = open(path, mode, S_IRWXU);
     APPSPAWN_CHECK(fd >= 0, return NULL, "Failed to open errno %{public}d path %{public}s", errno, path);
-    fdsan_exchange_owner_tag(fd, 0, APPSPAWN_DOMAIN);
     if (!readOnly) {
         ftruncate(fd, size);
     }
     void *areaAddr = (void *)mmap(NULL, size, prot, MAP_SHARED, fd, 0);
-    fdsan_close_with_tag(fd, APPSPAWN_DOMAIN);
+    close(fd);
     APPSPAWN_CHECK(areaAddr != MAP_FAILED && areaAddr != NULL,
         return NULL, "Failed to map memory error %{public}d fileName %{public}s ", errno, path);
     return (char *)areaAddr;
@@ -569,8 +568,6 @@ static int InitForkContext(AppSpawningCtx *property)
         APPSPAWN_LOGE("create pipe fail, errno: %{public}d", errno);
         return errno;
     }
-    fdsan_exchange_owner_tag(property->forkCtx.fd[0], 0, APPSPAWN_DOMAIN);
-    fdsan_exchange_owner_tag(property->forkCtx.fd[1], 0, APPSPAWN_DOMAIN);
     int option = fcntl(property->forkCtx.fd[0], F_GETFD);
     if (option > 0) {
         (void)fcntl(property->forkCtx.fd[0], F_SETFD, (unsigned int)option | O_NONBLOCK);
@@ -582,7 +579,7 @@ static void ClosePidfdWatcher(const TaskHandle taskHandle)
 {
     int fd = LE_GetSocketFd(taskHandle);
     if (fd >= 0) {
-        fdsan_close_with_tag(fd, APPSPAWN_DOMAIN);
+        close(fd);
     }
     void *p = LE_GetUserData(taskHandle);
     if (p != NULL) {
@@ -630,7 +627,6 @@ static void WatchChildProcessFd(AppSpawningCtx *property)
             GetBundleName(property), errno);
         return;
     }
-    fdsan_exchange_owner_tag(fd, 0, APPSPAWN_DOMAIN);
     APPSPAWN_LOGI("watch app process pid %{public}d, pidFd %{public}d", property->pid, fd);
     LE_WatchInfo watchInfo = {};
     watchInfo.fd = fd;
@@ -645,7 +641,7 @@ static void WatchChildProcessFd(AppSpawningCtx *property)
     LE_STATUS status = LE_StartWatcher(LE_GetDefaultLoop(), &property->forkCtx.pidFdWatcherHandle, &watchInfo, appPid);
     if (status != LE_SUCCESS) {
 #ifndef APPSPAWN_TEST
-        fdsan_close_with_tag(fd, APPSPAWN_DOMAIN);
+        close(fd);
 #endif
         APPSPAWN_LOGW("Failed to watch child pid fd, pid is %{public}d", property->pid);
     }
@@ -798,35 +794,22 @@ static int SetPreforkProcessName(AppSpawnContent *content)
     return 0;
 }
 
-static int FdsanPipeTag(AppSpawnContent *content)
-{
-    APPSPAWN_CHECK(pipe(content->preforkFd) == 0, return -1, "prefork with prefork pipe failed %{public}d", errno);
-    fdsan_exchange_owner_tag(content->preforkFd[0], 0, APPSPAWN_DOMAIN);
-    fdsan_exchange_owner_tag(content->preforkFd[1], 0, APPSPAWN_DOMAIN);
-    APPSPAWN_CHECK_ONLY_EXPER(content->parentToChildFd[0] <= 0,
-        fdsan_close_with_tag(content->parentToChildFd[0], APPSPAWN_DOMAIN);
-        content->parentToChildFd[0] = -1);
-    APPSPAWN_CHECK_ONLY_EXPER(content->parentToChildFd[1] <= 0,
-        fdsan_close_with_tag(content->parentToChildFd[1], APPSPAWN_DOMAIN);
-        content->parentToChildFd[1] = -1);
-    APPSPAWN_CHECK(pipe(content->parentToChildFd) == 0,
-        return -1, "prefork with prefork pipe failed %{public}d", errno);
-    fdsan_exchange_owner_tag(content->parentToChildFd[0], 0, APPSPAWN_DOMAIN);
-    fdsan_exchange_owner_tag(content->parentToChildFd[1], 0, APPSPAWN_DOMAIN);
-    return 0;
-}
-
 static void ProcessPreFork(AppSpawnContent *content, AppSpawningCtx *property)
 {
-    APPSPAWN_CHECK(FdsanPipeTag(content) == 0, return, "Faild to FdsanPipeTag");
+    APPSPAWN_CHECK(pipe(content->preforkFd) == 0, return, "prefork with prefork pipe failed %{public}d", errno);
+    APPSPAWN_CHECK_ONLY_EXPER(content->parentToChildFd[0] <= 0, close(content->parentToChildFd[0]);
+        content->parentToChildFd[0] = -1);
+    APPSPAWN_CHECK_ONLY_EXPER(content->parentToChildFd[1] <= 0, close(content->parentToChildFd[1]);
+        content->parentToChildFd[1] = -1);
+    APPSPAWN_CHECK(pipe(content->parentToChildFd) == 0, return, "prefork with prefork pipe failed %{public}d", errno);
     enum fdsan_error_level errorLevel = fdsan_get_error_level();
     content->reservedPid = fork();
     APPSPAWN_LOGV("prefork fork finish %{public}d,%{public}d,%{public}d,%{public}d,%{public}d",
         content->reservedPid, content->preforkFd[0], content->preforkFd[1], content->parentToChildFd[0],
         content->parentToChildFd[1]);
     if (content->reservedPid == 0) {
-        fdsan_close_with_tag(property->forkCtx.fd[0], APPSPAWN_DOMAIN);
-        fdsan_close_with_tag(property->forkCtx.fd[1], APPSPAWN_DOMAIN);
+        (void)close(property->forkCtx.fd[0]);
+        (void)close(property->forkCtx.fd[1]);
         int isRet = SetPreforkProcessName(content);
         APPSPAWN_LOGV("prefork process start wait read msg with set processname %{public}d", isRet);
         AppSpawnPreforkMsg preforkMsg = {0};
@@ -1139,7 +1122,7 @@ static void NotifyResToParent(AppSpawnContent *content, AppSpawnClient *client, 
     int fd = property->forkCtx.fd[1];
     if (fd >= 0) {
         (void)write(fd, &result, sizeof(result));
-        fdsan_close_with_tag(fd, APPSPAWN_DOMAIN);
+        (void)close(fd);
         property->forkCtx.fd[1] = -1;
     }
     APPSPAWN_LOGV("NotifyResToParent client id: %{public}u result: 0x%{public}x", client->id, result);
@@ -1175,10 +1158,10 @@ void AppSpawnDestroyContent(AppSpawnContent *content)
         return;
     }
     if (content->parentToChildFd[0] > 0) {
-        fdsan_close_with_tag(content->parentToChildFd[0], APPSPAWN_DOMAIN);
+        close(content->parentToChildFd[0]);
     }
     if (content->parentToChildFd[1] > 0) {
-        fdsan_close_with_tag(content->parentToChildFd[1], APPSPAWN_DOMAIN);
+        close(content->parentToChildFd[1]);
     }
     AppSpawnMgr *appSpawnContent = (AppSpawnMgr *)content;
     if (appSpawnContent->sigHandler != NULL && appSpawnContent->servicePid == getpid()) {

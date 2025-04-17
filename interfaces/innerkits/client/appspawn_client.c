@@ -91,7 +91,7 @@ APPSPAWN_STATIC void CloseClientSocket(int socketId)
     if (socketId >= 0) {
         int flag = 0;
         setsockopt(socketId, IPPROTO_TCP, TCP_NODELAY, (char *)&flag, sizeof(int));
-        fdsan_close_with_tag(socketId, APPSPAWN_DOMAIN);
+        close(socketId);
     }
 }
 
@@ -117,7 +117,6 @@ APPSPAWN_STATIC int CreateClientSocket(uint32_t type, uint32_t timeout)
     int socketFd = socket(AF_UNIX, SOCK_STREAM, 0);  // SOCK_SEQPACKET
     APPSPAWN_CHECK(socketFd >= 0, return -1,
         "Socket socket fd: %{public}s error: %{public}d", socketName, errno);
-    fdsan_exchange_owner_tag(socketFd, 0, APPSPAWN_DOMAIN);
     int ret = 0;
     do {
         int flag = 1;

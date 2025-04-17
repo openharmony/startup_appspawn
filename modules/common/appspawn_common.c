@@ -190,7 +190,7 @@ static void ClearEnvironment(const AppSpawnMgr *content, const AppSpawningCtx *p
     sigprocmask(SIG_UNBLOCK, &mask, NULL);
     // close child fd
     AppSpawningCtx *ctx = (AppSpawningCtx *)property;
-    fdsan_close_with_tag(ctx->forkCtx.fd[0], APPSPAWN_DOMAIN);
+    close(ctx->forkCtx.fd[0]);
     ctx->forkCtx.fd[0] = -1;
     return;
 }
@@ -292,7 +292,6 @@ static int32_t SetFileDescriptors(const AppSpawnMgr *content, const AppSpawningC
         APPSPAWN_LOGE("open dev_null error: %{public}d", errno);
         return (-errno);
     }
-    fdsan_exchange_owner_tag(devNullFd, 0, APPSPAWN_DOMAIN);
 
     // stdin
     if (dup2(devNullFd, STDIN_FILENO) == -1) {
@@ -311,7 +310,7 @@ static int32_t SetFileDescriptors(const AppSpawnMgr *content, const AppSpawningC
     }
 
     if (devNullFd > STDERR_FILENO) {
-        fdsan_close_with_tag(devNullFd, APPSPAWN_DOMAIN);
+        close(devNullFd);
     }
 #endif
     return 0;
@@ -321,11 +320,10 @@ static int32_t CheckTraceStatus(void)
 {
     int fd = open("/proc/self/status", O_RDONLY);
     APPSPAWN_CHECK(fd >= 0, return errno, "Failed to open /proc/self/status error: %{public}d", errno);
-    fdsan_exchange_owner_tag(fd, 0, APPSPAWN_DOMAIN);
 
     char data[1024] = {0};  // 1024 is data length
     ssize_t dataNum = read(fd, data, sizeof(data) - 1);
-    fdsan_close_with_tag(fd, APPSPAWN_DOMAIN);
+    (void)close(fd);
     APPSPAWN_CHECK(dataNum > 0, return -1, "Failed to read file /proc/self/status error: %{public}d", errno);
 
     const char *tracerPid = "TracerPid:\t";
@@ -568,7 +566,7 @@ static int CloseFdArgs(AppSpawnMgr *content, AppSpawningCtx *property)
     if (fds != NULL && fdCount > 0) {
         for (int i = 0; i < fdCount; i++) {
             if (fds[i] > 0) {
-                fdsan_close_with_tag(fds[i], APPSPAWN_DOMAIN);
+                close(fds[i]);
             }
         }
     }

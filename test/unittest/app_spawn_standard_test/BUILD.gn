@@ -114,10 +114,6 @@ ohos_unittest("AppSpawn_ut") {
     "${appspawn_path}/modules/sandbox/sandbox_manager.c",
   ]
 
-  if (appspawn_use_encaps == true) {
-    sources += [ "${appspawn_path}/modules/common/appspawn_encaps.c" ]
-  }
-
   # add stub
   include_dirs += [ "${appspawn_path}/test/mock" ]
   sources += [
