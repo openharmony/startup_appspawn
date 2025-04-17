@@ -328,7 +328,8 @@ static int32_t SandboxMountFusePath(const SandboxContext *context, const MountAr
         "rootmode=40000,user_id=%d,group_id=%d,allow_other,"
         "context=\"u:object_r:dlp_fuse_file:s0\","
         "fscontext=u:object_r:dlp_fuse_file:s0", fd, info->uid, info->gid);
-    APPSPAWN_CHECK(ret > 0, return APPSPAWN_ERROR_UTILS_MEM_FAIL, "sprintf options fail");
+    APPSPAWN_CHECK(ret > 0, close(fd);
+        return APPSPAWN_ERROR_UTILS_MEM_FAIL, "sprintf options fail");
 
     APPSPAWN_LOGV("Bind mount dlp fuse \n "
         "mount arg: '%{public}s' '%{public}s' %{public}x '%{public}s' %{public}s => %{public}s",

@@ -816,7 +816,7 @@ std::string SandboxUtils::GetSandboxOptions(const AppSpawningCtx *appProperty, n
     }
 
     std::string options = "";
-    const int userIdBase = 200000;
+    const int userIdBase = UID_BASE;
     if (GetSandboxDacOverrideEnable(config) && (config.find(g_sandBoxOptions) != config.end())) {
         options = config[g_sandBoxOptions].get<std::string>() + ",user_id=";
         options += std::to_string(dacInfo->uid / userIdBase);
@@ -875,6 +875,16 @@ static bool GetCreateSandboxPath(nlohmann::json &json, std::string srcPath)
     return true;
 }
 
+static bool GetCheckStatus(nlohmann::json &mntPoint)
+{
+    std::string value = g_statusCheck;
+    (void)JsonUtils::GetStringFromJson(mntPoint, g_actionStatuc, value);
+    if (value == g_statusCheck) {
+        return true;
+    }
+    return false;
+}
+
 int SandboxUtils::DoAllMntPointsMount(const AppSpawningCtx *appProperty,
                                       nlohmann::json &appConfig, const char *typeName, const std::string &section)
 {
@@ -884,10 +894,8 @@ int SandboxUtils::DoAllMntPointsMount(const AppSpawningCtx *appProperty,
             section.c_str(), bundleName.c_str());
         return 0;
     }
-
     std::string sandboxRoot = GetSbxPathByConfig(appProperty, appConfig);
     bool checkFlag = CheckMountFlag(appProperty, bundleName, appConfig);
-
     nlohmann::json& mountPoints = appConfig[g_mountPrefix];
     unsigned int mountPointSize = mountPoints.size();
     for (unsigned int i = 0; i < mountPointSize; i++) {
@@ -895,7 +903,6 @@ int SandboxUtils::DoAllMntPointsMount(const AppSpawningCtx *appProperty,
         if ((CheckMountConfig(mntPoint, appProperty, checkFlag) == false)) {
             continue;
         }
-
         std::string srcPath = ConvertToRealPath(appProperty, mntPoint[g_srcPath].get<std::string>());
         if (!GetCreateSandboxPath(mntPoint, srcPath)) {
             continue;
@@ -912,23 +919,15 @@ int SandboxUtils::DoAllMntPointsMount(const AppSpawningCtx *appProperty,
             ret = DoAppSandboxMountOnce(srcPath.c_str(), sandboxPath.c_str(), mountConfig.fsType.c_str(),
                                         mountFlags, mountConfig.optionsPoint.c_str(), mountSharedFlag);
         }
-        if (ret) {
-            std::string actionStatus = g_statusCheck;
-            (void)JsonUtils::GetStringFromJson(mntPoint, g_actionStatuc, actionStatus);
-            if (actionStatus == g_statusCheck) {
-                APPSPAWN_LOGE("DoAppSandboxMountOnce section %{public}s failed, %{public}s",
-                    section.c_str(), sandboxPath.c_str());
+        APPSPAWN_CHECK(ret == 0 || !GetCheckStatus(mntPoint),
 #ifdef APPSPAWN_HISYSEVENT
-                ReportMountFail(bundleName.c_str(), srcPath.c_str(), sandboxPath.c_str(), errno);
-                ret = APPSPAWN_SANDBOX_MOUNT_FAIL;
+            ReportMountFail(bundleName.c_str(), srcPath.c_str(), sandboxPath.c_str(), errno);
+            ret = APPSPAWN_SANDBOX_MOUNT_FAIL;
 #endif
-                return ret;
-            }
-        }
-
+            return ret,
+            "DoAppSandboxMountOnce section %{public}s failed, %{public}s", section.c_str(), sandboxPath.c_str());
         DoSandboxChmod(mntPoint, sandboxRoot);
     }
-
     return 0;
 }
 
@@ -1083,7 +1082,7 @@ int32_t SandboxUtils::HandleFlagsPoint(const AppSpawningCtx *appProperty,
             }
             int ret = DoAllMntPointsMount(appProperty, flagPoint, nullptr, g_flagePoint);
             if (ret != 0) {
-                APPSPAWN_LOGE("mount flag points failed");
+                APPSPAWN_LOGE("DoAllMntPointsMount failed ret: %{public}d", ret);
             }
         } else {
             APPSPAWN_LOGE("read flags config failed, app name is %{public}s", GetBundleName(appProperty));
@@ -1718,8 +1717,6 @@ void SandboxUtils::UpdateMsgFlagsWithPermission(AppSpawningCtx *appProperty)
     if (ret != 0) {
         APPSPAWN_LOGV("Set GET_ALL_PROCESSES_MODE flag failed");
     }
-
-    return;
 }
 
 int32_t SandboxUtils::UpdatePermissionFlags(AppSpawningCtx *appProperty)
