@@ -149,7 +149,7 @@ static int UninstallPrivateDirs(const AppSpawnMgr *content, const AppSpawningCtx
     ret = RemoveDebugPermissionConfig(removeDebugDirInfo->context, removeDebugDirInfo->sandboxCfg,
                                       removeDebugDirInfo->debugTmpPath);
     APPSPAWN_CHECK(ret == 0, return ret, "Failed to remove debug permission config");
-    
+
     /* umount and remove dir /mnt/debug/<userId>/debug_hap/<variablePackageName> */
     ret = snprintf_s(removeDebugDirInfo->debugPath, PATH_MAX_LEN, PATH_MAX_LEN - 1, "%s%s/",
         removeDebugDirInfo->debugPath, removeDebugDirInfo->context->rootPath + strlen(uidPath));
