@@ -333,10 +333,10 @@ void DeleteAppSpawningCtx(AppSpawningCtx *property)
         property->forkCtx.coldRunPath = NULL;
     }
     if (property->forkCtx.fd[0] >= 0) {
-        fdsan_close_with_tag(property->forkCtx.fd[0], APPSPAWN_DOMAIN);
+        close(property->forkCtx.fd[0]);
     }
     if (property->forkCtx.fd[1] >= 0) {
-        fdsan_close_with_tag(property->forkCtx.fd[1], APPSPAWN_DOMAIN);
+        close(property->forkCtx.fd[1]);
     }
 
     free(property);

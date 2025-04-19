@@ -424,7 +424,6 @@ int EnableNewNetNamespace(void)
 {
     int fd = open(DEVICE_VIRTUAL_NET_IO_FLAGS, O_WRONLY);
     APPSPAWN_CHECK(fd >= 0, return APPSPAWN_SYSTEM_ERROR, "Failed to open file errno %{public}d", errno);
-    fdsan_exchange_owner_tag(fd, 0, APPSPAWN_DOMAIN);
 
     int ret = write(fd, IFF_LOOPBACK_VALUE, IFF_LOOPBACK_SIZE);
     if (ret < 0) {
@@ -433,6 +432,6 @@ int EnableNewNetNamespace(void)
         APPSPAWN_LOGI("Successfully enabled new net namespace");
     }
 
-    fdsan_close_with_tag(fd, APPSPAWN_DOMAIN);
+    close(fd);
     return (ret >= 0) ? 0 : APPSPAWN_SYSTEM_ERROR;
 }
