@@ -313,14 +313,13 @@ static int32_t SandboxMountFusePath(const SandboxContext *context, const MountAr
     int fd = open("/dev/fuse", O_RDWR);
     APPSPAWN_CHECK(fd != -1, return -EINVAL,
         "open /dev/fuse failed, errno: %{public}d sandbox path %{public}s", errno, args->destinationPath);
-    fdsan_exchange_owner_tag(fd, 0, APPSPAWN_DOMAIN);
 
     char options[OPTIONS_MAX_LEN] = {0};
     int ret = sprintf_s(options, sizeof(options), "fd=%d,"
         "rootmode=40000,user_id=%d,group_id=%d,allow_other,"
         "context=\"u:object_r:dlp_fuse_file:s0\","
         "fscontext=u:object_r:dlp_fuse_file:s0", fd, info->uid, info->gid);
-    APPSPAWN_CHECK(ret > 0, fdsan_close_with_tag(fd, APPSPAWN_DOMAIN);
+    APPSPAWN_CHECK(ret > 0, close(fd);
         return APPSPAWN_ERROR_UTILS_MEM_FAIL, "sprintf options fail");
 
     APPSPAWN_LOGV("Bind mount dlp fuse \n "
@@ -333,7 +332,7 @@ static int32_t SandboxMountFusePath(const SandboxContext *context, const MountAr
     MountArg mountArg = {args->originPath, args->destinationPath, args->fsType, args->mountFlags, options, MS_SHARED};
     ret = SandboxMountPath(&mountArg);
     if (ret != 0) {
-        fdsan_close_with_tag(fd, APPSPAWN_DOMAIN);
+        close(fd);
         return -1;
     }
     /* set DLP_FUSE_FD  */
@@ -354,8 +353,7 @@ APPSPAWN_STATIC void CheckAndCreateSandboxFile(const char *file)
     if (fd < 0) {
         APPSPAWN_LOGW("failed create %{public}s, err=%{public}d", file, errno);
     } else {
-        fdsan_exchange_owner_tag(fd, 0, APPSPAWN_DOMAIN);
-        fdsan_close_with_tag(fd, APPSPAWN_DOMAIN);
+        close(fd);
     }
     return;
 }

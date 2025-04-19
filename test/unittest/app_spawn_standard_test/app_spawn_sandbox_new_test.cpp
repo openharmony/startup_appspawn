@@ -709,7 +709,7 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Permission_01, TestSize.Level0)
 }
 
 static int ProcessTestExpandConfig(const SandboxContext *context,
-    const AppSpawnSandboxCfg *appSandBox, const char *name)
+    const AppSpawnSandboxCfg *appSandbox, const char *name)
 {
     uint32_t size = 0;
     char *extInfo = (char *)GetAppSpawnMsgExtInfo(context->message, name, &size);

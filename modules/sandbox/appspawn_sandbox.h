@@ -325,7 +325,7 @@ typedef struct {
     char name[0];
 } AppSandboxExpandAppCfgNode;
 int ProcessExpandAppSandboxConfig(const SandboxContext *context,
-    const AppSpawnSandboxCfg *appSandBox, const char *name);
+    const AppSpawnSandboxCfg *appSandbox, const char *name);
 void AddDefaultExpandAppSandboxConfigHandle(void);
 void ClearExpandAppSandboxConfigHandle(void);
 
