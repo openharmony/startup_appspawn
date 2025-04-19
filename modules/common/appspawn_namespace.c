@@ -32,7 +32,7 @@
 #define PID_NS_INIT_UID 100000  // reserved for pid_ns_init process, avoid app, render proc, etc.
 #define PID_NS_INIT_GID 100000
 
-typedef struct {
+typedef struct TagAppSpawnNamespace {
     AppSpawnExtData extData;
     int nsSelfPidFd;  // ns pid fd of appspawn
     int nsInitPidFd;  // ns pid fd of pid_ns_init
