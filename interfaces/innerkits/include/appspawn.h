@@ -345,7 +345,7 @@ int32_t GetMaxPermissionIndex(AppSpawnClientHandle handle);
 const char *GetPermissionByIndex(AppSpawnClientHandle handle, int32_t index);
 
 /**
- * @brief set up a pipe fd to capture the exit reason of a child process
+ * @brief set up a pipe fd to capture the exit reason of appspawn's child process
  *
  * @param fd fd for write signal info
  * @return if succeed return 0,else return other value
@@ -353,11 +353,26 @@ const char *GetPermissionByIndex(AppSpawnClientHandle handle, int32_t index);
 int SpawnListenFdSet(int fd);
 
 /**
- * @brief close the listener for child process exit
+ * @brief close the listener for appspawn's child process exits
  *
  * @return if succeed return 0,else return other value
  */
 int SpawnListenCloseSet(void);
+
+/**
+ * @brief set up a pipe fd to capture the exit reason of nativespawn's child process
+ *
+ * @param fd fd for write signal info
+ * @return if succeed return 0,else return other value
+ */
+int NativeSpawnListenFdSet(int fd);
+
+/**
+ * @brief close the listener for nativespawn's child process exits
+ *
+ * @return if succeed return 0,else return other value
+ */
+int NativeSpawnListenCloseSet(void);
 
 #ifdef __cplusplus
 }
