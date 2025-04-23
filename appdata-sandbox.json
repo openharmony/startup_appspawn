@@ -803,6 +803,10 @@
                     "src-path": "/data/app/el1/bundle/public",
                     "sandbox-path": "/data/bundles/",
                     "sandbox-flags": [ "bind", "rec" ]
+                }, {
+                    "src-path": "/data/service/el1/public/bms/bundle_manager_service/uninstalled_preload",
+                    "sandbox-path": "/data/bms/uninstalled_preload/",
+                    "sandbox-flags": [ "bind", "rec" ]
                 }
             ]
         }],
