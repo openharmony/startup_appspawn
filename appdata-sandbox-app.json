@@ -374,6 +374,15 @@
                 "sandbox-path": "/data/bms_app_clone/",
                 "sandbox-flags": ["bind", "rec"]
             }]
+        }, {
+            "name": "ohos.permission.ACCESS_MEDIALIB_RESTORE",
+            "sandbox-switch": "ON",
+            "gids": ["user_data_rw"],
+            "mount-paths": [{
+                "src-path": "/storage/media/<currentUserId>/local/files/.backup",
+                "sandbox-path": "/data/storage/el2/base/files/mediadata/",
+                "sandbox-flags": ["bind", "rec"]
+            }]
         }],
         "spawn-flag": [{
             "name": "START_FLAGS_BACKUP",

@@ -1014,6 +1014,16 @@
                 "sandbox-flags": ["bind", "rec"]
                 }
             ]
+        }],
+        "ohos.permission.ACCESS_MEDIALIB_RESTORE":[{
+            "sandbox-switch": "ON",
+            "gids":[1008],
+            "mount-paths": [{
+                "src-path": "/storage/media/<currentUserId>/local/files/.backup",
+                "sandbox-path": "/data/storage/el2/base/files/mediadata/",
+                "sandbox-flags": ["bind", "rec"]
+                }
+            ]
         }]
     }]
 }
