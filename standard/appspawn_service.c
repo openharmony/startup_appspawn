@@ -167,7 +167,7 @@ APPSPAWN_STATIC void WriteSignalInfoToFd(AppSpawnedProcess *appInfo, AppSpawnCon
         APPSPAWN_LOGE("Spawn Listen failed to write signal info to fd errno %{public}d", errno);
         return;
     }
-    APPSPAWN_LOGV("Spawn Listen successfully write signal info[%{public}s] to fd", jsonString);
+    APPSPAWN_LOGV("Spawn Listen write signal info %{public}s to fd %{public}d success", jsonString, content->signalFd);
     free(jsonString);
 }
 
