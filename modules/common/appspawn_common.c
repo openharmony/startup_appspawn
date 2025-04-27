@@ -225,7 +225,9 @@ static int SetXpmConfig(const AppSpawnMgr *content, const AppSpawningCtx *proper
         idType = PROCESS_OWNERID_APP;
         ownerId = ownerInfo->ownerId;
     }
-    int ret = InitXpm(jitfortEnable, idType, ownerId);
+
+    char *apiTargetVersionStr = GetAppPropertyExt(property, MSG_EXT_NAME_API_TARGET_VERSION, &len);
+    int ret = InitXpm(jitfortEnable, idType, ownerId, apiTargetVersionStr);
     APPSPAWN_CHECK(ret == 0, return ret, "set xpm region failed: %{public}d", ret);
 #endif
     return 0;
