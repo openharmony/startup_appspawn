@@ -86,7 +86,6 @@ ohos_moduletest("AppSpawnModuleTest") {
   deps = [
     "${appspawn_innerkits_path}/client:appspawn_client",
     "${appspawn_path}/util:libappspawn_util",
-    "//third_party/googletest:gtest_main",
   ]
 
   external_deps = [
