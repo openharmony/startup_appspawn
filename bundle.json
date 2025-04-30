@@ -33,7 +33,8 @@
         "rom": "296KB",
         "ram": "13125KB",
         "hisysevent_config": [
-            "//base/startup/appspawn/hisysevent.yaml"
+            "//base/startup/appspawn/hisysevent.yaml",
+            "//base/startup/appspawn/startup_events.yaml"
         ],
         "deps": {
             "components": [
