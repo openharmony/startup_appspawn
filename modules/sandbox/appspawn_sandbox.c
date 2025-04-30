@@ -707,7 +707,9 @@ static int SetSandboxPermissionConfig(const SandboxContext *context, const AppSp
 
         APPSPAWN_LOGV("SetSandboxPermissionConfig permission %{public}d %{public}s",
             permissionNode->permissionIndex, permissionNode->section.name);
-        int ret = MountSandboxConfig(context, sandbox, &permissionNode->section, MOUNT_PATH_OP_NONE);
+        uint32_t operation = 0;
+        SetMountPathOperation(&operation, MOUNT_PATH_OP_REPLACE_BY_SANDBOX);
+        int ret = MountSandboxConfig(context, sandbox, &permissionNode->section, operation);
         APPSPAWN_CHECK_ONLY_EXPER(ret == 0, return ret);
         node = node->next;
     }

@@ -63,7 +63,7 @@
             "mount-groups" : []
         },
         "app-variable": {
-            "mount-path": [{
+            "mount-paths": [{
                 "src-path" : "/data/app/el1/bundle/public/<arkWebPackageName>",
                 "sandbox-path" : "/data/storage/el1/bundle/arkwebcore"
             }, {
