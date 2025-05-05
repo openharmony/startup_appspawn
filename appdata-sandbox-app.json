@@ -204,7 +204,17 @@
         }, {
             "name": "ohos.permission.FILE_CROSS_APP",
             "gids": ["file_manager"],
-            "mount-paths": [],
+            "mount-paths": [{
+                "src-path": "/mnt/data/<currentUserId>/userExternal",
+                "sandbox-path": "/mnt/storage/userExternal"
+            }, {
+                "src-path": "/mnt/sandbox/<currentUserId>/<PackageName>/mnt/storage/userExternal",
+                "sandbox-path": "/storage/userExternal",
+                "sandbox-flags-customized": [ "MS_NODEV" ],
+                "dac-override-sensitive": "true",
+                "fs-type": "sharefs",
+                "options": "override_support_delete"
+            }],
             "mount-groups": [ "user-public", "storage_users" ]
         }, {
             "name": "ohos.permission.FILE_ACCESS_COMMON_DIR",

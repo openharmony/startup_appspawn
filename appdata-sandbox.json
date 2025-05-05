@@ -742,6 +742,20 @@
                     "dac-override-sensitive": "true",
                     "fs-type": "sharefs",
                     "options": "override"
+                },
+                {
+                    "src-path": "/mnt/data/<currentUserId>/userExternal",
+                    "sandbox-path": "/mnt/storage/userExternal",
+                    "sandbox-flags": [ "bind", "rec" ],
+                    "check-action-status": "false"
+                },
+                {
+                    "src-path": "/mnt/sandbox/<currentUserId>/<PackageName>/mnt/storage/userExternal",
+                    "sandbox-path": "/storage/userExternal",
+                    "sandbox-flags-customized": [ "MS_NODEV" ],
+                    "dac-override-sensitive": "true",
+                    "fs-type": "sharefs",
+                    "options": "override_support_delete"
                 }
             ]
         }],
