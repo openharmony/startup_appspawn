@@ -323,7 +323,7 @@ int32_t SandboxUtils::DoAppSandboxMountOnce(const char *originPath, const char *
     if (originPath == nullptr || destinationPath == nullptr || originPath[0] == '\0' || destinationPath[0] == '\0') {
         return 0;
     }
-    if (strstr(originPath, "system/etc/hosts") != nullptr) {
+    if (strstr(originPath, "system/etc/hosts") != nullptr || strstr(originPath, "system/etc/profile") != nullptr) {
         CheckAndCreatFile(destinationPath);
     } else {
         MakeDirRecursive(destinationPath, FILE_MODE);
