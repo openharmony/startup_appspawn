@@ -58,6 +58,8 @@ typedef void *AppSpawnClientHandle;
 #define APP_MAX_FD_COUNT 16
 #define APP_FDENV_PREFIX "APPSPAWN_FD_"
 #define APP_FDNAME_MAXLEN 20
+#define PIPE_FD_LENGTH 2
+
 typedef struct {
     uint32_t uid;       // the UNIX uid that the child process setuid() to after fork()
     uint32_t gid;       // the UNIX gid that the child process setgid() to after fork()
