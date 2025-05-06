@@ -72,7 +72,7 @@
                 "src-path" : "/vendor/etc/hiai",
                 "sandbox-path" : "/vendor/etc/hiai"
             }, {
-                "src-path" : "/data/local/shader_cache/cloud/common",
+                "src-path" : "/data/app/el1/public/shader_cache/cloud/common",
                 "sandbox-path" : "/data/storage/shader_cache/common"
             }, {
                 "src-path" : "/data/service/el0/public/for-all-app",
@@ -133,6 +133,9 @@
                 "sandbox-path" : "/data/storage/el1/bundle",
                 "check-action-status": "true"
             }, {
+                "src-path" : "/data/app/el1/bundle/public/<arkWebPackageName>",
+                "sandbox-path" : "/data/storage/el1/bundle/arkwebcore"
+            }, {
                 "src-path" : "/data/misc",
                 "sandbox-path" : "/data/storage/el1/bundle/misc"
             }, {
@@ -142,10 +145,10 @@
                 "src-path" : "/data/app/el1/<currentUserId>/aot_compiler/ark_profile/<PackageName>",
                 "sandbox-path" : "/data/storage/ark-profile"
             }, {
-                "src-path" : "/data/local/shader_cache/local/<PackageName>",
+                "src-path" : "/data/app/el1/<currentUserId>/shader_cache/<variablePackageName>",
                 "sandbox-path" : "/data/storage/shader_cache/local"
             }, {
-                "src-path" : "/data/local/shader_cache/cloud/<PackageName>",
+                "src-path" : "/data/app/el1/public/shader_cache/cloud/<PackageName>",
                 "sandbox-path" : "/data/storage/shader_cache/cloud"
             }, {
                 "src-path" : "/data/service/el1/public/themes/<currentUserId>/a/app",
@@ -157,9 +160,6 @@
                 "src-path" : "/data/service/el1/<currentUserId>/utdtypes/utd",
                 "sandbox-path" : "/data/utd"
             }, {
-                "src-path" : "/data/app/el1/bundle/public/<arkWebPackageName>",
-                "sandbox-path" : "/mnt/nweb/tmp"
-            }, {
                 "src-path" : "/mnt/hmdfs/<currentUserId>",
                 "sandbox-path" : "/mnt/hmdfs/<currentUserId>"
             }, {
@@ -168,10 +168,6 @@
             }, {
                 "src-path" : "/mnt/data/<currentUserId>/media_fuse",
                 "sandbox-path" : "/data/storage/el2/media"
-            }],
-            "symbol-links" : [{
-                "target-name" : "/mnt/nweb/tmp",
-                "link-name" : "/data/storage/el1/bundle/arkwebcore"
             }],
             "mount-groups": ["el2", "el3", "el4"]
         }
@@ -269,8 +265,11 @@
         }, {
             "name": "ohos.permission.ACCESS_SHADER_CACHE_DIR",
             "mount-paths": [{
-                "src-path": "/data/local/shader_cache",
-                "sandbox-path": "/data/storage/shader_caches"
+                "src-path": "/data/service/el1/public/shader_cache/local",
+                "sandbox-path": "/data/storage/shader_caches/local"
+            }, {
+                "src-path": "/data/app/el1/public/shader_cache/cloud",
+                "sandbox-path": "/data/storage/shader_caches/cloud"
             }]
         }, {
             "name": "ohos.permission.ACCESS_HIVIEWX",
@@ -375,6 +374,15 @@
                 "sandbox-path": "/data/bms_app_clone/",
                 "sandbox-flags": ["bind", "rec"]
             }]
+        }, {
+            "name": "ohos.permission.ACCESS_MEDIALIB_RESTORE",
+            "sandbox-switch": "ON",
+            "gids": ["user_data_rw"],
+            "mount-paths": [{
+                "src-path": "/storage/media/<currentUserId>/local/files/.backup",
+                "sandbox-path": "/data/storage/el2/base/files/mediadata/",
+                "sandbox-flags": ["bind", "rec"]
+            }]
         }],
         "spawn-flag": [{
             "name": "START_FLAGS_BACKUP",
@@ -422,6 +430,12 @@
             "mount-paths": [{
                 "src-path": "/system/app",
                 "sandbox-path": "/system/app"
+            }]
+        }, {
+            "name": "CUSTOM_SANDBOX_HAP",
+            "mount-paths": [{
+                "src-path": "/tmp",
+                "sandbox-path": "/tmp"
             }]
         }],
         "package-name": [{

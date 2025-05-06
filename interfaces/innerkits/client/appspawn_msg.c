@@ -552,6 +552,11 @@ int AppSpawnClientAddPermission(AppSpawnClientHandle handle, AppSpawnReqMsgHandl
     APPSPAWN_CHECK(permission != NULL, return APPSPAWN_ARG_INVALID, "Invalid permission ");
     APPSPAWN_CHECK(reqNode->permissionFlags != NULL, return APPSPAWN_ARG_INVALID, "No permission tlv ");
 
+    // Don't need to transmit sandbox permission in nwebspawn mode
+    if (reqMgr->type == CLIENT_FOR_NWEBSPAWN) {
+        return 0;
+    }
+
     int32_t maxIndex = GetMaxPermissionIndex(handle);
     int index = GetPermissionIndex(handle, permission);
     APPSPAWN_CHECK(index >= 0 && index < maxIndex,
