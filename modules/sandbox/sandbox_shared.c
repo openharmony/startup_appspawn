@@ -127,6 +127,44 @@ static bool SetSandboxPathShared(const char *sandboxPath)
     return true;
 }
 
+static int MountDataShared(const AppDacInfo *info)
+{
+    /* /mnt/sandbox/<currentUser/app-root/data/shared */
+    char sandboxPath[PATH_MAX_LEN] = {0};
+    int ret = snprintf_s(sandboxPath, PATH_MAX_LEN, PATH_MAX_LEN - 1, "/mnt/sandbox/%u/app-root/data/shared",
+                         info->uid/ UID_BASE);
+    if (ret <= 0) {
+        APPSPAWN_LOGE("snprintf sandbox path data/shared failed, errno %{public}d", errno);
+        return APPSPAWN_ERROR_UTILS_MEM_FAIL;
+    }
+
+    // Check whether the directory is a shared mount point
+    if (SetSandboxPathShared(sandboxPath)) {
+        APPSPAWN_LOGV("shared mountpoint is exist");
+        return 0;
+    }
+
+    ret = CreateSandboxDir(sandboxPath, DIR_MODE);
+    if (ret != 0) {
+        APPSPAWN_LOGE("mkdir %{public}s failed, errno %{public}d", sandboxPath, errno);
+        return APPSPAWN_SANDBOX_ERROR_MKDIR_FAIL;
+    }
+
+    MountArg arg = {
+        .originPath = sandboxPath,
+        .destinationPath = sandboxPath,
+        .fsType = NULL,
+        .mountFlags = MS_BIND | MS_REC,
+        .options = NULL,
+        .mountSharedFlag = MS_SHARED
+    };
+    ret = SandboxMountPath(&arg);
+    if (ret != 0) {
+        APPSPAWN_LOGE("mount %{public}s shared failed, ret %{public}d", sandboxPath, ret);
+    }
+    return ret;
+}
+
 static int MountWithFileMgr(const AppDacInfo *info)
 {
     /* /mnt/user/<currentUserId>/nosharefs/docs */
@@ -498,6 +536,8 @@ int MountDirsToShared(AppSpawnMgr *content, SandboxContext *context, AppSpawnSan
         APPSPAWN_LOGE("Info or bundleInfo invalid");
         return APPSPAWN_SANDBOX_INVALID;
     }
+
+    MountDataShared(info);
 
     if (IsUnlockStatus(info->uid)) {
         return 0;

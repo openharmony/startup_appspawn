@@ -1512,7 +1512,7 @@ static int ProcessSpawnRemountMsg(AppSpawnConnection *connection, AppSpawnMsgNod
         }
         char destPath[PATH_SIZE] = {0};
         int ret = snprintf_s(destPath, sizeof(destPath), sizeof(destPath) - 1,
-            "%s/%s/app-root/mnt/nweb/tmp", rootPath, userId);
+            "%s/%s/app-root/data/shared/arkwebcore", rootPath, userId);
         APPSPAWN_CHECK(ret > 0, continue, "Failed to snprintf_s, errno %{public}d", errno);
 
         ret = umount2(destPath, MNT_DETACH);

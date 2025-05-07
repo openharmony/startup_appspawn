@@ -507,11 +507,6 @@ static int DoSandboxPathSymLink(const SandboxContext *context,
     const char *linkName = GetSandboxRealVar(context, BUFFER_FOR_TARGET,
         sandboxNode->linkName, context->rootPath, NULL);
     APPSPAWN_LOGV("symlink from %{public}s to %{public}s", target, linkName);
-    if (access(linkName, F_OK) == 0) {
-        if (rmdir(linkName) != 0) {
-            APPSPAWN_LOGW("linkName %{public}s already exist and rmdir failed, errno %{public}d", linkName, errno);
-        }
-    }
     int ret = symlink(target, linkName);
     if (ret && errno != EEXIST) {
         if (sandboxNode->checkErrorFlag) {
