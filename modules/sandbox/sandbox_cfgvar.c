@@ -68,6 +68,25 @@ static int VarCurrentUseIdReplace(const SandboxContext *context,
     return 0;
 }
 
+static int VarCurrentHostUserIdReplace(const SandboxContext *context,
+    const char *buffer, uint32_t bufferLen, uint32_t *realLen, const VarExtraData *extraData)
+{
+    int uid = 0;
+    int len = 0;
+    char *hostUid =
+        (char *)GetAppSpawnMsgExtInfo(context->message, MSG_EXT_NAME_PARENT_UID, NULL);
+    if (hostUid != NULL) {
+        uid = atoi(hostUid);
+        len = sprintf_s((char *)buffer, bufferLen, "%d", uid / UID_BASE);
+    } else {
+        len = sprintf_s((char *)buffer, bufferLen, "%s", "hostUserId");
+    }
+    APPSPAWN_CHECK(len > 0 && ((uint32_t)len < bufferLen),
+        return -1, "Failed to format path app: %{public}s", context->bundleName);
+    *realLen = (uint32_t)len;
+    return 0;
+}
+
 static int VarArkWebPackageNameReplace(const SandboxContext *context,
     const char *buffer, uint32_t bufferLen, uint32_t *realLen,
     const VarExtraData *extraData)
@@ -348,6 +367,7 @@ void AddDefaultVariable(void)
 {
     AddVariableReplaceHandler(PARAMETER_PACKAGE_NAME, VarPackageNameReplace);
     AddVariableReplaceHandler(PARAMETER_USER_ID, VarCurrentUseIdReplace);
+    AddVariableReplaceHandler(PARAMETER_HOST_USER_ID, VarCurrentHostUserIdReplace);
     AddVariableReplaceHandler(PARAMETER_PACKAGE_INDEX, VarPackageNameIndexReplace);
     AddVariableReplaceHandler(PARAMETER_ARK_WEB_PACKAGE_INDEX, VarArkWebPackageNameReplace);
     /*

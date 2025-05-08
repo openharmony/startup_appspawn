@@ -46,7 +46,8 @@ static const SandboxFlagInfo FLAGE_POINT_MAP[] = {
     {"START_FLAGS_BACKUP", (unsigned long)APP_FLAGS_BACKUP_EXTENSION},
     {"DLP_MANAGER", (unsigned long)APP_FLAGS_DLP_MANAGER},
     {"DEVELOPER_MODE", (unsigned long)APP_FLAGS_DEVELOPER_MODE},
-    {"PREINSTALLED_HAP", (unsigned long)APP_FLAGS_PRE_INSTALLED_HAP}
+    {"PREINSTALLED_HAP", (unsigned long)APP_FLAGS_PRE_INSTALLED_HAP},
+    {"CUSTOM_SANDBOX_HAP", (unsigned long)APP_FLAGS_CUSTOM_SANDBOX}
 };
 
 static const SandboxFlagInfo MOUNT_MODE_MAP[] = {
@@ -227,7 +228,7 @@ static PathMountNode *DecodeMountPathConfig(const SandboxSection *section, const
     sandboxNode->destMode = GetChmodFromJson(config);
     sandboxNode->mountSharedFlag = GetBoolValueFromJsonObj(config, "mount-shared-flag", false);
     sandboxNode->checkErrorFlag = GetBoolValueFromJsonObj(config, "check-action-status", false);
-
+    sandboxNode->createSandboxPath = GetBoolValueFromJsonObj(config, "create-sandbox-path", true);
     sandboxNode->category = GetMountCategory(GetStringFromJsonObj(config, "category"));
     const char *value = GetStringFromJsonObj(config, "app-apl-name");
     if (value != NULL) {
@@ -502,6 +503,23 @@ static int ParsePermissionConfig(AppSpawnSandboxCfg *sandbox, const char *name, 
     return 0;
 }
 
+static int AddSpawnerPermissionNode(AppSpawnSandboxCfg *sandbox)
+{
+    uint32_t permissionCount = ARRAY_LENGTH(g_spawnerPermissionList);
+    for (uint32_t i = 0; i < permissionCount; i++) {
+        SandboxPermissionNode *node =
+            (SandboxPermissionNode *)GetSandboxSection(&sandbox->permissionQueue, g_spawnerPermissionList[i]);
+        if (node == NULL) {
+            node = CreateSandboxPermissionNode(g_spawnerPermissionList[i]);
+        }
+        APPSPAWN_CHECK_ONLY_EXPER(node != NULL, return -1);
+
+        // success, insert section
+        AddSandboxSection(&node->section, &sandbox->permissionQueue);
+    }
+    return 0;
+}
+
 static SandboxNameGroupNode *ParseNameGroup(AppSpawnSandboxCfg *sandbox, const cJSON *groupConfig)
 {
     char *name = GetStringFromJsonObj(groupConfig, "name");
@@ -647,9 +665,12 @@ APPSPAWN_STATIC int ParseAppSandboxConfig(const cJSON *root, ParseJsonContext *c
     // conditional
     cJSON *json = cJSON_GetObjectItemCaseSensitive(root, "conditional");
     if (json != NULL) {
-        // permission
+        // sandbox permission
         cJSON *config = cJSON_GetObjectItemCaseSensitive(json, "permission");
         ret = ParseConditionalConfig(sandbox, config, "permission", ParsePermissionConfig);
+        APPSPAWN_CHECK_ONLY_EXPER(ret == 0, return ret);
+        // sandbox permission
+        ret = AddSpawnerPermissionNode(sandbox);
         APPSPAWN_CHECK_ONLY_EXPER(ret == 0, return ret);
         // spawn-flag
         config = cJSON_GetObjectItemCaseSensitive(json, "spawn-flag");
@@ -702,19 +723,14 @@ int LoadAppSandboxConfig(AppSpawnSandboxCfg *sandbox, ExtDataType type)
     }
     ParseJsonContext context = {};
     context.sandboxCfg = sandbox;
-    int ret = ParseJsonConfig("etc/sandbox", sandboxName, ParseAppSandboxConfig, &context);
-    if (ret == APPSPAWN_SANDBOX_NONE) {
-        APPSPAWN_LOGW("No sandbox config");
-        ret = 0;
-    }
-    APPSPAWN_CHECK_ONLY_EXPER(ret == 0, return ret);
+    (void)ParseJsonConfig("etc/sandbox", sandboxName, ParseAppSandboxConfig, &context);
     sandbox->pidNamespaceSupport = AppSandboxPidNsIsSupport();
     sandbox->appFullMountEnable = CheckAppFullMountEnable();
     APPSPAWN_LOGI("Sandbox pidNamespaceSupport: %{public}d appFullMountEnable: %{public}d",
         sandbox->pidNamespaceSupport, sandbox->appFullMountEnable);
 
     uint32_t depNodeCount = sandbox->depNodeCount;
-    APPSPAWN_CHECK_ONLY_EXPER(depNodeCount > 0, return ret);
+    APPSPAWN_CHECK_ONLY_EXPER(depNodeCount > 0, return 0);
 
     sandbox->depGroupNodes = (SandboxNameGroupNode **)calloc(1, sizeof(SandboxNameGroupNode *) * depNodeCount);
     APPSPAWN_CHECK(sandbox->depGroupNodes != NULL, return APPSPAWN_SYSTEM_ERROR, "Failed alloc memory ");

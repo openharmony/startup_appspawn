@@ -100,6 +100,11 @@ typedef struct TagAppSpawnCommonEnv {
     int developerModeEnable;
 } AppSpawnCommonEnv;
 
+/* spawner permission */
+static const char *g_spawnerPermissionList[] = {
+    "ohos.permission.FOWNER"
+};
+
 typedef enum {
     APPSPAWN_OK = 0,
     APPSPAWN_SYSTEM_ERROR = 0xD000000,
@@ -110,7 +115,6 @@ typedef enum {
     APPSPAWN_TLV_NONE,
     APPSPAWN_SANDBOX_NONE,
     APPSPAWN_SANDBOX_LOAD_FAIL,
-    APPSPAWN_SANDBOX_INVALID,
     APPSPAWN_SANDBOX_MOUNT_FAIL,  // 0xD00000a
     APPSPAWN_SPAWN_TIMEOUT,       // 0xD00000a
     APPSPAWN_CHILD_CRASH,         // 0xD00000b
@@ -128,6 +132,7 @@ typedef enum {
     APPSPAWN_ERROR_UTILS_CREATE_JSON_FAIL,
     APPSPAWN_ERROR_UTILS_ADD_JSON_FAIL,
     /* sandbox errno num */
+    APPSPAWN_SANDBOX_INVALID,
     APPSPAWN_SANDBOX_ERROR_MKDIR_FAIL,
     APPSPAWN_SANDBOX_ERROR_MOUNT_FAIL,
     APPSPAWN_SANDBOX_ERROR_SET_PERMISSION_FLAG_FAIL,

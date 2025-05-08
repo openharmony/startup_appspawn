@@ -17,13 +17,14 @@
 #define _GNU_SOURCE
 #include <sched.h>
 
+#include "securec.h"
 #include "appspawn_manager.h"
 #include "appspawn_permission.h"
 #include "appspawn_sandbox.h"
 #include "appspawn_utils.h"
 #include "modulemgr.h"
 #include "parameter.h"
-#include "securec.h"
+#include "sandbox_shared.h"
 
 static void FreePathMountNode(SandboxMountNode *node)
 {
@@ -500,7 +501,7 @@ static int PreLoadSandboxCfgByType(AppSpawnMgr *content, ExtDataType type)
     sandbox->maxPermissionIndex = PermissionRenumber(&sandbox->permissionQueue);
 
     content->content.sandboxNsFlags = 0;
-    if (sandbox->pidNamespaceSupport) {
+    if (IsNWebSpawnMode(content) || sandbox->pidNamespaceSupport) {
         content->content.sandboxNsFlags = sandbox->sandboxNsFlags;
     }
     return 0;
@@ -586,19 +587,15 @@ static ExtDataType GetSandboxType(AppSpawnMgr *content, AppSpawningCtx *property
 }
 
 /**
- * @brief 构建沙箱环境有以下条件
+ * 构建沙箱环境有以下条件
  * 1.如果是孵化普通hap，ExtDataType为EXT_DATA_APP_SANDBOX
- * 2.如果是孵化普通hap并且hap中携带APP_FLAGS_ISOLATED_SANDBOX_TYPE标志位，ExtDataType为EXT_DATA_ISOLATED_SANDBOX
- * 3.如果孵化的是render进程，ExtDataType为EXT_DATA_RENDER_SANDBOX
- * 4.如果孵化的是gpu进程，ExtDataType为EXT_DATA_GPU_SANDBOX
- * 5.如果孵化应用进程时携带了APP_FLAG_DEBUGABLE标记位并开启了开发者模式，需要增量配置ExtDataType为EXT_DATA_DEBUG_HAP_SANDBOX
-
- * @param content appspawn global content
- * @param property app property
- * @return int
+ * 2.如果是孵化普通hap且hap中携带APP_FLAGS_ISOLATED_SANDBOX_TYPE标志位，ExtDataType为EXT_DATA_ISOLATED_SANDBOX
+ * 3.如果是孵化render进程，ExtDataType为EXT_DATA_RENDER_SANDBOX
+ * 4.如果是孵化gpu进程，ExtDataType为EXT_DATA_GPU_SANDBOX
+ * 5.如果孵化hap过程中，携带APP_FLAG_DEBUGABLE标志位同时开启了开发者模式，需增量配置ExtDataType为EXT_DATA_DEBUG_HAP_SANDBOX
  */
 
-int SpawnBuildSandboxEnv(AppSpawnMgr *content, AppSpawningCtx *property)
+static int SpawnBuildSandboxEnv(AppSpawnMgr *content, AppSpawningCtx *property)
 {
     // Don't build sandbox env
     if (CheckAppMsgFlagsSet(property, APP_FLAGS_NO_SANDBOX)) {
@@ -719,8 +716,12 @@ static void UpdateMsgFlagsWithPermission(AppSpawnSandboxCfg *sandbox, AppSpawnin
     return;
 }
 
-static int UpdatePermissionFlags(AppSpawnSandboxCfg *sandbox, AppSpawningCtx *property)
+static int UpdatePermissionFlags(AppSpawnMgr *content, AppSpawnSandboxCfg *sandbox, AppSpawningCtx *property)
 {
+    if (IsNWebSpawnMode(content)) {
+        return 0;
+    }
+
     int32_t index = 0;
     if (sandbox->appFullMountEnable) {
         index = GetPermissionIndexInQueue(&sandbox->permissionQueue, FILE_CROSS_APP_MODE);
@@ -760,13 +761,12 @@ int SpawnPrepareSandboxCfg(AppSpawnMgr *content, AppSpawningCtx *property)
     APPSPAWN_CHECK_ONLY_EXPER(content != NULL, return -1);
     APPSPAWN_CHECK_ONLY_EXPER(property != NULL, return -1);
     APPSPAWN_LOGV("Prepare sandbox config %{public}s", GetProcessName(property));
-    ExtDataType type = CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX_TYPE) ? EXT_DATA_ISOLATED_SANDBOX :
-        EXT_DATA_APP_SANDBOX;
+    ExtDataType type = GetSandboxType(content, property);
     AppSpawnSandboxCfg *sandbox = GetAppSpawnSandbox(content, type);
-    content->content.sandboxType = type;
     APPSPAWN_CHECK(sandbox != NULL, return -1, "Failed to get sandbox for %{public}s", GetProcessName(property));
+    content->content.sandboxType = type;
 
-    int ret = UpdatePermissionFlags(sandbox, property);
+    int ret = UpdatePermissionFlags(content, sandbox, property);
     if (ret != 0) {
         APPSPAWN_LOGW("set sandbox permission flag failed.");
         return APPSPAWN_SANDBOX_ERROR_SET_PERMISSION_FLAG_FAIL;
@@ -778,6 +778,26 @@ int SpawnPrepareSandboxCfg(AppSpawnMgr *content, AppSpawningCtx *property)
     ret = StagedMountSystemConst(sandbox, property, IsNWebSpawnMode(content));
     APPSPAWN_CHECK(ret == 0, return ret, "Failed to mount system-const for %{public}s", GetProcessName(property));
     return 0;
+}
+
+static int SpawnMountDirToShared(AppSpawnMgr *content, AppSpawningCtx *property)
+{
+    ExtDataType type = GetSandboxType(content, property);
+    AppSpawnSandboxCfg *appSandbox = GetAppSpawnSandbox(content, type);
+    APPSPAWN_CHECK(appSandbox != NULL, return APPSPAWN_SANDBOX_INVALID,
+                   "Failed to get sandbox cfg for %{public}s", GetProcessName(property));
+    content->content.sandboxType = type;
+
+    SandboxContext *context = GetSandboxContext();  // need free after mount
+    APPSPAWN_CHECK_ONLY_EXPER(context != NULL, return APPSPAWN_SYSTEM_ERROR);
+    int ret = InitSandboxContext(context, appSandbox, property, IsNWebSpawnMode(content));  // need free after mount
+    APPSPAWN_CHECK_ONLY_EXPER(ret == 0, DeleteSandboxContext(context);
+                                        return ret);
+
+    ret = MountDirsToShared(content, context, appSandbox);
+    APPSPAWN_CHECK_ONLY_LOG(ret == 0, "Failed to mount dirs to shared");
+    DeleteSandboxContext(context);
+    return ret;
 }
 
 APPSPAWN_STATIC int SandboxUnmountPath(const AppSpawnMgr *content, const AppSpawnedProcessInfo *appInfo)
@@ -802,6 +822,7 @@ MODULE_CONSTRUCTOR(void)
     (void)AddServerStageHook(STAGE_SERVER_EXIT, HOOK_PRIO_SANDBOX, SandboxHandleServerExit);
     (void)AddServerStageHook(STAGE_SERVER_EXIT, HOOK_PRIO_SANDBOX, IsolatedSandboxHandleServerExit);
     (void)AddAppSpawnHook(STAGE_PARENT_PRE_FORK, HOOK_PRIO_SANDBOX, SpawnPrepareSandboxCfg);
+    (void)AddAppSpawnHook(STAGE_PARENT_PRE_FORK, HOOK_PRIO_SANDBOX, SpawnMountDirToShared);
     (void)AddAppSpawnHook(STAGE_CHILD_EXECUTE, HOOK_PRIO_SANDBOX, SpawnBuildSandboxEnv);
     (void)AddProcessMgrHook(STAGE_SERVER_APP_DIED, 0, SandboxUnmountPath);
 }

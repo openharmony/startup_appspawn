@@ -196,7 +196,7 @@ int AddVariableReplaceHandler(const char *name, ReplaceVarHandler handler);
 
 typedef struct TagAppSpawnSandboxCfg AppSpawnSandboxCfg;
 typedef int (*ProcessExpandSandboxCfg)(const SandboxContext *context,
-    const AppSpawnSandboxCfg *appSandBox, const char *name);
+    const AppSpawnSandboxCfg *appSandbox, const char *name);
 #define EXPAND_CFG_HANDLER_PRIO_START 3
 
 /**

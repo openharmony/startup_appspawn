@@ -41,7 +41,7 @@
                 "src-path" : "/vendor/etc/vulkan/icd.d",
                 "sandbox-path" : "/vendor/etc/vulkan/icd.d"
             }, {
-                "src-path" : "/data/local/shader_cache/cloud/common",
+                "src-path" : "/data/app/el1/public/shader_cache/cloud/common",
                 "sandbox-path" : "/data/storage/shader_cache/common"
             }],
             "symbol-links" : [{
@@ -79,10 +79,10 @@
                 "src-path" : "/module_update/ArkWebCore/app/<arkWebPackageName>",
                 "sandbox-path" : "/module_update/ArkWebCore/app/<arkWebPackageName>"
             }, {
-                "src-path" : "/data/local/shader_cache/local/<PackageName>",
+                "src-path" : "/data/app/el1/<hostUserId>/shader_cache/<variablePackageName>",
                 "sandbox-path" : "/data/storage/shader_cache/local"
             }, {
-                "src-path" : "/data/local/shader_cache/cloud/<PackageName>",
+                "src-path" : "/data/app/el1/public/shader_cache/cloud/<PackageName>",
                 "sandbox-path" : "/data/storage/shader_cache/cloud"
             }]
         }

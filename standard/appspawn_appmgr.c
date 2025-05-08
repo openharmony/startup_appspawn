@@ -61,9 +61,7 @@ AppSpawnMgr *CreateAppSpawnMgr(int mode)
     OH_ListInit(&appMgr->appQueue);
     OH_ListInit(&appMgr->diedQueue);
     OH_ListInit(&appMgr->appSpawnQueue);
-#ifndef APPSPAWN_SANDBOX_NEW
     OH_ListInit(&appMgr->dataGroupCtxQueue);
-#endif
     appMgr->diedAppCount = 0;
     OH_ListInit(&appMgr->extData);
     g_appSpawnMgr = appMgr;
@@ -104,9 +102,7 @@ void DeleteAppSpawnMgr(AppSpawnMgr *mgr)
     OH_ListRemoveAll(&mgr->diedQueue, NULL);
     OH_ListRemoveAll(&mgr->appSpawnQueue, SpawningQueueDestroy);
     OH_ListRemoveAll(&mgr->extData, ExtDataDestroy);
-#ifndef APPSPAWN_SANDBOX_NEW
     OH_ListRemoveAll(&mgr->dataGroupCtxQueue, NULL);
-#endif
 #ifdef APPSPAWN_HISYSEVENT
     DeleteHisyseventInfo(mgr->hisyseventInfo);
 #endif
