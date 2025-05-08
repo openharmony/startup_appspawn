@@ -1748,11 +1748,9 @@ static void ProcessAppSpawnLockStatusMsg(AppSpawnMsgNode *message)
 #ifdef APPSPAWN_HISYSEVENT
     ReportKeyEvent(strcmp(userLockStatus, "0") == 0 ? UNLOCK_SUCCESS : LOCK_SUCCESS);
 #endif
-#ifndef APPSPAWN_SANDBOX_NEW
     if (strcmp(userLockStatus, "0") == 0) {
         ServerStageHookExecute(STAGE_SERVER_LOCK, GetAppSpawnContent());
     }
-#endif
 }
 
 APPSPAWN_STATIC int AppSpawnReqMsgFdGet(AppSpawnConnection *connection, AppSpawnMsgNode *message,

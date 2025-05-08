@@ -38,18 +38,20 @@ extern "C" {
 
 #define PARAMETER_PACKAGE_NAME "<PackageName>"
 #define PARAMETER_USER_ID "<currentUserId>"
+#define PARAMETER_HOST_USER_ID "<hostUserId>"
 #define PARAMETER_PACKAGE_INDEX "<PackageName_index>"
 #define ARK_WEB_PERSIST_PACKAGE_NAME "persist.arkwebcore.package_name"
 #define PARAMETER_ARK_WEB_PACKAGE_INDEX "<arkWebPackageName>"
 #define SHAREFS_OPTION_USER ",user_id="
 
-#define FILE_MODE 0711
-#define MAX_SANDBOX_BUFFER 256
-#define OPTIONS_MAX_LEN 256
-#define APP_FLAGS_SECTION 0x80000000
-#define BASIC_MOUNT_FLAGS (MS_REC | MS_BIND)
-#define INVALID_UID ((uint32_t)-1)
-#define PARAM_BUFFER_SIZE 128
+#define FILE_MODE                   0711
+#define MAX_SANDBOX_BUFFER          256
+#define OPTIONS_MAX_LEN             256
+#define APP_FLAGS_SECTION           0x80000000
+#define FILE_MANAGER_GID            1006
+#define BASIC_MOUNT_FLAGS           (MS_REC | MS_BIND)
+#define INVALID_UID                 ((uint32_t)-1)
+#define PARAM_BUFFER_SIZE           128
 
 #ifdef APPSPAWN_64
 #define APPSPAWN_LIB_NAME "lib64"
@@ -122,10 +124,11 @@ typedef struct {
 
 typedef struct TagPathMountNode {
     SandboxMountNode sandboxNode;
-    char *source;                  // source 目录，一般是全局的fs 目录
-    char *target;                  // 沙盒化后的目录
-    mode_t destMode;               // "dest-mode": "S_IRUSR | S_IWOTH | S_IRWXU "  默认值：0
-    uint32_t mountSharedFlag : 1;  // "mount-shared-flag" : "true", 默认值：false
+    char *source;                   // source 目录，一般是全局的fs 目录
+    char *target;                   // 沙盒化后的目录
+    mode_t destMode;                // "dest-mode": "S_IRUSR | S_IWOTH | S_IRWXU "  默认值：0
+    uint32_t mountSharedFlag : 1;   // "mount-shared-flag" : "true", 默认值：false
+    uint32_t createSandboxPath : 1; // "create-sandbox-path" : "true", 默认值 : true
     uint32_t createDemand : 1;
     uint32_t checkErrorFlag : 1;
     uint32_t category;
@@ -322,7 +325,7 @@ typedef struct {
     char name[0];
 } AppSandboxExpandAppCfgNode;
 int ProcessExpandAppSandboxConfig(const SandboxContext *context,
-    const AppSpawnSandboxCfg *appSandBox, const char *name);
+    const AppSpawnSandboxCfg *appSandbox, const char *name);
 void AddDefaultExpandAppSandboxConfigHandle(void);
 void ClearExpandAppSandboxConfigHandle(void);
 
@@ -409,6 +412,11 @@ __attribute__((always_inline)) inline int IsPathEmpty(const char *path)
         return 1;
     }
     return 0;
+}
+
+__attribute__((always_inline)) inline bool CheckPath(const char *name)
+{
+    return name != NULL && strcmp(name, ".") != 0 && strcmp(name, "..") != 0 && strstr(name, "/") == NULL;
 }
 
 #ifdef __cplusplus

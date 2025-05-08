@@ -628,7 +628,7 @@ HWTEST_F(AppSpawnSandboxMgrTest, App_Spawn_AddVariableReplaceHandler_001, TestSi
  *
  */
 static int TestProcessExpandSandboxCfg(const SandboxContext *context,
-    const AppSpawnSandboxCfg *appSandBox, const char *name)
+    const AppSpawnSandboxCfg *appSandbox, const char *name)
 {
     return 0;
 }
