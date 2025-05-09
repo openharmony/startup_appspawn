@@ -700,18 +700,19 @@ static int AppendPackageNameGids(const AppSpawnSandboxCfg *sandbox, AppSpawningC
     return 0;
 }
 
-static void UpdateMsgFlagsWithPermission(AppSpawnSandboxCfg *sandbox, AppSpawningCtx *property)
+static void UpdateMsgFlagsWithPermission(AppSpawnSandboxCfg *sandbox, AppSpawningCtx *property,
+    const char *permissionMode, uint32_t flag)
 {
-    int32_t allProcessIndex = GetPermissionIndexInQueue(&sandbox->permissionQueue, GET_ALL_PROCESSES_MODE);
-    int res = CheckAppPermissionFlagSet(property, (uint32_t)allProcessIndex);
+    int32_t processIndex = GetPermissionIndexInQueue(&sandbox->permissionQueue, permissionMode);
+    int res = CheckAppPermissionFlagSet(property, (uint32_t)processIndex);
     if (res == 0) {
-        APPSPAWN_LOGV("Don't need set GET_ALL_PROCESSES_MODE flag");
+        APPSPAWN_LOGV("Don't need set %{public}s flag", permissionMode);
         return;
     }
 
-    int ret = SetAppSpawnMsgFlag(property->message, TLV_MSG_FLAGS, APP_FLAGS_GET_ALL_PROCESSES);
+    int ret = SetAppSpawnMsgFlag(property->message, TLV_MSG_FLAGS, flag);
     if (ret != 0) {
-        APPSPAWN_LOGE("Set GET_ALL_PROCESSES_MODE flag failed");
+        APPSPAWN_LOGE("Set %{public}s flag failed", permissionMode);
     }
     return;
 }
@@ -771,7 +772,8 @@ int SpawnPrepareSandboxCfg(AppSpawnMgr *content, AppSpawningCtx *property)
         APPSPAWN_LOGW("set sandbox permission flag failed.");
         return APPSPAWN_SANDBOX_ERROR_SET_PERMISSION_FLAG_FAIL;
     }
-    UpdateMsgFlagsWithPermission(sandbox, property);
+    UpdateMsgFlagsWithPermission(sandbox, property, GET_ALL_PROCESSES_MODE, APP_FLAGS_GET_ALL_PROCESSES);
+    UpdateMsgFlagsWithPermission(sandbox, property, APP_ALLOW_IOURING, APP_FLAGS_ALLOW_IOURING);
 
     ret = AppendGids(sandbox, property);
     APPSPAWN_CHECK(ret == 0, return ret, "Failed to add gid for %{public}s", GetProcessName(property));
