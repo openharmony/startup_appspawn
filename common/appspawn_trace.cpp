@@ -22,13 +22,13 @@
 void StartAppspawnTrace(const char *value)
 {
 #ifndef OHOS_LITE
-    StartTrace(HITRACE_TAG_APP, value);
+    StartTraceEx(HITRACE_LEVEL_COMMERCIAL, HITRACE_TAG_APP, value);
 #endif
 }
 
 void FinishAppspawnTrace()
 {
 #ifndef OHOS_LITE
-    FinishTrace(HITRACE_TAG_APP);
+    FinishTraceEx(HITRACE_LEVEL_COMMERCIAL, HITRACE_TAG_APP);
 #endif
 }
