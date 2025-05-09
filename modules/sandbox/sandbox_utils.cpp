@@ -143,6 +143,7 @@ namespace {
     const std::string FILE_ACCESS_MANAGER_MODE = "ohos.permission.FILE_ACCESS_MANAGER";
     const std::string READ_WRITE_USER_FILE_MODE = "ohos.permission.READ_WRITE_USER_FILE";
     const std::string GET_ALL_PROCESSES_MODE = "ohos.permission.GET_ALL_PROCESSES";
+    const std::string APP_ALLOW_IOURING = "ohos.permission.ALLOW_IOURING";
     const std::string ARK_WEB_PERSIST_PACKAGE_NAME = "persist.arkwebcore.package_name";
 
     const std::string& getArkWebPackageName()
@@ -1706,20 +1707,19 @@ static int EnableSandboxNamespace(AppSpawningCtx *appProperty, uint32_t sandboxN
     return 0;
 }
 
-void SandboxUtils::UpdateMsgFlagsWithPermission(AppSpawningCtx *appProperty)
+void SandboxUtils::UpdateMsgFlagsWithPermission(AppSpawningCtx *appProperty,
+    const std::string &permissionMode, uint32_t flag)
 {
-    int32_t processIndex = GetPermissionIndex(nullptr, GET_ALL_PROCESSES_MODE.c_str());
+    int32_t processIndex = GetPermissionIndex(nullptr, permissionMode.c_str());
     if ((CheckAppPermissionFlagSet(appProperty, static_cast<uint32_t>(processIndex)) == 0)) {
-        APPSPAWN_LOGV("Don't need set GET_ALL_PROCESSES_MODE flag");
+        APPSPAWN_LOGV("Don't need set %{public}s flag", permissionMode.c_str());
         return;
     }
 
-    int ret = SetAppSpawnMsgFlag(appProperty->message, TLV_MSG_FLAGS, APP_FLAGS_GET_ALL_PROCESSES);
+    int ret = SetAppSpawnMsgFlag(appProperty->message, TLV_MSG_FLAGS, flag);
     if (ret != 0) {
-        APPSPAWN_LOGV("Set GET_ALL_PROCESSES_MODE flag failed");
+        APPSPAWN_LOGV("Set %{public}s flag failed", permissionMode.c_str());
     }
-
-    return;
 }
 
 int32_t SandboxUtils::UpdatePermissionFlags(AppSpawningCtx *appProperty)
@@ -1784,10 +1784,10 @@ int32_t SandboxUtils::SetAppSandboxProperty(AppSpawningCtx *appProperty, uint32_
         APPSPAWN_LOGW("Set app permission flag fail.");
         return -1;
     }
-    UpdateMsgFlagsWithPermission(appProperty);
+    UpdateMsgFlagsWithPermission(appProperty, GET_ALL_PROCESSES_MODE, APP_FLAGS_GET_ALL_PROCESSES);
+    UpdateMsgFlagsWithPermission(appProperty, APP_ALLOW_IOURING, APP_FLAGS_ALLOW_IOURING);
     // check app sandbox switch
-    if ((CheckTotalSandboxSwitchStatus(appProperty) == false) ||
-        (CheckAppSandboxSwitchStatus(appProperty) == false)) {
+    if ((CheckTotalSandboxSwitchStatus(appProperty) == false) || (CheckAppSandboxSwitchStatus(appProperty) == false)) {
         rc = DoSandboxRootFolderCreateAdapt(sandboxPackagePath);
     } else if (!sandboxSharedStatus) {
         rc = DoSandboxRootFolderCreate(appProperty, sandboxPackagePath);
