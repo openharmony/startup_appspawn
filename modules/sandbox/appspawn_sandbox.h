@@ -75,6 +75,7 @@ extern "C" {
 #define FILE_ACCESS_MANAGER_MODE             "ohos.permission.FILE_ACCESS_MANAGER"
 #define READ_WRITE_USER_FILE_MODE            "ohos.permission.READ_WRITE_USER_FILE"
 #define GET_ALL_PROCESSES_MODE               "ohos.permission.GET_ALL_PROCESSES"
+#define APP_ALLOW_IOURING                    "ohos.permission.ALLOW_IOURING"
 
 typedef enum SandboxTag {
     SANDBOX_TAG_MOUNT_PATH = 0,
