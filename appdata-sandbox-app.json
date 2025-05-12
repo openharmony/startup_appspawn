@@ -205,6 +205,19 @@
                 "sandbox-flags": [ "bind", "rec" ]
             }]
         }, {
+            "name": "ohos.permission.GET_ENTERPRISE_CONFIG",
+            "sandbox-switch": "ON",
+            "mount-paths": [{
+                "src-path": "/data/service/el1/public/edm/config/application/<PackageName>/all",
+                "sandbox-path": "/data/ecust/forAll",
+                "sandbox-flags": [ "bind", "rec" ]
+            },
+            {
+                "src-path": "/data/service/el1/public/edm/config/application/<PackageName>/<currentUserId>",
+                "sandbox-path": "/data/ecust/currentUser",
+                "sandbox-flags": [ "bind", "rec" ]
+            }]
+        }, {
             "name": "ohos.permission.FILE_CROSS_APP",
             "gids": ["file_manager"],
             "mount-paths": [{
