@@ -35,7 +35,6 @@
 #include "appspawn_service.h"
 #include "appspawn_utils.h"
 #include "config_policy_utils.h"
-#include "sandbox_shared_mount.h"
 #ifdef WITH_DLP
 #include "dlp_fuse_fd.h"
 #endif
@@ -316,17 +315,27 @@ static void CheckMountStatus(const std::string &path)
     APPSPAWN_CHECK_ONLY_LOG(flag, "Mountinfo not contains %{public}s", path.c_str());
 }
 
-int32_t SandboxUtils::DoAppSandboxMountOnce(const char *originPath, const char *destinationPath,
-                                            const char *fsType, unsigned long mountFlags,
-                                            const char *options, mode_t mountSharedFlag)
+static bool IsNeededCheckPathStatus(const AppSpawningCtx *appProperty, const char *path)
 {
-    if (originPath == nullptr || destinationPath == nullptr || originPath[0] == '\0' || destinationPath[0] == '\0') {
+    if (strstr(path, "data/app/el1/") || strstr(path, "data/app/el2/")) {
+        return true;
+    }
+    if ((strstr(path, "data/app/el3/") || strstr(path, "data/app/el4/") || strstr(path, "data/app/el5/")) &&
+        CheckAppMsgFlagsSet(appProperty, APP_FLAGS_UNLOCKED_STATUS)) {
+        return true;
+    }
+    return false;
+}
+
+int32_t SandboxUtils::DoAppSandboxMountOnce(const AppSpawningCtx *appProperty, const SharedMountArgs *arg)
+{
+    if (!(arg && arg->srcPath && arg->destPath && arg->srcPath[0] != '\0' && arg->destPath[0] != '\0')) {
         return 0;
     }
-    if (strstr(originPath, "system/etc/hosts") != nullptr || strstr(originPath, "system/etc/profile") != nullptr) {
-        CheckAndCreatFile(destinationPath);
+    if (strstr(arg->srcPath, "system/etc/hosts") != nullptr || strstr(arg->srcPath, "system/etc/profile") != nullptr) {
+        CheckAndCreatFile(arg->destPath);
     } else {
-        MakeDirRecursive(destinationPath, FILE_MODE);
+        MakeDirRecursive(arg->destPath, FILE_MODE);
     }
 
     int ret = 0;
@@ -334,31 +343,29 @@ int32_t SandboxUtils::DoAppSandboxMountOnce(const char *originPath, const char *
     struct timespec mountStart = {0};
     clock_gettime(CLOCK_MONOTONIC_COARSE, &mountStart);
     APPSPAWN_LOGV("Bind mount %{public}s to %{public}s '%{public}s' '%{public}lu' '%{public}s' '%{public}u'",
-        originPath, destinationPath, fsType, mountFlags, options, mountSharedFlag);
-    ret = mount(originPath, destinationPath, fsType, mountFlags, options);
+        arg->srcPath, arg->destPath, arg->fsType, arg->mountFlags, arg->options, arg->mountSharedFlag);
+    ret = mount(arg->srcPath, arg->destPath, arg->fsType, arg->mountFlags, arg->options);
     struct timespec mountEnd = {0};
     clock_gettime(CLOCK_MONOTONIC_COARSE, &mountEnd);
     uint64_t diff = DiffTime(&mountStart, &mountEnd);
-    APPSPAWN_CHECK_ONLY_LOG(diff < MAX_MOUNT_TIME, "mount %{public}s time %{public}" PRId64 " us", originPath, diff);
+    APPSPAWN_CHECK_ONLY_LOG(diff < MAX_MOUNT_TIME, "mount %{public}s time %{public}" PRId64 " us", arg->srcPath, diff);
 #ifdef APPSPAWN_HISYSEVENT
     APPSPAWN_CHECK_ONLY_EXPER(diff < FUNC_REPORT_DURATION, ReportAbnormalDuration("MOUNT", diff));
 #endif
     if (ret != 0) {
-        APPSPAWN_LOGI("errno is: %{public}d, bind mount %{public}s to %{public}s", errno, originPath, destinationPath);
-        std::string originPathStr = originPath == nullptr ? "" : originPath;
-        if (originPathStr.find("data/app/el1/") != std::string::npos ||
-            originPathStr.find("data/app/el2/") != std::string::npos) {
-            CheckDirRecursive(originPathStr);
+        APPSPAWN_LOGI("errno is: %{public}d, bind mount %{public}s to %{public}s", errno, arg->srcPath, arg->destPath);
+        if (errno == ENOENT && IsNeededCheckPathStatus(appProperty, arg->srcPath)) {
+            CheckDirRecursive(arg->srcPath);
         }
         return ret;
     }
 
-    ret = mount(nullptr, destinationPath, nullptr, mountSharedFlag, nullptr);
+    ret = mount(nullptr, arg->destPath, nullptr, arg->mountSharedFlag, nullptr);
     if (ret != 0) {
         APPSPAWN_LOGI("errno is: %{public}d, private mount to %{public}s '%{public}u' failed",
-            errno, destinationPath, mountSharedFlag);
+            errno, arg->destPath, arg->mountSharedFlag);
         if (errno == EINVAL) {
-            CheckMountStatus(destinationPath);
+            CheckMountStatus(arg->destPath);
         }
         return ret;
     }
@@ -920,32 +927,34 @@ int SandboxUtils::DoAllMntPointsMount(const AppSpawningCtx *appProperty,
     unsigned int mountPointSize = mountPoints.size();
     for (unsigned int i = 0; i < mountPointSize; i++) {
         nlohmann::json& mntPoint = mountPoints[i];
-        if ((CheckMountConfig(mntPoint, appProperty, checkFlag) == false)) {
-            continue;
-        }
+        APPSPAWN_CHECK_ONLY_EXPER(CheckMountConfig(mntPoint, appProperty, checkFlag), continue);
+
         std::string srcPath = ConvertToRealPath(appProperty, mntPoint[g_srcPath].get<std::string>());
-        if (!GetCreateSandboxPath(mntPoint, srcPath)) {
-            continue;
-        }
+        APPSPAWN_CHECK_ONLY_EXPER(GetCreateSandboxPath(mntPoint, srcPath), continue);
         std::string sandboxPath = GetSandboxPath(appProperty, mntPoint, section, sandboxRoot);
         SandboxMountConfig mountConfig = {0};
         GetSandboxMountConfig(appProperty, section, mntPoint, mountConfig);
-        unsigned long mountFlags = GetSandboxMountFlags(mntPoint);
-        mode_t mountSharedFlag = (mntPoint.find(g_mountSharedFlag) != mntPoint.end()) ? MS_SHARED : MS_SLAVE;
+        SharedMountArgs arg = {
+            .srcPath = srcPath.c_str(),
+            .destPath = sandboxPath.c_str(),
+            .fsType = mountConfig.fsType.c_str(),
+            .mountFlags = GetSandboxMountFlags(mntPoint),
+            .options = mountConfig.optionsPoint.c_str(),
+            .mountSharedFlag = (mntPoint.find(g_mountSharedFlag) != mntPoint.end()) ? MS_SHARED : MS_SLAVE
+        };
 
         /* if app mount failed for special strategy, we need deal with common mount config */
-        int ret = HandleSpecialAppMount(appProperty, srcPath, sandboxPath, mountConfig.fsType, mountFlags);
+        int ret = HandleSpecialAppMount(appProperty, arg.srcPath, arg.destPath, arg.fsType, arg.mountFlags);
         if (ret < 0) {
-            ret = DoAppSandboxMountOnce(srcPath.c_str(), sandboxPath.c_str(), mountConfig.fsType.c_str(),
-                                        mountFlags, mountConfig.optionsPoint.c_str(), mountSharedFlag);
+            ret = DoAppSandboxMountOnce(appProperty, &arg);
         }
         APPSPAWN_CHECK(ret == 0 || !GetCheckStatus(mntPoint),
 #ifdef APPSPAWN_HISYSEVENT
-            ReportMountFail(bundleName.c_str(), srcPath.c_str(), sandboxPath.c_str(), errno);
+            ReportMountFail(bundleName.c_str(), arg.srcPath, arg.destPath, errno);
             ret = APPSPAWN_SANDBOX_MOUNT_FAIL;
 #endif
             return ret,
-            "DoAppSandboxMountOnce section %{public}s failed, %{public}s", section.c_str(), sandboxPath.c_str());
+            "DoAppSandboxMountOnce section %{public}s failed, %{public}s", section.c_str(), arg.destPath);
         DoSandboxChmod(mntPoint, sandboxRoot);
     }
     return 0;
@@ -1330,13 +1339,15 @@ int32_t SandboxUtils::SetCommonAppSandboxProperty(const AppSpawningCtx *appPrope
     AppSpawnMsgDomainInfo *info =
         reinterpret_cast<AppSpawnMsgDomainInfo *>(GetAppProperty(appProperty, TLV_DOMAIN_INFO));
     APPSPAWN_CHECK(info != nullptr, return -1, "No domain info %{public}s", sandboxPackagePath.c_str());
-    if (strcmp(info->apl, APL_SYSTEM_BASIC.data()) == 0 ||
-        strcmp(info->apl, APL_SYSTEM_CORE.data()) == 0 ||
+    if (strcmp(info->apl, APL_SYSTEM_BASIC.data()) == 0 || strcmp(info->apl, APL_SYSTEM_CORE.data()) == 0 ||
         CheckAppMsgFlagsSet(appProperty, APP_FLAGS_ACCESS_BUNDLE_DIR)) {
         // need permission check for system app here
         std::string destbundlesPath = sandboxPackagePath + g_dataBundles;
-        DoAppSandboxMountOnce(g_physicalAppInstallPath.c_str(), destbundlesPath.c_str(), "", BASIC_MOUNT_FLAGS,
-                              nullptr);
+        SharedMountArgs arg = {
+            .srcPath = g_physicalAppInstallPath.c_str(),
+            .destPath = destbundlesPath.c_str()
+        };
+        DoAppSandboxMountOnce(appProperty, &arg);
     }
 
     return 0;
@@ -1390,7 +1401,11 @@ int32_t SandboxUtils::MountAllHsp(const AppSpawningCtx *appProperty, std::string
 
         std::string libPhysicalPath = g_physicalAppInstallPath + libBundleName + "/" + libVersion + "/" + libModuleName;
         std::string mntPath =  sandboxPackagePath + g_sandboxHspInstallPath + libBundleName + "/" + libModuleName;
-        ret = DoAppSandboxMountOnce(libPhysicalPath.c_str(), mntPath.c_str(), "", BASIC_MOUNT_FLAGS, nullptr);
+        SharedMountArgs arg = {
+            .srcPath = libPhysicalPath.c_str(),
+            .destPath = mntPath.c_str()
+        };
+        ret = DoAppSandboxMountOnce(appProperty, &arg);
         APPSPAWN_CHECK(ret == 0, return ret, "mount library failed %{public}d", ret);
     }
     return ret;
@@ -1448,14 +1463,19 @@ int32_t SandboxUtils::MountAllGroup(const AppSpawningCtx *appProperty, std::stri
                 continue;
             }
         }
+
         std::string dataGroupUuid = item[g_groupList_key_uuid];
         std::string mntPath = sandboxPackagePath + templateItem->sandboxPath + dataGroupUuid;
-        mode_t mountFlags = MS_REC | MS_BIND;
         mode_t mountSharedFlag = MS_SLAVE;
         if (CheckAppMsgFlagsSet(appProperty, APP_FLAGS_ISOLATED_SANDBOX)) {
             mountSharedFlag |= MS_REMOUNT | MS_NODEV | MS_RDONLY | MS_BIND;
         }
-        ret = DoAppSandboxMountOnce(srcPath.c_str(), mntPath.c_str(), "", mountFlags, nullptr, mountSharedFlag);
+        SharedMountArgs arg = {
+            .srcPath = srcPath.c_str(),
+            .destPath = mntPath.c_str(),
+            .mountSharedFlag = mountSharedFlag
+        };
+        ret = DoAppSandboxMountOnce(appProperty, &arg);
         if (ret != 0) {
             APPSPAWN_LOGE("mount el%{public}d datagroup failed", elxValue);
         }
@@ -1472,8 +1492,11 @@ int32_t SandboxUtils::DoSandboxRootFolderCreate(const AppSpawningCtx *appPropert
         return rc;
     }
 #endif
-    DoAppSandboxMountOnce(sandboxPackagePath.c_str(), sandboxPackagePath.c_str(), "",
-                          BASIC_MOUNT_FLAGS, nullptr);
+    SharedMountArgs arg = {
+        .srcPath = sandboxPackagePath.c_str(),
+        .destPath = sandboxPackagePath.c_str()
+    };
+    DoAppSandboxMountOnce(appProperty, &arg);
 
     return 0;
 }
@@ -1606,8 +1629,11 @@ int32_t SandboxUtils::SetOverlayAppSandboxProperty(const AppSpawningCtx *appProp
 
         auto bundleNameIndex = srcPath.find_last_of(g_fileSeparator);
         string destPath = sandboxOverlayPath + srcPath.substr(bundleNameIndex + 1, srcPath.length());
-        int32_t retMount = DoAppSandboxMountOnce(srcPath.c_str(), destPath.c_str(),
-                                                 nullptr, BASIC_MOUNT_FLAGS, nullptr);
+        SharedMountArgs arg = {
+            .srcPath = srcPath.c_str(),
+            .destPath = destPath.c_str()
+        };
+        int32_t retMount = DoAppSandboxMountOnce(appProperty, &arg);
         if (retMount != 0) {
             APPSPAWN_LOGE("fail to mount overlay path, src is %{public}s.", hapPath.c_str());
             ret = retMount;
@@ -1621,16 +1647,16 @@ int32_t SandboxUtils::SetOverlayAppSandboxProperty(const AppSpawningCtx *appProp
 int32_t SandboxUtils::SetBundleResourceAppSandboxProperty(const AppSpawningCtx *appProperty,
                                                           string &sandboxPackagePath)
 {
-    int ret = 0;
     if (!CheckAppMsgFlagsSet(appProperty, APP_FLAGS_BUNDLE_RESOURCES)) {
-        return ret;
+        return 0;
     }
 
-    string srcPath = g_bundleResourceSrcPath;
     string destPath = sandboxPackagePath + g_bundleResourceDestPath;
-    ret = DoAppSandboxMountOnce(
-        srcPath.c_str(), destPath.c_str(), nullptr, BASIC_MOUNT_FLAGS, nullptr);
-    return ret;
+    SharedMountArgs arg = {
+        .srcPath = g_bundleResourceSrcPath.c_str(),
+        .destPath = destPath.c_str()
+    };
+    return DoAppSandboxMountOnce(appProperty, &arg);
 }
 
 int32_t SandboxUtils::CheckAppFullMountEnable()

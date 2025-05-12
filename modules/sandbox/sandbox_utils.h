@@ -22,7 +22,7 @@
 #include <sys/types.h>
 #include <vector>
 
-#include "nlohmann/json.hpp"
+#include "sandbox_shared_mount.h"
 #include "appspawn_server.h"
 #include "appspawn_manager.h"
 
@@ -52,9 +52,7 @@ public:
 #ifndef APPSPAWN_TEST
 private:
 #endif
-    static int32_t DoAppSandboxMountOnce(const char *originPath, const char *destinationPath,
-                                         const char *fsType, unsigned long mountFlags,
-                                         const char *options, mode_t mountSharedFlag = MS_SLAVE);
+    static int32_t DoAppSandboxMountOnce(const AppSpawningCtx *appProperty, const SharedMountArgs *arg);
     static int32_t DoSandboxFileCommonBind(const AppSpawningCtx *appProperty, nlohmann::json &wholeConfig);
     static int32_t DoSandboxFileCommonSymlink(const AppSpawningCtx *appProperty,
                                               nlohmann::json &wholeConfig);
