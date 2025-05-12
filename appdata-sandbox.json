@@ -723,6 +723,20 @@
                 }
             ]
         }],
+        "ohos.permission.GET_ENTERPRISE_CONFIG":[{
+            "sandbox-switch": "ON",
+            "mount-paths": [{
+                    "src-path": "/data/service/el1/public/edm/config/application/<PackageName>/all",
+                    "sandbox-path": "/data/ecust/forAll",
+                    "sandbox-flags": [ "bind", "rec" ]
+                },
+                {
+                    "src-path": "/data/service/el1/public/edm/config/application/<PackageName>/<currentUserId>",
+                    "sandbox-path": "/data/ecust/currentUser",
+                    "sandbox-flags": [ "bind", "rec" ]
+                }
+            ]
+        }],
         "ohos.permission.FILE_CROSS_APP":[{
             "sandbox-switch": "ON",
             "mount-paths": [{
