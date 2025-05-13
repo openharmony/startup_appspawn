@@ -82,6 +82,7 @@ APPSPAWN_STATIC int MountAllGroup(const SandboxContext *context, const AppSpawnS
         APPSPAWN_LOGV("Data group flags is isolated");
         mountSharedFlag |= MS_REMOUNT | MS_NODEV | MS_RDONLY | MS_BIND;
     }
+
     int ret = 0;
     // Iterate through the array (assuming groups is an array)
     cJSON *item = NULL;
