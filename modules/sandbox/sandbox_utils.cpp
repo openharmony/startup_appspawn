@@ -2151,6 +2151,9 @@ static int UmountSandboxPath(const AppSpawnMgr *content, const AppSpawnedProcess
 {
     APPSPAWN_CHECK(content != NULL && appInfo != NULL && appInfo->name != NULL,
         return -1, "Invalid content or appInfo");
+    if (!IsAppSpawnMode(content)) {
+        return 0;
+    }
     APPSPAWN_LOGV("UmountSandboxPath name %{public}s pid %{public}d", appInfo->name, appInfo->pid);
     const char rootPath[] = "/mnt/sandbox/";
     const char el1Path[] = "/data/storage/el1/bundle";
