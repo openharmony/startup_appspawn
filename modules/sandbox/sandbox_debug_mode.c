@@ -388,7 +388,14 @@ static int InstallDebugSandbox(AppSpawnMgr *content, AppSpawningCtx *property)
 {
     APPSPAWN_CHECK(property != NULL && content != NULL, return APPSPAWN_ARG_INVALID,
                    "Invalid appspawn client or property");
-    if (!CheckAppMsgFlagsSet(property, APP_FLAGS_DEBUGGABLE) || !IsDeveloperModeOn(property)) {
+    
+    if (!IsDeveloperModeOn(property)) {
+        return 0;
+    }
+
+    uint32_t size = 0;
+    char *provisionType = GetAppSpawnMsgExtInfo(property->message, MSG_EXT_NAME_PROVISION_TYPE, &size);
+    if (provisionType == NULL || size == 0 || strcmp(provisionType, "debug") != 0) {
         return 0;
     }
 
