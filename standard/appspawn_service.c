@@ -751,22 +751,31 @@ static int SetPreforkProcessName(AppSpawnContent *content)
     return 0;
 }
 
+static void ClearPipeFd(int pipe[], int length)
+{
+    for (int i = 0; i < length; i++) {
+        if (pipe[i] > 0) {
+            close(pipe[i]);
+            pipe[i] = -1;
+        }
+    }
+}
+
 static void ProcessPreFork(AppSpawnContent *content, AppSpawningCtx *property)
 {
     APPSPAWN_CHECK(pipe(content->preforkFd) == 0, return, "prefork with prefork pipe failed %{public}d", errno);
-    APPSPAWN_CHECK_ONLY_EXPER(content->parentToChildFd[0] <= 0, close(content->parentToChildFd[0]);
-        content->parentToChildFd[0] = -1);
-    APPSPAWN_CHECK_ONLY_EXPER(content->parentToChildFd[1] <= 0, close(content->parentToChildFd[1]);
-        content->parentToChildFd[1] = -1);
-    APPSPAWN_CHECK(pipe(content->parentToChildFd) == 0, return, "prefork with prefork pipe failed %{public}d", errno);
+    ClearPipeFd(content->parentToChildFd, PIPE_FD_LENGTH);
+    APPSPAWN_LOGV("clear pipe fd finish %{public}d %{public}d",
+        content->parentToChildFd[0], content->parentToChildFd[1]);
+    APPSPAWN_CHECK(pipe(content->parentToChildFd) == 0, ClearPipeFd(content->preforkFd, PIPE_FD_LENGTH);
+        return, "prefork with prefork pipe failed %{public}d", errno);
 
     content->reservedPid = fork();
     APPSPAWN_LOGV("prefork fork finish %{public}d,%{public}d,%{public}d,%{public}d,%{public}d",
         content->reservedPid, content->preforkFd[0], content->preforkFd[1], content->parentToChildFd[0],
         content->parentToChildFd[1]);
     if (content->reservedPid == 0) {
-        (void)close(property->forkCtx.fd[0]);
-        (void)close(property->forkCtx.fd[1]);
+        ClearPipeFd(property->forkCtx.fd, PIPE_FD_LENGTH);
         int isRet = SetPreforkProcessName(content);
         APPSPAWN_LOGV("prefork process start wait read msg with set processname %{public}d", isRet);
         AppSpawnClient client = {0, 0};
@@ -793,6 +802,7 @@ static void ProcessPreFork(AppSpawnContent *content, AppSpawningCtx *property)
         ClearMMAP(property->client.id);
         ProcessExit(AppSpawnChild(content, &property->client));
     } else if (content->reservedPid < 0) {
+        ClearPipeFd(content->preforkFd, PIPE_FD_LENGTH);
         APPSPAWN_LOGE("prefork fork child process failed %{public}d", content->reservedPid);
     }
 }
@@ -1108,9 +1118,11 @@ void AppSpawnDestroyContent(AppSpawnContent *content)
     }
     if (content->parentToChildFd[0] > 0) {
         close(content->parentToChildFd[0]);
+        content->parentToChildFd[0] = -1;
     }
     if (content->parentToChildFd[1] > 0) {
         close(content->parentToChildFd[1]);
+        content->parentToChildFd[1] = -1;
     }
     AppSpawnMgr *appSpawnContent = (AppSpawnMgr *)content;
     if (appSpawnContent->sigHandler != NULL && appSpawnContent->servicePid == getpid()) {
