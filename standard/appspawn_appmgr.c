@@ -334,9 +334,11 @@ void DeleteAppSpawningCtx(AppSpawningCtx *property)
     }
     if (property->forkCtx.fd[0] >= 0) {
         close(property->forkCtx.fd[0]);
+        property->forkCtx.fd[0] = -1;
     }
     if (property->forkCtx.fd[1] >= 0) {
         close(property->forkCtx.fd[1]);
+        property->forkCtx.fd[1] = -1;
     }
 
     free(property);
