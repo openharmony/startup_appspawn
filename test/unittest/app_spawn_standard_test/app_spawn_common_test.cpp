@@ -797,7 +797,7 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_SetIsolateDir, TestSize.Level0)
         APPSPAWN_CHECK_ONLY_EXPER(ret == 0, break);
         property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
         APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
-        ret = SetIsolateDirForCustomSandbox(property);
+        ret = SetIsolateDir(property);
     } while (0);
     DeleteAppSpawningCtx(property);
     AppSpawnClientDestroy(clientHandle);
