@@ -639,6 +639,35 @@ HWTEST_F(AppSpawnInterfaceTest, App_SpawnListenCloseSet_001, TestSize.Level0)
 }
 
 /**
+ * @brief 测试接口：NativeSpawnListenFdSet
+ *
+ */
+HWTEST_F(AppSpawnInterfaceTest, Native_SpawnListenFdSet_001, TestSize.Level0)
+{
+    int ret = NativeSpawnListenFdSet(-1);
+    EXPECT_EQ(ret, APPSPAWN_ARG_INVALID);
+
+    int pipefd[2];
+    EXPECT_EQ(pipe(pipefd), 0);
+
+    ret = NativeSpawnListenFdSet(pipefd[1]);
+    EXPECT_EQ(ret, 0);
+    
+    close(pipefd[0]);
+    close(pipefd[1]);
+}
+
+/**
+ * @brief 测试接口：NativeSpawnListenCloseSet
+ *
+ */
+HWTEST_F(AppSpawnInterfaceTest, Native_SpawnListenCloseSet_001, TestSize.Level0)
+{
+    int ret = NativeSpawnListenCloseSet();
+    EXPECT_EQ(ret, 0);
+}
+
+/**
  * @brief 测试接口：AppSpawnClientSendUserLockStatus
  *
  */
