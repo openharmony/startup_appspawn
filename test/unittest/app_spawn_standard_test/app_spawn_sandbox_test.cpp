@@ -835,7 +835,7 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_31, TestSize.Level0)
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_32, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "App_Spawn_Sandbox_32 start";
-    int ret = OHOS::AppSpawn::SandboxUtils::DoAppSandboxMountOnce(nullptr, "", nullptr, 0, nullptr);
+    int ret = OHOS::AppSpawn::SandboxUtils::DoAppSandboxMountOnce(nullptr, nullptr);
     EXPECT_EQ(ret, 0);
 
     std::string mJsconfig1 = "{ \

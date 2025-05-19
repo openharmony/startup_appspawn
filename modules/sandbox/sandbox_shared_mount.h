@@ -16,6 +16,8 @@
 #ifndef SANDBOX_SHARED_MOUNT_H
 #define SANDBOX_SHARED_MOUNT_H
 
+#include "nlohmann/json.hpp"
+
 #include "appspawn.h"
 #include "appspawn_hook.h"
 #include "appspawn_manager.h"
@@ -46,14 +48,14 @@ typedef struct DataGroupSandboxPathTemplate {
     const char *permission;
 } DataGroupSandboxPathTemplate;
 
-typedef struct {
+struct SharedMountArgs {
     const char *srcPath;
     const char *destPath;
-    const char *fsType;
-    unsigned long mountFlags;
-    const char *options;
-    mode_t mountSharedFlag;
-} SharedMountArgs;
+    const char *fsType = "";
+    unsigned long mountFlags = MS_REC | MS_BIND;
+    const char *options = "";
+    mode_t mountSharedFlag = MS_SLAVE;
+};
 
 bool IsValidDataGroupItem(nlohmann::json &item);
 int GetElxInfoFromDir(const char *path);

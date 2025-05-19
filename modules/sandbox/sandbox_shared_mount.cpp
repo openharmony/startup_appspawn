@@ -23,7 +23,6 @@
 #include <regex>
 #include <map>
 #include "securec.h"
-#include "nlohmann/json.hpp"
 
 #include "sandbox_shared_mount.h"
 #include "appspawn_mount_permission.h"
@@ -185,7 +184,7 @@ static int MountEl1Bundle(const AppSpawningCtx *property, const AppDacInfo *info
 
     ret = umount2(targetPath, MNT_DETACH);
     if (ret != 0) {
-        APPSPAWN_LOGE("umount2 %{public}s  failed, errno %{public}d", targetPath, errno);
+        APPSPAWN_LOGE("umount2 %{public}s failed, errno %{public}d", targetPath, errno);
     }
 
     SharedMountArgs arg = {
@@ -565,6 +564,7 @@ static void MountDirToShared(AppSpawnMgr *content, const AppSpawningCtx *propert
     MountEl1Bundle(property, info, bundleInfo->bundleName);
 
     if (IsUnlockStatus(info->uid)) {
+        SetAppSpawnMsgFlag(property->message, TLV_MSG_FLAGS, APP_FLAGS_UNLOCKED_STATUS);
         return;
     }
 
