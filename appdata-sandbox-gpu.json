@@ -1,6 +1,6 @@
 {
     "global": {
-        "sandbox-root" : "/mnt/sandbox/com.ohos.render/<PackageName>",
+        "sandbox-root" : "/mnt/sandbox/com.ohos.render/gpu-root",
         "sandbox-ns-flags" : [ "pid", "net" ]
     },
     "required": {
