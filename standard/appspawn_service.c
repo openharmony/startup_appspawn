@@ -1496,46 +1496,14 @@ static bool CheckAllDigit(char *userId)
 #ifdef APPSPAWN_SANDBOX_NEW
 static int ProcessSpawnRemountMsg(AppSpawnConnection *connection, AppSpawnMsgNode *message)
 {
-    char srcPath[PATH_SIZE] = {0};
-    int len = GetArkWebInstallPath("persist.arkwebcore.install_path", srcPath);
-    APPSPAWN_CHECK(len > 0, return -1, "Failed to get arkwebcore install path");
-
-    char *rootPath = "/mnt/sandbox";
-    DIR *rootDir = opendir(rootPath);
-    APPSPAWN_CHECK(rootDir != NULL, return -1, "Failed to opendir %{public}s, errno %{public}d", rootPath, errno);
-
-    struct dirent *ent;
-    while ((ent = readdir(rootDir)) != NULL) {
-        char *userId = ent->d_name;
-        if (strcmp(userId, ".") == 0 || strcmp(userId, "..") == 0 || !CheckAllDigit(userId)) {
-            continue;
-        }
-        char destPath[PATH_SIZE] = {0};
-        int ret = snprintf_s(destPath, sizeof(destPath), sizeof(destPath) - 1,
-            "%s/%s/app-root/data/shared/arkwebcore", rootPath, userId);
-        APPSPAWN_CHECK(ret > 0, continue, "Failed to snprintf_s, errno %{public}d", errno);
-
-        ret = umount2(destPath, MNT_DETACH);
-        if (ret != 0) {
-            APPSPAWN_LOGW("Umount %{public}s failed, errno %{public}d", destPath, errno);
-        }
-
-        ret = mount(srcPath, destPath, NULL, MS_BIND | MS_REC, NULL);
-        if (ret != 0 && errno == EBUSY) {
-            ret = mount(srcPath, destPath, NULL, MS_BIND | MS_REC, NULL);
-            APPSPAWN_LOGW("Bind mount again %{public}s to %{public}s, ret %{public}d", srcPath, destPath, ret);
-        }
-        APPSPAWN_CHECK(ret == 0, continue,
-            "Failed to bind mount %{public}s to %{public}s, errno %{public}d", srcPath, destPath, errno);
-
-        ret = mount(NULL, destPath, NULL, MS_SHARED, NULL);
-        APPSPAWN_CHECK(ret == 0, continue,
-            "Failed to shared mount %{public}s, errno %{public}d", destPath, errno);
-
-        APPSPAWN_LOGI("Remount %{public}s to %{public}s success", srcPath, destPath);
-    }
-    closedir(rootDir);
+    APPSPAWN_LOGI("ProcessSpawnRemountMsg in new sandbox, do not handle it");
     return 0;
+}
+
+static void ProcessSpawnRestartMsg(AppSpawnConnection *connection, AppSpawnMsgNode *message)
+{
+    APPSPAWN_LOGI("ProcessSpawnRestartMsg in new sandbox, do not handle it");
+    SendResponse(connection, &message->msgHeader, 0, 0);
 }
 #else
 static int ProcessSpawnRemountMsg(AppSpawnConnection *connection, AppSpawnMsgNode *message)
@@ -1592,7 +1560,6 @@ static int ProcessSpawnRemountMsg(AppSpawnConnection *connection, AppSpawnMsgNod
     closedir(rootDir);
     return 0;
 }
-#endif
 
 static void ProcessSpawnRestartMsg(AppSpawnConnection *connection, AppSpawnMsgNode *message)
 {
@@ -1629,6 +1596,7 @@ static void ProcessSpawnRestartMsg(AppSpawnConnection *connection, AppSpawnMsgNo
     ret = execv(path, (char **)formatCmds);
     APPSPAWN_LOGE("Failed to execv, ret %{public}d, errno %{public}d", ret, errno);
 }
+#endif
 
 APPSPAWN_STATIC void ProcessUninstallDebugHap(AppSpawnConnection *connection, AppSpawnMsgNode *message)
 {
