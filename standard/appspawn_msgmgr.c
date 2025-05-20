@@ -100,20 +100,21 @@ AppSpawnMsgNode *CreateAppSpawnMsg(void)
     return message;
 }
 
-void DeleteAppSpawnMsg(AppSpawnMsgNode *msgNode)
+void DeleteAppSpawnMsg(AppSpawnMsgNode **msgNode)
 {
-    if (msgNode == NULL) {
+    if (msgNode == NULL || *msgNode == NULL) {
         return;
     }
-    if (msgNode->buffer) {
-        free(msgNode->buffer);
-        msgNode->buffer = NULL;
+    if ((*msgNode)->buffer) {
+        free((*msgNode)->buffer);
+        (*msgNode)->buffer = NULL;
     }
-    if (msgNode->tlvOffset) {
-        free(msgNode->tlvOffset);
-        msgNode->tlvOffset = NULL;
+    if ((*msgNode)->tlvOffset) {
+        free((*msgNode)->tlvOffset);
+        (*msgNode)->tlvOffset = NULL;
     }
-    free(msgNode);
+    free(*msgNode);
+    *msgNode = NULL;
 }
 
 static inline int CheckRecvMsg(const AppSpawnMsg *msg)
@@ -157,19 +158,19 @@ AppSpawnMsgNode *RebuildAppSpawnMsgNode(AppSpawnMsgNode *message, AppSpawnedProc
     AppSpawnMsgNode *node = CreateAppSpawnMsg();
     APPSPAWN_CHECK(node != NULL, return NULL, "Failed to create AppSpawnMsgNode");
     int ret = memcpy_s(&node->msgHeader, sizeof(AppSpawnMsg), &message->msgHeader, sizeof(AppSpawnMsg));
-    APPSPAWN_CHECK(ret == 0, DeleteAppSpawnMsg(node); return NULL, "Failed to memcpy_s node->msgHeader");
+    APPSPAWN_CHECK(ret == 0, DeleteAppSpawnMsg(&node); return NULL, "Failed to memcpy_s node->msgHeader");
     bufferLen = message->msgHeader.msgLen + appInfo->message->msgHeader.msgLen - sizeof(AppSpawnMsg);
     node->msgHeader.msgLen = bufferLen;
     node->msgHeader.msgType = MSG_SPAWN_NATIVE_PROCESS;
     node->msgHeader.tlvCount += message->msgHeader.tlvCount;
     ret = AppSpawnMsgRebuild(node, &node->msgHeader);
-    APPSPAWN_CHECK(ret == 0, DeleteAppSpawnMsg(node); return NULL, "Failed to alloc memory for recv message");
+    APPSPAWN_CHECK(ret == 0, DeleteAppSpawnMsg(&node); return NULL, "Failed to alloc memory for recv message");
     uint32_t appInfoBufLen = appInfo->message->msgHeader.msgLen - sizeof(AppSpawnMsg);
     uint32_t msgBufLen = message->msgHeader.msgLen - sizeof(AppSpawnMsg);
     ret = memcpy_s(node->buffer, bufferLen, appInfo->message->buffer, appInfoBufLen);
-    APPSPAWN_CHECK(ret == 0, DeleteAppSpawnMsg(node); return NULL, "Failed to memcpy_s appInfo buffer");
+    APPSPAWN_CHECK(ret == 0, DeleteAppSpawnMsg(&node); return NULL, "Failed to memcpy_s appInfo buffer");
     ret = memcpy_s(node->buffer + appInfoBufLen, bufferLen - appInfoBufLen, message->buffer, msgBufLen);
-    APPSPAWN_CHECK(ret == 0, DeleteAppSpawnMsg(node); return NULL, "Failed to memcpy_s message->buffer");
+    APPSPAWN_CHECK(ret == 0, DeleteAppSpawnMsg(&node); return NULL, "Failed to memcpy_s message->buffer");
     return node;
 #endif
     return NULL;
