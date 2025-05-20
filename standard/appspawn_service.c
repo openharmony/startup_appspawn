@@ -229,7 +229,7 @@ static void OnClose(const TaskHandle taskHandle)
     }
     APPSPAWN_LOGI("OnClose connectionId: %{public}u socket %{public}d",
         connection->connectionId, LE_GetSocketFd(taskHandle));
-    DeleteAppSpawnMsg(connection->receiverCtx.incompleteMsg);
+    DeleteAppSpawnMsg(&connection->receiverCtx.incompleteMsg);
     connection->receiverCtx.incompleteMsg = NULL;
     // connect close, to close spawning app
     AppSpawningCtxTraversal(AppSpawningCtxOnClose, connection);
@@ -283,7 +283,7 @@ static void WaitMsgCompleteTimeOut(const TimerHandle taskHandle, void *context)
 {
     AppSpawnConnection *connection = (AppSpawnConnection *)context;
     APPSPAWN_LOGE("Long time no msg complete so close connectionId: %{public}u", connection->connectionId);
-    DeleteAppSpawnMsg(connection->receiverCtx.incompleteMsg);
+    DeleteAppSpawnMsg(&connection->receiverCtx.incompleteMsg);
     connection->receiverCtx.incompleteMsg = NULL;
     LE_CloseStreamTask(LE_GetDefaultLoop(), connection->stream);
 }
@@ -467,7 +467,7 @@ static void OnReceiveRequest(const TaskHandle taskHandle, const uint8_t *buffer,
     } while (reminder > 0);
 
     if (message) {
-        DeleteAppSpawnMsg(message);
+        DeleteAppSpawnMsg(&message);
     }
     if (ret != 0) {
         LE_CloseTask(LE_GetDefaultLoop(), taskHandle);
@@ -892,7 +892,7 @@ static void ProcessSpawnReqMsg(AppSpawnConnection *connection, AppSpawnMsgNode *
     int ret = CheckAppSpawnMsg(message);
     if (ret != 0) {
         SendResponse(connection, &message->msgHeader, ret, 0);
-        DeleteAppSpawnMsg(message);
+        DeleteAppSpawnMsg(&message);
         return;
     }
 
@@ -907,7 +907,7 @@ static void ProcessSpawnReqMsg(AppSpawnConnection *connection, AppSpawnMsgNode *
     AppSpawningCtx *property = CreateAppSpawningCtx();
     if (property == NULL) {
         SendResponse(connection, &message->msgHeader, APPSPAWN_SYSTEM_ERROR, 0);
-        DeleteAppSpawnMsg(message);
+        DeleteAppSpawnMsg(&message);
         return;
     }
 
@@ -1214,7 +1214,7 @@ static AppSpawningCtx *GetAppSpawningCtxFromArg(AppSpawnMgr *content, int argc, 
         return property;
     }
     NotifyResToParent(&content->content, &property->client, APPSPAWN_MSG_INVALID);
-    DeleteAppSpawnMsg(message);
+    DeleteAppSpawnMsg(&message);
     DeleteAppSpawningCtx(property);
     return NULL;
 }
@@ -1386,7 +1386,7 @@ static AppSpawnMsgNode *ProcessSpawnBegetctlMsg(AppSpawnConnection *connection, 
     APPSPAWN_CHECK(msgNode != NULL, return NULL, "Failed to rebuild app message node");
     int ret = DecodeAppSpawnMsg(msgNode);
     if (ret != 0) {
-        DeleteAppSpawnMsg(msgNode);
+        DeleteAppSpawnMsg(&msgNode);
         return NULL;
     }
     return msgNode;
@@ -1397,18 +1397,18 @@ static void ProcessBegetCmdMsg(AppSpawnConnection *connection, AppSpawnMsgNode *
     AppSpawnMsg *msg = &message->msgHeader;
     if (!IsDeveloperModeOpen()) {
         SendResponse(connection, msg, APPSPAWN_DEBUG_MODE_NOT_SUPPORT, 0);
-        DeleteAppSpawnMsg(message);
+        DeleteAppSpawnMsg(&message);
         return;
     }
     AppSpawnMsgNode *msgNode = ProcessSpawnBegetctlMsg(connection, message);
     if (msgNode == NULL) {
         SendResponse(connection, msg, APPSPAWN_DEBUG_MODE_NOT_SUPPORT, 0);
-        DeleteAppSpawnMsg(message);
+        DeleteAppSpawnMsg(&message);
         return;
     }
     ProcessSpawnReqMsg(connection, msgNode);
-    DeleteAppSpawnMsg(message);
-    DeleteAppSpawnMsg(msgNode);
+    DeleteAppSpawnMsg(&message);
+    DeleteAppSpawnMsg(&msgNode);
 }
 
 static int GetArkWebInstallPath(const char *key, char *value)
@@ -1495,14 +1495,14 @@ static void ProcessSpawnRestartMsg(AppSpawnConnection *connection, AppSpawnMsgNo
     AppSpawnContent *content = GetAppSpawnContent();
     if (!IsNWebSpawnMode((AppSpawnMgr *)content)) {
         SendResponse(connection, &message->msgHeader, APPSPAWN_MSG_INVALID, 0);
-        DeleteAppSpawnMsg(message);
+        DeleteAppSpawnMsg(&message);
         APPSPAWN_LOGE("Restart msg only support nwebspawn");
         return;
     }
 
     TraversalSpawnedProcess(AppQueueDestroyProc, NULL);
     SendResponse(connection, &message->msgHeader, 0, 0);
-    DeleteAppSpawnMsg(message);
+    DeleteAppSpawnMsg(&message);
     (void) ServerStageHookExecute(STAGE_SERVER_EXIT, content);
 
     errno = 0;
@@ -1532,7 +1532,7 @@ APPSPAWN_STATIC void ProcessUninstallDebugHap(AppSpawnConnection *connection, Ap
     AppSpawningCtx *property = CreateAppSpawningCtx();
     if (property == NULL) {
         SendResponse(connection, &message->msgHeader, APPSPAWN_SYSTEM_ERROR, 0);
-        DeleteAppSpawnMsg(message);
+        DeleteAppSpawnMsg(&message);
         return;
     }
     
@@ -1678,7 +1678,7 @@ static void ProcessRecvMsg(AppSpawnConnection *connection, AppSpawnMsgNode *mess
             AppSpawnResult result = {0};
             ret = ProcessTerminationStatusMsg(message, &result);
             SendResponse(connection, msg, ret == 0 ? result.result : ret, result.pid);
-            DeleteAppSpawnMsg(message);
+            DeleteAppSpawnMsg(&message);
             break;
         }
         case MSG_SPAWN_NATIVE_PROCESS:  // spawn msg
@@ -1689,7 +1689,7 @@ static void ProcessRecvMsg(AppSpawnConnection *connection, AppSpawnMsgNode *mess
         case MSG_DUMP:
             ProcessAppSpawnDumpMsg(message);
             SendResponse(connection, msg, 0, 0);
-            DeleteAppSpawnMsg(message);
+            DeleteAppSpawnMsg(&message);
             break;
         case MSG_BEGET_CMD: {
             ProcessBegetCmdMsg(connection, message);
@@ -1698,7 +1698,7 @@ static void ProcessRecvMsg(AppSpawnConnection *connection, AppSpawnMsgNode *mess
         case MSG_BEGET_SPAWNTIME:
             SendResponse(connection, msg, GetAppSpawnMgr()->spawnTime.minAppspawnTime,
                          GetAppSpawnMgr()->spawnTime.maxAppspawnTime);
-            DeleteAppSpawnMsg(message);
+            DeleteAppSpawnMsg(&message);
             break;
         case MSG_UPDATE_MOUNT_POINTS:
             ret = ProcessSpawnRemountMsg(connection, message);
@@ -1710,7 +1710,7 @@ static void ProcessRecvMsg(AppSpawnConnection *connection, AppSpawnMsgNode *mess
         case MSG_DEVICE_DEBUG:
             ret = ProcessAppSpawnDeviceDebugMsg(message);
             SendResponse(connection, msg, ret, 0);
-            DeleteAppSpawnMsg(message);
+            DeleteAppSpawnMsg(&message);
             break;
         case MSG_UNINSTALL_DEBUG_HAP:
             ProcessUninstallDebugHap(connection, message);
@@ -1718,11 +1718,11 @@ static void ProcessRecvMsg(AppSpawnConnection *connection, AppSpawnMsgNode *mess
         case MSG_LOCK_STATUS:
             ProcessAppSpawnLockStatusMsg(message);
             SendResponse(connection, msg, 0, 0);
-            DeleteAppSpawnMsg(message);
+            DeleteAppSpawnMsg(&message);
             break;
         default:
             SendResponse(connection, msg, APPSPAWN_MSG_INVALID, 0);
-            DeleteAppSpawnMsg(message);
+            DeleteAppSpawnMsg(&message);
             break;
     }
 }
