@@ -136,9 +136,6 @@
                 "src-path" : "/data/app/el1/bundle/public/<arkWebPackageName>",
                 "sandbox-path" : "/data/storage/el1/bundle/arkwebcore"
             }, {
-                "src-path" : "/data/app/el1/bundle/public/<arkWebPackageName>",
-                "sandbox-path" : "/data/shared/arkwebcore"
-            }, {
                 "src-path" : "/data/misc",
                 "sandbox-path" : "/data/storage/el1/bundle/misc"
             }, {
