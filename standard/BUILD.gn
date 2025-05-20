@@ -135,7 +135,6 @@ ohos_shared_library("appspawn_helper") {
     "-fstack-protector-all",
   ]
   external_deps = [
-    "ffrt:libffrt",
     "hilog:libhilog",
     "init:libbegetutil",
   ]
