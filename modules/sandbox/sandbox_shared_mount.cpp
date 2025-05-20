@@ -157,20 +157,27 @@ static bool SetSandboxPathShared(const std::string &sandboxPath)
     return true;
 }
 
-static int MountEl1Bundle(const AppSpawningCtx *property, const AppDacInfo *info, const char *bundleName)
+static int MountEl1Bundle(const AppSpawningCtx *property, const AppDacInfo *info, const char *varBundleName)
 {
     /* /data/app/el1/bundle/public/<bundleName> */
+    AppSpawnMsgBundleInfo *bundleInfo =
+        reinterpret_cast<AppSpawnMsgBundleInfo *>(GetAppProperty(property, TLV_BUNDLE_INFO));
+    if (bundleInfo == nullptr) {
+        return APPSPAWN_SANDBOX_INVALID;
+    }
     char sourcePath[PATH_MAX_LEN] = {0};
-    int ret = snprintf_s(sourcePath, PATH_MAX_LEN, PATH_MAX_LEN - 1, "/data/app/el1/bundle/public/%s", bundleName);
+    int ret = snprintf_s(sourcePath, PATH_MAX_LEN, PATH_MAX_LEN - 1, "/data/app/el1/bundle/public/%s",
+                         bundleInfo->bundleName);
     if (ret <= 0) {
-        APPSPAWN_LOGE("snprintf data/app/el1/bundle/public/%{public}s failed, errno %{public}d", bundleName, errno);
+        APPSPAWN_LOGE("snprintf data/app/el1/bundle/public/%{public}s failed, errno %{public}d",
+                      bundleInfo->bundleName, errno);
         return APPSPAWN_ERROR_UTILS_MEM_FAIL;
     }
 
-    /* /mnt/sandbox/<currentUserId>/<bundleName>/data/storage/el1/bundle */
+    /* /mnt/sandbox/<currentUserId>/<varBundleName>/data/storage/el1/bundle */
     char targetPath[PATH_MAX_LEN] = {0};
     ret = snprintf_s(targetPath, PATH_MAX_LEN, PATH_MAX_LEN - 1, "/mnt/sandbox/%u/%s/data/storage/el1/bundle",
-                     info->uid/ UID_BASE, bundleName);
+                     info->uid/ UID_BASE, varBundleName);
     if (ret <= 0) {
         APPSPAWN_LOGE("snprintf el1 bundle sandbox path failed, errno %{public}d", errno);
         return APPSPAWN_ERROR_UTILS_MEM_FAIL;
@@ -199,12 +206,12 @@ static int MountEl1Bundle(const AppSpawningCtx *property, const AppDacInfo *info
     if (ret != 0) {
         APPSPAWN_LOGE("mount %{public}s shared failed, ret %{public}d", targetPath, ret);
     }
-    std::string key = std::to_string(info->uid / UID_BASE) + "-" + std::string(bundleName);
+    std::string key = std::to_string(info->uid / UID_BASE) + "-" + std::string(varBundleName);
     g_mountInfoMap[key]++;
     return ret;
 }
 
-static int MountWithFileMgr(const AppSpawningCtx *property, const AppDacInfo *info, const char *bundleName)
+static int MountWithFileMgr(const AppSpawningCtx *property, const AppDacInfo *info, const char *varBundleName)
 {
     /* /mnt/user/<currentUserId>/nosharefs/docs */
     char nosharefsDocsDir[PATH_MAX_LEN] = {0};
@@ -215,10 +222,10 @@ static int MountWithFileMgr(const AppSpawningCtx *property, const AppDacInfo *in
         return APPSPAWN_ERROR_UTILS_MEM_FAIL;
     }
 
-    /* /mnt/sandbox/<currentUser/<bundleName>/storage/Users */
+    /* /mnt/sandbox/<currentUser/<varBundleName>/storage/Users */
     char storageUserPath[PATH_MAX_LEN] = {0};
     ret = snprintf_s(storageUserPath, PATH_MAX_LEN, PATH_MAX_LEN - 1, "/mnt/sandbox/%u/%s/storage/Users",
-                     info->uid / UID_BASE, bundleName);
+                     info->uid / UID_BASE, varBundleName);
     if (ret <= 0) {
         APPSPAWN_LOGE("snprintf storageUserPath failed, errno %{public}d", errno);
         return APPSPAWN_ERROR_UTILS_MEM_FAIL;
@@ -251,7 +258,7 @@ static int MountWithFileMgr(const AppSpawningCtx *property, const AppDacInfo *in
     return ret;
 }
 
-static int MountWithOther(const AppSpawningCtx *property, const AppDacInfo *info, const char *bundleName)
+static int MountWithOther(const AppSpawningCtx *property, const AppDacInfo *info, const char *varBundleName)
 {
     /* /mnt/user/<currentUserId>/sharefs/docs */
     char sharefsDocsDir[PATH_MAX_LEN] = {0};
@@ -262,10 +269,10 @@ static int MountWithOther(const AppSpawningCtx *property, const AppDacInfo *info
         return APPSPAWN_ERROR_UTILS_MEM_FAIL;
     }
 
-    /* /mnt/sandbox/<currentUser/<bundleName>/storage/Users */
+    /* /mnt/sandbox/<currentUser/<varBundleName>/storage/Users */
     char storageUserPath[PATH_MAX_LEN] = {0};
     ret = snprintf_s(storageUserPath, PATH_MAX_LEN, PATH_MAX_LEN - 1, "/mnt/sandbox/%u/%s/storage/Users",
-                     info->uid / UID_BASE, bundleName);
+                     info->uid / UID_BASE, varBundleName);
     if (ret <= 0) {
         APPSPAWN_LOGE("snprintf storageUserPath failed, errno %{public}d", errno);
         return APPSPAWN_ERROR_UTILS_MEM_FAIL;
@@ -306,17 +313,18 @@ static int MountWithOther(const AppSpawningCtx *property, const AppDacInfo *info
     return ret;
 }
 
-static void MountStorageUsers(const AppSpawningCtx *property, const AppDacInfo *info, const char *bundleName)
+static void MountStorageUsers(const AppSpawningCtx *property, const AppDacInfo *info, const char *varBundleName)
 {
     int ret = 0;
     int index = GetPermissionIndex(nullptr, "ohos.permission.FILE_ACCESS_MANAGER");
     int checkRes = CheckAppPermissionFlagSet(property, static_cast<uint32_t>(index));
     if (checkRes == 0) {
-        /* mount /mnt/user/<currentUserId>/sharefs/docs to /mnt/sandbox/<currentUserId>/<bundleName>/storage/Users */
-        ret = MountWithOther(property, info, bundleName);
+        /* mount /mnt/user/<currentUserId>/sharefs/docs to /mnt/sandbox/<currentUserId>/<varBundleName>/storage/Users */
+        ret = MountWithOther(property, info, varBundleName);
     } else {
-        /* mount /mnt/user/<currentUserId>/nosharefs/docs to /mnt/sandbox/<currentUserId>/<bundleName>/storage/Users */
-        ret = MountWithFileMgr(property, info, bundleName);
+        /* mount /mnt/user/<currentUserId>/nosharefs/docs to /mnt/sandbox/<currentUserId>/<varBundleName>/storage/Users
+         */
+        ret = MountWithFileMgr(property, info, varBundleName);
     }
     if (ret != 0) {
         APPSPAWN_LOGE("Update %{public}s storage dir failed, ret %{public}d",
@@ -326,13 +334,13 @@ static void MountStorageUsers(const AppSpawningCtx *property, const AppDacInfo *
     }
 }
 
-static int MountSharedMapItem(const AppSpawningCtx *property, const AppDacInfo *info, const char *bundleName,
+static int MountSharedMapItem(const AppSpawningCtx *property, const AppDacInfo *info, const char *varBundleName,
                               const char *sandboxPathItem)
 {
-    /* /mnt/sandbox/<currentUserId>/<bundleName>/data/storage/el<x> */
+    /* /mnt/sandbox/<currentUserId>/<varBundleName>/data/storage/el<x> */
     char sandboxPath[PATH_MAX_LEN] = {0};
     int ret = snprintf_s(sandboxPath, PATH_MAX_LEN, PATH_MAX_LEN - 1, "/mnt/sandbox/%u/%s%s",
-                         info->uid / UID_BASE, bundleName, sandboxPathItem);
+                         info->uid / UID_BASE, varBundleName, sandboxPathItem);
     if (ret <= 0) {
         APPSPAWN_LOGE("snprintf sandboxPath failed, errno %{public}d", errno);
         return APPSPAWN_ERROR_UTILS_MEM_FAIL;
@@ -365,17 +373,17 @@ static int MountSharedMapItem(const AppSpawningCtx *property, const AppDacInfo *
     return ret;
 }
 
-static void MountSharedMap(const AppSpawningCtx *property, const AppDacInfo *info, const char *bundleName)
+static void MountSharedMap(const AppSpawningCtx *property, const AppDacInfo *info, const char *varBundleName)
 {
     int length = sizeof(MOUNT_SHARED_MAP) / sizeof(MOUNT_SHARED_MAP[0]);
     for (int i = 0; i < length; i++) {
         if (MOUNT_SHARED_MAP[i].permission == nullptr) {
-            MountSharedMapItem(property, info, bundleName, MOUNT_SHARED_MAP[i].sandboxPath);
+            MountSharedMapItem(property, info, varBundleName, MOUNT_SHARED_MAP[i].sandboxPath);
         } else {
             int index = GetPermissionIndex(nullptr, MOUNT_SHARED_MAP[i].permission);
             APPSPAWN_LOGV("mount dir on lock mountPermissionFlags %{public}d", index);
             if (CheckAppPermissionFlagSet(property, static_cast<uint32_t>(index))) {
-                MountSharedMapItem(property, info, bundleName, MOUNT_SHARED_MAP[i].sandboxPath);
+                MountSharedMapItem(property, info, varBundleName, MOUNT_SHARED_MAP[i].sandboxPath);
             }
         }
     }
@@ -459,7 +467,7 @@ static void DumpDataGroupCtxQueue(const ListNode *front)
 }
 
 static int ParseDataGroupList(AppSpawnMgr *content, const AppSpawningCtx *property, AppDacInfo *info,
-                              AppSpawnMsgBundleInfo *bundleInfo)
+                              const char *varBundleName)
 {
     int ret = 0;
     std::string dataGroupList = GetExtraInfoByType(property, DATA_GROUP_SOCKET_TYPE);
@@ -495,8 +503,8 @@ static int ParseDataGroupList(AppSpawnMgr *content, const AppSpawningCtx *proper
             }
         }
 
-        // sandboxPath: /mnt/sandbox/<currentUserId>/<bundleName>/data/storage/el<x>/group
-        std::string sandboxPath = "/mnt/sandbox/" + std::to_string(info->uid / UID_BASE) + "/" + bundleInfo->bundleName
+        // sandboxPath: /mnt/sandbox/<currentUserId>/<varBundleName>/data/storage/el<x>/group
+        std::string sandboxPath = "/mnt/sandbox/" + std::to_string(info->uid / UID_BASE) + "/" + varBundleName
                                  + templateItem->sandboxPath;
 
         ret = AddDataGroupItemToQueue(content, srcPath, sandboxPath, item[GROUPLIST_KEY_UUID]);
@@ -548,6 +556,23 @@ int UpdateDataGroupDirs(AppSpawnMgr *content)
     return 0;
 }
 
+static std::string ReplaceVarBundleName(const AppSpawningCtx *property)
+{
+    AppSpawnMsgBundleInfo *bundleInfo =
+        reinterpret_cast<AppSpawnMsgBundleInfo *>(GetAppProperty(property, TLV_BUNDLE_INFO));
+    if (bundleInfo == nullptr) {
+        return "";
+    }
+
+    std::string tmpBundlePath = bundleInfo->bundleName;
+    std::ostringstream variablePackageName;
+    if (CheckAppSpawnMsgFlag(property->message, TLV_MSG_FLAGS, APP_FLAGS_CLONE_ENABLE)) {
+        variablePackageName << "+clone-" << bundleInfo->bundleIndex << "+" << bundleInfo->bundleName;
+        tmpBundlePath = variablePackageName.str();
+    }
+    return tmpBundlePath;
+}
+
 static void MountDirToShared(AppSpawnMgr *content, const AppSpawningCtx *property)
 {
     if (property == nullptr) {
@@ -555,26 +580,26 @@ static void MountDirToShared(AppSpawnMgr *content, const AppSpawningCtx *propert
     }
 
     AppDacInfo *info = reinterpret_cast<AppDacInfo *>(GetAppProperty(property, TLV_DAC_INFO));
-    AppSpawnMsgBundleInfo *bundleInfo =
-        reinterpret_cast<AppSpawnMsgBundleInfo *>(GetAppProperty(property, TLV_BUNDLE_INFO));
-    if (info == NULL || bundleInfo == NULL) {
+    std::string varBundleName = ReplaceVarBundleName(property);
+    if (info == NULL || varBundleName == "") {
+        APPSPAWN_LOGE("Invalid app dac info or varBundleName");
         return;
     }
 
-    MountEl1Bundle(property, info, bundleInfo->bundleName);
+    MountEl1Bundle(property, info, varBundleName.c_str());
 
     if (IsUnlockStatus(info->uid)) {
         SetAppSpawnMsgFlag(property->message, TLV_MSG_FLAGS, APP_FLAGS_UNLOCKED_STATUS);
         return;
     }
 
-    MountSharedMap(property, info, bundleInfo->bundleName);
-    MountStorageUsers(property, info, bundleInfo->bundleName);
-    ParseDataGroupList(content, property, info, bundleInfo);
+    MountSharedMap(property, info, varBundleName.c_str());
+    MountStorageUsers(property, info, varBundleName.c_str());
+    ParseDataGroupList(content, property, info, varBundleName.c_str());
 
     std::string lockSbxPathStamp = "/mnt/sandbox/" + std::to_string(info->uid / UID_BASE) + "/";
     lockSbxPathStamp += CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX_TYPE) ? "isolated/" : "";
-    lockSbxPathStamp += bundleInfo->bundleName;
+    lockSbxPathStamp += varBundleName;
     lockSbxPathStamp += "_locked";
     int ret = MakeDirRec(lockSbxPathStamp.c_str(), DIR_MODE, 1);
     if (ret != 0) {

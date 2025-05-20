@@ -124,7 +124,7 @@ HWTEST_F(AppSpawnAppMgrTest, App_Spawn_AppSpawnedProcess_001, TestSize.Level0)
     int result[resultCount] = {0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0};
     for (size_t i = 0; i < processNameCount; i++) {
         for (size_t j = 0; j < pidCount; j++) {
-            AppSpawnedProcess *app = AddSpawnedProcess(pidInput[j], processNameInput[i], false);
+            AppSpawnedProcess *app = AddSpawnedProcess(pidInput[j], processNameInput[i], 0, false);
             EXPECT_EQ(app != nullptr, result[i * pidCount + j]);
         }
     }
@@ -167,7 +167,7 @@ HWTEST_F(AppSpawnAppMgrTest, App_Spawn_AppSpawnedProcess_002, TestSize.Level0)
     int result[resultCount] = {0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0};
     for (size_t i = 0; i < processNameCount; i++) {
         for (size_t j = 0; j < pidCount; j++) {
-            AppSpawnedProcess *app = AddSpawnedProcess(pidInput[j], processNameInput[i], false);
+            AppSpawnedProcess *app = AddSpawnedProcess(pidInput[j], processNameInput[i], 0, false);
             EXPECT_EQ(app != nullptr, result[i * pidCount + j]);
         }
     }
@@ -205,7 +205,7 @@ HWTEST_F(AppSpawnAppMgrTest, App_Spawn_AppSpawnedProcess_003, TestSize.Level0)
     // GetSpawnedProcessByName
     size_t processNameCount = ARRAY_LENGTH(processNameInput);
     for (size_t i = 0; i < processNameCount; i++) {
-        AppSpawnedProcess *app = AddSpawnedProcess(1000, processNameInput[i], false); // 10000
+        AppSpawnedProcess *app = AddSpawnedProcess(1000, processNameInput[i], 0, false); // 10000
         EXPECT_EQ(app != nullptr, 1);
     }
     for (size_t i = 0; i < processNameCount; i++) {
@@ -492,7 +492,7 @@ HWTEST_F(AppSpawnAppMgrTest, App_Spawn_AppSpawnMsgNode_005, TestSize.Level0)
     EXPECT_EQ(memcmp(buffer.data() + sizeof(AppSpawnMsg), outMsg->buffer, msgLen - sizeof(AppSpawnMsg)), 0);
     EXPECT_EQ(0, reminder);
 
-    AppSpawnedProcess *app = AddSpawnedProcess(9999999, "aaaa", false); // 9999999 test
+    AppSpawnedProcess *app = AddSpawnedProcess(9999999, "aaaa", 0, false); // 9999999 test
     EXPECT_EQ(app != nullptr, 1);
     TerminateSpawnedProcess(app);
     AppSpawnExtData extData;
@@ -540,7 +540,7 @@ HWTEST_F(AppSpawnAppMgrTest, App_Spawn_AppSpawnMsgNode_006, TestSize.Level0)
     EXPECT_EQ(memcmp(buffer.data() + sizeof(AppSpawnMsg), outMsg->buffer, msgLen - sizeof(AppSpawnMsg)), 0);
     EXPECT_EQ(0, reminder);
 
-    AppSpawnedProcess *app = AddSpawnedProcess(9999999, "aaaa", false); // 9999999 test
+    AppSpawnedProcess *app = AddSpawnedProcess(9999999, "aaaa", 0, false); // 9999999 test
     EXPECT_EQ(app != nullptr, 1);
 
     ret = DecodeAppSpawnMsg(outMsg);
