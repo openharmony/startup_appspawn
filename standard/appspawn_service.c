@@ -1082,7 +1082,14 @@ static void ProcessChildResponse(const WatcherHandle taskHandle, int fd, uint32_
 
     // success
     bool isDebuggable = CheckAppMsgFlagsSet(property, APP_FLAGS_DEBUGGABLE);
-    AppSpawnedProcess *appInfo = AddSpawnedProcess(property->pid, GetBundleName(property), isDebuggable);
+    uint32_t appIndex = 0;
+    if (CheckAppMsgFlagsSet(property, APP_FLAGS_CLONE_ENABLE)) {
+        AppSpawnMsgBundleInfo *bundleInfo = (AppSpawnMsgBundleInfo *)GetAppProperty(property, TLV_BUNDLE_INFO);
+        if (bundleInfo != NULL) {
+            appIndex = bundleInfo->bundleIndex;
+        }
+    }
+    AppSpawnedProcess *appInfo = AddSpawnedProcess(property->pid, GetBundleName(property), appIndex, isDebuggable);
     if (appInfo) {
         AppSpawnMsgDacInfo *dacInfo = GetAppProperty(property, TLV_DAC_INFO);
         appInfo->uid = dacInfo != NULL ? dacInfo->uid : 0;
@@ -1427,7 +1434,7 @@ AppSpawnContent *StartSpawnService(const AppSpawnStartArg *startArg, uint32_t ar
 #endif
     AddAppSpawnHook(STAGE_CHILD_PRE_RUN, HOOK_PRIO_LOWEST, AppSpawnClearEnv);
     if (arg->mode == MODE_FOR_APP_SPAWN) {
-        AddSpawnedProcess(pid, NWEBSPAWN_SERVER_NAME, false);
+        AddSpawnedProcess(pid, NWEBSPAWN_SERVER_NAME, 0, false);
         SetParameter("bootevent.appspawn.started", "true");
     }
     return content;
