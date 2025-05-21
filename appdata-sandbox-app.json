@@ -189,9 +189,9 @@
             }],
             "mount-groups": [ "user-public", "file_manager_recent" ]
         }, {
-            "name": "ohos.permission.READ_IMAGEVIDEO",
+            "name": "ohos.permission.MANAGE_PRIVATE_PHOTOS",
             "sandbox-switch": "ON",
-            "gids": ["user_data_r"],
+            "gids": ["user_data_rw"],
             "mount-paths": [{
                 "src-path": "/storage/cloud/<currentUserId>/files/.thumbs/Photo",
                 "sandbox-path": "/storage/Share/.thumbs/Photo"
