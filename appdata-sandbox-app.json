@@ -248,6 +248,9 @@
             "mount-paths": [{
                 "src-path": "/data/app/el1/bundle/public",
                 "sandbox-path": "/data/bundles/"
+            }, {
+                "src-path": "/data/service/el1/public/bms/bundle_manager_service/uninstalled_preload",
+                "sandbox-path": "/data/bms/uninstalled_preload/"
             }]
         }, {
             "name": "ohos.permission.ACCESS_BBOX_DIR",
