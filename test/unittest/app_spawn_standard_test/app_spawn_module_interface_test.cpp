@@ -183,7 +183,7 @@ HWTEST_F(AppSpawnModuleInterfaceTest, App_Spawn_Process_Hook_001, TestSize.Level
 {
     AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
     EXPECT_EQ(mgr != nullptr, 1);
-    AppSpawnedProcess *app = AddSpawnedProcess(1000, "test-001", false);
+    AppSpawnedProcess *app = AddSpawnedProcess(1000, "test-001", 0, false);
     EXPECT_EQ(app != nullptr, 1);
 
     int ret = 0;

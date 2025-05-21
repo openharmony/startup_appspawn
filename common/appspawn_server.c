@@ -26,7 +26,9 @@
 #include "appspawn_utils.h"
 #ifndef OHOS_LITE
 #include "appspawn_manager.h"
+#ifndef APPSPAWN_HELPER
 #include "ffrt_inner.h"
+#endif
 #endif
 
 #define MAX_FORK_TIME (30 * 1000)   // 30ms
@@ -122,7 +124,9 @@ static int CloneAppSpawn(void *arg)
 {
     APPSPAWN_CHECK(arg != NULL, return -1, "Invalid content for appspawn");
     APPSPAWN_LOGI("CloneNwebSpawn done.");
+#ifndef APPSPAWN_HELPER
     ffrt_child_init();
+#endif
     AppSpawnForkArg *forkArg = (AppSpawnForkArg *)arg;
     ProcessExit(AppSpawnChild(forkArg->content, forkArg->client));
     return 0;

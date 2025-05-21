@@ -668,20 +668,32 @@ std::string SandboxUtils::GetSbxPathByConfig(const AppSpawningCtx *appProperty, 
     }
 
     std::string sandboxRoot = "";
+    const std::string sandboxRootPathTemplate = "/mnt/sandbox/<currentUserId>/<PackageName>";
     const std::string originSandboxPath = "/mnt/sandbox/<PackageName>";
     std::string isolatedFlagText = CheckAppMsgFlagsSet(appProperty, APP_FLAGS_ISOLATED_SANDBOX_TYPE) ? "isolated/" : "";
-    const std::string defaultSandboxRoot = g_sandBoxDir + to_string(dacInfo->uid / UID_BASE) +
-        "/" + isolatedFlagText.c_str() + GetBundleName(appProperty);
+    AppSpawnMsgBundleInfo *bundleInfo =
+        reinterpret_cast<AppSpawnMsgBundleInfo *>(GetAppProperty(appProperty, TLV_BUNDLE_INFO));
+    if (bundleInfo == nullptr) {
+        return "";
+    }
+    std::string tmpBundlePath = bundleInfo->bundleName;
+    std::ostringstream variablePackageName;
+    if (CheckAppSpawnMsgFlag(appProperty->message, TLV_MSG_FLAGS, APP_FLAGS_CLONE_ENABLE)) {
+        variablePackageName << "+clone-" << bundleInfo->bundleIndex << "+" << bundleInfo->bundleName;
+        tmpBundlePath = variablePackageName.str();
+    }
+    const std::string variableSandboxRoot = g_sandBoxDir + to_string(dacInfo->uid / UID_BASE) +
+        "/" + isolatedFlagText.c_str() + tmpBundlePath;
     if (config.find(g_sandboxRootPrefix) != config.end()) {
         sandboxRoot = config[g_sandboxRootPrefix].get<std::string>();
-        if (sandboxRoot == originSandboxPath) {
-            sandboxRoot = defaultSandboxRoot;
+        if (sandboxRoot == originSandboxPath || sandboxRoot == sandboxRootPathTemplate) {
+            sandboxRoot = variableSandboxRoot;
         } else {
             sandboxRoot = ConvertToRealPath(appProperty, sandboxRoot);
             APPSPAWN_LOGV("set sandbox-root name is %{public}s", sandboxRoot.c_str());
         }
     } else {
-        sandboxRoot = defaultSandboxRoot;
+        sandboxRoot = variableSandboxRoot;
         APPSPAWN_LOGV("set sandbox-root to default rootapp name is %{public}s", GetBundleName(appProperty));
     }
 
@@ -1811,14 +1823,13 @@ int32_t SandboxUtils::SetAppSandboxProperty(AppSpawningCtx *appProperty, uint32_
         return -1;
     }
 
-    std::string sandboxPackagePath = g_sandBoxRootDir + to_string(dacInfo->uid / UID_BASE) + "/";
     const std::string bundleName = GetBundleName(appProperty);
+    nlohmann::json tmpJson = {};
+    std::string sandboxPackagePath = GetSbxPathByConfig(appProperty, tmpJson);
+    MakeDirRecursiveWithClock(sandboxPackagePath.c_str(), FILE_MODE);
     bool sandboxSharedStatus = GetSandboxPrivateSharedStatus(bundleName, appProperty) ||
         (CheckAppPermissionFlagSet(appProperty, static_cast<uint32_t>(GetPermissionIndex(nullptr,
         ACCESS_DLP_FILE_MODE.c_str()))) != 0);
-    sandboxPackagePath += CheckAppMsgFlagsSet(appProperty, APP_FLAGS_ISOLATED_SANDBOX_TYPE) ? "isolated/" : "";
-    sandboxPackagePath += bundleName;
-    MakeDirRecursiveWithClock(sandboxPackagePath.c_str(), FILE_MODE);
 
     // add pid to a new mnt namespace
     int rc = EnableSandboxNamespace(appProperty, sandboxNsFlags);
@@ -2070,8 +2081,13 @@ static int UmountSandboxPath(const AppSpawnMgr *content, const AppSpawnedProcess
     const char rootPath[] = "/mnt/sandbox/";
     const char el1Path[] = "/data/storage/el1/bundle";
 
+    std::string varBundleName = std::string(appInfo->name);
+    if (appInfo->appIndex > 0) {
+        varBundleName = "+clone-" + std::to_string(appInfo->appIndex) + "+" + varBundleName;
+    }
+
     uint32_t userId = appInfo->uid / UID_BASE;
-    std::string key = std::to_string(userId) + "-" + std::string(appInfo->name);
+    std::string key = std::to_string(userId) + "-" + varBundleName;
     map<string, int> *el1BundleCountMap = static_cast<std::map<std::string, int>*>(GetEl1BundleMountCount());
     if (el1BundleCountMap == nullptr || el1BundleCountMap->find(key) == el1BundleCountMap->end()) {
         return 0;
