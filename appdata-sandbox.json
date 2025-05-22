@@ -704,9 +704,9 @@
                 }
             ]
         }],
-        "ohos.permission.READ_IMAGEVIDEO":[{
+        "ohos.permission.MANAGE_PRIVATE_PHOTOS":[{
             "sandbox-switch": "ON",
-            "gids": [2008],
+            "gids": [1008],
             "mount-paths": [{
                     "src-path": "/storage/cloud/<currentUserId>/files/.thumbs/Photo",
                     "sandbox-path": "/storage/Share/.thumbs/Photo",
