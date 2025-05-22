@@ -625,6 +625,13 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_029, TestSize.Level0)
 {
     DeleteAppSpawnNamespace(nullptr);
     FreeAppSpawnNamespace(nullptr);
+    AppSpawnMgr *mgr = nullptr;
+    mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
+    EXPECT_EQ(mgr != nullptr, 1);
+    AppSpawnNamespace *appSpawnNamespace = GetAppSpawnNamespace(mgr);
+    DeleteAppSpawnNamespace(appSpawnNamespace);
+    DeleteAppSpawnMgr(mgr);
+    EXPECT_EQ(appSpawnNamespace == nullptr, 1);
 }
 
 HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_030, TestSize.Level0)
