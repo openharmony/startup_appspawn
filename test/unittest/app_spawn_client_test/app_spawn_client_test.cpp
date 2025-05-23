@@ -1218,6 +1218,7 @@ HWTEST_F(AppSpawnClientTest, App_Spawn_interface001, TestSize.Level0)
     clientInstance->socketId = 1;
     clientInstance->maxRetryCount = 1;
     TryCreateSocket(clientInstance);
+    EXPECT_EQ(clientInstance->socketId, 1);
     free(clientInstance);
 }
 }  // namespace OHOS
