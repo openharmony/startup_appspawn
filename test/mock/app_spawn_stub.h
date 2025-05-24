@@ -61,7 +61,8 @@ int ProcessMgrRemoveApp(const AppSpawnMgr *content, const AppSpawnedProcessInfo 
 int ProcessMgrAddApp(const AppSpawnMgr *content, const AppSpawnedProcessInfo *appInfo);
 void TryCreateSocket(AppSpawnReqMsgMgr *reqMgr);
 
-int MountAllGroup(const SandboxContext *context, const cJSON *groups);
+int MountAllGroup(const SandboxContext *context, const AppSpawnSandboxCfg *appSandbox,
+                  const cJSON *groups);
 int MountAllHsp(const SandboxContext *context, const cJSON *hsps);
 
 void CheckAndCreateSandboxFile(const char *file);

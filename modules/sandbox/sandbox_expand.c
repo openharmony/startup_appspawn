@@ -197,6 +197,7 @@ static int SetOverlayAppSandboxConfig(const SandboxContext *context, const char 
     int ret = StringSplit(overlayInfo, "|", (void *)&overlayContext, SetOverlayAppPath);
     APPSPAWN_LOGV("overlayContext->mountedSrcSet: '%{public}s'", overlayContext.mountedSrcSet);
     free(overlayContext.mountedSrcSet);
+    overlayContext.mountedSrcSet = NULL;
     return ret;
 }
 
@@ -282,7 +283,8 @@ int RegisterExpandSandboxCfgHandler(const char *name, int prio, ProcessExpandSan
     node->prio = prio;
     int ret = strcpy_s(node->name, len, name);
     APPSPAWN_CHECK(ret == 0, free(node);
-        return -1, "Failed to copy name %{public}s", name);
+                             node = NULL;
+                             return -1, "Failed to copy name %{public}s", name);
     OH_ListAddWithOrder(&g_sandboxExpandCfgList, &node->node, AppSandboxExpandAppCfgComparePrio);
     return 0;
 }
