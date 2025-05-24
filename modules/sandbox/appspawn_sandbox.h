@@ -356,7 +356,7 @@ __attribute__((always_inline)) inline bool CheckSandboxCtxPermissionFlagSet(
  * @return SandboxContext*
  */
 SandboxContext *GetSandboxContext(void);
-void DeleteSandboxContext(SandboxContext *context);
+void DeleteSandboxContext(SandboxContext **context);
 
 /**
  * @brief defineMount Arg Template and operation

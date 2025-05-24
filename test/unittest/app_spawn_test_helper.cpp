@@ -470,7 +470,7 @@ int AppSpawnTestHelper::AddFdInfo(AppSpawnReqMsgHandle &reqHandle)
     if (fdArg < 0) {
         fdArg = open("/dev/random", O_RDONLY);
     }
-    APPSPAWN_LOGE("Add fd info %d", fdArg);
+    APPSPAWN_LOGE("Add fd info %{public}d", fdArg);
     APPSPAWN_CHECK(fdArg >= 0, return -1, "open fd failed ");
     return AppSpawnReqMsgAddFd(reqHandle, "fdname", fdArg);
 }

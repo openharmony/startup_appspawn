@@ -228,7 +228,7 @@ static int UninstallDebugSandbox(AppSpawnMgr *content, AppSpawningCtx *property)
     SandboxContext *context = GetSandboxContext();   // Need free after mounting each time
     APPSPAWN_CHECK_ONLY_EXPER(context != NULL, return APPSPAWN_ERROR_UTILS_MEM_FAIL);
     ret = InitDebugSandboxContext(context, sandboxCfg, property, IsNWebSpawnMode(content));
-    APPSPAWN_CHECK_ONLY_EXPER(ret == 0, DeleteSandboxContext(context);
+    APPSPAWN_CHECK_ONLY_EXPER(ret == 0, DeleteSandboxContext(&context);
                                         return ret);
 
     RemoveDebugDirInfo removeDebugDirInfo = {
@@ -245,7 +245,7 @@ static int UninstallDebugSandbox(AppSpawnMgr *content, AppSpawningCtx *property)
     }
     APPSPAWN_CHECK_ONLY_LOG(ret == 0, "Failed to uninstall debug hap dir, ret: %{public}d", ret);
 
-    DeleteSandboxContext(context);
+    DeleteSandboxContext(&context);
     return 0;
 }
 
@@ -304,7 +304,7 @@ static int SetDebugAutomicTmpRootPath(SandboxContext *context, const AppSpawning
     APPSPAWN_CHECK(ret > 0, return APPSPAWN_ERROR_UTILS_MEM_FAIL, "snprintf_s debugAutomicRootPath failed");
     context->rootPath = strdup(debugAutomicRootPath);
     if (context->rootPath == NULL) {
-        DeleteSandboxContext(context);
+        DeleteSandboxContext(&context);
         return APPSPAWN_SYSTEM_ERROR;
     }
     APPSPAWN_LOGI("Set automic sandbox root: %{public}s", context->rootPath);
@@ -407,7 +407,7 @@ static int InstallDebugSandbox(AppSpawnMgr *content, AppSpawningCtx *property)
     SandboxContext *context = GetSandboxContext();   // Need free after mounting each time
     APPSPAWN_CHECK_ONLY_EXPER(context != NULL, return APPSPAWN_SYSTEM_ERROR);
     int ret = InitDebugSandboxContext(context, sandboxCfg, property, IsNWebSpawnMode(content));
-    APPSPAWN_CHECK_ONLY_EXPER(ret == 0, DeleteSandboxContext(context);
+    APPSPAWN_CHECK_ONLY_EXPER(ret == 0, DeleteSandboxContext(&context);
                                         return ret);
 
     do {
@@ -420,7 +420,7 @@ static int InstallDebugSandbox(AppSpawnMgr *content, AppSpawningCtx *property)
         ret = MountDebugDirBySharefs(context, sandboxCfg);
     } while (0);
 
-    DeleteSandboxContext(context);
+    DeleteSandboxContext(&context);
     return 0;
 }
 
