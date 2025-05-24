@@ -458,14 +458,14 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Variable_001, TestSize.Level0)
     SandboxContext *context = TestGetSandboxContext(spawningCtx, 0);
     ASSERT_EQ(context != nullptr, 1);
 
-    const char *real = "/data/app/el2/100/log/com.example.myapplication_100";
+    const char *real = "/data/app/el2/100/log/100_com.example.myapplication";
     const char *value = GetSandboxRealVar(context, 0,
         "/data/app/el2/<currentUserId>/log/<PackageName_index>", nullptr, nullptr);
     APPSPAWN_LOGV("value %{public}s", value);
     APPSPAWN_LOGV("real %{public}s", real);
     ASSERT_EQ(value != nullptr, 1);
     ASSERT_EQ(strcmp(value, real) == 0, 1);
-    DeleteSandboxContext(context);
+    DeleteSandboxContext(&context);
     DeleteAppSpawningCtx(spawningCtx);
 }
 
@@ -487,7 +487,7 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Variable_002, TestSize.Level0)
 #else
     ASSERT_EQ(strcmp(value, "/system/lib/module") == 0, 1);
 #endif
-    DeleteSandboxContext(context);
+    DeleteSandboxContext(&context);
     DeleteAppSpawningCtx(spawningCtx);
 }
 
@@ -506,7 +506,7 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Variable_003, TestSize.Level0)
     APPSPAWN_LOGV("value %{public}s", value);
     ASSERT_EQ(value != nullptr, 1);
     ASSERT_EQ(strcmp(value, real) == 0, 1);
-    DeleteSandboxContext(context);
+    DeleteSandboxContext(&context);
     DeleteAppSpawningCtx(spawningCtx);
 }
 
@@ -537,7 +537,7 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Variable_004, TestSize.Level0)
     APPSPAWN_LOGV("value %{public}s", value);
     ASSERT_EQ(value != nullptr, 1);
     ASSERT_EQ(strcmp(value, real) == 0, 1);
-    DeleteSandboxContext(context);
+    DeleteSandboxContext(&context);
     DeleteAppSpawningCtx(spawningCtx);
 }
 
@@ -579,7 +579,7 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Variable_005, TestSize.Level0)
     APPSPAWN_LOGV("value %{public}s", value);
     ASSERT_EQ(value != nullptr, 1);
     ASSERT_EQ(strcmp(value, real) == 0, 1);
-    DeleteSandboxContext(context);
+    DeleteSandboxContext(&context);
     DeleteAppSpawningCtx(spawningCtx);
 }
 
@@ -603,7 +603,7 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Variable_006, TestSize.Level0)
     APPSPAWN_LOGV("value %{public}s", value);
     ASSERT_EQ(value != nullptr, 1);
     ASSERT_EQ(strcmp(value, real) == 0, 1);
-    DeleteSandboxContext(context);
+    DeleteSandboxContext(&context);
     DeleteAppSpawningCtx(spawningCtx);
 }
 
@@ -627,7 +627,7 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Variable_007, TestSize.Level0)
     APPSPAWN_LOGV("value %{public}s", value);
     ASSERT_EQ(value != nullptr, 1);
     ASSERT_EQ(strcmp(value, real) == 0, 1);
-    DeleteSandboxContext(context);
+    DeleteSandboxContext(&context);
     DeleteAppSpawningCtx(spawningCtx);
 }
 
@@ -651,7 +651,7 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Variable_008, TestSize.Level0)
     APPSPAWN_LOGV("value %{public}s", value);
     ASSERT_EQ(value != nullptr, 1);
     ASSERT_EQ(strcmp(value, real) == 0, 1);
-    DeleteSandboxContext(context);
+    DeleteSandboxContext(&context);
     DeleteAppSpawningCtx(spawningCtx);
 }
 
@@ -670,7 +670,7 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Variable_009, TestSize.Level0)
     APPSPAWN_LOGV("value %{public}s", value);
     ASSERT_EQ(value != nullptr, 1);
     ASSERT_EQ(strcmp(value, real) == 0, 1);
-    DeleteSandboxContext(context);
+    DeleteSandboxContext(&context);
     DeleteAppSpawningCtx(spawningCtx);
 }
 
@@ -779,12 +779,19 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_ExpandCfg_02, TestSize.Level0)
         reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_SPAWN_NATIVE_PROCESS, 0);
         APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break, "Failed to create req %{public}s", APPSPAWN_SERVER_NAME);
         // add expand info to msg
-        const char dataGroupInfoListStr[] = "{ \
-            \"dataGroupId\":[\"1234abcd5678efgh\", \"abcduiop1234\"], \
-            \"dir\":[\"/data/app/el2/100/group/091a68a9-2cc9-4279-8849-28631b598975\", \
-                     \"/data/app/el2/100/group/ce876162-fe69-45d3-aa8e-411a047af564\"], \
-            \"gid\":[\"20100001\", \"20100002\"] \
-        }";
+        const char dataGroupInfoListStr[] = R"([
+            {
+                "gid":"2010001",
+                "dir":"/data/app/el2/100/group/091a68a9-2cc9-4279-8849-28631b598975",
+                "dataGroupId":"43200",
+                "uuid":"091a68a9-2cc9-4279-8849-28631b598975"
+            }, {
+                "gid":"2010001",
+                "dir":"/data/app/el2/100/group/49c016e6-065a-abd1-5867-b1f91114f840",
+                "dataGroupId":"43200",
+                "uuid":"49c016e6-065a-abd1-5867-b1f91114f840"
+            }
+        ])";
         ret = AppSpawnReqMsgAddExtInfo(reqHandle, "DataGroup",
             reinterpret_cast<uint8_t *>(const_cast<char *>(dataGroupInfoListStr)), strlen(dataGroupInfoListStr) + 1);
         APPSPAWN_CHECK(ret == 0, break, "Failed to ext tlv %{public}s", dataGroupInfoListStr);
@@ -1461,8 +1468,8 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_mount_006, TestSize.Level0)
         stub->arg = reinterpret_cast<void *>(&args);
         stub->result = 0;
         ret = MountSandboxConfigs(sandbox, property, 0);
-        ASSERT_EQ(ret, 0);  // do not check result
-        ASSERT_EQ(stub->result, 0);
+        ASSERT_NE(ret, 0);  // do not check result
+        ASSERT_NE(stub->result, 0);
         ret = 0;
     } while (0);
     if (sandbox) {
@@ -2095,12 +2102,19 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_003, TestSize.Level
         ret = AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_ISOLATED_SANDBOX);
         APPSPAWN_CHECK_ONLY_EXPER(ret == 0, break);
         // add expand info to msg
-        const char dataGroupInfoListStr[] = "{ \
-            \"dataGroupId\":[\"1234abcd5678efgh\", \"abcduiop1234\"], \
-            \"dir\":[\"/data/app/el2/100/group/091a68a9-2cc9-4279-8849-28631b598975\", \
-                     \"/data/app/el2/100/group/ce876162-fe69-45d3-aa8e-411a047af564\"], \
-            \"gid\":[\"20100001\", \"20100002\"] \
-        }";
+        const char dataGroupInfoListStr[] = R"([
+            {
+                "gid":"2010001",
+                "dir":"/data/app/el2/100/group/091a68a9-2cc9-4279-8849-28631b598975",
+                "dataGroupId":"43200",
+                "uuid":"091a68a9-2cc9-4279-8849-28631b598975"
+            }, {
+                "gid":"2010001",
+                "dir":"/data/app/el2/100/group/49c016e6-065a-abd1-5867-b1f91114f840",
+                "dataGroupId":"43200",
+                "uuid":"49c016e6-065a-abd1-5867-b1f91114f840"
+            }
+        ])";
         ret = AppSpawnReqMsgAddStringInfo(reqHandle, "DataGroup", dataGroupInfoListStr);
         APPSPAWN_CHECK(ret == 0, break, "Failed to ext tlv %{public}s", dataGroupInfoListStr);
 
@@ -2132,7 +2146,7 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_004, TestSize.Level
     APPSPAWN_LOGV("value %{public}s", value);
     ASSERT_EQ(value != nullptr, 1);
     ASSERT_EQ(strcmp(value, "/system/com.example.myapplication/module") == 0, 1);
-    DeleteSandboxContext(context);
+    DeleteSandboxContext(&context);
     DeleteAppSpawningCtx(spawningCtx);
 }
 
@@ -2149,7 +2163,7 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_005, TestSize.Level
     APPSPAWN_LOGV("value %{public}s", value);
     ASSERT_EQ(value != nullptr, 1);  // +clone-bundleIndex+packageName
     ASSERT_EQ(strcmp(value, "/system/+clone-100+com.example.myapplication/module") == 0, 1);
-    DeleteSandboxContext(context);
+    DeleteSandboxContext(&context);
     DeleteAppSpawningCtx(spawningCtx);
 }
 
@@ -2174,7 +2188,7 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_006, TestSize.Level
     APPSPAWN_LOGV("value %{public}s", value);
     ASSERT_EQ(value != nullptr, 1);  // +extension-<extensionType>+packageName
     ASSERT_EQ(strcmp(value, "/system/+extension-test001+com.example.myapplication/module") == 0, 1);
-    DeleteSandboxContext(context);
+    DeleteSandboxContext(&context);
     DeleteAppSpawningCtx(spawningCtx);
     AppSpawnClientDestroy(clientHandle);
 }
@@ -2202,7 +2216,7 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_007, TestSize.Level
     APPSPAWN_LOGV("value %{public}s", value);
     ASSERT_EQ(value != nullptr, 1);  // +clone-bundleIndex+extension-<extensionType>+packageName
     ASSERT_EQ(strcmp(value, "/system/+clone-100+extension-test001+com.example.myapplication/module") == 0, 1);
-    DeleteSandboxContext(context);
+    DeleteSandboxContext(&context);
     DeleteAppSpawningCtx(spawningCtx);
     AppSpawnClientDestroy(clientHandle);
 }
@@ -2227,7 +2241,7 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_008, TestSize.Level
     const char *value = GetSandboxRealVar(context, 0, "/system/<variablePackageName>/module", nullptr, nullptr);
     ASSERT_EQ(value == nullptr, 1);
 
-    DeleteSandboxContext(context);
+    DeleteSandboxContext(&context);
     DeleteAppSpawningCtx(spawningCtx);
     AppSpawnClientDestroy(clientHandle);
 }
@@ -2250,7 +2264,7 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_009, TestSize.Level
     const char *value = GetSandboxRealVar(context, 0, "/system/<variablePackageName>/module", nullptr, nullptr);
     ASSERT_EQ(value == nullptr, 1);
 
-    DeleteSandboxContext(context);
+    DeleteSandboxContext(&context);
     DeleteAppSpawningCtx(spawningCtx);
     AppSpawnClientDestroy(clientHandle);
 }

@@ -791,12 +791,12 @@ static int SpawnMountDirToShared(AppSpawnMgr *content, AppSpawningCtx *property)
     SandboxContext *context = GetSandboxContext();  // need free after mount
     APPSPAWN_CHECK_ONLY_EXPER(context != NULL, return APPSPAWN_SYSTEM_ERROR);
     int ret = InitSandboxContext(context, appSandbox, property, IsNWebSpawnMode(content));  // need free after mount
-    APPSPAWN_CHECK_ONLY_EXPER(ret == 0, DeleteSandboxContext(context);
+    APPSPAWN_CHECK_ONLY_EXPER(ret == 0, DeleteSandboxContext(&context);
                                         return ret);
 
     ret = MountDirsToShared(content, context, appSandbox);
     APPSPAWN_CHECK_ONLY_LOG(ret == 0, "Failed to mount dirs to shared");
-    DeleteSandboxContext(context);
+    DeleteSandboxContext(&context);
     return ret;
 }
 

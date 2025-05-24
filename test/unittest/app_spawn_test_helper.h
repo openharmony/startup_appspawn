@@ -152,8 +152,6 @@ private:
         const_cast<char *>("ohos.permission.FILE_CROSS_APP"),
         const_cast<char *>("ohos.permission.ACTIVATE_THEME_PACKAGE"),
         const_cast<char *>("ohos.permission.GET_WALLPAPER"),
-        const_cast<char *>("ohos.permission.ACCESS_DATA"),
-        const_cast<char *>("ohos.permission.ACCESS_DEV_FUSE"),
         const_cast<char *>("ohos.permission.FILE_ACCESS_MANAGER")
     };
 };

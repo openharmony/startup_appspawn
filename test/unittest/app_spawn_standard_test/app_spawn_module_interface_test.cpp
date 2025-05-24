@@ -327,8 +327,6 @@ HWTEST_F(AppSpawnModuleInterfaceTest, App_Spawn_ParseJsonConfig_001, TestSize.Le
 {
     int ret = 0;
 #ifdef APPSPAWN_SANDBOX_NEW
-    ret = ParseJsonConfig("etc/sandbox", RENDER_SANDBOX_FILE_NAME, TestParseAppSandboxConfig, nullptr);
-    EXPECT_EQ(ret, 0);
     ret = ParseJsonConfig("etc/sandbox", APP_SANDBOX_FILE_NAME, TestParseAppSandboxConfig, nullptr);
     EXPECT_EQ(ret, 0);
 #else

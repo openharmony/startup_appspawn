@@ -157,17 +157,20 @@ SandboxContext *GetSandboxContext(void)
     return g_sandboxContext;
 }
 
-void DeleteSandboxContext(SandboxContext *context)
+void DeleteSandboxContext(SandboxContext **context)
 {
-    APPSPAWN_CHECK_ONLY_EXPER(context != NULL, return);
-    if (context->rootPath) {
-        free(context->rootPath);
-        context->rootPath = NULL;
+    if (context == NULL || *context == NULL) {
+        return;
     }
-    if (context == g_sandboxContext) {
+    if ((*context)->rootPath) {
+        free((*context)->rootPath);
+        (*context)->rootPath = NULL;
+    }
+    if ((*context) == g_sandboxContext) {
         g_sandboxContext = NULL;
     }
-    free(context);
+    free((*context));
+    *context = NULL;
 }
 
 static bool NeedNetworkIsolated(SandboxContext *context, const AppSpawningCtx *property)
@@ -233,7 +236,6 @@ int InitSandboxContext(SandboxContext *context, const AppSpawnSandboxCfg *sandbo
         context->rootPath = strdup(rootPath);
     }
     if (context->rootPath == NULL) {
-        DeleteSandboxContext(context);
         return -1;
     }
     return 0;
@@ -930,12 +932,12 @@ int StagedMountSystemConst(AppSpawnSandboxCfg *sandbox, const AppSpawningCtx *pr
     SandboxContext *context = GetSandboxContext();
     APPSPAWN_CHECK_ONLY_EXPER(context != NULL, return APPSPAWN_SYSTEM_ERROR);
     int ret = InitSandboxContext(context, sandbox, property, nwebspawn);
-    APPSPAWN_CHECK_ONLY_EXPER(ret == 0, DeleteSandboxContext(context);
+    APPSPAWN_CHECK_ONLY_EXPER(ret == 0, DeleteSandboxContext(&context);
                                         return ret);
 
     if (IsSandboxMounted(sandbox, "system-const", context->rootPath) && IsADFPermission(sandbox, property) != true) {
         APPSPAWN_LOGV("Sandbox system-const %{public}s has been mount", context->rootPath);
-        DeleteSandboxContext(context);
+        DeleteSandboxContext(&context);
         return 0;
     }
 
@@ -947,7 +949,7 @@ int StagedMountSystemConst(AppSpawnSandboxCfg *sandbox, const AppSpawningCtx *pr
         ret = MountSandboxConfig(context, sandbox, section, operation);
     }
     SetSandboxMounted(sandbox, "system-const", context->rootPath);
-    DeleteSandboxContext(context);
+    DeleteSandboxContext(&context);
     return ret;
 }
 
@@ -1212,7 +1214,7 @@ int MountSandboxConfigs(AppSpawnSandboxCfg *sandbox, const AppSpawningCtx *prope
     SandboxContext *context = GetSandboxContext();
     APPSPAWN_CHECK_ONLY_EXPER(context != NULL, return APPSPAWN_SYSTEM_ERROR);
     int ret = InitSandboxContext(context, sandbox, property, nwebspawn);
-    APPSPAWN_CHECK_ONLY_EXPER(ret == 0, DeleteSandboxContext(context);
+    APPSPAWN_CHECK_ONLY_EXPER(ret == 0, DeleteSandboxContext(&context);
                                         return ret);
 
     APPSPAWN_LOGV("Set sandbox config %{public}s sandboxNsFlags 0x%{public}x",
@@ -1252,6 +1254,6 @@ int MountSandboxConfigs(AppSpawnSandboxCfg *sandbox, const AppSpawningCtx *prope
 #endif
         APPSPAWN_LOGV("Change root dir success %{public}s ", context->rootPath);
     } while (0);
-    DeleteSandboxContext(context);
+    DeleteSandboxContext(&context);
     return ret;
 }

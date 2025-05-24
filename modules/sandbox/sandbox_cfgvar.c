@@ -358,7 +358,8 @@ int AddVariableReplaceHandler(const char *name, ReplaceVarHandler handler)
     node->replaceVar = handler;
     int ret = strcpy_s(node->name, len, name);
     APPSPAWN_CHECK(ret == 0, free(node);
-        return -1, "Failed to copy name %{public}s", name);
+                             node = NULL;
+                             return -1, "Failed to copy name %{public}s", name);
     OH_ListAddTail(&g_sandboxVarList, &node->node);
     return 0;
 }
