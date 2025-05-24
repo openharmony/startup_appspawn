@@ -22,7 +22,7 @@
 **操作步骤：**
 1. 下载DevEco Studio软件，创建一个hap工程。
 
-2. Hap工程根目录下新增hnp根目录，在hap打包命令中用--hnp-path指定hnp根目录。hnp根目录下根据设备的操作系统ABI名称（例如arm64-v8a）创建文件夹，文件目录格式如下：
+2. Hap工程根目录下新增hnp根目录，hnp根目录下根据设备的操作系统ABI名称（例如arm64-v8a）创建文件夹，文件目录格式如下：
 
 ```
 HAP工程根目录
@@ -32,6 +32,8 @@ HAP工程根目录
 |______sub_dir        #支持子目录
 |________test.hnp
 ```
+
+hnp目录准备完成后，参考第4步在hap打包命令中用--hnp-path指定hnp根目录。
 
 3. 修改hap工程根目录下entry/src/main/module.json5文件，配置hnp包信息，需要在"module"字段下增加以下字段。"package"字段指定hnp包在ABI文件夹下相对路径，"type"指定hnp包类型，包含公有（"public"）和私有（"private"）类型。点击DevEco Studio软件菜单栏中"Build"按钮下的"Build Hap(s)/APP(s)"按钮，点击"Build Hap(s)"，编译Hap工程。
 
@@ -52,7 +54,8 @@ HAP工程根目录
 5. 执行hap包模式打包指令获取未签名的hap包。
 
 **规格：**
-1. 公有hnp包安装后应用进程沙箱路径为/data/service/hnp/xxx.org/xxx_yyy，私有hnp包安装后应用进程沙箱路径为/data/app/bundleName/xxx.org/xxx_yyy，其中xxx值hnp包hnp.json文件"name"字段，yyy值为hnp包中"version"字段。
+
+1. 公有hnp包安装后应用进程沙箱路径为/data/service/hnp/xxx.org/xxx_yyy，私有hnp包安装后应用进程沙箱路径为/data/app/<bundleName>/xxx.org/xxx_yyy，其中xxx值hnp包hnp.json文件"name"字段，yyy值为hnp包中"version"字段。
 2. 公有hnp包根路径的环境变量HNP_PUBLIC_HOME=/data/service/hnp，私有hnp包根路径的环境变量HNP_PRIVATE_HOME=/data/app。HNP_PRIVATE_HOME环境变量排序在HNP_PUBLIC_HOME前面，意味着如果存在同名二进制分别在公有hnp路径下和私有hnp路径下，优先执行私有hnp路径下二进制。
 3. 公有hnp包可以被所有应用访问，私有hnp包只允许被安装该hnp包的hap应用访问。
 4. 卸载hap应用会同步卸载该hap应用安装的所有hnp包，如果该hnp包中二进制正在被其他应用使用，则会导致hap应用卸载失败。
@@ -77,6 +80,7 @@ HAP工程根目录
 ### 3.2 hdc shell执行方法
 
 **操作步骤：**
+
 1. 从应用市场下载Native软件包hap应用并安装。
 2. 通过数据线连接设备，执行hdc shell访问设备。
-3. 公有hnp包安装后的物理路径为/data/app/el1/bundle/userid/hnppublic，私有hnp包安装后的物理路径为/data/app/el1/bundle/userid/hnp。可以进入这些目录下找到安装的Native包文件目录，执行相关二进制。
+3. 公有hnp包安装后的物理路径为/data/app/el1/bundle/<userid>/hnppublic，私有hnp包安装后的物理路径为/data/app/el1/bundle/<userid>/hnp，userid默认为100。可以进入这些目录下找到安装的Native包文件目录，执行相关二进制。
