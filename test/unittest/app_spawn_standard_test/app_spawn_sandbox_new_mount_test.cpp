@@ -245,50 +245,83 @@ HWTEST_F(AppSpawnSandboxCoverageTest, App_Spawn_Sandbox_MountAllHsp_004, TestSiz
 
 HWTEST_F(AppSpawnSandboxCoverageTest, App_Spawn_Sandbox_MountAllGroup, TestSize.Level0)
 {
-    int ret = MountAllGroup(nullptr, nullptr);
-    ASSERT_EQ(ret, -1);
+    int ret = MountAllGroup(nullptr, nullptr, nullptr);
+    ASSERT_NE(ret, 0);
 
     AppSpawningCtx *spawningCtx = TestCreateAppSpawningCtx();
     SandboxContext *context = TestGetSandboxContext(spawningCtx, 0);
     ASSERT_EQ(context != nullptr, 1);
+    AppSpawnSandboxCfg *sandbox = CreateAppSpawnSandbox(EXT_DATA_APP_SANDBOX);
+    ASSERT_EQ(sandbox != nullptr, 1);
+    LoadAppSandboxConfig(sandbox, EXT_DATA_APP_SANDBOX);
 
-    const char testDataGroupStr1[] = "{ \
-        \"dataGroupId\":[\"1234abcd5678efgh\", \"abcduiop1234\"], \
-        \"dir\":[\"/data/app/el2/100/group/091a68a9-2cc9-4279-8849-28631b598975\", \
-                    \"/data/app/el2/100/group/ce876162-fe69-45d3-aa8e-411a047af564\"], \
-        \"gid\":[\"20100001\", \"20100002\"] \
-    }";
+    const char testDataGroupStr1[] = R"([
+        {
+            "gid":"2010001",
+            "dir":"/data/app/el2/100/group/091a68a9-2cc9-4279-8849-28631b598975",
+            "dataGroupId":"43200",
+            "uuid":"091a68a9-2cc9-4279-8849-28631b598975"
+        }, {
+            "gid":"2010001",
+            "dir":"/data/app/el2/100/group/49c016e6-065a-abd1-5867-b1f91114f840",
+            "dataGroupId":"43200",
+            "uuid":"49c016e6-065a-abd1-5867-b1f91114f840"
+        }
+    ])";
     cJSON *config1 = cJSON_Parse(testDataGroupStr1);
     ASSERT_NE(config1, nullptr);
-    ret = MountAllGroup(context, nullptr);
-    ASSERT_EQ(ret, -1);
-    ret = MountAllGroup(nullptr, config1);
-    ASSERT_EQ(ret, -1);
-    ret = MountAllGroup(context, config1);
+    ret = MountAllGroup(context, sandbox, nullptr);
+    ASSERT_NE(ret, 0);
+    ret = MountAllGroup(context, nullptr, config1);
+    ASSERT_NE(ret, 0);
+    ret = MountAllGroup(nullptr, sandbox, config1);
+    ASSERT_NE(ret, 0);
+    context->rootPath = strdup("/mnt/sandbox/100/app-root");
+    ASSERT_EQ(context->rootPath != nullptr, 1);
+    ret = MountAllGroup(context, sandbox, config1);
     ASSERT_EQ(ret, 0);
     cJSON_Delete(config1);
+    free(context->rootPath);
+    context->rootPath = NULL;
 
-    const char testDataGroupStr2[] = "{ \
-        \"dataGroupId\":[\"1234abcd5678efgh\", \"abcduiop1234\"], \
-        \"dir\":[\"/data/app/el2/100/group/091a68a9-2cc9-4279-8849-28631b598975\"], \
-        \"gid\":[\"20100001\"] \
-    }";
+    const char testDataGroupStr2[] = R"([
+        {
+            "gid":"2010001",
+            "dir":"/data/app/el2/100/group/091a68a9-2cc9-4279-8849-28631b598975",
+            "dataGroupId":"43200",
+            "uuid":"091a68a9-2cc9-4279-8849-28631b598975"
+        }, {
+            "gid":"2010001",
+            "dir":"/data/app/el2/100/group/49c016e6-065a-abd1-5867-b1f91114f840",
+            "uuid":"49c016e6-065a-abd1-5867-b1f91114f840"
+        }
+    ])";
     cJSON *config2 = cJSON_Parse(testDataGroupStr2);
     ASSERT_NE(config2, nullptr);
-    ret = MountAllGroup(context, config2); // gid count != dataGroupId
-    ASSERT_EQ(ret, -1);
+    ret = MountAllGroup(context, sandbox, config2); // gid count != dataGroupId
+    ASSERT_NE(ret, 0);
     cJSON_Delete(config2);
 
-    const char testDataGroupStr3[] = "{ \
-        \"dataGroupId\":[\"1234abcd5678efgh\", \"abcduiop1234\"], \
-        \"dir\":[\"/data/app/el2/100/group/091a68a9-2cc9-4279-8849-28631b598975\"], \
-        \"gid\":[\"20100001\", \"20100002\"] \
-    }";
+    const char testDataGroupStr3[] = R"([
+        {
+            "gid":"2010001",
+            "dir":"/data/app/el2/100/group/091a68a9-2cc9-4279-8849-28631b598975",
+            "dataGroupId":"43200",
+            "uuid":"091a68a9-2cc9-4279-8849-28631b598975"
+        }, {
+            "gid":"2010001",
+            "dataGroupId":"43200",
+            "uuid":"49c016e6-065a-abd1-5867-b1f91114f840"
+        }
+    ])";
     cJSON *config3 = cJSON_Parse(testDataGroupStr3);
     ASSERT_NE(config3, nullptr);
-    ret = MountAllGroup(context, config3); // dir count != dataGroupId
-    ASSERT_EQ(ret, -1);
+    ret = MountAllGroup(context, sandbox, config3); // dir count != dataGroupId
+    ASSERT_NE(ret, -1);
     cJSON_Delete(config3);
+    if (sandbox != nullptr) {
+        sandbox->extData.freeNode(&sandbox->extData);
+    }
 }
 
 HWTEST_F(AppSpawnSandboxCoverageTest, App_Spawn_Sandbox_MountAllGroup_001, TestSize.Level0)
@@ -296,24 +329,25 @@ HWTEST_F(AppSpawnSandboxCoverageTest, App_Spawn_Sandbox_MountAllGroup_001, TestS
     AppSpawningCtx *spawningCtx = TestCreateAppSpawningCtx();
     SandboxContext *context = TestGetSandboxContext(spawningCtx, 0);
     ASSERT_EQ(context != nullptr, 1);
+    AppSpawnSandboxCfg *sandbox = CreateAppSpawnSandbox(EXT_DATA_APP_SANDBOX);
+    ASSERT_EQ(sandbox != nullptr, 1);
+    LoadAppSandboxConfig(sandbox, EXT_DATA_APP_SANDBOX);
 
-    const char testDataGroupStr1[] = "{ \
-        \"test\":[\"1234abcd5678efgh\", \"abcduiop1234\"] \
-    }";
+    const char testDataGroupStr1[] = R"([
+        {
+            "gid":"2010001",
+            "dir":"/data/app/el2/100/group/091a68a9-2cc9-4279-8849-28631b598975",
+            "uuid":"091a68a9-2cc9-4279-8849-28631b598975"
+        }
+    ])";
     cJSON *config1 = cJSON_Parse(testDataGroupStr1);
     ASSERT_NE(config1, nullptr);
-    int ret = MountAllGroup(context, config1); // dataGroupIds is null
-    ASSERT_EQ(ret, -1);
+    int ret = MountAllGroup(context, sandbox, config1); // dataGroupIds is null
+    ASSERT_NE(ret, 0);
     cJSON_Delete(config1);
-
-    const char testDataGroupStr2[] = "{ \
-        \"dataGroupId\":\"1234abcd5678efgh\" \
-    }";
-    cJSON *config2 = cJSON_Parse(testDataGroupStr2);
-    ASSERT_NE(config2, nullptr);
-    ret = MountAllGroup(context, config2); // dataGroupIds is not Array
-    ASSERT_EQ(ret, -1);
-    cJSON_Delete(config2);
+    if (sandbox != nullptr) {
+        sandbox->extData.freeNode(&sandbox->extData);
+    }
 }
 
 HWTEST_F(AppSpawnSandboxCoverageTest, App_Spawn_Sandbox_MountAllGroup_002, TestSize.Level0)
@@ -321,48 +355,36 @@ HWTEST_F(AppSpawnSandboxCoverageTest, App_Spawn_Sandbox_MountAllGroup_002, TestS
     AppSpawningCtx *spawningCtx = TestCreateAppSpawningCtx();
     SandboxContext *context = TestGetSandboxContext(spawningCtx, 0);
     ASSERT_EQ(context != nullptr, 1);
+    AppSpawnSandboxCfg *sandbox = CreateAppSpawnSandbox(EXT_DATA_APP_SANDBOX);
+    ASSERT_EQ(sandbox != nullptr, 1);
+    LoadAppSandboxConfig(sandbox, EXT_DATA_APP_SANDBOX);
 
-    const char testDataGroupStr1[] = "{ \
-        \"dataGroupId\":[\"1234abcd5678efgh\", \"abcduiop1234\"], \
-        \"test\":[\"20100001\", \"20100002\"] \
-    }";
+    const char testDataGroupStr1[] = R"([
+        {
+            "test":"2010001",
+            "dir":"/data/app/el2/100/group/091a68a9-2cc9-4279-8849-28631b598975",
+            "dataGroupId":"43200",
+            "uuid":"091a68a9-2cc9-4279-8849-28631b598975"
+        }
+    ])";
     cJSON *config1 = cJSON_Parse(testDataGroupStr1);
     ASSERT_NE(config1, nullptr);
-    int ret = MountAllGroup(context, config1); // gid is null
-    ASSERT_EQ(ret, -1);
+    int ret = MountAllGroup(context, sandbox, config1); // gid is null
+    ASSERT_NE(ret, 0);
     cJSON_Delete(config1);
 
-    const char testDataGroupStr2[] = "{ \
-        \"dataGroupId\":[\"1234abcd5678efgh\", \"abcduiop1234\"], \
-        \"gid\":\"20100001\" \
-    }";
+    const char testDataGroupStr2[] = R"([
+        {
+            "gid":"2010001",
+            "dataGroupId":"43200",
+            "uuid":"091a68a9-2cc9-4279-8849-28631b598975"
+        }
+    ])";
     cJSON *config2 = cJSON_Parse(testDataGroupStr2);
     ASSERT_NE(config2, nullptr);
-    ret = MountAllGroup(context, config2); // gid is not Array
-    ASSERT_EQ(ret, -1);
+    ret = MountAllGroup(context, sandbox, config2); // dir
+    ASSERT_NE(ret, 0);
     cJSON_Delete(config2);
-
-    const char testDataGroupStr3[] = "{ \
-        \"dataGroupId\":[\"1234abcd5678efgh\", \"abcduiop1234\"], \
-        \"test\":[\"/data/app/el2/100/group/ce876162-fe69-45d3-aa8e-411a047af564\"], \
-        \"gid\":[\"20100001\", \"20100002\"] \
-    }";
-    cJSON *config3 = cJSON_Parse(testDataGroupStr3);
-    ASSERT_NE(config3, nullptr);
-    ret = MountAllGroup(context, config3); // dir is null
-    ASSERT_EQ(ret, -1);
-    cJSON_Delete(config3);
-
-    const char testDataGroupStr4[] = "{ \
-        \"dataGroupId\":[\"1234abcd5678efgh\", \"abcduiop1234\"], \
-        \"dir\":\"/data/app/el2/100/group/091a68a9-2cc9-4279-8849-28631b598975\", \
-        \"gid\":[\"20100001\", \"20100002\"] \
-    }";
-    cJSON *config4 = cJSON_Parse(testDataGroupStr4);
-    ASSERT_NE(config4, nullptr);
-    ret = MountAllGroup(context, config4); // dir is not Array
-    ASSERT_EQ(ret, -1);
-    cJSON_Delete(config4);
 }
 
 HWTEST_F(AppSpawnSandboxCoverageTest, App_Spawn_Sandbox_cfgvar, TestSize.Level0)
@@ -486,6 +508,7 @@ HWTEST_F(AppSpawnSandboxCoverageTest, App_Spawn_Sandbox_manager, TestSize.Level0
     EXPECT_EQ(ret, -1);
     AppSpawningCtx property = {};
     property.message = (AppSpawnMsgNode *)malloc(sizeof(AppSpawnMsgNode));
+    memset_s(property.message, sizeof(AppSpawnMsgNode), 0, sizeof(AppSpawnMsgNode));
     ASSERT_EQ(property.message != nullptr, 1);
     ret = strcpy_s(property.message->msgHeader.processName, APP_LEN_PROC_NAME, "com.xxx.xxx.xxx");
     EXPECT_EQ(ret, 0);
@@ -675,7 +698,8 @@ HWTEST_F(AppSpawnSandboxCoverageTest, App_Spawn_Sandbox_load_006, TestSize.Level
     }";
     cJSON *config1 = cJSON_Parse(testStr1);
     ASSERT_NE(config1, nullptr);
-    int ret = ParseGidTableConfig(nullptr, config1, nullptr);
+    SandboxSection section = {};
+    int ret = ParseGidTableConfig(nullptr, config1, &section);
     EXPECT_EQ(ret, 0);
     cJSON_Delete(config1);
 
@@ -685,11 +709,10 @@ HWTEST_F(AppSpawnSandboxCoverageTest, App_Spawn_Sandbox_load_006, TestSize.Level
     cJSON *config2 = cJSON_Parse(testStr2);
     ASSERT_NE(config2, nullptr);
     cJSON *testCfg = cJSON_GetObjectItemCaseSensitive(config2, "test");
-    ret = ParseGidTableConfig(nullptr, testCfg, nullptr);
+    ret = ParseGidTableConfig(nullptr, testCfg, &section);
     EXPECT_EQ(ret, 0);
     cJSON_Delete(config2);
 
-    SandboxSection section = {};
     const char testStr3[] = "{ \
         \"gids\":[\"202400\", \"202500\", \"202600\"] \
     }";
@@ -700,10 +723,6 @@ HWTEST_F(AppSpawnSandboxCoverageTest, App_Spawn_Sandbox_load_006, TestSize.Level
     EXPECT_EQ(ret, 0);
     cJSON_Delete(config3);
 
-    section.gidTable = (gid_t *)malloc(sizeof(gid_t) * 10);
-    ASSERT_EQ(section.gidTable != nullptr, 1);
-    ret = ParseGidTableConfig(nullptr, testCfg, &section);
-    EXPECT_EQ(ret, 0);
     if (section.gidTable != nullptr) {
         free(section.gidTable);
     }

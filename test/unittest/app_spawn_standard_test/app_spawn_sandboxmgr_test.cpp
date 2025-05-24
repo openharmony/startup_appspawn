@@ -102,7 +102,7 @@ HWTEST_F(AppSpawnSandboxMgrTest, App_Spawn_AppSpawnSandboxCfg_002, TestSize.Leve
 
 HWTEST_F(AppSpawnSandboxMgrTest, App_Spawn_AppSpawnSandboxCfg_003, TestSize.Level0)
 {
-    AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
+    AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
     EXPECT_EQ(mgr != nullptr, 1);
 
     AppSpawnSandboxCfg *sandbox = CreateAppSpawnSandbox(EXT_DATA_APP_SANDBOX);
@@ -133,7 +133,7 @@ HWTEST_F(AppSpawnSandboxMgrTest, App_Spawn_AppSpawnSandboxCfg_003, TestSize.Leve
 
 HWTEST_F(AppSpawnSandboxMgrTest, App_Spawn_SandboxSection_001, TestSize.Level0)
 {
-    AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
+    AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
     EXPECT_EQ(mgr != nullptr, 1);
 
     AppSpawnSandboxCfg *sandbox = CreateAppSpawnSandbox(EXT_DATA_APP_SANDBOX);
