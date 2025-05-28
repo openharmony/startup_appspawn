@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+#include <string>
+
 #include "sandbox_adapter.h"
 #include "init_utils.h"
 
