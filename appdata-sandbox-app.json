@@ -21,6 +21,9 @@
                 "src-path" : "/sys_prod",
                 "sandbox-path" : "/sys_prod"
             }, {
+                "src-path" : "/system/app",
+                "sandbox-path" : "/system/app"
+            }, {
                 "src-path" : "/module_update",
                 "sandbox-path" : "/module_update"
             }, {
