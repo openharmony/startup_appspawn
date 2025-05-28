@@ -195,14 +195,6 @@ static void HandleDiedPid(pid_t pid, uid_t uid, int status)
     ProcessMgrHookExecute(STAGE_SERVER_APP_DIED, GetAppSpawnContent(), appInfo);
     ProcessMgrHookExecute(STAGE_SERVER_APP_UMOUNT, GetAppSpawnContent(), appInfo);
 
-    // if current process of death is nwebspawn, restart appspawn
-    if (strcmp(appInfo->name, NWEBSPAWN_SERVER_NAME) == 0) {
-        OH_ListRemove(&appInfo->node);
-        free(appInfo);
-        APPSPAWN_LOGW("Current process of death is nwebspawn, pid = %{public}d, restart appspawn", pid);
-        StopAppSpawn();
-        return;
-    }
     // move app info to died queue in NWEBSPAWN, or delete appinfo
     TerminateSpawnedProcess(appInfo);
 }
@@ -1203,6 +1195,8 @@ APPSPAWN_STATIC int AppSpawnColdStartApp(struct AppSpawnContent *content, AppSpa
     char *path = property->forkCtx.coldRunPath != NULL ? property->forkCtx.coldRunPath : "/system/bin/cjappspawn";
 #elif NATIVE_SPAWN
     char *path = property->forkCtx.coldRunPath != NULL ? property->forkCtx.coldRunPath : "/system/bin/nativespawn";
+#elif NWEB_SPAWN
+    char *path = property->forkCtx.coldRunPath != NULL ? property->forkCtx.coldRunPath : "/system/bin/nwebspawn";
 #else
     char *path = property->forkCtx.coldRunPath != NULL ? property->forkCtx.coldRunPath : "/system/bin/appspawn";
 #endif
@@ -1395,20 +1389,7 @@ AppSpawnContent *StartSpawnService(const AppSpawnStartArg *startArg, uint32_t ar
     AppSpawnStartArg *arg = (AppSpawnStartArg *)startArg;
     APPSPAWN_LOGV("Start appspawn argvSize %{public}d mode %{public}d service %{public}s",
         argvSize, arg->mode, arg->serviceName);
-    if (arg->mode == MODE_FOR_APP_SPAWN) {
-#ifndef APPSPAWN_TEST
-        pid = NWebSpawnLaunch();
-        if (pid == 0) {
-            arg->socketName = NWEBSPAWN_SOCKET_NAME;
-            arg->serviceName = NWEBSPAWN_SERVER_NAME;
-            arg->moduleType = MODULE_NWEBSPAWN;
-            arg->mode = MODE_FOR_NWEB_SPAWN;
-            arg->initArg = 1;
-        }
-#endif
-    } else if (arg->mode == MODE_FOR_NWEB_SPAWN && getuid() == 0) {
-        NWebSpawnInit();
-    }
+
     if (arg->initArg) {
         int ret = memset_s(argv[0], argvSize, 0, (size_t)argvSize);
         APPSPAWN_CHECK(ret == EOK, return NULL, "Failed to memset argv[0]");
@@ -1434,7 +1415,6 @@ AppSpawnContent *StartSpawnService(const AppSpawnStartArg *startArg, uint32_t ar
 #endif
     AddAppSpawnHook(STAGE_CHILD_PRE_RUN, HOOK_PRIO_LOWEST, AppSpawnClearEnv);
     if (arg->mode == MODE_FOR_APP_SPAWN) {
-        AddSpawnedProcess(pid, NWEBSPAWN_SERVER_NAME, 0, false);
         SetParameter("bootevent.appspawn.started", "true");
     }
     return content;
@@ -1597,7 +1577,7 @@ static void ProcessSpawnRestartMsg(AppSpawnConnection *connection, AppSpawnMsgNo
         }
     }
 
-    char *path = "/system/bin/appspawn";
+    char *path = "/system/bin/nwebspawn";
     char *mode = NWEBSPAWN_RESTART;
     const char *const formatCmds[] = {path, "-mode", mode, NULL};
     ret = execv(path, (char **)formatCmds);
