@@ -27,6 +27,7 @@ namespace AbilityRuntime {
     public:
         enum class Language {
             JS = 0,
+            STS = 1,
         };
 
         struct Options {
@@ -49,7 +50,7 @@ namespace AbilityRuntime {
         {
             return std::make_unique<Runtime>();
         }
-        static void SavePreloaded(std::unique_ptr<Runtime> &&instance) {}
+        static void SavePreloaded(std::unique_ptr<Runtime> &&instance, Language key = Language::JS) {}
 
         Runtime() {};
         ~Runtime() {};
