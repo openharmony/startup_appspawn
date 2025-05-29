@@ -82,7 +82,7 @@ static int GetModuleSet(const cJSON *root, ParseJsonContext *context)
     return 0;
 }
 
-static void PreloadModule(void)
+static void PreloadJsModule(void)
 {
     OHOS::AbilityRuntime::Runtime::Options options;
     options.lang = OHOS::AbilityRuntime::Runtime::Language::JS;
@@ -91,7 +91,7 @@ static void PreloadModule(void)
 
     auto runtime = OHOS::AbilityRuntime::Runtime::Create(options);
     if (!runtime) {
-        APPSPAWN_LOGE("LoadExtendLib: Failed to create runtime");
+        APPSPAWN_LOGE("LoadExtendLib: Failed to create JS runtime");
         return;
     }
 
@@ -101,8 +101,25 @@ static void PreloadModule(void)
         APPSPAWN_LOGI("moduleName %{public}s", moduleName.c_str());
         runtime->PreloadSystemModule(moduleName);
     }
-    // Save preloaded runtime
-    OHOS::AbilityRuntime::Runtime::SavePreloaded(std::move(runtime));
+    // Save preloaded JS runtime
+    OHOS::AbilityRuntime::Runtime::SavePreloaded(std::move(runtime), options.lang);
+}
+
+static void PreloadStsModule(void)
+{
+    OHOS::AbilityRuntime::Runtime::Options options;
+    options.lang = OHOS::AbilityRuntime::Runtime::Language::STS;
+    options.loadAce = true;
+    options.preload = true;
+
+    auto runtime = OHOS::AbilityRuntime::Runtime::Create(options);
+    if (!runtime) {
+        APPSPAWN_LOGE("LoadExtendLib: Failed to create STS runtime");
+        return;
+    }
+
+    // Save preloaded STS runtime
+    OHOS::AbilityRuntime::Runtime::SavePreloaded(std::move(runtime), options.lang);
 }
 
 static void LoadExtendLib(void)
@@ -116,19 +133,23 @@ static void LoadExtendLib(void)
     OHOS::AppExecFwk::MainThread::PreloadExtensionPlugin();
     bool preload = OHOS::system::GetBoolParameter("persist.appspawn.preload", DEFAULT_PRELOAD_VALUE);
     if (!preload) {
-        APPSPAWN_LOGI("LoadExtendLib: Do not preload JS VM");
+        APPSPAWN_LOGI("LoadExtendLib: Do not preload VM");
         return;
     }
 
     APPSPAWN_LOGI("LoadExtendLib: Start preload JS VM");
     SetTraceDisabled(true);
-    PreloadModule();
+    PreloadJsModule();
     SetTraceDisabled(false);
 
+    APPSPAWN_LOGI("LoadExtendLib: Start preload STS VM");
+    PreloadStsModule();
+
+    APPSPAWN_LOGI("LoadExtendLib: Start reclaim file cache");
     OHOS::Ace::AceForwardCompatibility::ReclaimFileCache(getpid());
     Resource::ResourceManager *systemResMgr = Resource::GetSystemResourceManagerNoSandBox();
     APPSPAWN_CHECK(systemResMgr != nullptr, return, "Fail to get system resource manager");
-    APPSPAWN_LOGI("LoadExtendLib: End preload JS VM");
+    APPSPAWN_LOGI("LoadExtendLib: End preload VM");
 }
 
 APPSPAWN_STATIC void PreloadCJLibs(void)
