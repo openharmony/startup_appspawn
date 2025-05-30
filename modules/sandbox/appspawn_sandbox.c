@@ -483,7 +483,7 @@ static int DoSandboxPathNodeMount(const SandboxContext *context,
 
     int ret = 0;
     if (CHECK_FLAGS_BY_INDEX(operation, MOUNT_PATH_OP_UNMOUNT)) {  // unmount this deps
-        APPSPAWN_LOGV("umount2 %{public}s", args.destinationPath);
+        APPSPAWN_LOGI("umount2 %{public}s", args.destinationPath);
         ret = umount2(args.destinationPath, MNT_DETACH);
         APPSPAWN_CHECK_ONLY_LOG(ret == 0, "Failed to umount %{public}s errno %{public}d", args.destinationPath, errno);
     }
@@ -836,7 +836,7 @@ static void UnmountPath(char *rootPath, uint32_t len, const SandboxMountNode *sa
         PathMountNode *pathNode = (PathMountNode *)sandboxNode;
         int ret = strcat_s(rootPath, len, pathNode->target);
         APPSPAWN_CHECK(ret == 0, return, "Failed to format");
-        APPSPAWN_LOGV("Unmount sandbox config sandbox path %{public}s ", rootPath);
+        APPSPAWN_LOGI("Unmount sandbox config sandbox path %{public}s ", rootPath);
         ret = umount2(rootPath, MNT_DETACH);
         APPSPAWN_CHECK_ONLY_LOG(ret == 0, "Failed to umount2 %{public}s errno: %{public}d", rootPath, errno);
     }

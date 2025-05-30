@@ -42,6 +42,12 @@
                 "src-path" : "/system/lib64",
                 "sandbox-path" : "/system/lib64"
             }, {
+                "src-path" : "/system/asan/lib",
+                "sandbox-path" : "/system/asan/lib"
+            }, {
+                "src-path" : "/system/asan/lib64",
+                "sandbox-path" : "/system/asan/lib64"
+            }, {
                 "src-path" : "/system/data",
                 "sandbox-path" : "/system/data"
             }, {
@@ -62,6 +68,9 @@
             }, {
                 "src-path" : "/vendor/<lib>",
                 "sandbox-path" : "/vendor/<lib>"
+            }, {
+                "src-path" : "/vendor/asan/<lib>",
+                "sandbox-path" : "/vendor/asan/<lib>"
             }, {
                 "src-path" : "/vendor/etc/vulkan",
                 "sandbox-path" : "/vendor/etc/vulkan"
