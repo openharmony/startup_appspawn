@@ -303,6 +303,7 @@ static int SendResponse(const AppSpawnConnection *connection, const AppSpawnMsg 
     uint32_t bufferSize = sizeof(AppSpawnResponseMsg);
     BufferHandle handle = LE_CreateBuffer(LE_GetDefaultLoop(), bufferSize);
     AppSpawnResponseMsg *buffer = (AppSpawnResponseMsg *)LE_GetBufferInfo(handle, NULL, &bufferSize);
+    APPSPAWN_CHECK(buffer != NULL, return APPSPAWN_ERROR_UTILS_MEM_FAIL, "buffer is null");
     int ret = memcpy_s(buffer, bufferSize, msg, sizeof(AppSpawnMsg));
     APPSPAWN_CHECK(ret == 0, LE_FreeBuffer(LE_GetDefaultLoop(), NULL, handle);
         return -1, "Failed to memcpy_s bufferSize");
