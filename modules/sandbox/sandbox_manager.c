@@ -800,17 +800,6 @@ static int SpawnMountDirToShared(AppSpawnMgr *content, AppSpawningCtx *property)
     return ret;
 }
 
-APPSPAWN_STATIC int SandboxUnmountPath(const AppSpawnMgr *content, const AppSpawnedProcessInfo *appInfo)
-{
-    APPSPAWN_CHECK_ONLY_EXPER(content != NULL, return -1);
-    APPSPAWN_CHECK_ONLY_EXPER(appInfo != NULL, return -1);
-    AppSpawnSandboxCfg *sandbox = NULL;
-    APPSPAWN_LOGV("Sandbox process %{public}s %{public}u exit", appInfo->name, appInfo->uid);
-    sandbox = GetAppSpawnSandbox(content, content->content.sandboxType);
-
-    return UnmountDepPaths(sandbox, appInfo->uid);
-}
-
 #ifdef APPSPAWN_SANDBOX_NEW
 MODULE_CONSTRUCTOR(void)
 {
@@ -824,7 +813,6 @@ MODULE_CONSTRUCTOR(void)
     (void)AddAppSpawnHook(STAGE_PARENT_PRE_FORK, HOOK_PRIO_SANDBOX, SpawnPrepareSandboxCfg);
     (void)AddAppSpawnHook(STAGE_PARENT_PRE_FORK, HOOK_PRIO_SANDBOX, SpawnMountDirToShared);
     (void)AddAppSpawnHook(STAGE_CHILD_EXECUTE, HOOK_PRIO_SANDBOX, SpawnBuildSandboxEnv);
-    (void)AddProcessMgrHook(STAGE_SERVER_APP_DIED, 0, SandboxUnmountPath);
 }
 
 MODULE_DESTRUCTOR(void)
