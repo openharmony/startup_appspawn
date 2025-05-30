@@ -31,9 +31,7 @@
                 "sandbox-path" : "/system/lib64"
             }, {
                 "src-path" : "/vendor/<lib>",
-                "sandbox-path" : "/vendor/<lib>",
-                "sandbox-flags" : [ "bind", "rec" ],
-                "check-action-status": "false"
+                "sandbox-path" : "/vendor/<lib>"
             }, {
                 "src-path" : "/system/app/NWeb",
                 "sandbox-path" : "/system/app/NWeb"

@@ -35,9 +35,12 @@
             }, {
                 "src-path" : "/system/app/NWeb",
                 "sandbox-path" : "/system/app/NWeb"
-            },  {
+            }, {
                 "src-path" : "/system/asan/lib64",
                 "sandbox-path" : "/system/asan/lib64"
+            }, {
+                "src-path" : "/system/asan/lib",
+                "sandbox-path" : "/system/asan/lib"
             }, {
                 "src-path" : "/vendor/asan/lib64",
                 "sandbox-path" : "/vendor/asan/lib64"
