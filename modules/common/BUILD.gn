@@ -65,6 +65,9 @@ ohos_shared_library("appspawn_common") {
     if (appspawn_custom_sandbox) {
       cflags += [ "-DCUSTOM_SANDBOX" ]
     }
+    if (appspawn_support_local_debugger) {
+      cflags += [ "-DSUPPORT_LOCAL_DEBUGGER" ]
+    }
     external_deps += [ "init:seccomp" ]
   }
 

@@ -63,4 +63,7 @@ ohos_shared_library("appspawn_ace") {
   } else {
     module_install_dir = "lib/appspawn/appspawn"
   }
+  if (appspawn_support_local_debugger) {
+    cflags = [ "-DSUPPORT_LOCAL_DEBUGGER" ]
+  }
 }
