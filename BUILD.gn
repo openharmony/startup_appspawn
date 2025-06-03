@@ -58,6 +58,13 @@ if (!defined(ohos_lite)) {
     subsystem_name = "${subsystem_name}"
     part_name = "${part_name}"
   }
+
+  ohos_prebuilt_etc("nwebspawn.rc") {
+    source = "nwebspawn.cfg"
+    relative_install_dir = "init"
+    subsystem_name = "${subsystem_name}"
+    part_name = "${part_name}"
+  }
 }
 
 group("appspawn_all") {
@@ -92,6 +99,12 @@ group("appspawn_all") {
       deps += [
         ":nativespawn.rc",
         "standard:nativespawn",
+      ]
+    }
+    if (appspawn_support_nweb) {  # for support nwebspawn
+      deps += [
+        ":nwebspawn.rc",
+        "standard:nwebspawn",
       ]
     }
   } else {
