@@ -27,7 +27,7 @@
 
 #define SILK_JSON_CONFIG_PATH   "/vendor/etc/silk/silk.json"
 #define SILK_JSON_ENABLE_ITEM   "enabled_app_list"
-#define SILK_JSON_LIBRARY_PATH  "/vendor/lib64/chipsetsdk/libsilk.so.0.1"
+#define SILK_JSON_LIBRARY_PATH  "libsilk.so.0.1"
 
 #define SILK_JSON_MAX 128
 #define SILK_JSON_NAME_MAX 256
@@ -55,10 +55,11 @@ static void ParseSilkConfig(const cJSON *root, struct SilkConfig *config)
     APPSPAWN_CHECK(ret == 0, free(config->configItems);
                    config->configItems = NULL; return,
                    "Memset silk config items failed");
-
+    bool abnormal = false;
     for (uint32_t i = 0; i < configCount; ++i) {
         const char *appName = cJSON_GetStringValue(cJSON_GetArrayItem(silkJson, i));
-        APPSPAWN_CHECK(appName != NULL, break, "appName is NULL");
+        APPSPAWN_CHECK(appName != NULL,
+                       abnormal = true; break, "appName is NULL");
         APPSPAWN_LOGI("Enable silk appName %{public}s", appName);
 
         int len = strlen(appName) + 1;
@@ -66,18 +67,31 @@ static void ParseSilkConfig(const cJSON *root, struct SilkConfig *config)
                        "appName %{public}s is larger than the maximum limit", appName);
         char **item = &config->configItems[config->configCursor];
         *item = (char *)malloc(len * sizeof(char));
-        APPSPAWN_CHECK(*item != NULL, break, "Alloc for config item failed");
+        APPSPAWN_CHECK(*item != NULL,
+                       abnormal = true; break, "Alloc for config item failed");
 
         ret = memset_s(*item, len * sizeof(char), 0, len * sizeof(char));
         APPSPAWN_CHECK(ret == 0, free(*item);
-                       *item = NULL; break,
+                       *item = NULL;
+                       abnormal = true; break,
                        "Memset config item %{public}s failed", appName);
 
         ret = strncpy_s(*item, len, appName, len - 1);
         APPSPAWN_CHECK(ret == 0, free(*item);
-                       *item = NULL; break,
+                       *item = NULL;
+                       abnormal = true; break,
                        "Copy config item %{public}s failed", appName);
         config->configCursor++;
+    }
+    if (abnormal) {
+        for (uint32_t i = 0; i < config->configCursor; ++i) {
+            char **item = &config->configItems[i];
+            free(*item);
+            *item = NULL;
+        }
+        free(config->configItems);
+        config->configItems = NULL;
+        config->configCursor = 0;
     }
 }
 
