@@ -77,7 +77,7 @@ static void CheckPreload(char *const argv[])
 
 #ifndef NATIVE_SPAWN
 static AppSpawnStartArgTemplate *GetAppSpawnStartArg(const char *serverName, AppSpawnStartArgTemplate *argTemplate,
-    int count)
+    AppSpawnStartArgTemplate *argTemp, int count)
 {
     for (int i = 0; i < count; i++) {
         if (strcmp(serverName, argTemplate[i].serverName) == 0) {
@@ -85,7 +85,7 @@ static AppSpawnStartArgTemplate *GetAppSpawnStartArg(const char *serverName, App
         }
     }
 
-    return argTemplate;
+    return argTemp;
 }
 #endif
 
@@ -112,15 +112,21 @@ int main(int argc, char *const argv[])
     argTemp = &g_appCJSpawnStartArgTemplate[CJPROCESS_FOR_APP_SPAWN];
     if (argc > MODE_VALUE_INDEX) {
         argTemp = GetAppSpawnStartArg(argv[MODE_VALUE_INDEX], g_appCJSpawnStartArgTemplate,
-            ARRAY_LENGTH(g_appCJSpawnStartArgTemplate));
+            argTemp, ARRAY_LENGTH(g_appCJSpawnStartArgTemplate));
     }
 #elif NATIVE_SPAWN
     argTemp = &g_appSpawnStartArgTemplate[PROCESS_FOR_NATIVE_SPAWN];
+#elif NWEB_SPAWN
+    argTemp = &g_appSpawnStartArgTemplate[PROCESS_FOR_NWEB_SPAWN];
+    if (argc > MODE_VALUE_INDEX) {
+        argTemp = GetAppSpawnStartArg(argv[MODE_VALUE_INDEX], g_appSpawnStartArgTemplate,
+            argTemp, ARRAY_LENGTH(g_appSpawnStartArgTemplate));
+    }
 #else
     argTemp = &g_appSpawnStartArgTemplate[PROCESS_FOR_APP_SPAWN];
     if (argc > MODE_VALUE_INDEX) {
         argTemp = GetAppSpawnStartArg(argv[MODE_VALUE_INDEX], g_appSpawnStartArgTemplate,
-            ARRAY_LENGTH(g_appSpawnStartArgTemplate));
+            argTemp, ARRAY_LENGTH(g_appSpawnStartArgTemplate));
     }
 #endif
     arg = &argTemp->arg;
