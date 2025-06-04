@@ -502,7 +502,15 @@
             "gids": ["data_reserve"],
             "mount-paths" : [{
                 "src-path" : "/data/app/el1/bundle/public/",
-                "sandbox-path" : "/data/bundles/"
+                "sandbox-path" : "/data/app/el1/bundle/public/"
+            }]
+        }, {
+            "name": "com.ohos.settingsdata",
+            "sandbox-switch": "ON",
+            "gids": ["data_reserve"],
+            "mount-paths" : [{
+                "src-path" : "",
+                "sandbox-path" : ""
             }]
         }]
     },
