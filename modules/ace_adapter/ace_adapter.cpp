@@ -82,46 +82,6 @@ static int GetModuleSet(const cJSON *root, ParseJsonContext *context)
     return 0;
 }
 
-static void PreloadJsModule(void)
-{
-    OHOS::AbilityRuntime::Runtime::Options options;
-    options.lang = OHOS::AbilityRuntime::Runtime::Language::JS;
-    options.loadAce = true;
-    options.preload = true;
-
-    auto runtime = OHOS::AbilityRuntime::Runtime::Create(options);
-    if (!runtime) {
-        APPSPAWN_LOGE("LoadExtendLib: Failed to create JS runtime");
-        return;
-    }
-
-    ParseJsonContext context = {};
-    (void)ParseJsonConfig("etc/appspawn", PRELOAD_JSON_CONFIG.c_str(), GetModuleSet, &context);
-    for (std::string moduleName : context.modules) {
-        APPSPAWN_LOGI("moduleName %{public}s", moduleName.c_str());
-        runtime->PreloadSystemModule(moduleName);
-    }
-    // Save preloaded JS runtime
-    OHOS::AbilityRuntime::Runtime::SavePreloaded(std::move(runtime), options.lang);
-}
-
-static void PreloadStsModule(void)
-{
-    OHOS::AbilityRuntime::Runtime::Options options;
-    options.lang = OHOS::AbilityRuntime::Runtime::Language::STS;
-    options.loadAce = true;
-    options.preload = true;
-
-    auto runtime = OHOS::AbilityRuntime::Runtime::Create(options);
-    if (!runtime) {
-        APPSPAWN_LOGE("LoadExtendLib: Failed to create STS runtime");
-        return;
-    }
-
-    // Save preloaded STS runtime
-    OHOS::AbilityRuntime::Runtime::SavePreloaded(std::move(runtime), options.lang);
-}
-
 static void LoadExtendLib(void)
 {
     const char *acelibdir = OHOS::Ace::AceForwardCompatibility::GetAceLibName();
@@ -139,11 +99,44 @@ static void LoadExtendLib(void)
 
     APPSPAWN_LOGI("LoadExtendLib: Start preload JS VM");
     SetTraceDisabled(true);
-    PreloadJsModule();
+
+    OHOS::AbilityRuntime::Runtime::Options jsOptions;
+    jsOptions.lang = OHOS::AbilityRuntime::Runtime::Language::JS;
+    jsOptions.loadAce = true;
+    jsOptions.preload = true;
+
+    auto jsRuntime = OHOS::AbilityRuntime::Runtime::Create(jsOptions);
+    if (!jsRuntime) {
+        APPSPAWN_LOGE("LoadExtendLib: Failed to create JS runtime");
+        return;
+    }
+
+    OHOS::AbilityRuntime::Runtime::Options stsOptions;
+    stsOptions.lang = OHOS::AbilityRuntime::Runtime::Language::STS;
+    stsOptions.loadAce = true;
+    stsOptions.preload = true;
+
+    auto stsRuntime = OHOS::AbilityRuntime::Runtime::Create(stsOptions);
+    if (!stsRuntime) {
+        APPSPAWN_LOGE("LoadExtendLib: Failed to create STS runtime");
+        return;
+    }
+
     SetTraceDisabled(false);
 
     APPSPAWN_LOGI("LoadExtendLib: Start preload STS VM");
-    PreloadStsModule();
+
+    ParseJsonContext context = {};
+    (void)ParseJsonConfig("etc/appspawn", PRELOAD_JSON_CONFIG.c_str(), GetModuleSet, &context);
+    for (std::string moduleName : context.modules) {
+        APPSPAWN_LOGI("moduleName %{public}s", moduleName.c_str());
+        jsRuntime->PreloadSystemModule(moduleName);
+    }
+    // Save preloaded JS runtime
+    OHOS::AbilityRuntime::Runtime::SavePreloaded(std::move(jsRuntime), jsOptions.lang);
+
+    // Save preloaded STS runtime
+    OHOS::AbilityRuntime::Runtime::SavePreloaded(std::move(stsRuntime), stsOptions.lang);
 
     APPSPAWN_LOGI("LoadExtendLib: Start reclaim file cache");
     OHOS::Ace::AceForwardCompatibility::ReclaimFileCache(getpid());
