@@ -50,42 +50,83 @@ static const bool DEFAULT_PRELOAD_VALUE = false;
 static const bool DEFAULT_PRELOAD_VALUE = true;
 #endif
 static const std::string PRELOAD_JSON_CONFIG("/appspawn_preload.json");
+static const std::string PRELOAD_STS_JSON_CONFIG("/appspawn_preload_sts.json");
 
 typedef struct TagParseJsonContext {
-    std::set<std::string> modules;
+    std::set<std::string> names;
+    std::string key;
 } ParseJsonContext;
 
-static void GetModules(const cJSON *root, std::set<std::string> &modules)
+static void GetNames(const cJSON *root, std::set<std::string> &names, std::string key)
 {
-    // no config
-    cJSON *modulesJson = cJSON_GetObjectItemCaseSensitive(root, "napi");
-    if (modulesJson == nullptr) {
+    cJSON *namesJson = cJSON_GetObjectItemCaseSensitive(root, key.c_str());
+    if (namesJson == nullptr) {
         return;
     }
 
-    uint32_t moduleCount = (uint32_t)cJSON_GetArraySize(modulesJson);
-    for (uint32_t i = 0; i < moduleCount; ++i) {
-        const char *moduleName = cJSON_GetStringValue(cJSON_GetArrayItem(modulesJson, i));
-        if (moduleName == nullptr) {
+    uint32_t count = (uint32_t)cJSON_GetArraySize(namesJson);
+    for (uint32_t i = 0; i < count; ++i) {
+        const char *name = cJSON_GetStringValue(cJSON_GetArrayItem(namesJson, i));
+        if (name == nullptr) {
             continue;
         }
-        APPSPAWN_LOGV("moduleName %{public}s", moduleName);
-        if (!modules.count(moduleName)) {
-            modules.insert(moduleName);
+        APPSPAWN_LOGV("name %{public}s", name);
+        if (!names.count(name)) {
+            names.insert(name);
         }
     }
 }
 
-static int GetModuleSet(const cJSON *root, ParseJsonContext *context)
+static int GetNameSet(const cJSON *root, ParseJsonContext *context)
 {
-    GetModules(root, context->modules);
+    GetNames(root, context->names, context->key);
     return 0;
+}
+
+static void PreloadModule(void)
+{
+    OHOS::AbilityRuntime::Runtime::Options jsOptions;
+    jsOptions.lang = OHOS::AbilityRuntime::Runtime::Language::JS;
+    jsOptions.loadAce = true;
+    jsOptions.preload = true;
+    auto jsRuntime = OHOS::AbilityRuntime::Runtime::Create(jsOptions);
+    if (!jsRuntime) {
+        APPSPAWN_LOGE("LoadExtendLib: Failed to create JS runtime");
+        return;
+    }
+
+    OHOS::AbilityRuntime::Runtime::Options stsOptions;
+    stsOptions.lang = OHOS::AbilityRuntime::Runtime::Language::STS;
+    stsOptions.loadAce = true;
+    stsOptions.preload = true;
+    auto stsRuntime = OHOS::AbilityRuntime::Runtime::Create(stsOptions);
+    if (!stsRuntime) {
+        APPSPAWN_LOGE("LoadExtendLib: Failed to create STS runtime");
+        return;
+    }
+
+    ParseJsonContext jscontext = {{}, "napi"};
+    (void)ParseJsonConfig("etc/appspawn", PRELOAD_JSON_CONFIG.c_str(), GetNameSet, &jscontext);
+    for (std::string moduleName : jscontext.names) {
+        APPSPAWN_LOGI("moduleName %{public}s", moduleName.c_str());
+        jsRuntime->PreloadSystemModule(moduleName);
+    }
+
+    ParseJsonContext stscontext = {{}, "class"};
+    (void)ParseJsonConfig("etc/appspawn", PRELOAD_STS_JSON_CONFIG.c_str(), GetNameSet, &stscontext);
+    for (std::string className : stscontext.names) {
+        APPSPAWN_LOGI("className %{public}s", className.c_str());
+        stsRuntime->PreloadClass(className.c_str());
+    }
+
+    OHOS::AbilityRuntime::Runtime::SavePreloaded(std::move(jsRuntime), jsOptions.lang);
+    OHOS::AbilityRuntime::Runtime::SavePreloaded(std::move(stsRuntime), stsOptions.lang);
 }
 
 static void LoadExtendLib(void)
 {
     const char *acelibdir = OHOS::Ace::AceForwardCompatibility::GetAceLibName();
-    APPSPAWN_LOGI("LoadExtendLib: Start calling dlopen acelibdir.");
+    APPSPAWN_LOGI("LoadExtendLib: Start calling dlopen acelibdir");
     void *aceAbilityLib = dlopen(acelibdir, RTLD_NOW | RTLD_LOCAL);
     APPSPAWN_CHECK(aceAbilityLib != nullptr, return, "Fail to dlopen %{public}s, [%{public}s]", acelibdir, dlerror());
     APPSPAWN_LOGI("LoadExtendLib: Success to dlopen %{public}s", acelibdir);
@@ -97,46 +138,10 @@ static void LoadExtendLib(void)
         return;
     }
 
-    APPSPAWN_LOGI("LoadExtendLib: Start preload JS VM");
+    APPSPAWN_LOGI("LoadExtendLib: Start preload VM");
     SetTraceDisabled(true);
-
-    OHOS::AbilityRuntime::Runtime::Options jsOptions;
-    jsOptions.lang = OHOS::AbilityRuntime::Runtime::Language::JS;
-    jsOptions.loadAce = true;
-    jsOptions.preload = true;
-
-    auto jsRuntime = OHOS::AbilityRuntime::Runtime::Create(jsOptions);
-    if (!jsRuntime) {
-        APPSPAWN_LOGE("LoadExtendLib: Failed to create JS runtime");
-        return;
-    }
-
-    OHOS::AbilityRuntime::Runtime::Options stsOptions;
-    stsOptions.lang = OHOS::AbilityRuntime::Runtime::Language::STS;
-    stsOptions.loadAce = true;
-    stsOptions.preload = true;
-
-    auto stsRuntime = OHOS::AbilityRuntime::Runtime::Create(stsOptions);
-    if (!stsRuntime) {
-        APPSPAWN_LOGE("LoadExtendLib: Failed to create STS runtime");
-        return;
-    }
-
+    PreloadModule();
     SetTraceDisabled(false);
-
-    APPSPAWN_LOGI("LoadExtendLib: Start preload STS VM");
-
-    ParseJsonContext context = {};
-    (void)ParseJsonConfig("etc/appspawn", PRELOAD_JSON_CONFIG.c_str(), GetModuleSet, &context);
-    for (std::string moduleName : context.modules) {
-        APPSPAWN_LOGI("moduleName %{public}s", moduleName.c_str());
-        jsRuntime->PreloadSystemModule(moduleName);
-    }
-    // Save preloaded JS runtime
-    OHOS::AbilityRuntime::Runtime::SavePreloaded(std::move(jsRuntime), jsOptions.lang);
-
-    // Save preloaded STS runtime
-    OHOS::AbilityRuntime::Runtime::SavePreloaded(std::move(stsRuntime), stsOptions.lang);
 
     APPSPAWN_LOGI("LoadExtendLib: Start reclaim file cache");
     OHOS::Ace::AceForwardCompatibility::ReclaimFileCache(getpid());
