@@ -78,6 +78,12 @@ ohos_prebuilt_etc("appspawn_preload.json") {
   module_install_dir = "etc/appspawn"
 }
 
+ohos_prebuilt_etc("appspawn_preload_sts.json") {
+  source = "../appspawn_preload_sts.json"
+  part_name = "${part_name}"
+  module_install_dir = "etc/appspawn"
+}
+
 ohos_prebuilt_etc("appspawn_systemLib.json") {
   source = "../appspawn_systemLib.json"
   part_name = "${part_name}"
@@ -88,6 +94,7 @@ group("etc_files") {
   deps = [
     ":appdata-sandbox.json",
     ":appspawn_preload.json",
+    ":appspawn_preload_sts.json",
     ":appspawn_systemLib.json",
   ]
   if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
