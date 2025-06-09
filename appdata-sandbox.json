@@ -750,7 +750,7 @@
                     "sandbox-flags": [ "bind", "rec" ]
                 },
                 {
-                    "src-path": "/mnt/sandbox/<currentUserId>/<PackageName>/mnt/storage/Users",
+                    "src-path": "/mnt/sandbox/<currentUserId>/<clonePackageName>/mnt/storage/Users",
                     "sandbox-path": "/storage/Users",
                     "sandbox-flags-customized": [ "MS_NODEV"],
                     "dac-override-sensitive": "true",
@@ -764,7 +764,7 @@
                     "check-action-status": "false"
                 },
                 {
-                    "src-path": "/mnt/sandbox/<currentUserId>/<PackageName>/mnt/storage/userExternal",
+                    "src-path": "/mnt/sandbox/<currentUserId>/<clonePackageName>/mnt/storage/userExternal",
                     "sandbox-path": "/storage/userExternal",
                     "sandbox-flags-customized": [ "MS_NODEV" ],
                     "dac-override-sensitive": "true",
@@ -781,7 +781,7 @@
                     "sandbox-flags": [ "bind", "rec" ]
                 },
                 {
-                    "src-path": "/mnt/sandbox/<currentUserId>/<PackageName>/mnt/storage/Users",
+                    "src-path": "/mnt/sandbox/<currentUserId>/<clonePackageName>/mnt/storage/Users",
                     "sandbox-path": "/storage/Users",
                     "sandbox-flags-customized": [ "MS_NODEV"],
                     "dac-override-sensitive": "true",
