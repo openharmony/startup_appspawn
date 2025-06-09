@@ -60,6 +60,11 @@ namespace AbilityRuntime {
             return;
         }
 
+        void PreloadClass(const char *className)
+        {
+            return;
+        }
+
         Runtime(const Runtime &) = delete;
         Runtime(Runtime &&) = delete;
         Runtime &operator=(const Runtime &) = delete;
