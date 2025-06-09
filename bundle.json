@@ -28,7 +28,8 @@
             "appspawn_support_prefork",
             "appspawn_support_code_signature",
             "appspawn_allow_internet_permission",
-            "appspawn_custom_sandbox"
+            "appspawn_custom_sandbox",
+            "appspawn_support_local_debugger"
         ],
         "rom": "296KB",
         "ram": "13125KB",
