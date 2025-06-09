@@ -460,8 +460,8 @@ static void OnReceiveRequest(const TaskHandle taskHandle, const uint8_t *buffer,
     connection->receiverCtx.incompleteMsg = NULL;
     int ret = 0;
     do {
-        APPSPAWN_LOGI("OnReceiveRequest connectionId: %{public}u start: 0x%{public}x buffLen %{public}d",
-            connection->connectionId, *(uint32_t *)(buffer + currLen), buffLen - currLen);
+        APPSPAWN_LOGI("connectionId:%{public}u buffLen:%{public}d",
+            connection->connectionId, buffLen - currLen);
 
         ret = GetAppSpawnMsgFromBuffer(buffer + currLen, buffLen - currLen,
             &message, &connection->receiverCtx.msgRecvLen, &reminder);
