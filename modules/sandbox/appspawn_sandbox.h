@@ -122,6 +122,11 @@ typedef struct {
     uint32_t mode;
 } PathDemandInfo;
 
+typedef struct {
+    uint32_t decPathCount;  // dec放行目录数量
+    char **decPath;         // dec放行目录数组
+} DecPolicyPaths;
+
 typedef struct TagPathMountNode {
     SandboxMountNode sandboxNode;
     char *source;                   // source 目录，一般是全局的fs 目录
@@ -134,6 +139,7 @@ typedef struct TagPathMountNode {
     uint32_t category;
     char *appAplName;
     PathDemandInfo demandInfo[0];
+    DecPolicyPaths decPolicyPaths;
 } PathMountNode;
 
 typedef struct TagSymbolLinkNode {

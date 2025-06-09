@@ -701,6 +701,12 @@
                     "src-path": "/mnt/data/<currentUserId>/userExternal",
                     "sandbox-path": "/storage/userExternal",
                     "sandbox-flags": [ "bind", "rec" ]
+                },
+                {
+                    "src-path": "",
+                    "sandbox-path": "",
+                    "sandbox-flags": [],
+                    "dec-paths": [ "/storage/Users/<currentUserId>/appdata/el2/shareFiles" ]
                 }
             ]
         }],
@@ -911,6 +917,11 @@
                     "dac-override-sensitive": "true",
                     "fs-type": "fuse",
                     "check-action-status": "false"
+                }, {
+                    "src-path": "",
+                    "sandbox-path": "",
+                    "sandbox-flags": [],
+                    "dec-paths": [ "/mnt/data/fuse" ]
                 }
             ]
         }],
@@ -986,6 +997,36 @@
                     "src-path": "/storage/media/<currentUserId>/local/files",
                     "sandbox-path": "/storage/media/local/files",
                     "sandbox-flags": [ "bind", "rec" ]
+                }
+            ]
+        }],
+        "ohos.permission.READ_WRITE_DOWNLOAD_DIRECTORY":[{
+            "sandbox-switch": "ON",
+            "mount-paths": [{
+                    "src-path": "",
+                    "sandbox-path": "",
+                    "sandbox-flags": [],
+                    "dec-paths": [ "/storage/Users/<currentUserId>/Download" ]
+                }
+            ]
+        }],
+        "ohos.permission.READ_WRITE_DESKTOP_DIRECTORY":[{
+            "sandbox-switch": "ON",
+            "mount-paths": [{
+                    "src-path": "",
+                    "sandbox-path": "",
+                    "sandbox-flags": [],
+                    "dec-paths": [ "/storage/Users/<currentUserId>/Desktop" ]
+                }
+            ]
+        }],
+        "ohos.permission.READ_WRITE_DOCUMENTS_DIRECTORY":[{
+            "sandbox-switch": "ON",
+            "mount-paths": [{
+                    "src-path": "",
+                    "sandbox-path": "",
+                    "sandbox-flags": [],
+                    "dec-paths": [ "/storage/Users/<currentUserId>/Documents" ]
                 }
             ]
         }],
