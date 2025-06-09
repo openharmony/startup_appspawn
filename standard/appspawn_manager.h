@@ -232,6 +232,9 @@ APPSPAWN_INLINE int IsColdRunMode(const AppSpawnMgr *content)
 
 APPSPAWN_INLINE int IsDeveloperModeOn(const AppSpawningCtx *property)
 {
+#ifdef SUPPORT_LOCAL_DEBUGGER
+    return true;
+#endif
     return (property != NULL && ((property->client.flags & APP_DEVELOPER_MODE) == APP_DEVELOPER_MODE));
 }
 
