@@ -23,6 +23,7 @@ if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
       "sandbox_adapter.cpp",
       "sandbox_cfgvar.c",
       "sandbox_debug_mode.c",
+      "sandbox_dec.c",
       "sandbox_expand.c",
       "sandbox_load.c",
       "sandbox_manager.c",
@@ -80,6 +81,7 @@ if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
     sources = [
       "${appspawn_innerkits_path}/permission/appspawn_mount_permission.c",
       "appspawn_permission.c",
+      "sandbox_dec.c",
       "sandbox_shared_mount.cpp",
       "sandbox_utils.cpp",
     ]

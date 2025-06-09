@@ -193,6 +193,10 @@
                 "src-path": "/mnt/user/<currentUserId>/nosharefs/docs",
                 "sandbox-path": "/storage/Users"
             }, {
+                "src-path": "",
+                "sandbox-path": "",
+                "dec-paths":[ "/storage/Users/<currentUserId>/appdata/el2/shareFiles" ]
+            }, {
                 "src-path": "/mnt/data/<currentUserId>/userExternal",
                 "sandbox-path": "/storage/userExternal"
             }],
@@ -369,6 +373,10 @@
                 "src-path": "/dev/fuse",
                 "sandbox-path": "/mnt/data/fuse",
                 "category": "dlp_fuse"
+            }, {
+                "src-path": "",
+                "sandbox-path": "",
+                "dec-paths": [ "/mnt/data/fuse" ]
             }],
             "mount-groups": ["dlpmgr"]
         }, {
@@ -389,6 +397,27 @@
             "mount-paths": [{
                 "src-path": "/data/service/el1/public/update/param_service/install/system/etc/<PackageName>",
                 "sandbox-path": "/data/service/el1/public/update/param_service/install/system/etc/<PackageName>"
+            }]
+        }, {
+            "name": "ohos.permission.READ_WRITE_DOWNLOAD_DIRECTORY",
+            "mount-paths": [{
+                "src-path": "none",
+                "sandbox-path": "none",
+                "dec-paths": [ "/storage/Users/<currentUserId>/Download" ]
+            }]
+        },{
+            "name": "ohos.permission.READ_WRITE_DESKTOP_DIRECTORY",
+            "mount-paths": [{
+                "src-path": "none",
+                "sandbox-path": "none",
+                "dec-paths": [ "/storage/Users/<currentUserId>/Desktop" ]
+            }]
+        },{
+            "name": "ohos.permission.READ_WRITE_DOCUMENTS_DIRECTORY",
+            "mount-paths": [{
+                "src-path": "none",
+                "sandbox-path": "none",
+                "dec-paths": [ "/storage/Users/<currentUserId>/Documents" ]
             }]
         }, {
             "name": "ohos.permission.READ_WRITE_USER_FILE",
