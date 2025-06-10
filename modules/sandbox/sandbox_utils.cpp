@@ -84,6 +84,7 @@ namespace {
     const std::string g_packageName = "<PackageName>";
     const std::string g_packageNameIndex = "<PackageName_index>";
     const std::string g_variablePackageName = "<variablePackageName>";
+    const std::string g_clonePackageName = "<clonePackageName>";
     const std::string g_arkWebPackageName = "<arkWebPackageName>";
     const std::string g_hostUserId = "<hostUserId>";
     const std::string g_sandBoxDir = "/mnt/sandbox/";
@@ -573,6 +574,25 @@ static std::string ReplaceHostUserId(const AppSpawningCtx *appProperty, const st
     return tmpSandboxPath;
 }
 
+static std::string ReplaceClonePackageName(const AppSpawningCtx *appProperty, const std::string &path)
+{
+    std::string tmpSandboxPath = path;
+    AppSpawnMsgBundleInfo *bundleInfo =
+        reinterpret_cast<AppSpawnMsgBundleInfo *>(GetAppProperty(appProperty, TLV_BUNDLE_INFO));
+    APPSPAWN_CHECK(bundleInfo != NULL, return "", "No bundle info in msg %{public}s", GetBundleName(appProperty));
+
+    std::string tmpBundlePath = bundleInfo->bundleName;
+    std::ostringstream variablePackageName;
+    if (CheckAppSpawnMsgFlag(appProperty->message, TLV_MSG_FLAGS, APP_FLAGS_CLONE_ENABLE)) {
+        variablePackageName << "+clone-" << bundleInfo->bundleIndex << "+" << bundleInfo->bundleName;
+        tmpBundlePath = variablePackageName.str();
+    }
+
+    tmpSandboxPath = replace_all(tmpSandboxPath, g_variablePackageName, tmpBundlePath);
+    APPSPAWN_LOGV("tmpSandboxPath %{public}s", tmpSandboxPath.c_str());
+    return tmpSandboxPath;
+}
+
 string SandboxUtils::ConvertToRealPath(const AppSpawningCtx *appProperty, std::string path)
 {
     AppSpawnMsgBundleInfo *info =
@@ -603,6 +623,10 @@ string SandboxUtils::ConvertToRealPath(const AppSpawningCtx *appProperty, std::s
 
     if (path.find(g_variablePackageName) != std::string::npos) {
         path = ReplaceVariablePackageName(appProperty, path);
+    }
+
+    if (path.find(g_clonePackageName) != std::string::npos) {
+        path = ReplaceClonePackageName(appProperty, path);
     }
 
     if (path.find(g_arkWebPackageName) != std::string::npos) {
