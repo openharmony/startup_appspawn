@@ -29,6 +29,7 @@
 
 #include "appspawn_hook.h"
 #include "appspawn_manager.h"
+#include "parameter.h"
 
 #ifdef WITH_SECCOMP
 #include "seccomp_policy.h"
@@ -49,6 +50,17 @@ namespace {
     const std::string ARK_WEB_RENDER_LIB_NAME = "libarkweb_render.so";
     const std::string WEB_ENGINE_LIB_NAME = "libweb_engine.so";
     const std::string WEB_RENDER_LIB_NAME = "libnweb_render.so";
+    const std::string ARK_WEB_ENGINE_LIB_PRELOAD_PATH =
+        "/data/app/el1/bundle/public/com.huawei.hmos.arkwebcore/libs/arm64";
+    const std::string OHOS_ADPT_GLUE_SRC_LIB_PATH =
+        "/system/lib64/libohos_adapter_glue_source.z.so";
+
+typedef enum {
+    PRELOAD_NO = 0,         // 不预加载
+    PRELOAD_PARTIAL = 1,    // 只预加载libohos_adapter_glue_source.z.so
+    PRELOAD_FULL = 2        // 预加载libohos_adapter_glue_source.z.so和libarkweb_engine.so
+} RenderPreLoadMode;
+
 }  // namespace
 
 static bool SetSeccompPolicyForRenderer(void *nwebRenderHandle)
@@ -148,6 +160,37 @@ APPSPAWN_STATIC int RunChildProcessor(AppSpawnContent *content, AppSpawnClient *
     return 0;
 }
 
+static void PreLoadArkWebEngineLib()
+{
+    Dl_namespace dlns;
+    Dl_namespace ndkns;
+    dlns_init(&dlns, "nweb_ns");
+    dlns_create(&dlns, ARK_WEB_ENGINE_LIB_PRELOAD_PATH.c_str());
+    dlns_get("ndk", &ndkns);
+    dlns_inherit(&dlns, &ndkns, "allow_all_shared_libs");
+    void *webEngineHandle = dlopen_ns(&dlns, ARK_WEB_ENGINE_LIB_NAME.c_str(), RTLD_NOW | RTLD_GLOBAL);
+    if (!webEngineHandle) {
+        APPSPAWN_LOGE("Fail to dlopen libarkweb_engine.so, errno: %{public}d", errno);
+    }
+}
+
+static void PreLoadOHOSAdptGlueSrcLib()
+{
+    void *ohosAdptGlueSrcHandle = dlopen(OHOS_ADPT_GLUE_SRC_LIB_PATH.c_str(), RTLD_NOW | RTLD_GLOBAL);
+    if (!ohosAdptGlueSrcHandle) {
+        APPSPAWN_LOGE("Fail to dlopen libohos_adapter_glue_source.z.so, errno: %{public}d", errno);
+    }
+}
+
+static int GetSysParamPreLoadMode()
+{
+    const int BUFFER_LEN = 128;
+    char preLoadMode[BUFFER_LEN] = {0};
+    GetParameter("const.startup.nwebspawn.preloadMode", "0", preLoadMode, BUFFER_LEN);
+    int ret = std::atoi(preLoadMode);
+    return ret;
+}
+
 static int PreLoadNwebSpawn(AppSpawnMgr *content)
 {
     APPSPAWN_LOGI("PreLoadNwebSpawn %{public}d", IsNWebSpawnMode(content));
@@ -156,6 +199,18 @@ static int PreLoadNwebSpawn(AppSpawnMgr *content)
     }
     // register
     RegChildLooper(&content->content, RunChildProcessor);
+
+    // preload render lib
+    int preloadMode = GetSysParamPreLoadMode();
+    APPSPAWN_LOGI("NwebSpawn preload render lib mode: %{public}d", preloadMode);
+    if (preloadMode == PRELOAD_PARTIAL) {
+        PreLoadOHOSAdptGlueSrcLib();
+    }
+    if (preloadMode == PRELOAD_FULL) {
+        PreLoadArkWebEngineLib();
+        PreLoadOHOSAdptGlueSrcLib();
+    }
+
     return 0;
 }
 
