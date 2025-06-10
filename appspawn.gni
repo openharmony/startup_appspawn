@@ -26,7 +26,7 @@ declare_args() {
   appspawn_support_native = true
   appspawn_report_event = true
   appspawn_test_cmd = false
-  appspawn_sandbox_new = true
+  appspawn_sandbox_new = false
   appspawn_use_encaps = false
   enable_appspawn_dump_catcher = true
   appspawn_unittest_coverage = false
