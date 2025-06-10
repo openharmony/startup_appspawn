@@ -181,7 +181,8 @@ int EnableNewNetNamespace(void);
     HILOG_WARN(LOG_CORE, "[%{public}s:%{public}d]" fmt, (APP_FILE_NAME), (__LINE__), ##__VA_ARGS__)
 #define APPSPAWN_LOGF(fmt, ...) \
     HILOG_FATAL(LOG_CORE, "[%{public}s:%{public}d]" fmt, (APP_FILE_NAME), (__LINE__), ##__VA_ARGS__)
-
+#define APPSPAWN_DUMP_LOGI(fmt, ...) \
+    HILOG_INFO(LOG_CORE, fmt, ##__VA_ARGS__)
 #define APPSPAWN_DUMP(fmt, ...) \
     do { \
         HILOG_INFO(LOG_CORE, fmt, ##__VA_ARGS__); \
@@ -198,6 +199,8 @@ int EnableNewNetNamespace(void);
     HILOG_DEBUG(HILOG_MODULE_HIVIEW, "[%{public}s:%{public}d]" fmt,  (APP_FILE_NAME), (__LINE__), ##__VA_ARGS__)
 #define APPSPAWN_LOGW(fmt, ...) \
     HILOG_FATAL(HILOG_MODULE_HIVIEW, "[%{public}s:%{public}d]" fmt,  (APP_FILE_NAME), (__LINE__), ##__VA_ARGS__)
+#define APPSPAWN_DUMP_LOGI(fmt, ...) \
+    HILOG_INFO(HILOG_MODULE_HIVIEW, fmt, ##__VA_ARGS__)
 #endif
 
 #define APPSPAWN_CHECK(retCode, exper, fmt, ...) \

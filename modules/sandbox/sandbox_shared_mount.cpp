@@ -114,7 +114,7 @@ static bool IsUnlockStatus(uint32_t uid)
     std::string lockStatusParam = "startup.appspawn.lockstatus_" + std::to_string(uid);
     char userLockStatus[LOCK_STATUS_SIZE] = {0};
     int ret = GetParameter(lockStatusParam.c_str(), "1", userLockStatus, sizeof(userLockStatus));
-    APPSPAWN_LOGI("get param %{public}s %{public}s", lockStatusParam.c_str(), userLockStatus);
+    APPSPAWN_LOGI("lockStatus %{public}u %{public}s", uid, userLockStatus);
     if (ret > 0 && (strcmp(userLockStatus, "0") == 0)) {   // 0:unlock status 1：lock status
         return true;
     }
