@@ -469,7 +469,7 @@ static void SpawnLoadSilk(const AppSpawnMgr *content, const AppSpawningCtx *prop
 {
     const char *processName = GetBundleName(property);
     APPSPAWN_CHECK(processName != NULL, return, "Can not get bundle name");
-    LoadSilkLibrary(processName);
+    (void)LoadSilkLibrary(processName);
 }
 
 static int SpawnSetProperties(AppSpawnMgr *content, AppSpawningCtx *property)

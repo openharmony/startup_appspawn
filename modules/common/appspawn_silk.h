@@ -16,7 +16,12 @@
 #ifndef APPSPAWN_SILK_CPP
 #define APPSPAWN_SILK_CPP
 
+struct SilkConfig {
+    char **configItems;
+    int configCursor;
+};
+
 void LoadSilkConfig(void);
-void LoadSilkLibrary(const char *packageName);
+bool LoadSilkLibrary(const char *packageName);
 
 #endif
