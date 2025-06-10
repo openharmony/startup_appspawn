@@ -116,6 +116,11 @@ void RunAppSandbox(const char *ptyName);
 HOOK_MGR *GetAppSpawnHookMgr(void);
 int SpawnKickDogStart(AppSpawnMgr *mgrContent);
 int AddPermissionToEncaps(cJSON *extInfoJson, cJSON *encaps, uint32_t *permissionCount);
+
+#ifdef APPSPAWN_HITRACE_OPTION
+int FilterAppSpawnTrace(AppSpawnMgr *content, AppSpawningCtx *property);
+#endif
+
 #define STUB_NEED_CHECK 0x01
 typedef int (*ExecvFunc)(const char *pathname, char *const argv[]);
 enum {
