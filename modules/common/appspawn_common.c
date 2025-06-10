@@ -47,6 +47,10 @@
 #include "parameter.h"
 #include "securec.h"
 
+#ifdef APPSPAWN_HITRACE_OPTION
+#include "hitrace_option/hitrace_option.h"
+#endif
+
 #ifdef CODE_SIGNATURE_ENABLE  // for xpm
 #include "code_sign_attr_utils.h"
 #endif
@@ -472,6 +476,22 @@ static void SpawnLoadSilk(const AppSpawnMgr *content, const AppSpawningCtx *prop
     LoadSilkLibrary(processName);
 }
 
+#ifdef APPSPAWN_HITRACE_OPTION
+APPSPAWN_STATIC int FilterAppSpawnTrace(AppSpawnMgr *content, AppSpawningCtx *property)
+{
+    const char *processName = GetProcessName(property);
+    if (processName != NULL) {
+        pid_t pid = getpid();
+        APPSPAWN_LOGV("processName: %{public}s pid: %{public}d", processName, pid);
+        FilterAppTrace(processName, pid);
+    } else {
+        APPSPAWN_LOGV("processName is NULL");
+    }
+
+    return 0;
+}
+#endif
+
 static int SpawnSetProperties(AppSpawnMgr *content, AppSpawningCtx *property)
 {
     APPSPAWN_LOGV("Spawning: set child property");
@@ -639,6 +659,9 @@ MODULE_CONSTRUCTOR(void)
     AddAppSpawnHook(STAGE_CHILD_PRE_COLDBOOT, HOOK_PRIO_HIGHEST, SpawnInitSpawningEnv);
     AddAppSpawnHook(STAGE_CHILD_PRE_COLDBOOT, HOOK_PRIO_COMMON + 1, SpawnSetAppEnv);
     AddAppSpawnHook(STAGE_CHILD_EXECUTE, HOOK_PRIO_HIGHEST, SpawnEnableCache);
+#ifdef APPSPAWN_HITRACE_OPTION
+    AddAppSpawnHook(STAGE_CHILD_EXECUTE, HOOK_PRIO_COMMON, FilterAppSpawnTrace);
+#endif
     AddAppSpawnHook(STAGE_CHILD_EXECUTE, HOOK_PRIO_PROPERTY, SpawnSetProperties);
     AddAppSpawnHook(STAGE_CHILD_POST_RELY, HOOK_PRIO_HIGHEST, SpawnComplete);
     AddAppSpawnHook(STAGE_PARENT_POST_FORK, HOOK_PRIO_HIGHEST, CloseFdArgs);
