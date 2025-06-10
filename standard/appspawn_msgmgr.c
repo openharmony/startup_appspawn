@@ -386,7 +386,7 @@ void DumpAppSpawnMsg(const AppSpawnMsgNode *message)
         APPSPAWN_DUMP("App dac info uid: %{public}d gid: %{public}d count: %{public}d",
             dacInfo->uid, dacInfo->gid, dacInfo->gidCount);
         for (uint32_t i = 0; i < dacInfo->gidCount; i++) {
-            APPSPAWN_DUMP("gid group[%{public}d]: %{public}d", i, dacInfo->gidTable[i]);
+            APPSPAWN_LOGV("gid group[%{public}d]: %{public}d", i, dacInfo->gidTable[i]);
         }
     }
     AppSpawnMsgBundleInfo *bundleInfo = (AppSpawnMsgBundleInfo *)GetAppSpawnMsgInfo(message, TLV_BUNDLE_INFO);
