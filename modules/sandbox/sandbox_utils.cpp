@@ -588,7 +588,7 @@ static std::string ReplaceClonePackageName(const AppSpawningCtx *appProperty, co
         tmpBundlePath = variablePackageName.str();
     }
 
-    tmpSandboxPath = replace_all(tmpSandboxPath, g_variablePackageName, tmpBundlePath);
+    tmpSandboxPath = replace_all(tmpSandboxPath, g_clonePackageName, tmpBundlePath);
     APPSPAWN_LOGV("tmpSandboxPath %{public}s", tmpSandboxPath.c_str());
     return tmpSandboxPath;
 }
