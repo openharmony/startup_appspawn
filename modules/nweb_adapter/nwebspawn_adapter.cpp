@@ -184,7 +184,7 @@ static void PreLoadOHOSAdptGlueSrcLib()
 
 static int GetSysParamPreLoadMode()
 {
-    const int BUFFER_LEN = 128;
+    const int BUFFER_LEN = 8;
     char preLoadMode[BUFFER_LEN] = {0};
     GetParameter("const.startup.nwebspawn.preloadMode", "0", preLoadMode, BUFFER_LEN);
     int ret = std::atoi(preLoadMode);
