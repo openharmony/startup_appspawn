@@ -177,6 +177,12 @@ ohos_unittest("AppSpawn_ut") {
     "os_account:os_account_innerkits",
     "resource_management:global_resmgr",
   ]
+
+  if (appspawn_hitrace_option == true) {
+    defines += [ "APPSPAWN_HITRACE_OPTION" ]
+    external_deps += [ "hitrace:libhitrace_option" ]
+  }
+
   if (enable_appspawn_dump_catcher) {
     external_deps += [ "faultloggerd:libdfx_dumpcatcher" ]
   }
