@@ -812,4 +812,30 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_SetIsolateDir, TestSize.Level0)
     ASSERT_EQ(ret, 0);
 }
 
+#ifdef APPSPAWN_HITRACE_OPTION
+HWTEST_F(AppSpawnCommonTest, App_Spawn_FilterAppSpawnTrace, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = nullptr;
+    AppSpawnReqMsgHandle reqHandle = 0;
+    AppSpawningCtx *property = nullptr;
+    int ret = -1;
+    FilterAppSpawnTrace(nullptr, property);
+    EXPECT_EQ(property, nullptr);
+
+    do {
+        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create reqMgr %{public}s", APPSPAWN_SERVER_NAME);
+        reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+        APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break,
+            "Failed to create req %{public}s", APPSPAWN_SERVER_NAME);
+        property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
+        APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
+        FilterAppSpawnTrace(nullptr, property);
+    } while (0);
+
+    DeleteAppSpawningCtx(property);
+    AppSpawnClientDestroy(clientHandle);
+}
+#endif
+
 }  // namespace OHOS
