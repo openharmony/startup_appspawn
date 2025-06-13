@@ -38,6 +38,7 @@
 #include "init_utils.h"
 #include "parameter.h"
 #include "appspawn_permission.h"
+#include "sandbox_dec.h"
 
 #ifdef WITH_SELINUX
 #ifdef APPSPAWN_MOUNT_TMPSHM
@@ -447,6 +448,98 @@ static int DoSandboxMountByCategory(const SandboxContext *context, const PathMou
     return ret;
 }
 
+static void FreeDecPolicyPaths(DecPolicyInfo *decPolicyInfo)
+{
+    if (decPolicyInfo == NULL) {
+        return;
+    }
+
+    for (uint32_t i = 0; i < decPolicyInfo->pathNum; i++) {
+        if (decPolicyInfo->path[i].path) {
+            free(decPolicyInfo->path[i].path);
+        }
+    }
+
+    decPolicyInfo->pathNum = 0;
+}
+
+
+static int32_t SetDecPolicyWithCond(const SandboxContext *context, const PathMountNode *sandboxNode,
+                                    VarExtraData *extraData)
+{
+    if (sandboxNode == NULL || sandboxNode->decPolicyPaths.decPathCount == 0) {
+        return 0;
+    }
+
+    AppSpawnMsgAccessToken *tokenInfo = (AppSpawnMsgAccessToken *)GetSandboxCtxMsgInfo(context, TLV_ACCESS_TOKEN_INFO);
+    APPSPAWN_CHECK(tokenInfo != NULL, return APPSPAWN_MSG_INVALID, "Get token id failed.");
+
+    DecPolicyInfo decPolicyInfo = {0};
+    decPolicyInfo.pathNum = sandboxNode->decPolicyPaths.decPathCount;
+
+    for (uint32_t i = 0; i < decPolicyInfo.pathNum; i++) {
+        const char* realDecPath = GetSandboxRealVar(context, BUFFER_FOR_TARGET, sandboxNode->decPolicyPaths.decPath[i],
+                                                    NULL, extraData);
+        if (realDecPath == NULL) {
+            // Handle the error appropriately if needed
+            continue;
+        }
+        decPolicyInfo.path[i].path = strdup(realDecPath);
+        if (decPolicyInfo.path[i].path == NULL) {
+            // Free already allocated paths before returning
+            FreeDecPolicyPaths(&decPolicyInfo);
+            return APPSPAWN_ERROR_UTILS_MEM_FAIL;
+        }
+
+        decPolicyInfo.path[i].pathLen = (uint32_t)strlen(decPolicyInfo.path[i].path);
+        decPolicyInfo.path[i].mode = SANDBOX_MODE_WRITE | SANDBOX_MODE_READ;
+    }
+
+    decPolicyInfo.tokenId = tokenInfo->accessTokenIdEx;
+    decPolicyInfo.flag = true;
+    SetDecPolicyInfos(&decPolicyInfo);
+    FreeDecPolicyPaths(&decPolicyInfo);
+    return 0;
+}
+
+static int SetDecPolicyWithDir(const SandboxContext *context)
+{
+    AppSpawnMsgAccessToken *tokenInfo = (AppSpawnMsgAccessToken *)GetSandboxCtxMsgInfo(context, TLV_ACCESS_TOKEN_INFO);
+    AppSpawnMsgBundleInfo *bundleInfo = (AppSpawnMsgBundleInfo *)GetSandboxCtxMsgInfo(context, TLV_BUNDLE_INFO);
+    APPSPAWN_CHECK(tokenInfo != NULL && bundleInfo != NULL, return APPSPAWN_MSG_INVALID,
+        "Get token info or bundle info failed.");
+
+    uint32_t flags = CheckAppSpawnMsgFlag(context->message, TLV_MSG_FLAGS, APP_FLAGS_ATOMIC_SERVICE) ? 0x4 : 0;
+    if (flags == 0) {
+        flags = (CheckAppSpawnMsgFlag(context->message, TLV_MSG_FLAGS, APP_FLAGS_CLONE_ENABLE) &&
+            bundleInfo->bundleIndex > 0) ? 0x1 : 0;
+    }
+    int ret = 0;
+    char downloadDir[PATH_MAX] = {0};
+    if (flags == 1) {
+        ret = snprintf_s(downloadDir, PATH_MAX, PATH_MAX - 1, "/storage/Users/currentUser/Download/+clone-%d+%s",
+            bundleInfo->bundleIndex, bundleInfo->bundleName);
+    } else {
+        ret = snprintf_s(downloadDir, PATH_MAX, PATH_MAX - 1, "/storage/Users/currentUser/Download/%s",
+            bundleInfo->bundleName);
+    }
+    APPSPAWN_CHECK(ret > 0, return APPSPAWN_ERROR_UTILS_MEM_FAIL,
+                   "snprintf_s download path failed, ret %{public}d, err %{public}d", ret, errno);
+
+    DecPolicyInfo decPolicyInfo = {0};
+    decPolicyInfo.pathNum = 1;
+    PathInfo pathInfo = {0};
+    pathInfo.path = downloadDir;
+    pathInfo.pathLen = (uint32_t)(strlen(pathInfo.path));
+    pathInfo.mode = SANDBOX_MODE_WRITE | SANDBOX_MODE_READ;
+    decPolicyInfo.path[0] = pathInfo;
+    decPolicyInfo.tokenId = tokenInfo->accessTokenIdEx;
+    decPolicyInfo.flag = true;
+
+    SetDecPolicyInfos(&decPolicyInfo);
+    return 0;
+}
+
 static int DoSandboxPathNodeMount(const SandboxContext *context,
     const SandboxSection *section, const PathMountNode *sandboxNode, uint32_t operation)
 {
@@ -494,7 +587,12 @@ static int DoSandboxPathNodeMount(const SandboxContext *context,
             section->name, ret, category);
         return ret;
     }
-    return 0;
+
+    ret = SetDecPolicyWithCond(context, sandboxNode, extraData);
+    if (ret != 0) {
+        APPSPAWN_LOGE("Failed to set dec policy with conditional: %{public}d", ret);
+    }
+    return ret;
 }
 
 static int DoSandboxPathSymLink(const SandboxContext *context,
@@ -1249,6 +1347,8 @@ int MountSandboxConfigs(AppSpawnSandboxCfg *sandbox, const AppSpawningCtx *prope
 #endif
         ret = ChangeCurrentDir(context);
         APPSPAWN_CHECK_ONLY_EXPER(ret == 0, break);
+        SetDecPolicyWithDir(context);
+        SetDecPolicy();
 #if defined(APPSPAWN_MOUNT_TMPSHM) && defined(WITH_SELINUX)
         Restorecon(DEV_SHM_DIR);
 #endif
