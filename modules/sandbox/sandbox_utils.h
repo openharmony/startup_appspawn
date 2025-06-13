@@ -47,6 +47,7 @@ public:
         std::string optionsPoint;
         std::string fsType;
         std::string sandboxPath;
+        std::vector<std::string> decPaths;
     } SandboxMountConfig;
 
 #ifndef APPSPAWN_TEST
@@ -73,6 +74,8 @@ private:
     static int32_t DoSandboxRootFolderCreateAdapt(std::string &sandboxPackagePath);
     static int32_t DoSandboxRootFolderCreate(const AppSpawningCtx *appProperty,
                                              std::string &sandboxPackagePath);
+    static int32_t SetDecPolicyWithPermission(const AppSpawningCtx *appProperty, SandboxMountConfig &mountConfig);
+    static int32_t SetDecWithDir(const AppSpawningCtx *appProperty, uint32_t userId);
     static void DoSandboxChmod(nlohmann::json jsonConfig, std::string &sandboxRoot);
     static int DoAllMntPointsMount(const AppSpawningCtx *appProperty,
         nlohmann::json &appConfig, const char *typeName, const std::string &section = "app-base");
@@ -115,6 +118,7 @@ private:
     static unsigned long GetSandboxMountFlags(nlohmann::json &config);
     static std::string GetSandboxFsType(nlohmann::json &config);
     static std::string GetSandboxOptions(const AppSpawningCtx *appProperty, nlohmann::json &config);
+    static std::vector<std::string> GetSandboxDecPath(const AppSpawningCtx *appProperty, nlohmann::json &config);
     static std::string GetSandboxPath(const AppSpawningCtx *appProperty, nlohmann::json &mntPoint,
                                       const std::string &section, std::string sandboxRoot);
     static void GetSandboxMountConfig(const AppSpawningCtx *appProperty, const std::string &section,

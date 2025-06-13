@@ -42,6 +42,7 @@
 #include "init_utils.h"
 #include "parameter.h"
 #include "parameters.h"
+#include "sandbox_dec.h"
 #include "securec.h"
 #ifdef APPSPAWN_HISYSEVENT
 #include "hisysevent_adapter.h"
@@ -123,6 +124,7 @@ namespace {
     const char *g_dacOverrideSensitive = "dac-override-sensitive";
     const char *g_sandBoxShared = "sandbox-shared";
     const char *g_sandBoxSwitchPrefix = "sandbox-switch";
+    const char *g_sandBoxDecPath = "dec-paths";
     const char *g_symlinkPrefix = "symbol-links";
     const char *g_sandboxRootPrefix = "sandbox-root";
     const char *g_topSandBoxSwitchPrefix = "top-sandbox-switch";
@@ -887,15 +889,34 @@ std::string SandboxUtils::GetSandboxOptions(const AppSpawningCtx *appProperty, n
     return options;
 }
 
+std::vector<std::string> SandboxUtils::GetSandboxDecPath(const AppSpawningCtx *appProperty, nlohmann::json &config)
+{
+    AppSpawnMsgDacInfo *dacInfo = reinterpret_cast<AppSpawnMsgDacInfo *>(GetAppProperty(appProperty, TLV_DAC_INFO));
+    if (dacInfo == nullptr) {
+        return {};
+    }
+
+    std::vector<std::string> decPaths = {};
+    if (config.find(g_sandBoxDecPath) != config.end()) {
+        for (auto decPath : config[g_sandBoxDecPath].get<std::vector<std::string>>()) {
+            decPath = ConvertToRealPathWithPermission(appProperty, decPath);
+            decPaths.push_back(decPath);
+        }
+    }
+    return decPaths;
+}
+
 void SandboxUtils::GetSandboxMountConfig(const AppSpawningCtx *appProperty, const std::string &section,
                                          nlohmann::json &mntPoint, SandboxMountConfig &mountConfig)
 {
     if (section.compare(g_permissionPrefix) == 0) {
         mountConfig.optionsPoint = GetSandboxOptions(appProperty, mntPoint);
         mountConfig.fsType = GetSandboxFsType(mntPoint);
+        mountConfig.decPaths = GetSandboxDecPath(appProperty, mntPoint);
     } else {
         mountConfig.fsType = (mntPoint.find(g_fsType) != mntPoint.end()) ? mntPoint[g_fsType].get<std::string>() : "";
         mountConfig.optionsPoint = "";
+        mountConfig.decPaths = {};
     }
     return;
 }
@@ -911,6 +932,88 @@ std::string SandboxUtils::GetSandboxPath(const AppSpawningCtx *appProperty, nloh
         sandboxPath = sandboxRoot + ConvertToRealPath(appProperty, tmpSandboxPath);
     }
     return sandboxPath;
+}
+
+int32_t SandboxUtils::SetDecWithDir(const AppSpawningCtx *appProperty, uint32_t userId)
+{
+    AppSpawnMsgAccessToken *tokenInfo =
+        reinterpret_cast<AppSpawnMsgAccessToken *>(GetAppProperty(appProperty, TLV_ACCESS_TOKEN_INFO));
+    APPSPAWN_CHECK(tokenInfo != NULL, return APPSPAWN_MSG_INVALID, "Get token id failed.");
+
+    AppSpawnMsgBundleInfo *bundleInfo =
+        reinterpret_cast<AppSpawnMsgBundleInfo *>(GetAppProperty(appProperty, TLV_BUNDLE_INFO));
+    APPSPAWN_CHECK(bundleInfo != NULL, return APPSPAWN_MSG_INVALID, "No bundle info in msg %{public}s",
+        GetBundleName(appProperty));
+
+    uint32_t flags = CheckAppSpawnMsgFlag(appProperty->message, TLV_MSG_FLAGS, APP_FLAGS_ATOMIC_SERVICE) ? 0x4 : 0;
+    if (flags == 0) {
+        flags = (CheckAppSpawnMsgFlag(appProperty->message, TLV_MSG_FLAGS, APP_FLAGS_CLONE_ENABLE) &&
+            bundleInfo->bundleIndex > 0) ? 0x1 : 0;
+    }
+    std::ostringstream clonePackageName;
+    if (flags == 1) {
+        clonePackageName << "+clone-" << bundleInfo->bundleIndex << "+" << bundleInfo->bundleName;
+    } else {
+        clonePackageName << bundleInfo->bundleName;
+    }
+    std::string dir = "/storage/Users/currentUser/Download/" + clonePackageName.str();
+    DecPolicyInfo decPolicyInfo = {0};
+    decPolicyInfo.pathNum = 1;
+    PathInfo pathInfo = {0};
+    pathInfo.path = strdup(dir.c_str());
+    if (pathInfo.path == nullptr) {
+        APPSPAWN_LOGE("strdup %{public}s failed, err %{public}d", dir.c_str(), errno);
+        return APPSPAWN_MSG_INVALID;
+    }
+    pathInfo.pathLen = static_cast<uint32_t>(strlen(pathInfo.path));
+    pathInfo.mode = SANDBOX_MODE_WRITE | SANDBOX_MODE_READ;
+    decPolicyInfo.path[0] = pathInfo;
+    decPolicyInfo.tokenId = tokenInfo->accessTokenIdEx;
+    decPolicyInfo.flag = true;
+    SetDecPolicyInfos(&decPolicyInfo);
+
+    if (decPolicyInfo.path[0].path) {
+        free(decPolicyInfo.path[0].path);
+        decPolicyInfo.path[0].path = nullptr;
+    }
+    return 0;
+}
+
+int32_t SandboxUtils::SetDecPolicyWithPermission(const AppSpawningCtx *appProperty, SandboxMountConfig &mountConfig)
+{
+    if (mountConfig.decPaths.size() == 0) {
+        return 0;
+    }
+    AppSpawnMsgAccessToken *tokenInfo =
+        reinterpret_cast<AppSpawnMsgAccessToken *>(GetAppProperty(appProperty, TLV_ACCESS_TOKEN_INFO));
+    APPSPAWN_CHECK(tokenInfo != NULL, return APPSPAWN_MSG_INVALID, "Get token id failed.");
+
+    DecPolicyInfo decPolicyInfo = {0};
+    decPolicyInfo.pathNum = mountConfig.decPaths.size();
+    int ret = 0;
+    for (uint32_t i = 0; i < decPolicyInfo.pathNum; i++) {
+        PathInfo pathInfo = {0};
+        pathInfo.path = strdup(mountConfig.decPaths[i].c_str());
+        if (pathInfo.path == nullptr) {
+            APPSPAWN_LOGE("strdup %{public}s failed, err %{public}d", mountConfig.decPaths[i].c_str(), errno);
+            ret =  APPSPAWN_ERROR_UTILS_MEM_FAIL;
+            goto EXIT;
+        }
+        pathInfo.pathLen = static_cast<uint32_t>(strlen(pathInfo.path));
+        pathInfo.mode = SANDBOX_MODE_WRITE | SANDBOX_MODE_READ;
+        decPolicyInfo.path[0] = pathInfo;
+    }
+    decPolicyInfo.tokenId = tokenInfo->accessTokenIdEx;
+    decPolicyInfo.flag = true;
+    SetDecPolicyInfos(&decPolicyInfo);
+EXIT:
+    for (uint32_t i = 0; i < decPolicyInfo.pathNum; i++) {
+        if (decPolicyInfo.path[0].path) {
+            free(decPolicyInfo.path[0].path);
+            decPolicyInfo.path[0].path = nullptr;
+        }
+    }
+    return ret;
 }
 
 static bool CheckMountFlag(const AppSpawningCtx *appProperty, const std::string bundleName, nlohmann::json &appConfig)
@@ -991,6 +1094,7 @@ int SandboxUtils::DoAllMntPointsMount(const AppSpawningCtx *appProperty,
 #endif
             return ret,
             "DoAppSandboxMountOnce section %{public}s failed, %{public}s", section.c_str(), arg.destPath);
+        SetDecPolicyWithPermission(appProperty, mountConfig);
         DoSandboxChmod(mntPoint, sandboxRoot);
     }
     return 0;
@@ -1882,10 +1986,12 @@ int32_t SandboxUtils::SetAppSandboxProperty(AppSpawningCtx *appProperty, uint32_
     rc = ChangeCurrentDir(sandboxPackagePath, bundleName, sandboxSharedStatus);
     APPSPAWN_CHECK(rc == 0, return rc, "change current dir failed");
     APPSPAWN_LOGV("Change root dir success");
+#endif
+    SetDecWithDir(appProperty, dacInfo->uid / UID_BASE);
+    SetDecPolicy();
 #if defined(APPSPAWN_MOUNT_TMPSHM) && defined(WITH_SELINUX)
     Restorecon(DEV_SHM_DIR);
-#endif // APPSPAWN_MOUNT_TMPSHM && WITH_SELINUX
-#endif // APPSPAWN_TEST
+#endif
     return 0;
 }
 

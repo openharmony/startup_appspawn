@@ -41,6 +41,15 @@ static void FreePathMountNode(SandboxMountNode *node)
         free(sandboxNode->appAplName);
         sandboxNode->appAplName = NULL;
     }
+    for (uint32_t i = 0; i < sandboxNode->decPolicyPaths.decPathCount; i++) {
+        if (sandboxNode->decPolicyPaths.decPath[i] != NULL) {
+            free(sandboxNode->decPolicyPaths.decPath[i]);
+            sandboxNode->decPolicyPaths.decPath[i] = NULL;
+        }
+    }
+    sandboxNode->decPolicyPaths.decPathCount = 0;
+    free(sandboxNode->decPolicyPaths.decPath);
+    sandboxNode->decPolicyPaths.decPath = NULL;
     free(sandboxNode);
 }
 

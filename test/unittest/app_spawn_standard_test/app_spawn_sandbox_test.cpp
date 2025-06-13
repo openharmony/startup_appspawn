@@ -28,6 +28,7 @@
 
 #include "app_spawn_stub.h"
 #include "app_spawn_test_helper.h"
+#include "sandbox_dec.h"
 #include "sandbox_shared_mount.h"
 
 using namespace testing;
@@ -1550,6 +1551,173 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_009, TestSize.Level
 
     DeleteAppSpawningCtx(spawningCtx);
     AppSpawnClientDestroy(clientHandle);
+}
+
+/**
+ * @tc.name: App_Spawn_Sandbox_dec_01
+ * @tc.desc: parse config file for dec paths.
+ * @tc.type: FUNC
+ * @tc.author:
+ */
+#define DEC_PATH_SIZE 3
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_dec_01, TestSize.Level0)
+{
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_dec_01 start";
+    std::string mJsconfig = "{ \
+        \"mount-paths\": [{ \
+            \"src-path\": \"\", \
+            \"sandbox-path\": \"\", \
+            \"sandbox-flags-customized\": [ \"MS_NODEV\", \"MS_RDONLY\" ], \
+            \"dec-paths\": [ \"/storage/Users\", \"/storage/External\", \"/storage/test\"] \
+        }] \
+    }";
+    nlohmann::json j_config = nlohmann::json::parse(mJsconfig.c_str());
+    const char *mountPath = "mount-paths";
+    nlohmann::json j_secondConfig = j_config[mountPath][0];
+    std::string section = "permission";
+    OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config, SANBOX_APP_JSON_CONFIG);
+    OHOS::AppSpawn::SandboxUtils::SandboxMountConfig mountConfig;
+    AppSpawningCtx *appProperty = GetTestAppProperty();
+    OHOS::AppSpawn::SandboxUtils::GetSandboxMountConfig(appProperty, section, j_secondConfig, mountConfig);
+    int decPathSize = mountConfig.decPaths.size();
+    EXPECT_EQ(decPathSize, DEC_PATH_SIZE);
+    int ret = strcmp(mountConfig.decPaths[0].c_str(), "/storage/Users");
+    EXPECT_EQ(ret, 0);
+    ret = strcmp(mountConfig.decPaths[1].c_str(), "/storage/External");
+    EXPECT_EQ(ret, 0);
+    ret = strcmp(mountConfig.decPaths[2].c_str(), "/storage/test");
+    EXPECT_EQ(ret, 0);
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_dec_01 end";
+}
+
+/**
+ * @tc.name: App_Spawn_Sandbox_dec_02
+ * @tc.desc: parse config file for dec paths.
+ * @tc.type: FUNC
+ * @tc.author:
+ */
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_dec_02, TestSize.Level0)
+{
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_dec_02 start";
+    std::string mJsconfig = "{ \
+        \"mount-paths\": [{ \
+            \"src-path\": \"\", \
+            \"sandbox-path\": \"\", \
+            \"sandbox-flags-customized\": [ \"MS_NODEV\", \"MS_RDONLY\" ], \
+            \"dec-paths\": [ ] \
+        }] \
+    }";
+    nlohmann::json j_config = nlohmann::json::parse(mJsconfig.c_str());
+    const char *mountPath = "mount-paths";
+    nlohmann::json j_secondConfig = j_config[mountPath][0];
+    std::string section = "permission";
+    OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config, SANBOX_APP_JSON_CONFIG);
+    OHOS::AppSpawn::SandboxUtils::SandboxMountConfig mountConfig;
+    AppSpawningCtx *appProperty = GetTestAppProperty();
+    OHOS::AppSpawn::SandboxUtils::GetSandboxMountConfig(appProperty, section, j_secondConfig, mountConfig);
+    int decPathSize = mountConfig.decPaths.size();
+    EXPECT_EQ(decPathSize, 0);
+
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_dec_02 end";
+}
+
+/**
+ * @tc.name: App_Spawn_Sandbox_dec_03
+ * @tc.desc: parse config file for set policy.
+ * @tc.type: FUNC
+ * @tc.author:
+ */
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_dec_03, TestSize.Level0)
+{
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_dec_03 start";
+    std::string mJsconfig = "{ \
+        \"mount-paths\": [{ \
+            \"src-path\": \"\", \
+            \"sandbox-path\": \"\", \
+            \"sandbox-flags-customized\": [ \"MS_NODEV\", \"MS_RDONLY\" ], \
+            \"dec-paths\": [ \"/storage/Users\", \"/storage/External\", \"/storage/test\"] \
+        }] \
+    }";
+    nlohmann::json j_config = nlohmann::json::parse(mJsconfig.c_str());
+    const char *mountPath = "mount-paths";
+    nlohmann::json j_secondConfig = j_config[mountPath][0];
+    std::string section = "permission";
+    OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config, SANBOX_APP_JSON_CONFIG);
+    OHOS::AppSpawn::SandboxUtils::SandboxMountConfig mountConfig;
+    AppSpawningCtx *appProperty = GetTestAppProperty();
+    OHOS::AppSpawn::SandboxUtils::GetSandboxMountConfig(appProperty, section, j_secondConfig, mountConfig);
+    int decPathSize = mountConfig.decPaths.size();
+    EXPECT_EQ(decPathSize, DEC_PATH_SIZE);
+    OHOS::AppSpawn::SandboxUtils::SetDecPolicyWithPermission(appProperty, mountConfig);
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_dec_03 end";
+}
+
+/**
+ * @tc.name: App_Spawn_Sandbox_dec_04
+ * @tc.desc: parse config file for mount.
+ * @tc.type: FUNC
+ * @tc.author:
+ */
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_dec_04, TestSize.Level0)
+{
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_dec_04 start";
+    std::string mJsconfig = "{ \
+        \"mount-paths\": [{ \
+            \"src-path\": \"\", \
+            \"sandbox-path\": \"\", \
+            \"sandbox-flags-customized\": [ \"MS_NODEV\", \"MS_RDONLY\" ], \
+            \"dec-paths\": [ \"/storage/Users\", \"/storage/External\", \"/storage/test\"] \
+        }] \
+    }";
+    nlohmann::json j_config = nlohmann::json::parse(mJsconfig.c_str());
+    const char *mountPath = "mount-paths";
+    nlohmann::json j_secondConfig = j_config[mountPath][0];
+    std::string section = "permission";
+    OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config, SANBOX_APP_JSON_CONFIG);
+    OHOS::AppSpawn::SandboxUtils::SandboxMountConfig mountConfig;
+    AppSpawningCtx *appProperty = GetTestAppProperty();
+    OHOS::AppSpawn::SandboxUtils::GetSandboxMountConfig(appProperty, section, j_secondConfig, mountConfig);
+    int decPathSize = mountConfig.decPaths.size();
+    EXPECT_EQ(decPathSize, DEC_PATH_SIZE);
+
+    int ret = OHOS::AppSpawn::SandboxUtils::DoAllMntPointsMount(appProperty, j_config, nullptr, "permission");
+    EXPECT_EQ(ret, 0);
+
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_dec_04 end";
+}
+
+/**
+ * @tc.name: App_Spawn_Sandbox_dec_05
+ * @tc.desc: parse config file for READ_WRITE_DOWNLOAD_DIRECTORY.
+ * @tc.type: FUNC
+ * @tc.author:
+ */
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_dec_05, TestSize.Level0)
+{
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_dec_05 start";
+    std::string mJsconfig = "{ \
+        \"mount-paths\": [{ \
+            \"src-path\": \"\", \
+            \"sandbox-path\": \"\", \
+            \"sandbox-flags-customized\": [ \"MS_NODEV\", \"MS_RDONLY\" ], \
+            \"dec-paths\": [ \"/storage/Users/<currentUserId>/Download\" ] \
+        }] \
+    }";
+    nlohmann::json j_config = nlohmann::json::parse(mJsconfig.c_str());
+    const char *mountPath = "mount-paths";
+    nlohmann::json j_secondConfig = j_config[mountPath][0];
+    std::string section = "permission";
+    OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config, SANBOX_APP_JSON_CONFIG);
+    OHOS::AppSpawn::SandboxUtils::SandboxMountConfig mountConfig;
+    AppSpawningCtx *appProperty = GetTestAppProperty();
+    OHOS::AppSpawn::SandboxUtils::GetSandboxMountConfig(appProperty, section, j_secondConfig, mountConfig);
+    int decPathSize = mountConfig.decPaths.size();
+    EXPECT_EQ(decPathSize, 1);
+
+    int ret = OHOS::AppSpawn::SandboxUtils::DoAllMntPointsMount(appProperty, j_config, nullptr, "permission");
+    EXPECT_EQ(ret, 0);
+
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_dec_05 end";
 }
 
 /**

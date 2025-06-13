@@ -204,6 +204,57 @@ static void FillPathDemandInfo(const cJSON *config, PathMountNode *sandboxNode)
     sandboxNode->demandInfo->mode = GetIntValueFromJsonObj(config, "ugo", -1);
 }
 
+static int32_t DecodeDecPolicyPaths(const cJSON *config, PathMountNode *sandboxNode)
+{
+    if (config == NULL || sandboxNode == NULL) {
+        return APPSPAWN_MSG_INVALID;
+    }
+
+    sandboxNode->decPolicyPaths.decPathCount = 0;
+    sandboxNode->decPolicyPaths.decPath = NULL;
+
+    cJSON *pathArray = cJSON_GetObjectItemCaseSensitive(config, "dec-paths");
+    if (pathArray == NULL || !cJSON_IsArray(pathArray)) {
+        return 0;
+    }
+
+    int pathCount = cJSON_GetArraySize(pathArray);
+    if (pathCount == 0) {
+        return 0;
+    }
+    size_t decPathSize = pathCount * sizeof(char *);
+    sandboxNode->decPolicyPaths.decPath = (char **)malloc(decPathSize);
+    if (sandboxNode->decPolicyPaths.decPath == NULL) {
+        return APPSPAWN_ERROR_UTILS_MEM_FAIL;
+    }
+
+    for (int i = 0; i < pathCount; i++) {
+        cJSON *pathItem = cJSON_GetArrayItem(pathArray, i);
+        if (!cJSON_IsString(pathItem)) {
+            APPSPAWN_LOGE("path parse failed");
+            goto ERROR;
+        }
+        sandboxNode->decPolicyPaths.decPath[i] = strdup(pathItem->valuestring);
+        if (sandboxNode->decPolicyPaths.decPath[i] == NULL) {
+            goto ERROR;
+        }
+        sandboxNode->decPolicyPaths.decPathCount++;
+    }
+    return 0;
+
+ERROR:
+    for (int i = 0; i < pathCount; i++) {
+        if (sandboxNode->decPolicyPaths.decPath[i] != NULL) {
+            free(sandboxNode->decPolicyPaths.decPath[i]);
+            sandboxNode->decPolicyPaths.decPath[i] = NULL;
+        }
+    }
+    sandboxNode->decPolicyPaths.decPathCount = 0;
+    free(sandboxNode->decPolicyPaths.decPath);
+    sandboxNode->decPolicyPaths.decPath = NULL;
+    return -1;
+}
+
 static PathMountNode *DecodeMountPathConfig(const SandboxSection *section, const cJSON *config, uint32_t type)
 {
     char *srcPath = GetStringFromJsonObj(config, "src-path");
@@ -235,6 +286,11 @@ static PathMountNode *DecodeMountPathConfig(const SandboxSection *section, const
         sandboxNode->appAplName = strdup(value);
     }
     FillPathDemandInfo(demandInfo, sandboxNode);
+
+    int ret = DecodeDecPolicyPaths(config, sandboxNode);
+    if (ret != 0) {
+        APPSPAWN_LOGE("DecodeDecPolicyPaths failed %{public}d", ret);
+    }
 
     if (sandboxNode->source == NULL || sandboxNode->target == NULL) {
         APPSPAWN_LOGE("Failed to get sourc or target path");
