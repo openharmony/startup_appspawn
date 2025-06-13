@@ -928,9 +928,9 @@
                     "fs-type": "fuse",
                     "check-action-status": "false"
                 }, {
-                    "src-path": "",
-                    "sandbox-path": "",
-                    "sandbox-flags": [],
+                    "src-path" : "",
+                    "sandbox-path" : "",
+                    "sandbox-flags" : [],
                     "dec-paths": [ "/mnt/data/fuse" ]
                 }
             ]
@@ -989,7 +989,7 @@
                     "check-action-status": "false"
                 }
             ]
-	    }],
+        }],
         "ohos.permission.ACCESS_FILE_CONTENT_SHARE":[{
             "sandbox-switch": "ON",
             "gids": [1006, 1008],
