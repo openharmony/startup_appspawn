@@ -455,7 +455,7 @@ static void FreeDecPolicyPaths(DecPolicyInfo *decPolicyInfo)
     }
 
     for (uint32_t i = 0; i < decPolicyInfo->pathNum; i++) {
-        if (decPolicyInfo->path[i].path) {
+        if (decPolicyInfo->path[i].path != NULL) {
             free(decPolicyInfo->path[i].path);
         }
     }
@@ -463,9 +463,8 @@ static void FreeDecPolicyPaths(DecPolicyInfo *decPolicyInfo)
     decPolicyInfo->pathNum = 0;
 }
 
-
-static int32_t SetDecPolicyWithCond(const SandboxContext *context, const PathMountNode *sandboxNode,
-                                    VarExtraData *extraData)
+static int SetDecPolicyWithCond(const SandboxContext *context, const PathMountNode *sandboxNode,
+                                VarExtraData *extraData)
 {
     if (sandboxNode == NULL || sandboxNode->decPolicyPaths.decPathCount == 0) {
         return 0;
@@ -478,7 +477,7 @@ static int32_t SetDecPolicyWithCond(const SandboxContext *context, const PathMou
     decPolicyInfo.pathNum = sandboxNode->decPolicyPaths.decPathCount;
 
     for (uint32_t i = 0; i < decPolicyInfo.pathNum; i++) {
-        const char* realDecPath = GetSandboxRealVar(context, BUFFER_FOR_TARGET, sandboxNode->decPolicyPaths.decPath[i],
+        const char *realDecPath = GetSandboxRealVar(context, BUFFER_FOR_TARGET, sandboxNode->decPolicyPaths.decPath[i],
                                                     NULL, extraData);
         if (realDecPath == NULL) {
             // Handle the error appropriately if needed
@@ -507,7 +506,7 @@ static int SetDecPolicyWithDir(const SandboxContext *context)
     AppSpawnMsgAccessToken *tokenInfo = (AppSpawnMsgAccessToken *)GetSandboxCtxMsgInfo(context, TLV_ACCESS_TOKEN_INFO);
     AppSpawnMsgBundleInfo *bundleInfo = (AppSpawnMsgBundleInfo *)GetSandboxCtxMsgInfo(context, TLV_BUNDLE_INFO);
     APPSPAWN_CHECK(tokenInfo != NULL && bundleInfo != NULL, return APPSPAWN_MSG_INVALID,
-        "Get token info or bundle info failed.");
+                   "Get token info or bundle info failed.");
 
     uint32_t flags = CheckAppSpawnMsgFlag(context->message, TLV_MSG_FLAGS, APP_FLAGS_ATOMIC_SERVICE) ? 0x4 : 0;
     if (flags == 0) {
@@ -530,7 +529,7 @@ static int SetDecPolicyWithDir(const SandboxContext *context)
     decPolicyInfo.pathNum = 1;
     PathInfo pathInfo = {0};
     pathInfo.path = downloadDir;
-    pathInfo.pathLen = (uint32_t)(strlen(pathInfo.path));
+    pathInfo.pathLen = (uint32_t)strlen(pathInfo.path);
     pathInfo.mode = SANDBOX_MODE_WRITE | SANDBOX_MODE_READ;
     decPolicyInfo.path[0] = pathInfo;
     decPolicyInfo.tokenId = tokenInfo->accessTokenIdEx;

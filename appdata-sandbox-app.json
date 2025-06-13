@@ -198,7 +198,7 @@
             }, {
                 "src-path": "",
                 "sandbox-path": "",
-                "dec-paths":[ "/storage/Users/<currentUserId>/appdata/el2/shareFiles" ]
+                "dec-paths": [ "/storage/Users/<currentUserId>/appdata/el2/shareFiles" ]
             }, {
                 "src-path": "/mnt/data/<currentUserId>/userExternal",
                 "sandbox-path": "/storage/userExternal"
@@ -408,14 +408,14 @@
                 "sandbox-path": "none",
                 "dec-paths": [ "/storage/Users/<currentUserId>/Download" ]
             }]
-        },{
+        }, {
             "name": "ohos.permission.READ_WRITE_DESKTOP_DIRECTORY",
             "mount-paths": [{
                 "src-path": "none",
                 "sandbox-path": "none",
                 "dec-paths": [ "/storage/Users/<currentUserId>/Desktop" ]
             }]
-        },{
+        }, {
             "name": "ohos.permission.READ_WRITE_DOCUMENTS_DIRECTORY",
             "mount-paths": [{
                 "src-path": "none",
