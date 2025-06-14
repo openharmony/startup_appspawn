@@ -934,6 +934,17 @@ std::string SandboxUtils::GetSandboxPath(const AppSpawningCtx *appProperty, nloh
     return sandboxPath;
 }
 
+static bool CheckMountFlag(const AppSpawningCtx *appProperty, const std::string bundleName, nlohmann::json &appConfig)
+{
+    if (appConfig.find(g_flags) != appConfig.end()) {
+        if (((ConvertFlagStr(appConfig[g_flags].get<std::string>()) & GetAppMsgFlags(appProperty)) != 0) &&
+            bundleName.find("wps") != std::string::npos) {
+            return true;
+        }
+    }
+    return false;
+}
+
 int32_t SandboxUtils::SetDecWithDir(const AppSpawningCtx *appProperty, uint32_t userId)
 {
     AppSpawnMsgAccessToken *tokenInfo =
@@ -996,33 +1007,32 @@ int32_t SandboxUtils::SetDecPolicyWithPermission(const AppSpawningCtx *appProper
         pathInfo.path = strdup(mountConfig.decPaths[i].c_str());
         if (pathInfo.path == nullptr) {
             APPSPAWN_LOGE("strdup %{public}s failed, err %{public}d", mountConfig.decPaths[i].c_str(), errno);
-            ret =  APPSPAWN_ERROR_UTILS_MEM_FAIL;
+            ret = APPSPAWN_ERROR_UTILS_MEM_FAIL;
             goto EXIT;
         }
         pathInfo.pathLen = static_cast<uint32_t>(strlen(pathInfo.path));
         pathInfo.mode = SANDBOX_MODE_WRITE | SANDBOX_MODE_READ;
-        decPolicyInfo.path[0] = pathInfo;
+        decPolicyInfo.path[i] = pathInfo;
     }
     decPolicyInfo.tokenId = tokenInfo->accessTokenIdEx;
     decPolicyInfo.flag = true;
     SetDecPolicyInfos(&decPolicyInfo);
 EXIT:
     for (uint32_t i = 0; i < decPolicyInfo.pathNum; i++) {
-        if (decPolicyInfo.path[0].path) {
-            free(decPolicyInfo.path[0].path);
-            decPolicyInfo.path[0].path = nullptr;
+        if (decPolicyInfo.path[i].path) {
+            free(decPolicyInfo.path[i].path);
+            decPolicyInfo.path[i].path = nullptr;
         }
     }
     return ret;
 }
 
-static bool CheckMountFlag(const AppSpawningCtx *appProperty, const std::string bundleName, nlohmann::json &appConfig)
+static bool GetCheckStatus(nlohmann::json &mntPoint)
 {
-    if (appConfig.find(g_flags) != appConfig.end()) {
-        if (((ConvertFlagStr(appConfig[g_flags].get<std::string>()) & GetAppMsgFlags(appProperty)) != 0) &&
-            bundleName.find("wps") != std::string::npos) {
-            return true;
-        }
+    std::string value = g_statusCheck;
+    (void)JsonUtils::GetStringFromJson(mntPoint, g_actionStatuc, value);
+    if (value == g_statusCheck) {
+        return true;
     }
     return false;
 }
@@ -1039,16 +1049,6 @@ static bool GetCreateSandboxPath(nlohmann::json &json, std::string srcPath)
         }
     }
     return true;
-}
-
-static bool GetCheckStatus(nlohmann::json &mntPoint)
-{
-    std::string value = g_statusCheck;
-    (void)JsonUtils::GetStringFromJson(mntPoint, g_actionStatuc, value);
-    if (value == g_statusCheck) {
-        return true;
-    }
-    return false;
 }
 
 int SandboxUtils::DoAllMntPointsMount(const AppSpawningCtx *appProperty,

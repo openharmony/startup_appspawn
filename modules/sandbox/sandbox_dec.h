@@ -49,7 +49,7 @@ extern "C" {
 #define SET_DEC_PREFIX_CMD _IOWR(HM_DEC_IOCTL_BASE, HM_SET_PREFIX_ID, DecPolicyInfo)
 
 #define MAX_POLICY_NUM 8
-#define SANDBOX_MODE_READ 0x00000001
+#define SANDBOX_MODE_READ  0x00000001
 #define SANDBOX_MODE_WRITE (SANDBOX_MODE_READ << 1)
 
 #define DEC_POLICY_HEADER_RESERVED 64
@@ -72,7 +72,7 @@ typedef struct DecPolicyInfo {
 } DecPolicyInfo;
 
 void SetDecPolicyInfos(DecPolicyInfo *decPolicyInfos);
-void DestoryDecPolicyInfos(DecPolicyInfo *decPolicyInfos);
+void DestroyDecPolicyInfos(DecPolicyInfo *decPolicyInfos);
 void SetDecPolicy(void);
 
 #ifdef __cplusplus

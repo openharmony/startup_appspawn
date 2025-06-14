@@ -24,12 +24,12 @@
 
 static const char *g_decConstraintDir[] = {
     "/storage/Users",
-    "/storage/Externel",
+    "/storage/External",
     "/storage/Share",
     "/storage/hmdfs",
     "/mnt/data/fuse",
     "/mnt/debug",
-    "/storage/userExternel"
+    "/storage/userExternal"
 };
 
 static const char *g_decForcedPrefix[] = {
@@ -38,7 +38,7 @@ static const char *g_decForcedPrefix[] = {
 
 static DecPolicyInfo *g_decPolicyInfos = NULL;
 
-void DestoryDecPolicyInfos(DecPolicyInfo *decPolicyInfos)
+void DestroyDecPolicyInfos(DecPolicyInfo *decPolicyInfos)
 {
     if (decPolicyInfos == NULL) {
         return;
@@ -72,36 +72,36 @@ void SetDecPolicyInfos(DecPolicyInfo *decPolicyInfos)
     }
 
     APPSPAWN_CHECK(g_decPolicyInfos->pathNum + decPolicyInfos->pathNum <= MAX_POLICY_NUM,
-        DestoryDecPolicyInfos(g_decPolicyInfos);
+        DestroyDecPolicyInfos(g_decPolicyInfos);
         g_decPolicyInfos = NULL;
         return, "Out of MAX_POLICY_NUM %{public}d, %{public}d", g_decPolicyInfos->pathNum, decPolicyInfos->pathNum);
     for (uint32_t i = 0; i < decPolicyInfos->pathNum; i++) {
         PathInfo pathInfo = {0};
         if (decPolicyInfos->path[i].path == NULL) {
-            DestoryDecPolicyInfos(g_decPolicyInfos);
+            DestroyDecPolicyInfos(g_decPolicyInfos);
             g_decPolicyInfos = NULL;
             return;
         }
         pathInfo.path = strdup(decPolicyInfos->path[i].path);
         if (pathInfo.path == NULL) {
-            DestoryDecPolicyInfos(g_decPolicyInfos);
+            DestroyDecPolicyInfos(g_decPolicyInfos);
             g_decPolicyInfos = NULL;
             return;
         }
         pathInfo.pathLen = (uint32_t)strlen(pathInfo.path);
         pathInfo.mode = SANDBOX_MODE_WRITE | SANDBOX_MODE_READ;
-        uint32_t index = g_decPolicyInfos->pathNum + 1;
+        uint32_t index = g_decPolicyInfos->pathNum + i;
         g_decPolicyInfos->path[index] = pathInfo;
     }
     g_decPolicyInfos->tokenId = decPolicyInfos->tokenId;
-    g_decPolicyInfos->tokenId = decPolicyInfos->pathNum;
+    g_decPolicyInfos->pathNum += decPolicyInfos->pathNum;
     g_decPolicyInfos->flag = true;
     g_decPolicyInfos->userId = 0;
 }
 
-static int SetDecConstraintDirs(AppSpawnMgr* content)
+static int SetDenyConstraintDirs(AppSpawnMgr *content)
 {
-    APPSPAWN_LOGI("enter SetDecConstraintDirs sandbox policy success.");
+    APPSPAWN_LOGI("enter SetDenyConstraintDirs sandbox policy success.");
     UNUSED(content);
     const char *decFilename = "/dev/dec";
     int fd = open(decFilename, O_RDWR);
@@ -133,7 +133,7 @@ static int SetDecConstraintDirs(AppSpawnMgr* content)
     return 0;
 }
 
-static int SetForcedPrefixDirs(AppSpawnMgr* content)
+static int SetForcedPrefixDirs(AppSpawnMgr *content)
 {
     APPSPAWN_LOGI("enter SetForcedPrefixDirs sandbox policy success.");
     UNUSED(content);
@@ -176,7 +176,7 @@ void SetDecPolicy(void)
     int fd = open(decFilename, O_RDWR);
     if (fd < 0) {
         APPSPAWN_LOGE("open dec file fail.");
-        DestoryDecPolicyInfos(g_decPolicyInfos);
+        DestroyDecPolicyInfos(g_decPolicyInfos);
         g_decPolicyInfos = NULL;
         return;
     }
@@ -195,7 +195,7 @@ void SetDecPolicy(void)
         }
     }
     close(fd);
-    DestoryDecPolicyInfos(g_decPolicyInfos);
+    DestroyDecPolicyInfos(g_decPolicyInfos);
     g_decPolicyInfos = NULL;
     return;
 }
@@ -203,6 +203,6 @@ void SetDecPolicy(void)
 MODULE_CONSTRUCTOR(void)
 {
     APPSPAWN_LOGI("Load sandbox dec module ...");
-    AddPreloadHook(HOOK_PRIO_COMMON, SetDecConstraintDirs);
+    AddPreloadHook(HOOK_PRIO_COMMON, SetDenyConstraintDirs);
     AddPreloadHook(HOOK_PRIO_COMMON, SetForcedPrefixDirs);
 }
