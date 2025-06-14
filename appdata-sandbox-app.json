@@ -269,6 +269,15 @@
                 "sandbox-path": "/data/themes/s"
             }]
         }, {
+            "name": "ohos.permission.THEME_SKIN",
+            "mount-paths": [{
+                "src-path": "/data/service/el1/public/themes/<currentUserId>/a/skin",
+                "sandbox-path": "/data/themes/a/skin"
+            }, {
+                "src-path": "/data/service/el1/public/themes/<currentUserId>/b/skin",
+                "sandbox-path": "/data/themes/b/skin"
+            }]
+        }, {
             "name": "ohos.permission.GET_WALLPAPER",
             "mount-paths": [{
                 "src-path": "/data/service/el1/public/wallpaper/<currentUserId>",
