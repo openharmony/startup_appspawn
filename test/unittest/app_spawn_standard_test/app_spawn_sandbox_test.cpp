@@ -1568,7 +1568,7 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_dec_01, TestSize.Level0)
             \"src-path\": \"\", \
             \"sandbox-path\": \"\", \
             \"sandbox-flags-customized\": [ \"MS_NODEV\", \"MS_RDONLY\" ], \
-            \"dec-paths\": [ \"/storage/Users\", \"/storage/External\", \"/storage/test\"] \
+            \"dec-paths\": [ \"/storage/Users\", \"/storage/External\", \"/storage/test\" ] \
         }] \
     }";
     nlohmann::json j_config = nlohmann::json::parse(mJsconfig.c_str());
@@ -1635,7 +1635,7 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_dec_03, TestSize.Level0)
             \"src-path\": \"\", \
             \"sandbox-path\": \"\", \
             \"sandbox-flags-customized\": [ \"MS_NODEV\", \"MS_RDONLY\" ], \
-            \"dec-paths\": [ \"/storage/Users\", \"/storage/External\", \"/storage/test\"] \
+            \"dec-paths\": [ \"/storage/Users\", \"/storage/External\", \"/storage/test\" ] \
         }] \
     }";
     nlohmann::json j_config = nlohmann::json::parse(mJsconfig.c_str());
@@ -1666,7 +1666,7 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_dec_04, TestSize.Level0)
             \"src-path\": \"\", \
             \"sandbox-path\": \"\", \
             \"sandbox-flags-customized\": [ \"MS_NODEV\", \"MS_RDONLY\" ], \
-            \"dec-paths\": [ \"/storage/Users\", \"/storage/External\", \"/storage/test\"] \
+            \"dec-paths\": [ \"/storage/Users\", \"/storage/External\", \"/storage/test\" ] \
         }] \
     }";
     nlohmann::json j_config = nlohmann::json::parse(mJsconfig.c_str());

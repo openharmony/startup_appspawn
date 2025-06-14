@@ -207,7 +207,7 @@ static void FillPathDemandInfo(const cJSON *config, PathMountNode *sandboxNode)
 static int32_t DecodeDecPolicyPaths(const cJSON *config, PathMountNode *sandboxNode)
 {
     if (config == NULL || sandboxNode == NULL) {
-        return APPSPAWN_MSG_INVALID;
+        return APPSPAWN_ARG_INVALID;
     }
 
     sandboxNode->decPolicyPaths.decPathCount = 0;
