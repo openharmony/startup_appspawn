@@ -154,6 +154,9 @@
                 "src-path" : "/data/misc",
                 "sandbox-path" : "/data/storage/el1/bundle/misc"
             }, {
+                "src-path" : "/data/app/el1/<currentUserId>/system_optimize/<variablePackageName>",
+                "sandbox-path" : "/data/storage/system_optimize"
+            }, {
                 "src-path" : "/data/app/el1/public/aot_compiler/ark_cache/<PackageName>",
                 "sandbox-path" : "/data/storage/ark-cache"
             }, {
