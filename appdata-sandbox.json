@@ -134,6 +134,11 @@
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "true"
                 }, {
+                    "src-path" : "/data/app/el1/<currentUserId>/system_optimize/<variablePackageName>",
+                    "sandbox-path" : "/data/storage/system_optimize",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
                     "src-path" : "/mnt/hmdfs/<currentUserId>",
                     "sandbox-path" : "/mnt/hmdfs/<currentUserId>",
                     "sandbox-flags" : [ "bind", "rec" ],
