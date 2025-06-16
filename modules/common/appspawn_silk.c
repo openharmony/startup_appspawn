@@ -32,76 +32,7 @@
 #define SILK_JSON_MAX 128
 #define SILK_JSON_NAME_MAX 256
 
-struct SilkConfig {
-    char **configItems;
-    int configCursor;
-};
-
-static struct SilkConfig g_silkConfig = {0};
-
-static void ParseSilkConfig(const cJSON *root, struct SilkConfig *config)
-{
-    cJSON *silkJson = cJSON_GetObjectItemCaseSensitive(root, SILK_JSON_ENABLE_ITEM);
-    if (silkJson == NULL) {
-        return;
-    }
-
-    uint32_t configCount = (uint32_t)cJSON_GetArraySize(silkJson);
-    APPSPAWN_CHECK(configCount <= SILK_JSON_MAX, configCount = SILK_JSON_MAX,
-                   "config count %{public}u is larger than %{public}d", configCount, SILK_JSON_MAX);
-    config->configItems = (char **)malloc(configCount * sizeof(char *));
-    APPSPAWN_CHECK(config->configItems != NULL, return, "Alloc for silk config items failed");
-    int ret = memset_s(config->configItems, configCount * sizeof(char *), 0, configCount * sizeof(char *));
-    APPSPAWN_CHECK(ret == 0, free(config->configItems);
-                   config->configItems = NULL; return,
-                   "Memset silk config items failed");
-    bool abnormal = false;
-    for (uint32_t i = 0; i < configCount; ++i) {
-        const char *appName = cJSON_GetStringValue(cJSON_GetArrayItem(silkJson, i));
-        APPSPAWN_CHECK(appName != NULL,
-                       abnormal = true; break, "appName is NULL");
-        APPSPAWN_LOGI("Enable silk appName %{public}s", appName);
-
-        int len = strlen(appName) + 1;
-        APPSPAWN_CHECK(len <= SILK_JSON_NAME_MAX, continue,
-                       "appName %{public}s is larger than the maximum limit", appName);
-        char **item = &config->configItems[config->configCursor];
-        *item = (char *)malloc(len * sizeof(char));
-        APPSPAWN_CHECK(*item != NULL,
-                       abnormal = true; break, "Alloc for config item failed");
-
-        ret = memset_s(*item, len * sizeof(char), 0, len * sizeof(char));
-        APPSPAWN_CHECK(ret == 0, free(*item);
-                       *item = NULL;
-                       abnormal = true; break,
-                       "Memset config item %{public}s failed", appName);
-
-        ret = strncpy_s(*item, len, appName, len - 1);
-        APPSPAWN_CHECK(ret == 0, free(*item);
-                       *item = NULL;
-                       abnormal = true; break,
-                       "Copy config item %{public}s failed", appName);
-        config->configCursor++;
-    }
-    if (abnormal) {
-        for (uint32_t i = 0; i < config->configCursor; ++i) {
-            char **item = &config->configItems[i];
-            free(*item);
-            *item = NULL;
-        }
-        free(config->configItems);
-        config->configItems = NULL;
-        config->configCursor = 0;
-    }
-}
-
-void LoadSilkConfig(void)
-{
-    cJSON *root = GetJsonObjFromFile(SILK_JSON_CONFIG_PATH);
-    APPSPAWN_CHECK(root != NULL, return, "Failed to load silk config");
-    ParseSilkConfig(root, &g_silkConfig);
-    cJSON_Delete(root);
-}
+APPSPAWN_STATIC struct SilkConfig g_silkConfig = {0};
 
 static void FreeSilkConfigItems(void)
 {
@@ -126,16 +57,75 @@ static void FreeAllSilkConfig(void)
     FreeSilkConfig();
 }
 
-void LoadSilkLibrary(const char *packageName)
+APPSPAWN_STATIC bool ParseSilkConfig(const cJSON *root, struct SilkConfig *config)
 {
+    bool isSuccess = false;
+    cJSON *silkJson = cJSON_GetObjectItemCaseSensitive(root, SILK_JSON_ENABLE_ITEM);
+    if (silkJson == NULL) {
+        return isSuccess;
+    }
+
+    uint32_t configCount = (uint32_t)cJSON_GetArraySize(silkJson);
+    APPSPAWN_CHECK(configCount <= SILK_JSON_MAX, configCount = SILK_JSON_MAX,
+                   "config count %{public}u is larger than %{public}d", configCount, SILK_JSON_MAX);
+    config->configItems = (char **)malloc(configCount * sizeof(char *));
+    APPSPAWN_CHECK(config->configItems != NULL, return isSuccess, "Alloc for silk config items failed");
+    int ret = memset_s(config->configItems, configCount * sizeof(char *), 0, configCount * sizeof(char *));
+    APPSPAWN_CHECK(ret == 0, free(config->configItems);
+                   config->configItems = NULL; return isSuccess,
+                   "Memset silk config items failed");
+
+    for (uint32_t i = 0; i < configCount; ++i) {
+        const char *appName = cJSON_GetStringValue(cJSON_GetArrayItem(silkJson, i));
+        APPSPAWN_CHECK(appName != NULL, break, "appName is NULL");
+        APPSPAWN_LOGI("Enable silk appName %{public}s", appName);
+
+        int len = strlen(appName) + 1;
+        APPSPAWN_CHECK(len <= SILK_JSON_NAME_MAX, continue,
+                       "appName %{public}s is larger than the maximum limit", appName);
+        char **item = &config->configItems[config->configCursor];
+        *item = (char *)malloc(len * sizeof(char));
+        APPSPAWN_CHECK(*item != NULL, break, "Alloc for config item failed");
+
+        ret = memset_s(*item, len * sizeof(char), 0, len * sizeof(char));
+        APPSPAWN_CHECK(ret == 0, free(*item);
+                       *item = NULL; break,
+                       "Memset config item %{public}s failed", appName);
+
+        ret = strncpy_s(*item, len, appName, len - 1);
+        APPSPAWN_CHECK(ret == 0, free(*item);
+                       *item = NULL; break,
+                       "Copy config item %{public}s failed", appName);
+        config->configCursor++;
+        if (i == configCount -1) {
+            isSuccess = true;
+        }
+    }
+    if (!isSuccess) {
+        FreeAllSilkConfig();
+    }
+    return isSuccess;
+}
+
+void LoadSilkConfig(void)
+{
+    cJSON *root = GetJsonObjFromFile(SILK_JSON_CONFIG_PATH);
+    APPSPAWN_CHECK(root != NULL, return, "Failed to load silk config");
+    (void)ParseSilkConfig(root, &g_silkConfig);
+    cJSON_Delete(root);
+}
+
+bool LoadSilkLibrary(const char *packageName)
+{
+    bool isSuccess = false;
     if (g_silkConfig.configItems == NULL) {
         APPSPAWN_LOGV("ConfigItems is NULL");
-        return;
+        return isSuccess;
     }
     if (packageName == NULL) {
         APPSPAWN_LOGV("PackageName is NULL");
         FreeAllSilkConfig();
-        return;
+        return isSuccess;
     }
     char **appName = NULL;
     void *handle = NULL;
@@ -146,6 +136,9 @@ void LoadSilkLibrary(const char *packageName)
         }
         if (handle == NULL && strcmp(*appName, packageName) == 0) {
             handle = dlopen(SILK_JSON_LIBRARY_PATH, RTLD_NOW);
+            if (handle != NULL) {
+                isSuccess = true;
+            }
             APPSPAWN_LOGI("Enable Silk AppName %{public}s result:%{public}s",
                 *appName, handle ? "success" : "failed");
         }
@@ -153,4 +146,5 @@ void LoadSilkLibrary(const char *packageName)
         *appName = NULL;
     }
     FreeSilkConfig();
+    return isSuccess;
 }
