@@ -51,6 +51,8 @@ extern "C" {
 #define MAX_POLICY_NUM 8
 #define SANDBOX_MODE_READ  0x00000001
 #define SANDBOX_MODE_WRITE (SANDBOX_MODE_READ << 1)
+#define DEC_MODE_DENY_READ  (1 << 5)
+#define DEC_MODE_DENY_WRITE (1 << 6)
 
 #define DEC_POLICY_HEADER_RESERVED 64
 
@@ -70,6 +72,11 @@ typedef struct DecPolicyInfo {
     uint64_t reserved[DEC_POLICY_HEADER_RESERVED];
     bool flag;
 } DecPolicyInfo;
+
+typedef struct DecDenyPathTemplate {
+    const char *permission;
+    const char *decPath;
+} DecDenyPathTemplate;
 
 void SetDecPolicyInfos(DecPolicyInfo *decPolicyInfos);
 void DestroyDecPolicyInfos(DecPolicyInfo *decPolicyInfos);

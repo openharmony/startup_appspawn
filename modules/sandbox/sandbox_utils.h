@@ -76,6 +76,7 @@ private:
                                              std::string &sandboxPackagePath);
     static int32_t SetDecPolicyWithPermission(const AppSpawningCtx *appProperty, SandboxMountConfig &mountConfig);
     static int32_t SetDecWithDir(const AppSpawningCtx *appProperty, uint32_t userId);
+    static void SetDecDenyWithDir(const AppSpawningCtx *appProperty);
     static void DoSandboxChmod(nlohmann::json jsonConfig, std::string &sandboxRoot);
     static int DoAllMntPointsMount(const AppSpawningCtx *appProperty,
         nlohmann::json &appConfig, const char *typeName, const std::string &section = "app-base");

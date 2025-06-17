@@ -1721,6 +1721,34 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_dec_05, TestSize.Level0)
 }
 
 /**
+ * @tc.name: App_Spawn_Sandbox_dec_06
+ * @tc.desc: set deny dec rules
+ * @tc.type: FUNC
+ * @tc.author:
+ */
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_dec_06, TestSize.Level0)
+{
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_dec_06 start";
+    AppSpawningCtx *appProperty = GetTestAppProperty();
+    OHOS::AppSpawn::SandboxUtils::SetDecDenyWithDir(appProperty);
+
+    int32_t userFileIndex = GetPermissionIndex(nullptr, "ohos.permission.READ_WRITE_USER_FILE");
+    ASSERT_NE(userFileIndex, 0);
+    int ret = SetAppPermissionFlags(appProperty, userFileIndex);
+    ASSERT_EQ(ret, 0);
+    OHOS::AppSpawn::SandboxUtils::SetDecDenyWithDir(appProperty);
+
+    int32_t downloadIndex = GetPermissionIndex(nullptr, "ohos.permission.READ_WRITE_DOWNLOAD_DIRECTORY");
+    ASSERT_NE(downloadIndex, 0);
+    ret = SetAppPermissionFlags(appProperty, downloadIndex);
+    ASSERT_EQ(ret, 0);
+    OHOS::AppSpawn::SandboxUtils::SetDecDenyWithDir(appProperty);
+
+    DeleteAppSpawningCtx(appProperty);
+    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_dec_06 end";
+}
+
+/**
  * @tc.name: App_Spawn_Sandbox_Shared_Mount_01
  * @tc.desc: [IsValidDataGroupItem] input valid param
  * @tc.type: FUNC
