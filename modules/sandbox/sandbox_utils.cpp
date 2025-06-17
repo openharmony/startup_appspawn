@@ -1027,6 +1027,43 @@ EXIT:
     return ret;
 }
 
+static const DecDenyPathTemplate DEC_DENY_PATH_MAP[] = {
+    {"ohos.permission.READ_WRITE_DOWNLOAD_DIRECTORY", "/storage/Users/currentUser/Download"},
+    {"ohos.permission.READ_WRITE_DESKTOP_DIRECTORY", "/storage/Users/currentUser/Desktop"},
+    {"ohos.permission.READ_WRITE_DOCUMENTS_DIRECTORY", "/storage/Users/currentUser/Documents"},
+};
+void SandboxUtils::SetDecDenyWithDir(const AppSpawningCtx *appProperty)
+{
+    int32_t userFileIndex = GetPermissionIndex(nullptr, READ_WRITE_USER_FILE_MODE.c_str());
+    if (CheckAppPermissionFlagSet(appProperty, static_cast<uint32_t>(userFileIndex)) == 0) {
+        APPSPAWN_LOGV("The app doesn't have %{public}s, no need to set deny rules", READ_WRITE_USER_FILE_MODE.c_str());
+        return;
+    }
+
+    AppSpawnMsgAccessToken *tokenInfo =
+        reinterpret_cast<AppSpawnMsgAccessToken *>(GetAppProperty(appProperty, TLV_ACCESS_TOKEN_INFO));
+    APPSPAWN_CHECK(tokenInfo != NULL, return, "Get token id failed");
+
+    DecPolicyInfo decPolicyInfo = {0};
+    decPolicyInfo.pathNum = 0;
+    uint32_t count = ARRAY_LENGTH(DEC_DENY_PATH_MAP);
+    for (uint32_t i = 0, j = 0; i < count; i++) {
+        int32_t index = GetPermissionIndex(nullptr, DEC_DENY_PATH_MAP[i].permission);
+        if (CheckAppPermissionFlagSet(appProperty, static_cast<uint32_t>(index))) {
+            continue;
+        }
+        PathInfo pathInfo = {0};
+        pathInfo.path = const_cast<char *>(DEC_DENY_PATH_MAP[i].decPath);
+        pathInfo.pathLen = static_cast<uint32_t>(strlen(pathInfo.path));
+        pathInfo.mode = DEC_MODE_DENY_READ | DEC_MODE_DENY_WRITE;
+        decPolicyInfo.path[j++] = pathInfo;
+        decPolicyInfo.pathNum += 1;
+    }
+    decPolicyInfo.tokenId = tokenInfo->accessTokenIdEx;
+    decPolicyInfo.flag = true;
+    SetDecPolicyInfos(&decPolicyInfo);
+}
+
 static bool GetCheckStatus(nlohmann::json &mntPoint)
 {
     std::string value = g_statusCheck;
@@ -1988,6 +2025,7 @@ int32_t SandboxUtils::SetAppSandboxProperty(AppSpawningCtx *appProperty, uint32_
     APPSPAWN_LOGV("Change root dir success");
 #endif
     SetDecWithDir(appProperty, dacInfo->uid / UID_BASE);
+    SetDecDenyWithDir(appProperty);
     SetDecPolicy();
 #if defined(APPSPAWN_MOUNT_TMPSHM) && defined(WITH_SELINUX)
     Restorecon(DEV_SHM_DIR);

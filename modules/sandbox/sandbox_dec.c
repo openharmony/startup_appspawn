@@ -89,7 +89,7 @@ void SetDecPolicyInfos(DecPolicyInfo *decPolicyInfos)
             return;
         }
         pathInfo.pathLen = (uint32_t)strlen(pathInfo.path);
-        pathInfo.mode = SANDBOX_MODE_WRITE | SANDBOX_MODE_READ;
+        pathInfo.mode = decPolicyInfos->path[i].mode;
         uint32_t index = g_decPolicyInfos->pathNum + i;
         g_decPolicyInfos->path[index] = pathInfo;
     }
@@ -191,7 +191,8 @@ void SetDecPolicy(void)
     } else {
         APPSPAWN_LOGI("set SET_DEC_POLICY_CMD sandbox policy success. timestamp:%{public}" PRId64 "", timestamp);
         for (uint32_t i = 0; i < g_decPolicyInfos->pathNum; i++) {
-            APPSPAWN_LOGI("policy info: %{public}s", g_decPolicyInfos->path[i].path);
+            APPSPAWN_LOGI("policy info: path %{public}s, mode 0x%{public}x",
+                g_decPolicyInfos->path[i].path, g_decPolicyInfos->path[i].mode);
         }
     }
     close(fd);
