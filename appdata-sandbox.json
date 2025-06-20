@@ -836,6 +836,20 @@
                 }
             ]
         }],
+        "ohos.permission.THEME_SKIN":[{
+            "sandbox-switch": "ON",
+            "mount-paths": [{
+                    "src-path": "/data/service/el1/public/themes/<currentUserId>/a/skin",
+                    "sandbox-path": "/data/themes/a/skin",
+                    "sandbox-flags": [ "bind", "rec" ]
+                },
+                {
+                    "src-path": "/data/service/el1/public/themes/<currentUserId>/b/skin",
+                    "sandbox-path": "/data/themes/b/skin",
+                    "sandbox-flags": [ "bind", "rec" ]
+                }
+            ]
+        }],
         "ohos.permission.GET_WALLPAPER":[{
             "sandbox-switch": "ON",
             "mount-paths": [{
