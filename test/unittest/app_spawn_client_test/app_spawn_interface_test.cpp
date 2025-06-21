@@ -369,7 +369,7 @@ HWTEST_F(AppSpawnInterfaceTest, App_Spawn_Interface_Add_Permission_001, TestSize
     EXPECT_EQ(0, ret);
 
     const AppSpawnReqMsgHandle inputHandle[] = {reqHandle, nullptr};
-    const char *permission[] = {"ohos.permission.READ_IMAGEVIDEO", "", nullptr};
+    const char *permission[] = {"ohos.permission.MANAGE_PRIVATE_PHOTOS", "", nullptr};
     for (size_t i = 0; i < ARRAY_LENGTH(inputHandle); i++) {
         for (size_t j = 0; j < ARRAY_LENGTH(permission); j++) {
             printf("App_Spawn_Interface_Add_Permission_001 %zu %zu %d \n", i, j, ret);
