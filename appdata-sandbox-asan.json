@@ -14,6 +14,11 @@
                     "sandbox-path" : "/vendor/asan/lib",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
+                }, {
+                    "src-path" : "/system/asan/bin",
+                    "sandbox-path" : "/system/asan/bin",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
                 }
             ],
             "symbol-links" : [
@@ -42,6 +47,44 @@
                 }, {
                     "src-path" : "/vendor/asan/lib",
                     "sandbox-path" : "/vendor/asan/lib",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/system/asan/bin",
+                    "sandbox-path" : "/system/asan/bin",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }
+            ],
+            "symbol-links" : [
+            ]
+        }],
+        "__internal__.com.ohos.gpu" : [{
+            "sandbox-root" : "/mnt/sandbox/com.ohos.render/<PackageName>",
+            "sandbox-ns-flags" : [ "pid", "net" ],
+            "mount-paths" : [{
+                    "src-path" : "/system/asan/lib64",
+                    "sandbox-path" : "/system/asan/lib64",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/vendor/asan/lib64",
+                    "sandbox-path" : "/vendor/asan/lib64",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/system/asan/lib",
+                    "sandbox-path" : "/system/asan/lib",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/vendor/asan/lib",
+                    "sandbox-path" : "/vendor/asan/lib",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/system/asan/bin",
+                    "sandbox-path" : "/system/asan/bin",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }
