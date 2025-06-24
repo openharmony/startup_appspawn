@@ -13,7 +13,7 @@
             "accessTokenIdEx": 537854093
     },
     "permission": [
-            "ohos.permission.READ_IMAGEVIDEO"
+            "ohos.permission.MANAGE_PRIVATE_PHOTOS"
     ],
     "internet-permission": {
             "set-allow-internet": 0,

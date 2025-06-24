@@ -148,7 +148,7 @@ private:
     uint32_t defaultMsgFlags_ = 0;
     int fdArg = -1;
     std::vector<const char *> permissions_ = {
-        const_cast<char *>("ohos.permission.READ_IMAGEVIDEO"),
+        const_cast<char *>("ohos.permission.MANAGE_PRIVATE_PHOTOS"),
         const_cast<char *>("ohos.permission.FILE_CROSS_APP"),
         const_cast<char *>("ohos.permission.ACTIVATE_THEME_PACKAGE"),
         const_cast<char *>("ohos.permission.GET_WALLPAPER"),
