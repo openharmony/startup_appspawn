@@ -66,7 +66,7 @@ static AppSpawnReqMsgHandle CreateMsg(AppSpawnClientHandle handle, const char *b
         APPSPAWN_CHECK(ret == 0, break, "Failed to add access token %{public}s", APPSPAWN_SERVER_NAME);
 
         static const char *permissions[] = {
-            "ohos.permission.READ_IMAGEVIDEO",
+            "ohos.permission.MANAGE_PRIVATE_PHOTOS",
             "ohos.permission.FILE_CROSS_APP",
             "ohos.permission.ACTIVATE_THEME_PACKAGE",
             "ohos.permission.GET_WALLPAPER",

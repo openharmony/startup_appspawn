@@ -55,7 +55,7 @@ static const std::string g_defaultAppInfo = "{ \
             \"accessTokenIdEx\" : 537854093\
     },\
     \"permission\" : [\
-            \"ohos.permission.READ_IMAGEVIDEO\",\
+            \"ohos.permission.MANAGE_PRIVATE_PHOTOS\",\
             \"ohos.permission.FILE_CROSS_APP\",\
             \"ohos.permission.ACTIVATE_THEME_PACKAGE\"\
     ],\
