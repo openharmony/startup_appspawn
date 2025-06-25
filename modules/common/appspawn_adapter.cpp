@@ -164,9 +164,7 @@ int SetUidGidFilter(const AppSpawnMgr *content)
         ret = SetSeccompPolicyWithName(INDIVIDUAL, NWEBSPAWN_NAME);
     } else {
 #ifdef SECCOMP_PRIVILEGE
-        if (IsDeveloperModeOpen()) {
-            return 0;
-        }
+        return 0;
 #endif
         ret = SetSeccompPolicyWithName(INDIVIDUAL, APPSPAWN_NAME);
     }
