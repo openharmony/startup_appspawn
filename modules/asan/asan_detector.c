@@ -71,7 +71,7 @@ static int SetAsanEnabledEnv(const AppSpawnMgr *content, const AppSpawningCtx *p
     for (size_t i = 0; i < configTableSize; ++i) {
         if (CheckAppMsgFlagsSet(property, g_configTable[i].flag)) {
             if (g_configTable[i].flag == APP_FLAGS_TSAN_ENABLED && isInRenderProcess(property)) {
-                APPSPAWN_LOGI("SetAsanEnabledEnv ship tsan setting if render process");
+                APPSPAWN_LOGI("SetAsanEnabledEnv skip tsan setting if render process");
                 continue;
             }
             if (g_configTable[i].ldPreload) {
