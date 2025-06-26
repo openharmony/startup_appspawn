@@ -27,6 +27,9 @@
 #include "appspawn_client.h"
 #include "appspawn_hook.h"
 
+void SetBoolParamResult(const char *key, bool flag);
+int SetSelinuxConNweb(const AppSpawnMgr *content, const AppSpawningCtx *property);
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -139,6 +142,5 @@ StubNode *GetStubNode(int type);
 #ifdef __cplusplus
 }
 #endif
-int SetSelinuxConNweb(const AppSpawnMgr *content, const AppSpawningCtx *property);
-void InitAppCommonEnv(const AppSpawningCtx *property);
+
 #endif // APPSPAWN_TEST_STUB_H

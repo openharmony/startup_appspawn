@@ -49,6 +49,18 @@
 #include <sys/prctl.h>
 #endif
 
+static uint32_t g_preloadParamResult = 0;
+static uint32_t g_preloadEtsParamResult = 0;
+void SetBoolParamResult(const char *key, bool flag)
+{
+    if (strcmp(key, "persist.appspawn.preload") == 0) {
+        flag ? (g_preloadParamResult = true) : (g_preloadParamResult = false);
+    }
+    if (strcmp(key, "persist.appspawn.preloadets") == 0) {
+        flag ? (g_preloadEtsParamResult = true) : (g_preloadEtsParamResult = false);
+    }
+}
+
 namespace OHOS {
 namespace system {
     bool GetIntParameter(const std::string &key, bool def, bool arg1 = false, bool arg2 = false)
@@ -58,6 +70,12 @@ namespace system {
 
     bool GetBoolParameter(const std::string &key, bool def)
     {
+        if (strcmp(key.c_str(), "persist.appspawn.preload") == 0) {
+            return g_preloadParamResult ? true : false;
+        }
+        if (strcmp(key.c_str(), "persist.appspawn.preloadets") == 0) {
+            return g_preloadEtsParamResult ? true : false;
+        }
         return def;
     }
 }  // namespace system

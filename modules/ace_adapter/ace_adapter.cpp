@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -49,6 +49,7 @@ static const bool DEFAULT_PRELOAD_VALUE = false;
 #else
 static const bool DEFAULT_PRELOAD_VALUE = true;
 #endif
+static const bool DEFAULT_PRELOAD_ETS_VALUE = false;
 static const std::string PRELOAD_JSON_CONFIG("/appspawn_preload.json");
 
 typedef struct TagParseJsonContext {
@@ -84,11 +85,17 @@ static int GetModuleSet(const cJSON *root, ParseJsonContext *context)
 
 static void PreloadModule(void)
 {
+    bool preloadEts = OHOS::system::GetBoolParameter("persist.appspawn.preloadets", DEFAULT_PRELOAD_ETS_VALUE);
+    APPSPAWN_LOGI("LoadExtendLib: preloadets param value is %{public}s", preloadEts ? "true" : "false");
+
     OHOS::AbilityRuntime::Runtime::Options options;
-    options.lang = OHOS::AbilityRuntime::Runtime::Language::JS;
     options.loadAce = true;
     options.preload = true;
-
+    if (preloadEts) {
+        options.lang = OHOS::AbilityRuntime::Runtime::Language::ETS;
+    } else {
+        options.lang = OHOS::AbilityRuntime::Runtime::Language::JS;
+    }
     auto runtime = OHOS::AbilityRuntime::Runtime::Create(options);
     if (!runtime) {
         APPSPAWN_LOGE("LoadExtendLib: Failed to create runtime");
@@ -108,7 +115,7 @@ static void PreloadModule(void)
 static void LoadExtendLib(void)
 {
     const char *acelibdir = OHOS::Ace::AceForwardCompatibility::GetAceLibName();
-    APPSPAWN_LOGI("LoadExtendLib: Start calling dlopen acelibdir.");
+    APPSPAWN_LOGI("LoadExtendLib: Start calling dlopen acelibdir");
     void *aceAbilityLib = dlopen(acelibdir, RTLD_NOW | RTLD_LOCAL);
     APPSPAWN_CHECK(aceAbilityLib != nullptr, return, "Fail to dlopen %{public}s, [%{public}s]", acelibdir, dlerror());
     APPSPAWN_LOGI("LoadExtendLib: Success to dlopen %{public}s", acelibdir);
@@ -116,22 +123,23 @@ static void LoadExtendLib(void)
     OHOS::AppExecFwk::MainThread::PreloadExtensionPlugin();
     bool preload = OHOS::system::GetBoolParameter("persist.appspawn.preload", DEFAULT_PRELOAD_VALUE);
     if (!preload) {
-        APPSPAWN_LOGI("LoadExtendLib: Do not preload JS VM");
+        APPSPAWN_LOGI("LoadExtendLib: Do not preload VM");
         return;
     }
 
-    APPSPAWN_LOGI("LoadExtendLib: Start preload JS VM");
+    APPSPAWN_LOGI("LoadExtendLib: Start preload VM");
     SetTraceDisabled(true);
     PreloadModule();
     SetTraceDisabled(false);
 
+    APPSPAWN_LOGI("LoadExtendLib: Start reclaim file cache");
     OHOS::Ace::AceForwardCompatibility::ReclaimFileCache(getpid());
     Resource::ResourceManager *systemResMgr = Resource::GetSystemResourceManagerNoSandBox();
     APPSPAWN_CHECK(systemResMgr != nullptr, return, "Fail to get system resource manager");
-    APPSPAWN_LOGI("LoadExtendLib: End preload JS VM");
+    APPSPAWN_LOGI("LoadExtendLib: End preload VM");
 }
 
-APPSPAWN_STATIC void PreloadCJLibs(void)
+static void PreloadCJLibs(void)
 {
     const char* cjEnvLibName = "libcj_environment.z.so";
     const char* cjEnvInitName = "OHOS_InitSpawnEnv";
@@ -147,7 +155,7 @@ APPSPAWN_STATIC void PreloadCJLibs(void)
     initSpawnEnv();
 }
 
-APPSPAWN_STATIC void LoadExtendCJLib(void)
+static void LoadExtendCJLib(void)
 {
     const char *acelibdir = OHOS::Ace::AceForwardCompatibility::GetAceLibName();
     APPSPAWN_LOGI("LoadExtendLib: Start calling dlopen acelibdir.");
@@ -160,7 +168,7 @@ APPSPAWN_STATIC void LoadExtendCJLib(void)
     PreloadCJLibs();
 }
 
-APPSPAWN_STATIC int BuildFdInfoMap(const AppSpawnMsgNode *message, std::map<std::string, int> &fdMap, int isColdRun)
+static int BuildFdInfoMap(const AppSpawnMsgNode *message, std::map<std::string, int> &fdMap, int isColdRun)
 {
     APPSPAWN_CHECK_ONLY_EXPER(message != NULL && message->buffer != NULL, return -1);
     APPSPAWN_CHECK_ONLY_EXPER(message->tlvOffset != NULL, return -1);
@@ -206,7 +214,7 @@ APPSPAWN_STATIC int BuildFdInfoMap(const AppSpawnMsgNode *message, std::map<std:
     return 0;
 }
 
-static int RunChildThread(const AppSpawnMgr *content, const AppSpawningCtx *property)
+APPSPAWN_STATIC int RunChildThread(const AppSpawnMgr *content, const AppSpawningCtx *property)
 {
     std::string checkExit;
     if (OHOS::system::GetBoolParameter("persist.init.debug.checkexit", true)) {
