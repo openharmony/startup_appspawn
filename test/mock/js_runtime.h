@@ -27,6 +27,7 @@ namespace AbilityRuntime {
     public:
         enum class Language {
             JS = 0,
+            ETS = 1,
         };
 
         struct Options {
