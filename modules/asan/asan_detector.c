@@ -102,7 +102,7 @@ static int SetAsanEnabledEnv(const AppSpawnMgr *content, const AppSpawningCtx *p
         APPSPAWN_LOGV("SetAsanEnabledEnv %{public}d,%{public}s,%{public}s,%{public}s,%{public}s,%{public}s",
             g_configTable[i].flag, g_configTable[i].ldPreload, g_configTable[i].asanOptions,
             g_configTable[i].tsanOptions, g_configTable[i].ubsanOptions, g_configTable[i].hwasanOptions);
-        return 0;        
+        return 0;
     }
     return -1;
 }
