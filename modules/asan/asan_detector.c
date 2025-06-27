@@ -55,7 +55,7 @@ static bool IsInRenderProcess(const AppSpawningCtx *property)
     }
     firstIn = false;
     char *processType = (char *)GetAppPropertyExt(property, MSG_EXT_NAME_PROCESS_TYPE, NULL);
-    if (processType == nullptr) {
+    if (processType == NULL) {
         APPSPAWN_LOGE("GetAppPropertyExt ProcessType is null");
         return false;
     }
