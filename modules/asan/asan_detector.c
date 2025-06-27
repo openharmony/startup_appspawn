@@ -69,7 +69,7 @@ static int SetAsanEnabledEnv(const AppSpawnMgr *content, const AppSpawningCtx *p
 {
     size_t configTableSize = sizeof(g_configTable) / sizeof(g_configTable[0]);
     for (size_t i = 0; i < configTableSize; ++i) {
-        if (!CheckAppMsgFlagsSet(property, g_configTable[i].flag)) {
+        if (CheckAppMsgFlagsSet(property, g_configTable[i].flag) == 0) {
             continue;
         }
         if (g_configTable[i].flag == APP_FLAGS_TSAN_ENABLED && IsInRenderProcess(property)) {
