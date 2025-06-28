@@ -46,39 +46,63 @@ static const EnvConfig g_configTable[] = {
     { APP_FLAGS_UBSAN_ENABLED, NULL, NULL, NULL, UBSAN_OPTIONS, NULL },
 };
 
+static bool IsInRenderProcess(const AppSpawningCtx *property)
+{
+    static bool isRender = false;
+    static bool firstIn = true;
+    if (!firstIn) {
+        return isRender;
+    }
+    firstIn = false;
+    char *processType = (char *)GetAppPropertyExt(property, MSG_EXT_NAME_PROCESS_TYPE, NULL);
+    if (processType == NULL) {
+        APPSPAWN_LOGE("GetAppPropertyExt ProcessType is null");
+        return false;
+    }
+    if (strcmp(processType, "render") == 0 || strcmp(processType, "gpu") == 0) {
+        isRender = true;
+    }
+    return isRender;
+}
+
 static int SetAsanEnabledEnv(const AppSpawnMgr *content, const AppSpawningCtx *property)
 {
     size_t configTableSize = sizeof(g_configTable) / sizeof(g_configTable[0]);
     for (size_t i = 0; i < configTableSize; ++i) {
-        if (CheckAppMsgFlagsSet(property, g_configTable[i].flag)) {
-            if (g_configTable[i].ldPreload) {
-                setenv("LD_PRELOAD", g_configTable[i].ldPreload, 1);
-            }
-            if (g_configTable[i].asanOptions) {
-                setenv("ASAN_OPTIONS", g_configTable[i].asanOptions, 1);
-            } else {
-                unsetenv("ASAN_OPTIONS");
-            }
-            if (g_configTable[i].tsanOptions) {
-                setenv("TSAN_OPTIONS", g_configTable[i].tsanOptions, 1);
-            } else {
-                unsetenv("TSAN_OPTIONS");
-            }
-            if (g_configTable[i].ubsanOptions) {
-                setenv("UBSAN_OPTIONS", g_configTable[i].ubsanOptions, 1);
-            } else {
-                unsetenv("UBSAN_OPTIONS");
-            }
-            if (g_configTable[i].hwasanOptions) {
-                setenv("HWASAN_OPTIONS", g_configTable[i].hwasanOptions, 1);
-            } else {
-                unsetenv("HWASAN_OPTIONS");
-            }
-            APPSPAWN_LOGV("SetAsanEnabledEnv %{public}d,%{public}s,%{public}s,%{public}s,%{public}s,%{public}s",
-                g_configTable[i].flag, g_configTable[i].ldPreload, g_configTable[i].asanOptions,
-                g_configTable[i].tsanOptions, g_configTable[i].ubsanOptions, g_configTable[i].hwasanOptions);
-            return 0;
+        if (CheckAppMsgFlagsSet(property, g_configTable[i].flag) == 0) {
+            continue;
         }
+        if (g_configTable[i].flag == APP_FLAGS_TSAN_ENABLED && IsInRenderProcess(property)) {
+            APPSPAWN_LOGI("SetAsanEnabledEnv skip tsan setting if render process");
+            continue;
+        }
+        if (g_configTable[i].ldPreload) {
+            setenv("LD_PRELOAD", g_configTable[i].ldPreload, 1);
+        }
+        if (g_configTable[i].asanOptions) {
+            setenv("ASAN_OPTIONS", g_configTable[i].asanOptions, 1);
+        } else {
+            unsetenv("ASAN_OPTIONS");
+        }
+        if (g_configTable[i].tsanOptions) {
+            setenv("TSAN_OPTIONS", g_configTable[i].tsanOptions, 1);
+        } else {
+            unsetenv("TSAN_OPTIONS");
+        }
+        if (g_configTable[i].ubsanOptions) {
+            setenv("UBSAN_OPTIONS", g_configTable[i].ubsanOptions, 1);
+        } else {
+            unsetenv("UBSAN_OPTIONS");
+        }
+        if (g_configTable[i].hwasanOptions) {
+            setenv("HWASAN_OPTIONS", g_configTable[i].hwasanOptions, 1);
+        } else {
+            unsetenv("HWASAN_OPTIONS");
+        }
+        APPSPAWN_LOGV("SetAsanEnabledEnv %{public}d,%{public}s,%{public}s,%{public}s,%{public}s,%{public}s",
+            g_configTable[i].flag, g_configTable[i].ldPreload, g_configTable[i].asanOptions,
+            g_configTable[i].tsanOptions, g_configTable[i].ubsanOptions, g_configTable[i].hwasanOptions);
+        return 0;
     }
     return -1;
 }
