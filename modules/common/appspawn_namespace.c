@@ -39,7 +39,7 @@ typedef struct TagAppSpawnNamespace {
 } AppSpawnNamespace;
 
 APPSPAWN_STATIC pid_t GetPidByName(const char *name);
-static int AppSpawnExtDataCompareDataId(ListNode *node, void *data)
+APPSPAWN_STATIC int AppSpawnExtDataCompareDataId(ListNode *node, void *data)
 {
     AppSpawnExtData *extData = (AppSpawnExtData *)ListEntry(node, AppSpawnExtData, node);
     return extData->dataId - *(uint32_t *)data;
@@ -223,7 +223,7 @@ APPSPAWN_STATIC int PreLoadEnablePidNs(AppSpawnMgr *content)
 }
 
 // after calling setns, new process will be in the same pid namespace of the input pid
-static int SetPidNamespace(int nsPidFd, int nsType)
+APPSPAWN_STATIC int SetPidNamespace(int nsPidFd, int nsType)
 {
     APPSPAWN_LOGI("SetPidNamespace 0x%{public}x", nsType);
 #ifndef APPSPAWN_TEST
