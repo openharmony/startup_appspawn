@@ -658,6 +658,81 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_031, TestSize.Level0)
     AppSpawnClientInit(nullptr, nullptr);
 }
 
+HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_GetAppSpawnNamespace, TestSize.Level0)
+{
+    int ret = -1;
+    AppSpawnMgr *mgr = nullptr;
+    AppSpawnNamespace *appSpawnNamespace = nullptr;
+    mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+    EXPECT_EQ(mgr != nullptr, 1);
+    appSpawnNamespace = CreateAppSpawnNamespace();
+    appSpawnNamespace->nsSelfPidFd = GetNsPidFd(getpid());
+    OH_ListInit(&appSpawnNamespace->extData.node);
+    OH_ListAddTail(&mgr->extData, &appSpawnNamespace->extData.node);
+    AppSpawnNamespace *appSpawnNamespace1 = nullptr;
+    appSpawnNamespace1 = GetAppSpawnNamespace(mgr);
+    EXPECT_EQ(appSpawnNamespace1 != nullptr, 1);
+    uint32_t dataId = EXT_DATA_NAMESPACE;
+    AppSpawnExtDataCompareDataId(&mgr->extData, (void *)&dataId);
+    DeleteAppSpawnNamespace(appSpawnNamespace);
+    DeleteAppSpawnMgr(mgr);
+}
+
+HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_GetPidByName, TestSize.Level0)
+{
+    int ret = -1;
+    AppSpawnMgr *mgr = nullptr;
+    AppSpawnNamespace *appSpawnNamespace = nullptr;
+    mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+    EXPECT_EQ(mgr != nullptr, 1);
+    appSpawnNamespace = CreateAppSpawnNamespace();
+    OH_ListInit(&appSpawnNamespace->extData.node);
+    OH_ListAddTail(&mgr->extData, &appSpawnNamespace->extData.node);
+    appSpawnNamespace->nsInitPidFd = GetNsPidFd(getpid());
+    pid_t pid = GetPidByName("appspawn");
+    EXPECT_EQ(pid > 0, 1);
+    DeleteAppSpawnNamespace(appSpawnNamespace);
+    DeleteAppSpawnMgr(mgr);
+}
+
+HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_PreLoadEnablePidNs, TestSize.Level0)
+{
+    int ret = -1;
+    AppSpawnMgr *mgr = nullptr;
+    AppSpawnNamespace *appSpawnNamespace = nullptr;
+    mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+    EXPECT_EQ(mgr != nullptr, 1);
+    mgr->content.sandboxNsFlags = CLONE_NEWPID;
+    ret = PreLoadEnablePidNs(mgr);
+    EXPECT_EQ(ret, 0);
+    AppSpawnNamespace *appSpawnNamespace1 = nullptr;
+    appSpawnNamespace1 = GetAppSpawnNamespace(mgr);
+    EXPECT_EQ(appSpawnNamespace1 != nullptr, 1);
+    DeleteAppSpawnNamespace(appSpawnNamespace);
+    DeleteAppSpawnMgr(mgr);
+    SetPidNamespace(0, 0);
+}
+
+HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_PreForkSetPidNamespace, TestSize.Level0)
+{
+    int ret = -1;
+    AppSpawnMgr *mgr = nullptr;
+    AppSpawnNamespace *appSpawnNamespace = nullptr;
+    mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+    EXPECT_EQ(mgr != nullptr, 1);
+    mgr->content.sandboxNsFlags = CLONE_NEWPID;
+    ret = PreLoadEnablePidNs(mgr);
+    EXPECT_EQ(ret, 0);
+    PreForkSetPidNamespace(mgr, nullptr);
+    PostForkSetPidNamespace(mgr, nullptr);
+    mgr->content.sandboxNsFlags = 0;
+    PreForkSetPidNamespace(mgr, nullptr);
+    PostForkSetPidNamespace(mgr, nullptr);
+    DeleteAppSpawnNamespace(appSpawnNamespace);
+    DeleteAppSpawnMgr(mgr);
+    SetPidNamespace(0, 0);
+}
+
 HWTEST_F(AppSpawnCommonTest, App_Spawn_Encaps_001, TestSize.Level0)
 {
     const char encapsJsonStr[] = "{\"name\":\"Permissions\",\"ohos.encaps.count\":0,\"permissions\":"
