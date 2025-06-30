@@ -75,3 +75,13 @@ HWTEST_F(ParseSilkConfigTest, Parse_Silk_Config_002, TestSize.Level0)
     ASSERT_EQ(g_silkConfig.configItems, NULL);
     ASSERT_EQ(g_silkConfig.configCursor, 0);
 }
+
+HWTEST_F(ParseSilkConfigTest, Parse_Silk_Config_003, TestSize.Level0)
+{
+    const char *silkJsonStr = "{\"enabled_app_list0\":[\"com.taobao.taobao\",\"com.tencent.mm\"]}";
+    cJSON *root =  cJSON_Parse(silkJsonStr);
+    const char* testEnableSilkProcessName = NULL;
+    bool ret = ParseSilkConfig(root, &g_silkConfig);
+    cJSON_Delete(root);
+    ASSERT_EQ(ret, false);
+}

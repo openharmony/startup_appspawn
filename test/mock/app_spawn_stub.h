@@ -49,10 +49,17 @@ typedef struct TagPathMountNode PathMountNode;
 typedef struct TagMountArg MountArg;
 typedef struct TagVarExtraData VarExtraData;
 typedef struct TagSandboxSection SandboxSection;
-typedef struct TagAppSpawnNamespace AppSpawnNamespace;
+typedef struct TagAppSpawnNamespace {
+    AppSpawnExtData extData;
+    int nsSelfPidFd;
+    int nsInitPidFd;
+} AppSpawnNamespace;
 typedef struct TagAppSpawnedProcess AppSpawnedProcessInfo;
 
+int AppSpawnExtDataCompareDataId(ListNode *node, void *data);
 AppSpawnNamespace *GetAppSpawnNamespace(const AppSpawnMgr *content);
+int SetPidNamespace(int nsPidFd, int nsType);
+AppSpawnNamespace *CreateAppSpawnNamespace(void);
 void DeleteAppSpawnNamespace(AppSpawnNamespace *ns);
 void FreeAppSpawnNamespace(struct TagAppSpawnExtData *data);
 int PreForkSetPidNamespace(AppSpawnMgr *content, AppSpawningCtx *property);
