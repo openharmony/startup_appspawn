@@ -198,6 +198,55 @@ static int HnpInstall(const char *hnpFile, HnpInstallInfo *hnpInfo, HnpCfgInfo *
 }
 
 /**
+ * 删除 ../hnppublic/bin目录下所有失效的hnp
+ */
+APPSPAWN_STATIC void ClearSoftLink(int uid)
+{
+    char path[MAX_FILE_PATH_LEN] = {0};
+    ssize_t bytes = snprintf_s(path, MAX_FILE_PATH_LEN, MAX_FILE_PATH_LEN - 1,
+        HNP_DEFAULT_INSTALL_ROOT_PATH"/%d/hnppublic/bin", uid);
+    HNP_ERROR_CHECK(bytes > 0, return,
+        "Build bin path failed %{public}d %{public}zd", uid, bytes);
+
+    DIR *dir = opendir(path);
+    HNP_ERROR_CHECK(dir != NULL, return,
+        "open bin path failed %{public}s %{public}d", path, errno);
+
+    struct dirent *entry;
+    int count = 0;
+    while ((entry = readdir(dir)) != NULL) {
+        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
+            continue;
+        }
+        count++;
+        HNP_INFO_CHECK(entry->d_type == DT_LNK, continue,
+            "not lnk file %s skip to next", entry->d_name);
+
+        char sourcePath[MAX_FILE_PATH_LEN] = {0};
+        bytes = snprintf_s(sourcePath, MAX_FILE_PATH_LEN, MAX_FILE_PATH_LEN - 1,
+            "%s/%s", path, entry->d_name);
+        HNP_ERROR_CHECK(bytes > 0, continue,
+            "build soft link path failed %{public}s", entry->d_name);
+
+        char targetPath[MAX_FILE_PATH_LEN] = {0};
+        bytes = readlink(sourcePath, targetPath, MAX_FILE_PATH_LEN);
+        HNP_ERROR_CHECK(bytes > 0, continue, "readlink failed %{public}s", sourcePath);
+
+        char linkPath[MAX_FILE_PATH_LEN] = {0};
+        bytes = snprintf_s(linkPath, MAX_FILE_PATH_LEN, MAX_FILE_PATH_LEN - 1,
+            "%s/%s", path, targetPath);
+        HNP_ERROR_CHECK(bytes > 0, continue, "build link file source path failed %{public}s", targetPath);
+
+        if (access(linkPath, F_OK) != 0) {
+            int ret = unlink(sourcePath);
+            HNP_LOGI("unlink file %{public}s %{public}d", sourcePath, ret);
+        }
+    }
+    HNP_LOGI("file count is %d", count);
+    closedir(dir);
+}
+
+/**
  * 卸载公共hnp.
  *
  * @param packageName hap名称.
@@ -249,6 +298,7 @@ static int HnpUnInstallPublicHnp(const char* packageName, const char *name, cons
     }
 
     if (HnpPathFileCount(hnpNamePath) == 0) {
+        ClearSoftLink(uid);
         return HnpDeleteFolder(hnpNamePath);
     }
 
