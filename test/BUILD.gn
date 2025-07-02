@@ -31,6 +31,7 @@ group("unittest") {
       deps += [ "unittest/app_spawn_standard_test:AppSpawn_coldrun_ut" ]
     }
     deps += [ "unittest/hnp_test:HnpTest" ]
+    deps += [ "unittest/single_test/hnp_installer:hnp_installer_test" ]
     deps += [ "unittest/devicedebug_test:DevicedebugTest" ]
   } else {
     testonly = true
