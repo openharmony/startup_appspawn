@@ -327,6 +327,21 @@ char *HnpCurrentVersionGet(const char *name);
     HILOG_ERROR(LOG_CORE, "[%{public}s:%{public}d]" args, (__FILE_NAME__), (__LINE__), ##__VA_ARGS__); \
     HnpLogPrintf(HNP_LOG_ERROR, "HNP", "[%{public}s:%{public}d]" args, (__FILE_NAME__), (__LINE__), ##__VA_ARGS__)
 #endif
+#define HNP_ERROR_CHECK(ret, statement, format, ...) \
+    do {                                                  \
+        if (!(ret)) {                                     \
+            HNP_LOGE(format, ##__VA_ARGS__);             \
+            statement;                                    \
+        }                                                 \
+    } while (0)
+
+#define HNP_INFO_CHECK(ret, statement, format, ...) \
+    do {                                                  \
+        if (!(ret)) {                                    \
+            HNP_LOGI(format, ##__VA_ARGS__);            \
+            statement;                                   \
+        }                                          \
+    } while (0)
 
 #ifdef __cplusplus
 }
