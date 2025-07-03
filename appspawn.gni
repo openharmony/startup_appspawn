@@ -36,6 +36,7 @@ declare_args() {
   appspawn_support_code_signature = true
   appspawn_allow_internet_permission = false
   appspawn_custom_sandbox = false
+  appspawn_support_nosharefs = false
   appspawn_support_local_debugger = false
   appspawn_hitrace_option = true
 }

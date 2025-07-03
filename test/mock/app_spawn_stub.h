@@ -111,6 +111,7 @@ int LoadPermission(AppSpawnClientType type);
 void DeletePermission(AppSpawnClientType type);
 int SetProcessName(const AppSpawnMgr *content, const AppSpawningCtx *property);
 int SetIsolateDir(const AppSpawningCtx *property);
+int SetCapabilities(const AppSpawnMgr *content, const AppSpawningCtx *property);
 int SetFdEnv(AppSpawnMgr *content, AppSpawningCtx *property);
 int PreLoadEnablePidNs(AppSpawnMgr *content);
 int NsInitFunc();

@@ -1951,16 +1951,8 @@ int32_t SandboxUtils::UpdatePermissionFlags(AppSpawningCtx *appProperty)
     } else if (appFullMountStatus == FILE_ACCESS_COMMON_DIR_STATUS) {
         index = GetPermissionIndex(nullptr, FILE_ACCESS_COMMON_DIR_MODE.c_str());
     }
-    int32_t userFileIndex = GetPermissionIndex(nullptr, READ_WRITE_USER_FILE_MODE.c_str());
     int32_t fileMgrIndex = GetPermissionIndex(nullptr, FILE_ACCESS_MANAGER_MODE.c_str());
-    if ((CheckAppPermissionFlagSet(appProperty, static_cast<uint32_t>(userFileIndex)) != 0) &&
-        (CheckAppPermissionFlagSet(appProperty, static_cast<uint32_t>(fileMgrIndex)) != 0)) {
-        APPSPAWN_LOGE("invalid msg request.");
-        return -1;
-    }
-    if (index > 0 && (fileMgrIndex > 0 && userFileIndex > 0) &&
-        (CheckAppPermissionFlagSet(appProperty, static_cast<uint32_t>(userFileIndex)) == 0) &&
-        (CheckAppPermissionFlagSet(appProperty, static_cast<uint32_t>(fileMgrIndex)) == 0)) {
+    if (index > 0 && (CheckAppPermissionFlagSet(appProperty, static_cast<uint32_t>(fileMgrIndex)) == 0)) {
         return SetAppPermissionFlags(appProperty, index);
     }
     return 0;
