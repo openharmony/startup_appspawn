@@ -767,30 +767,14 @@
                 },
                 {
                     "src-path": "/mnt/user/<currentUserId>/sharefs/docs",
-                    "sandbox-path": "/mnt/storage/Users",
+                    "sandbox-path": "/storage/Users",
                     "sandbox-flags": [ "bind", "rec" ]
                 },
                 {
-                    "src-path": "/mnt/sandbox/<currentUserId>/<clonePackageName>/mnt/storage/Users",
-                    "sandbox-path": "/storage/Users",
-                    "sandbox-flags-customized": [ "MS_NODEV"],
-                    "dac-override-sensitive": "true",
-                    "fs-type": "sharefs",
-                    "options": "override"
-                },
-                {
                     "src-path": "/mnt/data/<currentUserId>/userExternal",
-                    "sandbox-path": "/mnt/storage/userExternal",
+                    "sandbox-path": "/storage/userExternal",
                     "sandbox-flags": [ "bind", "rec" ],
                     "check-action-status": "false"
-                },
-                {
-                    "src-path": "/mnt/sandbox/<currentUserId>/<clonePackageName>/mnt/storage/userExternal",
-                    "sandbox-path": "/storage/userExternal",
-                    "sandbox-flags-customized": [ "MS_NODEV" ],
-                    "dac-override-sensitive": "true",
-                    "fs-type": "sharefs",
-                    "options": "override_support_delete"
                 }
             ]
         }],
@@ -950,7 +934,7 @@
                     "src-path" : "",
                     "sandbox-path" : "",
                     "sandbox-flags" : [],
-                    "dec-paths": [ "/mnt/data/fuse" ]
+                    "dec-paths": [ "/mnt/data/fuse", "/mnt/sandbox/*/<PackageName>/storage/Users/currentUser" ]
                 }
             ]
         }],
@@ -1087,25 +1071,7 @@
         "ohos.permission.READ_WRITE_USER_FILE":[{
             "sandbox-switch": "ON",
             "gids": [1006],
-            "mount-paths": [{
-                    "src-path": "/storage/media/<currentUserId>/local/files/Docs",
-                    "sandbox-path": "/storage/Users/<currentUserId>",
-                    "sandbox-flags": [ "bind", "rec" ],
-                    "check-action-status": "false"
-                },
-                {
-                    "src-path": "/mnt/data/external",
-                    "sandbox-path": "/storage/External",
-                    "sandbox-flags": ["bind", "rec"],
-                    "check-action-status": "false"
-                },
-                {
-                    "src-path": "/mnt/data/<currentUserId>/hmdfs",
-                    "sandbox-path": "/storage/hmdfs",
-                    "sandbox-flags": ["bind", "rec"],
-                    "check-action-status": "false"
-                }
-            ]
+            "mount-paths": []
         }],
         "ohos.permission.ACCESS_APP_CLONE_DIR":[{
             "sandbox-switch": "ON",
