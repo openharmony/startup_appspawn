@@ -297,7 +297,16 @@ static int MountWithOther(const AppSpawningCtx *property, const AppDacInfo *info
         APPSPAWN_LOGE("snprintf options failed, errno %{public}d", errno);
         return APPSPAWN_ERROR_UTILS_MEM_FAIL;
     }
-
+#ifdef APPSPAWN_SUPPORT_NOSHAREFS
+    SharedMountArgs arg = {
+        .srcPath = sharefsDocsDir,
+        .destPath = storageUserPath,
+        .fsType = nullptr,
+        .mountFlags = MS_BIND | MS_REC,
+        .options = nullptr,
+        .mountSharedFlag = MS_SHARED
+    };
+#else
     SharedMountArgs arg = {
         .srcPath = sharefsDocsDir,
         .destPath = storageUserPath,
@@ -306,6 +315,7 @@ static int MountWithOther(const AppSpawningCtx *property, const AppDacInfo *info
         .options = options,
         .mountSharedFlag = MS_SHARED
     };
+#endif
     ret = DoSharedMount(&arg);
     if (ret != 0) {
         APPSPAWN_LOGE("mount %{public}s shared failed, ret %{public}d", storageUserPath, ret);

@@ -93,6 +93,9 @@ ohos_shared_library("appspawn_common") {
     defines += [ "APPSPAWN_SANDBOX_NEW" ]
   }
 
+  if (appspawn_support_nosharefs) {
+    defines += [ "APPSPAWN_SUPPORT_NOSHAREFS" ]
+  }
   if (appspawn_allow_internet_permission) {
     defines += [ "APPSPAWN_ALLOW_INTERNET_PERMISSION" ]
   }
