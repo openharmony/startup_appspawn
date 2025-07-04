@@ -39,6 +39,8 @@ ohos_unittest("AppSpawn_client_ut") {
     "${appspawn_path}/modules/ace_adapter",
     "${appspawn_path}/modules/common",
     "${appspawn_path}/modules/sandbox",
+    "${appspawn_path}/modules/sandbox/normal",
+    "${appspawn_path}/modules/sandbox/modern",
     "${appspawn_path}/modules/module_engine/include",
     "${appspawn_path}/modules/sysevent",
     "${appspawn_innerkits_path}/client",
