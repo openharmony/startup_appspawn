@@ -121,32 +121,65 @@ static int SetKeepCapabilities(const AppSpawnMgr *content, const AppSpawningCtx 
     return 0;
 }
 
-static int SetCapabilities(const AppSpawnMgr *content, const AppSpawningCtx *property)
+#ifdef APPSPAWN_SUPPORT_NOSHAREFS
+static int SetAmbientCapability(int cap)
+{
+    if (prctl(PR_CAP_AMBIENT, PR_CAP_AMBIENT_RAISE, cap, 0, 0)) {
+        APPSPAWN_LOGE("prctl PR_CAP_AMBIENT failed: %{public}d", errno);
+        return -1;
+    }
+    return 0;
+}
+
+//if current process is native process, set the ambient
+static int SetAmbientCapabilities(const AppSpawningCtx *property)
+{
+    if (GetAppSpawnMsgType(property) != MSG_SPAWN_NATIVE_PROCESS) {
+        return 0;
+    }
+    const int caps[] = {CAP_DAC_OVERRIDE, CAP_DAC_READ_SEARCH, CAP_FOWNER, CAP_KILL};
+    size_t capCount = sizeof(caps) / sizeof(caps[0]);
+    for (size_t i = 0;i < capCount; ++i) {
+        if (SetAmbientCapability(caps[i]) != 0) {
+            APPSPAWN_LOGE("set cap failed: %{public}d", caps[i]);
+            return -1;
+        }
+    }
+    return 0;
+}
+#endif
+
+APPSPAWN_STATIC int SetCapabilities(const AppSpawnMgr *content, const AppSpawningCtx *property)
 {
     // init cap
     struct __user_cap_header_struct capHeader;
-
     bool isRet = memset_s(&capHeader, sizeof(capHeader), 0, sizeof(capHeader)) != EOK;
     APPSPAWN_CHECK(!isRet, return -EINVAL, "Failed to memset cap header");
 
     capHeader.version = _LINUX_CAPABILITY_VERSION_3;
     capHeader.pid = 0;
-
     struct __user_cap_data_struct capData[2]; // 2 is data number
     isRet = memset_s(&capData, sizeof(capData), 0, sizeof(capData)) != EOK;
     APPSPAWN_CHECK(!isRet, return -EINVAL, "Failed to memset cap data");
 
     // init inheritable permitted effective zero
 #ifdef GRAPHIC_PERMISSION_CHECK
-    const uint64_t inheriTable = 0;
-    const uint64_t permitted = 0;
-    const uint64_t effective = 0;
+    u_int64_t baseCaps = 0;
+#ifdef APPSPAWN_SUPPORT_NOSHAREFS
+    if (!CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX_TYPE) &&
+            (IsAppSpawnMode(content) || IsNativeSpawnMode(content))) {
+        baseCaps = CAP_TO_MASK(CAP_DAC_OVERRIDE) | CAP_TO_MASK(CAP_DAC_READ_SEARCH) |
+        CAP_TO_MASK(CAP_FOWNER) | CAP_TO_MASK(CAP_KILL);
+    }
+#endif
+    const uint64_t inheriTable = baseCaps;
+    const uint64_t permitted = baseCaps;
+    const uint64_t effective = baseCaps;
 #else
     const uint64_t inheriTable = 0x3fffffffff;
     const uint64_t permitted = 0x3fffffffff;
     const uint64_t effective = 0x3fffffffff;
 #endif
-
     capData[0].inheritable = (__u32)(inheriTable);
     capData[1].inheritable = (__u32)(inheriTable >> BITLEN32);
     capData[0].permitted = (__u32)(permitted);
@@ -157,6 +190,10 @@ static int SetCapabilities(const AppSpawnMgr *content, const AppSpawningCtx *pro
     // set capabilities
     isRet = capset(&capHeader, &capData[0]) != 0;
     APPSPAWN_CHECK(!isRet, return -errno, "Failed to capset errno: %{public}d", errno);
+#ifdef APPSPAWN_SUPPORT_NOSHAREFS
+    isRet = SetAmbientCapabilities(property);
+    APPSPAWN_CHECK(!isRet, return -1, "Failed to set ambient");
+#endif
     return 0;
 }
 
