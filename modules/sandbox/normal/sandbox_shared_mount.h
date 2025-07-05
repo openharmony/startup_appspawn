@@ -16,8 +16,6 @@
 #ifndef SANDBOX_SHARED_MOUNT_H
 #define SANDBOX_SHARED_MOUNT_H
 
-#include "nlohmann/json.hpp"
-
 #include "appspawn.h"
 #include "appspawn_hook.h"
 #include "appspawn_manager.h"

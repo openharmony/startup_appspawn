@@ -24,8 +24,8 @@
 
 int32_t SetAppSandboxProperty(AppSpawnMgr *content, AppSpawningCtx *property)
 {
-    APPSPAWN_CHECK(property != nullptr, return -1, "Invalid appspwn client");
-    APPSPAWN_CHECK(content != nullptr, return -1, "Invalid appspwn content");
+    APPSPAWN_CHECK(property != nullptr, return -1, "Invalid appspawn client");
+    APPSPAWN_CHECK(content != nullptr, return -1, "Invalid appspawn content");
     // clear g_mountInfo in the child process
     std::map<std::string, int>* mapPtr = static_cast<std::map<std::string, int>*>(GetEl1BundleMountCount());
     if (mapPtr == nullptr) {

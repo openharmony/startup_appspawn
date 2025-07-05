@@ -150,8 +150,8 @@ const std::string ARK_WEB_PERSIST_PACKAGE_NAME = "persist.arkwebcore.package_nam
 
 // 枚举类型
 enum SandboxConfigType {
-    SANBOX_APP_JSON_CONFIG,
-    SANBOX_ISOLATED_JSON_CONFIG
+    SANDBOX_APP_JSON_CONFIG,
+    SANDBOX_ISOLATED_JSON_CONFIG
 };
 
 } // namespace SandboxCommonDef
