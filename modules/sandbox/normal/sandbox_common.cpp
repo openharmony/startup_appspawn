@@ -41,7 +41,7 @@ namespace OHOS {
 namespace AppSpawn {
 
 int32_t SandboxCommon::deviceTypeEnable_ = -1;
-std::map<SandboxCommonDef::SandboxConfigType, std::vector<cJSON *>> appSandboxCJsonConfig_ = {};
+std::map<SandboxCommonDef::SandboxConfigType, std::vector<cJSON *>> SandboxCommon::appSandboxCJsonConfig_ = {};
 
 // 加载配置文件
 uint32_t SandboxCommon::GetSandboxNsFlags(bool isNweb)
@@ -89,7 +89,7 @@ uint32_t SandboxCommon::GetSandboxNsFlags(bool isNweb)
         return 0;
     };
 
-    for (auto& config : GetJsonConfig(SandboxCommonDef::SANBOX_APP_JSON_CONFIG)) {
+    for (auto& config : GetCJsonConfig(SandboxCommonDef::SANDBOX_APP_JSON_CONFIG)) {
         // 获取 "individual" 数组
         cJSON *individual = cJSON_GetObjectItemCaseSensitive(config, prefixStr);
         if (!individual || !cJSON_IsArray(individual)) {
@@ -155,14 +155,14 @@ int SandboxCommon::LoadAppSandboxConfigCJson(AppSpawnMgr *content)
         sandboxCJsonRoot = GetJsonObjFromFile(appPath.c_str());
         APPSPAWN_CHECK((sandboxCJsonRoot != nullptr && cJSON_IsObject(sandboxCJsonRoot)), continue,
                        "Failed to load app data sandbox config %{public}s", appPath.c_str());
-        StoreCJsonConfig(sandboxCJsonRoot, SandboxCommonDef::SANBOX_APP_JSON_CONFIG);
+        StoreCJsonConfig(sandboxCJsonRoot, SandboxCommonDef::SANDBOX_APP_JSON_CONFIG);
 
         std::string isolatedPath = path + SandboxCommonDef::APP_ISOLATED_JSON_CONFIG;
         APPSPAWN_LOGI("LoadAppSandboxConfig %{public}s", isolatedPath.c_str());
-        sandboxCJsonRoot = GetJsonObjFromFile(appPath.c_str());
+        sandboxCJsonRoot = GetJsonObjFromFile(isolatedPath.c_str());
         APPSPAWN_CHECK((sandboxCJsonRoot != nullptr && cJSON_IsObject(sandboxCJsonRoot)), continue,
-                       "Failed to load app data sandbox config %{public}s", appPath.c_str());
-        StoreCJsonConfig(sandboxCJsonRoot, SandboxCommonDef::SANBOX_ISOLATED_JSON_CONFIG);
+                       "Failed to load app data sandbox config %{public}s", isolatedPath.c_str());
+        StoreCJsonConfig(sandboxCJsonRoot, SandboxCommonDef::SANDBOX_ISOLATED_JSON_CONFIG);
     }
     FreeCfgFiles(files);
 
@@ -174,18 +174,19 @@ int SandboxCommon::LoadAppSandboxConfigCJson(AppSpawnMgr *content)
     return 0;
 }
 
-void SandboxCommon::FreeAppSandboxConfigCJson(AppSpawnMgr *content)
+int SandboxCommon::FreeAppSandboxConfigCJson(AppSpawnMgr *content)
 {
     UNUSED(content);
-    std::vector<cJSON *> normalJsonVec = GetCJsonConfig(SandboxCommonDef::SANBOX_APP_JSON_CONFIG);
+    std::vector<cJSON *> normalJsonVec = GetCJsonConfig(SandboxCommonDef::SANDBOX_APP_JSON_CONFIG);
     for (auto& normal : normalJsonVec) {
         cJSON_Delete(normal);
     }
 
-    std::vector<cJSON *> isolatedJsonVec = GetCJsonConfig(SandboxCommonDef::SANBOX_APP_JSON_CONFIG);
+    std::vector<cJSON *> isolatedJsonVec = GetCJsonConfig(SandboxCommonDef::SANDBOX_ISOLATED_JSON_CONFIG);
     for (auto& isolated : normalJsonVec) {
         cJSON_Delete(isolated);
     }
+    return 0;
 }
 
 std::vector<cJSON *> &SandboxCommon::GetCJsonConfig(SandboxCommonDef::SandboxConfigType type)
@@ -226,7 +227,7 @@ std::string SandboxCommon::GetSandboxRootPath(const AppSpawningCtx *appProperty,
     }
     const std::string variableSandboxRoot = SandboxCommonDef::g_sandBoxRootDir +
         std::to_string(dacInfo->uid / UID_BASE) + "/" + isolatedFlagText.c_str() + tmpBundlePath;
-    
+
     const char *sandboxRootChr = GetStringFromJsonObj(config, SandboxCommonDef::g_sandboxRootPrefix);
     if (sandboxRootChr != nullptr) {
         sandboxRoot = sandboxRootChr;
@@ -378,7 +379,7 @@ bool SandboxCommon::IsDacOverrideEnabled(cJSON *config) // GetSandboxDacOverride
 bool SandboxCommon::GetSwitchStatus(cJSON *config) // GetSbxSwitchStatusByConfig
 {
     // if not find sandbox-switch node, default switch status is true
-    return GetBoolValueFromJsonObj(config, SandboxCommonDef::g_sbxSwitchCheck, true);
+    return GetBoolValueFromJsonObj(config, SandboxCommonDef::g_sandBoxSwitchPrefix, true);
 }
 
 uint32_t SandboxCommon::ConvertFlagStr(const std::string &flagStr)
@@ -401,7 +402,11 @@ unsigned long SandboxCommon::GetMountFlags(cJSON *config) // GetSandboxMountFlag
     std::vector<std::string> vec;
     cJSON *customizedFlags = IsDacOverrideEnabled(config) ?
         cJSON_GetObjectItemCaseSensitive(config, SandboxCommonDef::g_sandBoxFlagsCustomized) :
-        cJSON_GetObjectItemCaseSensitive(config, SandboxCommonDef::g_sandBoxFlags)
+        cJSON_GetObjectItemCaseSensitive(config, SandboxCommonDef::g_sandBoxFlags);
+
+    if (!customizedFlags) {
+        customizedFlags = cJSON_GetObjectItemCaseSensitive(config, SandboxCommonDef::g_sandBoxFlags);
+    }
     if (customizedFlags == nullptr || !cJSON_IsArray(customizedFlags)) {
         return mountFlags;
     }
@@ -413,7 +418,7 @@ unsigned long SandboxCommon::GetMountFlags(cJSON *config) // GetSandboxMountFlag
         }
         vec.emplace_back(strItem);
         return 0;
-    }
+    };
 
     if (HandleArrayForeach(customizedFlags, processor) != 0) {
         return mountFlags;
@@ -445,7 +450,7 @@ std::string SandboxCommon::GetOptions(const AppSpawningCtx *appProperty, cJSON *
         return options;
     }
     options = optionsChr;
-    options += ",user_id=" + std::to_string(dacInfo->uid /UID_BASE);
+    options += ",user_id=" + std::to_string(dacInfo->uid / UID_BASE);
     return options;
 }
 
@@ -480,7 +485,7 @@ std::vector<std::string> SandboxCommon::GetDecPath(const AppSpawningCtx *appProp
 bool SandboxCommon::IsCreateSandboxPathEnabled(cJSON *json, std::string srcPath) // GetCreateSandboxPath
 {
     bool isRet = GetBoolValueFromJsonObj(json, SandboxCommonDef::CREATE_SANDBOX_PATH, false);
-    if (!isRet && access(srcPath.c_str(), F_OK) != 0) {
+    if (isRet && access(srcPath.c_str(), F_OK) != 0) {
         return false;
     }
     return true;
@@ -489,9 +494,9 @@ bool SandboxCommon::IsCreateSandboxPathEnabled(cJSON *json, std::string srcPath)
 bool SandboxCommon::IsTotalSandboxEnabled(const AppSpawningCtx *appProperty) // CheckTotalSandboxSwitchStatus
 {
     SandboxCommonDef::SandboxConfigType type = CheckAppMsgFlagsSet(appProperty, APP_FLAGS_ISOLATED_SANDBOX_TYPE) ?
-        SandboxCommonDef::SANBOX_ISOLATED_JSON_CONFIG : SandboxCommonDef::SANBOX_APP_JSON_CONFIG;
+        SandboxCommonDef::SANDBOX_ISOLATED_JSON_CONFIG : SandboxCommonDef::SANDBOX_APP_JSON_CONFIG;
 
-    for (auto& wholeConfig : GetJsonConfig(type)) {
+    for (auto& wholeConfig : GetCJsonConfig(type)) {
         // 获取 "common" 数组
         cJSON *common = cJSON_GetObjectItemCaseSensitive(wholeConfig, SandboxCommonDef::g_commonPrefix);
         if (!common || !cJSON_IsArray(common)) {
@@ -511,9 +516,10 @@ bool SandboxCommon::IsTotalSandboxEnabled(const AppSpawningCtx *appProperty) // 
 bool SandboxCommon::IsAppSandboxEnabled(const AppSpawningCtx *appProperty) // CheckAppSandboxSwitchStatus
 {
     SandboxCommonDef::SandboxConfigType type = CheckAppMsgFlagsSet(appProperty, APP_FLAGS_ISOLATED_SANDBOX_TYPE) ?
-        SandboxCommonDef::SANBOX_ISOLATED_JSON_CONFIG : SandboxCommonDef::SANBOX_APP_JSON_CONFIG;
+        SandboxCommonDef::SANDBOX_ISOLATED_JSON_CONFIG : SandboxCommonDef::SANDBOX_APP_JSON_CONFIG;
 
-    for (auto& wholeConfig : GetJsonConfig(type)) {
+    bool ret = true;
+    for (auto& wholeConfig : GetCJsonConfig(type)) {
         // 获取 "individual" 数组
         cJSON *individual = cJSON_GetObjectItemCaseSensitive(wholeConfig, SandboxCommonDef::g_privatePrefix);
         if (!individual || !cJSON_IsArray(individual)) {
@@ -528,16 +534,21 @@ bool SandboxCommon::IsAppSandboxEnabled(const AppSpawningCtx *appProperty) // Ch
         if (!firstCommon) {
             continue;
         }
-        return GetSwitchStatus(firstCommon);
+        ret = GetSwitchStatus(firstCommon);
+        if (ret) {
+            break;
+        }
     }
     // default sandbox switch is on
-    return true;
+    return ret;
 }
 
 void SandboxCommon::GetSandboxMountConfig(const AppSpawningCtx *appProperty, const std::string &section,
                                           cJSON *mntPoint, SandboxMountConfig &mountConfig)
 {
-    if (section.compare(SandboxCommonDef::g_permissionPrefix) == 0) {
+    if (section.compare(SandboxCommonDef::g_permissionPrefix) == 0 ||
+        section.compare(SandboxCommonDef::g_flagePoint) == 0 ||
+        section.compare(SandboxCommonDef::g_debughap) == 0) {
         mountConfig.optionsPoint = GetOptions(appProperty, mntPoint);
         mountConfig.fsType = GetFsType(mntPoint);
         mountConfig.decPaths = GetDecPath(appProperty, mntPoint);
@@ -630,9 +641,9 @@ bool SandboxCommon::IsPrivateSharedStatus(const std::string &bundleName, AppSpaw
 {
     bool result = false;
     SandboxCommonDef::SandboxConfigType type = CheckAppMsgFlagsSet(appProperty, APP_FLAGS_ISOLATED_SANDBOX_TYPE) ?
-        SandboxCommonDef::SANBOX_ISOLATED_JSON_CONFIG : SandboxCommonDef::SANBOX_APP_JSON_CONFIG;
+        SandboxCommonDef::SANDBOX_ISOLATED_JSON_CONFIG : SandboxCommonDef::SANDBOX_APP_JSON_CONFIG;
 
-    for (auto& config : GetJsonConfig(type)) {
+    for (auto& config : GetCJsonConfig(type)) {
         // 获取 "individual" 数组
         cJSON *individual = cJSON_GetObjectItemCaseSensitive(config, SandboxCommonDef::g_privatePrefix);
         if (!individual || !cJSON_IsArray(individual)) {
@@ -805,7 +816,7 @@ std::string SandboxCommon::ReplaceVariablePackageName(const AppSpawningCtx *appP
             variablePackageName << "+auid-" << accountId << "+" << bundleInfo->bundleName;
             std::string atomicServicePath = path;
             atomicServicePath = ReplaceAllVariables(atomicServicePath, SandboxCommonDef::g_variablePackageName,
-                                                                   variablePackageName.str());
+                                                    variablePackageName.str());
             MakeAtomicServiceDir(appProperty, atomicServicePath, variablePackageName.str());
             break;
         }
@@ -813,8 +824,7 @@ std::string SandboxCommon::ReplaceVariablePackageName(const AppSpawningCtx *appP
             variablePackageName << bundleInfo->bundleName;
             break;
     }
-    tmpSandboxPath = ReplaceAllVariables(tmpSandboxPath, SandboxCommonDef::g_variablePackageName,
-                                         variablePackageName.str());
+    tmpSandboxPath = ReplaceAllVariables(tmpSandboxPath, SandboxCommonDef::g_variablePackageName, variablePackageName.str());
     APPSPAWN_LOGV("tmpSandboxPath %{public}s", tmpSandboxPath.c_str());
     return tmpSandboxPath;
 }
@@ -960,8 +970,7 @@ int32_t SandboxCommon::DoAppSandboxMountOnce(const AppSpawningCtx *appProperty, 
     struct timespec mountEnd = {0};
     clock_gettime(CLOCK_MONOTONIC_COARSE, &mountEnd);
     uint64_t diff = DiffTime(&mountStart, &mountEnd);
-    APPSPAWN_CHECK_ONLY_LOG(diff < SandboxCommonDef::MAX_MOUNT_TIME, "mount %{public}s time %{public}" PRId64 " us",
-                            arg->srcPath, diff);
+    APPSPAWN_CHECK_ONLY_LOG(diff < SandboxCommonDef::MAX_MOUNT_TIME, "mount %{public}s time %{public}" PRId64 " us", arg->srcPath, diff);
 #ifdef APPSPAWN_HISYSEVENT
     APPSPAWN_CHECK_ONLY_EXPER(diff < FUNC_REPORT_DURATION, ReportAbnormalDuration("MOUNT", diff));
 #endif
