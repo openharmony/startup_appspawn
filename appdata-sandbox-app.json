@@ -163,9 +163,6 @@
                 "src-path" : "/data/app/el1/<currentUserId>/aot_compiler/ark_profile/<PackageName>",
                 "sandbox-path" : "/data/storage/ark-profile"
             }, {
-                "src-path" : "/data/app/el1/<currentUserId>/shader_cache/<variablePackageName>",
-                "sandbox-path" : "/data/storage/shader_cache/local"
-            }, {
                 "src-path" : "/data/app/el1/public/shader_cache/cloud/<PackageName>",
                 "sandbox-path" : "/data/storage/shader_cache/cloud"
             }, {
