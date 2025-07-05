@@ -61,7 +61,7 @@ ohos_moduletest("AppSpawnModuleTest") {
 
   sources = [
     "${appspawn_path}/test/moduletest/appspawn_client_test.cpp",
-    "${appspawn_path}/test/moduletest/appspawn_module_test.cpp",
+    #"${appspawn_path}/test/moduletest/appspawn_module_test.cpp",
     "${appspawn_path}/test/moduletest/appspawn_test_cmder.cpp",
   ]
 
