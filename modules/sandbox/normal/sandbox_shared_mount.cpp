@@ -302,7 +302,16 @@ static int MountWithOther(const AppSpawningCtx *property, const AppDacInfo *info
         APPSPAWN_LOGE("snprintf options failed, errno %{public}d", errno);
         return APPSPAWN_ERROR_UTILS_MEM_FAIL;
     }
-
+#ifdef APPSPAWN_SUPPORT_NOSHAREFS
+    SharedMountArgs arg = {
+        .srcPath = sharefsDocsDir,
+        .destPath = storageUserPath,
+        .fsType = nullptr,
+        .mountFlags = MS_BIND | MS_REC,
+        .options = nullptr,
+        .mountSharedFlag = MS_SHARED
+    };
+#else
     SharedMountArgs arg = {
         .srcPath = sharefsDocsDir,
         .destPath = storageUserPath,
@@ -311,6 +320,7 @@ static int MountWithOther(const AppSpawningCtx *property, const AppDacInfo *info
         .options = options,
         .mountSharedFlag = MS_SHARED
     };
+#endif
     ret = DoSharedMount(&arg);
     if (ret != 0) {
         APPSPAWN_LOGE("mount %{public}s shared failed, ret %{public}d", storageUserPath, ret);
@@ -478,14 +488,14 @@ static int ParseDataGroupList(AppSpawnMgr *content, const AppSpawningCtx *proper
                               const char *varBundleName)
 {
     int ret = 0;
-    const char *dataGroupList = (char *)GetJsonObjFromExtInfo(property, DATA_GROUP_SOCKET_TYPE);
+    cJSON *dataGroupList = GetJsonObjFromExtInfo(property, DATA_GROUP_SOCKET_TYPE);
     if (dataGroupList == nullptr || !cJSON_IsArray(dataGroupList)) {
         APPSPAWN_LOGE("dataGroupList is empty");
         return APPSPAWN_ARG_INVALID;
     }
 
     // Iterate through the array (assuming groups is an array)
-    cJSON *item = NULL;
+    cJSON *item = nullptr;
     cJSON_ArrayForEach(item, dataGroupList) {
         // Check if the item is valid
         APPSPAWN_CHECK((item != nullptr && IsValidDataGroupItem(item)), break,
@@ -493,7 +503,7 @@ static int ParseDataGroupList(AppSpawnMgr *content, const AppSpawningCtx *proper
 
         cJSON *dirItem = cJSON_GetObjectItemCaseSensitive(item, "dir");
         cJSON *uuidItem = cJSON_GetObjectItemCaseSensitive(item, "uuid");
-        if (dirItem == NULL || !cJSON_IsString(dirItem) || uuidItem == NULL || !cJSON_IsString(uuidItem)) {
+        if (dirItem == nullptr || !cJSON_IsString(dirItem) || uuidItem == nullptr || !cJSON_IsString(uuidItem)) {
             APPSPAWN_LOGE("Data group element is invalid");
             break;
         }
@@ -505,10 +515,10 @@ static int ParseDataGroupList(AppSpawnMgr *content, const AppSpawningCtx *proper
         APPSPAWN_CHECK((elxValue >= EL2 && elxValue < ELX_MAX), break, "Get elx value failed");
 
         const DataGroupSandboxPathTemplate *templateItem = GetDataGroupArgTemplate(elxValue);
-        APPSPAWN_CHECK(templateItem != NULL, break, "Get data group arg template failed");
+        APPSPAWN_CHECK(templateItem != nullptr, break, "Get data group arg template failed");
 
         // If permission isn't null, need check permission flag
-        if (templateItem->permission != NULL) {
+        if (templateItem->permission != nullptr) {
             int index = GetPermissionIndex(nullptr, templateItem->permission);
             APPSPAWN_LOGV("mount dir no lock mount permission flag %{public}d", index);
             if (CheckAppPermissionFlagSet(property, static_cast<uint32_t>(index)) == 0) {
@@ -520,9 +530,11 @@ static int ParseDataGroupList(AppSpawnMgr *content, const AppSpawningCtx *proper
                                  + templateItem->sandboxPath;
 
         ret = AddDataGroupItemToQueue(content, srcPath, sandboxPath, uuidItem->valuestring);
+        if (ret != 0) {
             APPSPAWN_LOGE("Add datagroup item to dataGroupCtxQueue failed, el%{public}d", elxValue);
             OH_ListRemoveAll(&content->dataGroupCtxQueue, nullptr);
-            break;;
+            break;
+        }
     }
     cJSON_Delete(dataGroupList);
 

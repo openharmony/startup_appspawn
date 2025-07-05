@@ -16,8 +16,9 @@ import("//build/test.gni")
 
 ohos_unittest("AppSpawn_ut") {
   module_out_path = "appspawn/appspawn"
+  cflags = [ "-Dprivate=public" ]
   if (appspawn_unittest_coverage) {
-    cflags = [ "--coverage" ]
+    cflags += [ "--coverage" ]
     ldflags = [ "--coverage" ]
     cflags_cc = [ "--coverage" ]
   }
@@ -150,8 +151,10 @@ ohos_unittest("AppSpawn_ut") {
     defines += [ "APPSPAWN_SANDBOX_NEW" ]
   } else {
     sources += [
-      "${appspawn_path}/modules/sandbox/sandbox_shared_mount.cpp",
-      "${appspawn_path}/modules/sandbox/sandbox_utils.cpp",
+      "${appspawn_path}/modules/sandbox/normal/sandbox_shared_mount.cpp",
+      "${appspawn_path}/modules/sandbox/normal/sandbox_core.cpp",
+      "${appspawn_path}/modules/sandbox/normal/sandbox_common.cpp",
+      "${appspawn_path}/modules/sandbox/normal/appspawn_sandbox_manager.cpp",
       "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_sandbox_test.cpp",
     ]
   }
@@ -226,8 +229,9 @@ ohos_unittest("AppSpawn_ut") {
 
 ohos_unittest("AppSpawn_coldrun_ut") {
   module_out_path = "appspawn/appspawn"
+  cflags = [ "-Dprivate=public" ]
   if (appspawn_unittest_coverage) {
-    cflags = [ "--coverage" ]
+    cflags += [ "--coverage" ]
     ldflags = [ "--coverage" ]
     cflags_cc = [ "--coverage" ]
   }
@@ -350,8 +354,10 @@ ohos_unittest("AppSpawn_coldrun_ut") {
     sources += [ "${appspawn_path}/modules/sandbox/sandbox_shared.c" ]
   } else {
     sources += [
-      "${appspawn_path}/modules/sandbox/sandbox_shared_mount.cpp",
-      "${appspawn_path}/modules/sandbox/sandbox_utils.cpp",
+      "${appspawn_path}/modules/sandbox/normal/sandbox_shared_mount.cpp",
+      "${appspawn_path}/modules/sandbox/normal/sandbox_core.cpp",
+      "${appspawn_path}/modules/sandbox/normal/sandbox_common.cpp",
+      "${appspawn_path}/modules/sandbox/normal/appspawn_sandbox_manager.cpp",
     ]
   }
 
@@ -419,8 +425,9 @@ ohos_unittest("AppSpawn_coldrun_ut") {
 
 ohos_unittest("AppSpawn_common_ut") {
   module_out_path = "appspawn/appspawn"
+  cflags = [ "-Dprivate=public" ]
   if (appspawn_unittest_coverage) {
-    cflags = [ "--coverage" ]
+    cflags += [ "--coverage" ]
     ldflags = [ "--coverage" ]
     cflags_cc = [ "--coverage" ]
   }
@@ -540,8 +547,10 @@ ohos_unittest("AppSpawn_common_ut") {
     sources += [ "${appspawn_path}/modules/sandbox/sandbox_shared.c" ]
   } else {
     sources += [
-      "${appspawn_path}/modules/sandbox/sandbox_shared_mount.cpp",
-      "${appspawn_path}/modules/sandbox/sandbox_utils.cpp",
+      "${appspawn_path}/modules/sandbox/normal/sandbox_shared_mount.cpp",
+      "${appspawn_path}/modules/sandbox/normal/sandbox_core.cpp",
+      "${appspawn_path}/modules/sandbox/normal/sandbox_common.cpp",
+      "${appspawn_path}/modules/sandbox/normal/appspawn_sandbox_manager.cpp",
     ]
   }
 

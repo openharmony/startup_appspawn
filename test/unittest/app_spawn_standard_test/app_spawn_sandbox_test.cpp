@@ -23,7 +23,9 @@
 #include "appspawn_service.h"
 #include "json_utils.h"
 #include "parameter.h"
-#include "sandbox_utils.h"
+#include "sandbox_def.h"
+#include "sandbox_core.h"
+#include "sandbox_common.h"
 #include "securec.h"
 
 #include "app_spawn_stub.h"
@@ -34,7 +36,6 @@
 using namespace testing;
 using namespace testing::ext;
 using namespace OHOS::AppSpawn;
-using nlohmann::json;
 
 namespace OHOS {
 AppSpawnTestHelper g_testHelper;
@@ -51,9 +52,33 @@ void AppSpawnSandboxTest::SetUpTestCase() {}
 
 void AppSpawnSandboxTest::TearDownTestCase() {}
 
-void AppSpawnSandboxTest::SetUp() {}
+void AppSpawnSandboxTest::SetUp() {
+    const TestInfo *info = UnitTest::GetInstance()->current_test_info();
+    GTEST_LOG_(INFO) << info->test_suite_name() << "." << info->name() << " start";
+    APPSPAWN_LOGI("%{public}s.%{public}s start", info->test_suite_name(), info->name());
 
-void AppSpawnSandboxTest::TearDown() {}
+    std::vector<cJSON *> &appVec =
+        AppSpawn::SandboxCommon::GetCJsonConfig(SandboxCommonDef::SANDBOX_APP_JSON_CONFIG);
+    appVec.erase(appVec.begin(), appVec.end());
+
+    std::vector<cJSON *> &isolatedVec =
+        AppSpawn::SandboxCommon::GetCJsonConfig(SandboxCommonDef::SANDBOX_ISOLATED_JSON_CONFIG);
+    isolatedVec.erase(isolatedVec.begin(), isolatedVec.end());
+}
+
+void AppSpawnSandboxTest::TearDown() {
+    std::vector<cJSON *> &appVec =
+        AppSpawn::SandboxCommon::GetCJsonConfig(SandboxCommonDef::SANDBOX_APP_JSON_CONFIG);
+    appVec.erase(appVec.begin(), appVec.end());
+
+    std::vector<cJSON *> &isolatedVec =
+        AppSpawn::SandboxCommon::GetCJsonConfig(SandboxCommonDef::SANDBOX_ISOLATED_JSON_CONFIG);
+    isolatedVec.erase(isolatedVec.begin(), isolatedVec.end());
+
+    const TestInfo *info = UnitTest::GetInstance()->current_test_info();
+    GTEST_LOG_(INFO) << info->test_suite_name() << "." << info->name() << " end";
+    APPSPAWN_LOGI("%{public}s.%{public}s end", info->test_suite_name(), info->name());
+}
 
 static AppSpawningCtx *GetTestAppProperty()
 {
@@ -85,14 +110,14 @@ static AppSpawningCtx *GetTestAppPropertyWithExtInfo(const char *name, const cha
  */
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_08, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_08 start";
     g_testHelper.SetTestUid(1000);  // 1000 test
     g_testHelper.SetTestGid(1000);  // 1000 test
     g_testHelper.SetProcessName("ohos.samples.ecg");
     AppSpawningCtx *appProperty = GetTestAppProperty();
-    OHOS::AppSpawn::SandboxUtils::SetAppSandboxProperty(appProperty);
+    int32_t ret = AppSpawn::SandboxCore::SetAppSandboxProperty(appProperty, CLONE_NEWPID);
+    EXPECT_EQ(ret, 0);
+
     DeleteAppSpawningCtx(appProperty);
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_08 end";
 }
 
 /**
@@ -104,70 +129,62 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_08, TestSize.Level0)
  */
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_09, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_09 start";
     g_testHelper.SetProcessName("com.ohos.dlpmanager");
     g_testHelper.SetTestApl("normal");
     AppSpawningCtx *appProperty = GetTestAppProperty();
-    OHOS::AppSpawn::SandboxUtils::SetAppSandboxProperty(appProperty);
+    int32_t ret = AppSpawn::SandboxCore::SetAppSandboxProperty(appProperty, CLONE_NEWPID);
+    EXPECT_EQ(ret, 0);
+
     DeleteAppSpawningCtx(appProperty);
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_09 end";
 }
 
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_09_1, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_09_1 start";
     g_testHelper.SetTestUid(1000);  // 1000 test
     g_testHelper.SetTestGid(1000);  // 1000 test
     g_testHelper.SetProcessName("com.ohos.dlpmanager");
     g_testHelper.SetTestApl("normal");
-    AppSpawningCtx *appProperty = GetTestAppProperty();
-    int ret = OHOS::AppSpawn::SandboxUtils::SetAppSandboxProperty(nullptr);
+    int32_t ret = AppSpawn::SandboxCore::SetAppSandboxProperty(nullptr, CLONE_NEWPID);
     EXPECT_NE(ret, 0);
-    DeleteAppSpawningCtx(appProperty);
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_09_1 end";
 }
 
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_09_2, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_09_1 start";
     g_testHelper.SetTestUid(1000);  // 1000 test
     g_testHelper.SetTestGid(1000);  // 1000 test
     g_testHelper.SetProcessName("");
     g_testHelper.SetTestApl("normal");
     AppSpawningCtx *appProperty = GetTestAppProperty();
-
-    int ret = OHOS::AppSpawn::SandboxUtils::SetAppSandboxProperty(appProperty);
+    int32_t ret = AppSpawn::SandboxCore::SetAppSandboxProperty(appProperty, CLONE_NEWPID);
     EXPECT_NE(ret, 0);
+
     DeleteAppSpawningCtx(appProperty);
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_09_1 end";
 }
 
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_09_3, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_09_1 start";
     g_testHelper.SetTestUid(1000);  // 1000 test
     g_testHelper.SetTestGid(1000);  // 1000 test
     g_testHelper.SetProcessName("com.\\ohos.dlpmanager");
     g_testHelper.SetTestApl("normal");
     AppSpawningCtx *appProperty = GetTestAppProperty();
-    int ret = OHOS::AppSpawn::SandboxUtils::SetAppSandboxProperty(appProperty);
+    int32_t ret = AppSpawn::SandboxCore::SetAppSandboxProperty(appProperty, CLONE_NEWPID);
     EXPECT_NE(ret, 0);
+
     DeleteAppSpawningCtx(appProperty);
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_09_1 end";
 }
 
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_09_4, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_09_1 start";
     g_testHelper.SetTestUid(1000);  // 1000 test
     g_testHelper.SetTestGid(1000);  // 1000 test
     g_testHelper.SetProcessName("com./ohos.dlpmanager");
     g_testHelper.SetTestApl("normal");
     AppSpawningCtx *appProperty = GetTestAppProperty();
-    int ret = OHOS::AppSpawn::SandboxUtils::SetAppSandboxProperty(appProperty);
+    int32_t ret = AppSpawn::SandboxCore::SetAppSandboxProperty(appProperty, CLONE_NEWPID);
     EXPECT_NE(ret, 0);
+
     DeleteAppSpawningCtx(appProperty);
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_09_1 end";
 }
 
 /**
@@ -179,7 +196,6 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_09_4, TestSize.Level0)
  */
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_10, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_10 start";
     std::string mJsconfig = "{ \
         \"common\":[{ \
             \"top-sandbox-switch\": \"ON\", \
@@ -197,19 +213,20 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_10, TestSize.Level0)
         }], \
         \"individual\": [] \
     }";
-    nlohmann::json j_config = nlohmann::json::parse(mJsconfig.c_str());
+    cJSON *j_config = cJSON_Parse(mJsconfig.c_str());
+    ASSERT_NE(j_config, nullptr);
+    AppSpawn::SandboxCommon::StoreCJsonConfig(j_config, SandboxCommonDef::SANDBOX_APP_JSON_CONFIG);
 
-    OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config, SANBOX_APP_JSON_CONFIG);
-    GTEST_LOG_(INFO) << "SetAppSandboxProperty start" << std::endl;
     g_testHelper.SetTestUid(1000);  // 1000 test
     g_testHelper.SetTestGid(1000);  // 1000 test
     g_testHelper.SetProcessName("test.appspawn");
     g_testHelper.SetTestApl("normal");
     AppSpawningCtx *appProperty = GetTestAppProperty();
-    GTEST_LOG_(INFO) << "SetAppSandboxProperty section 2" << std::endl;
-    OHOS::AppSpawn::SandboxUtils::SetAppSandboxProperty(appProperty);
+    int32_t ret = AppSpawn::SandboxCore::SetAppSandboxProperty(appProperty, CLONE_NEWPID);
+    EXPECT_EQ(ret, 0);
+
+    cJSON_Delete(j_config);
     DeleteAppSpawningCtx(appProperty);
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_10 end";
 }
 
 /**
@@ -221,7 +238,6 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_10, TestSize.Level0)
  */
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_13, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_13 start";
     std::string mJsconfig = "{ \
         \"common\":[{ \
             \"app-base\":[{ \
@@ -238,19 +254,20 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_13, TestSize.Level0)
         }], \
         \"individual\": [] \
     }";
-    nlohmann::json j_config = nlohmann::json::parse(mJsconfig.c_str());
+    cJSON *j_config = cJSON_Parse(mJsconfig.c_str());
+    ASSERT_NE(j_config, nullptr);
+    AppSpawn::SandboxCommon::StoreCJsonConfig(j_config, SandboxCommonDef::SANDBOX_APP_JSON_CONFIG);
 
-    OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config, SANBOX_APP_JSON_CONFIG);
-
-    GTEST_LOG_(INFO) << "SetAppSandboxProperty start" << std::endl;
     g_testHelper.SetTestUid(1000);  // 1000 test
     g_testHelper.SetTestGid(1000);  // 1000 test
     g_testHelper.SetProcessName("test.appspawn");
     g_testHelper.SetTestApl("normal");
     AppSpawningCtx *appProperty = GetTestAppProperty();
-    OHOS::AppSpawn::SandboxUtils::SetAppSandboxProperty(appProperty);
+    int32_t ret = AppSpawn::SandboxCore::SetAppSandboxProperty(appProperty, CLONE_NEWPID);
+    EXPECT_EQ(ret, 0);
+
+    cJSON_Delete(j_config);
     DeleteAppSpawningCtx(appProperty);
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_13 end";
 }
 
 /**
@@ -262,7 +279,6 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_13, TestSize.Level0)
  */
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_14, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_14 start";
     std::string mJsconfig = "{ \
         \"common\":[{ \
             \"app-base\":[{ \
@@ -278,22 +294,20 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_14, TestSize.Level0)
         }], \
         \"individual\": [] \
     }";
-    nlohmann::json j_config = nlohmann::json::parse(mJsconfig.c_str());
-
-    OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config, SANBOX_APP_JSON_CONFIG);
-
-    GTEST_LOG_(INFO) << "SetAppSandboxProperty start" << std::endl;
+    cJSON *j_config = cJSON_Parse(mJsconfig.c_str());
+    ASSERT_NE(j_config, nullptr);
+    AppSpawn::SandboxCommon::StoreCJsonConfig(j_config, SandboxCommonDef::SANDBOX_APP_JSON_CONFIG);
 
     g_testHelper.SetTestUid(1000);  // 1000 test
     g_testHelper.SetTestGid(1000);  // 1000 test
     g_testHelper.SetProcessName("test.appspawn");
     g_testHelper.SetTestApl("normal");
     AppSpawningCtx *appProperty = GetTestAppProperty();
+    int32_t ret = AppSpawn::SandboxCore::SetAppSandboxProperty(appProperty, CLONE_NEWPID);
+    EXPECT_EQ(ret, 0);
 
-    GTEST_LOG_(INFO) << "SetAppSandboxProperty section 2" << std::endl;
-    OHOS::AppSpawn::SandboxUtils::SetAppSandboxProperty(appProperty);
+    cJSON_Delete(j_config);
     DeleteAppSpawningCtx(appProperty);
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_14 end";
 }
 
 /**
@@ -305,7 +319,6 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_14, TestSize.Level0)
  */
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_15, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_15 start";
     std::string mJsconfig = "{ \
         \"common\":[{ \
             \"app-base\":[{ \
@@ -322,20 +335,20 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_15, TestSize.Level0)
         }], \
         \"individual\": [] \
     }";
-    nlohmann::json j_config = nlohmann::json::parse(mJsconfig.c_str());
+    cJSON *j_config = cJSON_Parse(mJsconfig.c_str());
+    ASSERT_NE(j_config, nullptr);
+    AppSpawn::SandboxCommon::StoreCJsonConfig(j_config, SandboxCommonDef::SANDBOX_APP_JSON_CONFIG);
 
-    OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config, SANBOX_APP_JSON_CONFIG);
-
-    GTEST_LOG_(INFO) << "SetAppSandboxProperty start" << std::endl;
     g_testHelper.SetTestUid(1000);  // 1000 test
     g_testHelper.SetTestGid(1000);  // 1000 test
     g_testHelper.SetProcessName("test.appspawn");
     g_testHelper.SetTestApl("normal");
     AppSpawningCtx *appProperty = GetTestAppProperty();
-    GTEST_LOG_(INFO) << "SetAppSandboxProperty section 2" << std::endl;
-    OHOS::AppSpawn::SandboxUtils::SetAppSandboxProperty(appProperty);
+    int32_t ret = AppSpawn::SandboxCore::SetAppSandboxProperty(appProperty, CLONE_NEWPID);
+    EXPECT_EQ(ret, 0);
+
+    cJSON_Delete(j_config);
     DeleteAppSpawningCtx(appProperty);
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_15 end";
 }
 
 /**
@@ -347,7 +360,6 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_15, TestSize.Level0)
  */
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_16, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_16 start";
     std::string mJsconfig = "{ \
         \"common\":[{ \
             \"app-base\":[{ \
@@ -357,30 +369,30 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_16, TestSize.Level0)
         }], \
         \"individual\": [] \
     }";
-    nlohmann::json j_config = nlohmann::json::parse(mJsconfig.c_str());
+    cJSON *j_config = cJSON_Parse(mJsconfig.c_str());
+    ASSERT_NE(j_config, nullptr);
+    AppSpawn::SandboxCommon::StoreCJsonConfig(j_config, SandboxCommonDef::SANDBOX_APP_JSON_CONFIG);
 
-    OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config, SANBOX_APP_JSON_CONFIG);
-
-    GTEST_LOG_(INFO) << "SetAppSandboxProperty start" << std::endl;
     g_testHelper.SetTestUid(1000);  // 1000 test
     g_testHelper.SetTestGid(1000);  // 1000 test
     g_testHelper.SetProcessName("test.appspawn");
     g_testHelper.SetTestApl("normal");
     AppSpawningCtx *appProperty = GetTestAppProperty();
-    OHOS::AppSpawn::SandboxUtils::SetAppSandboxProperty(appProperty);
+    int32_t ret = AppSpawn::SandboxCore::SetAppSandboxProperty(appProperty, CLONE_NEWPID);
+    EXPECT_EQ(ret, 0);
+
+    cJSON_Delete(j_config);
     DeleteAppSpawningCtx(appProperty);
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_16 end";
 }
 
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_17, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_09 start";
-    nlohmann::json appSandboxConfig;
-    bool rc = JsonUtils::GetJsonObjFromJson(appSandboxConfig, "");
-    EXPECT_FALSE(rc);
+    cJSON *appSandboxConfig = GetJsonObjFromFile("");
+    EXPECT_EQ(appSandboxConfig, nullptr);
+
     std::string path(256, 'w');  // 256 test
-    rc = JsonUtils::GetJsonObjFromJson(appSandboxConfig, path);
-    EXPECT_FALSE(rc);
+    appSandboxConfig = GetJsonObjFromFile(path.c_str());
+    EXPECT_EQ(appSandboxConfig, nullptr);
 
     std::string mJsconfig = "{ \
         \"common\":[{ \
@@ -391,45 +403,51 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_17, TestSize.Level0)
         }], \
         \"individual\": [] \
     }";
-    nlohmann::json j_config = nlohmann::json::parse(mJsconfig.c_str());
-    OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config, SANBOX_APP_JSON_CONFIG);
+    cJSON *j_config = cJSON_Parse(mJsconfig.c_str());
+    ASSERT_NE(j_config, nullptr);
+    AppSpawn::SandboxCommon::StoreCJsonConfig(j_config, SandboxCommonDef::SANDBOX_APP_JSON_CONFIG);
 
-    std::string value;
-    rc = JsonUtils::GetStringFromJson(j_config, "common", value);
-    EXPECT_FALSE(rc);
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_09 end";
+    const char *value = GetStringFromJsonObj(j_config, "common");
+    EXPECT_EQ(value, nullptr);
+
+    cJSON_Delete(j_config);
 }
 
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_18, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_18 start";
     std::string mJsconfig1 = "{ \
         \"sandbox-switch\": \"ON\", \
         \"sandbox-root\" : \"/mnt/sandbox/<currentUserId>/<PackageName>\" \
     }";
-    nlohmann::json j_config1 = nlohmann::json::parse(mJsconfig1.c_str());
-    bool ret = OHOS::AppSpawn::SandboxUtils::GetSbxSwitchStatusByConfig(j_config1);
+    cJSON *j_config1 = cJSON_Parse(mJsconfig1.c_str());
+    ASSERT_NE(j_config1, nullptr);
+    bool ret = AppSpawn::SandboxCommon::GetSwitchStatus(j_config1);
     EXPECT_TRUE(ret);
 
     std::string mJsconfig2 = "{ \
         \"sandbox-switch\": \"OFF\", \
         \"sandbox-root\" : \"/mnt/sandbox/<currentUserId>/<PackageName>\" \
     }";
-    nlohmann::json j_config2 = nlohmann::json::parse(mJsconfig2.c_str());
-    ret = OHOS::AppSpawn::SandboxUtils::GetSbxSwitchStatusByConfig(j_config2);
+    cJSON *j_config2 = cJSON_Parse(mJsconfig2.c_str());
+    ASSERT_NE(j_config2, nullptr);
+    ret = AppSpawn::SandboxCommon::GetSwitchStatus(j_config2);
     EXPECT_FALSE(ret);
 
     std::string mJsconfig3 = "{ \
         \"sandbox-root\" : \"/mnt/sandbox/<currentUserId>/<PackageName>\" \
     }";
-    nlohmann::json j_config3 = nlohmann::json::parse(mJsconfig3.c_str());
-    ret = OHOS::AppSpawn::SandboxUtils::GetSbxSwitchStatusByConfig(j_config3);
+    cJSON *j_config3 = cJSON_Parse(mJsconfig3.c_str());
+    ASSERT_NE(j_config3, nullptr);
+    ret = AppSpawn::SandboxCommon::GetSwitchStatus(j_config3);
     EXPECT_TRUE(ret);
+
+    cJSON_Delete(j_config1);
+    cJSON_Delete(j_config2);
+    cJSON_Delete(j_config3);
 }
 
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_20, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_20 start";
     std::string mJsconfig = "{ \
         \"common\":[{ \
             \"top-sandbox-switch\": \"OFF\", \
@@ -440,16 +458,17 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_20, TestSize.Level0)
         }], \
         \"individual\": [] \
     }";
-    nlohmann::json j_config = nlohmann::json::parse(mJsconfig.c_str());
-    OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config, SANBOX_APP_JSON_CONFIG);
+    cJSON *j_config = cJSON_Parse(mJsconfig.c_str());
+    ASSERT_NE(j_config, nullptr);
+    AppSpawn::SandboxCommon::StoreCJsonConfig(j_config, SandboxCommonDef::SANDBOX_APP_JSON_CONFIG);
 
     g_testHelper.SetTestUid(1000);  // 1000 test
     g_testHelper.SetTestGid(1000);  // 1000 test
     g_testHelper.SetProcessName("test.appspawn");
     g_testHelper.SetTestApl("normal");
     AppSpawningCtx *appProperty = GetTestAppProperty();
-
-    OHOS::AppSpawn::SandboxUtils::SetAppSandboxProperty(appProperty);
+    int32_t ret = AppSpawn::SandboxCore::SetAppSandboxProperty(appProperty, CLONE_NEWPID);
+    EXPECT_EQ(ret, 0);
 
     std::string mJsconfig1 = "{ \
         \"common\":[{ \
@@ -465,29 +484,33 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_20, TestSize.Level0)
             }] \
         }] \
     }";
-    nlohmann::json j_config1 = nlohmann::json::parse(mJsconfig1.c_str());
-    OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config1, SANBOX_APP_JSON_CONFIG);
-    OHOS::AppSpawn::SandboxUtils::SetAppSandboxProperty(appProperty);
+    cJSON *j_config1 = cJSON_Parse(mJsconfig1.c_str());
+    ASSERT_NE(j_config1, nullptr);
+
+    AppSpawn::SandboxCommon::StoreCJsonConfig(j_config1, SandboxCommonDef::SANDBOX_APP_JSON_CONFIG);
+    ret = AppSpawn::SandboxCore::SetAppSandboxProperty(appProperty, CLONE_NEWPID);
+    EXPECT_EQ(ret, 0);
+
+    cJSON_Delete(j_config);
+    cJSON_Delete(j_config1);
     DeleteAppSpawningCtx(appProperty);
 }
 
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_21, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_21 start";
-
-    bool ret = OHOS::AppSpawn::SandboxUtils::CheckBundleNameForPrivate(std::string("__internal__"));
+    bool ret = AppSpawn::SandboxCommon::HasPrivateInBundleName(std::string("__internal__"));
     EXPECT_FALSE(ret);
 }
 
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_22, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_22 start";
     std::string mJsconfig1 = "{ \
         \"common\":[], \
         \"individual\": [] \
     }";
-    nlohmann::json j_config1 = nlohmann::json::parse(mJsconfig1.c_str());
-    OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config1, SANBOX_APP_JSON_CONFIG);
+    cJSON *j_config = cJSON_Parse(mJsconfig1.c_str());
+    ASSERT_NE(j_config, nullptr);
+    AppSpawn::SandboxCommon::StoreCJsonConfig(j_config, SandboxCommonDef::SANDBOX_APP_JSON_CONFIG);
 
     g_testHelper.SetTestUid(1000);  // 1000 test
     g_testHelper.SetTestGid(1000);  // 1000 test
@@ -497,24 +520,15 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_22, TestSize.Level0)
 
     const char *strl1 = "/mnt/sandbox/100/test.bundle1";
     std::string testBundle = strl1;
-    int ret = OHOS::AppSpawn::SandboxUtils::SetCommonAppSandboxProperty(appProperty, testBundle);
-    DeleteAppSpawningCtx(appProperty);
+    int32_t ret = AppSpawn::SandboxCore::SetCommonAppSandboxProperty(appProperty, testBundle);
     EXPECT_EQ(ret, 0);
-}
 
-HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_23, TestSize.Level0)
-{
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_23 start";
-    const char *strl1 = "/mnt/sandbox/100/test.bundle1";
-    std::string testBundle = strl1;
-    int ret = OHOS::AppSpawn::SandboxUtils::SetRenderSandboxProperty(nullptr, testBundle);
-    EXPECT_EQ(ret, 0);
+    cJSON_Delete(j_config);
+    DeleteAppSpawningCtx(appProperty);
 }
 
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_24, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_24 start";
-
     g_testHelper.SetTestUid(1000);  // 1000 test
     g_testHelper.SetTestGid(1000);  // 1000 test
     g_testHelper.SetProcessName("test.bundle.name1");
@@ -542,8 +556,9 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_24, TestSize.Level0)
             }] \
         }] \
     }";
-    nlohmann::json j_config1 = nlohmann::json::parse(mJsconfig1.c_str());
-    int ret = OHOS::AppSpawn::SandboxUtils::DoSandboxFileCommonSymlink(appProperty, j_config1);
+    cJSON *j_config1 = cJSON_Parse(mJsconfig1.c_str());
+    ASSERT_NE(j_config1, nullptr);
+    int32_t ret = AppSpawn::SandboxCore::DoSandboxFileCommonSymlink(appProperty, j_config1);
     EXPECT_EQ(ret, 0);
 
     std::string mJsconfig2 = "{ \
@@ -558,15 +573,18 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_24, TestSize.Level0)
             }] \
         }] \
     }";
-    nlohmann::json j_config2 = nlohmann::json::parse(mJsconfig2.c_str());
-    ret = OHOS::AppSpawn::SandboxUtils::DoSandboxFileCommonSymlink(appProperty, j_config2);
-    DeleteAppSpawningCtx(appProperty);
+    cJSON *j_config2 = cJSON_Parse(mJsconfig2.c_str());
+    ASSERT_NE(j_config2, nullptr);
+    ret = AppSpawn::SandboxCore::DoSandboxFileCommonSymlink(appProperty, j_config2);
     EXPECT_EQ(ret, 0);
+
+    cJSON_Delete(j_config1);
+    cJSON_Delete(j_config2);
+    DeleteAppSpawningCtx(appProperty);
 }
 
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_25, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_25 start";
     g_testHelper.SetTestUid(1000);  // 1000 test
     g_testHelper.SetTestGid(1000);  // 1000 test
     g_testHelper.SetProcessName("test.bundle.wps");
@@ -596,23 +614,26 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_25, TestSize.Level0)
             }] \
         }] \
     }";
-    nlohmann::json j_config1 = nlohmann::json::parse(mJsconfig1.c_str());
-    int ret = OHOS::AppSpawn::SandboxUtils::DoSandboxFileCommonBind(appProperty, j_config1);
+    cJSON *j_config1 = cJSON_Parse(mJsconfig1.c_str());
+    ASSERT_NE(j_config1, nullptr);
+    int32_t ret = AppSpawn::SandboxCore::DoSandboxFileCommonBind(appProperty, j_config1);
     EXPECT_EQ(ret, 0);
 
-    ret = OHOS::AppSpawn::SandboxUtils::DoSandboxFileCommonFlagsPointHandle(appProperty, j_config1);
-    DeleteAppSpawningCtx(appProperty);
+    ret = AppSpawn::SandboxCore::DoSandboxFileCommonFlagsPointHandle(appProperty, j_config1);
     EXPECT_EQ(ret, 0);
+
+    cJSON_Delete(j_config1);
+    DeleteAppSpawningCtx(appProperty);
 }
 
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_26, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_26 start";
     g_testHelper.SetTestUid(1000);  // 1000 test
     g_testHelper.SetTestGid(1000);  // 1000 test
     g_testHelper.SetProcessName("com.ohos.dlpmanager");
     g_testHelper.SetTestApl("system_basic");
     AppSpawningCtx *appProperty = GetTestAppProperty();
+
     std::string mJsconfig2 = "{ \
         \"common\":[{ \
             \"app-base\" : [{ \
@@ -627,15 +648,17 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_26, TestSize.Level0)
             }] \
         }] \
     }";
-    nlohmann::json j_config2 = nlohmann::json::parse(mJsconfig2.c_str());
-    int ret = OHOS::AppSpawn::SandboxUtils::DoSandboxFileCommonBind(appProperty, j_config2);
-    DeleteAppSpawningCtx(appProperty);
+    cJSON *j_config2 = cJSON_Parse(mJsconfig2.c_str());
+    ASSERT_NE(j_config2, nullptr);
+    int32_t ret = AppSpawn::SandboxCore::DoSandboxFileCommonBind(appProperty, j_config2);
     EXPECT_NE(ret, 0);
+
+    cJSON_Delete(j_config2);
+    DeleteAppSpawningCtx(appProperty);
 }
 
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_27, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_27 start";
     g_testHelper.SetTestUid(1000);  // 1000 test
     g_testHelper.SetTestGid(1000);  // 1000 test
     g_testHelper.SetProcessName("test.bundle.name");
@@ -650,8 +673,9 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_27, TestSize.Level0)
             }] \
         }] \
     }";
-    nlohmann::json j_config1 = nlohmann::json::parse(mJsconfig1.c_str());
-    int ret = OHOS::AppSpawn::SandboxUtils::DoSandboxFilePrivateFlagsPointHandle(appProperty, j_config1);
+    cJSON *j_config1 = cJSON_Parse(mJsconfig1.c_str());
+    ASSERT_NE(j_config1, nullptr);
+    int32_t ret = AppSpawn::SandboxCore::DoSandboxFilePrivateFlagsPointHandle(appProperty, j_config1);
     EXPECT_EQ(ret, 0);
 
     std::string mJsconfig2 = "{ \
@@ -671,15 +695,18 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_27, TestSize.Level0)
             }] \
         }] \
     }";
-    nlohmann::json j_config2 = nlohmann::json::parse(mJsconfig2.c_str());
-    ret = OHOS::AppSpawn::SandboxUtils::DoSandboxFilePrivateFlagsPointHandle(appProperty, j_config2);
-    DeleteAppSpawningCtx(appProperty);
+    cJSON *j_config2 = cJSON_Parse(mJsconfig2.c_str());
+    ASSERT_NE(j_config2, nullptr);
+    ret = AppSpawn::SandboxCore::DoSandboxFilePrivateFlagsPointHandle(appProperty, j_config2);
     EXPECT_EQ(ret, 0);
+
+    cJSON_Delete(j_config1);
+    cJSON_Delete(j_config2);
+    DeleteAppSpawningCtx(appProperty);
 }
 
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_28, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_28 start";
     g_testHelper.SetTestUid(1000);  // 1000 test
     g_testHelper.SetTestGid(1000);  // 1000 test
     g_testHelper.SetProcessName("test.bundle.name");
@@ -705,15 +732,17 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_28, TestSize.Level0)
             }] \
         }] \
     }";
-    nlohmann::json j_config3 = nlohmann::json::parse(mJsconfig3.c_str());
-    int ret = OHOS::AppSpawn::SandboxUtils::DoSandboxFilePrivateFlagsPointHandle(appProperty, j_config3);
-    DeleteAppSpawningCtx(appProperty);
+    cJSON *j_config3 = cJSON_Parse(mJsconfig3.c_str());
+    ASSERT_NE(j_config3, nullptr);
+    int ret = AppSpawn::SandboxCore::DoSandboxFilePrivateFlagsPointHandle(appProperty, j_config3);
     EXPECT_EQ(ret, 0);
+
+    cJSON_Delete(j_config3);
+    DeleteAppSpawningCtx(appProperty);
 }
 
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_29, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_29 start";
     g_testHelper.SetTestUid(1000);  // 1000 test
     g_testHelper.SetTestGid(1000);  // 1000 test
     g_testHelper.SetProcessName("test.bundle.name");
@@ -739,15 +768,17 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_29, TestSize.Level0)
             }] \
         }] \
     }";
-    nlohmann::json j_config3 = nlohmann::json::parse(mJsconfig3.c_str());
-    int ret = OHOS::AppSpawn::SandboxUtils::DoSandboxFilePrivateFlagsPointHandle(appProperty, j_config3);
-    DeleteAppSpawningCtx(appProperty);
+    cJSON *j_config3 = cJSON_Parse(mJsconfig3.c_str());
+    ASSERT_NE(j_config3, nullptr);
+    int ret = AppSpawn::SandboxCore::DoSandboxFilePrivateFlagsPointHandle(appProperty, j_config3);
     EXPECT_EQ(ret, 0);
+
+    cJSON_Delete(j_config3);
+    DeleteAppSpawningCtx(appProperty);
 }
 
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_30, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_30 start";
     g_testHelper.SetTestUid(1000);  // 1000 test
     g_testHelper.SetTestGid(1000);  // 1000 test
     g_testHelper.SetProcessName("com.ohos.wps");
@@ -765,8 +796,9 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_30, TestSize.Level0)
             \"check-action-status\": \"false\" \
         }] \
     }";
-    nlohmann::json j_config3 = nlohmann::json::parse(mJsconfig3.c_str());
-    int ret = OHOS::AppSpawn::SandboxUtils::DoAllMntPointsMount(appProperty, j_config3, nullptr);
+    cJSON *j_config3 = cJSON_Parse(mJsconfig3.c_str());
+    ASSERT_NE(j_config3, nullptr);
+    int32_t ret = AppSpawn::SandboxCore::DoAllMntPointsMount(appProperty, j_config3, nullptr);
     EXPECT_EQ(ret, 0);
 
     std::string mJsconfig4 = "{ \
@@ -779,15 +811,18 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_30, TestSize.Level0)
             \"check-action-status\": \"false\" \
         }] \
     }";
-    nlohmann::json j_config4 = nlohmann::json::parse(mJsconfig4.c_str());
-    ret = OHOS::AppSpawn::SandboxUtils::DoAllMntPointsMount(appProperty, j_config4, nullptr);
-    DeleteAppSpawningCtx(appProperty);
+    cJSON *j_config4 = cJSON_Parse(mJsconfig4.c_str());
+    ASSERT_NE(j_config4, nullptr);
+    ret = AppSpawn::SandboxCore::DoAllMntPointsMount(appProperty, j_config4, nullptr);
     EXPECT_EQ(ret, 0);
+
+    cJSON_Delete(j_config3);
+    cJSON_Delete(j_config4);
+    DeleteAppSpawningCtx(appProperty);
 }
 
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_31, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_31 start";
     g_testHelper.SetTestUid(1000);  // 1000 test
     g_testHelper.SetTestGid(1000);  // 1000 test
     g_testHelper.SetProcessName("com.ohos.dlpmanager");
@@ -804,8 +839,9 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_31, TestSize.Level0)
             \"check-action-status\": \"false\" \
         }] \
     }";
-    nlohmann::json j_config1 = nlohmann::json::parse(mJsconfig1.c_str());
-    int ret = OHOS::AppSpawn::SandboxUtils::DoAllMntPointsMount(appProperty, j_config1, nullptr);
+    cJSON *j_config1 = cJSON_Parse(mJsconfig1.c_str());
+    ASSERT_NE(j_config1, nullptr);
+    int32_t ret = AppSpawn::SandboxCore::DoAllMntPointsMount(appProperty, j_config1, nullptr);
     EXPECT_EQ(ret, 0);
 
     std::string mJsconfig2 = "{ \
@@ -826,32 +862,36 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_31, TestSize.Level0)
             \"check-action-status\": \"true\" \
         }] \
     }";
+    cJSON *j_config2 = cJSON_Parse(mJsconfig2.c_str());
+    ASSERT_NE(j_config2, nullptr);
+    ret = AppSpawn::SandboxCore::DoAllMntPointsMount(appProperty, j_config2, nullptr);
+    EXPECT_NE(ret, 0);
 
-    nlohmann::json j_config2 = nlohmann::json::parse(mJsconfig2.c_str());
-    ret = OHOS::AppSpawn::SandboxUtils::DoAllMntPointsMount(appProperty, j_config2, nullptr);
+    cJSON_Delete(j_config1);
+    cJSON_Delete(j_config2);
     DeleteAppSpawningCtx(appProperty);
-    EXPECT_TRUE(ret != 0);
 }
 
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_32, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_32 start";
-    int ret = OHOS::AppSpawn::SandboxUtils::DoAppSandboxMountOnce(nullptr, nullptr);
+    int32_t ret = AppSpawn::SandboxCommon::DoAppSandboxMountOnce(nullptr, nullptr);
     EXPECT_EQ(ret, 0);
 
     std::string mJsconfig1 = "{ \
         \"dest-mode\" : \"S_IRUSR|S_IWUSR|S_IXUSR\" \
     }";
-    nlohmann::json j_config1 = nlohmann::json::parse(mJsconfig1.c_str());
+    cJSON *j_config1 = cJSON_Parse(mJsconfig1.c_str());
+    ASSERT_NE(j_config1, nullptr);
     std::string sandboxRoot;
     const char *str = "/data/test11122";
     sandboxRoot = str;
-    OHOS::AppSpawn::SandboxUtils::DoSandboxChmod(j_config1, sandboxRoot);
+    AppSpawn::SandboxCommon::SetSandboxPathChmod(j_config1, sandboxRoot);
+
+    cJSON_Delete(j_config1);
 }
 
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_34, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_34 start";
     g_testHelper.SetTestUid(1000);  // 1000 test
     g_testHelper.SetTestGid(1000);  // 1000 test
     g_testHelper.SetProcessName("com.ohos.dlpmanager");
@@ -865,19 +905,19 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_34, TestSize.Level0)
         \"versions\":[\"v10001\", \"v10002\"] \
     }";
     AppSpawningCtx *appProperty = GetTestAppPropertyWithExtInfo("HspList", hspListStr);
-    int ret = OHOS::AppSpawn::SandboxUtils::MountAllHsp(appProperty, testBundle);
+    int32_t ret = AppSpawn::SandboxCore::MountAllHsp(appProperty, testBundle);
+    EXPECT_EQ(ret, 0);
+
     DeleteAppSpawningCtx(appProperty);
-    EXPECT_EQ(0, ret);
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_34 end";
 }
 
 static void InvalidJsonTest(std::string &testBundle)
 {
     char hspListStr[] = "{";
     AppSpawningCtx *appProperty = GetTestAppPropertyWithExtInfo("HspList", hspListStr);
-    int ret = OHOS::AppSpawn::SandboxUtils::MountAllHsp(appProperty, testBundle);
+    int32_t ret = AppSpawn::SandboxCore::MountAllHsp(appProperty, testBundle);
     DeleteAppSpawningCtx(appProperty);
-    EXPECT_NE(0, ret);
+    EXPECT_EQ(ret, 0);
 }
 
 static void NoBundleTest(std::string &testBundle)
@@ -887,9 +927,9 @@ static void NoBundleTest(std::string &testBundle)
         \"versions\":[\"v10001\", \"v10002\"] \
     }";
     AppSpawningCtx *appProperty = GetTestAppPropertyWithExtInfo("HspList", hspListStr);
-    int ret = OHOS::AppSpawn::SandboxUtils::MountAllHsp(appProperty, testBundle);
+    int32_t ret = AppSpawn::SandboxCore::MountAllHsp(appProperty, testBundle);
     DeleteAppSpawningCtx(appProperty);
-    EXPECT_NE(0, ret);
+    EXPECT_NE(ret, 0);
 }
 
 static void NoModulesTest(std::string &testBundle)
@@ -900,9 +940,9 @@ static void NoModulesTest(std::string &testBundle)
     }";
 
     AppSpawningCtx *appProperty = GetTestAppPropertyWithExtInfo("HspList", hspListStr);
-    int ret = OHOS::AppSpawn::SandboxUtils::MountAllHsp(appProperty, testBundle);
+    int32_t ret = AppSpawn::SandboxCore::MountAllHsp(appProperty, testBundle);
     DeleteAppSpawningCtx(appProperty);
-    EXPECT_NE(0, ret);
+    EXPECT_NE(ret, 0);
 }
 
 static void NoVersionsTest(std::string &testBundle)
@@ -912,9 +952,9 @@ static void NoVersionsTest(std::string &testBundle)
         \"modules\":[\"module1\", \"module2\"] \
     }";
     AppSpawningCtx *appProperty = GetTestAppPropertyWithExtInfo("HspList", hspListStr);
-    int ret = OHOS::AppSpawn::SandboxUtils::MountAllHsp(appProperty, testBundle);
+    int32_t ret = AppSpawn::SandboxCore::MountAllHsp(appProperty, testBundle);
     DeleteAppSpawningCtx(appProperty);
-    EXPECT_NE(0, ret);
+    EXPECT_NE(ret, 0);
 }
 
 static void ListSizeNotSameTest(std::string &testBundle)
@@ -925,9 +965,9 @@ static void ListSizeNotSameTest(std::string &testBundle)
         \"versions\":[\"v10001\", \"v10002\"] \
     }";
     AppSpawningCtx *appProperty = GetTestAppPropertyWithExtInfo("HspList", hspListStr);
-    int ret = OHOS::AppSpawn::SandboxUtils::MountAllHsp(appProperty, testBundle);
+    int32_t ret = AppSpawn::SandboxCore::MountAllHsp(appProperty, testBundle);
     DeleteAppSpawningCtx(appProperty);
-    EXPECT_NE(0, ret);
+    EXPECT_NE(ret, 0);
 }
 
 static void ValueTypeIsNotArraryTest(std::string &testBundle)
@@ -938,9 +978,9 @@ static void ValueTypeIsNotArraryTest(std::string &testBundle)
         \"versions\": 1001 \
     }";
     AppSpawningCtx *appProperty = GetTestAppPropertyWithExtInfo("HspList", hspListStr);
-    int ret = OHOS::AppSpawn::SandboxUtils::MountAllHsp(appProperty, testBundle);
+    int32_t ret = AppSpawn::SandboxCore::MountAllHsp(appProperty, testBundle);
     DeleteAppSpawningCtx(appProperty);
-    EXPECT_NE(0, ret);
+    EXPECT_NE(ret, 0);
 }
 
 static void ElementTypeIsNotStringTest(std::string &testBundle)
@@ -951,9 +991,9 @@ static void ElementTypeIsNotStringTest(std::string &testBundle)
         \"versions\": [1001, 1002] \
     }";
     AppSpawningCtx *appProperty = GetTestAppPropertyWithExtInfo("HspList", hspListStr);
-    int ret = OHOS::AppSpawn::SandboxUtils::MountAllHsp(appProperty, testBundle);
+    int32_t ret = AppSpawn::SandboxCore::MountAllHsp(appProperty, testBundle);
     DeleteAppSpawningCtx(appProperty);
-    EXPECT_NE(0, ret);
+    EXPECT_NE(ret, 0);
 }
 
 static void ElementTypeIsNotSameTestSN(std::string &testBundle)
@@ -965,9 +1005,9 @@ static void ElementTypeIsNotSameTestSN(std::string &testBundle)
         \"versions\": [\"v10001\", 1002] \
     }";
     AppSpawningCtx *appProperty = GetTestAppPropertyWithExtInfo("HspList", hspListStr);
-    int ret = OHOS::AppSpawn::SandboxUtils::MountAllHsp(appProperty, testBundle);
+    int32_t ret = AppSpawn::SandboxCore::MountAllHsp(appProperty, testBundle);
     DeleteAppSpawningCtx(appProperty);
-    EXPECT_NE(0, ret);
+    EXPECT_NE(ret, 0);
 }
 
 static void ElementTypeIsNotSameTestNS(std::string &testBundle)
@@ -979,14 +1019,13 @@ static void ElementTypeIsNotSameTestNS(std::string &testBundle)
         \"versions\": [1001, \"v10002\"] \
     }";
     AppSpawningCtx *appProperty = GetTestAppPropertyWithExtInfo("HspList", hspListStr);
-    int ret = OHOS::AppSpawn::SandboxUtils::MountAllHsp(appProperty, testBundle);
+    int32_t ret = AppSpawn::SandboxCore::MountAllHsp(appProperty, testBundle);
     DeleteAppSpawningCtx(appProperty);
-    EXPECT_NE(0, ret);
+    EXPECT_NE(ret, 0);
 }
 
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_35, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_35 start";
     const char *strl1 = "/mnt/sandbox/100/test.bundle1";
     std::string testBundle = strl1;
     InvalidJsonTest(testBundle);
@@ -998,12 +1037,10 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_35, TestSize.Level0)
     ElementTypeIsNotStringTest(testBundle);
     ElementTypeIsNotSameTestSN(testBundle);
     ElementTypeIsNotSameTestNS(testBundle);
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_35 end";
 }
 
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_36, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_36 start";
     const char *strl1 = "/mnt/sandbox/100/test.bundle1";
     std::string testBundle = strl1;
 
@@ -1014,9 +1051,9 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_36, TestSize.Level0)
             \"versions\":[\"v10001\", \"v10002\"] \
         }";
         AppSpawningCtx *appProperty = GetTestAppPropertyWithExtInfo("HspList", hspListStr);
-        int ret = OHOS::AppSpawn::SandboxUtils::MountAllHsp(appProperty, testBundle);
+        int32_t ret = AppSpawn::SandboxCore::MountAllHsp(appProperty, testBundle);
         DeleteAppSpawningCtx(appProperty);
-        EXPECT_NE(0, ret);
+        EXPECT_NE(ret, 0);
     }
     {  // name is .
         char hspListStr[] = "{ \
@@ -1025,9 +1062,9 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_36, TestSize.Level0)
             \"versions\":[\"v10001\", \"v10002\"] \
         }";
         AppSpawningCtx *appProperty = GetTestAppPropertyWithExtInfo("HspList", hspListStr);
-        int ret = OHOS::AppSpawn::SandboxUtils::MountAllHsp(appProperty, testBundle);
+        int32_t ret = AppSpawn::SandboxCore::MountAllHsp(appProperty, testBundle);
         DeleteAppSpawningCtx(appProperty);
-        EXPECT_NE(0, ret);
+        EXPECT_NE(ret, 0);
     }
     {  // name is ..
         char hspListStr[] = "{ \
@@ -1036,9 +1073,9 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_36, TestSize.Level0)
             \"versions\":[\"v10001\", \"v10002\"] \
         }";
         AppSpawningCtx *appProperty = GetTestAppPropertyWithExtInfo("HspList", hspListStr);
-        int ret = OHOS::AppSpawn::SandboxUtils::MountAllHsp(appProperty, testBundle);
+        int32_t ret = AppSpawn::SandboxCore::MountAllHsp(appProperty, testBundle);
         DeleteAppSpawningCtx(appProperty);
-        EXPECT_NE(0, ret);
+        EXPECT_NE(ret, 0);
     }
     {  // name contains /
         char hspListStr[] = "{ \
@@ -1047,16 +1084,14 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_36, TestSize.Level0)
             \"versions\":[\"v10001\", \"v10002\"] \
         }";
         AppSpawningCtx *appProperty = GetTestAppPropertyWithExtInfo("HspList", hspListStr);
-        int ret = OHOS::AppSpawn::SandboxUtils::MountAllHsp(appProperty, testBundle);
+        int32_t ret = AppSpawn::SandboxCore::MountAllHsp(appProperty, testBundle);
         DeleteAppSpawningCtx(appProperty);
-        EXPECT_NE(0, ret);
+        EXPECT_NE(ret, 0);
     }
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_36 end";
 }
 
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_37, TestSize.Level0)
 {
-    APPSPAWN_LOGI("App_Spawn_Sandbox_37 start");
     g_testHelper.SetTestUid(1000);  // 1000 test
     g_testHelper.SetTestGid(1000);  // 1000 test
     g_testHelper.SetProcessName("ohos.samples.xxx");
@@ -1064,22 +1099,21 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_37, TestSize.Level0)
     AppSpawningCtx *appProperty = GetTestAppProperty();
 
     AppSpawnMgr content;
-    LoadAppSandboxConfig(&content);
+    AppSpawn::SandboxCommon::LoadAppSandboxConfigCJson(&content);
     std::string sandboxPackagePath = "/mnt/sandbox/100/";
     const std::string bundleName = GetBundleName(appProperty);
     sandboxPackagePath += bundleName;
 
-    int ret = SandboxUtils::SetPrivateAppSandboxProperty(appProperty);
-    EXPECT_EQ(0, ret);
-    ret = SandboxUtils::SetCommonAppSandboxProperty(appProperty, sandboxPackagePath);
+    int32_t ret = AppSpawn::SandboxCore::SetPrivateAppSandboxProperty(appProperty);
+    EXPECT_EQ(ret, 0);
+    ret = AppSpawn::SandboxCore::SetCommonAppSandboxProperty(appProperty, sandboxPackagePath);
+    EXPECT_EQ(ret, 0);
+
     DeleteAppSpawningCtx(appProperty);
-    EXPECT_EQ(0, ret);
-    APPSPAWN_LOGI("App_Spawn_Sandbox_37 end");
 }
 
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_38, TestSize.Level0)
 {
-    APPSPAWN_LOGI("App_Spawn_Sandbox_38 start");
     g_testHelper.SetTestUid(1000);  // 1000 test
     g_testHelper.SetTestGid(1000);  // 1000 test
     g_testHelper.SetProcessName("com.example.deviceinfo");
@@ -1108,19 +1142,20 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_38, TestSize.Level0)
         }] \
         }] \
     }";
-
-    nlohmann::json p_config1 = nlohmann::json::parse(pJsconfig1.c_str());
-    OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(p_config1, SANBOX_APP_JSON_CONFIG);
+    cJSON *j_config = cJSON_Parse(pJsconfig1.c_str());
+    ASSERT_NE(j_config, nullptr);
+    AppSpawn::SandboxCommon::StoreCJsonConfig(j_config, SandboxCommonDef::SANDBOX_APP_JSON_CONFIG);
 
     std::string sandboxPackagePath = "/mnt/sandbox/100/";
     const std::string bundleName = GetBundleName(appProperty);
     sandboxPackagePath += bundleName;
-    int ret = SandboxUtils::SetPrivateAppSandboxProperty(appProperty);
-    EXPECT_EQ(0, ret);
-    ret = SandboxUtils::SetCommonAppSandboxProperty(appProperty, sandboxPackagePath);
+    int32_t ret = AppSpawn::SandboxCore::SetPrivateAppSandboxProperty(appProperty);
+    EXPECT_EQ(ret, 0);
+    ret = AppSpawn::SandboxCore::SetCommonAppSandboxProperty(appProperty, sandboxPackagePath);
+    EXPECT_EQ(ret, 0);
+
+    cJSON_Delete(j_config);
     DeleteAppSpawningCtx(appProperty);
-    EXPECT_EQ(0, ret);
-    APPSPAWN_LOGI("App_Spawn_Sandbox_38 end");
 }
 
 /**
@@ -1132,7 +1167,6 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_38, TestSize.Level0)
  */
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_39, TestSize.Level0)
 {
-    APPSPAWN_LOGI("App_Spawn_Sandbox_39 start");
     g_testHelper.SetTestUid(1000);  // 1000 test
     g_testHelper.SetTestGid(1000);  // 1000 test
     g_testHelper.SetProcessName("com.ohos.demo");
@@ -1143,11 +1177,12 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_39, TestSize.Level0)
     overlayInfo += "/data/app/el1/bundle/public/com.ohos.demo/feature.hsp|";
     AppSpawningCtx *appProperty = GetTestAppPropertyWithExtInfo("Overlay", overlayInfo.c_str());
     std::string sandBoxRootDir = "/mnt/sandbox/100/com.ohos.demo";
-    int32_t ret = OHOS::AppSpawn::SandboxUtils::SetOverlayAppSandboxProperty(appProperty, sandBoxRootDir);
+    int32_t ret = AppSpawn::SandboxCore::SetOverlayAppSandboxProperty(appProperty, sandBoxRootDir);
+    EXPECT_EQ(ret, 0);
+
     DeleteAppSpawningCtx(appProperty);
-    EXPECT_EQ(0, ret);
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_39 end";
 }
+
 /**
  * @tc.name: App_Spawn_Sandbox_40
  * @tc.desc: load group info config SetAppSandboxProperty
@@ -1157,7 +1192,6 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_39, TestSize.Level0)
  */
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_40, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_40 start";
     g_testHelper.SetTestUid(1000);  // 1000 test
     g_testHelper.SetTestGid(1000);  // 1000 test
     g_testHelper.SetProcessName("com.ohos.demo");
@@ -1179,22 +1213,21 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_40, TestSize.Level0)
         }
     ])";
     AppSpawningCtx *appProperty = GetTestAppPropertyWithExtInfo("DataGroup", dataGroupInfoListStr);
-    int ret = OHOS::AppSpawn::SandboxUtils::MountAllGroup(appProperty, sandboxPrefix);
+    int32_t ret = AppSpawn::SandboxCore::MountAllGroup(appProperty, sandboxPrefix);
+    EXPECT_EQ(ret, 0);
+
     DeleteAppSpawningCtx(appProperty);
-    EXPECT_EQ(0, ret);
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_40 end";
 }
 
 /**
  * @tc.name: App_Spawn_Sandbox_41
- * @tc.desc: parse namespace config.
+ * @tc.desc: parse namespace config
  * @tc.type: FUNC
  * @tc.require:issueI8B63M
  * @tc.author:
  */
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_41, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_41 start";
     std::string mJsconfig = "{ \
         \"common\":[{ \
             \"top-sandbox-switch\": \"ON\", \
@@ -1214,29 +1247,28 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_41, TestSize.Level0)
             }] \
         }] \
     }";
-    nlohmann::json j_config = nlohmann::json::parse(mJsconfig.c_str());
+    cJSON *j_config = cJSON_Parse(mJsconfig.c_str());
+    ASSERT_NE(j_config, nullptr);
+    AppSpawn::SandboxCommon::StoreCJsonConfig(j_config, SandboxCommonDef::SANDBOX_APP_JSON_CONFIG);
 
-    OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config, SANBOX_APP_JSON_CONFIG);
-
-    uint32_t cloneFlags = OHOS::AppSpawn::SandboxUtils::GetSandboxNsFlags(false);
+    uint32_t cloneFlags = AppSpawn::SandboxCommon::GetSandboxNsFlags(false);
     EXPECT_EQ(!!(cloneFlags & CLONE_NEWPID), true);
 
-    cloneFlags = OHOS::AppSpawn::SandboxUtils::GetSandboxNsFlags(true);
+    cloneFlags = AppSpawn::SandboxCommon::GetSandboxNsFlags(true);
     EXPECT_EQ(!!(cloneFlags & (CLONE_NEWPID | CLONE_NEWNET)), true);
 
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_41 end";
+    cJSON_Delete(j_config);
 }
 
 /**
  * @tc.name: App_Spawn_Sandbox_42
- * @tc.desc: parse config file for fstype .
+ * @tc.desc: parse config file for fstype
  * @tc.type: FUNC
  * @tc.require: https://gitee.com/openharmony/startup_appspawn/issues/I8OF9K
  * @tc.author:
  */
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_42, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_42 start";
     std::string mJsconfig = "{ \
         \"mount-paths\": [{ \
             \"src-path\": \"/data/app/el1/<currentUserId>/base\", \
@@ -1247,16 +1279,26 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_42, TestSize.Level0)
             \"options\": \"support_overwrite=1\" \
         }] \
     }";
-    nlohmann::json j_config = nlohmann::json::parse(mJsconfig.c_str());
-    const char *mountPath = "mount-paths";
-    nlohmann::json j_secondConfig = j_config[mountPath][0];
-    OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config, SANBOX_APP_JSON_CONFIG);
+    cJSON *j_config = cJSON_Parse(mJsconfig.c_str());
+    ASSERT_NE(j_config, nullptr);
+    AppSpawn::SandboxCommon::StoreCJsonConfig(j_config, SandboxCommonDef::SANDBOX_APP_JSON_CONFIG);
 
-    std::string fsType = OHOS::AppSpawn::SandboxUtils::GetSandboxFsType(j_secondConfig);
-    int ret = strcmp(fsType.c_str(), "sharefs");
-    EXPECT_EQ(ret, 0);
+    int ret = 0;
+    do {
+        cJSON *mountPoints = cJSON_GetObjectItemCaseSensitive(j_config, "mount-paths");
+        APPSPAWN_CHECK(mountPoints != nullptr || cJSON_IsArray(mountPoints), ret = -1;
+            break, "Invalid mountPaths config");
 
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_42 end";
+        for (int i = 0; i < cJSON_GetArraySize(mountPoints); ++i) {
+            cJSON *mntPoint = cJSON_GetArrayItem(mountPoints, i);
+            APPSPAWN_CHECK(mntPoint != nullptr, ret = -2; break, "Invalid mountPoint config");
+            std::string fsType = AppSpawn::SandboxCommon::GetFsType(mntPoint);
+            ret = strcmp(fsType.c_str(), "sharefs");
+        }
+        EXPECT_EQ(ret, 0);
+    } while (0);
+
+    cJSON_Delete(j_config);
 }
 
 /**
@@ -1268,7 +1310,6 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_42, TestSize.Level0)
  */
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_43, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_43 start";
     std::string mJsconfig = "{ \
         \"mount-paths\": [{ \
             \"src-path\": \"/data/app/el1/<currentUserId>/base\", \
@@ -1279,18 +1320,29 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_43, TestSize.Level0)
             \"options\": \"support_overwrite=1\" \
         }] \
     }";
-    nlohmann::json j_config = nlohmann::json::parse(mJsconfig.c_str());
-    const char *mountPath = "mount-paths";
-    nlohmann::json j_secondConfig = j_config[mountPath][0];
+    cJSON *j_config = cJSON_Parse(mJsconfig.c_str());
+    ASSERT_NE(j_config, nullptr);
+    AppSpawn::SandboxCommon::StoreCJsonConfig(j_config, SandboxCommonDef::SANDBOX_APP_JSON_CONFIG);
 
-    OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config, SANBOX_APP_JSON_CONFIG);
-    OHOS::AppSpawn::SandboxUtils::SandboxMountConfig mountConfig;
-    std::string section = "common";
+    int ret = 0;
     AppSpawningCtx *appProperty = GetTestAppProperty();
-    OHOS::AppSpawn::SandboxUtils::GetSandboxMountConfig(appProperty, section, j_secondConfig, mountConfig);
-    int ret = strcmp(mountConfig.fsType.c_str(), "sharefs");
-    EXPECT_EQ(ret, 0);
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_43 end";
+    do {
+        cJSON *mountPoints = cJSON_GetObjectItemCaseSensitive(j_config, "mount-paths");
+        APPSPAWN_CHECK(mountPoints != nullptr || cJSON_IsArray(mountPoints), ret = -1;
+            break, "Invalid mountPaths config");
+
+        for (int i = 0; i < cJSON_GetArraySize(mountPoints); ++i) {
+            cJSON *mntPoint = cJSON_GetArrayItem(mountPoints, i);
+            APPSPAWN_CHECK(mntPoint != nullptr, ret = -2; break, "Invalid mntPoint config");
+            SandboxMountConfig mountConfig = {0};
+            AppSpawn::SandboxCommon::GetSandboxMountConfig(appProperty, "common", mntPoint, mountConfig);
+            ret = strcmp(mountConfig.fsType.c_str(), "sharefs");
+        }
+        EXPECT_EQ(ret, 0);
+    } while (0);
+
+    cJSON_Delete(j_config);
+    DeleteAppSpawningCtx(appProperty);
 }
 
 /**
@@ -1302,7 +1354,6 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_43, TestSize.Level0)
  */
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_44, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_44 start";
     std::string mJsconfig = "{ \
         \"mount-paths\": [{ \
             \"src-path\": \"/data/app/el1/<currentUserId>/base\", \
@@ -1313,18 +1364,29 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_44, TestSize.Level0)
             \"options\": \"support_overwrite=1\" \
         }] \
     }";
-    nlohmann::json j_config = nlohmann::json::parse(mJsconfig.c_str());
-    const char *mountPath = "mount-paths";
-    nlohmann::json j_secondConfig = j_config[mountPath][0];
+    cJSON *j_config = cJSON_Parse(mJsconfig.c_str());
+    ASSERT_NE(j_config, nullptr);
+    AppSpawn::SandboxCommon::StoreCJsonConfig(j_config, SandboxCommonDef::SANDBOX_APP_JSON_CONFIG);
 
-    OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config, SANBOX_APP_JSON_CONFIG);
-    OHOS::AppSpawn::SandboxUtils::SandboxMountConfig mountConfig;
-    std::string section = "permission";
+    int ret = 0;
     AppSpawningCtx *appProperty = GetTestAppProperty();
-    OHOS::AppSpawn::SandboxUtils::GetSandboxMountConfig(appProperty, section, j_secondConfig, mountConfig);
-    int ret = strcmp(mountConfig.fsType.c_str(), "sharefs");
-    EXPECT_EQ(ret, 0);
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_44 end";
+    do {
+        cJSON *mountPoints = cJSON_GetObjectItemCaseSensitive(j_config, "mount-paths");
+        APPSPAWN_CHECK(mountPoints != nullptr || cJSON_IsArray(mountPoints), ret = -1;
+            break, "Invalid mountPaths config");
+
+        for (int i = 0; i < cJSON_GetArraySize(mountPoints); ++i) {
+            cJSON *mntPoint = cJSON_GetArrayItem(mountPoints, i);
+            APPSPAWN_CHECK(mntPoint != nullptr, ret = -2; break, "Invalid mntPoint config");
+            SandboxMountConfig mountConfig = {0};
+            AppSpawn::SandboxCommon::GetSandboxMountConfig(appProperty, "permission", mntPoint, mountConfig);
+            ret = strcmp(mountConfig.fsType.c_str(), "sharefs");
+        }
+        EXPECT_EQ(ret, 0);
+    } while (0);
+
+    cJSON_Delete(j_config);
+    DeleteAppSpawningCtx(appProperty);
 }
 
 /**
@@ -1336,7 +1398,6 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_44, TestSize.Level0)
  */
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_45, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_45 start";
     std::string mJsconfig = "{ \
         \"mount-paths\": [{ \
             \"src-path\": \"/data/app/el1/<currentUserId>/base\", \
@@ -1347,21 +1408,32 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_45, TestSize.Level0)
             \"options\": \"support_overwrite=1\" \
         }] \
     }";
-    nlohmann::json j_config = nlohmann::json::parse(mJsconfig.c_str());
-    const char *mountPath = "mount-paths";
-    nlohmann::json j_secondConfig = j_config[mountPath][0];
+    cJSON *j_config = cJSON_Parse(mJsconfig.c_str());
+    ASSERT_NE(j_config, nullptr);
+    AppSpawn::SandboxCommon::StoreCJsonConfig(j_config, SandboxCommonDef::SANDBOX_APP_JSON_CONFIG);
 
-    OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config, SANBOX_APP_JSON_CONFIG);
+    int ret = 0;
     AppSpawningCtx *appProperty = GetTestAppProperty();
-    std::string options = OHOS::AppSpawn::SandboxUtils::GetSandboxOptions(appProperty, j_secondConfig);
-    int ret = strcmp(options.c_str(), "support_overwrite=1,user_id=100");
-    EXPECT_EQ(ret, 0);
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_45 end";
+    do {
+        cJSON *mountPoints = cJSON_GetObjectItemCaseSensitive(j_config, "mount-paths");
+        APPSPAWN_CHECK(mountPoints != nullptr || cJSON_IsArray(mountPoints), ret = -1;
+            break, "Invalid mountPaths config");
+
+        for (int i = 0; i < cJSON_GetArraySize(mountPoints); ++i) {
+            cJSON *mntPoint = cJSON_GetArrayItem(mountPoints, i);
+            APPSPAWN_CHECK(mntPoint != nullptr, ret = -2; break, "Invalid mountPoint config");
+            std::string options = AppSpawn::SandboxCommon::GetOptions(appProperty, mntPoint);
+            ret = strcmp(options.c_str(), "support_overwrite=1,user_id=100");
+        }
+        EXPECT_EQ(ret, 0);
+    } while (0);
+
+    cJSON_Delete(j_config);
+    DeleteAppSpawningCtx(appProperty);
 }
 
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_46, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_46 start";
     g_testHelper.SetTestUid(1000);  // 1000 test
     g_testHelper.SetTestGid(1000);  // 1000 test
     g_testHelper.SetProcessName("com.example.myapplication");
@@ -1378,8 +1450,9 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_46, TestSize.Level0)
             \"check-action-status\": \"false\" \
         }] \
     }";
-    nlohmann::json j_config1 = nlohmann::json::parse(mJsconfig1.c_str());
-    int ret = OHOS::AppSpawn::SandboxUtils::DoAllMntPointsMount(appProperty, j_config1, nullptr);
+    cJSON *j_config1 = cJSON_Parse(mJsconfig1.c_str());
+    ASSERT_NE(j_config1, nullptr);
+    int32_t ret = AppSpawn::SandboxCore::DoAllMntPointsMount(appProperty, j_config1, nullptr);
     EXPECT_EQ(ret, 0);
 
     std::string mJsconfig2 = "{ \
@@ -1392,15 +1465,18 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_46, TestSize.Level0)
             \"create-sandbox-path\": \"true\" \
         }] \
     }";
-    nlohmann::json j_config2 = nlohmann::json::parse(mJsconfig2.c_str());
-    ret = OHOS::AppSpawn::SandboxUtils::DoAllMntPointsMount(appProperty, j_config2, nullptr);
-    DeleteAppSpawningCtx(appProperty);
+    cJSON *j_config2 = cJSON_Parse(mJsconfig2.c_str());
+    ASSERT_NE(j_config2, nullptr);
+    ret = AppSpawn::SandboxCore::DoAllMntPointsMount(appProperty, j_config2, nullptr);
     EXPECT_EQ(ret, 0);
+
+    cJSON_Delete(j_config1);
+    cJSON_Delete(j_config2);
+    DeleteAppSpawningCtx(appProperty);
 }
 
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_47, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_47 start";
     g_testHelper.SetTestUid(1000);  // 1000 test
     g_testHelper.SetTestGid(1000);  // 1000 test
     g_testHelper.SetProcessName("com.example.myapplication");
@@ -1417,8 +1493,9 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_47, TestSize.Level0)
             \"check-action-status\": \"false\" \
         }] \
     }";
-    nlohmann::json j_config1 = nlohmann::json::parse(mJsconfig1.c_str());
-    int ret = OHOS::AppSpawn::SandboxUtils::DoAllMntPointsMount(appProperty, j_config1, nullptr);
+    cJSON *j_config1 = cJSON_Parse(mJsconfig1.c_str());
+    ASSERT_NE(j_config1, nullptr);
+    int32_t ret = AppSpawn::SandboxCore::DoAllMntPointsMount(appProperty, j_config1, nullptr);
     EXPECT_EQ(ret, 0);
 
     std::string mJsconfig2 = "{ \
@@ -1431,10 +1508,14 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_47, TestSize.Level0)
             \"create-sandbox-path\": \"false\" \
         }] \
     }";
-    nlohmann::json j_config2 = nlohmann::json::parse(mJsconfig2.c_str());
-    ret = OHOS::AppSpawn::SandboxUtils::DoAllMntPointsMount(appProperty, j_config2, nullptr);
-    DeleteAppSpawningCtx(appProperty);
+    cJSON *j_config2 = cJSON_Parse(mJsconfig2.c_str());
+    ASSERT_NE(j_config2, nullptr);
+    ret = AppSpawn::SandboxCore::DoAllMntPointsMount(appProperty, j_config2, nullptr);
     EXPECT_EQ(ret, 0);
+
+    cJSON_Delete(j_config1);
+    cJSON_Delete(j_config2);
+    DeleteAppSpawningCtx(appProperty);
 }
 /**
  * @brief 测试app extension
@@ -1443,10 +1524,9 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_47, TestSize.Level0)
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_004, TestSize.Level0)
 {
     AppSpawningCtx *spawningCtx = GetTestAppProperty();
-    std::string path = SandboxUtils::ConvertToRealPath(spawningCtx, "/system/<variablePackageName>/module");
-    APPSPAWN_LOGV("path %{public}s", path.c_str());
-    ASSERT_EQ(path.c_str() != nullptr, 1);
-    ASSERT_EQ(strcmp(path.c_str(), "/system/com.example.myapplication/module") == 0, 1);
+    std::string path = AppSpawn::SandboxCommon::ConvertToRealPath(spawningCtx, "/system/<variablePackageName>/module");
+    ASSERT_NE(path.c_str(), nullptr);
+    ASSERT_EQ(strcmp(path.c_str(), "/system/com.example.myapplication/module"), 0);
     DeleteAppSpawningCtx(spawningCtx);
 }
 
@@ -1457,10 +1537,9 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_005, TestSize.Level
     int ret = SetAppSpawnMsgFlag(spawningCtx->message, TLV_MSG_FLAGS, APP_FLAGS_CLONE_ENABLE);
     ASSERT_EQ(ret, 0);
 
-    std::string path = SandboxUtils::ConvertToRealPath(spawningCtx, "/system/<variablePackageName>/module");
-    APPSPAWN_LOGV("path %{public}s", path.c_str());
-    ASSERT_EQ(path.c_str() != nullptr, 1);  // +clone-bundleIndex+packageName
-    ASSERT_EQ(strcmp(path.c_str(), "/system/+clone-100+com.example.myapplication/module") == 0, 1);
+    std::string path = AppSpawn::SandboxCommon::ConvertToRealPath(spawningCtx, "/system/<variablePackageName>/module");
+    ASSERT_NE(path.c_str(), nullptr);   // +clone-bundleIndex+packageName
+    ASSERT_EQ(strcmp(path.c_str(), "/system/+clone-100+com.example.myapplication/module"), 0);
     DeleteAppSpawningCtx(spawningCtx);
 }
 
@@ -1478,10 +1557,10 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_006, TestSize.Level
     AppSpawningCtx *spawningCtx = g_testHelper.GetAppProperty(clientHandle, reqHandle);
     ASSERT_EQ(spawningCtx != nullptr, 1);
 
-    std::string path = SandboxUtils::ConvertToRealPath(spawningCtx, "/system/<variablePackageName>/module");
-    APPSPAWN_LOGV("path %{public}s", path.c_str());
-    ASSERT_EQ(path.c_str() != nullptr, 1);  // +extension-<extensionType>+packageName
-    ASSERT_EQ(strcmp(path.c_str(), "/system/+extension-test001+com.example.myapplication/module") == 0, 1);
+    std::string path = AppSpawn::SandboxCommon::ConvertToRealPath(spawningCtx, "/system/<variablePackageName>/module");
+    ASSERT_NE(path.c_str(), nullptr);  // +extension-<extensionType>+packageName
+    ASSERT_EQ(strcmp(path.c_str(), "/system/+extension-test001+com.example.myapplication/module"), 0);
+
     DeleteAppSpawningCtx(spawningCtx);
     AppSpawnClientDestroy(clientHandle);
 }
@@ -1502,11 +1581,10 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_007, TestSize.Level
     AppSpawningCtx *spawningCtx = g_testHelper.GetAppProperty(clientHandle, reqHandle);
     ASSERT_EQ(spawningCtx != nullptr, 1);
 
-    std::string path = SandboxUtils::ConvertToRealPath(spawningCtx, "/system/<variablePackageName>/module");
-    APPSPAWN_LOGV("path %{public}s", path.c_str());
-    ASSERT_EQ(path.c_str() != nullptr, 1);  // +clone-bundleIndex+extension-<extensionType>+packageName
+    std::string path = AppSpawn::SandboxCommon::ConvertToRealPath(spawningCtx, "/system/<variablePackageName>/module");
+    ASSERT_NE(path.c_str(), nullptr);   // +clone-bundleIndex+extension-<extensionType>+packageName
+    ASSERT_EQ(strcmp(path.c_str(), "/system/+clone-100+extension-test001+com.example.myapplication/module"), 0);
 
-    ASSERT_EQ(strcmp(path.c_str(), "/system/+clone-100+extension-test001+com.example.myapplication/module") == 0, 1);
     DeleteAppSpawningCtx(spawningCtx);
     AppSpawnClientDestroy(clientHandle);
 }
@@ -1525,8 +1603,7 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_008, TestSize.Level
     AppSpawningCtx *spawningCtx = g_testHelper.GetAppProperty(clientHandle, reqHandle);
     ASSERT_EQ(spawningCtx != nullptr, 1);
 
-    std::string path = SandboxUtils::ConvertToRealPath(spawningCtx, "/system/<variablePackageName>/module");
-    APPSPAWN_LOGV("path %{public}s", path.c_str());
+    std::string path = AppSpawn::SandboxCommon::ConvertToRealPath(spawningCtx, "/system/<variablePackageName>/module");
     ASSERT_STREQ(path.c_str(), "");
 
     DeleteAppSpawningCtx(spawningCtx);
@@ -1545,8 +1622,7 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_009, TestSize.Level
     AppSpawningCtx *spawningCtx = g_testHelper.GetAppProperty(clientHandle, reqHandle);
     ASSERT_EQ(spawningCtx != nullptr, 1);
 
-    std::string path = SandboxUtils::ConvertToRealPath(spawningCtx, "/system/<variablePackageName>/module");
-    APPSPAWN_LOGV("path %{public}s", path.c_str());
+    std::string path = AppSpawn::SandboxCommon::ConvertToRealPath(spawningCtx, "/system/<variablePackageName>/module");
     ASSERT_STREQ(path.c_str(), "");
 
     DeleteAppSpawningCtx(spawningCtx);
@@ -1562,7 +1638,6 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_AppExtension_009, TestSize.Level
 #define DEC_PATH_SIZE 3
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_dec_01, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_dec_01 start";
     std::string mJsconfig = "{ \
         \"mount-paths\": [{ \
             \"src-path\": \"\", \
@@ -1571,23 +1646,34 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_dec_01, TestSize.Level0)
             \"dec-paths\": [ \"/storage/Users\", \"/storage/External\", \"/storage/test\" ] \
         }] \
     }";
-    nlohmann::json j_config = nlohmann::json::parse(mJsconfig.c_str());
-    const char *mountPath = "mount-paths";
-    nlohmann::json j_secondConfig = j_config[mountPath][0];
-    std::string section = "permission";
-    OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config, SANBOX_APP_JSON_CONFIG);
-    OHOS::AppSpawn::SandboxUtils::SandboxMountConfig mountConfig;
+    cJSON *j_config = cJSON_Parse(mJsconfig.c_str());
+    ASSERT_NE(j_config, nullptr);
+    AppSpawn::SandboxCommon::StoreCJsonConfig(j_config, SandboxCommonDef::SANDBOX_APP_JSON_CONFIG);
+
+    int ret = 0;
     AppSpawningCtx *appProperty = GetTestAppProperty();
-    OHOS::AppSpawn::SandboxUtils::GetSandboxMountConfig(appProperty, section, j_secondConfig, mountConfig);
-    int decPathSize = mountConfig.decPaths.size();
-    EXPECT_EQ(decPathSize, DEC_PATH_SIZE);
-    int ret = strcmp(mountConfig.decPaths[0].c_str(), "/storage/Users");
-    EXPECT_EQ(ret, 0);
-    ret = strcmp(mountConfig.decPaths[1].c_str(), "/storage/External");
-    EXPECT_EQ(ret, 0);
-    ret = strcmp(mountConfig.decPaths[2].c_str(), "/storage/test");
-    EXPECT_EQ(ret, 0);
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_dec_01 end";
+    do {
+        cJSON *mountPoints = cJSON_GetObjectItemCaseSensitive(j_config, "mount-paths");
+        APPSPAWN_CHECK(mountPoints != nullptr || cJSON_IsArray(mountPoints), ret = -1;
+            break, "Invalid mountPaths config");
+
+        for (int i = 0; i < cJSON_GetArraySize(mountPoints); ++i) {
+            cJSON *mntPoint = cJSON_GetArrayItem(mountPoints, i);
+            APPSPAWN_CHECK(mntPoint != nullptr, ret = -2; break, "Invalid mntPoint config");
+            SandboxMountConfig mountConfig = {0};
+            AppSpawn::SandboxCommon::GetSandboxMountConfig(appProperty, "permission", mntPoint, mountConfig);
+
+            int decPathSize = mountConfig.decPaths.size();
+            ASSERT_EQ(decPathSize, DEC_PATH_SIZE);
+            ret = strcmp(mountConfig.decPaths[0].c_str(), "/storage/Users") ||
+                  strcmp(mountConfig.decPaths[1].c_str(), "/storage/External") ||
+                  strcmp(mountConfig.decPaths[2].c_str(), "/storage/test");
+        }
+        EXPECT_EQ(ret, 0);
+    } while (0);
+
+    cJSON_Delete(j_config);
+    DeleteAppSpawningCtx(appProperty);
 }
 
 /**
@@ -1598,7 +1684,6 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_dec_01, TestSize.Level0)
  */
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_dec_02, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_dec_02 start";
     std::string mJsconfig = "{ \
         \"mount-paths\": [{ \
             \"src-path\": \"\", \
@@ -1607,18 +1692,31 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_dec_02, TestSize.Level0)
             \"dec-paths\": [ ] \
         }] \
     }";
-    nlohmann::json j_config = nlohmann::json::parse(mJsconfig.c_str());
-    const char *mountPath = "mount-paths";
-    nlohmann::json j_secondConfig = j_config[mountPath][0];
-    std::string section = "permission";
-    OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config, SANBOX_APP_JSON_CONFIG);
-    OHOS::AppSpawn::SandboxUtils::SandboxMountConfig mountConfig;
-    AppSpawningCtx *appProperty = GetTestAppProperty();
-    OHOS::AppSpawn::SandboxUtils::GetSandboxMountConfig(appProperty, section, j_secondConfig, mountConfig);
-    int decPathSize = mountConfig.decPaths.size();
-    EXPECT_EQ(decPathSize, 0);
+    cJSON *j_config = cJSON_Parse(mJsconfig.c_str());
+    ASSERT_NE(j_config, nullptr);
+    AppSpawn::SandboxCommon::StoreCJsonConfig(j_config, SandboxCommonDef::SANDBOX_APP_JSON_CONFIG);
 
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_dec_02 end";
+    int ret = 0;
+    AppSpawningCtx *appProperty = GetTestAppProperty();
+    do {
+        cJSON *mountPoints = cJSON_GetObjectItemCaseSensitive(j_config, "mount-paths");
+        APPSPAWN_CHECK(mountPoints != nullptr || cJSON_IsArray(mountPoints), ret = -1;
+            break, "Invalid mountPaths config");
+
+        for (int i = 0; i < cJSON_GetArraySize(mountPoints); ++i) {
+            cJSON *mntPoint = cJSON_GetArrayItem(mountPoints, i);
+            APPSPAWN_CHECK(mntPoint != nullptr, ret = -2; break, "Invalid mntPoint config");
+            SandboxMountConfig mountConfig = {0};
+            AppSpawn::SandboxCommon::GetSandboxMountConfig(appProperty, "permission", mntPoint, mountConfig);
+
+            int decPathSize = mountConfig.decPaths.size();
+            EXPECT_EQ(decPathSize, 0);
+        }
+        EXPECT_EQ(ret, 0);
+    } while (0);
+
+    cJSON_Delete(j_config);
+    DeleteAppSpawningCtx(appProperty);
 }
 
 /**
@@ -1629,7 +1727,6 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_dec_02, TestSize.Level0)
  */
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_dec_03, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_dec_03 start";
     std::string mJsconfig = "{ \
         \"mount-paths\": [{ \
             \"src-path\": \"\", \
@@ -1638,18 +1735,32 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_dec_03, TestSize.Level0)
             \"dec-paths\": [ \"/storage/Users\", \"/storage/External\", \"/storage/test\" ] \
         }] \
     }";
-    nlohmann::json j_config = nlohmann::json::parse(mJsconfig.c_str());
-    const char *mountPath = "mount-paths";
-    nlohmann::json j_secondConfig = j_config[mountPath][0];
-    std::string section = "permission";
-    OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config, SANBOX_APP_JSON_CONFIG);
-    OHOS::AppSpawn::SandboxUtils::SandboxMountConfig mountConfig;
+    cJSON *j_config = cJSON_Parse(mJsconfig.c_str());
+    ASSERT_NE(j_config, nullptr);
+    AppSpawn::SandboxCommon::StoreCJsonConfig(j_config, SandboxCommonDef::SANDBOX_APP_JSON_CONFIG);
+
+    int ret = 0;
     AppSpawningCtx *appProperty = GetTestAppProperty();
-    OHOS::AppSpawn::SandboxUtils::GetSandboxMountConfig(appProperty, section, j_secondConfig, mountConfig);
-    int decPathSize = mountConfig.decPaths.size();
-    EXPECT_EQ(decPathSize, DEC_PATH_SIZE);
-    OHOS::AppSpawn::SandboxUtils::SetDecPolicyWithPermission(appProperty, mountConfig);
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_dec_03 end";
+    do {
+        cJSON *mountPoints = cJSON_GetObjectItemCaseSensitive(j_config, "mount-paths");
+        APPSPAWN_CHECK(mountPoints != nullptr || cJSON_IsArray(mountPoints), ret = -1;
+            break, "Invalid mountPaths config");
+
+        for (int i = 0; i < cJSON_GetArraySize(mountPoints); ++i) {
+            cJSON *mntPoint = cJSON_GetArrayItem(mountPoints, i);
+            APPSPAWN_CHECK(mntPoint != nullptr, ret = -2; break, "Invalid mntPoint config");
+            SandboxMountConfig mountConfig = {0};
+            AppSpawn::SandboxCommon::GetSandboxMountConfig(appProperty, "permission", mntPoint, mountConfig);
+
+            int decPathSize = mountConfig.decPaths.size();
+            EXPECT_EQ(decPathSize, DEC_PATH_SIZE);
+            ret = AppSpawn::SandboxCore::SetDecPolicyWithPermission(appProperty, mountConfig);
+        }
+        EXPECT_EQ(ret, 0);
+    } while (0);
+
+    cJSON_Delete(j_config);
+    DeleteAppSpawningCtx(appProperty);
 }
 
 /**
@@ -1660,7 +1771,6 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_dec_03, TestSize.Level0)
  */
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_dec_04, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_dec_04 start";
     std::string mJsconfig = "{ \
         \"mount-paths\": [{ \
             \"src-path\": \"\", \
@@ -1669,21 +1779,33 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_dec_04, TestSize.Level0)
             \"dec-paths\": [ \"/storage/Users\", \"/storage/External\", \"/storage/test\" ] \
         }] \
     }";
-    nlohmann::json j_config = nlohmann::json::parse(mJsconfig.c_str());
-    const char *mountPath = "mount-paths";
-    nlohmann::json j_secondConfig = j_config[mountPath][0];
-    std::string section = "permission";
-    OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config, SANBOX_APP_JSON_CONFIG);
-    OHOS::AppSpawn::SandboxUtils::SandboxMountConfig mountConfig;
-    AppSpawningCtx *appProperty = GetTestAppProperty();
-    OHOS::AppSpawn::SandboxUtils::GetSandboxMountConfig(appProperty, section, j_secondConfig, mountConfig);
-    int decPathSize = mountConfig.decPaths.size();
-    EXPECT_EQ(decPathSize, DEC_PATH_SIZE);
+    cJSON *j_config = cJSON_Parse(mJsconfig.c_str());
+    ASSERT_NE(j_config, nullptr);
+    AppSpawn::SandboxCommon::StoreCJsonConfig(j_config, SandboxCommonDef::SANDBOX_APP_JSON_CONFIG);
 
-    int ret = OHOS::AppSpawn::SandboxUtils::DoAllMntPointsMount(appProperty, j_config, nullptr, "permission");
+    int ret = 0;
+    AppSpawningCtx *appProperty = GetTestAppProperty();
+    do {
+        cJSON *mountPoints = cJSON_GetObjectItemCaseSensitive(j_config, "mount-paths");
+        APPSPAWN_CHECK(mountPoints != nullptr || cJSON_IsArray(mountPoints), ret = -1;
+            break, "Invalid mountPaths config");
+
+        for (int i = 0; i < cJSON_GetArraySize(mountPoints); ++i) {
+            cJSON *mntPoint = cJSON_GetArrayItem(mountPoints, i);
+            APPSPAWN_CHECK(mntPoint != nullptr, ret = -2; break, "Invalid mntPoint config");
+            SandboxMountConfig mountConfig = {0};
+            AppSpawn::SandboxCommon::GetSandboxMountConfig(appProperty, "permission", mntPoint, mountConfig);
+
+            int decPathSize = mountConfig.decPaths.size();
+            EXPECT_EQ(decPathSize, DEC_PATH_SIZE);
+        }
+        EXPECT_EQ(ret, 0);
+    } while (0);
+    ret = AppSpawn::SandboxCore::DoAllMntPointsMount(appProperty, j_config, nullptr, "permission");
     EXPECT_EQ(ret, 0);
 
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_dec_04 end";
+    cJSON_Delete(j_config);
+    DeleteAppSpawningCtx(appProperty);
 }
 
 /**
@@ -1694,7 +1816,6 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_dec_04, TestSize.Level0)
  */
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_dec_05, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_dec_05 start";
     std::string mJsconfig = "{ \
         \"mount-paths\": [{ \
             \"src-path\": \"\", \
@@ -1703,21 +1824,33 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_dec_05, TestSize.Level0)
             \"dec-paths\": [ \"/storage/Users/<currentUserId>/Download\" ] \
         }] \
     }";
-    nlohmann::json j_config = nlohmann::json::parse(mJsconfig.c_str());
-    const char *mountPath = "mount-paths";
-    nlohmann::json j_secondConfig = j_config[mountPath][0];
-    std::string section = "permission";
-    OHOS::AppSpawn::SandboxUtils::StoreJsonConfig(j_config, SANBOX_APP_JSON_CONFIG);
-    OHOS::AppSpawn::SandboxUtils::SandboxMountConfig mountConfig;
-    AppSpawningCtx *appProperty = GetTestAppProperty();
-    OHOS::AppSpawn::SandboxUtils::GetSandboxMountConfig(appProperty, section, j_secondConfig, mountConfig);
-    int decPathSize = mountConfig.decPaths.size();
-    EXPECT_EQ(decPathSize, 1);
+    cJSON *j_config = cJSON_Parse(mJsconfig.c_str());
+    ASSERT_NE(j_config, nullptr);
+    AppSpawn::SandboxCommon::StoreCJsonConfig(j_config, SandboxCommonDef::SANDBOX_APP_JSON_CONFIG);
 
-    int ret = OHOS::AppSpawn::SandboxUtils::DoAllMntPointsMount(appProperty, j_config, nullptr, "permission");
+    int ret = 0;
+    AppSpawningCtx *appProperty = GetTestAppProperty();
+    do {
+        cJSON *mountPoints = cJSON_GetObjectItemCaseSensitive(j_config, "mount-paths");
+        APPSPAWN_CHECK(mountPoints != nullptr || cJSON_IsArray(mountPoints), ret = -1;
+            break, "Invalid mountPaths config");
+
+        for (int i = 0; i < cJSON_GetArraySize(mountPoints); ++i) {
+            cJSON *mntPoint = cJSON_GetArrayItem(mountPoints, i);
+            APPSPAWN_CHECK(mntPoint != nullptr, ret = -2; break, "Invalid mntPoint config");
+            SandboxMountConfig mountConfig = {0};
+            AppSpawn::SandboxCommon::GetSandboxMountConfig(appProperty, "permission", mntPoint, mountConfig);
+
+            int decPathSize = mountConfig.decPaths.size();
+            EXPECT_EQ(decPathSize, 1);
+        }
+        EXPECT_EQ(ret, 0);
+    } while (0);
+    ret = AppSpawn::SandboxCore::DoAllMntPointsMount(appProperty, j_config, nullptr, "permission");
     EXPECT_EQ(ret, 0);
 
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_dec_05 end";
+    cJSON_Delete(j_config);
+    DeleteAppSpawningCtx(appProperty);
 }
 
 /**
@@ -1728,24 +1861,22 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_dec_05, TestSize.Level0)
  */
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_dec_06, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_dec_06 start";
     AppSpawningCtx *appProperty = GetTestAppProperty();
-    OHOS::AppSpawn::SandboxUtils::SetDecDenyWithDir(appProperty);
+    AppSpawn::SandboxCore::SetDecDenyWithDir(appProperty);
 
     int32_t userFileIndex = GetPermissionIndex(nullptr, "ohos.permission.READ_WRITE_USER_FILE");
     ASSERT_NE(userFileIndex, 0);
     int ret = SetAppPermissionFlags(appProperty, userFileIndex);
     ASSERT_EQ(ret, 0);
-    OHOS::AppSpawn::SandboxUtils::SetDecDenyWithDir(appProperty);
+    AppSpawn::SandboxCore::SetDecDenyWithDir(appProperty);
 
     int32_t downloadIndex = GetPermissionIndex(nullptr, "ohos.permission.READ_WRITE_DOWNLOAD_DIRECTORY");
     ASSERT_NE(downloadIndex, 0);
     ret = SetAppPermissionFlags(appProperty, downloadIndex);
     ASSERT_EQ(ret, 0);
-    OHOS::AppSpawn::SandboxUtils::SetDecDenyWithDir(appProperty);
+    AppSpawn::SandboxCore::SetDecDenyWithDir(appProperty);
 
     DeleteAppSpawningCtx(appProperty);
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_dec_06 end";
 }
 
 /**
@@ -1756,7 +1887,6 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_dec_06, TestSize.Level0)
  */
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_01, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_01 start";
     char dataGroupInfoListStr[] = R"(
         {
             "gid": "1002",
@@ -1765,10 +1895,12 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_01, TestSize.Level0
             "uuid": "49c016e6-065a-abd1-5867-b1f91114f840"
         }
     )";
-    nlohmann::json j_config = nlohmann::json::parse(dataGroupInfoListStr);
+    cJSON *j_config = cJSON_Parse(dataGroupInfoListStr);
+    ASSERT_NE(j_config, nullptr);
     bool ret = IsValidDataGroupItem(j_config);
     EXPECT_TRUE(ret);
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_01 end";
+
+    cJSON_Delete(j_config);
 }
 
 /**
@@ -1779,7 +1911,6 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_01, TestSize.Level0
  */
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_02, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_02 start";
     char dataGroupInfoListStr[] = R"([
         {
             "gid": "1002",
@@ -1794,16 +1925,19 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_02, TestSize.Level0
             "uuid": "49c016e6-065a-abd1-5867-b1f91114f840"
         }
     ])";
-    nlohmann::json j_config = nlohmann::json::parse(dataGroupInfoListStr);
+    cJSON *j_config = cJSON_Parse(dataGroupInfoListStr);
+    ASSERT_NE(j_config, nullptr);
     bool ret = false;
-    for (auto& item : j_config) {
-        ret = IsValidDataGroupItem(item);
-        if (ret != true) {
+    cJSON *child = nullptr;
+    cJSON_ArrayForEach(child, j_config) {
+        ret = IsValidDataGroupItem(child);
+        if (!ret) {
             break;
         }
     }
     EXPECT_TRUE(ret);
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_02 end";
+
+    cJSON_Delete(j_config);
 }
 
 /**
@@ -1814,7 +1948,6 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_02, TestSize.Level0
  */
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_03, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_03 start";
     char dataGroupInfoListStr[] = R"(
         {
             "gid": "1002",
@@ -1823,10 +1956,12 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_03, TestSize.Level0
             "uuid": "49c016e6-065a-abd1-5867-b1f91114f840"
         }
     )";
-    nlohmann::json j_config = nlohmann::json::parse(dataGroupInfoListStr);
+    cJSON *j_config = cJSON_Parse(dataGroupInfoListStr);
+    ASSERT_NE(j_config, nullptr);
     bool ret = IsValidDataGroupItem(j_config);
     EXPECT_FALSE(ret);
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_03 end";
+
+    cJSON_Delete(j_config);
 }
 
 /**
@@ -1837,7 +1972,6 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_03, TestSize.Level0
  */
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_04, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_04 start";
     char dataGroupInfoListStr[] = R"(
         {
             "gid": 1002,
@@ -1846,10 +1980,12 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_04, TestSize.Level0
             "uuid": "49c016e6-065a-abd1-5867-b1f91114f840"
         }
     )";
-    nlohmann::json j_config = nlohmann::json::parse(dataGroupInfoListStr);
+    cJSON *j_config = cJSON_Parse(dataGroupInfoListStr);
+    ASSERT_NE(j_config, nullptr);
     bool ret = IsValidDataGroupItem(j_config);
     EXPECT_FALSE(ret);
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_04 end";
+
+    cJSON_Delete(j_config);
 }
 
 /**
@@ -1860,7 +1996,6 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_04, TestSize.Level0
  */
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_05, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_05 start";
     char dataGroupInfoListStr[] = R"(
         {
             "gid": "1002",
@@ -1869,10 +2004,12 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_05, TestSize.Level0
             "uuid": "49c016e6-065a-abd1-5867-b1f91114f840"
         }
     )";
-    nlohmann::json j_config = nlohmann::json::parse(dataGroupInfoListStr);
+    cJSON *j_config = cJSON_Parse(dataGroupInfoListStr);
+    ASSERT_NE(j_config, nullptr);
     bool ret = IsValidDataGroupItem(j_config);
     EXPECT_FALSE(ret);
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_05 end";
+
+    cJSON_Delete(j_config);
 }
 
 /**
@@ -1883,7 +2020,6 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_05, TestSize.Level0
  */
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_06, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_06 start";
     char dataGroupInfoListStr[] = R"(
         {
             "gid": "1002",
@@ -1892,10 +2028,12 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_06, TestSize.Level0
             "uuid": 124
         }
     )";
-    nlohmann::json j_config = nlohmann::json::parse(dataGroupInfoListStr);
+    cJSON *j_config = cJSON_Parse(dataGroupInfoListStr);
+    ASSERT_NE(j_config, nullptr);
     bool ret = IsValidDataGroupItem(j_config);
     EXPECT_FALSE(ret);
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_06 end";
+
+    cJSON_Delete(j_config);
 }
 
 /**
@@ -1906,7 +2044,6 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_06, TestSize.Level0
  */
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_07, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_07 start";
     char dataGroupInfoListStr[] = R"(
         {
             "gid": 1002,
@@ -1915,10 +2052,12 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_07, TestSize.Level0
             "uuid": "49c016e6-065a-abd1-5867-b1f91114f840"
         }
     )";
-    nlohmann::json j_config = nlohmann::json::parse(dataGroupInfoListStr);
+    cJSON *j_config = cJSON_Parse(dataGroupInfoListStr);
+    ASSERT_NE(j_config, nullptr);
     bool ret = IsValidDataGroupItem(j_config);
     EXPECT_FALSE(ret);
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_07 end";
+
+    cJSON_Delete(j_config);
 }
 
 /**
@@ -1929,7 +2068,6 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_07, TestSize.Level0
  */
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_08, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_08 start";
     char dataGroupInfoListStr[] = R"(
         {
             "gid": "1002",
@@ -1938,10 +2076,12 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_08, TestSize.Level0
             "uuid": "49c016e6-065a-abd1-5867-b1f91114f840"
         }
     )";
-    nlohmann::json j_config = nlohmann::json::parse(dataGroupInfoListStr);
+    cJSON *j_config = cJSON_Parse(dataGroupInfoListStr);
+    ASSERT_NE(j_config, nullptr);
     bool ret = IsValidDataGroupItem(j_config);
     EXPECT_FALSE(ret);
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_08 end";
+
+    cJSON_Delete(j_config);
 }
 
 /**
@@ -1952,7 +2092,6 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_08, TestSize.Level0
  */
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_09, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_09 start";
     char dataGroupInfoListStr[] = R"(
         {
             "gid": "1002",
@@ -1961,10 +2100,12 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_09, TestSize.Level0
             "uuid": 124
         }
     )";
-    nlohmann::json j_config = nlohmann::json::parse(dataGroupInfoListStr);
+    cJSON *j_config = cJSON_Parse(dataGroupInfoListStr);
+    ASSERT_NE(j_config, nullptr);
     bool ret = IsValidDataGroupItem(j_config);
     EXPECT_FALSE(ret);
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_09 end";
+
+    cJSON_Delete(j_config);
 }
 
 /**
@@ -1975,7 +2116,6 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_09, TestSize.Level0
  */
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_10, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_10 start";
     char dataGroupInfoListStr[] = R"(
         {
             "gid": 1002,
@@ -1984,10 +2124,12 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_10, TestSize.Level0
             "uuid": "49c016e6-065a-abd1-5867-b1f91114f840"
         }
     )";
-    nlohmann::json j_config = nlohmann::json::parse(dataGroupInfoListStr);
+    cJSON *j_config = cJSON_Parse(dataGroupInfoListStr);
+    ASSERT_NE(j_config, nullptr);
     bool ret = IsValidDataGroupItem(j_config);
     EXPECT_FALSE(ret);
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_10 end";
+
+    cJSON_Delete(j_config);
 }
 
 /**
@@ -1998,7 +2140,6 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_10, TestSize.Level0
  */
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_11, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_11 start";
     char dataGroupInfoListStr[] = R"(
         {
             "gid": 1002,
@@ -2007,10 +2148,12 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_11, TestSize.Level0
             "uuid": 124
         }
     )";
-    nlohmann::json j_config = nlohmann::json::parse(dataGroupInfoListStr);
+    cJSON *j_config = cJSON_Parse(dataGroupInfoListStr);
+    ASSERT_NE(j_config, nullptr);
     bool ret = IsValidDataGroupItem(j_config);
     EXPECT_FALSE(ret);
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_11 end";
+
+    cJSON_Delete(j_config);
 }
 
 /**
@@ -2021,7 +2164,6 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_11, TestSize.Level0
  */
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_12, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_12 start";
     char dataGroupInfoListStr[] = R"(
         {
             "gid": "1002",
@@ -2030,10 +2172,12 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_12, TestSize.Level0
             "uuid": 124
         }
     )";
-    nlohmann::json j_config = nlohmann::json::parse(dataGroupInfoListStr);
+    cJSON *j_config = cJSON_Parse(dataGroupInfoListStr);
+    ASSERT_NE(j_config, nullptr);
     bool ret = IsValidDataGroupItem(j_config);
     EXPECT_FALSE(ret);
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_12 end";
+
+    cJSON_Delete(j_config);
 }
 
 /**
@@ -2044,11 +2188,9 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_12, TestSize.Level0
  */
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_13, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_13 start";
     std::string str = "/data/storage/el2/group/";
     int res = GetElxInfoFromDir(str.c_str());
     EXPECT_EQ(res, EL2);
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_13 end";
 }
 
 /**
@@ -2059,11 +2201,9 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_13, TestSize.Level0
  */
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_14, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_14 start";
     std::string str = "/data/storage/el3/group/";
     int res = GetElxInfoFromDir(str.c_str());
     EXPECT_EQ(res, EL3);
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_14 end";
 }
 
 /**
@@ -2074,11 +2214,9 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_14, TestSize.Level0
  */
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_15, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_15 start";
     std::string str = "/data/storage/el4/group/";
     int res = GetElxInfoFromDir(str.c_str());
     EXPECT_EQ(res, EL4);
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_15 end";
 }
 
 /**
@@ -2089,11 +2227,9 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_15, TestSize.Level0
  */
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_16, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_16 start";
     std::string str = "/data/storage/el5/group/";
     int res = GetElxInfoFromDir(str.c_str());
     EXPECT_EQ(res, EL5);
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_16 end";
 }
 
 /**
@@ -2104,11 +2240,9 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_16, TestSize.Level0
  */
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_17, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_17 start";
     std::string str = "/data/storage/el0/group/";
     int res = GetElxInfoFromDir(str.c_str());
     EXPECT_EQ(res, ELX_MAX);
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_17 end";
 }
 
 /**
@@ -2119,11 +2253,9 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_17, TestSize.Level0
  */
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_18, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_18 start";
     std::string str = "/data/storage/el6/group/";
     int res = GetElxInfoFromDir(str.c_str());
     EXPECT_EQ(res, ELX_MAX);
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_18 end";
 }
 
 /**
@@ -2134,10 +2266,8 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_18, TestSize.Level0
  */
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_19, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_19 start";
     int res = GetElxInfoFromDir(nullptr);
     EXPECT_EQ(res, ELX_MAX);
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_19 end";
 }
 
 /**
@@ -2148,12 +2278,10 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_19, TestSize.Level0
  */
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_20, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_20 start";
     const DataGroupSandboxPathTemplate *templateItem = GetDataGroupArgTemplate(EL2);
     ASSERT_EQ(templateItem != nullptr, 1);
     int res = strcmp(templateItem->elxName, "el2");
     EXPECT_EQ(res, 0);
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_20 end";
 }
 
 /**
@@ -2164,12 +2292,10 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_20, TestSize.Level0
  */
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_21, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_21 start";
     const DataGroupSandboxPathTemplate *templateItem = GetDataGroupArgTemplate(EL3);
     ASSERT_EQ(templateItem != nullptr, 1);
     int res = strcmp(templateItem->elxName, "el3");
     EXPECT_EQ(res, 0);
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_21 end";
 }
 
 /**
@@ -2180,12 +2306,10 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_21, TestSize.Level0
  */
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_22, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_22 start";
     const DataGroupSandboxPathTemplate *templateItem = GetDataGroupArgTemplate(EL4);
     ASSERT_EQ(templateItem != nullptr, 1);
     int res = strcmp(templateItem->elxName, "el4");
     EXPECT_EQ(res, 0);
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_22 end";
 }
 
 /**
@@ -2196,12 +2320,10 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_22, TestSize.Level0
  */
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_23, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_23 start";
     const DataGroupSandboxPathTemplate *templateItem = GetDataGroupArgTemplate(EL5);
     ASSERT_EQ(templateItem != nullptr, 1);
     int res = strcmp(templateItem->elxName, "el5");
     EXPECT_EQ(res, 0);
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_23 end";
 }
 
 /**
@@ -2212,13 +2334,11 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_23, TestSize.Level0
  */
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_24, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_24 start";
     const DataGroupSandboxPathTemplate *templateItem = GetDataGroupArgTemplate(6);
     int res = -1;
     if (templateItem == nullptr) {
         res = 0;
     }
     EXPECT_EQ(res, 0);
-    GTEST_LOG_(INFO) << "App_Spawn_Sandbox_Shared_Mount_24 end";
 }
 }  // namespace OHOS

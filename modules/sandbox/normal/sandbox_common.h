@@ -50,12 +50,13 @@ typedef struct MountPointProcessParams {
 using ArrayItemProcessor = std::function<int32_t(cJSON*)>;
 
 class SandboxCommon {
+
 public:
     // 加载配置文件
     static int LoadAppSandboxConfigCJson(AppSpawnMgr *content);
-    static void FreeAppSandboxConfigCJson(AppSpawnMgr *content);
+    static int FreeAppSandboxConfigCJson(AppSpawnMgr *content);
     static void StoreJsonConfig(cJSON *appSandboxConfig, SandboxCommonDef::SandboxConfigType type);
-    static std::vector<cJSON *> &GetCJsonConfig(SandboxCommonDef::SandboxConfigType type);
+    static std::vector<cJSON *> &GetCJsonConfig(SandboxCommonDef::SandboxConfigType type); // GetJsonConfig
 
     static int32_t HandleArrayForeach(cJSON *arrayJson, ArrayItemProcessor processor);
 
@@ -129,7 +130,7 @@ private:
 
 private:
     static int32_t deviceTypeEnable_;
-    static std::map<SandboxCommonDef::SandboxConfigType, std::vector<cJSON *>> appSandboxCJsonConfig_; // sandboxManager
+    static std::map<SandboxCommonDef::SandboxConfigType, std::vector<cJSON *>> appSandboxCJsonConfig_;
     typedef enum {
         SANDBOX_PACKAGENAME_DEFAULT = 0,
         SANDBOX_PACKAGENAME_CLONE,
