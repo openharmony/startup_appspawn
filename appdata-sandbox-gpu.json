@@ -77,8 +77,8 @@
                 "src-path" : "/module_update/ArkWebCore/app/<arkWebPackageName>",
                 "sandbox-path" : "/module_update/ArkWebCore/app/<arkWebPackageName>"
             }, {
-                "src-path" : "/data/app/el1/<hostUserId>/shader_cache/<variablePackageName>",
-                "sandbox-path" : "/data/storage/shader_cache/local"
+                "src-path" : "/data/app/el1/<hostUserId>/system_optimize/<variablePackageName>/shader_cache",
+                "sandbox-path" : "/data/storage/system_optimize/shader_cache"
             }, {
                 "src-path" : "/data/app/el1/public/shader_cache/cloud/<PackageName>",
                 "sandbox-path" : "/data/storage/shader_cache/cloud"
