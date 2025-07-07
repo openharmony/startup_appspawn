@@ -38,9 +38,9 @@
 #include "securec.h"
 
 static const AppSpawnCommonEnv COMMON_ENV[] = {
-    {"HNP_PRIVATE_HOME", "/data/app", true},
-    {"HNP_PUBLIC_HOME", "/data/service/hnp", true},
-    {"PATH", "${HNP_PRIVATE_HOME}/bin:${HNP_PUBLIC_HOME}/bin:${PATH}", true},
+    {"HNP_PRIVATE_HOME", "/data/app", false},
+    {"HNP_PUBLIC_HOME", "/data/service/hnp", false},
+    {"PATH", "${HNP_PRIVATE_HOME}/bin:${HNP_PUBLIC_HOME}/bin:${PATH}", false},
     {"HOME", "/storage/Users/currentUser", false},
     {"TMPDIR", "/data/storage/el2/base/cache", false},
     {"SHELL", "/bin/sh", false},
