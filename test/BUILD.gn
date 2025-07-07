@@ -32,6 +32,7 @@ group("unittest") {
     }
     deps += [ "unittest/hnp_test:HnpTest" ]
     deps += [ "unittest/devicedebug_test:DevicedebugTest" ]
+    deps += [ "unittest/app_spawn_hisysevent_test:AppSpawn_HisysEvent_ut" ]
   } else {
     testonly = true
     deps = [ "unittest/app_spawn_lite_test:unittest" ]
