@@ -73,7 +73,7 @@ if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
 }
 
 ohos_prebuilt_etc("appspawn_preload.json") {
-  source = "../appspawn_preload.json"
+  source = appspawn_napi_preload_path
   part_name = "${part_name}"
   module_install_dir = "etc/appspawn"
 }
