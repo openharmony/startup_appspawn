@@ -462,6 +462,11 @@
                 "sandbox-path": "/data/storage/el2/base/files/mediadata/",
                 "sandbox-flags": ["bind", "rec"]
             }]
+        }, {
+            "name": "ohos.permission.ACCESS_DFX_LOG_DIR",
+            "sandbox-switch": "ON",
+            "gids": ["log"],
+            "mount-paths": []
         }],
         "spawn-flag": [{
             "name": "START_FLAGS_BACKUP",
