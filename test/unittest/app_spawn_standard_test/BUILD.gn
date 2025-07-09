@@ -12,6 +12,7 @@
 # limitations under the License.
 
 import("//base/startup/appspawn/appspawn.gni")
+import("//base/startup/appspawn/modules/sandbox/sandbox.gni")
 import("//build/test.gni")
 
 ohos_unittest("AppSpawn_ut") {
@@ -27,6 +28,7 @@ ohos_unittest("AppSpawn_ut") {
     "APPSPAWN_BASE_DIR=\"/data/appspawn_ut\"",
     "APPSPAWN_LABEL=\"APPSPAWN_UT\"",
     "APPSPAWN_TEST",
+    "APPSPAWN_CLIENT",
     "APPSPAWN_DEBUG",
     "DEBUG_BEGETCTL_BOOT",
     "USER_TIMER_TO_CHECK",
@@ -64,9 +66,6 @@ ohos_unittest("AppSpawn_ut") {
     "${appspawn_path}/modules/modulemgr",
     "${appspawn_path}/modules/ace_adapter",
     "${appspawn_path}/modules/common",
-    "${appspawn_path}/modules/sandbox",
-    "${appspawn_path}/modules/sandbox/normal",
-    "${appspawn_path}/modules/sandbox/modern",
     "${appspawn_path}/modules/sysevent",
     "${appspawn_innerkits_path}/client",
     "${appspawn_innerkits_path}/include",
@@ -76,6 +75,7 @@ ohos_unittest("AppSpawn_ut") {
     "${appspawn_path}/test/unittest",
     "${appspawn_path}/util/include",
   ]
+  include_dirs += appspawn_sandbox_inc
   sources = [
     "${appspawn_path}/common/appspawn_server.c",
     "${appspawn_path}/common/appspawn_trace.cpp",
@@ -107,16 +107,8 @@ ohos_unittest("AppSpawn_ut") {
     "${appspawn_path}/modules/common/appspawn_namespace.c",
     "${appspawn_path}/modules/common/appspawn_silk.c",
     "${appspawn_path}/modules/nweb_adapter/nwebspawn_adapter.cpp",
-    "${appspawn_path}/modules/sandbox/modern/appspawn_mount_template.c",
-    "${appspawn_path}/modules/sandbox/appspawn_permission.c",
-    "${appspawn_path}/modules/sandbox/modern/appspawn_sandbox.c",
-    "${appspawn_path}/modules/sandbox/modern/sandbox_adapter.cpp",
-    "${appspawn_path}/modules/sandbox/modern/sandbox_cfgvar.c",
-    "${appspawn_path}/modules/sandbox/sandbox_dec.c",
-    "${appspawn_path}/modules/sandbox/modern/sandbox_expand.c",
-    "${appspawn_path}/modules/sandbox/modern/sandbox_load.c",
-    "${appspawn_path}/modules/sandbox/modern/sandbox_manager.c",
   ]
+  sources += appspawn_sandbox_src
 
   # add stub
   include_dirs += [ "${appspawn_path}/test/mock" ]
@@ -135,7 +127,6 @@ ohos_unittest("AppSpawn_ut") {
     "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_command_lexer_test.cpp",
     "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_kickdog_test.cpp",
     "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_module_interface_test.cpp",
-    "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_sandboxmgr_test.cpp",
     "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_service_test.cpp",
     "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_silk_test.cpp",
     "${appspawn_path}/test/unittest/app_spawn_standard_test/nweb_spawn_service_test.cpp",
@@ -144,17 +135,13 @@ ohos_unittest("AppSpawn_ut") {
 
   if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
     sources += [
-      "${appspawn_path}/modules/sandbox/sandbox_shared.c",
       "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_sandbox_new_mount_test.cpp",
       "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_sandbox_new_test.cpp",
+      "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_sandboxmgr_test.cpp",
     ]
     defines += [ "APPSPAWN_SANDBOX_NEW" ]
   } else {
     sources += [
-      "${appspawn_path}/modules/sandbox/normal/sandbox_shared_mount.cpp",
-      "${appspawn_path}/modules/sandbox/normal/sandbox_core.cpp",
-      "${appspawn_path}/modules/sandbox/normal/sandbox_common.cpp",
-      "${appspawn_path}/modules/sandbox/normal/appspawn_sandbox_manager.cpp",
       "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_sandbox_test.cpp",
     ]
   }
@@ -241,6 +228,7 @@ ohos_unittest("AppSpawn_coldrun_ut") {
     "APPSPAWN_LABEL=\"APPSPAWN_UT\"",
     "APPSPAWN_TEST",
     "APPSPAWN_DEBUG",
+    "APPSPAWN_CLIENT",
     "DEBUG_BEGETCTL_BOOT",
     "USER_TIMER_TO_CHECK",
     "OHOS_DEBUG",
@@ -277,9 +265,6 @@ ohos_unittest("AppSpawn_coldrun_ut") {
     "${appspawn_path}/modules/modulemgr",
     "${appspawn_path}/modules/ace_adapter",
     "${appspawn_path}/modules/common",
-    "${appspawn_path}/modules/sandbox",
-    "${appspawn_path}/modules/sandbox/normal",
-    "${appspawn_path}/modules/sandbox/modern",
     "${appspawn_path}/modules/sysevent",
     "${appspawn_innerkits_path}/client",
     "${appspawn_innerkits_path}/include",
@@ -289,6 +274,7 @@ ohos_unittest("AppSpawn_coldrun_ut") {
     "${appspawn_path}/test/unittest",
     "${appspawn_path}/util/include",
   ]
+  include_dirs += appspawn_sandbox_inc
   sources = [
     "${appspawn_path}/common/appspawn_server.c",
     "${appspawn_path}/common/appspawn_trace.cpp",
@@ -320,16 +306,8 @@ ohos_unittest("AppSpawn_coldrun_ut") {
     "${appspawn_path}/modules/common/appspawn_namespace.c",
     "${appspawn_path}/modules/common/appspawn_silk.c",
     "${appspawn_path}/modules/nweb_adapter/nwebspawn_adapter.cpp",
-    "${appspawn_path}/modules/sandbox/modern/appspawn_mount_template.c",
-    "${appspawn_path}/modules/sandbox/appspawn_permission.c",
-    "${appspawn_path}/modules/sandbox/modern/appspawn_sandbox.c",
-    "${appspawn_path}/modules/sandbox/modern/sandbox_adapter.cpp",
-    "${appspawn_path}/modules/sandbox/modern/sandbox_cfgvar.c",
-    "${appspawn_path}/modules/sandbox/sandbox_dec.c",
-    "${appspawn_path}/modules/sandbox/modern/sandbox_expand.c",
-    "${appspawn_path}/modules/sandbox/modern/sandbox_load.c",
-    "${appspawn_path}/modules/sandbox/modern/sandbox_manager.c",
   ]
+  sources += appspawn_sandbox_src
 
   if (appspawn_use_encaps == true) {
     sources += [ "${appspawn_path}/modules/common/appspawn_encaps.c" ]
@@ -351,14 +329,6 @@ ohos_unittest("AppSpawn_coldrun_ut") {
 
   if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
     defines += [ "APPSPAWN_SANDBOX_NEW" ]
-    sources += [ "${appspawn_path}/modules/sandbox/sandbox_shared.c" ]
-  } else {
-    sources += [
-      "${appspawn_path}/modules/sandbox/normal/sandbox_shared_mount.cpp",
-      "${appspawn_path}/modules/sandbox/normal/sandbox_core.cpp",
-      "${appspawn_path}/modules/sandbox/normal/sandbox_common.cpp",
-      "${appspawn_path}/modules/sandbox/normal/appspawn_sandbox_manager.cpp",
-    ]
   }
 
   configs = [ "${appspawn_path}:appspawn_config" ]
@@ -437,6 +407,7 @@ ohos_unittest("AppSpawn_common_ut") {
     "APPSPAWN_LABEL=\"APPSPAWN_UT\"",
     "APPSPAWN_TEST",
     "APPSPAWN_DEBUG",
+    "APPSPAWN_CLIENT",
     "DEBUG_BEGETCTL_BOOT",
     "USER_TIMER_TO_CHECK",
     "OHOS_DEBUG",
@@ -473,9 +444,6 @@ ohos_unittest("AppSpawn_common_ut") {
     "${appspawn_path}/modules/modulemgr",
     "${appspawn_path}/modules/ace_adapter",
     "${appspawn_path}/modules/common",
-    "${appspawn_path}/modules/sandbox",
-    "${appspawn_path}/modules/sandbox/normal",
-    "${appspawn_path}/modules/sandbox/modern",
     "${appspawn_path}/modules/sysevent",
     "${appspawn_innerkits_path}/client",
     "${appspawn_innerkits_path}/include",
@@ -485,6 +453,7 @@ ohos_unittest("AppSpawn_common_ut") {
     "${appspawn_path}/test/unittest",
     "${appspawn_path}/util/include",
   ]
+  include_dirs += appspawn_sandbox_inc
   sources = [
     "${appspawn_path}/common/appspawn_server.c",
     "${appspawn_path}/common/appspawn_trace.cpp",
@@ -517,16 +486,8 @@ ohos_unittest("AppSpawn_common_ut") {
     "${appspawn_path}/modules/common/appspawn_namespace.c",
     "${appspawn_path}/modules/common/appspawn_silk.c",
     "${appspawn_path}/modules/nweb_adapter/nwebspawn_adapter.cpp",
-    "${appspawn_path}/modules/sandbox/modern/appspawn_mount_template.c",
-    "${appspawn_path}/modules/sandbox/appspawn_permission.c",
-    "${appspawn_path}/modules/sandbox/modern/appspawn_sandbox.c",
-    "${appspawn_path}/modules/sandbox/modern/sandbox_adapter.cpp",
-    "${appspawn_path}/modules/sandbox/modern/sandbox_cfgvar.c",
-    "${appspawn_path}/modules/sandbox/sandbox_dec.c",
-    "${appspawn_path}/modules/sandbox/modern/sandbox_expand.c",
-    "${appspawn_path}/modules/sandbox/modern/sandbox_load.c",
-    "${appspawn_path}/modules/sandbox/modern/sandbox_manager.c",
   ]
+  sources += appspawn_sandbox_src
 
   # add stub
   include_dirs += [ "${appspawn_path}/test/mock" ]
@@ -545,14 +506,6 @@ ohos_unittest("AppSpawn_common_ut") {
 
   if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
     defines += [ "APPSPAWN_SANDBOX_NEW" ]
-    sources += [ "${appspawn_path}/modules/sandbox/sandbox_shared.c" ]
-  } else {
-    sources += [
-      "${appspawn_path}/modules/sandbox/normal/sandbox_shared_mount.cpp",
-      "${appspawn_path}/modules/sandbox/normal/sandbox_core.cpp",
-      "${appspawn_path}/modules/sandbox/normal/sandbox_common.cpp",
-      "${appspawn_path}/modules/sandbox/normal/appspawn_sandbox_manager.cpp",
-    ]
   }
 
   configs = [ "${appspawn_path}:appspawn_config" ]

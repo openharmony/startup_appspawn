@@ -177,15 +177,25 @@ int SandboxCommon::LoadAppSandboxConfigCJson(AppSpawnMgr *content)
 int SandboxCommon::FreeAppSandboxConfigCJson(AppSpawnMgr *content)
 {
     UNUSED(content);
-    std::vector<cJSON *> normalJsonVec = GetCJsonConfig(SandboxCommonDef::SANDBOX_APP_JSON_CONFIG);
+    std::vector<cJSON *> &normalJsonVec = GetCJsonConfig(SandboxCommonDef::SANDBOX_APP_JSON_CONFIG);
     for (auto& normal : normalJsonVec) {
+        if (normal == nullptr) {
+            continue;
+        }
         cJSON_Delete(normal);
+        normal = nullptr;
     }
+    normalJsonVec.clear();
 
-    std::vector<cJSON *> isolatedJsonVec = GetCJsonConfig(SandboxCommonDef::SANDBOX_ISOLATED_JSON_CONFIG);
-    for (auto& isolated : normalJsonVec) {
+    std::vector<cJSON *> &isolatedJsonVec = GetCJsonConfig(SandboxCommonDef::SANDBOX_ISOLATED_JSON_CONFIG);
+    for (auto& isolated : isolatedJsonVec) {
+        if (isolated == nullptr) {
+            continue;
+        }
         cJSON_Delete(isolated);
+        isolated = nullptr;
     }
+    isolatedJsonVec.clear();
     return 0;
 }
 

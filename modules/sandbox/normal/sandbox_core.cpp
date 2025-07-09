@@ -1198,9 +1198,9 @@ void SandboxCore::DoUninstallDebugSandbox(std::vector<std::string> &bundleList, 
         if (srcPathChr == nullptr || sandboxPathChr == nullptr) {
             return 0;
         }
-        std::string sandboxPath(sandboxPathChr);
+        std::string tmpSandboxPath = sandboxPathChr;
         for (const auto& currentBundle : bundleList) {
-            sandboxPath = currentBundle + sandboxPath;
+            std::string sandboxPath = currentBundle + tmpSandboxPath;
             APPSPAWN_LOGV("DoUninstallDebugSandbox with path %{public}s", sandboxPath.c_str());
             APPSPAWN_CHECK(access(sandboxPath.c_str(), F_OK) == 0, return 0,
                 "Invalid path %{public}s", sandboxPath.c_str());
@@ -1283,7 +1283,12 @@ int32_t SandboxCore::UninstallDebugSandbox(AppSpawnMgr *content, AppSpawningCtx 
 
         cJSON *permissionChild = debugPermissionConfig->child;
         while (permissionChild != nullptr) {
-            DoUninstallDebugSandbox(bundleList, permissionChild);
+            cJSON *permissionMountPaths = cJSON_GetArrayItem(permissionChild, 0);
+            if (!permissionMountPaths) {
+                permissionChild = permissionChild->next;
+                continue;
+            }
+            DoUninstallDebugSandbox(bundleList, permissionMountPaths);
             permissionChild = permissionChild->next;
         }
     }

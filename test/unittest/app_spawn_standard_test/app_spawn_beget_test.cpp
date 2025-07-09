@@ -163,9 +163,6 @@ HWTEST_F(AppSpawnBegetCtlTest, App_Spawn_BetgetCtl_004, TestSize.Level0)
     AppSpawningCtx *property = nullptr;
     int ret = -1;
     do {
-        // add default
-        AddDefaultVariable();
-
         // create msg
         ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
         APPSPAWN_CHECK(ret == 0, break, "Failed to create reqMgr %{public}s", APPSPAWN_SERVER_NAME);
