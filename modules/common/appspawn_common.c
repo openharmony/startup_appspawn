@@ -553,7 +553,7 @@ static int SpawnSetProperties(AppSpawnMgr *content, AppSpawningCtx *property)
     ret = SetCapabilities(content, property);
     APPSPAWN_CHECK_ONLY_EXPER(ret == 0, return ret);
 
-    ret = SetSelinuxCon(content, property) == -1;
+    ret = SetSelinuxCon(content, property);
     APPSPAWN_CHECK_ONLY_EXPER(ret == 0, return ret);
 
     ret = WaitForDebugger(property);
