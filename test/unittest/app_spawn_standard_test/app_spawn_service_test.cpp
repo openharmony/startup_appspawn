@@ -63,34 +63,27 @@ public:
 };
 
 /**
- * @brief 正常消息发送和接收，完整应用孵化过程
+ * @brief 向appspawn发送MSG_APP_SPAWN类型的消息
+ * @note 预期结果：appspawn接收到请求消息，孵化应用进程
  *
  */
-HWTEST_F(AppSpawnServiceTest, App_Spawn_001, TestSize.Level0)
+HWTEST_F(AppSpawnServiceTest, App_Spawn_MSG_APP_SPAWN_001, TestSize.Level0)
 {
     int ret = 0;
     AppSpawnClientHandle clientHandle = nullptr;
     do {
-        APPSPAWN_LOGV("App_Spawn_001 start");
         ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
         APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", APPSPAWN_SERVER_NAME);
         AppSpawnReqMsgHandle reqHandle = testServer->CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
 
-        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_NO_SANDBOX);
-        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_DEBUGGABLE);
-        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_NATIVEDEBUG);
-        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_BUNDLE_RESOURCES);
-        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_ACCESS_BUNDLE_DIR);
-
         AppSpawnResult result = {};
         ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
-        APPSPAWN_LOGV("App_Spawn_001 recv result %{public}d  %{public}d", result.result, result.pid);
-        APPSPAWN_CHECK(ret == 0, break, "Failed to send msg %{public}d", ret);
-        if (ret == 0 && result.pid > 0) {
-            APPSPAWN_LOGV("App_Spawn_001 Kill pid %{public}d ", result.pid);
-            DumpSpawnStack(result.pid);
-            kill(result.pid, SIGKILL);
-        }
+        APPSPAWN_CHECK(ret == 0 && result.pid > 0, ret = -1;
+            break, "Failed to send MSG_APP_SPAWN, ret %{public}d pid %{public}d", ret, result.pid);
+
+        DumpSpawnStack(result.pid);
+        ret = kill(result.pid, SIGKILL);
+        APPSPAWN_CHECK(ret == 0, break, "unable to kill pid %{public}d, err %{public}d", result.pid, errno);
     } while (0);
 
     AppSpawnClientDestroy(clientHandle);
@@ -98,33 +91,73 @@ HWTEST_F(AppSpawnServiceTest, App_Spawn_001, TestSize.Level0)
 }
 
 /**
- * @brief 模拟测试，孵化进程退出后，MSG_GET_RENDER_TERMINATION_STATUS
+ * @brief 通过多线程模拟多个客户端向appspawn发送MSG_APP_SPAWN类型的消息
+ * @note 预期结果：appspawn接收到请求消息，逐个孵化应用进程
  *
  */
-HWTEST_F(AppSpawnServiceTest, App_Spawn_002, TestSize.Level0)
+HWTEST_F(AppSpawnServiceTest, App_Spawn_MSG_APP_SPAWN_002, TestSize.Level0)
 {
     int ret = 0;
     AppSpawnClientHandle clientHandle = nullptr;
     do {
-        APPSPAWN_LOGV("App_Spawn_002 start");
+        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", APPSPAWN_SERVER_NAME);
+
+        auto sendMsg = [this, &ret](AppSpawnClientHandle clientHandle) {
+            AppSpawnReqMsgHandle reqHandle = testServer->CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+
+            AppSpawnResult result = {};
+            ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
+            APPSPAWN_CHECK(ret == 0 && result.pid > 0, ret = -1;
+                return, "Failed to send MSG_APP_SPAWN, ret %{public}d pid %{public}d", ret, result.pid);
+
+            ret = kill(result.pid, SIGKILL);
+            APPSPAWN_CHECK(ret == 0, return, "unable to kill pid %{public}d, err %{public}d", result.pid, errno);
+        };
+        std::thread thread1(sendMsg, clientHandle);
+        std::thread thread2(sendMsg, clientHandle);
+        std::thread thread3(sendMsg, clientHandle);
+        std::thread thread4(sendMsg, clientHandle);
+        std::thread thread5(sendMsg, clientHandle);
+        thread1.join();
+        thread2.join();
+        thread3.join();
+        thread4.join();
+        thread5.join();
+    } while (0);
+
+    AppSpawnClientDestroy(clientHandle);
+    ASSERT_EQ(ret, 0);
+}
+
+/**
+ * @brief appspawn孵化的应用进程退出后，向appspawn发送MSG_GET_RENDER_TERMINATION_STATUS类型的消息
+ * @note 预期结果：appspawn不支持处理该类型消息，不会根据消息中传入的pid去查询进程的退出状态
+ *
+ */
+HWTEST_F(AppSpawnServiceTest, App_Spawn_MSG_GET_RENDER_TERMINATION_STATUS_001, TestSize.Level0)
+{
+    int ret = 0;
+    AppSpawnClientHandle clientHandle = nullptr;
+    do {
         ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
         APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", APPSPAWN_SERVER_NAME);
         AppSpawnReqMsgHandle reqHandle = testServer->CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+
         AppSpawnResult result = {};
         ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
-        APPSPAWN_LOGV("App_Spawn_002 recv result %{public}d  %{public}d", result.result, result.pid);
-        if (ret != 0 || result.pid == 0) {
-            ret = -1;
-            break;
-        }
-        // stop child and termination
-        APPSPAWN_LOGI("App_Spawn_002 Kill pid %{public}d ", result.pid);
-        kill(result.pid, SIGKILL);
-        // MSG_GET_RENDER_TERMINATION_STATUS
-        ret = AppSpawnTerminateMsgCreate(result.pid, &reqHandle);
+        APPSPAWN_CHECK(ret == 0 && result.pid > 0, ret = -1;
+            break, "Failed to send MSG_APP_SPAWN, ret %{public}d pid %{public}d", ret, result.pid);
+
+        ret = kill(result.pid, SIGKILL);
+        APPSPAWN_CHECK(ret == 0, break, "unable to kill pid %{public}d, err %{public}d", result.pid, errno);
+
+        ret = AppSpawnTerminateMsgCreate(result.pid, &reqHandle);   // MSG_GET_RENDER_TERMINATION_STATUS
         APPSPAWN_CHECK(ret == 0, break, "Failed to create termination msg %{public}s", APPSPAWN_SERVER_NAME);
+
         ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
-        APPSPAWN_LOGV("Send MSG_GET_RENDER_TERMINATION_STATUS %{public}d", ret);
+        APPSPAWN_CHECK(ret == 0 && result.result == APPSPAWN_MSG_INVALID, ret = -1;
+            break, "Failed to send MSG_GET_RENDER_TERMINATION_STATUS, ret %{public}d", ret);
     } while (0);
 
     AppSpawnClientDestroy(clientHandle);
@@ -132,61 +165,11 @@ HWTEST_F(AppSpawnServiceTest, App_Spawn_002, TestSize.Level0)
 }
 
 /**
- * @brief 模拟测试，MSG_GET_RENDER_TERMINATION_STATUS 关闭孵化进程
+ * @brief 向appspawn发送MSG_SPAWN_NATIVE_PROCESS类型的消息
+ * @note 预期结果：appspawn接收到请求消息，孵化native进程
  *
  */
-HWTEST_F(AppSpawnServiceTest, App_Spawn_003, TestSize.Level0)
-{
-    int ret = 0;
-    AppSpawnClientHandle clientHandle = nullptr;
-    do {
-        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
-        APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", APPSPAWN_SERVER_NAME);
-        AppSpawnReqMsgHandle reqHandle = testServer->CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
-        AppSpawnResult result = {};
-        ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
-        APPSPAWN_LOGV("App_Spawn_003 recv result %{public}d  %{public}d", result.result, result.pid);
-        if (ret != 0 || result.pid == 0) {
-            ret = -1;
-            break;
-        }
-        // MSG_GET_RENDER_TERMINATION_STATUS
-        ret = AppSpawnTerminateMsgCreate(result.pid, &reqHandle);
-        APPSPAWN_CHECK(ret == 0, break, "Failed to create termination msg %{public}s", APPSPAWN_SERVER_NAME);
-        ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
-        APPSPAWN_LOGV("Send MSG_GET_RENDER_TERMINATION_STATUS %{public}d", ret);
-    } while (0);
-
-    AppSpawnClientDestroy(clientHandle);
-    ASSERT_EQ(ret, 0);
-}
-
-/**
- * @brief dump 消息
- *
- */
-HWTEST_F(AppSpawnServiceTest, App_Spawn_004, TestSize.Level0)
-{
-    int ret = 0;
-    AppSpawnClientHandle clientHandle = nullptr;
-    do {
-        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
-        APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", APPSPAWN_SERVER_NAME);
-        AppSpawnReqMsgHandle reqHandle = testServer->CreateMsg(clientHandle, MSG_DUMP, 0);
-        AppSpawnResult result = {};
-        ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
-        APPSPAWN_CHECK(ret == 0, break, "Failed to send msg %{public}d", ret);
-    } while (0);
-
-    AppSpawnClientDestroy(clientHandle);
-    ASSERT_EQ(ret, 0);
-}
-
-/**
- * @brief MSG_SPAWN_NATIVE_PROCESS 正常消息发送和接收，完整应用孵化过程
- *
- */
-HWTEST_F(AppSpawnServiceTest, App_Spawn_005, TestSize.Level0)
+HWTEST_F(AppSpawnServiceTest, App_Spawn_MSG_SPAWN_NATIVE_PROCESS_001, TestSize.Level0)
 {
     int ret = 0;
     AppSpawnClientHandle clientHandle = nullptr;
@@ -195,18 +178,13 @@ HWTEST_F(AppSpawnServiceTest, App_Spawn_005, TestSize.Level0)
         APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", APPSPAWN_SERVER_NAME);
         AppSpawnReqMsgHandle reqHandle = testServer->CreateMsg(clientHandle, MSG_SPAWN_NATIVE_PROCESS, 0);
 
-        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_DEBUGGABLE);
-        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_NATIVEDEBUG);
-        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_BUNDLE_RESOURCES);
-        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_ACCESS_BUNDLE_DIR);
-
         AppSpawnResult result = {};
         ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
-        APPSPAWN_CHECK(ret == 0, break, "Failed to send msg %{public}d", ret);
-        if (ret == 0 && result.pid > 0) {
-            APPSPAWN_LOGI("App_Spawn_005 Kill pid %{public}d ", result.pid);
-            kill(result.pid, SIGKILL);
-        }
+        APPSPAWN_CHECK(ret == 0 && result.pid > 0, ret = -1;
+            break, "Failed to send MSG_SPAWN_NATIVE_PROCESS, ret %{public}d pid %{public}d", ret, result.pid);
+
+        ret = kill(result.pid, SIGKILL);
+        APPSPAWN_CHECK(ret == 0, break, "unable to kill pid %{public}d, err %{public}d", result.pid, errno);
     } while (0);
 
     AppSpawnClientDestroy(clientHandle);
@@ -214,47 +192,310 @@ HWTEST_F(AppSpawnServiceTest, App_Spawn_005, TestSize.Level0)
 }
 
 /**
- * @brief 多线程发送消息
+ * @brief appspawn孵化应用进程后，向appspawn发送MSG_DUMP类型的消息
+ * @note 预期结果：appspawn接收到请求消息，dump打印出appQueue等信息
  *
  */
-HWTEST_F(AppSpawnServiceTest, App_Spawn_006, TestSize.Level0)
+HWTEST_F(AppSpawnServiceTest, App_Spawn_MSG_DUMP_001, TestSize.Level0)
 {
     int ret = 0;
     AppSpawnClientHandle clientHandle = nullptr;
     do {
         ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
         APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", APPSPAWN_SERVER_NAME);
-        auto sendMsg = [this](AppSpawnClientHandle clientHandle) {
-            AppSpawnReqMsgHandle reqHandle = testServer->CreateMsg(clientHandle, MSG_SPAWN_NATIVE_PROCESS, 0);
+        AppSpawnReqMsgHandle reqHandle = testServer->CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
 
-            AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_DEBUGGABLE);
-            AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_NATIVEDEBUG);
-            AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_BUNDLE_RESOURCES);
-            AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_ACCESS_BUNDLE_DIR);
+        AppSpawnResult result = {};
+        ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
+        APPSPAWN_CHECK(ret == 0 && result.pid > 0, ret = -1;
+            break, "Failed to send MSG_APP_SPAWN, ret %{public}d pid %{public}d", ret, result.pid);
 
-            AppSpawnResult result = {};
-            int ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
-            APPSPAWN_CHECK(ret == 0, return, "Failed to send msg %{public}d", ret);
-            if (ret == 0 && result.pid > 0) {
-                printf("App_Spawn_006 Kill pid %d \n", result.pid);
-                kill(result.pid, SIGKILL);
-            }
-            ASSERT_EQ(ret, 0);
-        };
-        std::thread thread1(sendMsg, clientHandle);
-        std::thread thread2(sendMsg, clientHandle);
-        std::thread thread3(sendMsg, clientHandle);
-        std::thread thread4(sendMsg, clientHandle);
-        std::thread thread5(sendMsg, clientHandle);
-
-        thread1.join();
-        thread2.join();
-        thread3.join();
-        thread4.join();
-        thread5.join();
+        reqHandle = testServer->CreateMsg(clientHandle, MSG_DUMP, 0);
+        ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to send MSG_DUMP, ret %{public}d", ret);
     } while (0);
+
     AppSpawnClientDestroy(clientHandle);
     ASSERT_EQ(ret, 0);
+}
+
+/**
+ * @brief 非开发者模式下，向appspawn发送MSG_BEGET_CMD类型的消息
+ * @note 预期结果：非开发者模式下，appspawn不支持处理该类型消息，不会根据消息中传入的pid进入应用沙箱
+ *
+ */
+HWTEST_F(AppSpawnServiceTest, App_Spawn_MSG_BEGET_CMD_001, TestSize.Level0)
+{
+    int ret = 0;
+    AppSpawnClientHandle clientHandle = nullptr;
+    SetDeveloperMode(false);
+    do {
+        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", APPSPAWN_SERVER_NAME);
+        AppSpawnReqMsgHandle reqHandle = testServer->CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+
+        AppSpawnResult result = {};
+        ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
+        APPSPAWN_CHECK(ret == 0 && result.pid > 0, ret = -1;
+            break, "Failed to send MSG_APP_SPAWN, ret %{public}d pid %{public}d", ret, result.pid);
+
+        reqHandle = testServer->CreateMsg(clientHandle, MSG_BEGET_CMD, 0);
+        ret = AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_BEGETCTL_BOOT);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to set msg flag 0x%{public}x", APP_FLAGS_BEGETCTL_BOOT);
+        ret = AppSpawnReqMsgAddStringInfo(reqHandle, MSG_EXT_NAME_BEGET_PID, std::to_string(result.pid).c_str());
+        APPSPAWN_CHECK(ret == 0, break, "Failed to add MSG_EXT_NAME_BEGET_PID %{public}d", result.pid);
+        ret = AppSpawnReqMsgAddStringInfo(reqHandle, MSG_EXT_NAME_BEGET_PTY_NAME, "/dev/pts/1");
+        APPSPAWN_CHECK(ret == 0, break, "Failed to add MSG_EXT_NAME_BEGET_PTY_NAME %{public}s", "/dev/pts/1");
+    
+        ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
+        APPSPAWN_CHECK(ret == 0 && result.result == APPSPAWN_DEBUG_MODE_NOT_SUPPORT, ret = -1;
+            break, "Failed to send MSG_BEGET_CMD, ret %{public}d result %{public}d", ret, result.result);
+    } while (0);
+
+    SetDeveloperMode(true);
+    AppSpawnClientDestroy(clientHandle);
+    ASSERT_EQ(ret, 0);
+}
+
+/**
+ * @brief 向appspawn发送MSG_BEGET_SPAWNTIME类型的消息
+ * @note 预期结果：appspawn接收到请求消息，获取appspawn启动时各hook执行的最小时间(result.result)和最大时间(result.pid)
+ *
+ */
+HWTEST_F(AppSpawnServiceTest, App_Spawn_MSG_BEGET_SPAWNTIME_001, TestSize.Level0)
+{
+    int ret = 0;
+    AppSpawnClientHandle clientHandle = nullptr;
+    int minAppspawnTime = 0;
+    int maxAppspawnTime = APPSPAWN_MAX_TIME;
+    do {
+        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", APPSPAWN_SERVER_NAME);
+        AppSpawnReqMsgHandle reqHandle = testServer->CreateMsg(clientHandle, MSG_BEGET_SPAWNTIME, 0);
+
+        AppSpawnResult result = {};
+        ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
+        minAppspawnTime = result.result;
+        maxAppspawnTime = result.pid;
+        APPSPAWN_CHECK(ret == 0, break, "Failed to send MSG_BEGET_SPAWNTIME, ret %{public}d", ret);
+    } while (0);
+
+    AppSpawnClientDestroy(clientHandle);
+    EXPECT_GT(minAppspawnTime, 0);
+    EXPECT_LT(maxAppspawnTime, APPSPAWN_MAX_TIME);
+    ASSERT_EQ(ret, 0);
+}
+
+/**
+ * @brief 向appspawn发送MSG_UPDATE_MOUNT_POINTS类型的消息
+ * @note 预期结果：appspawn接收到请求消息，遍历沙箱包名更新挂载点
+ *
+ */
+HWTEST_F(AppSpawnServiceTest, App_Spawn_MSG_UPDATE_MOUNT_POINTS_001, TestSize.Level0)
+{
+    int ret = 0;
+    AppSpawnClientHandle clientHandle = nullptr;
+    do {
+        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", APPSPAWN_SERVER_NAME);
+        AppSpawnReqMsgHandle reqHandle = testServer->CreateMsg(clientHandle, MSG_UPDATE_MOUNT_POINTS, 0);
+
+        AppSpawnResult result = {};
+        ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
+        APPSPAWN_CHECK(ret == 0 && result.result == 0, ret = -1;
+            break, "Failed to send MSG_UPDATE_MOUNT_POINTS, ret %{public}d result %{public}d", ret, result.result);
+    } while (0);
+
+    AppSpawnClientDestroy(clientHandle);
+    ASSERT_EQ(ret, 0);
+}
+
+/**
+ * @brief 向appspawn发送MSG_RESTART_SPAWNER类型的消息
+ * @note 预期结果：appspawn不支持处理该类型消息，返回APPSPAWN_MSG_INVALID
+ *
+ */
+HWTEST_F(AppSpawnServiceTest, App_Spawn_MSG_RESTART_SPAWNER_001, TestSize.Level0)
+{
+    int ret = 0;
+    AppSpawnClientHandle clientHandle = nullptr;
+    do {
+        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", APPSPAWN_SERVER_NAME);
+        AppSpawnReqMsgHandle reqHandle = testServer->CreateMsg(clientHandle, MSG_RESTART_SPAWNER, 0);
+
+        AppSpawnResult result = {};
+        ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
+        APPSPAWN_CHECK(ret == 0 && result.result == APPSPAWN_MSG_INVALID, ret = -1;
+            break, "Failed to send MSG_RESTART_SPAWNER, ret %{public}d result %{public}d", ret, result.result);
+    } while (0);
+
+    AppSpawnClientDestroy(clientHandle);
+    ASSERT_EQ(ret, 0);
+}
+
+/**
+ * @brief appspawn孵化debuggable应用后，向appspawn发送MSG_DEVICE_DEBUG类型的消息
+ * @note 预期结果：appspawn接收到请求消息，根据消息中传入的debuggable应用pid和signal杀死先前孵化的应用
+ *
+ */
+HWTEST_F(AppSpawnServiceTest, App_Spawn_MSG_DEVICE_DEBUG_001, TestSize.Level0)
+{
+    int ret = 0;
+    AppSpawnClientHandle clientHandle = nullptr;
+    do {
+        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", APPSPAWN_SERVER_NAME);
+        AppSpawnReqMsgHandle reqHandle = testServer->CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+        ret = AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_DEBUGGABLE);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to set msg flag 0x%{public}x", APP_FLAGS_DEBUGGABLE);
+
+        AppSpawnResult result = {};
+        ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
+        APPSPAWN_CHECK(ret == 0 && result.pid > 0, ret = -1;
+            break, "Failed to send MSG_APP_SPAWN, ret %{public}d pid %{public}d", ret, result.pid);
+
+        reqHandle = testServer->CreateMsg(clientHandle, MSG_DEVICE_DEBUG, 0);
+        char buffer[256] = {0};
+        ret = snprintf_s(buffer, sizeof(buffer), sizeof(buffer) - 1,
+            "{ \"app\": %d, \"op\": \"kill\", \"args\": { \"signal\": 9 } }", result.pid);
+        APPSPAWN_CHECK(ret > 0, ret = -1;
+            break, "Failed to snprintf_s devicedebug extra info, err %{public}d", errno);
+        ret = AppSpawnReqMsgAddStringInfo(reqHandle, "devicedebug", buffer);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to add devicedebug extra info %{public}s", buffer);
+    
+        ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
+        APPSPAWN_CHECK(ret == 0 && result.result == 0, ret = -1;
+            break, "Failed to send MSG_DEVICE_DEBUG, ret %{public}d result %{public}d", ret, result.result);
+    } while (0);
+
+    AppSpawnClientDestroy(clientHandle);
+    ASSERT_EQ(ret, 0);
+}
+
+/**
+ * @brief appspawn孵化非debuggable应用后，向appspawn发送MSG_DEVICE_DEBUG类型的消息
+ * @note 预期结果：appspawn接收到请求消息，但不支持向非debuggable应用发送signal
+ *
+ */
+HWTEST_F(AppSpawnServiceTest, App_Spawn_MSG_DEVICE_DEBUG_002, TestSize.Level0)
+{
+    int ret = 0;
+    AppSpawnClientHandle clientHandle = nullptr;
+    do {
+        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", APPSPAWN_SERVER_NAME);
+        AppSpawnReqMsgHandle reqHandle = testServer->CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+
+        AppSpawnResult result = {};
+        ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
+        APPSPAWN_CHECK(ret == 0 && result.pid > 0, ret = -1;
+            break, "Failed to send MSG_APP_SPAWN, ret %{public}d pid %{public}d", ret, result.pid);
+
+        reqHandle = testServer->CreateMsg(clientHandle, MSG_DEVICE_DEBUG, 0);
+        char buffer[256] = {0};
+        ret = snprintf_s(buffer, sizeof(buffer), sizeof(buffer) - 1,
+            "{ \"app\": %d, \"op\": \"kill\", \"args\": { \"signal\": 9 } }", result.pid);
+        APPSPAWN_CHECK(ret > 0, ret = -1;
+            break, "Failed to snprintf_s devicedebug extra info, err %{public}d", errno);
+        ret = AppSpawnReqMsgAddStringInfo(reqHandle, "devicedebug", buffer);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to add devicedebug extra info %{public}s", buffer);
+    
+        ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
+        APPSPAWN_CHECK(ret == 0 && result.result == APPSPAWN_DEVICEDEBUG_ERROR_APP_NOT_DEBUGGABLE, ret = -1;
+            break, "Failed to send MSG_DEVICE_DEBUG, ret %{public}d result %{public}d", ret, result.result);
+    } while (0);
+
+    AppSpawnClientDestroy(clientHandle);
+    ASSERT_EQ(ret, 0);
+}
+
+/**
+ * @brief appspawn孵化带debug沙箱的应用后，向appspawn发送MSG_UNINSTALL_DEBUG_HAP类型的消息
+ * @note 预期结果：appspawn接收到请求消息，卸载掉指定用户下的所有debug沙箱
+ *
+ */
+HWTEST_F(AppSpawnServiceTest, App_Spawn_MSG_UNINSTALL_DEBUG_HAP_001, TestSize.Level0)
+{
+    int ret = 0;
+    AppSpawnClientHandle clientHandle = nullptr;
+    do {
+        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", APPSPAWN_SERVER_NAME);
+        AppSpawnReqMsgHandle reqHandle = testServer->CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+        ret = AppSpawnReqMsgAddStringInfo(reqHandle, MSG_EXT_NAME_PROVISION_TYPE, "debug");
+        APPSPAWN_CHECK(ret == 0, break, "Failed to add MSG_EXT_NAME_PROVISION_TYPE %{public}s", "debug");
+
+        AppSpawnResult result = {};
+        ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
+        APPSPAWN_CHECK(ret == 0 && result.pid > 0, ret = -1;
+            break, "Failed to send MSG_APP_SPAWN, ret %{public}d pid %{public}d", ret, result.pid);
+
+        reqHandle = testServer->CreateMsg(clientHandle, MSG_UNINSTALL_DEBUG_HAP, 0);
+        ret = AppSpawnReqMsgAddStringInfo(reqHandle, MSG_EXT_NAME_USERID, "100");
+        APPSPAWN_CHECK(ret == 0, break, "Failed to add MSG_EXT_NAME_USERID %{public}s", "100");
+    
+        ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
+        APPSPAWN_CHECK(ret == 0 && result.result == 0, ret = -1;
+            break, "Failed to send MSG_UNINSTALL_DEBUG_HAP, ret %{public}d result %{public}d", ret, result.result);
+    } while (0);
+
+    AppSpawnClientDestroy(clientHandle);
+    ASSERT_EQ(ret, 0);
+}
+
+/**
+ * @brief 向appspawn发送MSG_LOCK_STATUS类型的消息
+ * @note 预期结果：appspawn接收到请求消息，根据消息中的传入的解锁状态对lockstatus参数进行设值
+ *
+ */
+HWTEST_F(AppSpawnServiceTest, App_Spawn_MSG_LOCK_STATUS_001, TestSize.Level0)
+{
+    int ret = 0;
+    AppSpawnClientHandle clientHandle = nullptr;
+    do {
+        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", APPSPAWN_SERVER_NAME);
+        AppSpawnReqMsgHandle reqHandle = testServer->CreateMsg(clientHandle, MSG_LOCK_STATUS, 0);
+
+        char lockstatus[8] = {0};
+        ret = snprintf_s(lockstatus, sizeof(lockstatus), sizeof(lockstatus) - 1, "%u:%d", 100, 0);
+        APPSPAWN_CHECK(ret > 0, ret = -1;
+            break, "Failed to snprintf_s lockstatus extra info, err %{public}d", errno);
+        ret = AppSpawnReqMsgAddStringInfo(reqHandle, "lockstatus", lockstatus);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to add lockstatus extra info %{public}s", lockstatus);
+    
+        AppSpawnResult result = {};
+        ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
+        APPSPAWN_CHECK(ret == 0 && result.result == 0, ret = -1;
+            break, "Failed to send MSG_LOCK_STATUS, ret %{public}d result %{public}d", ret, result.result);
+    } while (0);
+
+    AppSpawnClientDestroy(clientHandle);
+    ASSERT_EQ(ret, 0);
+}
+
+/**
+ * @brief 向appspawn发送MAX_TYPE_INVALID类型的消息
+ * @note 预期结果：不支持创建该类型消息，发送失败，appspawn接收不到该消息请求
+ *
+ */
+HWTEST_F(AppSpawnServiceTest, App_Spawn_MAX_TYPE_INVALID_001, TestSize.Level0)
+{
+    int ret = 0;
+    AppSpawnClientHandle clientHandle = nullptr;
+    do {
+        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", APPSPAWN_SERVER_NAME);
+        AppSpawnReqMsgHandle reqHandle = testServer->CreateMsg(clientHandle, MAX_TYPE_INVALID, 0);
+
+        AppSpawnResult result = {};
+        ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
+        APPSPAWN_CHECK(ret == APPSPAWN_ARG_INVALID, break, "Failed to send MAX_TYPE_INVALID, ret %{public}d", ret);
+    } while (0);
+
+    AppSpawnClientDestroy(clientHandle);
+    ASSERT_EQ(ret, APPSPAWN_ARG_INVALID);
 }
 
 HWTEST_F(AppSpawnServiceTest, App_Spawn_Msg_001, TestSize.Level0)

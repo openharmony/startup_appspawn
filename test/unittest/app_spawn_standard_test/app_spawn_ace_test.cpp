@@ -106,9 +106,9 @@ HWTEST_F(AppSpawnAceTest, App_Spawn_Ace_Preload_004, TestSize.Level0)
     mgr->content.longProcName = const_cast<char *>(APPSPAWN_SERVER_NAME);
     mgr->content.longProcNameLen = APP_LEN_PROC_NAME;
 
-    SetBoolParamResult("presist.appspwn.preload", true);
+    SetBoolParamResult("persist.appspawn.preload", true);
     int ret = PreLoadAppSpawn(mgr);
-    SetBoolParamResult("presist.appspwn.preload", false);
+    SetBoolParamResult("persist.appspawn.preload", false);
     DeleteAppSpawnMgr(mgr);
     EXPECT_EQ(ret, 0);
 }
@@ -125,11 +125,11 @@ HWTEST_F(AppSpawnAceTest, App_Spawn_Ace_Preload_005, TestSize.Level0)
     mgr->content.longProcName = const_cast<char *>(APPSPAWN_SERVER_NAME);
     mgr->content.longProcNameLen = APP_LEN_PROC_NAME;
 
-    SetBoolParamResult("presist.appspwn.preload", true);
-    SetBoolParamResult("presist.appspwn.preloadets", true);
+    SetBoolParamResult("persist.appspawn.preload", true);
+    SetBoolParamResult("persist.appspawn.preloadets", true);
     int ret = PreLoadAppSpawn(mgr);
-    SetBoolParamResult("presist.appspwn.preload", false);
-    SetBoolParamResult("presist.appspwn.preloadets", false);
+    SetBoolParamResult("persist.appspawn.preload", false);
+    SetBoolParamResult("persist.appspawn.preloadets", false);
     DeleteAppSpawnMgr(mgr);
     EXPECT_EQ(ret, 0);
 }

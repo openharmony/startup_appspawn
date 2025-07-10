@@ -237,6 +237,9 @@ int AccessStub(const char *pathName, int mode)
     if (strstr(pathName, "/mnt/sandbox/50/com.example.myapplication/data/storage/el2") != NULL) {
         return -1;
     }
+    if (strstr(pathName, "/mnt/sandbox/100/debug_hap/com.example.myapplication/data/storage/el2") != NULL) {
+        return -1;
+    }
     if (strstr(pathName, "/data/app/el5/100/base/com.example.myapplication") != NULL) {
         return -1;
     }

@@ -143,9 +143,6 @@ int SetSelinuxCon(const AppSpawnMgr *content, const AppSpawningCtx *property)
     HapDomainInfo hapDomainInfo;
     SetHapDomainInfo(&hapDomainInfo, property, msgDomainInfo, appInfo);
     int32_t ret = hapContext.HapDomainSetcontext(hapDomainInfo);
-    if (CheckAppMsgFlagsSet(property, APP_FLAGS_ASANENABLED)) {
-        ret = 0;
-    }
     APPSPAWN_CHECK(ret == 0, return APPSPAWN_ACCESS_TOKEN_INVALID,
         "Set domain context failed, ret: %{public}d %{public}s", ret, GetProcessName(property));
     APPSPAWN_LOGV("SetSelinuxCon success for %{public}s", GetProcessName(property));
