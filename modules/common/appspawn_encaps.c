@@ -25,45 +25,44 @@
 #include "appspawn_hook.h"
 #include "appspawn_manager.h"
 #include "appspawn_utils.h"
+#include "appspawn_encaps.h"
 
 #define APP_ENCAPS "encaps"
 #define APP_OHOS_ENCAPS_COUNT_KEY "ohos.encaps.count"
 #define APP_OHOS_ENCAPS_FORK_KEY "ohos.encaps.fork.count"
+#define APP_OHOS_ENCAPS_PERMISSIONS_KEY "permissions"
 
 #define MSG_EXT_NAME_MAX_DECIMAL       10
 #define OH_APP_MAX_PIDS_NUM            512
 #define OH_ENCAPS_PROC_TYPE_BASE       0x18
-#define OH_ENCAPS_PERMISSION_TYPE_BASE 0x1A
+#define OH_ENCAPS_PERMISSION_TYPE_BASE 0x1E
 #define OH_ENCAPS_MAGIC                'E'
 #define OH_PROC_HAP                    4
 #define OH_ENCAPS_DEFAULT_FLAG         0
 #define OH_ENCAPS_DEFAULT_STR          ""
+// permission value max len is 512
+#define OH_ENCAPS_VALUE_MAX_LEN 512
+// encapsCount max count is 64
+#define OH_ENCAPS_MAX_COUNT 64
 
 #define SET_ENCAPS_PROC_TYPE_CMD _IOW(OH_ENCAPS_MAGIC, OH_ENCAPS_PROC_TYPE_BASE, uint32_t)
-#define SET_ENCAPS_PERMISSION_TYPE_CMD _IOW(OH_ENCAPS_MAGIC, OH_ENCAPS_PERMISSION_TYPE_BASE, char *)
+#define SET_ENCAPS_PERMISSION_TYPE_CMD _IOW(OH_ENCAPS_MAGIC, OH_ENCAPS_PERMISSION_TYPE_BASE, UserEncaps)
 
-typedef enum {
-    ENCAPS_PROC_TYPE_MODE,        // enable the encaps attribute of a process
-    ENCAPS_PERMISSION_TYPE_MODE,  // set the encaps permission of a process
-    ENCAPS_MAX_TYPE_MODE
-} AppSpawnEncapsBaseType;
-
-static int OpenEncapsFile(void)
+APPSPAWN_STATIC int OpenEncapsFile(void)
 {
     int fd = 0;
-    fd = open("dev/encaps", O_RDWR);
+    fd = open("/dev/encaps", O_RDWR);
     if (fd < 0) {
         APPSPAWN_LOGW("Failed to open encaps file errno: %{public}d", errno);
     }
     return fd;
 }
 
-static int WriteEncapsInfo(int fd, AppSpawnEncapsBaseType encapsType, const char *encapsInfo, uint32_t flag)
+APPSPAWN_STATIC int WriteEncapsInfo(int fd, AppSpawnEncapsBaseType encapsType, const void *encapsInfo, uint32_t flag)
 {
     if (encapsInfo == NULL) {
         return APPSPAWN_ARG_INVALID;
     }
-    APPSPAWN_LOGV("root object: %{public}s", encapsInfo);
 
     int ret = 0;
     switch (encapsType) {
@@ -74,10 +73,11 @@ static int WriteEncapsInfo(int fd, AppSpawnEncapsBaseType encapsType, const char
             ret = ioctl(fd, SET_ENCAPS_PERMISSION_TYPE_CMD, encapsInfo);
             break;
         default:
+            ret = APPSPAWN_ARG_INVALID;
             break;
     }
     if (ret != 0) {
-        APPSPAWN_LOGE("Encaps the setup failed ret: %{public}d fd: %{public}d maxPid: %{public}s", ret, fd, encapsInfo);
+        APPSPAWN_LOGE("Encaps the setup failed ret: %{public}d fd: %{public}d", ret, fd);
         return ret;
     }
     return 0;
@@ -89,7 +89,7 @@ APPSPAWN_STATIC int EnableEncapsForProc(int encapsFileFd)
     return WriteEncapsInfo(encapsFileFd, ENCAPS_PROC_TYPE_MODE, OH_ENCAPS_DEFAULT_STR, flag);
 }
 
-static uint32_t SpawnGetMaxPids(AppSpawnMgr *content, AppSpawningCtx *property)
+APPSPAWN_STATIC uint32_t SpawnGetMaxPids(AppSpawningCtx *property)
 {
     uint32_t len = 0;
     char *pidMaxStr = GetAppPropertyExt(property, MSG_EXT_NAME_MAX_CHILD_PROCCESS_MAX, &len);
@@ -108,26 +108,6 @@ static uint32_t SpawnGetMaxPids(AppSpawnMgr *content, AppSpawningCtx *property)
     return 0;
 }
 
-/* set ohos.encaps.fork.count to encaps */
-static int SpawnSetMaxPids(AppSpawnMgr *content, AppSpawningCtx *property, cJSON *encaps)
-{
-    uint32_t maxPidCount = 0;
-    if (GetAppSpawnMsgType(property) != MSG_SPAWN_NATIVE_PROCESS) {
-        maxPidCount = SpawnGetMaxPids(content, property);
-    }
-    if (maxPidCount == 0 || maxPidCount > OH_APP_MAX_PIDS_NUM) {
-        APPSPAWN_LOGV("Don't need to set pid max count. Use default pid max");
-        return APPSPAWN_PIDMGR_DEFAULT_PID_MAX;
-    }
-
-    if (cJSON_AddNumberToObject(encaps, APP_OHOS_ENCAPS_FORK_KEY, maxPidCount) == NULL) {
-        APPSPAWN_LOGV("Add number to object failed.(ignore)");
-        return APPSPAWN_PIDMGR_DEFAULT_PID_MAX;
-    }
-
-    return 0;
-}
-
 static inline cJSON *GetJsonObjFromExtInfo(const AppSpawningCtx *property, const char *name)
 {
     uint32_t size = 0;
@@ -141,196 +121,266 @@ static inline cJSON *GetJsonObjFromExtInfo(const AppSpawningCtx *property, const
     return extInfoJson;
 }
 
-APPSPAWN_STATIC int AddPermissionArrayToItem(cJSON *encaps, const char *key, cJSON *permissionItemArr)
+APPSPAWN_STATIC int AddPermissionStrToValue(const char *valueStr, UserEncap *encap)
 {
+    APPSPAWN_CHECK(valueStr != NULL, return APPSPAWN_ARG_INVALID, "Invalid string value");
+    uint32_t valueLen = strlen(valueStr) + 1;
+    APPSPAWN_CHECK(valueLen > 1 && valueLen <= OH_ENCAPS_VALUE_MAX_LEN, return APPSPAWN_ARG_INVALID,
+        "String value len is invalied, len: %{public}u", valueLen);
+    char *value = (char *)calloc(1, valueLen);
+    APPSPAWN_CHECK(value != NULL, return APPSPAWN_SYSTEM_ERROR, "Failed to calloc value");
+
+    int ret = strcpy_s(value, valueLen, valueStr);
+    APPSPAWN_CHECK(ret == EOK, free(value);
+        return APPSPAWN_SYSTEM_ERROR, "Failed to copy string value");
+
+    encap->value.ptrValue = (void *)value;
+    encap->valueLen = valueLen;
+    encap->type = ENCAPS_CHAR_ARRAY;
+    return 0;
+}
+
+APPSPAWN_STATIC int AddPermissionIntArrayToValue(cJSON *arrayItem, UserEncap *encap, int arraySize)
+{
+    uint32_t valueLen = sizeof(int) * arraySize;
+    APPSPAWN_CHECK(valueLen <= OH_ENCAPS_VALUE_MAX_LEN, return APPSPAWN_ARG_INVALID,
+        "Int array len too long, len: %{public}u", valueLen);
+    int *value = (int *)calloc(1, valueLen);
+    APPSPAWN_CHECK(value != NULL, return APPSPAWN_SYSTEM_ERROR, "Failed to calloc int array value");
+
+    cJSON *arrayItemTemp = arrayItem;
+    for (int index = 0; index < arraySize; index++) {
+        if (arrayItemTemp == NULL || !cJSON_IsNumber(arrayItemTemp)) {
+            free(value);
+            APPSPAWN_LOGE("Invalid int array item type");
+            return APPSPAWN_ARG_INVALID;
+        }
+        value[index] = arrayItemTemp->valueint;
+        arrayItemTemp = arrayItemTemp->next;
+    }
+    encap->value.ptrValue = (void *)value;
+    encap->valueLen = valueLen;
+    encap->type = ENCAPS_INT_ARRAY;
+    return 0;
+}
+
+APPSPAWN_STATIC int AddPermissionBoolArrayToValue(cJSON *arrayItem, UserEncap *encap, int arraySize)
+{
+    uint32_t valueLen = sizeof(bool) * arraySize;
+    APPSPAWN_CHECK(valueLen <= OH_ENCAPS_VALUE_MAX_LEN, return APPSPAWN_ARG_INVALID,
+        "Bool array len too long, len: %{public}u", valueLen);
+    bool *value = (bool *)calloc(1, valueLen);
+    APPSPAWN_CHECK(value != NULL, return APPSPAWN_SYSTEM_ERROR, "Failed to calloc bool array value");
+
+    cJSON *arrayItemTemp = arrayItem;
+    for (int index = 0; index < arraySize; index++) {
+        if (arrayItemTemp == NULL || !cJSON_IsBool(arrayItemTemp)) {
+            free(value);
+            APPSPAWN_LOGE("Invalid bool array item type");
+            return APPSPAWN_ARG_INVALID;
+        }
+        value[index] = cJSON_IsTrue(arrayItemTemp) ? true : false;
+        arrayItemTemp = arrayItemTemp->next;
+    }
+    encap->value.ptrValue = (void *)value;
+    encap->valueLen = valueLen;
+    encap->type = ENCAPS_BOOL_ARRAY;
+    return 0;
+}
+
+APPSPAWN_STATIC int AddPermissionStrArrayToValue(cJSON *arrayItem, UserEncap *encap)
+{
+    uint32_t valueLen = 0;
+    for (cJSON *arrayItemTemp = arrayItem; arrayItemTemp != NULL; arrayItemTemp = arrayItemTemp->next) {
+        if (!cJSON_IsString(arrayItemTemp) || arrayItemTemp->valuestring == NULL) {
+            APPSPAWN_LOGE("Invalid string array item type");
+            return APPSPAWN_ARG_INVALID;
+        }
+        uint32_t tempLen = strlen(arrayItemTemp->valuestring);
+        APPSPAWN_CHECK(tempLen > 0, return APPSPAWN_ARG_INVALID, "String array value is invalied");
+        valueLen += tempLen + 1;
+    }
+
+    APPSPAWN_CHECK(valueLen > 0 && valueLen <= OH_ENCAPS_VALUE_MAX_LEN, return APPSPAWN_ARG_INVALID,
+        "String array len is invalied, len: %{public}u", valueLen);
+    char *value = (char *)calloc(1, valueLen);
+    APPSPAWN_CHECK(value != NULL, return APPSPAWN_SYSTEM_ERROR, "Failed to calloc string array value");
+
+    char *valuePtr = value;
+    for (cJSON *arrayItemTemp = arrayItem; arrayItemTemp != NULL; arrayItemTemp = arrayItemTemp->next) {
+        int len = strlen(arrayItemTemp->valuestring) + 1;
+        int ret = strcpy_s(valuePtr, len, arrayItemTemp->valuestring);
+        APPSPAWN_CHECK(ret == EOK, free(value);
+            return APPSPAWN_SYSTEM_ERROR, "Failed to copy string value");
+        valuePtr += len;
+    }
+    encap->value.ptrValue = (void *)value;
+    encap->valueLen = valueLen;
+    encap->type = ENCAPS_CHAR_ARRAY;
+    return 0;
+}
+
+APPSPAWN_STATIC int AddPermissionArrayToValue(cJSON *permissionItemArr, UserEncap *encap)
+{
+    int arraySize = cJSON_GetArraySize(permissionItemArr);
+    if (arraySize == 0) {
+        return APPSPAWN_ARG_INVALID;
+    }
+
+    // check first item type
     cJSON *arrayItem = permissionItemArr->child;
-    cJSON *newArray = cJSON_CreateArray();
-    if (newArray == NULL) {
-        return APPSPAWN_ERROR_UTILS_CREATE_JSON_FAIL;
-    }
-    if (!cJSON_AddItemToObject(encaps, key, newArray)) {
-        cJSON_Delete(newArray);
-        return APPSPAWN_ERROR_UTILS_ADD_JSON_FAIL;
-    }
-
-    while (arrayItem) {
-        cJSON *newItem = NULL;
-        if (cJSON_IsNumber(arrayItem)) {
-            newItem = cJSON_CreateNumber(arrayItem->valueint);
-        } else if (cJSON_IsString(arrayItem)) {
-            newItem = cJSON_CreateString(arrayItem->valuestring);
-        } else if (cJSON_IsBool(arrayItem)) {
-            newItem = cJSON_CreateBool(arrayItem->valueint);
+    if (cJSON_IsNumber(arrayItem)) {
+        if (AddPermissionIntArrayToValue(arrayItem, encap, arraySize) != 0) {
+            return APPSPAWN_ARG_INVALID;
         }
-
-        if (newItem == NULL || !cJSON_AddItemToArray(newArray, newItem)) {
-            cJSON_Delete(newItem);
-            return APPSPAWN_ERROR_UTILS_ADD_JSON_FAIL;
+    } else if (cJSON_IsString(arrayItem)) {
+        if (AddPermissionStrArrayToValue(arrayItem, encap) != 0) {
+            return APPSPAWN_ARG_INVALID;
         }
-        arrayItem = arrayItem->next;
+    } else if (cJSON_IsBool(arrayItem)) {
+        if (AddPermissionBoolArrayToValue(arrayItem, encap, arraySize) != 0) {
+            return APPSPAWN_ARG_INVALID;
+        }
+    } else {
+        APPSPAWN_LOGW("Invalid array item type");
+        return APPSPAWN_ARG_INVALID;
     }
 
     return 0;
 }
 
-APPSPAWN_STATIC int AddPermissionItemToEncaps(cJSON *encaps, cJSON *permissionItem)
+APPSPAWN_STATIC int AddPermissionItemToEncapsInfo(UserEncap *encap, cJSON *permissionItem)
 {
-    const char *key = permissionItem->string;
+    // copy json key
+    char *key = permissionItem->string;
+    if (key == NULL || strcpy_s(encap->key, OH_ENCAPS_KEY_MAX_LEN, key) != EOK) {
+        APPSPAWN_LOGE("Failed to copy json key");
+        return APPSPAWN_SYSTEM_ERROR;
+    }
+
     if (cJSON_IsNumber(permissionItem)) {
-        if (!cJSON_AddNumberToObject(encaps, key, permissionItem->valueint)) {
-            return APPSPAWN_ERROR_UTILS_ADD_JSON_FAIL;
-        }
-    } else if (cJSON_IsString(permissionItem)) {
-        if (!cJSON_AddStringToObject(encaps, key, permissionItem->valuestring)) {
-            return APPSPAWN_ERROR_UTILS_ADD_JSON_FAIL;
-        }
+        encap->type = ENCAPS_INT;
+        encap->value.intValue = (uint64_t)permissionItem->valueint;
+        encap->valueLen = sizeof(permissionItem->valueint);
     } else if (cJSON_IsBool(permissionItem)) {
-        if (!cJSON_AddBoolToObject(encaps, key, permissionItem->valueint)) {
-            return APPSPAWN_ERROR_UTILS_ADD_JSON_FAIL;
+        encap->type = ENCAPS_BOOL;
+        bool value = cJSON_IsTrue(permissionItem) ? true : false;
+        encap->value.intValue = (uint64_t)value;
+        encap->valueLen = sizeof(value);
+    } else if (cJSON_IsString(permissionItem)) {
+        if (AddPermissionStrToValue(permissionItem->valuestring, encap) != 0) {
+            return APPSPAWN_ARG_INVALID;
         }
-    } else if (cJSON_IsArray(permissionItem)) {
-        if (AddPermissionArrayToItem(encaps, key, permissionItem) != 0) {
-            return APPSPAWN_ERROR_UTILS_ADD_JSON_FAIL;
+    } else if (cJSON_IsArray(permissionItem))  {
+        if (AddPermissionArrayToValue(permissionItem, encap) != 0) {
+            return APPSPAWN_ARG_INVALID;
         }
+    } else {
+        APPSPAWN_LOGW("Invalid permission item type");
+        return APPSPAWN_ARG_INVALID;
     }
 
     return 0;
 }
 
-APPSPAWN_STATIC int AddPermissionToEncaps(cJSON *extInfoJson, cJSON *encaps, uint32_t *permissionCount)
+APPSPAWN_STATIC int AddMembersToEncapsInfo(cJSON *extInfoJson, UserEncaps *encapsInfo)
 {
     // Get ohos.encaps.count
-    cJSON *countJson = cJSON_GetObjectItem(extInfoJson, "ohos.encaps.count");
-    int encapsCount = 0;
-    if (cJSON_IsNumber(countJson)) {
-        encapsCount = countJson->valueint;
-    }
+    cJSON *countJson = cJSON_GetObjectItem(extInfoJson, APP_OHOS_ENCAPS_COUNT_KEY);
+    APPSPAWN_CHECK(countJson != NULL && cJSON_IsNumber(countJson), return APPSPAWN_ARG_INVALID, "Invalid countJson");
+    int encapsCount = countJson->valueint;
 
     // Check input count and permissions size
-    cJSON *permissions = cJSON_GetObjectItemCaseSensitive(extInfoJson, "permissions");
-    int count = cJSON_GetArraySize(permissions);
-    if (encapsCount != count) {
-        APPSPAWN_LOGE("Invalid args, encaps count: %{public}d, permission count: %{public}d", encapsCount, count);
-        return APPSPAWN_ARG_INVALID;
-    }
+    cJSON *permissionsJson = cJSON_GetObjectItemCaseSensitive(extInfoJson, APP_OHOS_ENCAPS_PERMISSIONS_KEY);
+    APPSPAWN_CHECK(permissionsJson != NULL && cJSON_IsArray(permissionsJson), return APPSPAWN_ARG_INVALID,
+        "Invalid permissionsJson");
+    int count = cJSON_GetArraySize(permissionsJson);
+    APPSPAWN_CHECK(count > 0 && count <= OH_ENCAPS_MAX_COUNT && encapsCount == count, return APPSPAWN_ARG_INVALID,
+        "Invalid args, encaps count: %{public}d, permission count: %{public}d", encapsCount, count);
 
-    // If permissionName and permissionValue are obtained, they need to be written
-    // in the {"permissionName1":"permissionValue1", "permissionName2":"permissionValue2", ...} in the encaps.
+    encapsInfo->encap = (UserEncap *)calloc(count + 1, sizeof(UserEncap));
+    APPSPAWN_CHECK(encapsInfo->encap != NULL, return APPSPAWN_SYSTEM_ERROR, "Failed to calloc encap");
+
     for (int i = 0; i < count; i++) {
-        // get single permission, such as {"permissionName1":"permissionValue1"}
-        cJSON *permission = cJSON_GetArrayItem(permissions, i);
-        if (permission == NULL) {
-            APPSPAWN_LOGE("encaps get single permission failed.");
-            return APPSPAWN_ERROR_UTILS_DECODE_JSON_FAIL;
-        }
+        cJSON *permission = cJSON_GetArrayItem(permissionsJson, i);
+        APPSPAWN_CHECK(permission != NULL, return APPSPAWN_ERROR_UTILS_DECODE_JSON_FAIL,
+            "Encaps get single permission failed")
 
-        // only one object in {}. So we only need to get first object.
-        // such as key:"permissionName1", value:"permissionValue1"
         cJSON *permissionItem = permission->child;
-        if (permissionItem == NULL) {
-            APPSPAWN_LOGE("encaps get permission item failed.");
-            return APPSPAWN_ERROR_UTILS_DECODE_JSON_FAIL;
-        }
+        APPSPAWN_CHECK(permissionItem != NULL, return APPSPAWN_ERROR_UTILS_DECODE_JSON_FAIL,
+            "Encaps get permission item failed")
 
-        if (AddPermissionItemToEncaps(encaps, permissionItem) != 0) {
-            APPSPAWN_LOGV("Add permission to object failed.(ignore)");
+        if (AddPermissionItemToEncapsInfo(&encapsInfo->encap[i], permissionItem) != 0) {
+            APPSPAWN_LOGE("Add permission to encap failed");
             return APPSPAWN_ERROR_UTILS_ADD_JSON_FAIL;
         }
+        encapsInfo->encapsCount++;
     }
-    *permissionCount += count;
 
     return 0;
 }
 
-static int SpawnSetPermissions(AppSpawnMgr *content, AppSpawningCtx *property, cJSON *encaps, uint32_t *count)
+APPSPAWN_STATIC void FreeEncapsInfo(UserEncaps *encapsInfo)
 {
+    APPSPAWN_CHECK_ONLY_EXPER(encapsInfo != NULL, return);
+
+    if (encapsInfo->encap != NULL) {
+        for (uint32_t i = 0; i < encapsInfo->encapsCount; i++) {
+            if (encapsInfo->encap[i].type > ENCAPS_AS_ARRAY) {
+                free(encapsInfo->encap[i].value.ptrValue);
+                encapsInfo->encap[i].value.ptrValue = NULL;
+            }
+        }
+        free(encapsInfo->encap);
+        encapsInfo->encap = NULL;
+    }
+}
+
+/* set ohos.encaps.fork.count to encaps */
+static int SpawnSetMaxPids(AppSpawningCtx *property, UserEncaps *encapsInfo)
+{
+    uint32_t maxPidCount = 0;
+    if (GetAppSpawnMsgType(property) != MSG_SPAWN_NATIVE_PROCESS) {
+        maxPidCount = SpawnGetMaxPids(property);
+    }
+
+    APPSPAWN_CHECK(maxPidCount > 0 && maxPidCount < OH_APP_MAX_PIDS_NUM, return 0,
+        "Don't need to set pid max count %{public}u. Use default pid max", maxPidCount);
+    APPSPAWN_CHECK(encapsInfo->encapsCount < OH_ENCAPS_MAX_COUNT,
+        return APPSPAWN_ARG_INVALID, "Encaps count is more than 64, cannot set permissions");
+
+    int count = encapsInfo->encapsCount;
+    int ret = strcpy_s(encapsInfo->encap[count].key, OH_ENCAPS_KEY_MAX_LEN, APP_OHOS_ENCAPS_FORK_KEY);
+    APPSPAWN_CHECK_ONLY_EXPER(ret == EOK, return APPSPAWN_SYSTEM_ERROR);
+
+    encapsInfo->encap[count].value.intValue = (uint64_t)maxPidCount;
+    encapsInfo->encap[count].valueLen = sizeof(maxPidCount);
+    encapsInfo->encap[count].type = ENCAPS_INT;
+    encapsInfo->encapsCount++;
+    return 0;
+}
+
+APPSPAWN_STATIC int SpawnSetPermissions(AppSpawningCtx *property, UserEncaps *encapsInfo)
+{
+    // Get Permissions obejct
     cJSON *extInfoJson = GetJsonObjFromExtInfo(property, MSG_EXT_NAME_JIT_PERMISSIONS);
     if (extInfoJson == NULL) {
+        APPSPAWN_LOGW("GetJsonObjFromExtInfo failed");
         return APPSPAWN_ARG_INVALID;
     }
 
-    int ret = AddPermissionToEncaps(extInfoJson, encaps, count);
+    int ret = AddMembersToEncapsInfo(extInfoJson, encapsInfo);
     if (ret != 0) {
-        APPSPAWN_LOGW("Add permission to object failed.(ignore), ret: %{public}d", ret);
-    }
-
-    cJSON_Delete(extInfoJson);
-    return ret;
-}
-
-static int AddMembersToEncaps(AppSpawnMgr *content, AppSpawningCtx *property, cJSON *encaps)
-{
-    uint32_t encapsPermissionCount = 0;
-    // need set ohos.encaps.count to encaps firstly
-    if (cJSON_AddNumberToObject(encaps, APP_OHOS_ENCAPS_COUNT_KEY, encapsPermissionCount) == NULL) {
-        APPSPAWN_LOGV("Set ohos.encaps.count to object failed.(ignore)");
-        return APPSPAWN_ERROR_UTILS_ADD_JSON_FAIL;
-    }
-
-    int ret = SpawnSetMaxPids(content, property, encaps);
-    if (ret != 0) {
-        APPSPAWN_LOGV("Can't set max pids to encaps object.(ignore), ret: %{public}d", ret);
-    } else {
-        encapsPermissionCount += 1;
-    }
-
-    uint32_t count = 0;
-    ret = SpawnSetPermissions(content, property, encaps, &count);
-    if (ret != 0) {
-        APPSPAWN_LOGV("Can't set JIT permission to encaps object.(ignore), ret: %{public}d", ret);
-    } else {
-        encapsPermissionCount += count;
-    }
-
-    if (encapsPermissionCount == 0) {
-        return APPSPAWN_ERROR_UTILS_ADD_JSON_FAIL; // Don't need set permission
-    }
-
-    cJSON *encapsCountItem = cJSON_GetObjectItem(encaps, APP_OHOS_ENCAPS_COUNT_KEY);
-    if (encapsCountItem != NULL) {
-        cJSON_SetNumberValue(encapsCountItem, encapsPermissionCount);
-    }
-
-    return 0;
-}
-
-static int SpawnBuildEncaps(AppSpawnMgr *content, AppSpawningCtx *property, char **encapsInfoStr)
-{
-    // Create root object
-    cJSON *root = cJSON_CreateObject();
-    if (root == NULL) {
-        return APPSPAWN_ERROR_UTILS_CREATE_JSON_FAIL;
-    }
-
-    // Create encaps object
-    cJSON *encaps = cJSON_CreateObject();
-    if (encaps == NULL) {
-        cJSON_Delete(root);
-        return APPSPAWN_ERROR_UTILS_CREATE_JSON_FAIL;
-    }
-
-    int ret = AddMembersToEncaps(content, property, encaps);
-    if (ret != 0) {
-        APPSPAWN_LOGW("Add members to encaps object failed.(ignore), ret: %{public}d", ret);
-        cJSON_Delete(root);
-        cJSON_Delete(encaps);
+        APPSPAWN_LOGW("Add member to encaps failed, ret: %{public}d", ret);
+        cJSON_Delete(extInfoJson);
         return ret;
     }
 
-    if (cJSON_AddItemToObject(root, APP_ENCAPS, encaps) != true) {   // add encaps object to root
-        cJSON_Delete(root);
-        cJSON_Delete(encaps);
-        APPSPAWN_LOGW("Add encaps object to root failed.(ignore)");
-        return APPSPAWN_ERROR_UTILS_ADD_JSON_FAIL;
-    }
+    ret = SpawnSetMaxPids(property, encapsInfo);
+    APPSPAWN_CHECK(ret == 0, cJSON_Delete(extInfoJson);
+        return ret, "Set max pids count to encaps failed");
 
-    *encapsInfoStr = cJSON_PrintUnformatted(root);       // need to  free
-    if (*encapsInfoStr == NULL) {
-        cJSON_Delete(root);
-        return APPSPAWN_ERROR_UTILS_DECODE_JSON_FAIL;
-    }
-
-    cJSON_Delete(root);
+    cJSON_Delete(extInfoJson);
     return 0;
 }
 
@@ -356,19 +406,19 @@ APPSPAWN_STATIC int SpawnSetEncapsPermissions(AppSpawnMgr *content, AppSpawningC
         return 0;         // Can't enable encaps ability
     }
 
-    char *encapsInfoStr = NULL;
-    ret = SpawnBuildEncaps(content, property, &encapsInfoStr);
+    UserEncaps encapsInfo = {0};
+    ret = SpawnSetPermissions(property, &encapsInfo);
     if (ret != 0) {
         close(encapsFileFd);
-        APPSPAWN_LOGW("Build encaps object failed, ret: %{public}d", ret);
+        FreeEncapsInfo(&encapsInfo);
+        APPSPAWN_LOGW("Build encaps info failed, ret: %{public}d", ret);
         return 0;        // Can't set permission encpas ability
     }
 
-    (void)WriteEncapsInfo(encapsFileFd, ENCAPS_PERMISSION_TYPE_MODE, encapsInfoStr, OH_ENCAPS_DEFAULT_FLAG);
+    (void)WriteEncapsInfo(encapsFileFd, ENCAPS_PERMISSION_TYPE_MODE, &encapsInfo, OH_ENCAPS_DEFAULT_FLAG);
+    APPSPAWN_LOGV("Set encaps info finish");
 
-    if (encapsInfoStr != NULL) {
-        free(encapsInfoStr);
-    }
+    FreeEncapsInfo(&encapsInfo);
     close(encapsFileFd);
 
     return 0;
