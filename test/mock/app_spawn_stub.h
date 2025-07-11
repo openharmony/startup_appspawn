@@ -34,6 +34,15 @@ int SetSelinuxConNweb(const AppSpawnMgr *content, const AppSpawningCtx *property
 extern "C" {
 #endif
 
+typedef struct TagMountTestArg {
+    const char *originPath;
+    const char *destinationPath;
+    const char *fsType;
+    unsigned long mountFlags;
+    const char *options;
+    mode_t mountSharedFlag;
+} MountTestArg;
+
 typedef struct AppSpawnContent AppSpawnContent;
 typedef struct AppSpawnClient AppSpawnClient;
 typedef struct TagAppSpawnReqMsgNode AppSpawnReqMsgNode;
@@ -49,7 +58,7 @@ typedef struct TagAppSpawnForkArg AppSpawnForkArg;
 typedef struct TagAppSpawnMsgNode AppSpawnMsgNode;
 typedef struct TagAppSpawnMgr AppSpawnMgr;
 typedef struct TagPathMountNode PathMountNode;
-typedef struct TagMountArg MountArg;
+typedef struct TagMountTestArg MountTestArg;
 typedef struct TagVarExtraData VarExtraData;
 typedef struct TagSandboxSection SandboxSection;
 typedef struct TagAppSpawnNamespace {
@@ -101,7 +110,7 @@ int ParseAppSandboxConfig(const cJSON *appSandboxConfig, AppSpawnSandboxCfg *san
 AppSpawnSandboxCfg *CreateAppSpawnSandbox(ExtDataType type);
 void AddDefaultVariable(void);
 bool CheckDirRecursive(const char *path);
-void CreateDemandSrc(const SandboxContext *context, const PathMountNode *sandboxNode, const MountArg *args);
+void CreateDemandSrc(const SandboxContext *context, const PathMountNode *sandboxNode, const MountTestArg *args);
 int CheckSandboxMountNode(const SandboxContext *context,
     const SandboxSection *section, const PathMountNode *sandboxNode, uint32_t operation);
 int AppSpawnClearEnv(AppSpawnMgr *content, AppSpawningCtx *property);

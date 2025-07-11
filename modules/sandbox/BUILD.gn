@@ -12,29 +12,20 @@
 # limitations under the License.
 
 import("//base/startup/appspawn/appspawn.gni")
+import("//base/startup/appspawn/modules/sandbox/sandbox.gni")
 import("//build/ohos.gni")
 
 if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
   ohos_shared_library("appspawn_sandbox") {
-    sources = [
-      "modern/appspawn_mount_template.c",
-      "modern/appspawn_sandbox.c",
-      "modern/sandbox_adapter.cpp",
-      "modern/sandbox_cfgvar.c",
-      "modern/sandbox_debug_mode.c",
-      "modern/sandbox_expand.c",
-      "modern/sandbox_load.c",
-      "modern/sandbox_manager.c",
-      "modern/sandbox_shared.c",
-      "appspawn_permission.c",
-      "sandbox_dec.c",
-    ]
+    sources += appspawn_sandbox_src
 
     include_dirs = [
       ".",
       "${appspawn_path}/common",
       "${appspawn_path}/standard",
     ]
+
+    include_dirs += appspawn_sandbox_inc
 
     configs = [ "${appspawn_path}:appspawn_config" ]
 
@@ -80,22 +71,17 @@ if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
   ohos_shared_library("appspawn_sandbox") {
     sources = [
       "${appspawn_innerkits_path}/permission/appspawn_mount_permission.c",
-      "appspawn_permission.c",
-      "sandbox_dec.c",
-      "normal/sandbox_shared_mount.cpp",
-      "normal/appspawn_sandbox_manager.cpp",
-      "normal/sandbox_common.cpp",
-      "normal/sandbox_core.cpp"
     ]
+    sources += appspawn_sandbox_src
 
     include_dirs = [
       ".",
-      "./normal",
       "${appspawn_path}/common",
       "${appspawn_path}/standard",
       "${appspawn_innerkits_path}/client",
       "${appspawn_innerkits_path}/permission",
     ]
+    include_dirs += appspawn_sandbox_inc
 
     configs = [ "${appspawn_path}:appspawn_config" ]
 
