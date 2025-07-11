@@ -36,7 +36,6 @@
 
 #include "appspawn_hook.h"
 #include "appspawn_server.h"
-#include "appspawn_sandbox.h"
 #include "hilog/log.h"
 #include "securec.h"
 
@@ -172,7 +171,7 @@ int MountStub(const char *originPath, const char *destinationPath,
     if (node == NULL || node->arg == NULL || (node->flags & STUB_NEED_CHECK) != STUB_NEED_CHECK) {
         return 0;
     }
-    MountArg *args = (MountArg *)node->arg;
+    MountTestArg *args = (MountTestArg *)node->arg;
 
     printf("args->originPath %s == %s \n", args->originPath, originPath);
     printf("args->destinationPath %s == %s \n", args->destinationPath, destinationPath);

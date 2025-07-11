@@ -25,7 +25,6 @@
 #include "appspawn_manager.h"
 #include "appspawn_modulemgr.h"
 #include "appspawn_permission.h"
-#include "appspawn_sandbox.h"
 #include "appspawn_utils.h"
 #include "cJSON.h"
 #include "json_utils.h"
