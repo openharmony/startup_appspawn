@@ -84,7 +84,6 @@ ohos_unittest("AppSpawn_ut") {
     "${appspawn_path}/standard/appspawn_kickdog.c",
     "${appspawn_path}/standard/appspawn_msgmgr.c",
     "${appspawn_path}/standard/appspawn_service.c",
-    "${appspawn_path}/standard/nwebspawn_launcher.c",
     "${appspawn_path}/util/src/appspawn_utils.c",
   ]
 
@@ -297,7 +296,6 @@ ohos_unittest("AppSpawn_coldrun_ut") {
     "${appspawn_path}/standard/appspawn_kickdog.c",
     "${appspawn_path}/standard/appspawn_msgmgr.c",
     "${appspawn_path}/standard/appspawn_service.c",
-    "${appspawn_path}/standard/nwebspawn_launcher.c",
     "${appspawn_path}/util/src/appspawn_utils.c",
   ]
 
@@ -493,7 +491,6 @@ ohos_unittest("AppSpawn_common_ut") {
     "${appspawn_path}/standard/appspawn_kickdog.c",
     "${appspawn_path}/standard/appspawn_msgmgr.c",
     "${appspawn_path}/standard/appspawn_service.c",
-    "${appspawn_path}/standard/nwebspawn_launcher.c",
     "${appspawn_path}/util/src/appspawn_utils.c",
   ]
 
