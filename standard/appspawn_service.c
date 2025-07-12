@@ -438,10 +438,8 @@ APPSPAWN_STATIC bool MsgDevicedebugCheck(TaskHandle stream, AppSpawnMsgNode *mes
     }
 
     AppSpawnMsg *msg = &message->msgHeader;
-    if (msg->msgType != MSG_DEVICE_DEBUG) {
-        APPSPAWN_LOGE("appspawn devicedebug msg type is not devicedebug [%{public}d]", msg->msgType);
-        return false;
-    }
+    APPSPAWN_CHECK(msg->msgType == MSG_DEVICE_DEBUG, return false,
+        "appspawn devicedebug msg type is not devicedebug [%{public}d]", msg->msgType);
 
     return true;
 }
@@ -745,10 +743,8 @@ static int WritePreforkMsg(AppSpawningCtx *property, uint32_t memSize)
 static int GetAppSpawnMsg(AppSpawningCtx *property, uint32_t memSize)
 {
     uint8_t *buffer = (uint8_t *)GetMapMem(property->client.id, "prefork", memSize, true, false);
-    if (buffer == NULL) {
-        APPSPAWN_LOGE("prefork buffer is null can not write propery");
-        return  -1;
-    }
+    APPSPAWN_CHECK(buffer != NULL, return -1, "prefork buffer is null can not write propery");
+
     uint32_t msgRecvLen = 0;
     uint32_t remainLen = 0;
     property->forkCtx.childMsg = (char *)buffer;
@@ -1606,21 +1602,13 @@ APPSPAWN_STATIC void ProcessUninstallDebugHap(AppSpawnConnection *connection, Ap
 APPSPAWN_STATIC int AppspawpnDevicedebugKill(int pid, cJSON *args)
 {
     cJSON *signal = cJSON_GetObjectItem(args, "signal");
-    if (!cJSON_IsNumber(signal)) {
-        APPSPAWN_LOGE("appspawn devicedebug json get signal fail");
-        return -1;
-    }
+    APPSPAWN_CHECK(cJSON_IsNumber(signal), return -1, "appspawn devicedebug json get signal fail");
 
     AppSpawnedProcess *appInfo = GetSpawnedProcess(pid);
-    if (appInfo == NULL) {
-        APPSPAWN_LOGE("appspawn devicedebug get app info unsuccess, pid=%{public}d", pid);
-        return APPSPAWN_DEVICEDEBUG_ERROR_APP_NOT_EXIST;
-    }
-
-    if (!appInfo->isDebuggable) {
-        APPSPAWN_LOGE("appspawn devicedebug process is not debuggable, pid=%{public}d", pid);
-        return APPSPAWN_DEVICEDEBUG_ERROR_APP_NOT_DEBUGGABLE;
-    }
+    APPSPAWN_CHECK(appInfo != NULL, return APPSPAWN_DEVICEDEBUG_ERROR_APP_NOT_EXIST,
+        "appspawn devicedebug get app info unsuccess, pid=%{public}d", pid);
+    APPSPAWN_CHECK(appInfo->isDebuggable, return APPSPAWN_DEVICEDEBUG_ERROR_APP_NOT_DEBUGGABLE,
+        "appspawn devicedebug process is not debuggable, pid=%{public}d", pid);
 
     APPSPAWN_LOGI("appspawn devicedebug debugable=%{public}d, pid=%{public}d, signal=%{public}d",
         appInfo->isDebuggable, pid, (int)signal->valueint);
@@ -1655,31 +1643,19 @@ APPSPAWN_STATIC int ProcessAppSpawnDeviceDebugMsg(AppSpawnMsgNode *message)
     }
 
     cJSON *json = cJSON_Parse(jsonString);
-    if (json == NULL) {
-        APPSPAWN_LOGE("appspawn devicedebug json parse fail");
-        return -1;
-    }
+    APPSPAWN_CHECK(json != NULL, return -1, "appspawn devicedebug json parse fail");
 
     cJSON *app = cJSON_GetObjectItem(json, "app");
-    if (!cJSON_IsNumber(app)) {
-        APPSPAWN_LOGE("appspawn devicedebug json get app fail");
-        cJSON_Delete(json);
-        return -1;
-    }
+    APPSPAWN_CHECK(cJSON_IsNumber(app), cJSON_Delete(json);
+        return -1, "appspawn devicedebug json get app fail");
 
     cJSON *op = cJSON_GetObjectItem(json, "op");
-    if (!cJSON_IsString(op) || op->valuestring == NULL) {
-        APPSPAWN_LOGE("appspawn devicedebug json get op fail");
-        cJSON_Delete(json);
-        return -1;
-    }
+    APPSPAWN_CHECK(cJSON_IsString(op) && op->valuestring != NULL, cJSON_Delete(json);
+        return -1, "appspawn devicedebug json get op fail");
 
     cJSON *args = cJSON_GetObjectItem(json, "args");
-    if (!cJSON_IsObject(args)) {
-        APPSPAWN_LOGE("appspawn devicedebug json get args fail");
-        cJSON_Delete(json);
-        return -1;
-    }
+    APPSPAWN_CHECK(cJSON_IsObject(args), cJSON_Delete(json);
+        return -1, "appspawn devicedebug json get args fail");
 
     int result = AppspawnDevicedebugDeal(op->valuestring, app->valueint, args);
     cJSON_Delete(json);

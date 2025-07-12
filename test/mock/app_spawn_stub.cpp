@@ -166,6 +166,10 @@ int GetParameter(const char *key, const char *def, char *value, uint32_t len)
     if (strcmp(key, "persist.arkwebcore.package_name") == 0) {
         return strcpy_s(value, len, "com.ohos.arkwebcore") == 0 ? strlen("com.ohos.arkwebcore") : -1;
     }
+    if (strcmp(key, "persist.arkwebcore.install_path") == 0) {
+        return strcpy_s(value, len, "/data/app/el1/bundle/public/com.ohos.nweb/ArkWWebCore.hap") == 0 ?
+            strlen("/data/app/el1/bundle/public/com.ohos.nweb/ArkWWebCore.hap") : -1;
+    }
     return -1;
 }
 
