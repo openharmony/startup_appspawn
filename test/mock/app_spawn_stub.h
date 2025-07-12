@@ -26,6 +26,7 @@
 #include "cJSON.h"
 #include "appspawn_client.h"
 #include "appspawn_hook.h"
+#include "appspawn_encaps.h"
 
 void SetBoolParamResult(const char *key, bool flag);
 int SetSelinuxConNweb(const AppSpawnMgr *content, const AppSpawningCtx *property);
@@ -135,7 +136,16 @@ void SetSystemEnv(void);
 void RunAppSandbox(const char *ptyName);
 HOOK_MGR *GetAppSpawnHookMgr(void);
 int SpawnKickDogStart(AppSpawnMgr *mgrContent);
-int AddPermissionToEncaps(cJSON *extInfoJson, cJSON *encaps, uint32_t *permissionCount);
+int AddMembersToEncapsInfo(cJSON *extInfoJson, UserEncaps *encapsInfo);
+int SpawnSetPermissions(AppSpawningCtx *property, UserEncaps *encapsInfo);
+int AddPermissionItemToEncapsInfo(UserEncap *encap, cJSON *permissionItem);
+void FreeEncapsInfo(UserEncaps *encapsInfo);
+int SpawnSetEncapsPermissions(AppSpawnMgr *content, AppSpawningCtx *property);
+int WriteEncapsInfo(int fd, AppSpawnEncapsBaseType encapsType, const void *encapsInfo, uint32_t flag);
+int AddPermissionIntArrayToValue(cJSON *arrayItem, UserEncap *encap, int arraySize);
+int AddPermissionBoolArrayToValue(cJSON *arrayItem, UserEncap *encap, int arraySize);
+int AddPermissionStrArrayToValue(cJSON *arrayItem, UserEncap *encap);
+int AddPermissionArrayToValue(cJSON *permissionItemArr, UserEncap *encap);
 
 #ifdef APPSPAWN_HITRACE_OPTION
 int FilterAppSpawnTrace(AppSpawnMgr *content, AppSpawningCtx *property);
