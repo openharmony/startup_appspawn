@@ -982,7 +982,7 @@ int32_t SandboxCommon::DoAppSandboxMountOnce(const AppSpawningCtx *appProperty, 
     uint64_t diff = DiffTime(&mountStart, &mountEnd);
     APPSPAWN_CHECK_ONLY_LOG(diff < SandboxCommonDef::MAX_MOUNT_TIME, "mount %{public}s time %{public}" PRId64 " us", arg->srcPath, diff);
 #ifdef APPSPAWN_HISYSEVENT
-    APPSPAWN_CHECK_ONLY_EXPER(diff < FUNC_REPORT_DURATION, ReportAbnormalDuration("MOUNT", diff));
+    APPSPAWN_CHECK_ONLY_EXPER(diff < FUNC_REPORT_DURATION, ReportAbnormalDuration(arg->srcPath, diff));
 #endif
     if (ret != 0) {
         APPSPAWN_LOGI("errno is: %{public}d, bind mount %{public}s to %{public}s", errno, arg->srcPath, arg->destPath);

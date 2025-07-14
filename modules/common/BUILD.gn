@@ -16,6 +16,7 @@ import("//build/ohos.gni")
 
 ohos_shared_library("appspawn_common") {
   sources = [
+    "${appspawn_path}/common/appspawn_trace.cpp",
     "appspawn_adapter.cpp",
     "appspawn_cgroup.c",
     "appspawn_common.c",
@@ -75,6 +76,10 @@ ohos_shared_library("appspawn_common") {
       cflags += [ "-DSUPPORT_LOCAL_DEBUGGER" ]
     }
     external_deps += [ "init:seccomp" ]
+  }
+
+  if (!defined(ohos_lite)) {
+    external_deps += [ "hitrace:hitrace_meter" ]
   }
 
   if (!defined(global_parts_info) ||
