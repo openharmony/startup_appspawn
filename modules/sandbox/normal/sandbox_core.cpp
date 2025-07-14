@@ -57,6 +57,7 @@ bool SandboxCore::NeedNetworkIsolated(AppSpawningCtx *property)
 
 int SandboxCore::EnableSandboxNamespace(AppSpawningCtx *appProperty, uint32_t sandboxNsFlags)
 {
+    StartAppspawnTrace("EnableSandboxNamespace");
 #ifdef APPSPAWN_HISYSEVENT
     struct timespec startClock = {0};
     clock_gettime(CLOCK_MONOTONIC, &startClock);
@@ -74,6 +75,7 @@ int SandboxCore::EnableSandboxNamespace(AppSpawningCtx *appProperty, uint32_t sa
         rc = EnableNewNetNamespace();
         APPSPAWN_CHECK(rc == 0, return rc, "Set %{public}s new netnamespace failed", GetBundleName(appProperty));
     }
+    FinishAppspawnTrace();
     return 0;
 }
 
@@ -843,7 +845,9 @@ int32_t SandboxCore::SetSandboxProperty(AppSpawningCtx *appProperty, std::string
 {
     int32_t ret = 0;
     const std::string bundleName = GetBundleName(appProperty);
+    StartAppspawnTrace("SetCommonAppSandboxProperty");
     ret = SetCommonAppSandboxProperty(appProperty, sandboxPackagePath);
+    FinishAppspawnTrace();
     APPSPAWN_CHECK(ret == 0, return ret, "SetCommonAppSandboxProperty failed, packagename is %{public}s",
                    bundleName.c_str());
     if (SandboxCommon::HasPrivateInBundleName(bundleName)) {
@@ -851,7 +855,9 @@ int32_t SandboxCore::SetSandboxProperty(AppSpawningCtx *appProperty, std::string
         APPSPAWN_CHECK(ret == 0, return ret, "SetPrivateAppSandboxProperty failed, packagename is %{public}s",
                        bundleName.c_str());
     }
+    StartAppspawnTrace("SetPermissionAppSandboxProperty");
     ret = SetPermissionAppSandboxProperty(appProperty);
+    FinishAppspawnTrace();
     APPSPAWN_CHECK(ret == 0, return ret, "SetPermissionAppSandboxProperty failed, packagename is %{public}s",
                    bundleName.c_str());
 
@@ -909,7 +915,9 @@ int32_t SandboxCore::SetAppSandboxProperty(AppSpawningCtx *appProperty, uint32_t
 #endif
 
 #ifndef APPSPAWN_TEST
+    StartAppspawnTrace("ChangeCurrentDir");
     rc = ChangeCurrentDir(sandboxPackagePath, bundleName, sandboxSharedStatus);
+    FinishAppspawnTrace();
     APPSPAWN_CHECK(rc == 0, return rc, "change current dir failed");
     APPSPAWN_LOGV("Change root dir success");
 #endif

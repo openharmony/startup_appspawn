@@ -290,6 +290,7 @@ static void SendMessageComplete(const TaskHandle taskHandle, BufferHandle handle
 
 static int SendResponse(const AppSpawnConnection *connection, const AppSpawnMsg *msg, int result, pid_t pid)
 {
+    StartAppspawnTrace("SendResponse");
     APPSPAWN_LOGV("SendResponse connectionId: %{public}u result: 0x%{public}x pid: %{public}d",
         connection->connectionId, result, pid);
     uint32_t bufferSize = sizeof(AppSpawnResponseMsg);
@@ -301,7 +302,9 @@ static int SendResponse(const AppSpawnConnection *connection, const AppSpawnMsg 
         return -1, "Failed to memcpy_s bufferSize");
     buffer->result.result = result;
     buffer->result.pid = pid;
-    return LE_Send(LE_GetDefaultLoop(), connection->stream, handle, bufferSize);
+    ret = LE_Send(LE_GetDefaultLoop(), connection->stream, handle, bufferSize);
+    FinishAppspawnTrace();
+    return ret;
 }
 
 static void WaitMsgCompleteTimeOut(const TimerHandle taskHandle, void *context)
@@ -802,6 +805,7 @@ static void ProcessPreFork(AppSpawnContent *content, AppSpawningCtx *property)
     APPSPAWN_CHECK(pipe(content->parentToChildFd) == 0, ClearPipeFd(content->preforkFd, PIPE_FD_LENGTH);
         return, "prefork with prefork pipe failed %{public}d", errno);
     enum fdsan_error_level errorLevel = fdsan_get_error_level();
+    StartAppspawnTrace("AppspawnPreFork");
     content->reservedPid = fork();
     APPSPAWN_LOGV("prefork fork finish %{public}d,%{public}d,%{public}d,%{public}d,%{public}d",
         content->reservedPid, content->preforkFd[0], content->preforkFd[1], content->parentToChildFd[0],
@@ -837,9 +841,12 @@ static void ProcessPreFork(AppSpawnContent *content, AppSpawningCtx *property)
         // Inherit the error level of the original process
         (void)fdsan_set_error_level(errorLevel);
         ProcessExit(AppSpawnChild(content, &property->client));
-    } else if (content->reservedPid < 0) {
-        ClearPipeFd(content->preforkFd, PIPE_FD_LENGTH);
-        APPSPAWN_LOGE("prefork fork child process failed %{public}d", content->reservedPid);
+    } else {
+        FinishAppspawnTrace();
+        if (content->reservedPid < 0) {
+            ClearPipeFd(content->preforkFd, PIPE_FD_LENGTH);
+            APPSPAWN_LOGE("prefork fork child process failed %{public}d", content->reservedPid);
+        }
     }
 }
 
@@ -1337,10 +1344,12 @@ static void AppSpawnRun(AppSpawnContent *content, int argc, char *const argv[])
 
 APPSPAWN_STATIC int AppSpawnClearEnv(AppSpawnMgr *content, AppSpawningCtx *property)
 {
+    StartAppspawnTrace("AppSpawnClearEnv");
     APPSPAWN_CHECK(content != NULL, return 0, "Invalid appspawn content");
     DeleteAppSpawningCtx(property);
     AppSpawnDestroyContent(&content->content);
     APPSPAWN_LOGV("clear %{public}d end", getpid());
+    FinishAppspawnTrace();
     return 0;
 }
 
