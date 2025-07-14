@@ -36,6 +36,7 @@ declare_args() {
   appspawn_support_code_signature = true
   appspawn_allow_internet_permission = false
   appspawn_custom_sandbox = false
+  appspawn_arkweb_preload = true
 }
 
 if (!defined(global_parts_info) ||
