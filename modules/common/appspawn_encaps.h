@@ -29,7 +29,7 @@ typedef enum {
 } AppSpawnEncapsBaseType;
 
 typedef enum {
-    ENCAPS_BOOL,
+    ENCAPS_BOOL = 1,
     ENCAPS_INT,
     ENCAPS_AS_ARRAY = 10,
     ENCAPS_BOOL_ARRAY,
