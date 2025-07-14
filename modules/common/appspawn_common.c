@@ -43,6 +43,7 @@
 #include "appspawn_msg.h"
 #include "appspawn_manager.h"
 #include "appspawn_silk.h"
+#include "appspawn_trace.h"
 #include "init_param.h"
 #include "parameter.h"
 #include "securec.h"
@@ -305,7 +306,9 @@ static int SetUidGid(const AppSpawnMgr *content, const AppSpawningCtx *property)
     APPSPAWN_CHECK(ret == 0, return errno,
         "setgid(%{public}u) failed: %{public}d", dacInfo->gid, errno);
 
+    StartAppspawnTrace("SetSeccompFilter");
     ret = SetSeccompFilter(content, property);
+    FinishAppspawnTrace();
     APPSPAWN_CHECK(ret == 0, return ret, "Failed to set setSeccompFilter");
 
     /* If the effective user ID is changed from 0 to nonzero,
@@ -553,7 +556,9 @@ static int SpawnSetProperties(AppSpawnMgr *content, AppSpawningCtx *property)
     ret = SetCapabilities(content, property);
     APPSPAWN_CHECK_ONLY_EXPER(ret == 0, return ret);
 
+    StartAppspawnTrace("SetSelinuxCon");
     ret = SetSelinuxCon(content, property);
+    FinishAppspawnTrace();
     APPSPAWN_CHECK_ONLY_EXPER(ret == 0, return ret);
 
     ret = WaitForDebugger(property);
@@ -561,7 +566,9 @@ static int SpawnSetProperties(AppSpawnMgr *content, AppSpawningCtx *property)
 
     APPSPAWN_ONLY_EXPER(GetAppSpawnMsgType(property) == MSG_SPAWN_NATIVE_PROCESS, return 0);
 #ifdef SECURITY_COMPONENT_ENABLE
+    StartAppspawnTrace("InitSecCompClientEnhance");
     InitSecCompClientEnhance();
+    FinishAppspawnTrace();
 #endif
     return 0;
 }

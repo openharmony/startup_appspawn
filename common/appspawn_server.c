@@ -35,10 +35,12 @@
 
 static void NotifyResToParent(struct AppSpawnContent *content, AppSpawnClient *client, int result)
 {
+    StartAppspawnTrace("NotifyResToParent");
     APPSPAWN_LOGI("NotifyResToParent: %{public}d", result);
     if (content->notifyResToParent != NULL) {
         content->notifyResToParent(content, client, result);
     }
+    FinishAppspawnTrace();
 }
 
 void ProcessExit(int code)
@@ -103,9 +105,7 @@ int AppSpawnChild(AppSpawnContent *content, AppSpawnClient *client)
         return 0);
 
     // notify success to father process and start app process
-    StartAppspawnTrace("NotifyResToParent");
     NotifyResToParent(content, client, 0);
-    FinishAppspawnTrace();
 
     StartAppspawnTrace("AppSpawnExecutePostReplyHook");
     (void)AppSpawnExecutePostReplyHook(content, client);
@@ -162,7 +162,7 @@ static void AppSpawnForkChildProcess(AppSpawnContent *content, AppSpawnClient *c
     enum fdsan_error_level errorLevel = fdsan_get_error_level();
 #endif
     clock_gettime(CLOCK_MONOTONIC, &forkStart);
-    StartAppspawnTrace("AppspawnForkStart");
+    StartAppspawnTrace("AppspawnFork");
     *pid = fork();
     if (*pid == 0) {
         struct timespec forkEnd = {0};
