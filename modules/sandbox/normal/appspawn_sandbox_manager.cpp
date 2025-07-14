@@ -16,6 +16,7 @@
 #include "securec.h"
 #include "appspawn_hook.h"
 #include "appspawn_manager.h"
+#include "appspawn_trace.h"
 #include "appspawn_utils.h"
 #include "sandbox_core.h"
 
@@ -52,11 +53,13 @@ int32_t SetAppSandboxProperty(AppSpawnMgr *content, AppSpawningCtx *property)
 
     APPSPAWN_LOGV("SetAppSandboxProperty sandboxNsFlags 0x%{public}x", sandboxNsFlags);
 
+    StartAppspawnTrace("SetAppSandboxProperty");
     if (IsNWebSpawnMode(content)) {
         ret = OHOS::AppSpawn::SandboxCore::SetAppSandboxPropertyNweb(property, sandboxNsFlags);
     } else {
         ret = OHOS::AppSpawn::SandboxCore::SetAppSandboxProperty(property, sandboxNsFlags);
     }
+    FinishAppspawnTrace();
     // for module test do not create sandbox, use APP_FLAGS_IGNORE_SANDBOX to ignore sandbox result
     if (CheckAppMsgFlagsSet(property, APP_FLAGS_IGNORE_SANDBOX)) {
         APPSPAWN_LOGW("Do not care sandbox result %{public}d", ret);
