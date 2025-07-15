@@ -30,6 +30,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <dirent.h>
 
 #undef _GNU_SOURCE
 #define _GNU_SOURCE
@@ -432,6 +433,24 @@ typedef struct {
     int pathNum;
 } IsolateDirInfo;
 
+/*
+ * Open isolate dir to prevent vnode from being released and ensure that
+ * vflag in vnode which we set by ioctl is valid during the app running.
+ * Fd will be automatically released when process exits.
+ */
+#ifdef CUSTOM_SANDBOX
+static void HoldIsolateDir(IsolateDirInfo *isolateDirInfo)
+{
+    DIR *dir = opendir(isolateDirInfo->isolatePath[0]);
+    APPSPAWN_CHECK_ONLY_LOG(!(dir == NULL), "open isolate dir %{public}s failed, errno is %{public}d",
+        isolateDirInfo->isolatePath[0], errno);
+
+    DIR *dir1 = opendir(isolateDirInfo->isolatePath[1]);
+    APPSPAWN_CHECK_ONLY_LOG(!(dir1 == NULL), "open isolate dir %{public}s failed, errno is %{public}d",
+        isolateDirInfo->isolatePath[1], errno);
+}
+#endif
+
 APPSPAWN_STATIC int SetIsolateDir(const AppSpawningCtx *property)
 {
 #ifdef CUSTOM_SANDBOX
@@ -452,6 +471,8 @@ APPSPAWN_STATIC int SetIsolateDir(const AppSpawningCtx *property)
                      "/storage/media", dacInfo->uid / UID_BASE, "local/files/Docs");
     APPSPAWN_CHECK(ret >= 0, return ret, "snprintf_s storage path failed, errno %{public}d", errno);
     isolateDirInfo.pathNum = ISOLATE_PATH_NUM;
+
+    HoldIsolateDir(&isolateDirInfo);
 
     int fd = open("/dev/dec", O_RDWR);
     APPSPAWN_CHECK(fd >= 0, return fd, "open dec file fail, errno %{public}d", errno);
