@@ -31,7 +31,8 @@
             "appspawn_custom_sandbox",
             "appspawn_support_nosharefs",
             "appspawn_support_local_debugger",
-            "appspawn_napi_preload_path"
+            "appspawn_napi_preload_path",
+            "appspawn_arkweb_preload"
         ],
         "rom": "296KB",
         "ram": "13125KB",
