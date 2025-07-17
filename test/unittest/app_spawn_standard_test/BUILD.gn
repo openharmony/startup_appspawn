@@ -525,6 +525,7 @@ ohos_unittest("AppSpawn_common_ut") {
   # add test
   include_dirs += [ "${appspawn_path}/test/unittest" ]
   sources += [
+    "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_ace_test.cpp",
     "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_common_test.cpp",
     "${appspawn_path}/test/unittest/app_spawn_test_helper.cpp",
   ]
