@@ -74,7 +74,8 @@ private:
     static uint32_t GetAppMsgFlags(const AppSpawningCtx *property);
     static bool CheckMountFlag(const AppSpawningCtx *appProperty, const std::string bundleName,
                                cJSON *appConfig);
-    static void UpdateMsgFlagsWithPermission(AppSpawningCtx *appProperty);
+    static void UpdateMsgFlagsWithPermission(AppSpawningCtx *appProperty,
+        const std::string &permissionMode, uint32_t flag);
     static int32_t UpdatePermissionFlags(AppSpawningCtx *appProperty);
     static std::string GetSandboxPath(const AppSpawningCtx *appProperty, cJSON *mntPoint,
                                       const std::string &section, std::string sandboxRoot);
