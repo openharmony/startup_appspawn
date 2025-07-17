@@ -104,17 +104,18 @@ bool SandboxCore::CheckMountFlag(const AppSpawningCtx *appProperty, const std::s
     return false;
 }
 
-void SandboxCore::UpdateMsgFlagsWithPermission(AppSpawningCtx *appProperty)
+void SandboxCore::UpdateMsgFlagsWithPermission(AppSpawningCtx *appProperty,
+    const std::string &permissionMode, uint32_t flag)
 {
-    int32_t processIndex = GetPermissionIndex(nullptr, SandboxCommonDef::GET_ALL_PROCESSES_MODE.c_str());
+    int32_t processIndex = GetPermissionIndex(nullptr, permissionMode.c_str());
     if ((CheckAppPermissionFlagSet(appProperty, static_cast<uint32_t>(processIndex)) == 0)) {
-        APPSPAWN_LOGV("Don't need set GET_ALL_PROCESSES_MODE flag");
+        APPSPAWN_LOGV("Don't need set %{public}s flag", permissionMode.c_str());
         return;
     }
 
-    int ret = SetAppSpawnMsgFlag(appProperty->message, TLV_MSG_FLAGS, APP_FLAGS_GET_ALL_PROCESSES);
+    int ret = SetAppSpawnMsgFlag(appProperty->message, TLV_MSG_FLAGS, flag);
     if (ret != 0) {
-        APPSPAWN_LOGV("Set GET_ALL_PROCESSES_MODE flag failed");
+        APPSPAWN_LOGV("Set %{public}s flag failed", permissionMode.c_str());
     }
 }
 
@@ -898,10 +899,10 @@ int32_t SandboxCore::SetAppSandboxProperty(AppSpawningCtx *appProperty, uint32_t
         APPSPAWN_LOGW("Set app permission flag fail.");
         return -1;
     }
-    UpdateMsgFlagsWithPermission(appProperty);
+    UpdateMsgFlagsWithPermission(appProperty, SandboxCommonDef::GET_ALL_PROCESSES_MODE, APP_FLAGS_GET_ALL_PROCESSES);
+    UpdateMsgFlagsWithPermission(appProperty, SandboxCommonDef::APP_ALLOW_IOURING, APP_FLAGS_ALLOW_IOURING);
     // check app sandbox switch
-    if ((SandboxCommon::IsTotalSandboxEnabled(appProperty) == false) ||
-        (SandboxCommon::IsAppSandboxEnabled(appProperty) == false)) {
+    if (!SandboxCommon::IsTotalSandboxEnabled(appProperty) || !SandboxCommon::IsAppSandboxEnabled(appProperty)) {
         rc = DoSandboxRootFolderCreateAdapt(sandboxPackagePath);
     } else if (!sandboxSharedStatus) {
         rc = DoSandboxRootFolderCreate(appProperty, sandboxPackagePath);

@@ -146,6 +146,7 @@ const std::string ACCESS_DLP_FILE_MODE = "ohos.permission.ACCESS_DLP_FILE";
 const std::string FILE_ACCESS_MANAGER_MODE = "ohos.permission.FILE_ACCESS_MANAGER";
 const std::string READ_WRITE_USER_FILE_MODE = "ohos.permission.READ_WRITE_USER_FILE";
 const std::string GET_ALL_PROCESSES_MODE = "ohos.permission.GET_ALL_PROCESSES";
+const std::string APP_ALLOW_IOURING = "ohos.permission.ALLOW_IOURING";
 const std::string ARK_WEB_PERSIST_PACKAGE_NAME = "persist.arkwebcore.package_name";
 
 // 枚举类型
