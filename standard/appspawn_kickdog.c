@@ -73,7 +73,7 @@ static void DealSpawnWatchdog(AppSpawnContent *content, bool isOpen)
     if (isOpen) {
         content->wdgOpened = (result != -1);
     }
-    APPSPAWN_DUMP_LOGI("%{public}s %{public}s %{public}d",
+    APPSPAWN_KLOGI("%{public}s %{public}s %{public}d",
         (content->mode == MODE_FOR_NWEB_SPAWN) ?
             "Nweb" : "Apps", isOpen ? "enable" : "kick", result);
 }
