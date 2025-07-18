@@ -102,7 +102,8 @@ typedef struct TagAppSpawnCommonEnv {
 
 /* spawner permission */
 static const char *g_spawnerPermissionList[] = {
-    "ohos.permission.FOWNER"
+    "ohos.permission.FOWNER",
+    "ohos.permission.ALLOW_IOURING"
 };
 
 typedef enum {

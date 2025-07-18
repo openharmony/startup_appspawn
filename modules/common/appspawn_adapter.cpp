@@ -216,6 +216,11 @@ int SetSeccompFilter(const AppSpawnMgr *content, const AppSpawningCtx *property)
         appName = APP_ATOMIC;
     }
 
+    // Set seccomp policy for processes that have ohos.permission.ALLOW_IOURING.
+    if (CheckAppMsgFlagsSet(property, APP_FLAGS_ALLOW_IOURING) != 0) {
+        appName = APP_ALLOW_IOURING;
+    }
+
     if (!SetSeccompPolicyWithName(type, appName)) {
         APPSPAWN_LOGE("Failed to set %{public}s seccomp filter and exit %{public}d", appName, errno);
         return -EINVAL;
