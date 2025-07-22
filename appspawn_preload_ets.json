@@ -1,0 +1,6 @@
+{
+    "class" : [
+        "L@ohos/app/ability/Want/Want;",
+        "L@ohos/deviceInfo/deviceInfo;"
+    ]
+}

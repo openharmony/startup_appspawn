@@ -78,17 +78,40 @@ ohos_prebuilt_etc("appspawn_preload.json") {
   module_install_dir = "etc/appspawn"
 }
 
+ohos_prebuilt_etc("appspawn_preload_ets.json") {
+  source = "../appspawn_preload_ets.json"
+  part_name = "${part_name}"
+  module_install_dir = "etc/appspawn"
+}
+
 ohos_prebuilt_etc("appspawn_systemLib.json") {
   source = "../appspawn_systemLib.json"
   part_name = "${part_name}"
   module_install_dir = "etc/appspawn"
 }
 
+ohos_prebuilt_etc("ohos.startup.appspawn.para") {
+  source = "ohos.startup.appspawn.para"
+  part_name = "${part_name}"
+  subsystem_name = "${subsystem_name}"
+  module_install_dir = "etc/param"
+}
+
+ohos_prebuilt_etc("ohos.startup.appspawn.para.dac") {
+  source = "ohos.startup.appspawn.para.dac"
+  part_name = "${part_name}"
+  subsystem_name = "${subsystem_name}"
+  module_install_dir = "etc/param"
+}
+
 group("etc_files") {
   deps = [
     ":appdata-sandbox.json",
     ":appspawn_preload.json",
+    ":appspawn_preload_ets.json",
     ":appspawn_systemLib.json",
+    ":ohos.startup.appspawn.para",
+    ":ohos.startup.appspawn.para.dac"
   ]
   if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
     deps += [
