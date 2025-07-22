@@ -147,6 +147,8 @@ static int AsanSpawnGetSpawningFlag(AppSpawnMgr *content, AppSpawningCtx *proper
         property->forkCtx.coldRunPath = strdup("/system/asan/bin/nativespawn");
 #elif NWEB_SPAWN
         property->forkCtx.coldRunPath = strdup("/system/asan/bin/nwebspawn");
+#elif HYBRID_SPAWN
+        property->forkCtx.coldRunPath = strdup("/system/asan/bin/hybridspawn");
 #else
         property->forkCtx.coldRunPath = strdup("/system/asan/bin/appspawn");
 #endif
