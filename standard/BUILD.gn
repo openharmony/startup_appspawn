@@ -52,6 +52,9 @@ ohos_executable("appspawn") {
   ]
 
   defines = []
+  if (target_cpu == "arm64") {
+    defines += [ "PRE_DLOPEN_ARKWEB_LIB" ]
+  }
   configs = [
     ":appspawn_server_config",
     "${appspawn_path}:appspawn_config",
