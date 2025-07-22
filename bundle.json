@@ -22,6 +22,7 @@
             "appspawn_support_nweb",
             "appspawn_support_cj",
             "appspawn_support_native",
+            "appspawn_support_hybrid",
             "appspawn_use_encaps",
             "appspawn_mount_tmpshm",
             "appspawn_seccomp_privilege",
