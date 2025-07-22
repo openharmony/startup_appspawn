@@ -51,6 +51,7 @@ typedef void *AppSpawnClientHandle;
 #define CJAPPSPAWN_SERVER_NAME "cjappspawn"
 #define NWEBSPAWN_RESTART "nwebRestart"
 #define NATIVESPAWN_SERVER_NAME "nativespawn"
+#define HYBRIDSPAWN_SERVER_NAME "hybridspawn"
 
 #pragma pack(4)
 #define APP_MAX_GIDS 64

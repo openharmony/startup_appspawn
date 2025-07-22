@@ -239,7 +239,7 @@ static int SetXpmConfig(const AppSpawnMgr *content, const AppSpawningCtx *proper
 
 static int SetUidGid(const AppSpawnMgr *content, const AppSpawningCtx *property)
 {
-    if (IsAppSpawnMode(content)) {
+    if (IsAppSpawnMode(content) || IsHybridSpawnMode(content)) {
         struct sched_param param = { 0 };
         param.sched_priority = 0;
         int ret = sched_setscheduler(0, SCHED_OTHER, &param);
@@ -439,7 +439,7 @@ static int SpawnInitSpawningEnv(AppSpawnMgr *content, AppSpawningCtx *property)
     ret = SetAppAccessToken(content, property);
     APPSPAWN_CHECK_ONLY_EXPER(ret == 0, return ret);
 
-    if ((IsAppSpawnMode(content) || IsNativeSpawnMode(content))) {
+    if ((IsAppSpawnMode(content) || IsHybridSpawnMode(content) || IsNativeSpawnMode(content))) {
         ret = SetIsolateDir(property);
         APPSPAWN_CHECK_ONLY_LOG(ret == 0, "Failed to set isolate dir, ret %{public}d", ret);
     }
