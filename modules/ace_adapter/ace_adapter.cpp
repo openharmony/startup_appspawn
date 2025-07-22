@@ -32,6 +32,7 @@
 #include "hitrace_meter.h"
 #include "js_runtime.h"
 #include "json_utils.h"
+#include "parameter.h"
 #include "parameters.h"
 #include "resource_manager.h"
 #ifndef APPSPAWN_TEST
@@ -132,8 +133,6 @@ static void LoadExtendLib(void)
     PreloadModule();
     SetTraceDisabled(false);
 
-    APPSPAWN_LOGI("LoadExtendLib: Start reclaim file cache");
-    OHOS::Ace::AceForwardCompatibility::ReclaimFileCache(getpid());
     Resource::ResourceManager *systemResMgr = Resource::GetSystemResourceManagerNoSandBox();
     APPSPAWN_CHECK(systemResMgr != nullptr, return, "Fail to get system resource manager");
     APPSPAWN_LOGI("LoadExtendLib: End preload VM");
@@ -318,6 +317,37 @@ APPSPAWN_STATIC int DoDlopenLibs(const cJSON *root, ParseJsonContext *context)
     return 0;
 }
 
+#ifdef PRE_DLOPEN_ARKWEB_LIB
+static void DlopenArkWebLib()
+{
+    char packageName[PATH_MAX] = {0};
+    GetParameter("persist.arkwebcore.package_name", "", packageName, PATH_MAX);
+    if (strlen(packageName) == 0) {
+        APPSPAWN_LOGE("persist.arkwebcore.package_name is empty");
+        return;
+    }
+
+    std::string arkwebLibPath = "/data/app/el1/bundle/public/" + std::string(packageName) +
+        "/libs/arm64:/data/storage/el1/bundle/arkwebcore/libs/arm64";
+    APPSPAWN_LOGI("DlopenArkWebLib arkwebLibPath: %{public}s", arkwebLibPath.c_str());
+
+    Dl_namespace dlns;
+    dlns_init(&dlns, "nweb_ns");
+    dlns_create(&dlns, arkwebLibPath.c_str());
+
+    Dl_namespace ndkns;
+    dlns_get("ndk", &ndkns);
+    dlns_inherit(&dlns, &ndkns, "allow_all_shared_libs");
+
+    void* webEngineHandle = dlopen_ns(&dlns, "libarkweb_engine.so", RTLD_NOW | RTLD_GLOBAL);
+    if (!webEngineHandle) {
+        APPSPAWN_LOGE("FAILED to dlopen libarkweb_engine.so in appspawn %{public}s", dlerror());
+    } else {
+        APPSPAWN_LOGI("SUCCESS to dlopen libarkweb_engine.so in appspawn");
+    }
+}
+#endif
+
 APPSPAWN_STATIC int DlopenAppSpawn(AppSpawnMgr *content)
 {
     if (!IsAppSpawnMode(content)) {
@@ -325,6 +355,11 @@ APPSPAWN_STATIC int DlopenAppSpawn(AppSpawnMgr *content)
     }
 
     (void)ParseJsonConfig("etc/appspawn", SYSTEMLIB_JSON, DoDlopenLibs, nullptr);
+#ifdef PRE_DLOPEN_ARKWEB_LIB
+    DlopenArkWebLib();
+    APPSPAWN_LOGI("DlopenAppSpawn: Start reclaim file cache");
+    OHOS::Ace::AceForwardCompatibility::ReclaimFileCache(getpid());
+#endif
     return 0;
 }
 
