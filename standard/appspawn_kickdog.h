@@ -43,6 +43,8 @@ extern "C" {
 #define HM_APPSPAWN_WATCHDOG_KICK    "kick,appspawn"
 #define HM_NWEBSPAWN_WATCHDOG_ON    "on,10,nwebspawn"
 #define HM_NWEBSPAWN_WATCHDOG_KICK    "kick,nwebspawn"
+#define HM_HYBRIDSPAWN_WATCHDOG_ON  "on,10,hybridspawn"
+#define HM_HYBRIDSPAWN_WATCHDOG_KICK    "kick,hybridspawn"
 
 #define APPSPAWN_WATCHDOG_KICKTIME    (10 * 1000)  //10s
 

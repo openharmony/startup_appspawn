@@ -55,13 +55,19 @@ static const char *GetProcContent(bool isLinux, bool isOpen, int mode)
         if (isLinux) {
             return LINUX_APPSPAWN_WATCHDOG_ON;
         }
-        return (mode == MODE_FOR_NWEB_SPAWN) ? HM_NWEBSPAWN_WATCHDOG_ON : HM_APPSPAWN_WATCHDOG_ON;
+        if (mode == MODE_FOR_NWEB_SPAWN) {
+            return HM_NWEBSPAWN_WATCHDOG_ON;
+        }
+        return (mode == MODE_FOR_HYBRID_SPAWN) ? HM_HYBRIDSPAWN_WATCHDOG_ON : HM_APPSPAWN_WATCHDOG_ON;
     }
 
     if (isLinux) {
         return LINUX_APPSPAWN_WATCHDOG_KICK;
     }
-    return (mode == MODE_FOR_NWEB_SPAWN) ? HM_NWEBSPAWN_WATCHDOG_KICK : HM_APPSPAWN_WATCHDOG_KICK;
+    if (mode == MODE_FOR_NWEB_SPAWN) {
+        return HM_NWEBSPAWN_WATCHDOG_KICK;
+    }
+    return (mode == MODE_FOR_HYBRID_SPAWN) ? HM_HYBRIDSPAWN_WATCHDOG_KICK : HM_APPSPAWN_WATCHDOG_KICK;
 }
 
 static void DealSpawnWatchdog(AppSpawnContent *content, bool isOpen)
@@ -73,9 +79,8 @@ static void DealSpawnWatchdog(AppSpawnContent *content, bool isOpen)
     if (isOpen) {
         content->wdgOpened = (result != -1);
     }
-    APPSPAWN_DUMP_LOGI("%{public}s %{public}s %{public}d",
-        (content->mode == MODE_FOR_NWEB_SPAWN) ?
-            "Nweb" : "Apps", isOpen ? "enable" : "kick", result);
+    APPSPAWN_DUMP_LOGI("%{public}s %{public}s %{public}d", (content->mode == MODE_FOR_NWEB_SPAWN) ? "Nweb" :
+        ((content->mode == MODE_FOR_HYBRID_SPAWN) ? "Hybrid" : "App"), isOpen ? "enable" : "kick", result);
 }
 
 static void ProcessTimerHandle(const TimerHandle taskHandle, void *context)
@@ -123,8 +128,8 @@ APPSPAWN_STATIC int SpawnKickDogStart(AppSpawnMgr *mgrContent)
 {
     APPSPAWN_CHECK(mgrContent != NULL, return 0, "content is null");
     APPSPAWN_CHECK((mgrContent->content.mode == MODE_FOR_APP_SPAWN) ||
-        (mgrContent->content.mode == MODE_FOR_NWEB_SPAWN), return 0, "Mode %{public}u no need enable watchdog",
-        mgrContent->content.mode);
+        (mgrContent->content.mode == MODE_FOR_NWEB_SPAWN) || (mgrContent->content.mode == MODE_FOR_HYBRID_SPAWN),
+        return 0, "Mode %{public}u no need enable watchdog", mgrContent->content.mode);
 
     if (CheckKernelType(&mgrContent->content.isLinux) != 0) {
         return 0;

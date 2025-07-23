@@ -24,6 +24,7 @@ declare_args() {
   appspawn_support_nweb = true
   appspawn_support_cj = true
   appspawn_support_native = true
+  appspawn_support_hybrid = true
   appspawn_report_event = true
   appspawn_test_cmd = false
   appspawn_sandbox_new = false

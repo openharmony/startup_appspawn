@@ -341,7 +341,7 @@ APPSPAWN_STATIC int SpawnSetEncapsPermissions(AppSpawnMgr *content, AppSpawningC
     }
 
     // The trustlist is used to control not appspawn or nativespawn
-    if (!(IsAppSpawnMode(content) || IsNativeSpawnMode(content))) {
+    if (!(IsAppSpawnMode(content) || IsHybridSpawnMode(content) || IsNativeSpawnMode(content))) {
         return 0;
     }
 
