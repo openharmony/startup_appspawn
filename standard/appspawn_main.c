@@ -35,6 +35,8 @@ static AppSpawnStartArgTemplate g_appSpawnStartArgTemplate[PROCESS_INVALID] = {
     {NATIVESPAWN_SERVER_NAME, {MODE_FOR_NATIVE_SPAWN, MODULE_NATIVESPAWN, NATIVESPAWN_SOCKET_NAME,
         NATIVESPAWN_SERVER_NAME, 1}},
     {NWEBSPAWN_RESTART, {MODE_FOR_NWEB_SPAWN, MODULE_NWEBSPAWN, NWEBSPAWN_SOCKET_NAME, NWEBSPAWN_SERVER_NAME, 1}},
+    {HYBRIDSPAWN_SERVER_NAME, {MODE_FOR_HYBRID_SPAWN, MODULE_HYBRIDSPAWN, HYBRIDSPAWN_SOCKET_NAME,
+        HYBRIDSPAWN_SERVER_NAME, 1}},
 };
 #else
 static AppSpawnStartArgTemplate g_appCJSpawnStartArgTemplate[CJPROCESS_INVALID] = {
@@ -80,6 +82,9 @@ static AppSpawnStartArgTemplate *GetAppSpawnStartArg(const char *serverName, App
     AppSpawnStartArgTemplate *argTemp, int count)
 {
     for (int i = 0; i < count; i++) {
+        if (serverName == NULL || argTemplate[i].serverName == NULL) {
+            continue;
+        }
         if (strcmp(serverName, argTemplate[i].serverName) == 0) {
             return &argTemplate[i];
         }
@@ -116,6 +121,12 @@ int main(int argc, char *const argv[])
     }
 #elif NATIVE_SPAWN
     argTemp = &g_appSpawnStartArgTemplate[PROCESS_FOR_NATIVE_SPAWN];
+#elif HYBRID_SPAWN
+    argTemp = &g_appSpawnStartArgTemplate[PROCESS_FOR_HYBRID_SPAWN];
+    if (argc > MODE_VALUE_INDEX) {
+        argTemp = GetAppSpawnStartArg(argv[MODE_VALUE_INDEX], g_appSpawnStartArgTemplate,
+            argTemp, ARRAY_LENGTH(g_appSpawnStartArgTemplate));
+    }
 #elif NWEB_SPAWN
     argTemp = &g_appSpawnStartArgTemplate[PROCESS_FOR_NWEB_SPAWN];
     if (argc > MODE_VALUE_INDEX) {
