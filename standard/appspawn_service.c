@@ -1804,11 +1804,12 @@ static int ProcessSpawnDlopenMsg(AppSpawnMsgNode *message)
 
         dlns_init(&dlns, "nweb_ns");
         dlns_create(&dlns, arkwebLibPath);
+
+        Dl_namespace ndkns;
+        dlns_get("ndk", &ndkns);
+        dlns_inherit(&dlns, &ndkns, "allow_all_shared_libs");
     }
 
-    Dl_namespace ndkns;
-    dlns_get("ndk", &ndkns);
-    dlns_inherit(&dlns, &ndkns, "allow_all_shared_libs");
 
     void* webEngineHandle = dlopen_ns(&dlns, "libarkweb_engine.so", RTLD_NOW | RTLD_GLOBAL);
     if (!webEngineHandle) {
