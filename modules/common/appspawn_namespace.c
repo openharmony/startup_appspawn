@@ -127,7 +127,12 @@ APPSPAWN_STATIC pid_t GetPidByName(const char *name)
             (void)fclose(file);
             continue;
         }
-        buffer[strcspn(buffer, "\n")] = 0;
+        size_t newline_pos = strcspn(buffer, "\n");
+        if (newline_pos < sizeof(buffer) -1) {
+            buffer[newline_pos] = '\0';
+        } else {
+            buffer[sizeof(buffer) -1] = '\0';
+        }
         if (strcmp(buffer, name) != 0) {
             (void)fclose(file);
             continue;

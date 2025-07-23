@@ -160,7 +160,7 @@ APPSPAWN_STATIC void WriteSignalInfoToFd(AppSpawnedProcess *appInfo, AppSpawnCon
     cJSON_AddStringToObject(root, "bundleName", appInfo->name);
     char *jsonString = cJSON_Print(root);
     cJSON_Delete(root);
-
+    APPSPAWN_CHECK(jsonString != NULL, return, "jsonString is NULL");
     int ret = write(content->signalFd, jsonString, strlen(jsonString) + 1);
     if (ret < 0) {
         free(jsonString);
