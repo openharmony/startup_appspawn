@@ -357,9 +357,9 @@ APPSPAWN_STATIC int DlopenAppSpawn(AppSpawnMgr *content)
     (void)ParseJsonConfig("etc/appspawn", SYSTEMLIB_JSON, DoDlopenLibs, nullptr);
 #ifdef PRE_DLOPEN_ARKWEB_LIB
     DlopenArkWebLib();
+#endif
     APPSPAWN_LOGI("DlopenAppSpawn: Start reclaim file cache");
     OHOS::Ace::AceForwardCompatibility::ReclaimFileCache(getpid());
-#endif
     return 0;
 }
 
