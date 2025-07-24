@@ -173,6 +173,10 @@ APPSPAWN_STATIC int SetCapabilities(const AppSpawnMgr *content, const AppSpawnin
         baseCaps = CAP_TO_MASK(CAP_DAC_OVERRIDE) | CAP_TO_MASK(CAP_DAC_READ_SEARCH) |
         CAP_TO_MASK(CAP_FOWNER) | CAP_TO_MASK(CAP_KILL);
     }
+#else
+    if (IsAppSpawnMode(content)) {
+        baseCaps = CheckAppMsgFlagsSet(property, APP_FLAGS_SET_CAPS_FOWNER) ? (1 << CAP_FOWNER) : 0;
+    }
 #endif
     const uint64_t inheriTable = baseCaps;
     const uint64_t permitted = baseCaps;
