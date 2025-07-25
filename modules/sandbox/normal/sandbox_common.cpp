@@ -398,7 +398,8 @@ uint32_t SandboxCommon::ConvertFlagStr(const std::string &flagStr)
                                                  {"DLP_MANAGER", 2},
                                                  {"DEVELOPER_MODE", 17},
                                                  {"PREINSTALLED_HAP", 29},
-                                                 {"CUSTOM_SANDBOX_HAP", 31}};
+                                                 {"CUSTOM_SANDBOX_HAP", 31},
+                                                 {"PREINSTALLED_SHELL_HAP", 35}};
 
     if (flagsMap.count(flagStr)) {
         return 1 << flagsMap.at(flagStr);
@@ -882,6 +883,15 @@ const std::string& SandboxCommon::GetArkWebPackageName(void)
     return arkWebPackageName;
 }
 
+const std::string& SandboxCommon::GetDevModel(void)
+{
+    static std::string devModel;
+    if (devModel.empty()) {
+        devModel = system::GetParameter(SandboxCommonDef::DEVICE_MODEL_NAME_PARAM, "");
+    }
+    return devModel;
+}
+
 std::string SandboxCommon::ConvertToRealPathWithPermission(const AppSpawningCtx *appProperty, std::string path)
 {
     AppSpawnMsgBundleInfo *info =
@@ -953,6 +963,10 @@ std::string SandboxCommon::ConvertToRealPath(const AppSpawningCtx *appProperty, 
         path = ReplaceAllVariables(path, SandboxCommonDef::g_arkWebPackageName, GetArkWebPackageName());
         APPSPAWN_LOGV("arkWeb sandbox, path %{public}s, package:%{public}s",
                       path.c_str(), GetArkWebPackageName().c_str());
+    }
+
+    if (path.find(SandboxCommonDef::g_devModel) != std::string::npos) {
+        path = ReplaceAllVariables(path, SandboxCommonDef::g_devModel, GetDevModel());
     }
 
     return path;

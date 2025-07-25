@@ -93,6 +93,7 @@ const std::string g_variablePackageName = "<variablePackageName>";
 const std::string g_clonePackageName = "<clonePackageName>";
 const std::string g_arkWebPackageName = "<arkWebPackageName>";
 const std::string g_hostUserId = "<hostUserId>";
+const std::string g_devModel = "<devModel>";
 
 /* HSP */
 const std::string HSPLIST_SOCKET_TYPE = "HspList";
@@ -148,6 +149,9 @@ const std::string READ_WRITE_USER_FILE_MODE = "ohos.permission.READ_WRITE_USER_F
 const std::string GET_ALL_PROCESSES_MODE = "ohos.permission.GET_ALL_PROCESSES";
 const std::string APP_ALLOW_IOURING = "ohos.permission.ALLOW_IOURING";
 const std::string ARK_WEB_PERSIST_PACKAGE_NAME = "persist.arkwebcore.package_name";
+
+/* 系统参数 */
+const std::string DEVICE_MODEL_NAME_PARAM = "const.cust.devmodel";
 
 // 枚举类型
 enum SandboxConfigType {

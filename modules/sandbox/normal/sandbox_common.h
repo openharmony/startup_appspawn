@@ -127,6 +127,7 @@ private:
     static std::string ReplaceHostUserId(const AppSpawningCtx *appProperty, const std::string &path);
     static std::string ReplaceClonePackageName(const AppSpawningCtx *appProperty, const std::string &path);
     static const std::string &GetArkWebPackageName(void);
+    static const std::string &GetDevModel(void);
 
 private:
     static int32_t deviceTypeEnable_;
