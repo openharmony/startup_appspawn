@@ -128,11 +128,7 @@ APPSPAWN_STATIC pid_t GetPidByName(const char *name)
             continue;
         }
         size_t newline_pos = strcspn(buffer, "\n");
-        if (newline_pos < sizeof(buffer) -1) {
-            buffer[newline_pos] = '\0';
-        } else {
-            buffer[sizeof(buffer) -1] = '\0';
-        }
+        APPSPAWN_CHECK_ONLY_EXPER(newline_pos >= sizeof(buffer), buffer[newline_pos] = 0);
         if (strcmp(buffer, name) != 0) {
             (void)fclose(file);
             continue;

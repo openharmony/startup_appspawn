@@ -489,10 +489,9 @@ static int ParseDataGroupList(AppSpawnMgr *content, const AppSpawningCtx *proper
 {
     int ret = 0;
     cJSON *dataGroupList = GetJsonObjFromExtInfo(property, DATA_GROUP_SOCKET_TYPE);
-    if (dataGroupList == nullptr || !cJSON_IsArray(dataGroupList)) {
-        APPSPAWN_LOGE("dataGroupList is empty");
-        return APPSPAWN_ARG_INVALID;
-    }
+    APPSPAWN_CHECK(dataGroupList != nullptr, return APPSPAWN_ARG_INVALID, "dataGroupList is empty");
+    APPSPAWN_CHECK(cJSON_IsArray(dataGroupList), cJSON_Delete(dataGroupList);
+        return APPSPAWN_ARG_INVALID, "dataGroupList is not Array");
 
     // Iterate through the array (assuming groups is an array)
     cJSON *item = nullptr;
