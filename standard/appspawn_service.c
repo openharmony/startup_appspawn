@@ -62,9 +62,6 @@
 #define PIDFD_NONBLOCK O_NONBLOCK
 #endif
 
-// When arkweb is upgraded, the maximum number of dlclose loop iterations.
-#define MAX_DLCLOSE_COUNT 10
-
 static void WaitChildTimeout(const TimerHandle taskHandle, void *context);
 static void ProcessChildResponse(const WatcherHandle taskHandle, int fd, uint32_t *events, const void *context);
 static void WaitChildDied(pid_t pid);
