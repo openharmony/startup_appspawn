@@ -142,8 +142,8 @@ int AddPermissionItemToEncapsInfo(UserEncap *encap, cJSON *permissionItem);
 void FreeEncapsInfo(UserEncaps *encapsInfo);
 int SpawnSetEncapsPermissions(AppSpawnMgr *content, AppSpawningCtx *property);
 int WriteEncapsInfo(int fd, AppSpawnEncapsBaseType encapsType, const void *encapsInfo, uint32_t flag);
-int AddPermissionIntArrayToValue(cJSON *arrayItem, UserEncap *encap, int arraySize);
-int AddPermissionBoolArrayToValue(cJSON *arrayItem, UserEncap *encap, int arraySize);
+int AddPermissionIntArrayToValue(cJSON *arrayItem, UserEncap *encap, uint32_t arraySize);
+int AddPermissionBoolArrayToValue(cJSON *arrayItem, UserEncap *encap, uint32_t arraySize);
 int AddPermissionStrArrayToValue(cJSON *arrayItem, UserEncap *encap);
 int AddPermissionArrayToValue(cJSON *permissionItemArr, UserEncap *encap);
 
