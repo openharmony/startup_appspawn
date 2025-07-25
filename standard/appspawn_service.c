@@ -290,7 +290,6 @@ static void SendMessageComplete(const TaskHandle taskHandle, BufferHandle handle
 
 static int SendResponse(const AppSpawnConnection *connection, const AppSpawnMsg *msg, int result, pid_t pid)
 {
-    StartAppspawnTrace("SendResponse");
     APPSPAWN_LOGV("SendResponse connectionId: %{public}u result: 0x%{public}x pid: %{public}d",
         connection->connectionId, result, pid);
     uint32_t bufferSize = sizeof(AppSpawnResponseMsg);
@@ -302,9 +301,7 @@ static int SendResponse(const AppSpawnConnection *connection, const AppSpawnMsg 
         return -1, "Failed to memcpy_s bufferSize");
     buffer->result.result = result;
     buffer->result.pid = pid;
-    ret = LE_Send(LE_GetDefaultLoop(), connection->stream, handle, bufferSize);
-    FinishAppspawnTrace();
-    return ret;
+    return LE_Send(LE_GetDefaultLoop(), connection->stream, handle, bufferSize);
 }
 
 static void WaitMsgCompleteTimeOut(const TimerHandle taskHandle, void *context)
@@ -761,6 +758,7 @@ static int GetAppSpawnMsg(AppSpawningCtx *property, uint32_t memSize)
         message = NULL;
         return 0;
     }
+    DeleteAppSpawnMsg(&message);
     return -1;
 }
 
@@ -845,7 +843,7 @@ static void ProcessPreFork(AppSpawnContent *content, AppSpawningCtx *property)
         FinishAppspawnTrace();
         if (content->reservedPid < 0) {
             ClearPipeFd(content->preforkFd, PIPE_FD_LENGTH);
-            APPSPAWN_LOGE("prefork fork child process failed %{public}d", content->reservedPid);
+            APPSPAWN_LOGE("prefork fork child process failed %{public}d, err %{public}d", content->reservedPid, errno);
         }
     }
 }
@@ -1119,7 +1117,9 @@ static void ProcessChildResponse(const WatcherHandle taskHandle, int fd, uint32_
     ProcessMgrHookExecute(STAGE_SERVER_APP_ADD, GetAppSpawnContent(), appInfo);
     // response
     AppSpawnHookExecute(STAGE_PARENT_PRE_RELY, 0, GetAppSpawnContent(), &property->client);
+    StartAppspawnTrace("SendResponse");
     SendResponse(property->message->connection, &property->message->msgHeader, 0, property->pid);
+    FinishAppspawnTrace();
     AppSpawnHookExecute(STAGE_PARENT_POST_RELY, 0, GetAppSpawnContent(), &property->client);
 #ifdef DEBUG_BEGETCTL_BOOT
     if (IsDeveloperModeOpen()) {
@@ -1344,8 +1344,8 @@ static void AppSpawnRun(AppSpawnContent *content, int argc, char *const argv[])
 
 APPSPAWN_STATIC int AppSpawnClearEnv(AppSpawnMgr *content, AppSpawningCtx *property)
 {
-    StartAppspawnTrace("AppSpawnClearEnv");
     APPSPAWN_CHECK(content != NULL, return 0, "Invalid appspawn content");
+    StartAppspawnTrace("AppSpawnClearEnv");
     DeleteAppSpawningCtx(property);
     AppSpawnDestroyContent(&content->content);
     APPSPAWN_LOGV("clear %{public}d end", getpid());
