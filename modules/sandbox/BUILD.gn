@@ -97,7 +97,6 @@ if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
       "config_policy:configpolicy_util",
       "hilog:libhilog",
       "init:libbegetutil",
-      "json:nlohmann_json_static",
     ]
     if (!defined(ohos_lite)) {
       external_deps += [ "hitrace:hitrace_meter" ]
