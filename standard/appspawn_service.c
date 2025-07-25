@@ -1769,18 +1769,7 @@ APPSPAWN_STATIC void ProcessObserveProcessSignalMsg(AppSpawnConnection *connecti
     DeleteAppSpawnMsg(&message);
 }
 
-#ifdef PRE_DLOPEN_ARKWEB_LIB
-static bool IsNWebLibLoaded(Dl_namespace dlns)
-{
-    void* handler = dlopen_ns(&dlns, "libarkweb_engine.so", RTLD_NOW | RTLD_NOLOAD);
-    if (handler) {
-        dlclose(handler);
-        return true;
-    }
-    return false;
-}
-
-static int ProcessSpawnDlopenMsg(AppSpawnMsgNode *message)
+static void ProcessSpawnDlopenMsg(AppSpawnConnection *connection, AppSpawnMsgNode *message)
 {
     AppSpawnMsg* msg = &message->msgHeader;
     APPSPAWN_LOGI("Recv ProcessSpawnReqMsg message header magic: 0x%{public}x type: %{public}u"
@@ -1791,6 +1780,7 @@ static int ProcessSpawnDlopenMsg(AppSpawnMsgNode *message)
         msg->msgLen,
         msg->processName);
 
+#ifdef PRE_DLOPEN_ARKWEB_LIB
     Dl_namespace dlns;
     if (dlns_get("nweb_ns", &dlns) != 0) {
         char arkwebLibPath[PATH_SIZE] = "";
@@ -1798,7 +1788,8 @@ static int ProcessSpawnDlopenMsg(AppSpawnMsgNode *message)
                        "%s%s%s", "/data/app/el1/bundle/public/", msg->processName,
                        "/libs/arm64:/data/storage/el1/bundle/arkwebcore/libs/arm64") < 0) {
             APPSPAWN_LOGE("FAILED to get arkwebLibPath");
-            return -1;
+            SendResponse(connection, msg, -1, 0);
+            return;
         }
         APPSPAWN_LOGI("ProcessSpawnDlopenMsg arkwebLibPath: %{public}s", arkwebLibPath);
 
@@ -1810,54 +1801,18 @@ static int ProcessSpawnDlopenMsg(AppSpawnMsgNode *message)
         dlns_inherit(&dlns, &ndkns, "allow_all_shared_libs");
     }
 
-
     void* webEngineHandle = dlopen_ns(&dlns, "libarkweb_engine.so", RTLD_NOW | RTLD_GLOBAL);
     if (!webEngineHandle) {
         APPSPAWN_LOGE("FAILED to dlopen libarkweb_engine.so in appspawn %{public}s", dlerror());
-        return -1;
+        SendResponse(connection, msg, -1, 0);
     } else {
         APPSPAWN_LOGI("SUCCESS to dlopen libarkweb_engine.so in appspawn");
-        return 0;
+        SendResponse(connection, msg, 0, 0);
     }
-}
-
-static int ProcessSpawnDlcloseMsg(AppSpawnMsgNode *message)
-{
-    AppSpawnMsg* msg = &message->msgHeader;
-    APPSPAWN_LOGI("Recv ProcessSpawnReqMsg message header magic: 0x%{public}x type: %{public}u"
-                  "id: %{public}u len: %{public}u processName: %{public}s",
-        msg->magic,
-        msg->msgType,
-        msg->msgId,
-        msg->msgLen,
-        msg->processName);
-    Dl_namespace dlns;
-    if (dlns_get("nweb_ns", &dlns) != 0) {
-        APPSPAWN_LOGE("Failed to get nweb ns");
-        return 0;
-    }
-
-    void* webEngineHandle = dlopen_ns(&dlns, "libarkweb_engine.so", RTLD_NOW | RTLD_NOLOAD);
-    if (!webEngineHandle) {
-        APPSPAWN_LOGI("FAILED to dlopen libarkweb_engine.so in appspawn %{public}s", dlerror());
-        return 0;
-    }
-
-    int cnt = MAX_DLCLOSE_COUNT;
-    do {
-        cnt--;
-        dlclose(webEngineHandle);
-    } while (cnt > 0 && IsNWebLibLoaded(dlns));
-
-    if (cnt == 0 && IsNWebLibLoaded(dlns)) {
-        APPSPAWN_LOGE("ProcessSpawnDlcloseMsg failed to dlclose arkweb so");
-        return -1;
-    }
-
-    APPSPAWN_LOGE("ProcessSpawnDlcloseMsg success to dlclose arkweb so");
-    return 0;
-}
+#else
+    SendResponse(connection, msg, 0, 0);
 #endif
+}
 
 static void ProcessRecvMsg(AppSpawnConnection *connection, AppSpawnMsgNode *message)
 {
@@ -1919,22 +1874,8 @@ static void ProcessRecvMsg(AppSpawnConnection *connection, AppSpawnMsgNode *mess
         case MSG_OBSERVE_PROCESS_SIGNAL_STATUS:
             ProcessObserveProcessSignalMsg(connection, message);
             break;
-        case MSG_UNLOAD_WEBLIB_IN_APPSPAWN:
-#ifdef PRE_DLOPEN_ARKWEB_LIB
-            ret = ProcessSpawnDlcloseMsg(message);
-            SendResponse(connection, msg, ret, 0);
-#else
-            SendResponse(connection, msg, 0, 0);
-#endif
-            DeleteAppSpawnMsg(&message);
-            break;
         case MSG_LOAD_WEBLIB_IN_APPSPAWN:
-#ifdef PRE_DLOPEN_ARKWEB_LIB
-            ret = ProcessSpawnDlopenMsg(message);
-            SendResponse(connection, msg, ret, 0);
-#else
-            SendResponse(connection, msg, 0, 0);
-#endif
+            ProcessSpawnDlopenMsg(connection, message);
             DeleteAppSpawnMsg(&message);
             break;
         default:
