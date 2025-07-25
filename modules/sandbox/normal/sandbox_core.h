@@ -121,6 +121,12 @@ private:
 
     static int32_t DoMountDebugPoints(const AppSpawningCtx *appProperty, cJSON *appConfig);
     static int32_t MountDebugSharefs(const AppSpawningCtx *property, const char *src, const char *target);
+
+    // 处理拥有沙箱权限应用的挂载
+    static void GetSpecialMountCondition(bool &isPreInstalled, bool &isHaveSandBoxPermission,
+                                         const AppSpawningCtx *appProperty);
+    static int32_t MountNonShellPreInstallHap(const AppSpawningCtx *appProperty, cJSON *item);
+    static int32_t MountShellPreInstallHap(const AppSpawningCtx *appProperty, cJSON *item);
 };
 
 } // namespace AppSpawn

@@ -703,6 +703,39 @@ int32_t SandboxCore::DoSandboxRootFolderCreate(const AppSpawningCtx *appProperty
     return 0;
 }
 
+void SandboxCore::GetSpecialMountCondition(bool &isPreInstalled, bool &isHaveSandBoxPermission,
+                                           const AppSpawningCtx *appProperty)
+{
+    const std::string preInstallFlag = "PREINSTALLED_HAP";
+    const std::string customSandBoxFlag = "CUSTOM_SANDBOX_HAP";
+    isPreInstalled = (GetAppMsgFlags(appProperty) & SandboxCommon::ConvertFlagStr(preInstallFlag)) != 0;
+    isHaveSandBoxPermission = (GetAppMsgFlags(appProperty) & SandboxCommon::ConvertFlagStr(customSandBoxFlag)) != 0;
+}
+
+int32_t SandboxCore::MountNonShellPreInstallHap(const AppSpawningCtx *appProperty, cJSON *item)
+{
+    bool isPreInstalled = false;
+    bool isHaveSandBoxPermission = false;
+    GetSpecialMountCondition(isPreInstalled, isHaveSandBoxPermission, appProperty);
+    bool preInstallMount = (isPreInstalled && !isHaveSandBoxPermission);
+    if (preInstallMount) {
+        return DoAllMntPointsMount(appProperty, item, nullptr, SandboxCommonDef::g_flagePoint);
+    }
+    return 0;
+}
+
+int32_t SandboxCore::MountShellPreInstallHap(const AppSpawningCtx *appProperty, cJSON *item)
+{
+    bool isPreInstalled = false;
+    bool isHaveSandBoxPermission = false;
+    GetSpecialMountCondition(isPreInstalled, isHaveSandBoxPermission, appProperty);
+    bool preInstallShellMount = (isPreInstalled && isHaveSandBoxPermission);
+    if (preInstallShellMount) {
+        return DoAllMntPointsMount(appProperty, item, nullptr, SandboxCommonDef::g_flagePoint);
+    }
+    return 0;
+}
+
 int32_t SandboxCore::HandleFlagsPoint(const AppSpawningCtx *appProperty, cJSON *appConfig)
 {
     cJSON *flagsPoints = cJSON_GetObjectItemCaseSensitive(appConfig, SandboxCommonDef::g_flagePoint);
@@ -717,6 +750,18 @@ int32_t SandboxCore::HandleFlagsPoint(const AppSpawningCtx *appProperty, cJSON *
             return 0;
         }
         std::string flagsStr(flagsChr);
+
+        const std::string preInstallFlag = "PREINSTALLED_HAP";
+        const std::string preInstallShellFlag = "PREINSTALLED_SHELL_HAP";
+
+        if (flagsStr == preInstallFlag) {
+            return MountNonShellPreInstallHap(appProperty, item);
+        }
+
+        if (flagsStr == preInstallShellFlag) {
+            return MountShellPreInstallHap(appProperty, item);
+        }
+
         uint32_t flag = SandboxCommon::ConvertFlagStr(flagsStr);
         if ((GetAppMsgFlags(appProperty) & flag) == 0) {
             return 0;
