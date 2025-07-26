@@ -902,13 +902,7 @@ std::string SandboxCommon::ConvertToRealPathWithPermission(const AppSpawningCtx 
     }
 
     if (path.find(SandboxCommonDef::g_userId) != std::string::npos) {
-        if (deviceTypeEnable_ == SandboxCommonDef::FILE_CROSS_APP_STATUS) {
-            path = ReplaceAllVariables(path, SandboxCommonDef::g_userId, "currentUser");
-        } else if (deviceTypeEnable_ == SandboxCommonDef::FILE_ACCESS_COMMON_DIR_STATUS) {
-            path = ReplaceAllVariables(path, SandboxCommonDef::g_userId, "currentUser");
-        } else {
-            return "";
-        }
+        path = ReplaceAllVariables(path, SandboxCommonDef::g_userId, "currentUser");
     }
     return path;
 }
