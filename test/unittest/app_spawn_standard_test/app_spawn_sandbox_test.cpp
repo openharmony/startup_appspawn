@@ -32,6 +32,7 @@
 #include "app_spawn_test_helper.h"
 #include "sandbox_dec.h"
 #include "sandbox_shared_mount.h"
+#include "parameters.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -2340,5 +2341,95 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_Shared_Mount_24, TestSize.Level0
         res = 0;
     }
     EXPECT_EQ(res, 0);
+}
+
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_DevModel_001, TestSize.Level0)
+{
+    AppSpawningCtx* spawningCtx = GetTestAppProperty();
+    std::string path = AppSpawn::SandboxCommon::ConvertToRealPath(spawningCtx, "/version/special_cust/<devModel>");
+    ASSERT_NE(path.c_str(), nullptr);
+    std::string devModelPath =
+        "/version/special_cust/" + system::GetParameter(SandboxCommonDef::DEVICE_MODEL_NAME_PARAM, "");
+
+    ASSERT_EQ(strcmp(path.c_str(), devModelPath.c_str()), 0);
+    DeleteAppSpawningCtx(spawningCtx);
+}
+
+HWTEST_F(AppSpawnSandboxTest, Handle_Flag_Point_PreInstall_Shell_Hap_001, TestSize.Level0)
+{
+    std::string flagPointConfigStr = "{ \
+        \"flags-point\": [ \
+            { \
+                \"flags\": \"PREINSTALLED_HAP\", \
+                \"mount-paths\": [{ \
+                    \"src-path\": \"/version/special_cust/app\", \
+                    \"sandbox-path\": \"/version/special_cust/app\", \
+                    \"sandbox-flags\": [ \
+                        \"bind\", \
+                        \"rec\" \
+                    ], \
+                    \"check-action-status\": \"false\" \
+                }] \
+            }, \
+            { \
+                \"flags\": \"PREINSTALLED_SHELL_HAP\", \
+                \"mount-paths\": [{ \
+                    \"src-path\": \"/system/app/HiShell\", \
+                    \"sandbox-path\": \"/system/app/HiShell\", \
+                    \"sandbox-flags\": [ \
+                        \"bind\", \
+                        \"rec\" \
+                    ], \
+                    \"check-action-status\": \"false\" \
+                }] \
+            } \
+        ] \
+    }";
+    cJSON *flagPointConfig = cJSON_Parse(flagPointConfigStr.c_str());
+    AppSpawningCtx *appProperty = GetTestAppProperty();
+    ASSERT_EQ(appProperty != nullptr, 1);
+    int32_t ret = AppSpawn::SandboxCore::HandleFlagsPoint(appProperty, flagPointConfig);
+    EXPECT_EQ(ret, 0);
+    DeleteAppSpawningCtx(appProperty);
+}
+
+HWTEST_F(AppSpawnSandboxTest, Handle_Flag_Point_PreInstall_Shell_Hap_002, TestSize.Level0)
+{
+    std::string flagPointConfigStr = "{ \
+        \"flags-point\": [ \
+            { \
+                \"flags\": \"PREINSTALLED_HAP\", \
+                \"mount-paths\": [{ \
+                    \"src-path\": \"/version/special_cust/app\", \
+                    \"sandbox-path\": \"/version/special_cust/app\", \
+                    \"sandbox-flags\": [ \
+                        \"bind\", \
+                        \"rec\" \
+                    ], \
+                    \"check-action-status\": \"false\" \
+                }] \
+            }, \
+            { \
+                \"flags\": \"PREINSTALLED_SHELL_HAP\", \
+                \"mount-paths\": [{ \
+                    \"src-path\": \"/system/app/HiShell\", \
+                    \"sandbox-path\": \"/system/app/HiShell\", \
+                    \"sandbox-flags\": [ \
+                        \"bind\", \
+                        \"rec\" \
+                    ], \
+                    \"check-action-status\": \"false\" \
+                }] \
+            } \
+        ] \
+    }";
+    cJSON *flagPointConfig = cJSON_Parse(flagPointConfigStr.c_str());
+    AppSpawningCtx *appProperty = GetTestAppProperty();
+    ASSERT_EQ(appProperty != nullptr, 1);
+    int ret = SetAppSpawnMsgFlag(appProperty->message, TLV_MSG_FLAGS, APP_FLAGS_PRE_INSTALLED_HAP);
+    ASSERT_EQ(ret, 0);
+    int32_t res = AppSpawn::SandboxCore::HandleFlagsPoint(appProperty, flagPointConfig);
+    EXPECT_EQ(res, 0);
+    DeleteAppSpawningCtx(appProperty);
 }
 }  // namespace OHOS
