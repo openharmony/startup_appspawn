@@ -57,7 +57,6 @@ bool SandboxCore::NeedNetworkIsolated(AppSpawningCtx *property)
 
 int SandboxCore::EnableSandboxNamespace(AppSpawningCtx *appProperty, uint32_t sandboxNsFlags)
 {
-    StartAppspawnTrace("EnableSandboxNamespace");
 #ifdef APPSPAWN_HISYSEVENT
     struct timespec startClock = {0};
     clock_gettime(CLOCK_MONOTONIC, &startClock);
@@ -75,7 +74,6 @@ int SandboxCore::EnableSandboxNamespace(AppSpawningCtx *appProperty, uint32_t sa
         rc = EnableNewNetNamespace();
         APPSPAWN_CHECK(rc == 0, return rc, "Set %{public}s new netnamespace failed", GetBundleName(appProperty));
     }
-    FinishAppspawnTrace();
     return 0;
 }
 
@@ -104,8 +102,8 @@ bool SandboxCore::CheckMountFlag(const AppSpawningCtx *appProperty, const std::s
     return false;
 }
 
-void SandboxCore::UpdateMsgFlagsWithPermission(AppSpawningCtx *appProperty,
-    const std::string &permissionMode, uint32_t flag)
+void SandboxCore::UpdateMsgFlagsWithPermission(AppSpawningCtx *appProperty, const std::string &permissionMode,
+                                               uint32_t flag)
 {
     int32_t processIndex = GetPermissionIndex(nullptr, permissionMode.c_str());
     if ((CheckAppPermissionFlagSet(appProperty, static_cast<uint32_t>(processIndex)) == 0)) {
@@ -176,11 +174,10 @@ int32_t SandboxCore::DoDlpAppMountStrategy(const AppSpawningCtx *appProperty, co
     // To make sure destinationPath exist
     (void)SandboxCommon::CreateDirRecursive(sandboxPath, SandboxCommonDef::FILE_MODE);
 
-    int ret = 0;
 #ifndef APPSPAWN_TEST
     APPSPAWN_LOGV("Bind mount %{public}s to %{public}s '%{public}s' '%{public}lu' '%{public}s'",
         srcPath.c_str(), sandboxPath.c_str(), fsType.c_str(), mountFlags, options);
-    ret = mount(srcPath.c_str(), sandboxPath.c_str(), fsType.c_str(), mountFlags, options);
+    int ret = mount(srcPath.c_str(), sandboxPath.c_str(), fsType.c_str(), mountFlags, options);
     APPSPAWN_CHECK(ret == 0, close(fd);
         return ret, "DoDlpAppMountStrategy failed, bind mount %{public}s to %{public}s failed %{public}d",
         srcPath.c_str(), sandboxPath.c_str(), errno);
@@ -276,17 +273,16 @@ int32_t SandboxCore::DoSandboxFilePermissionBind(AppSpawningCtx *appProperty, cJ
         cJSON *permissionChild = item->child;
         while (permissionChild != nullptr) {
             int index = GetPermissionIndex(nullptr, permissionChild->string);
-            APPSPAWN_LOGV("DoSandboxFilePermissionBind %{public}s index %{public}d", permissionChild->string, index);
             if (CheckAppPermissionFlagSet(appProperty, static_cast<uint32_t>(index)) == 0) {
                 permissionChild = permissionChild->next;
                 continue;
             }
-            DoAddGid(appProperty, permissionChild, permissionChild->string, SandboxCommonDef::g_permissionPrefix);
             cJSON *permissionMountPaths = cJSON_GetArrayItem(permissionChild, 0);
             if (!permissionMountPaths) {
                 permissionChild = permissionChild->next;
                 continue;
             }
+            APPSPAWN_LOGV("DoSandboxFilePermissionBind %{public}s index %{public}d", permissionChild->string, index);
             DoAddGid(appProperty, permissionMountPaths, permissionChild->string, SandboxCommonDef::g_permissionPrefix);
             DoAllMntPointsMount(appProperty, permissionMountPaths, permissionChild->string,
                                 SandboxCommonDef::g_permissionPrefix);
@@ -383,12 +379,11 @@ int32_t SandboxCore::DoSandboxFileCommonFlagsPointHandle(const AppSpawningCtx *a
         return 0;
     }
 
-    cJSON *appResoucesConfig = GetFirstSubConfig(firstCommon, SandboxCommonDef::g_appResources);
-    if (!appResoucesConfig) {
+    cJSON *appResourcesConfig = GetFirstSubConfig(firstCommon, SandboxCommonDef::g_appResources);
+    if (!appResourcesConfig) {
         return 0;
     }
-
-    return HandleFlagsPoint(appProperty, appResoucesConfig);
+    return HandleFlagsPoint(appProperty, appResourcesConfig);
 }
 
 int32_t SandboxCore::SetCommonAppSandboxProperty_(const AppSpawningCtx *appProperty, cJSON *config)
@@ -486,7 +481,6 @@ int32_t SandboxCore::MountAllGroup(const AppSpawningCtx *appProperty, std::strin
 
     mode_t mountSharedFlag = MS_SLAVE;
     if (CheckAppMsgFlagsSet(appProperty, APP_FLAGS_ISOLATED_SANDBOX)) {
-        APPSPAWN_LOGV("Data group flags is isolated");
         mountSharedFlag |= MS_REMOUNT | MS_NODEV | MS_RDONLY | MS_BIND;
     }
 
@@ -880,9 +874,7 @@ int32_t SandboxCore::SetAppSandboxProperty(AppSpawningCtx *appProperty, uint32_t
         return -1;
     }
     AppSpawnMsgDacInfo *dacInfo = reinterpret_cast<AppSpawnMsgDacInfo *>(GetAppProperty(appProperty, TLV_DAC_INFO));
-    if (dacInfo == nullptr) {
-        return -1;
-    }
+    APPSPAWN_CHECK(dacInfo != nullptr, return -1, "No dac info in msg app property");
 
     const std::string bundleName = GetBundleName(appProperty);
     cJSON *tmpJson = nullptr;
@@ -893,7 +885,9 @@ int32_t SandboxCore::SetAppSandboxProperty(AppSpawningCtx *appProperty, uint32_t
         SandboxCommonDef::ACCESS_DLP_FILE_MODE.c_str()))) != 0);
 
     // add pid to a new mnt namespace
+    StartAppspawnTrace("EnableSandboxNamespace");
     int rc = EnableSandboxNamespace(appProperty, sandboxNsFlags);
+    FinishAppspawnTrace();
     APPSPAWN_CHECK(rc == 0, return rc, "unshare failed, packagename is %{public}s", bundleName.c_str());
     if (UpdatePermissionFlags(appProperty) != 0) {
         APPSPAWN_LOGW("Set app permission flag fail.");
@@ -990,7 +984,9 @@ int32_t SandboxCore::SetAppSandboxPropertyNweb(AppSpawningCtx *appProperty, uint
     SandboxCommon::CreateDirRecursiveWithClock(sandboxPackagePath.c_str(), SandboxCommonDef::FILE_MODE);
 
     // add pid to a new mnt namespace
+    StartAppspawnTrace("EnableSandboxNamespace");
     int rc = EnableSandboxNamespace(appProperty, sandboxNsFlags);
+    FinishAppspawnTrace();
     APPSPAWN_CHECK(rc == 0, return rc, "unshare failed, packagename is %{public}s", bundleName.c_str());
 
     // check app sandbox switch
@@ -1001,10 +997,9 @@ int32_t SandboxCore::SetAppSandboxPropertyNweb(AppSpawningCtx *appProperty, uint
         rc = DoSandboxRootFolderCreate(appProperty, sandboxPackagePath);
     }
     APPSPAWN_CHECK(rc == 0, return rc, "DoSandboxRootFolderCreate failed, %{public}s", bundleName.c_str());
-    // rendering process can be created by different apps,
-    // and the bundle names of these apps are different,
-    // so we can't use the method SetPrivateAppSandboxProperty
-    // which mount dirs by using bundle name.
+
+    // rendering process can be created by different apps, and the bundle names of these apps are different
+    // so we can't use the method SetPrivateAppSandboxProperty which mount dirs by using bundle name.
     rc = SetRenderSandboxPropertyNweb(appProperty, sandboxPackagePath);
     APPSPAWN_CHECK(rc == 0, return rc, "SetRenderSandboxPropertyNweb for %{public}s failed", bundleName.c_str());
 
@@ -1055,8 +1050,6 @@ int32_t SandboxCore::ChangeCurrentDir(std::string &sandboxPackagePath, const std
     APPSPAWN_CHECK(ret == 0, return ret, "MNT_DETACH failed, packagename is %{public}s", bundleName.c_str());
     return ret;
 }
-
-
 
 static const DecDenyPathTemplate DEC_DENY_PATH_MAP[] = {
     {"ohos.permission.READ_WRITE_DOWNLOAD_DIRECTORY", "/storage/Users/currentUser/Download"},
@@ -1228,7 +1221,7 @@ int32_t SandboxCore::GetPackageList(AppSpawningCtx *property, std::vector<std::s
 {
     APPSPAWN_CHECK(property != nullptr, return APPSPAWN_ARG_INVALID, "Invalid property");
     AppDacInfo *info = reinterpret_cast<AppDacInfo *>(GetAppProperty(property, TLV_DAC_INFO));
-    if (GetBundleName(property) == nullptr ||SandboxCommon::CheckBundleName(GetBundleName(property)) != 0 ||
+    if (GetBundleName(property) == nullptr || SandboxCommon::CheckBundleName(GetBundleName(property)) != 0 ||
         info == nullptr) {
         std::string uid;
         char *userId = (char *)GetAppSpawnMsgExtInfo(property->message, MSG_EXT_NAME_USERID, nullptr);
@@ -1314,7 +1307,7 @@ int32_t SandboxCore::UninstallDebugSandbox(AppSpawnMgr *content, AppSpawningCtx 
         ret = rmdir(sandboxPath.c_str());
         APPSPAWN_CHECK_ONLY_LOG(ret == 0, "rmdir failed %{public}d %{public}d", ret, errno);
     }
-    
+
     return 0;
 }
 
@@ -1386,7 +1379,7 @@ int32_t SandboxCore::MountDebugSharefs(const AppSpawningCtx *property, const cha
     }
     char options[SandboxCommonDef::OPTIONS_MAX_LEN] = {0};
     ret = snprintf_s(options, SandboxCommonDef::OPTIONS_MAX_LEN, SandboxCommonDef::OPTIONS_MAX_LEN - 1,
-                         "override_support_delete,user_id=%u", info->uid / UID_BASE);
+                     "override_support_delete,user_id=%u", info->uid / UID_BASE);
     if (ret <= 0) {
         return APPSPAWN_ERROR_UTILS_MEM_FAIL;
     }

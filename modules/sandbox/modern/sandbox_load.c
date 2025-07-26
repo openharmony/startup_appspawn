@@ -725,7 +725,7 @@ APPSPAWN_STATIC int ParseAppSandboxConfig(const cJSON *root, ParseJsonContext *c
         cJSON *config = cJSON_GetObjectItemCaseSensitive(json, "permission");
         ret = ParseConditionalConfig(sandbox, config, "permission", ParsePermissionConfig);
         APPSPAWN_CHECK_ONLY_EXPER(ret == 0, return ret);
-        // sandbox permission
+        // spawning permission
         ret = AddSpawnerPermissionNode(sandbox);
         APPSPAWN_CHECK_ONLY_EXPER(ret == 0, return ret);
         // spawn-flag
