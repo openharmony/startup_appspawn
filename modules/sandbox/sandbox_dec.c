@@ -125,7 +125,7 @@ static int SetDenyConstraintDirs(AppSpawnMgr *content)
         APPSPAWN_LOGE("set sandbox policy failed.");
     } else {
         APPSPAWN_LOGI("set CONSTRAINT_DEC_POLICY_CMD sandbox policy success.");
-        for (uint32_t i = 0; i < decDirsSize; i++) {
+        for (uint32_t i = 0; i < decPolicyInfos.pathNum; i++) {
             APPSPAWN_LOGI("policy info: %{public}s", decPolicyInfos.path[i].path);
         }
     }
@@ -159,7 +159,7 @@ static int SetForcedPrefixDirs(AppSpawnMgr *content)
         APPSPAWN_LOGE("set sandbox forced prefix failed.");
     } else {
         APPSPAWN_LOGI("set SET_DEC_PREFIX_CMD sandbox policy success.");
-        for (uint32_t i = 0; i < decDirsSize; i++) {
+        for (uint32_t i = 0; i < decPolicyInfos.pathNum; i++) {
             APPSPAWN_LOGI("policy info: %{public}s", decPolicyInfos.path[i].path);
         }
     }
