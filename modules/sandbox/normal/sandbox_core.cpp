@@ -120,12 +120,11 @@ void SandboxCore::UpdateMsgFlagsWithPermission(AppSpawningCtx *appProperty, cons
 int32_t SandboxCore::UpdatePermissionFlags(AppSpawningCtx *appProperty)
 {
     int32_t index = 0;
-    int32_t appFullMountStatus = SandboxCommon::CheckAppFullMountEnable();
-    if (appFullMountStatus == SandboxCommonDef::FILE_CROSS_APP_STATUS) {
-        index = GetPermissionIndex(nullptr, SandboxCommonDef::FILE_CROSS_APP_MODE.c_str());
-    } else if (appFullMountStatus == SandboxCommonDef::FILE_ACCESS_COMMON_DIR_STATUS) {
-        index = GetPermissionIndex(nullptr, SandboxCommonDef::FILE_ACCESS_COMMON_DIR_MODE.c_str());
-    }
+#ifdef APPSPAWN_SUPPORT_NOSHAREFS
+    index = GetPermissionIndex(nullptr, SandboxCommonDef::FILE_CROSS_APP_MODE.c_str());
+#else
+    index = GetPermissionIndex(nullptr, SandboxCommonDef::FILE_ACCESS_COMMON_DIR_MODE.c_str());
+#endif
     int32_t fileMgrIndex = GetPermissionIndex(nullptr, SandboxCommonDef::FILE_ACCESS_MANAGER_MODE.c_str());
     if (index > 0 && (CheckAppPermissionFlagSet(appProperty, static_cast<uint32_t>(fileMgrIndex)) == 0)) {
         return SetAppPermissionFlags(appProperty, index);
