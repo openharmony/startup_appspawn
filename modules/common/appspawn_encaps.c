@@ -140,7 +140,7 @@ APPSPAWN_STATIC int AddPermissionStrToValue(const char *valueStr, UserEncap *enc
     return 0;
 }
 
-APPSPAWN_STATIC int AddPermissionIntArrayToValue(cJSON *arrayItem, UserEncap *encap, int arraySize)
+APPSPAWN_STATIC int AddPermissionIntArrayToValue(cJSON *arrayItem, UserEncap *encap, uint32_t arraySize)
 {
     uint32_t valueLen = sizeof(int) * arraySize;
     APPSPAWN_CHECK(valueLen <= OH_ENCAPS_VALUE_MAX_LEN, return APPSPAWN_ARG_INVALID,
@@ -164,7 +164,7 @@ APPSPAWN_STATIC int AddPermissionIntArrayToValue(cJSON *arrayItem, UserEncap *en
     return 0;
 }
 
-APPSPAWN_STATIC int AddPermissionBoolArrayToValue(cJSON *arrayItem, UserEncap *encap, int arraySize)
+APPSPAWN_STATIC int AddPermissionBoolArrayToValue(cJSON *arrayItem, UserEncap *encap, uint32_t arraySize)
 {
     uint32_t valueLen = sizeof(bool) * arraySize;
     APPSPAWN_CHECK(valueLen <= OH_ENCAPS_VALUE_MAX_LEN, return APPSPAWN_ARG_INVALID,
@@ -222,7 +222,7 @@ APPSPAWN_STATIC int AddPermissionStrArrayToValue(cJSON *arrayItem, UserEncap *en
 
 APPSPAWN_STATIC int AddPermissionArrayToValue(cJSON *permissionItemArr, UserEncap *encap)
 {
-    int arraySize = cJSON_GetArraySize(permissionItemArr);
+    uint32_t arraySize = (uint32_t)cJSON_GetArraySize(permissionItemArr);
     if (arraySize == 0) {
         return APPSPAWN_ARG_INVALID;
     }
@@ -349,7 +349,7 @@ static int SpawnSetMaxPids(AppSpawningCtx *property, UserEncaps *encapsInfo)
     APPSPAWN_CHECK(encapsInfo->encapsCount < OH_ENCAPS_MAX_COUNT,
         return APPSPAWN_ARG_INVALID, "Encaps count is more than 64, cannot set permissions");
 
-    int count = encapsInfo->encapsCount;
+    uint32_t count = encapsInfo->encapsCount;
     int ret = strcpy_s(encapsInfo->encap[count].key, OH_ENCAPS_KEY_MAX_LEN, APP_OHOS_ENCAPS_FORK_KEY);
     APPSPAWN_CHECK_ONLY_EXPER(ret == EOK, return APPSPAWN_SYSTEM_ERROR);
 
