@@ -761,7 +761,7 @@
                     "sandbox-flags": [ "bind", "rec" ]
                 },
                 {
-                    "src-path": "/mnt/user/<currentUserId>/sharefs/docs",
+                    "src-path": "/mnt/user/<currentUserId>/nosharefs/docs",
                     "sandbox-path": "/storage/Users",
                     "sandbox-flags": [ "bind", "rec" ]
                 },
@@ -949,7 +949,8 @@
             "mount-paths": [{
                     "src-path": "/data/log/UserView",
                     "sandbox-path": "/data/log/UserView",
-                    "sandbox-flags": [ "bind", "rec" ]
+                    "sandbox-flags": [ "bind", "rec" ],
+                    "dec-paths": [ "/data/log/UserView" ]
                 }
             ]
         }],
@@ -1062,11 +1063,6 @@
                     "sandbox-flags": [ "bind", "rec" ]
                 }
             ]
-        }],
-        "ohos.permission.READ_WRITE_USER_FILE":[{
-            "sandbox-switch": "ON",
-            "gids": [1006],
-            "mount-paths": []
         }],
         "ohos.permission.ACCESS_APP_CLONE_DIR":[{
             "sandbox-switch": "ON",
