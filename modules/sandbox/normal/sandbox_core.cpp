@@ -422,13 +422,12 @@ static inline cJSON *GetJsonObjFromProperty(const AppSpawningCtx *appProperty, c
     return root;
 }
 
-int32_t SandboxCore::MountAllHsp(const AppSpawningCtx *appProperty, std::string &sandboxPackagePath)
+int32_t SandboxCore::MountAllHsp(const AppSpawningCtx *appProperty, std::string &sandboxPackagePath, cJSON *hspRoot)
 {
     if (appProperty == nullptr || sandboxPackagePath == "") {
         return 0;
     }
     int ret = 0;
-    cJSON *hspRoot = GetJsonObjFromProperty(appProperty, SandboxCommonDef::HSPLIST_SOCKET_TYPE.c_str());
     APPSPAWN_CHECK_ONLY_EXPER(hspRoot != nullptr && cJSON_IsObject(hspRoot), return 0);
 
     cJSON *bundles = cJSON_GetObjectItemCaseSensitive(hspRoot, "bundles");
@@ -466,7 +465,6 @@ int32_t SandboxCore::MountAllHsp(const AppSpawningCtx *appProperty, std::string 
         ret = SandboxCommon::DoAppSandboxMountOnce(appProperty, &arg);
         APPSPAWN_CHECK(ret == 0, return 0, "mount library failed %{public}d", ret);
     }
-    cJSON_Delete(hspRoot);
     return 0;
 }
 
@@ -829,8 +827,9 @@ int32_t SandboxCore::SetCommonAppSandboxProperty(const AppSpawningCtx *appProper
         APPSPAWN_CHECK(ret == 0, return ret,
             "parse appdata config for common failed, %{public}s", sandboxPackagePath.c_str());
     }
-
-    ret = MountAllHsp(appProperty, sandboxPackagePath);
+    cJSON *hspRoot = GetJsonObjFromProperty(appProperty, SandboxCommonDef::HSPLIST_SOCKET_TYPE.c_str());
+    ret = MountAllHsp(appProperty, sandboxPackagePath, hspRoot);
+    cJSON_Delete(hspRoot);
     APPSPAWN_CHECK(ret == 0, return ret, "mount extraInfo failed, %{public}s", sandboxPackagePath.c_str());
 
     ret = MountAllGroup(appProperty, sandboxPackagePath);
