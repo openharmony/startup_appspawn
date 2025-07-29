@@ -32,7 +32,7 @@ static int OpenAndWriteToProc(const char *procName, const char *writeStr, size_t
 
     int writeResult = write(procFd, writeStr, writeLen);
     if (writeResult != (int)writeLen) {
-        APPSPAWN_LOGE("write %{public}s fail,result:%{public}d", writeStr, writeResult);
+        APPSPAWN_LOGE("write %{public}s fail, ret %{public}d, errno %{public}d", writeStr, writeResult, errno);
     } else {
         APPSPAWN_LOGV("write %{public}s success", writeStr);
     }
