@@ -108,7 +108,7 @@ private:
     static int32_t SetCommonAppSandboxProperty_(const AppSpawningCtx *appProperty, cJSON *config);
 
     // 处理可变参数的挂载
-    static int32_t MountAllHsp(const AppSpawningCtx *appProperty, std::string &sandboxPackagePath);
+    static int32_t MountAllHsp(const AppSpawningCtx *appProperty, std::string &sandboxPackagePath, cJSON *hspRoot);
     static int32_t MountAllGroup(const AppSpawningCtx *appProperty, std::string &sandboxPackagePath);
 
     // 沙箱回调函数
