@@ -16,11 +16,11 @@
 #include <gtest/gtest.h>
 
 #include "appspawn_utils.h"
+#include "cJSON.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-#include "cJSON.h"
 #include "appspawn_silk.h"
 
 extern struct SilkConfig g_silkConfig;
@@ -46,12 +46,12 @@ HWTEST_F(ParseSilkConfigTest, Parse_Silk_Config_001, TestSize.Level0)
 {
     const char *silkJsonStr = "{\"enabled_app_list\":[\"com.taobao.taobao\",\"com.tencent.mm\"]}";
     cJSON *root =  cJSON_Parse(silkJsonStr);
-    const char* testEnableSilkProcessName = "com.taobao.taobao";
+    const char* TEST_ENABLE_SILK_PROCESS_NAME = "com.taobao.taobao";
     bool ret = ParseSilkConfig(root, &g_silkConfig);
     cJSON_Delete(root);
     ASSERT_EQ(ret, true);
     ASSERT_EQ(g_silkConfig.configCursor, 2);
-    ret = LoadSilkLibrary(testEnableSilkProcessName);
+    ret = LoadSilkLibrary(TEST_ENABLE_SILK_PROCESS_NAME);
     ASSERT_EQ(ret, true);
     ASSERT_EQ(g_silkConfig.configItems, NULL);
     ASSERT_EQ(g_silkConfig.configCursor, 0);
@@ -65,12 +65,12 @@ HWTEST_F(ParseSilkConfigTest, Parse_Silk_Config_002, TestSize.Level0)
 {
     const char *silkJsonStr = "{\"enabled_app_list\":[\"com.taobao.taobao\",\"com.tencent.mm\"]}";
     cJSON *root =  cJSON_Parse(silkJsonStr);
-    const char* testEnableSilkProcessName = NULL;
+    const char* TEST_ENABLE_SILK_PROCESS_NAME = NULL;
     bool ret = ParseSilkConfig(root, &g_silkConfig);
     cJSON_Delete(root);
     ASSERT_EQ(ret, true);
     ASSERT_EQ(g_silkConfig.configCursor, 2);
-    ret = LoadSilkLibrary(testEnableSilkProcessName);
+    ret = LoadSilkLibrary(TEST_ENABLE_SILK_PROCESS_NAME);
     ASSERT_EQ(ret, false);
     ASSERT_EQ(g_silkConfig.configItems, NULL);
     ASSERT_EQ(g_silkConfig.configCursor, 0);

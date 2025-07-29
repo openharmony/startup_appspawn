@@ -465,7 +465,7 @@ std::string SandboxCommon::GetOptions(const AppSpawningCtx *appProperty, cJSON *
     return options;
 }
 
-std::vector<std::string> SandboxCommon::GetDecPath(const AppSpawningCtx *appProperty, cJSON *config) // GetSandboxDecPath
+std::vector<std::string> SandboxCommon::GetDecPath(const AppSpawningCtx *appProperty, cJSON *config)
 {
     AppSpawnMsgDacInfo *dacInfo = reinterpret_cast<AppSpawnMsgDacInfo *>(GetAppProperty(appProperty, TLV_DAC_INFO));
     if (dacInfo == nullptr) {
@@ -483,7 +483,7 @@ std::vector<std::string> SandboxCommon::GetDecPath(const AppSpawningCtx *appProp
         if (strItem == nullptr) {
             return -1;
         }
-        std::string decPath = ConvertToRealPath(appProperty, strItem);
+        std::string decPath = ConvertToRealPathWithPermission(appProperty, strItem);
         decPaths.emplace_back(std::move(decPath));
         return 0;
     };
@@ -835,8 +835,8 @@ std::string SandboxCommon::ReplaceVariablePackageName(const AppSpawningCtx *appP
             variablePackageName << bundleInfo->bundleName;
             break;
     }
-    tmpSandboxPath = ReplaceAllVariables(tmpSandboxPath, SandboxCommonDef::g_variablePackageName, variablePackageName.str());
-    APPSPAWN_LOGV("tmpSandboxPath %{public}s", tmpSandboxPath.c_str());
+    tmpSandboxPath = ReplaceAllVariables(tmpSandboxPath, SandboxCommonDef::g_variablePackageName,
+                                         variablePackageName.str());
     return tmpSandboxPath;
 }
 
@@ -988,7 +988,8 @@ int32_t SandboxCommon::DoAppSandboxMountOnce(const AppSpawningCtx *appProperty, 
     struct timespec mountEnd = {0};
     clock_gettime(CLOCK_MONOTONIC_COARSE, &mountEnd);
     uint64_t diff = DiffTime(&mountStart, &mountEnd);
-    APPSPAWN_CHECK_ONLY_LOG(diff < SandboxCommonDef::MAX_MOUNT_TIME, "mount %{public}s time %{public}" PRId64 " us", arg->srcPath, diff);
+    APPSPAWN_CHECK_ONLY_LOG(diff < SandboxCommonDef::MAX_MOUNT_TIME, "mount %{public}s time %{public}" PRId64 " us",
+                            arg->srcPath, diff);
 #ifdef APPSPAWN_HISYSEVENT
     APPSPAWN_CHECK_ONLY_EXPER(diff < FUNC_REPORT_DURATION, ReportAbnormalDuration(arg->srcPath, diff));
 #endif
