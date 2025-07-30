@@ -298,84 +298,112 @@
                 }
             ],
         "flags-point" : [{
-                    "flags": "DLP_MANAGER",
-                    "mount-paths" : [{
-                        "src-path" : "/data/app/el2/<currentUserId>/base/<PackageName_index>",
-                        "sandbox-path" : "/data/storage/el2/base",
-                        "sandbox-flags" : [ "bind", "rec" ],
-                        "check-action-status": "false"
-                    },{
-                        "src-path" : "/data/app/el1/<currentUserId>/database/<PackageName_index>",
-                        "sandbox-path" : "/data/storage/el1/database",
-                        "sandbox-flags" : [ "bind", "rec" ],
-                        "check-action-status": "false"
-                    }, {
-                        "src-path" : "/data/app/el2/<currentUserId>/database/<PackageName_index>",
-                        "sandbox-path" : "/data/storage/el2/database",
-                        "sandbox-flags" : [ "bind", "rec" ],
-                        "check-action-status": "false"
-                    }, {
-                        "src-path" : "/data/app/el1/<currentUserId>/base/<PackageName_index>",
-                        "sandbox-path" : "/data/storage/el1/base",
-                        "sandbox-flags" : [ "bind", "rec" ],
-                        "check-action-status": "false"
-                    }, {
-                        "src-path" : "/data/app/el2/<currentUserId>/log/<PackageName_index>",
-                        "sandbox-path" : "/data/storage/el2/log",
-                        "sandbox-flags" : [ "bind", "rec" ],
-                        "check-action-status": "false"
-                    }, {
-                        "src-path" : "/mnt/share/<currentUserId>/<PackageName_index>",
-                        "sandbox-path" : "/data/storage/el2/share",
-                        "sandbox-flags" : [ "bind", "rec" ],
-                        "check-action-status": "false"
-                    }
-                    ]}, {
-                        "flags": "START_FLAGS_BACKUP",
-                        "mount-paths": [{
-                            "src-path": "/data/app/el2/<currentUserId>/base/<PackageName>/.backup",
-                            "sandbox-path": "/data/storage/el2/backup",
-                            "sandbox-flags": [ "bind", "rec" ],
-                            "check-action-status": "false"
-                        }, {
-                            "src-path" : "/data/app/el1/<currentUserId>/base/<PackageName>/.backup",
-                            "sandbox-path" : "/data/storage/el1/backup",
-                            "sandbox-flags" : [ "bind", "rec" ],
-                            "check-action-status": "false"
-                        }
-                    ]}, {
-                        "flags": "DEVELOPER_MODE",
-                        "mount-paths": [{
-                            "src-path": "/data/app/el1/bundle/<currentUserId>/hnppublic",
-                            "sandbox-path": "/data/service/hnp",
-                            "sandbox-flags": [ "bind", "rec" ],
-                            "check-action-status": "false"
-                        }, {
-                            "src-path" : "/data/app/el1/bundle/<currentUserId>/hnp/<PackageName>",
-                            "sandbox-path" : "/data/app",
-                            "sandbox-flags" : [ "bind", "rec" ],
-                            "check-action-status": "false"
-                        }
-                    ]}, {
-                        "flags": "PREINSTALLED_HAP",
-                        "mount-paths": [{
-                            "src-path": "/system/app",
-                            "sandbox-path": "/system/app",
-                            "sandbox-flags": [ "bind", "rec" ],
-                            "check-action-status": "false"
-                        }
-                    ]}, {
-                        "flags": "CUSTOM_SANDBOX_HAP",
-                        "mount-paths": [{
-                            "src-path": "/tmp",
-                            "sandbox-path": "/tmp",
-                            "sandbox-flags": [ "bind", "rec" ],
-                            "check-action-status": "false"
-                        }
-                    ]}
-            ],
-            "symbol-links" : [
-            ]
+            "flags": "DLP_MANAGER",
+            "mount-paths" : [{
+                    "src-path" : "/data/app/el2/<currentUserId>/base/<PackageName_index>",
+                    "sandbox-path" : "/data/storage/el2/base",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/data/app/el1/<currentUserId>/database/<PackageName_index>",
+                    "sandbox-path" : "/data/storage/el1/database",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/data/app/el2/<currentUserId>/database/<PackageName_index>",
+                    "sandbox-path" : "/data/storage/el2/database",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/data/app/el1/<currentUserId>/base/<PackageName_index>",
+                    "sandbox-path" : "/data/storage/el1/base",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/data/app/el2/<currentUserId>/log/<PackageName_index>",
+                    "sandbox-path" : "/data/storage/el2/log",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/mnt/share/<currentUserId>/<PackageName_index>",
+                    "sandbox-path" : "/data/storage/el2/share",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }
+            ]}, {
+            "flags": "START_FLAGS_BACKUP",
+            "mount-paths": [{
+                    "src-path": "/data/app/el2/<currentUserId>/base/<PackageName>/.backup",
+                    "sandbox-path": "/data/storage/el2/backup",
+                    "sandbox-flags": [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/data/app/el1/<currentUserId>/base/<PackageName>/.backup",
+                    "sandbox-path" : "/data/storage/el1/backup",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }
+            ]}, {
+            "flags": "DEVELOPER_MODE",
+            "mount-paths": [{
+                    "src-path": "/data/app/el1/bundle/<currentUserId>/hnppublic",
+                    "sandbox-path": "/data/service/hnp",
+                    "sandbox-flags": [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/data/app/el1/bundle/<currentUserId>/hnp/<PackageName>",
+                    "sandbox-path" : "/data/app",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }
+            ]}, {
+            "flags": "PREINSTALLED_HAP",
+            "mount-paths": [{
+                    "src-path": "/system/app",
+                    "sandbox-path": "/system/app",
+                    "sandbox-flags": [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }
+            ]}, {
+            "flags": "CUSTOM_SANDBOX_HAP",
+            "mount-paths": [{
+                    "src-path": "/tmp",
+                    "sandbox-path": "/tmp",
+                    "sandbox-flags": [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }
+            ]}, {
+            "flags": "FILE_CROSS_APP",
+            "mount-paths": [{
+                    "src-path": "/mnt/data/external",
+                    "sandbox-path": "/storage/External",
+                    "sandbox-flags": [ "bind", "rec" ]
+                }, {
+                    "src-path": "/mnt/user/<currentUserId>/nosharefs/docs",
+                    "sandbox-path": "/storage/Users",
+                    "sandbox-flags": [ "bind", "rec" ]
+                }, {
+                    "src-path": "/mnt/data/<currentUserId>/userExternal",
+                    "sandbox-path": "/storage/userExternal",
+                    "sandbox-flags": [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }
+            ]}, {
+            "flags": "FILE_ACCESS_COMMON_DIR",
+            "mount-paths": [{
+                    "src-path": "/mnt/user/<currentUserId>/sharefs/docs",
+                    "sandbox-path": "/mnt/storage/Users",
+                    "sandbox-flags": [ "bind", "rec" ]
+                }, {
+                    "src-path": "/mnt/sandbox/<currentUserId>/<clonePackageName>/mnt/storage/Users",
+                    "sandbox-path": "/storage/Users",
+                    "sandbox-flags-customized": [ "MS_NODEV"],
+                    "dac-override-sensitive": "true",
+                    "fs-type": "sharefs",
+                    "options": "override"
+                }
+            ]}],
+            "symbol-links" : []
         }]
     }],
     "individual" : [{
@@ -750,43 +778,6 @@
                     "src-path": "/data/service/el1/public/edm/config/application/<PackageName>/<currentUserId>",
                     "sandbox-path": "/data/ecust/currentUser",
                     "sandbox-flags": [ "bind", "rec" ]
-                }
-            ]
-        }],
-        "ohos.permission.FILE_CROSS_APP":[{
-            "sandbox-switch": "ON",
-            "mount-paths": [{
-                    "src-path": "/mnt/data/external",
-                    "sandbox-path": "/storage/External",
-                    "sandbox-flags": [ "bind", "rec" ]
-                },
-                {
-                    "src-path": "/mnt/user/<currentUserId>/nosharefs/docs",
-                    "sandbox-path": "/storage/Users",
-                    "sandbox-flags": [ "bind", "rec" ]
-                },
-                {
-                    "src-path": "/mnt/data/<currentUserId>/userExternal",
-                    "sandbox-path": "/storage/userExternal",
-                    "sandbox-flags": [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }
-            ]
-        }],
-        "ohos.permission.FILE_ACCESS_COMMON_DIR":[{
-            "sandbox-switch": "ON",
-            "mount-paths": [{
-                    "src-path": "/mnt/user/<currentUserId>/sharefs/docs",
-                    "sandbox-path": "/mnt/storage/Users",
-                    "sandbox-flags": [ "bind", "rec" ]
-                },
-                {
-                    "src-path": "/mnt/sandbox/<currentUserId>/<clonePackageName>/mnt/storage/Users",
-                    "sandbox-path": "/storage/Users",
-                    "sandbox-flags-customized": [ "MS_NODEV"],
-                    "dac-override-sensitive": "true",
-                    "fs-type": "sharefs",
-                    "options": "override"
                 }
             ]
         }],
