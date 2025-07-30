@@ -76,7 +76,7 @@ private:
                                cJSON *appConfig);
     static void UpdateMsgFlagsWithPermission(AppSpawningCtx *appProperty, const std::string &permissionMode,
                                              uint32_t flag);
-    static int32_t UpdatePermissionFlags(AppSpawningCtx *appProperty);
+    static int32_t UpdatePointFlags(AppSpawningCtx *appProperty);
     static std::string GetSandboxPath(const AppSpawningCtx *appProperty, cJSON *mntPoint,
                                       const std::string &section, std::string sandboxRoot);
 

@@ -394,15 +394,16 @@ bool SandboxCommon::GetSwitchStatus(cJSON *config) // GetSbxSwitchStatusByConfig
 
 uint32_t SandboxCommon::ConvertFlagStr(const std::string &flagStr)
 {
-    const std::map<std::string, int> flagsMap = {{"0", 0}, {"START_FLAGS_BACKUP", 1},
-                                                 {"DLP_MANAGER", 2},
-                                                 {"DEVELOPER_MODE", 17},
-                                                 {"PREINSTALLED_HAP", 29},
-                                                 {"CUSTOM_SANDBOX_HAP", 31},
-                                                 {"PREINSTALLED_SHELL_HAP", 35}};
+    const std::map<std::string, int> flagsMap = {{"START_FLAGS_BACKUP", APP_FLAGS_BACKUP_EXTENSION},
+                                                 {"DLP_MANAGER", APP_FLAGS_DLP_MANAGER},
+                                                 {"DEVELOPER_MODE", APP_FLAGS_DEVELOPER_MODE},
+                                                 {"PREINSTALLED_HAP", APP_FLAGS_PRE_INSTALLED_HAP},
+                                                 {"CUSTOM_SANDBOX_HAP", APP_FLAGS_CUSTOM_SANDBOX},
+                                                 {"FILE_CROSS_APP", APP_FLAGS_FILE_CROSS_APP},
+                                                 {"FILE_ACCESS_COMMON_DIR", APP_FLAGS_FILE_ACCESS_COMMON_DIR}};
 
     if (flagsMap.count(flagStr)) {
-        return 1 << flagsMap.at(flagStr);
+        return flagsMap.at(flagStr);
     }
     return 0;
 }

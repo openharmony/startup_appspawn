@@ -95,7 +95,8 @@ bool SandboxCore::CheckMountFlag(const AppSpawningCtx *appProperty, const std::s
         return false;
     }
     std::string flagStr(flagChr);
-    if (((SandboxCommon::ConvertFlagStr(flagStr) & GetAppMsgFlags(appProperty)) != 0) &&
+    uint32_t flag = SandboxCommon::ConvertFlagStr(flagStr);
+    if ((CheckAppMsgFlagsSet(appProperty, flag) != 0) &&
         bundleName.find("wps") != std::string::npos) {
         return true;
     }
@@ -117,17 +118,17 @@ void SandboxCore::UpdateMsgFlagsWithPermission(AppSpawningCtx *appProperty, cons
     }
 }
 
-int32_t SandboxCore::UpdatePermissionFlags(AppSpawningCtx *appProperty)
+int32_t SandboxCore::UpdatePointFlags(AppSpawningCtx *appProperty)
 {
-    int32_t index = 0;
+    uint32_t index = 0;
 #ifdef APPSPAWN_SUPPORT_NOSHAREFS
-    index = GetPermissionIndex(nullptr, SandboxCommonDef::FILE_CROSS_APP_MODE.c_str());
+    index = APP_FLAGS_FILE_CROSS_APP;
 #else
-    index = GetPermissionIndex(nullptr, SandboxCommonDef::FILE_ACCESS_COMMON_DIR_MODE.c_str());
+    index = APP_FLAGS_FILE_ACCESS_COMMON_DIR;
 #endif
     int32_t fileMgrIndex = GetPermissionIndex(nullptr, SandboxCommonDef::FILE_ACCESS_MANAGER_MODE.c_str());
-    if (index > 0 && (CheckAppPermissionFlagSet(appProperty, static_cast<uint32_t>(fileMgrIndex)) == 0)) {
-        return SetAppPermissionFlags(appProperty, index);
+    if ((CheckAppPermissionFlagSet(appProperty, static_cast<uint32_t>(fileMgrIndex)) == 0)) {
+        return SetAppSpawnMsgFlag(appProperty->message, TLV_MSG_FLAGS, index);
     }
     return 0;
 }
@@ -701,8 +702,8 @@ void SandboxCore::GetSpecialMountCondition(bool &isPreInstalled, bool &isHaveSan
 {
     const std::string preInstallFlag = "PREINSTALLED_HAP";
     const std::string customSandBoxFlag = "CUSTOM_SANDBOX_HAP";
-    isPreInstalled = (GetAppMsgFlags(appProperty) & SandboxCommon::ConvertFlagStr(preInstallFlag)) != 0;
-    isHaveSandBoxPermission = (GetAppMsgFlags(appProperty) & SandboxCommon::ConvertFlagStr(customSandBoxFlag)) != 0;
+    isPreInstalled = CheckAppMsgFlagsSet(appProperty, SandboxCommon::ConvertFlagStr(preInstallFlag)) != 0;
+    isHaveSandBoxPermission = CheckAppMsgFlagsSet(appProperty, SandboxCommon::ConvertFlagStr(customSandBoxFlag)) != 0;
 }
 
 int32_t SandboxCore::MountNonShellPreInstallHap(const AppSpawningCtx *appProperty, cJSON *item)
@@ -756,7 +757,7 @@ int32_t SandboxCore::HandleFlagsPoint(const AppSpawningCtx *appProperty, cJSON *
         }
 
         uint32_t flag = SandboxCommon::ConvertFlagStr(flagsStr);
-        if ((GetAppMsgFlags(appProperty) & flag) == 0) {
+        if (CheckAppMsgFlagsSet(appProperty, flag) == 0) {
             return 0;
         }
         return DoAllMntPointsMount(appProperty, item, nullptr, SandboxCommonDef::g_flagePoint);
@@ -933,10 +934,8 @@ int32_t SandboxCore::SetAppSandboxProperty(AppSpawningCtx *appProperty, uint32_t
     int rc = EnableSandboxNamespace(appProperty, sandboxNsFlags);
     FinishAppspawnTrace();
     APPSPAWN_CHECK(rc == 0, return rc, "unshare failed, packagename is %{public}s", bundleName.c_str());
-    if (UpdatePermissionFlags(appProperty) != 0) {
-        APPSPAWN_LOGW("Set app permission flag fail.");
-        return -1;
-    }
+    APPSPAWN_CHECK(UpdatePointFlags(appProperty) == 0, return -1, "Set app permission flag fail.");
+
     UpdateMsgFlagsWithPermission(appProperty, SandboxCommonDef::GET_ALL_PROCESSES_MODE, APP_FLAGS_GET_ALL_PROCESSES);
     UpdateMsgFlagsWithPermission(appProperty, SandboxCommonDef::APP_ALLOW_IOURING, APP_FLAGS_ALLOW_IOURING);
     // check app sandbox switch
