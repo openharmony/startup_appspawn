@@ -117,6 +117,7 @@ if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
       include_dirs += [ "${appspawn_path}/modules/sysevent" ]
       sources += [ "${appspawn_path}/modules/sysevent/hisysevent_adapter.cpp" ]
     }
+
     if (appspawn_support_nosharefs) {
       defines += [ "APPSPAWN_SUPPORT_NOSHAREFS" ]
     }
