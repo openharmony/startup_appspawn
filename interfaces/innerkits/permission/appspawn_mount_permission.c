@@ -112,6 +112,7 @@ static int LoadPermissionConfig(PermissionManager *mgr)
     (void)ParseJsonConfig("etc/sandbox",
                           mgr->type == CLIENT_FOR_APPSPAWN ? APP_SANDBOX_FILE_NAME : RENDER_SANDBOX_FILE_NAME,
                           ParseAppSandboxConfig, mgr);
+
     size_t count = sizeof(g_staticPermission) / sizeof(g_staticPermission[0]);
     for (size_t i = 0; i < count; i++) {
         AddSandboxPermissionNode(g_staticPermission[i], &mgr->permissionQueue);
