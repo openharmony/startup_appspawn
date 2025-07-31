@@ -50,16 +50,6 @@ namespace {
     const std::string ARK_WEB_RENDER_LIB_NAME = "libarkweb_render.so";
     const std::string WEB_ENGINE_LIB_NAME = "libweb_engine.so";
     const std::string WEB_RENDER_LIB_NAME = "libnweb_render.so";
-    const std::string ARK_WEB_ENGINE_LIB_PRELOAD_PATH =
-        "/data/app/el1/bundle/public/com.huawei.hmos.arkwebcore/libs/arm64";
-    const std::string OHOS_ADPT_GLUE_SRC_LIB_PATH =
-        "/system/lib64/libohos_adapter_glue_source.z.so";
-
-#ifdef arkweb_preload
-    const std::string ARKWEB_BUNDLE_NAME = "com.ohos.arkwebcore";
-#else
-    const std::string ARKWEB_BUNDLE_NAME = "com.huawei.hmos.arkwebcore";
-#endif
 
 typedef enum {
     PRELOAD_NO = 0,         // 不预加载
@@ -171,6 +161,8 @@ static std::string GetOhosAdptGlueSrcLibPath()
 #ifdef webview_arm64
     const std::string ARK_WEB_CORE_HAP_LIB_PATH =
         "/system/lib64/libohos_adapter_glue_source.z.so";
+#elif webview_x86_64
+    const std::string ARK_WEB_CORE_HAP_LIB_PATH = "";
 #else
     const std::string ARK_WEB_CORE_HAP_LIB_PATH =
         "/system/lib/libohos_adapter_glue_source.z.so";
@@ -180,15 +172,20 @@ static std::string GetOhosAdptGlueSrcLibPath()
 
 static std::string GetArkWebEngineLibPath()
 {
+    char bundleName[PATH_MAX] = {0};
+    GetParameter("persist.arkwebcore.package_name", "", bundleName, PATH_MAX);
+    if (strlen(bundleName) == 0) {
+        APPSPAWN_LOGE("Fail to get persist.arkwebcore.package_name, empty");
+        return "";
+    }
 #ifdef webview_arm64
     const std::string ARK_WEB_CORE_HAP_LIB_PATH =
-        "/data/app/el1/bundle/public/" + ARKWEB_BUNDLE_NAME + "/libs/arm64";
+        "/data/app/el1/bundle/public/" + std::string(bundleName) + "/libs/arm64";
 #elif webview_x86_64
-    const std::string ARK_WEB_CORE_HAP_LIB_PATH =
-        "/data/app/el1/bundle/public/" + ARKWEB_BUNDLE_NAME + "/libs/x86_64";
+    const std::string ARK_WEB_CORE_HAP_LIB_PATH = "";
 #else
     const std::string ARK_WEB_CORE_HAP_LIB_PATH =
-        "/data/app/el1/bundle/public/" + ARKWEB_BUNDLE_NAME + "/libs/arm";
+        "/data/app/el1/bundle/public/" + std::string(bundleName) + "/libs/arm";
 #endif
     return ARK_WEB_CORE_HAP_LIB_PATH;
 }
@@ -199,6 +196,9 @@ static void PreLoadArkWebEngineLib()
     Dl_namespace ndkns;
     dlns_init(&dlns, "nweb_ns");
     const std::string arkWebEngineLibPath = GetArkWebEngineLibPath();
+    if (arkWebEngineLibPath.empty()) {
+        return;
+    }
     dlns_create(&dlns, arkWebEngineLibPath.c_str());
     dlns_get("ndk", &ndkns);
     dlns_inherit(&dlns, &ndkns, "allow_all_shared_libs");
@@ -211,6 +211,9 @@ static void PreLoadArkWebEngineLib()
 static void PreLoadOHOSAdptGlueSrcLib()
 {
     const std::string ohosAdptGlueSrcLibPath = GetOhosAdptGlueSrcLibPath();
+    if (ohosAdptGlueSrcLibPath.empty()) {
+        return;
+    }
     void *ohosAdptGlueSrcHandle = dlopen(ohosAdptGlueSrcLibPath.c_str(), RTLD_NOW | RTLD_GLOBAL);
     if (!ohosAdptGlueSrcHandle) {
         APPSPAWN_LOGE("Fail to dlopen libohos_adapter_glue_source.z.so, errno: %{public}d", errno);
