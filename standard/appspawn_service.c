@@ -15,6 +15,7 @@
 
 #include "appspawn_service.h"
 
+#include <dlfcn.h>
 #include <dirent.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -1765,6 +1766,51 @@ APPSPAWN_STATIC void ProcessObserveProcessSignalMsg(AppSpawnConnection *connecti
     DeleteAppSpawnMsg(&message);
 }
 
+static void ProcessSpawnDlopenMsg(AppSpawnConnection *connection, AppSpawnMsgNode *message)
+{
+    AppSpawnMsg* msg = &message->msgHeader;
+    APPSPAWN_LOGI("Recv ProcessSpawnReqMsg message header magic: 0x%{public}x type: %{public}u"
+                  "id: %{public}u len: %{public}u processName: %{public}s",
+        msg->magic,
+        msg->msgType,
+        msg->msgId,
+        msg->msgLen,
+        msg->processName);
+
+#ifdef PRE_DLOPEN_ARKWEB_LIB
+    Dl_namespace dlns;
+    if (dlns_get("nweb_ns", &dlns) != 0) {
+        char arkwebLibPath[PATH_SIZE] = "";
+        if (snprintf_s(arkwebLibPath, sizeof(arkwebLibPath), sizeof(arkwebLibPath) - 1,
+                       "%s%s%s", "/data/app/el1/bundle/public/", msg->processName,
+                       "/libs/arm64:/data/storage/el1/bundle/arkwebcore/libs/arm64") < 0) {
+            APPSPAWN_LOGE("FAILED to get arkwebLibPath");
+            SendResponse(connection, msg, -1, 0);
+            return;
+        }
+        APPSPAWN_LOGI("ProcessSpawnDlopenMsg arkwebLibPath: %{public}s", arkwebLibPath);
+
+        dlns_init(&dlns, "nweb_ns");
+        dlns_create(&dlns, arkwebLibPath);
+
+        Dl_namespace ndkns;
+        dlns_get("ndk", &ndkns);
+        dlns_inherit(&dlns, &ndkns, "allow_all_shared_libs");
+    }
+
+    void* webEngineHandle = dlopen_ns(&dlns, "libarkweb_engine.so", RTLD_NOW | RTLD_GLOBAL);
+    if (!webEngineHandle) {
+        APPSPAWN_LOGE("FAILED to dlopen libarkweb_engine.so in appspawn %{public}s", dlerror());
+        SendResponse(connection, msg, -1, 0);
+    } else {
+        APPSPAWN_LOGI("SUCCESS to dlopen libarkweb_engine.so in appspawn");
+        SendResponse(connection, msg, 0, 0);
+    }
+#else
+    SendResponse(connection, msg, 0, 0);
+#endif
+}
+
 static void ProcessRecvMsg(AppSpawnConnection *connection, AppSpawnMsgNode *message)
 {
     AppSpawnMsg *msg = &message->msgHeader;
@@ -1824,6 +1870,10 @@ static void ProcessRecvMsg(AppSpawnConnection *connection, AppSpawnMsgNode *mess
             break;
         case MSG_OBSERVE_PROCESS_SIGNAL_STATUS:
             ProcessObserveProcessSignalMsg(connection, message);
+            break;
+        case MSG_LOAD_WEBLIB_IN_APPSPAWN:
+            ProcessSpawnDlopenMsg(connection, message);
+            DeleteAppSpawnMsg(&message);
             break;
         default:
             SendResponse(connection, msg, APPSPAWN_MSG_INVALID, 0);
