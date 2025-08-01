@@ -47,7 +47,8 @@ static int HnpInstallerUidGet(const char *uidIn, int *uidOut)
     return 0;
 }
 
-static int HnpGenerateSoftLinkAllByJson(const char *installPath, const char *dstPath, HnpCfgInfo *hnpCfg)
+static int HnpGenerateSoftLinkAllByJson(const char *installPath, const char *dstPath, HnpCfgInfo *hnpCfg,
+    bool canRecovery, bool isPublic)
 {
     char srcFile[MAX_FILE_PATH_LEN];
     char dstFile[MAX_FILE_PATH_LEN];
@@ -87,15 +88,12 @@ static int HnpGenerateSoftLinkAllByJson(const char *installPath, const char *dst
             fileName++;
         }
         ret = sprintf_s(dstFile, MAX_FILE_PATH_LEN, "%s/%s", dstPath, fileName);
-        if (ret < 0) {
-            HNP_LOGE("sprintf install bin dst file unsuccess.");
-            return HNP_ERRNO_BASE_SPRINTF_FAILED;
-        }
+        HNP_ERROR_CHECK(ret > 0, return HNP_ERRNO_BASE_SPRINTF_FAILED,
+            "sprintf install bin dst file unsuccess.");
+
         /* 生成软链接 */
-        ret = HnpSymlink(srcFile, dstFile);
-        if (ret != 0) {
-            return ret;
-        }
+        ret = HnpSymlink(srcFile, dstFile, hnpCfg, canRecovery, isPublic);
+        HNP_ERROR_CHECK(ret == 0, return ret, "hnpSymlink failed");
 
         currentLink++;
     }
@@ -103,7 +101,8 @@ static int HnpGenerateSoftLinkAllByJson(const char *installPath, const char *dst
     return 0;
 }
 
-static int HnpGenerateSoftLinkAll(const char *installPath, const char *dstPath)
+static int HnpGenerateSoftLinkAll(const char *installPath, const char *dstPath, HnpCfgInfo *hnpCfg,
+    bool canRecovery, bool isPublic)
 {
     char srcPath[MAX_FILE_PATH_LEN];
     char srcFile[MAX_FILE_PATH_LEN];
@@ -113,10 +112,8 @@ static int HnpGenerateSoftLinkAll(const char *installPath, const char *dstPath)
     struct dirent *entry;
 
     ret = sprintf_s(srcPath, MAX_FILE_PATH_LEN, "%s/bin", installPath);
-    if (ret < 0) {
-        HNP_LOGE("sprintf install bin path unsuccess.");
-        return HNP_ERRNO_BASE_SPRINTF_FAILED;
-    }
+    HNP_ERROR_CHECK(ret > 0, return HNP_ERRNO_BASE_SPRINTF_FAILED,
+        "sprintf install bin path unsuccess.");
 
     if ((dir = opendir(srcPath)) == NULL) {
         HNP_LOGI("soft link bin file:%{public}s not exist", srcPath);
@@ -151,7 +148,7 @@ static int HnpGenerateSoftLinkAll(const char *installPath, const char *dstPath)
             return HNP_ERRNO_BASE_SPRINTF_FAILED;
         }
         /* 生成软链接 */
-        ret = HnpSymlink(srcFile, dstFile);
+        ret = HnpSymlink(srcFile, dstFile, hnpCfg, canRecovery, isPublic);
         if (ret != 0) {
             closedir(dir);
             return ret;
@@ -162,21 +159,24 @@ static int HnpGenerateSoftLinkAll(const char *installPath, const char *dstPath)
     return 0;
 }
 
-static int HnpGenerateSoftLink(const char *installPath, const char *hnpBasePath, HnpCfgInfo *hnpCfg)
+static int HnpGenerateSoftLink(HnpInstallInfo *hnpInfo, HnpCfgInfo *hnpCfg)
 {
+    HNP_ERROR_CHECK(hnpInfo != NULL, return HNP_ERRNO_BASE_PARAMS_INVALID,
+        "invalid hnpInfp");
+    bool canRecovery = CanRecovery(hnpInfo->hapInstallInfo->hapPackageName, hnpCfg);
     int ret = 0;
     char binPath[MAX_FILE_PATH_LEN];
 
-    ret = sprintf_s(binPath, MAX_FILE_PATH_LEN, "%s/bin", hnpBasePath);
-    if (ret < 0) {
-        HNP_LOGE("sprintf install bin path unsuccess.");
-        return HNP_ERRNO_BASE_SPRINTF_FAILED;
-    }
+    ret = sprintf_s(binPath, MAX_FILE_PATH_LEN, "%s/bin", hnpInfo->hnpBasePath);
+    HNP_ERROR_CHECK(ret > 0, return HNP_ERRNO_BASE_SPRINTF_FAILED,
+        "sprintf install bin path unsuccess.");
 
     if (hnpCfg->linkNum == 0) {
-        ret = HnpGenerateSoftLinkAll(installPath, binPath);
+        ret = HnpGenerateSoftLinkAll(hnpInfo->hnpVersionPath, binPath, hnpCfg,
+            canRecovery, hnpInfo->isPublic);
     } else {
-        ret = HnpGenerateSoftLinkAllByJson(installPath, binPath, hnpCfg);
+        ret = HnpGenerateSoftLinkAllByJson(hnpInfo->hnpVersionPath, binPath, hnpCfg,
+            canRecovery, hnpInfo->isPublic);
     }
 
     return ret;
@@ -194,7 +194,7 @@ static int HnpInstall(const char *hnpFile, HnpInstallInfo *hnpInfo, HnpCfgInfo *
     }
 
     /* 生成软链 */
-    return HnpGenerateSoftLink(hnpInfo->hnpVersionPath, hnpInfo->hnpBasePath, hnpCfg);
+    return HnpGenerateSoftLink(hnpInfo, hnpCfg);
 }
 
 /**
@@ -476,14 +476,12 @@ static int HnpReadAndInstall(char *srcFile, HnpInstallInfo *hnpInfo, HnpSignMapI
     /* 存在对应版本的公有hnp包跳过安装 */
     if (access(hnpInfo->hnpVersionPath, F_OK) == 0 && hnpInfo->isPublic) {
         /* 刷新软链 */
-        ret = HnpGenerateSoftLink(hnpInfo->hnpVersionPath, hnpInfo->hnpBasePath, &hnpCfg);
-        if (ret != 0) {
-            return ret;
-        }
+        ret = HnpGenerateSoftLink(hnpInfo, &hnpCfg);
+
         // 释放软链接占用的内存
-        if (hnpCfg.links != NULL) {
-            free(hnpCfg.links);
-        }
+        HNP_ONLY_EXPER(hnpCfg.links != NULL, free(hnpCfg.links));
+        HNP_ONLY_EXPER(ret != 0, return ret);
+
         return HnpPublicDealAfterInstall(hnpInfo, &hnpCfg);
     }
 
