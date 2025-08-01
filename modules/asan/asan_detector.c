@@ -141,12 +141,14 @@ static int AsanSpawnGetSpawningFlag(AppSpawnMgr *content, AppSpawningCtx *proper
         if (property->forkCtx.coldRunPath) {
             free(property->forkCtx.coldRunPath);
         }
-#ifndef CJAPP_SPAWN
-        property->forkCtx.coldRunPath = strdup("/system/asan/bin/appspawn");
+#ifdef CJAPP_SPAWN
+        property->forkCtx.coldRunPath = strdup("/system/asan/bin/cjappspawn");
 #elif NATIVE_SPAWN
         property->forkCtx.coldRunPath = strdup("/system/asan/bin/nativespawn");
+#elif NWEB_SPAWN
+        property->forkCtx.coldRunPath = strdup("/system/asan/bin/nwebspawn");
 #else
-        property->forkCtx.coldRunPath = strdup("/system/asan/bin/cjappspawn");
+        property->forkCtx.coldRunPath = strdup("/system/asan/bin/appspawn");
 #endif
         if (property->forkCtx.coldRunPath == NULL) {
             APPSPAWN_LOGE("Failed to set asan exec path %{public}s", GetProcessName(property));
