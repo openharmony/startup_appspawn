@@ -906,7 +906,9 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_34, TestSize.Level0)
         \"versions\":[\"v10001\", \"v10002\"] \
     }";
     AppSpawningCtx *appProperty = GetTestAppPropertyWithExtInfo("HspList", hspListStr);
-    int32_t ret = AppSpawn::SandboxCore::MountAllHsp(appProperty, testBundle);
+    cJSON *hspRoot = cJSON_Parse(hspListStr);
+    int32_t ret = AppSpawn::SandboxCore::MountAllHsp(appProperty, testBundle, hspRoot);
+    cJSON_Delete(hspRoot);
     EXPECT_EQ(ret, 0);
 
     DeleteAppSpawningCtx(appProperty);
@@ -916,7 +918,9 @@ static void InvalidJsonTest(std::string &testBundle)
 {
     char hspListStr[] = "{";
     AppSpawningCtx *appProperty = GetTestAppPropertyWithExtInfo("HspList", hspListStr);
-    int32_t ret = AppSpawn::SandboxCore::MountAllHsp(appProperty, testBundle);
+    cJSON *hspRoot = cJSON_Parse(hspListStr);
+    int32_t ret = AppSpawn::SandboxCore::MountAllHsp(appProperty, testBundle, hspRoot);
+    cJSON_Delete(hspRoot);
     DeleteAppSpawningCtx(appProperty);
     EXPECT_EQ(ret, 0);
 }
@@ -928,7 +932,9 @@ static void NoBundleTest(std::string &testBundle)
         \"versions\":[\"v10001\", \"v10002\"] \
     }";
     AppSpawningCtx *appProperty = GetTestAppPropertyWithExtInfo("HspList", hspListStr);
-    int32_t ret = AppSpawn::SandboxCore::MountAllHsp(appProperty, testBundle);
+    cJSON *hspRoot = cJSON_Parse(hspListStr);
+    int32_t ret = AppSpawn::SandboxCore::MountAllHsp(appProperty, testBundle, hspRoot);
+    cJSON_Delete(hspRoot);
     DeleteAppSpawningCtx(appProperty);
     EXPECT_NE(ret, 0);
 }
@@ -941,7 +947,9 @@ static void NoModulesTest(std::string &testBundle)
     }";
 
     AppSpawningCtx *appProperty = GetTestAppPropertyWithExtInfo("HspList", hspListStr);
-    int32_t ret = AppSpawn::SandboxCore::MountAllHsp(appProperty, testBundle);
+    cJSON *hspRoot = cJSON_Parse(hspListStr);
+    int32_t ret = AppSpawn::SandboxCore::MountAllHsp(appProperty, testBundle, hspRoot);
+    cJSON_Delete(hspRoot);
     DeleteAppSpawningCtx(appProperty);
     EXPECT_NE(ret, 0);
 }
@@ -953,7 +961,9 @@ static void NoVersionsTest(std::string &testBundle)
         \"modules\":[\"module1\", \"module2\"] \
     }";
     AppSpawningCtx *appProperty = GetTestAppPropertyWithExtInfo("HspList", hspListStr);
-    int32_t ret = AppSpawn::SandboxCore::MountAllHsp(appProperty, testBundle);
+    cJSON *hspRoot = cJSON_Parse(hspListStr);
+    int32_t ret = AppSpawn::SandboxCore::MountAllHsp(appProperty, testBundle, hspRoot);
+    cJSON_Delete(hspRoot);
     DeleteAppSpawningCtx(appProperty);
     EXPECT_NE(ret, 0);
 }
@@ -966,7 +976,9 @@ static void ListSizeNotSameTest(std::string &testBundle)
         \"versions\":[\"v10001\", \"v10002\"] \
     }";
     AppSpawningCtx *appProperty = GetTestAppPropertyWithExtInfo("HspList", hspListStr);
-    int32_t ret = AppSpawn::SandboxCore::MountAllHsp(appProperty, testBundle);
+    cJSON *hspRoot = cJSON_Parse(hspListStr);
+    int32_t ret = AppSpawn::SandboxCore::MountAllHsp(appProperty, testBundle, hspRoot);
+    cJSON_Delete(hspRoot);
     DeleteAppSpawningCtx(appProperty);
     EXPECT_NE(ret, 0);
 }
@@ -979,7 +991,9 @@ static void ValueTypeIsNotArraryTest(std::string &testBundle)
         \"versions\": 1001 \
     }";
     AppSpawningCtx *appProperty = GetTestAppPropertyWithExtInfo("HspList", hspListStr);
-    int32_t ret = AppSpawn::SandboxCore::MountAllHsp(appProperty, testBundle);
+    cJSON *hspRoot = cJSON_Parse(hspListStr);
+    int32_t ret = AppSpawn::SandboxCore::MountAllHsp(appProperty, testBundle, hspRoot);
+    cJSON_Delete(hspRoot);
     DeleteAppSpawningCtx(appProperty);
     EXPECT_NE(ret, 0);
 }
@@ -992,7 +1006,9 @@ static void ElementTypeIsNotStringTest(std::string &testBundle)
         \"versions\": [1001, 1002] \
     }";
     AppSpawningCtx *appProperty = GetTestAppPropertyWithExtInfo("HspList", hspListStr);
-    int32_t ret = AppSpawn::SandboxCore::MountAllHsp(appProperty, testBundle);
+    cJSON *hspRoot = cJSON_Parse(hspListStr);
+    int32_t ret = AppSpawn::SandboxCore::MountAllHsp(appProperty, testBundle, hspRoot);
+    cJSON_Delete(hspRoot);
     DeleteAppSpawningCtx(appProperty);
     EXPECT_NE(ret, 0);
 }
@@ -1006,7 +1022,9 @@ static void ElementTypeIsNotSameTestSN(std::string &testBundle)
         \"versions\": [\"v10001\", 1002] \
     }";
     AppSpawningCtx *appProperty = GetTestAppPropertyWithExtInfo("HspList", hspListStr);
-    int32_t ret = AppSpawn::SandboxCore::MountAllHsp(appProperty, testBundle);
+    cJSON *hspRoot = cJSON_Parse(hspListStr);
+    int32_t ret = AppSpawn::SandboxCore::MountAllHsp(appProperty, testBundle, hspRoot);
+    cJSON_Delete(hspRoot);
     DeleteAppSpawningCtx(appProperty);
     EXPECT_NE(ret, 0);
 }
@@ -1020,7 +1038,9 @@ static void ElementTypeIsNotSameTestNS(std::string &testBundle)
         \"versions\": [1001, \"v10002\"] \
     }";
     AppSpawningCtx *appProperty = GetTestAppPropertyWithExtInfo("HspList", hspListStr);
-    int32_t ret = AppSpawn::SandboxCore::MountAllHsp(appProperty, testBundle);
+    cJSON *hspRoot = cJSON_Parse(hspListStr);
+    int32_t ret = AppSpawn::SandboxCore::MountAllHsp(appProperty, testBundle, hspRoot);
+    cJSON_Delete(hspRoot);
     DeleteAppSpawningCtx(appProperty);
     EXPECT_NE(ret, 0);
 }
@@ -1052,7 +1072,9 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_36, TestSize.Level0)
             \"versions\":[\"v10001\", \"v10002\"] \
         }";
         AppSpawningCtx *appProperty = GetTestAppPropertyWithExtInfo("HspList", hspListStr);
-        int32_t ret = AppSpawn::SandboxCore::MountAllHsp(appProperty, testBundle);
+        cJSON *hspRoot = cJSON_Parse(hspListStr);
+        int32_t ret = AppSpawn::SandboxCore::MountAllHsp(appProperty, testBundle, hspRoot);
+        cJSON_Delete(hspRoot);
         DeleteAppSpawningCtx(appProperty);
         EXPECT_NE(ret, 0);
     }
@@ -1063,10 +1085,18 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_36, TestSize.Level0)
             \"versions\":[\"v10001\", \"v10002\"] \
         }";
         AppSpawningCtx *appProperty = GetTestAppPropertyWithExtInfo("HspList", hspListStr);
-        int32_t ret = AppSpawn::SandboxCore::MountAllHsp(appProperty, testBundle);
+        cJSON *hspRoot = cJSON_Parse(hspListStr);
+        int32_t ret = AppSpawn::SandboxCore::MountAllHsp(appProperty, testBundle, hspRoot);
+        cJSON_Delete(hspRoot);
         DeleteAppSpawningCtx(appProperty);
         EXPECT_NE(ret, 0);
     }
+}
+
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_37, TestSize.Level0)
+{
+    const char *strl1 = "/mnt/sandbox/100/test.bundle1";
+    std::string testBundle = strl1;
     {  // name is ..
         char hspListStr[] = "{ \
             \"bundles\":[\"..\", \"test.bundle2\"], \
@@ -1074,7 +1104,9 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_36, TestSize.Level0)
             \"versions\":[\"v10001\", \"v10002\"] \
         }";
         AppSpawningCtx *appProperty = GetTestAppPropertyWithExtInfo("HspList", hspListStr);
-        int32_t ret = AppSpawn::SandboxCore::MountAllHsp(appProperty, testBundle);
+        cJSON *hspRoot = cJSON_Parse(hspListStr);
+        int32_t ret = AppSpawn::SandboxCore::MountAllHsp(appProperty, testBundle, hspRoot);
+        cJSON_Delete(hspRoot);
         DeleteAppSpawningCtx(appProperty);
         EXPECT_NE(ret, 0);
     }
@@ -1085,13 +1117,15 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_36, TestSize.Level0)
             \"versions\":[\"v10001\", \"v10002\"] \
         }";
         AppSpawningCtx *appProperty = GetTestAppPropertyWithExtInfo("HspList", hspListStr);
-        int32_t ret = AppSpawn::SandboxCore::MountAllHsp(appProperty, testBundle);
+        cJSON *hspRoot = cJSON_Parse(hspListStr);
+        int32_t ret = AppSpawn::SandboxCore::MountAllHsp(appProperty, testBundle, hspRoot);
+        cJSON_Delete(hspRoot);
         DeleteAppSpawningCtx(appProperty);
         EXPECT_NE(ret, 0);
     }
 }
 
-HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_37, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_38, TestSize.Level0)
 {
     g_testHelper.SetTestUid(1000);  // 1000 test
     g_testHelper.SetTestGid(1000);  // 1000 test
@@ -1113,7 +1147,7 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_37, TestSize.Level0)
     DeleteAppSpawningCtx(appProperty);
 }
 
-HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_38, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_39, TestSize.Level0)
 {
     g_testHelper.SetTestUid(1000);  // 1000 test
     g_testHelper.SetTestGid(1000);  // 1000 test
@@ -1166,7 +1200,7 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_38, TestSize.Level0)
  * @tc.require:issueI7D0H9
  * @tc.author:
  */
-HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_39, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_40, TestSize.Level0)
 {
     g_testHelper.SetTestUid(1000);  // 1000 test
     g_testHelper.SetTestGid(1000);  // 1000 test
@@ -1191,7 +1225,7 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_39, TestSize.Level0)
  * @tc.require:issueI7FUPV
  * @tc.author:
  */
-HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_40, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_41, TestSize.Level0)
 {
     g_testHelper.SetTestUid(1000);  // 1000 test
     g_testHelper.SetTestGid(1000);  // 1000 test
@@ -1227,7 +1261,7 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_40, TestSize.Level0)
  * @tc.require:issueI8B63M
  * @tc.author:
  */
-HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_41, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_42, TestSize.Level0)
 {
     std::string mJsconfig = "{ \
         \"common\":[{ \
@@ -1268,7 +1302,7 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_41, TestSize.Level0)
  * @tc.require: https://gitee.com/openharmony/startup_appspawn/issues/I8OF9K
  * @tc.author:
  */
-HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_42, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_43, TestSize.Level0)
 {
     std::string mJsconfig = "{ \
         \"mount-paths\": [{ \
@@ -1309,7 +1343,7 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_42, TestSize.Level0)
  * @tc.require: https://gitee.com/openharmony/startup_appspawn/issues/I8OF9K
  * @tc.author:
  */
-HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_43, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_44, TestSize.Level0)
 {
     std::string mJsconfig = "{ \
         \"mount-paths\": [{ \
@@ -1353,7 +1387,7 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_43, TestSize.Level0)
  * @tc.require: https://gitee.com/openharmony/startup_appspawn/issues/I8OF9K
  * @tc.author:
  */
-HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_44, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_45, TestSize.Level0)
 {
     std::string mJsconfig = "{ \
         \"mount-paths\": [{ \
@@ -1397,7 +1431,7 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_44, TestSize.Level0)
  * @tc.require: https://gitee.com/openharmony/startup_appspawn/issues/I8OF9K
  * @tc.author:
  */
-HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_45, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_46, TestSize.Level0)
 {
     std::string mJsconfig = "{ \
         \"mount-paths\": [{ \
@@ -1433,7 +1467,7 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_45, TestSize.Level0)
     DeleteAppSpawningCtx(appProperty);
 }
 
-HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_46, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_47, TestSize.Level0)
 {
     g_testHelper.SetTestUid(1000);  // 1000 test
     g_testHelper.SetTestGid(1000);  // 1000 test
@@ -1476,7 +1510,7 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_46, TestSize.Level0)
     DeleteAppSpawningCtx(appProperty);
 }
 
-HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_47, TestSize.Level0)
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_48, TestSize.Level0)
 {
     g_testHelper.SetTestUid(1000);  // 1000 test
     g_testHelper.SetTestGid(1000);  // 1000 test
