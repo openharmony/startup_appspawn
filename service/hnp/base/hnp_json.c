@@ -451,6 +451,52 @@ static int HnpPackageJsonGet(cJSON **pJson)
     return 0;
 }
 
+/**
+ * 读取配置文件 仅当未安装过对应hnp或者当前hap与之前安装者一致 方可覆盖
+ */
+bool CanRecovery(const char *hnpPackageName, HnpCfgInfo *hnpCfg)
+{
+    cJSON *json = NULL;
+
+    int ret = HnpPackageJsonGet(&json);
+    HNP_ERROR_CHECK(ret == 0, return false, "Get Package Json failed");
+    HNP_INFO_CHECK(json != NULL, return true, "No Config, ingore");
+    HNP_INFO_CHECK(cJSON_IsArray(json), cJSON_Delete(json);
+        return false, "Config file structed damaged");
+
+    // 默认可以覆盖
+    bool canRecovery = true;
+    cJSON *hapItem = NULL;
+    cJSON *hapJson = NULL;
+
+    for (int i = 0; i < cJSON_GetArraySize(json); i++) {
+        hapItem = cJSON_GetArrayItem(json, i);
+        hapJson = cJSON_GetObjectItem(hapItem, HAP_PACKAGE_INFO_HAP_PREFIX);
+        HNP_ERROR_CHECK(hapJson != NULL && cJSON_IsString(hapJson), continue,
+            "invalid hap info");
+        cJSON *hnpItemArr = cJSON_GetObjectItem(hapItem, HAP_PACKAGE_INFO_HNP_PREFIX);
+        HNP_ERROR_CHECK(hnpItemArr != NULL && cJSON_IsArray(hnpItemArr), continue,
+            "invalid hnp info");
+        for (int j = 0; j < cJSON_GetArraySize(hnpItemArr); j++) {
+            cJSON *hnpItem = cJSON_GetArrayItem(hnpItemArr, j);
+            cJSON *name = cJSON_GetObjectItem(hnpItem, HAP_PACKAGE_INFO_NAME_PREFIX);
+            HNP_ERROR_CHECK(name != NULL && cJSON_IsString(name), continue,
+                "invalid name info");
+            
+            HNP_ONLY_EXPER(strcmp(name->valuestring, hnpCfg->name) != 0, continue);
+            // 找到对应hnp的安装信息时 要求当前hap与安装hap包名一致
+            canRecovery = false;
+            HNP_LOGI("Found hnp Info %{public}s %{public}s", hapJson->valuestring, hnpPackageName);
+            if (strcmp(hapJson->valuestring, hnpPackageName) == 0) {
+                cJSON_Delete(json);
+                return true;
+            }
+        }
+    }
+    cJSON_Delete(json);
+    return canRecovery;
+}
+
 int HnpPackageInfoGet(const char *packageName, HnpPackageInfo **packageInfoOut, int *count)
 {
     bool hnpExist = false;
