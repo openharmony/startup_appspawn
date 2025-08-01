@@ -39,6 +39,7 @@ ohos_shared_library("nativespawn") {
     "hilog:libhilog",
     "init:libbegetutil",
     "napi:ace_napi",
+    "ipc:ipc_single",
   ]
   if (!defined(APPSPAWN_TEST)) {
     external_deps += [ "common_event_service:cesfwk_innerkits" ]
