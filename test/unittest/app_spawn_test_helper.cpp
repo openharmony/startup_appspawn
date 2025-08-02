@@ -672,7 +672,7 @@ int AppSpawnTestHelper::AddBaseTlv(uint8_t *buffer, uint32_t bufferLen, uint32_t
 {
     // add app flage
     uint32_t currLen = 0;
-    uint32_t flags[2] = {2, 0b1010};
+    uint32_t flags[3] = {2, 0b1010, 0};
     AppSpawnTlv tlv = {};
     tlv.tlvType = TLV_MSG_FLAGS;
     tlv.tlvLen = sizeof(AppSpawnTlv) + sizeof(flags);
