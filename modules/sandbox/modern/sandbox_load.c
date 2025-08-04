@@ -365,7 +365,7 @@ APPSPAWN_STATIC int ParseSymbolLinksConfig(AppSpawnSandboxCfg *sandbox, const cJ
 
 APPSPAWN_STATIC int ParseGidTableConfig(AppSpawnSandboxCfg *sandbox, const cJSON *configs, SandboxSection *section)
 {
-    APPSPAWN_CHECK(cJSON_IsArray(configs), return 0, "json is not array.");
+    APPSPAWN_CHECK_LOGV(cJSON_IsArray(configs), return 0, "json is not array.");
     uint32_t arrayLen = (uint32_t)cJSON_GetArraySize(configs);
     APPSPAWN_CHECK_ONLY_EXPER(arrayLen > 0, return 0);
     APPSPAWN_CHECK(arrayLen < APP_MAX_GIDS, arrayLen = APP_MAX_GIDS, "More gid in gids json.");
