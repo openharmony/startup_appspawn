@@ -36,7 +36,7 @@ using namespace testing::ext;
 #endif
 
 namespace OHOS {
-class InitFirststageTest : public testing::Test {
+class HnpInstallerSingleTest : public testing::Test {
 public:
     static void SetUpTestCase();
     static void TearDownTestCase();
@@ -44,22 +44,22 @@ public:
     void TearDown();
 };
 
-void InitFirststageTest::SetUpTestCase()
+void HnpInstallerSingleTest::SetUpTestCase()
 {
     GTEST_LOG_(INFO) << "Hnp_Installer_TEST SetUpTestCase";
 }
 
-void InitFirststageTest::TearDownTestCase()
+void HnpInstallerSingleTest::TearDownTestCase()
 {
     GTEST_LOG_(INFO) << "Hnp_Installer_TEST TearDownTestCase";
 }
 
-void InitFirststageTest::SetUp()
+void HnpInstallerSingleTest::SetUp()
 {
     GTEST_LOG_(INFO) << "Hnp_Installer_TEST SetUp";
 }
 
-void InitFirststageTest::TearDown()
+void HnpInstallerSingleTest::TearDown()
 {
     GTEST_LOG_(INFO) << "Hnp_Installer_TEST TearDown";
 }
@@ -95,7 +95,7 @@ static void CreateTestFile(const char *fileName, const char *data)
     }
 }
 
-HWTEST_F(InitFirststageTest, hnp_clearSoftLink_001, TestSize.Level0)
+HWTEST_F(HnpInstallerSingleTest, hnp_clearSoftLink_001, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "hnp_clearSoftLink_001 start";
 
