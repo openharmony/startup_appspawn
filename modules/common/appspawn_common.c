@@ -682,7 +682,7 @@ APPSPAWN_STATIC int SetFdEnv(AppSpawnMgr *content, AppSpawningCtx *property)
     APPSPAWN_CHECK_ONLY_EXPER(message->tlvOffset != NULL, return -1);
     int findFdIndex = 0;
     AppSpawnMsgReceiverCtx recvCtx = message->connection->receiverCtx;
-    APPSPAWN_CHECK(recvCtx.fds != NULL && recvCtx.fdCount > 0, return 0,
+    APPSPAWN_CHECK_LOGV(recvCtx.fds != NULL && recvCtx.fdCount > 0, return 0,
         "no need set fd info %{public}d, %{public}d", recvCtx.fds != NULL, recvCtx.fdCount);
     char keyBuffer[APP_FDNAME_MAXLEN + sizeof(APP_FDENV_PREFIX)];
     char value[sizeof(int)];

@@ -196,7 +196,7 @@ static int MountEl1Bundle(const AppSpawningCtx *property, const AppDacInfo *info
 
     ret = umount2(targetPath, MNT_DETACH);
     if (ret != 0) {
-        APPSPAWN_LOGE("umount2 %{public}s failed, errno %{public}d", targetPath, errno);
+        APPSPAWN_LOGW("umount2 %{public}s failed, errno %{public}d", targetPath, errno);
     }
 
     SharedMountArgs arg = {
