@@ -116,7 +116,7 @@
             }],
             "mount-files": [{
                 "src-path" : "/system/etc/hosts",
-                "sandbox-path" : "/data/service/el1/network/hosts_user/hosts"
+                "sandbox-path" : "/data/service/el1/public/hosts_user/hosts"
             }],
             "symbol-links" : [{
                 "target-name" : "/system/bin",
