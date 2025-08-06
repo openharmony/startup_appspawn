@@ -897,7 +897,8 @@ std::string SandboxCommon::ConvertToRealPathWithPermission(const AppSpawningCtx 
 {
     AppSpawnMsgBundleInfo *info =
         reinterpret_cast<AppSpawnMsgBundleInfo *>(GetAppProperty(appProperty, TLV_BUNDLE_INFO));
-    if (info == nullptr) {
+    AppSpawnMsgDacInfo *dacInfo = reinterpret_cast<AppSpawnMsgDacInfo *>(GetAppProperty(appProperty, TLV_DAC_INFO));
+    if (info == nullptr || dacInfo == nullptr) {
         return "";
     }
     if (path.find(SandboxCommonDef::g_packageNameIndex) != std::string::npos) {
@@ -914,6 +915,10 @@ std::string SandboxCommon::ConvertToRealPathWithPermission(const AppSpawningCtx 
 
     if (path.find(SandboxCommonDef::g_userId) != std::string::npos) {
         path = ReplaceAllVariables(path, SandboxCommonDef::g_userId, "currentUser");
+    }
+
+    if (path.find(SandboxCommonDef::g_permissionUserId) != std::string::npos) {
+        path = ReplaceAllVariables(path, SandboxCommonDef::g_permissionUserId, std::to_string(dacInfo->uid / UID_BASE));
     }
     return path;
 }

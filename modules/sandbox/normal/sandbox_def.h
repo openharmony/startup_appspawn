@@ -86,6 +86,7 @@ constexpr const char *g_gidPrefix = "gids";
 
 // 可变参数
 const std::string g_userId = "<currentUserId>";
+const std::string g_permissionUserId = "<permissionUserId>";
 const std::string g_permissionUser = "<permissionUser>";
 const std::string g_packageName = "<PackageName>";
 const std::string g_packageNameIndex = "<PackageName_index>";
