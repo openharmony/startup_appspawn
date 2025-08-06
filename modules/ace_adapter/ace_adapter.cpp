@@ -231,7 +231,7 @@ APPSPAWN_STATIC void ClearEnvAndReturnSuccess(AppSpawnContent *content, AppSpawn
     int ret = 0;
     ssize_t written = write(fd, &ret, sizeof(ret));
     (void)close(fd);
-    APPSPAWN_LOGI("ClearEnvAndReturnSuccess %{public}u %{public}zd", client->id, written);
+    APPSPAWN_LOGI("ClearEnvAndReturnSuccess %{public}zd", written);
 }
 
 APPSPAWN_STATIC int RunChildThread(const AppSpawnMgr *content, const AppSpawningCtx *property)
