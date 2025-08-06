@@ -59,8 +59,7 @@ hnp目录准备完成后，参考第4步在hap打包命令中用--hnp-path指定
 2. 公有hnp包根路径的环境变量HNP_PUBLIC_HOME=/data/service/hnp，私有hnp包根路径的环境变量HNP_PRIVATE_HOME=/data/app。HNP_PRIVATE_HOME环境变量排序在HNP_PUBLIC_HOME前面，意味着如果存在同名二进制分别在公有hnp路径下和私有hnp路径下，优先执行私有hnp路径下二进制。
 3. 公有hnp包可以被所有应用访问，私有hnp包只允许被安装该hnp包的hap应用访问。
 4. 卸载hap应用会同步卸载该hap应用安装的所有hnp包，如果该hnp包中二进制正在被其他应用使用，则会导致hap应用卸载失败。
-5. Hap应用A和B安装相同公有hnp包（hnp.json文件中"name"和"version"字段相同）。后安装的应用会跳过该hnp包的安装。仅当hap应用A和B都被卸载时，该公有hnp包会被卸载。
-6. Hap应用A和B安装先后安装同名公有hnp包（hnp.json文件中"name"相同，但是"version"字段不同），则会尝试先卸载Hap应用A的hnp包，再安装Hap应用B的hnp包，如果Hap应用A的hnp包卸载失败会导致Hap应用B安装失败。
+5. Hap应用A和B安装先后安装同名公有hnp包（hnp.json文件中"name"）。后安装的应B用会无法安装，需要卸载hap应用A或者将应用B中的公有hnp修改为私有hnp方可继续安装。
 
 #### 2.1.3 hap包签名流程
 
