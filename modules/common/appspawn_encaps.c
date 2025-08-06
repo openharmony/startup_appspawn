@@ -149,7 +149,7 @@ APPSPAWN_STATIC int AddPermissionIntArrayToValue(cJSON *arrayItem, UserEncap *en
     APPSPAWN_CHECK(value != NULL, return APPSPAWN_SYSTEM_ERROR, "Failed to calloc int array value");
 
     cJSON *arrayItemTemp = arrayItem;
-    for (int index = 0; index < arraySize; index++) {
+    for (size_t index = 0; index < arraySize; index++) {
         if (arrayItemTemp == NULL || !cJSON_IsNumber(arrayItemTemp)) {
             free(value);
             APPSPAWN_LOGE("Invalid int array item type");
@@ -173,7 +173,7 @@ APPSPAWN_STATIC int AddPermissionBoolArrayToValue(cJSON *arrayItem, UserEncap *e
     APPSPAWN_CHECK(value != NULL, return APPSPAWN_SYSTEM_ERROR, "Failed to calloc bool array value");
 
     cJSON *arrayItemTemp = arrayItem;
-    for (int index = 0; index < arraySize; index++) {
+    for (size_t index = 0; index < arraySize; index++) {
         if (arrayItemTemp == NULL || !cJSON_IsBool(arrayItemTemp)) {
             free(value);
             APPSPAWN_LOGE("Invalid bool array item type");
