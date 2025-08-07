@@ -83,6 +83,7 @@ group("appspawn_all") {
     deps += [ "modules/common:appspawn_common" ]
     deps += [ "modules/sysevent:event_reporter" ]
     deps += [ "${appspawn_innerkits_path}/client:appspawn_client" ]
+    deps += [ "${appspawn_innerkits_path}/dec_util:appspawn_dec_util" ]
     deps += [
       "${appspawn_path}/modules/module_engine:libappspawn_module_engine",
       "${appspawn_path}/modules/module_engine:libappspawn_stub_empty",

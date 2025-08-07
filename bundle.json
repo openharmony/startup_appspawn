@@ -109,6 +109,15 @@
                         ]
                     },
                     "name": "//base/startup/appspawn/interfaces/innerkits/hnp:hnpapi"
+                },
+                {
+                    "header": {
+                        "header_base": "//base/startup/appspawn/interfaces/innerkits/dec_util/include/",
+                        "header_files": [
+                            "dec_api.h"
+                        ]
+                    },
+                    "name": "//base/startup/appspawn/interfaces/innerkits/dec_util:appspawn_dec_util"
                 }
             ],
             "test": [
