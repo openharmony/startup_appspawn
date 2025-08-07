@@ -65,15 +65,15 @@ static int CheckSymlink(HnpCfgInfo *hnpCfg, const char *linkPath)
 
     // 获取软链信息
     char targetPath[MAX_FILE_PATH_LEN] = {0};
-    size_t bytes = readlink(linkPath, targetPath, MAX_FILE_PATH_LEN);
+    ssize_t bytes = readlink(linkPath, targetPath, MAX_FILE_PATH_LEN);
     HNP_ERROR_CHECK(bytes > 0, return HNP_ERRNO_SYMLINK_CHECK_FAILED,
-        "readlink failed %{public}d %{public}zu %{public}s", errno, bytes, linkPath);
+        "readlink failed %{public}d %{public}zd %{public}s", errno, bytes, linkPath);
 
     // 获取软连接所在目录
     char linkCopy[MAX_FILE_PATH_LEN] = {0};
-    bytes = snprintf_s(linkCopy, MAX_FILE_PATH_LEN, MAX_FILE_PATH_LEN - 1,
+    int ret = snprintf_s(linkCopy, MAX_FILE_PATH_LEN, MAX_FILE_PATH_LEN - 1,
         "%s", linkPath);
-    HNP_ERROR_CHECK(bytes > 0, return HNP_ERRNO_SYMLINK_CHECK_FAILED,
+    HNP_ERROR_CHECK(ret > 0, return HNP_ERRNO_SYMLINK_CHECK_FAILED,
         "copy link path failed %{public}d", errno);
     const char *pos = strrchr(linkCopy, DIR_SPLIT_SYMBOL);
     HNP_ERROR_CHECK(pos != NULL && pos - linkCopy < MAX_FILE_PATH_LEN - 1,
@@ -82,9 +82,9 @@ static int CheckSymlink(HnpCfgInfo *hnpCfg, const char *linkPath)
 
     // 拼接源文件路径
     char sourcePath[MAX_FILE_PATH_LEN] = {0} ;
-    bytes = snprintf_s(sourcePath, MAX_FILE_PATH_LEN, MAX_FILE_PATH_LEN - 1,
+    ret = snprintf_s(sourcePath, MAX_FILE_PATH_LEN, MAX_FILE_PATH_LEN - 1,
         "%s/%s", linkCopy, targetPath);
-    HNP_ERROR_CHECK(bytes > 0, return HNP_ERRNO_SYMLINK_CHECK_FAILED,
+    HNP_ERROR_CHECK(ret > 0, return HNP_ERRNO_SYMLINK_CHECK_FAILED,
         "Get Source file path failed");
     // 源文件不存在 允许覆盖
     HNP_ONLY_EXPER(access(sourcePath, F_OK) != 0, return 0);
