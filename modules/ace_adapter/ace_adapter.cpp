@@ -140,8 +140,6 @@ static void LoadExtendLib(bool isHybrid)
     PreloadModule(isHybrid);
     SetTraceDisabled(false);
 
-    APPSPAWN_LOGI("LoadExtendLib: Start reclaim file cache");
-    OHOS::Ace::AceForwardCompatibility::ReclaimFileCache(getpid());
     Resource::ResourceManager *systemResMgr = Resource::GetSystemResourceManagerNoSandBox();
     APPSPAWN_CHECK(systemResMgr != nullptr, return, "Fail to get system resource manager");
     APPSPAWN_LOGI("LoadExtendLib: End preload VM");
@@ -338,6 +336,11 @@ APPSPAWN_STATIC int DlopenAppSpawn(AppSpawnMgr *content)
     }
 
     (void)ParseJsonConfig("etc/appspawn", SYSTEMLIB_JSON, DoDlopenLibs, nullptr);
+
+    if (content->content.mode != MODE_FOR_APP_COLD_RUN) {
+        APPSPAWN_LOGI("DlopenAppSpawn: Start reclaim file cache");
+        OHOS::Ace::AceForwardCompatibility::ReclaimFileCache(getpid());
+    }
     return 0;
 }
 
