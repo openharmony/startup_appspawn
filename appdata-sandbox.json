@@ -920,7 +920,7 @@
                     "src-path" : "",
                     "sandbox-path" : "",
                     "sandbox-flags" : [],
-                    "dec-paths": [ "/mnt/data/fuse", "/mnt/sandbox/*/<PackageName>/storage/Users/currentUser" ]
+                    "dec-paths": [ "/mnt/data/fuse", "/mnt/sandbox/<permissionUserId>/<PackageName>/storage/Users/currentUser" ]
                 }
             ]
         }],
