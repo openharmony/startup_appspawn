@@ -27,7 +27,9 @@ namespace AbilityRuntime {
     public:
         enum class Language {
             JS = 0,
-            ETS = 1,
+            CJ,
+            ETS,
+            UNKNOWN,
         };
 
         struct Options {
@@ -56,6 +58,11 @@ namespace AbilityRuntime {
         ~Runtime() {};
 
         void PreloadSystemModule(const std::string &moduleName)
+        {
+            return;
+        }
+
+        void PreloadSystemClass(const char *className)
         {
             return;
         }

@@ -95,27 +95,6 @@ static void AppQueueDestroyProc(const AppSpawnMgr *mgr, AppSpawnedProcess *appIn
 
 static void StopAppSpawn(void)
 {
-    // delete nwespawn, and wait exit. Otherwise, the process of nwebspawn spawning will become zombie
-    AppSpawnedProcess *appInfo = GetSpawnedProcessByName(NWEBSPAWN_SERVER_NAME);
-    if (appInfo != NULL) {
-        APPSPAWN_LOGI("kill %{public}s pid: %{public}d", appInfo->name, appInfo->pid);
-        int exitStatus = 0;
-        KillAndWaitStatus(appInfo->pid, SIGTERM, &exitStatus);
-        OH_ListRemove(&appInfo->node);
-        OH_ListInit(&appInfo->node);
-        free(appInfo);
-    }
-    // delete nativespawn, and wait exit. Otherwise, the process of nativespawn spawning will become zombie
-    appInfo = GetSpawnedProcessByName(NATIVESPAWN_SERVER_NAME);
-    if (appInfo != NULL) {
-        APPSPAWN_LOGI("kill %{public}s pid: %{public}d", appInfo->name, appInfo->pid);
-        int exitStatus = 0;
-        KillAndWaitStatus(appInfo->pid, SIGTERM, &exitStatus);
-        OH_ListRemove(&appInfo->node);
-        OH_ListInit(&appInfo->node);
-        free(appInfo);
-    }
-
     AppSpawnContent *content = GetAppSpawnContent();
     if (content != NULL && content->reservedPid > 0) {
         int ret = kill(content->reservedPid, SIGKILL);
@@ -1200,6 +1179,8 @@ APPSPAWN_STATIC int AppSpawnColdStartApp(struct AppSpawnContent *content, AppSpa
     char *path = property->forkCtx.coldRunPath != NULL ? property->forkCtx.coldRunPath : "/system/bin/cjappspawn";
 #elif NATIVE_SPAWN
     char *path = property->forkCtx.coldRunPath != NULL ? property->forkCtx.coldRunPath : "/system/bin/nativespawn";
+#elif HYBRID_SPAWN
+    char *path = property->forkCtx.coldRunPath != NULL ? property->forkCtx.coldRunPath : "/system/bin/hybridspawn";
 #elif NWEB_SPAWN
     char *path = property->forkCtx.coldRunPath != NULL ? property->forkCtx.coldRunPath : "/system/bin/nwebspawn";
 #else
@@ -1330,7 +1311,7 @@ static void AppSpawnRun(AppSpawnContent *content, int argc, char *const argv[])
         (void)LE_AddSignal(LE_GetDefaultLoop(), appSpawnContent->sigHandler, SIGTERM);
     }
 
-    if (IsAppSpawnMode(appSpawnContent)) {
+    if (IsAppSpawnMode(appSpawnContent) || IsHybridSpawnMode(appSpawnContent)) {
         struct sched_param param = { 0 };
         param.sched_priority = 1;
         int ret = sched_setscheduler(0, SCHED_FIFO, &param);
