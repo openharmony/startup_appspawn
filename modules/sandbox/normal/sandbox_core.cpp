@@ -1246,7 +1246,7 @@ void SandboxCore::DoUninstallDebugSandbox(std::vector<std::string> &bundleList, 
         for (const auto& currentBundle : bundleList) {
             std::string sandboxPath = currentBundle + tmpSandboxPath;
             APPSPAWN_LOGV("DoUninstallDebugSandbox with path %{public}s", sandboxPath.c_str());
-            APPSPAWN_CHECK(access(sandboxPath.c_str(), F_OK) == 0, return 0,
+            APPSPAWN_CHECK(access(sandboxPath.c_str(), F_OK) == 0, continue,
                 "Invalid path %{public}s", sandboxPath.c_str());
             int ret = umount2(sandboxPath.c_str(), MNT_DETACH);
             APPSPAWN_CHECK_ONLY_LOG(ret == 0, "umount failed %{public}d %{public}d", ret, errno);
