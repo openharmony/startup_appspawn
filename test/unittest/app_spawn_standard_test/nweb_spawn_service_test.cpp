@@ -37,6 +37,8 @@ using namespace testing;
 using namespace testing::ext;
 using namespace OHOS;
 
+APPSPAWN_STATIC int PreLoadNwebSpawn(AppSpawnMgr *content);
+
 namespace OHOS {
 class NWebSpawnServiceTest : public testing::Test {
 public:
@@ -529,5 +531,39 @@ HWTEST_F(NWebSpawnServiceTest, NWeb_Spawn_Msg_008, TestSize.Level0)
         CloseClientSocket(socketId);
     }
     ASSERT_EQ(ret, 0);
+}
+
+/**
+ * @brief nwebspawn进行预加载
+ * @note 预期结果: nwebspawn不支持预加载，直接返回
+ *
+ */
+HWTEST_F(NWebSpawnServiceTest, NWeb_Spawn_Msg_009, TestSize.Level0)
+{
+    GTEST_LOG_(INFO) << "NWebSpawnServiceTest NWeb_Spawn_Msg_009 start run";
+    AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+    ASSERT_NE(mgr, nullptr);
+    mgr->content.longProcName = const_cast<char *>(APPSPAWN_SERVER_NAME);
+    mgr->content.longProcNameLen = APP_LEN_PROC_NAME;
+
+    int ret = PreLoadNwebSpawn(mgr);
+    EXPECT_EQ(ret, 0);
+}
+
+/**
+ * @brief nwebspawn进行预加载
+ * @note 预期结果: 通过校验，进行nwebspawn预加载
+ *
+ */
+HWTEST_F(NWebSpawnServiceTest, NWeb_Spawn_Msg_010, TestSize.Level0)
+{
+    GTEST_LOG_(INFO) << "NWebSpawnServiceTest NWeb_Spawn_Msg_010 start run";
+    AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
+    ASSERT_NE(mgr, nullptr);
+    mgr->content.longProcName = const_cast<char *>(NWEBSPAWN_SERVER_NAME);
+    mgr->content.longProcNameLen = APP_LEN_PROC_NAME;
+
+    int ret = PreLoadNwebSpawn(mgr);
+    EXPECT_EQ(ret, 0);
 }
 }  // namespace OHOS
