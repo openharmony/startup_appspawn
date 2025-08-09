@@ -66,7 +66,7 @@ static int CheckSymlink(HnpCfgInfo *hnpCfg, const char *linkPath)
     // 获取软链信息
     char targetPath[MAX_FILE_PATH_LEN] = {0};
     ssize_t bytes = readlink(linkPath, targetPath, MAX_FILE_PATH_LEN);
-    HNP_ERROR_CHECK(bytes > 0, return HNP_ERRNO_SYMLINK_CHECK_FAILED,
+    HNP_ERROR_CHECK(bytes > 0 && bytes < MAX_FILE_PATH_LEN, return HNP_ERRNO_SYMLINK_CHECK_FAILED,
         "readlink failed %{public}d %{public}zd %{public}s", errno, bytes, linkPath);
 
     // 获取软连接所在目录
