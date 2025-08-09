@@ -337,8 +337,8 @@ int AppSpawnTestCommander::CreateMsg(AppSpawnReqMsgHandle &reqHandle,
 {
     int ret = APPSPAWN_SYSTEM_ERROR;
     if (clientHandle_ == NULL) {
-        ret = AppSpawnClientInit(appSpawn_ ? APPSPAWN_SERVER_NAME : NWEBSPAWN_SERVER_NAME, &clientHandle_);
-        APPSPAWN_CHECK(ret == 0, return -1, "Failed to create client %{public}d", appSpawn_);
+        ret = AppSpawnClientInit(appSpawn_ == 1 ? APPSPAWN_SERVER_NAME : (appSpawn_  == 2 ? NATIVESPAWN_SERVER_NAME :
+            (appSpawn_ == 3 ? HYBRIDSPAWN_SERVER_NAME : NWEBSPAWN_SERVER_NAME)), &clientHandle_);
     }
     reqHandle = INVALID_REQ_HANDLE;
     if (appInfoConfig_) {
@@ -388,7 +388,7 @@ int AppSpawnTestCommander::CreateMsg(AppSpawnReqMsgHandle &reqHandle,
 int AppSpawnTestCommander::SendMsg()
 {
     const char *server = appSpawn_ == 1 ? APPSPAWN_SERVER_NAME : (appSpawn_ == 2 ? NATIVESPAWN_SERVER_NAME :
-        NWEBSPAWN_SERVER_NAME);
+        (appSpawn_ == 3 ? HYBRIDSPAWN_SERVER_NAME : NWEBSPAWN_SERVER_NAME));
     printf("Send msg to server '%s' \n", server);
     AppSpawnReqMsgHandle reqHandle = INVALID_REQ_HANDLE;
     int ret = 0;
@@ -556,7 +556,7 @@ int AppSpawnTestCommander::Run()
 {
     int ret = 0;
     const char *name = appSpawn_ == 1 ? APPSPAWN_SERVER_NAME : (appSpawn_ == 2 ? NATIVESPAWN_SERVER_NAME :
-        NWEBSPAWN_SERVER_NAME);
+        (appSpawn_ == 3 ? HYBRIDSPAWN_SERVER_NAME : NWEBSPAWN_SERVER_NAME));
     if (clientHandle_ == NULL) {
         ret = AppSpawnClientInit(name, &clientHandle_);
         APPSPAWN_CHECK(ret == 0, return -1, "Failed to create client %{public}s", name);

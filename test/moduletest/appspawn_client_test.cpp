@@ -160,5 +160,25 @@ HWTEST_F(AppSpawnClientTest, AppSpawn_Client_test004, TestSize.Level0)
     AppSpawnClientDestroy(clientHandle);
 }
 
+/**
+ * @tc.name: AppSpawn_Client_test005
+ * @tc.desc: 模拟hybridspawn的客户端向hybridspawn服务端发送应用孵化请求
+ * @tc.type: FUNC
+ */
+HWTEST_F(AppSpawnClientTest, AppSpawn_Client_test005, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = CreateClient(HYBRIDSPAWN_SERVER_NAME);
+    ASSERT_EQ(clientHandle != NULL, 1);
+    AppSpawnReqMsgHandle reqHandle = CreateMsg(clientHandle, "ohos.samples.clock", MODE_FOR_HYBRID_SPAWN);
+    ASSERT_EQ(reqHandle != INVALID_REQ_HANDLE, 1);
+
+    AppSpawnResult result = {};
+    int ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
+    if (ret == 0 && result.pid > 0) {
+        kill(result.pid, SIGKILL);
+    }
+    AppSpawnClientDestroy(clientHandle);
+}
+
 }  // namespace AppSpawn
 }  // namespace OHOS

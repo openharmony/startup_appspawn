@@ -1,6 +1,6 @@
 {
         "msg-type": 0,
-        "msg-flags": [1, 2, 14],
+        "msg-flags": [1, 2, 4, 14],
         "process-name" : "com.example.myapplication",
         "pid": 328018,
         "dac-info" : {

@@ -112,6 +112,9 @@ APPSPAWN_STATIC int CreateClientSocket(uint32_t type, uint32_t timeout)
         case CLIENT_FOR_NATIVESPAWN:
             socketName = NATIVESPAWN_SOCKET_NAME;
             break;
+        case CLIENT_FOR_HYBRIDSPAWN:
+            socketName = HYBRIDSPAWN_SOCKET_NAME;
+            break;
         default:
             socketName = NWEBSPAWN_SOCKET_NAME;
             break;
@@ -389,6 +392,8 @@ int AppSpawnClientInit(const char *serviceName, AppSpawnClientHandle *handle)
     } else if (strcmp(serviceName, NATIVESPAWN_SERVER_NAME) == 0 ||
         strstr(serviceName, NATIVESPAWN_SOCKET_NAME) != NULL) {
         type = CLIENT_FOR_NATIVESPAWN;
+    } else if (strcmp(serviceName, HYBRIDSPAWN_SERVER_NAME) == 0) {
+        type = CLIENT_FOR_HYBRIDSPAWN;
     }
     int ret = InitClientInstance(type);
     APPSPAWN_CHECK(ret == 0, return APPSPAWN_SYSTEM_ERROR, "Failed to create reqMgr");

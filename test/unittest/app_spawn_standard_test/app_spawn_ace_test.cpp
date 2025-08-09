@@ -135,6 +135,63 @@ HWTEST_F(AppSpawnAceTest, App_Spawn_Ace_Preload_005, TestSize.Level0)
 }
 
 /**
+ * @brief 未设置preload参数时（使用参数默认值），hybridspawn进行预加载
+ * @note 预期结果: appspawn根据参数默认值判断是否执行preload预加载
+ *
+ */
+HWTEST_F(AppSpawnAceTest, App_Spawn_Ace_Preload_006, TestSize.Level0)
+{
+    AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_HYBRID_SPAWN);
+    ASSERT_NE(mgr, nullptr);
+    mgr->content.longProcName = const_cast<char *>(HYBRIDSPAWN_SERVER_NAME);
+    mgr->content.longProcNameLen = APP_LEN_PROC_NAME;
+
+    int ret = PreLoadAppSpawn(mgr);
+    DeleteAppSpawnMgr(mgr);
+    EXPECT_EQ(ret, 0);
+}
+
+/**
+ * @brief preload参数设置为true时，测试hybridspawn进行预加载
+ * @note 预期结果: appspawn执行preload预加载
+ *
+ */
+HWTEST_F(AppSpawnAceTest, App_Spawn_Ace_Preload_007, TestSize.Level0)
+{
+    AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_HYBRID_SPAWN);
+    ASSERT_NE(mgr, nullptr);
+    mgr->content.longProcName = const_cast<char *>(HYBRIDSPAWN_SERVER_NAME);
+    mgr->content.longProcNameLen = APP_LEN_PROC_NAME;
+
+    SetBoolParamResult("persist.appspawn.preload", true);
+    int ret = PreLoadAppSpawn(mgr);
+    SetBoolParamResult("persist.appspawn.preload", false);
+    DeleteAppSpawnMgr(mgr);
+    EXPECT_EQ(ret, 0);
+}
+
+/**
+ * @brief preload参数和preloadets参数均设置为true时，测试hybridspawn进行预加载
+ * @note 预期结果: appspawn执行preload和preloadets预加载
+ *
+ */
+HWTEST_F(AppSpawnAceTest, App_Spawn_Ace_Preload_008, TestSize.Level0)
+{
+    AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_HYBRID_SPAWN);
+    ASSERT_NE(mgr, nullptr);
+    mgr->content.longProcName = const_cast<char *>(HYBRIDSPAWN_SERVER_NAME);
+    mgr->content.longProcNameLen = APP_LEN_PROC_NAME;
+
+    SetBoolParamResult("persist.appspawn.preload", true);
+    SetBoolParamResult("persist.appspawn.preloadets", true);
+    int ret = PreLoadAppSpawn(mgr);
+    SetBoolParamResult("persist.appspawn.preload", false);
+    SetBoolParamResult("persist.appspawn.preloadets", false);
+    DeleteAppSpawnMgr(mgr);
+    EXPECT_EQ(ret, 0);
+}
+
+/**
  * @brief nwebspawn进行加载system libs
  * @note 预期结果: nwebspawn不支持加载system libs，直接返回
  *
