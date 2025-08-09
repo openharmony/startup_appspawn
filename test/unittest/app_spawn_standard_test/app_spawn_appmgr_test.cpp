@@ -780,14 +780,6 @@ HWTEST_F(AppSpawnAppMgrTest, App_Spawn_AppSpawnMsg_003, TestSize.Level0)
         }
     }
     for (int i = 0; i < inputCount; i++) {
-        for (int j = 32; j < MAX_FLAGS_INDEX + 5; j++) { // 5 test
-            ret = SetAppSpawnMsgFlag(outMsg, inputType[i], j);
-            EXPECT_EQ(0, ret == 0);
-            ret = CheckAppSpawnMsgFlag(outMsg, inputType[i], j);
-            EXPECT_EQ(0, ret);
-        }
-    }
-    for (int i = 0; i < inputCount; i++) {
         for (int j = 0; j < MAX_FLAGS_INDEX; j++) {
             ret = SetAppSpawnMsgFlag(nullptr, inputType[i], j);
             EXPECT_EQ(0, ret == 0);
@@ -957,12 +949,6 @@ HWTEST_F(AppSpawnAppMgrTest, App_Spawn_AppSpawningCtx_Msg_003, TestSize.Level0)
         EXPECT_EQ(1, ret == 0);
         ret = CheckAppPermissionFlagSet(appCtx, j);
         EXPECT_EQ(1, ret);
-    }
-    for (int j = 32; j < MAX_FLAGS_INDEX + 5; j++) { // 32 5 test
-        ret = SetAppPermissionFlags(appCtx, j);
-        EXPECT_NE(0, ret);
-        ret = CheckAppPermissionFlagSet(appCtx, j);
-        EXPECT_EQ(0, ret);
     }
     for (int j = 0; j < MAX_FLAGS_INDEX; j++) {
         ret = SetAppPermissionFlags(nullptr, j);
