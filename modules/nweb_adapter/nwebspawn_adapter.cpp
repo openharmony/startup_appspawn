@@ -231,7 +231,7 @@ static int GetSysParamPreLoadMode()
 }
 #endif
 
-static int PreLoadNwebSpawn(AppSpawnMgr *content)
+APPSPAWN_STATIC int PreLoadNwebSpawn(AppSpawnMgr *content)
 {
     APPSPAWN_LOGI("PreLoadNwebSpawn %{public}d", IsNWebSpawnMode(content));
     if (!IsNWebSpawnMode(content)) {
