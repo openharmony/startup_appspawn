@@ -35,21 +35,11 @@
 #include "seccomp_policy.h"
 #endif
 
+#include "arkweb_utils.h"
+
 namespace {
-#ifdef webview_arm64
-    const std::string ARK_WEB_CORE_HAP_LIB_PATH =
-        "/data/storage/el1/bundle/arkwebcore/libs/arm64";
-#elif webview_x86_64
-    const std::string ARK_WEB_CORE_HAP_LIB_PATH =
-        "/data/storage/el1/bundle/arkwebcore/libs/x86_64";
-#else
-    const std::string ARK_WEB_CORE_HAP_LIB_PATH =
-        "/data/storage/el1/bundle/arkwebcore/libs/arm";
-#endif
-    const std::string ARK_WEB_ENGINE_LIB_NAME = "libarkweb_engine.so";
-    const std::string ARK_WEB_RENDER_LIB_NAME = "libarkweb_render.so";
-    const std::string WEB_ENGINE_LIB_NAME = "libweb_engine.so";
-    const std::string WEB_RENDER_LIB_NAME = "libnweb_render.so";
+const std::string ARK_WEB_ENGINE_LIB_NAME = "libarkweb_engine.so";
+const std::string ARK_WEB_RENDER_LIB_NAME = "libarkweb_render.so";
 
 typedef enum {
     PRELOAD_NO = 0,         // 不预加载
@@ -76,22 +66,33 @@ static bool SetSeccompPolicyForRenderer(void *nwebRenderHandle)
     return true;
 }
 
-APPSPAWN_STATIC std::string GetArkWebEngineLibName()
+static void UpdateAppWebEngineVersion(std::string& renderCmd)
 {
-    std::string arkWebEngineLibPath = ARK_WEB_CORE_HAP_LIB_PATH + "/"
-            + ARK_WEB_ENGINE_LIB_NAME;
-    bool isArkWebEngineLibPathExist = access(arkWebEngineLibPath.c_str(), F_OK) == 0;
-    return isArkWebEngineLibPathExist ?
-            ARK_WEB_ENGINE_LIB_NAME : WEB_ENGINE_LIB_NAME;
-}
+    size_t posLeft = renderCmd.rfind(APP_ENGINE_VERSION_PREFIX);
+    if (posLeft == std::string::npos) {
+        APPSPAWN_LOGE("not found app engine type arg");
+        return;
+    }
+    size_t posRight = posLeft + strlen(APP_ENGINE_VERSION_PREFIX);
+    size_t posEnd = renderCmd.find('#', posRight);
+    std::string value = (posEnd == std::string::npos) ?
+                            renderCmd.substr(posRight) :
+                            renderCmd.substr(posRight, posEnd - posRight);
 
-APPSPAWN_STATIC std::string GetArkWebRenderLibName()
-{
-    std::string arkWebRenderLibPath = ARK_WEB_CORE_HAP_LIB_PATH + "/"
-            + ARK_WEB_RENDER_LIB_NAME;
-    bool isArkWebRenderLibPathExist = access(arkWebRenderLibPath.c_str(), F_OK) == 0;
-    return isArkWebRenderLibPathExist ?
-            ARK_WEB_RENDER_LIB_NAME : WEB_RENDER_LIB_NAME;
+    char* end;
+    long v = std::strtol(value.c_str(), &end, 10);
+    if (*end != '\0' || v > INT_MAX || v < 0) {
+        APPSPAWN_LOGE("invalid value: %{public}s", value.c_str());
+        return;
+    }
+    auto version = static_cast<OHOS::ArkWeb::ArkWebEngineVersion>(v);
+    OHOS::ArkWeb::setActiveWebEngineVersion(version);
+
+    // remove arg APP_ENGINE_VERSION_PREFIX
+    size_t eraseLength = (posEnd == std::string::npos) ?
+                            renderCmd.length() - posLeft :
+                            posEnd - posLeft;
+    renderCmd.erase(posLeft, eraseLength);
 }
 
 APPSPAWN_STATIC int RunChildProcessor(AppSpawnContent *content, AppSpawnClient *client)
@@ -103,17 +104,20 @@ APPSPAWN_STATIC int RunChildProcessor(AppSpawnContent *content, AppSpawnClient *
         return -1;
     }
     std::string renderStr(renderCmd);
+    UpdateAppWebEngineVersion(renderStr);
+
     void *webEngineHandle = nullptr;
     void *nwebRenderHandle = nullptr;
 
-    const std::string& libPath = ARK_WEB_CORE_HAP_LIB_PATH;
-    const std::string engineLibName = GetArkWebEngineLibName();
-    const std::string renderLibName = GetArkWebRenderLibName();
+    const std::string libNsName = OHOS::ArkWeb::GetArkwebNameSpace();
+    const std::string libPath = OHOS::ArkWeb::GetArkwebLibPath();
+    const std::string engineLibName = ARK_WEB_ENGINE_LIB_NAME;
+    const std::string renderLibName = ARK_WEB_RENDER_LIB_NAME;
 
 #ifdef __MUSL__
     Dl_namespace dlns;
     Dl_namespace ndkns;
-    dlns_init(&dlns, "nweb_ns");
+    dlns_init(&dlns, libNsName.c_str());
     dlns_create(&dlns, libPath.c_str());
     dlns_get("ndk", &ndkns);
     dlns_inherit(&dlns, &ndkns, "allow_all_shared_libs");
