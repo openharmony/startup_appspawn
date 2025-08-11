@@ -1,0 +1,14 @@
+{
+  "description": "Config for OpenHarmony devicetest test cases",
+  "environment": [
+    {
+      "type": "device"
+    }
+  ],
+  "driver": {
+    "type": "DeviceTest",
+    "py_file": [
+      "sub_startup_appspawn_filemgr_sandbox/SubStartupAppspawnFilemgrSandbox0400.py"
+    ]
+  }
+}
