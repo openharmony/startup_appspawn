@@ -57,6 +57,10 @@ ohos_shared_library("appspawn_ace") {
     "resource_management:global_resmgr",
     "selinux:libselinux",
   ]
+  if (appspawn_support_nweb) {
+    external_deps += [ "webview:libarkweb_utils" ]
+    defines += [ "ARKWEB_UTILS_ENABLE" ]
+  }
   subsystem_name = "${subsystem_name}"
   part_name = "${part_name}"
   install_enable = true

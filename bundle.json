@@ -79,7 +79,8 @@
                 "json",
                 "faultloggerd",
                 "dlp_permission_service",
-                "ffrt"
+                "ffrt",
+                "webview"
             ],
             "third_party": [
                 "bounds_checking_function",
