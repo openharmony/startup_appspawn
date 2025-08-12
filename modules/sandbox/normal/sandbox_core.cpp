@@ -1205,7 +1205,7 @@ void SandboxCore::SetDecDenyWithDir(const AppSpawningCtx *appProperty)
         PathInfo pathInfo = {0};
         pathInfo.path = const_cast<char *>(DEC_DENY_PATH_MAP[i].decPath);
         pathInfo.pathLen = static_cast<uint32_t>(strlen(pathInfo.path));
-        pathInfo.mode = DEC_MODE_DENY_READ | DEC_MODE_DENY_WRITE;
+        pathInfo.mode = DEC_MODE_DENY_INHERIT;
         decPolicyInfo.path[j++] = pathInfo;
         decPolicyInfo.pathNum += 1;
     }
