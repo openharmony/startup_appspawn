@@ -125,7 +125,7 @@ static int CheckSupportColdStart(const char *bundleName)
     APPSPAWN_CHECK(len > 0 && (len < WRAP_VALUE_MAX_LENGTH), return -1, "Invalid to format wrapBundleNameKey");
 
     int ret = GetParameter(wrapBundleNameKey, "", wrapBundleNameValue, WRAP_VALUE_MAX_LENGTH);
-    APPSPAWN_CHECK(ret > 0 && (!strcmp(wrapBundleNameValue, "asan_wrapper")), return -1,
+    APPSPAWN_CHECK_LOGV(ret > 0 && (!strcmp(wrapBundleNameValue, "asan_wrapper")), return -1,
         "Not wrap %{public}s.", bundleName);
     APPSPAWN_LOGI("Asan: GetParameter %{public}s the value is %{public}s.", wrapBundleNameKey, wrapBundleNameValue);
     return 0;

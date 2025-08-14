@@ -238,6 +238,8 @@ std::string SandboxCommon::GetSandboxRootPath(const AppSpawningCtx *appProperty,
     const std::string variableSandboxRoot = SandboxCommonDef::g_sandBoxRootDir +
         std::to_string(dacInfo->uid / UID_BASE) + "/" + isolatedFlagText.c_str() + tmpBundlePath;
 
+    APPSPAWN_CHECK_ONLY_EXPER(config != nullptr, sandboxRoot = variableSandboxRoot;
+        return sandboxRoot);
     const char *sandboxRootChr = GetStringFromJsonObj(config, SandboxCommonDef::g_sandboxRootPrefix);
     if (sandboxRootChr != nullptr) {
         sandboxRoot = sandboxRootChr;
@@ -304,7 +306,7 @@ bool SandboxCommon::VerifyDirRecursive(const std::string &path)
         index = pathIndex == std::string::npos ? size : pathIndex + 1;
         std::string dir = path.substr(0, index);
 #ifndef APPSPAWN_TEST
-        APPSPAWN_CHECK(access(dir.c_str(), F_OK) == 0,
+        APPSPAWN_CHECK_LOGW(access(dir.c_str(), F_OK) == 0,
             return false, "check dir %{public}s failed, strerror: %{public}s", dir.c_str(), strerror(errno));
 #endif
     } while (index < size);
@@ -994,7 +996,7 @@ int32_t SandboxCommon::DoAppSandboxMountOnce(const AppSpawningCtx *appProperty, 
     struct timespec mountEnd = {0};
     clock_gettime(CLOCK_MONOTONIC_COARSE, &mountEnd);
     uint64_t diff = DiffTime(&mountStart, &mountEnd);
-    APPSPAWN_CHECK_ONLY_LOG(diff < SandboxCommonDef::MAX_MOUNT_TIME, "mount %{public}s time %{public}" PRId64 " us",
+    APPSPAWN_CHECK_ONLY_LOGW(diff < SandboxCommonDef::MAX_MOUNT_TIME, "mount %{public}s time %{public}" PRId64 " us",
                             arg->srcPath, diff);
 #ifdef APPSPAWN_HISYSEVENT
     APPSPAWN_CHECK_ONLY_EXPER(diff < FUNC_REPORT_DURATION, ReportAbnormalDuration(arg->srcPath, diff));

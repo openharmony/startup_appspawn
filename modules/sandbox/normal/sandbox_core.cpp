@@ -1184,6 +1184,7 @@ EXIT:
 void SandboxCore::SetDecDenyWithDir(const AppSpawningCtx *appProperty)
 {
     int32_t userFileIndex = GetPermissionIndex(nullptr, SandboxCommonDef::READ_WRITE_USER_FILE_MODE.c_str());
+    APPSPAWN_CHECK_LOGV(userFileIndex != -1, return, "userFileIndex Invalid index");
     if (CheckAppPermissionFlagSet(appProperty, static_cast<uint32_t>(userFileIndex)) == 0) {
         APPSPAWN_LOGV("The app doesn't have %{public}s, no need to set deny rules",
                       SandboxCommonDef::READ_WRITE_USER_FILE_MODE.c_str());

@@ -97,7 +97,7 @@ static AppSpawnStartArgTemplate *GetAppSpawnStartArg(const char *serverName, App
 // appspawn -mode appspawn | cold | nwebspawn -param app_property -fd clientFd
 int main(int argc, char *const argv[])
 {
-    APPSPAWN_LOGE("main argc: %{public}d", argc);
+    APPSPAWN_LOGI("main argc: %{public}d", argc);
     if (argc <= 0) {
         return 0;
     }

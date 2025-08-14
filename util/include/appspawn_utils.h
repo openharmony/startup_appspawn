@@ -214,6 +214,24 @@ int EnableNewNetNamespace(void);
         exper;                           \
     }
 
+#define APPSPAWN_CHECK_LOGV(retCode, exper, fmt, ...) \
+    if (!(retCode)) {                    \
+        APPSPAWN_LOGV(fmt, ##__VA_ARGS__);         \
+        exper;                           \
+    }
+
+#define APPSPAWN_CHECK_LOGW(retCode, exper, fmt, ...) \
+    if (!(retCode)) {                    \
+        APPSPAWN_LOGW(fmt, ##__VA_ARGS__);         \
+        exper;                           \
+    }
+
+#define APPSPAWN_CHECK_LOGI(retCode, exper, fmt, ...) \
+    if (!(retCode)) {                    \
+        APPSPAWN_LOGI(fmt, ##__VA_ARGS__);         \
+        exper;                           \
+    }
+
 #define APPSPAWN_CHECK_ONLY_EXPER(retCode, exper) \
     if (!(retCode)) {                  \
         exper;                 \
@@ -228,6 +246,12 @@ int EnableNewNetNamespace(void);
     if (!(retCode)) {                    \
         APPSPAWN_LOGE(fmt, ##__VA_ARGS__);      \
     }
+
+#define APPSPAWN_CHECK_ONLY_LOGW(retCode, fmt, ...) \
+    if (!(retCode)) {                    \
+        APPSPAWN_LOGW(fmt, ##__VA_ARGS__);      \
+    }
+
 #ifdef __cplusplus
 }
 #endif  // __cplusplus
