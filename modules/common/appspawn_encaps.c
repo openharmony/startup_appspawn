@@ -365,7 +365,7 @@ APPSPAWN_STATIC int SpawnSetPermissions(AppSpawningCtx *property, UserEncaps *en
     // Get Permissions obejct
     cJSON *extInfoJson = GetJsonObjFromExtInfo(property, MSG_EXT_NAME_JIT_PERMISSIONS);
     if (extInfoJson == NULL) {
-        APPSPAWN_LOGW("GetJsonObjFromExtInfo failed");
+        APPSPAWN_LOGV("GetJsonObjFromExtInfo failed");
         return APPSPAWN_ARG_INVALID;
     }
 
@@ -411,7 +411,7 @@ APPSPAWN_STATIC int SpawnSetEncapsPermissions(AppSpawnMgr *content, AppSpawningC
     if (ret != 0) {
         close(encapsFileFd);
         FreeEncapsInfo(&encapsInfo);
-        APPSPAWN_LOGW("Build encaps info failed, ret: %{public}d", ret);
+        APPSPAWN_LOGV("Build encaps info failed, ret: %{public}d", ret);
         return 0;        // Can't set permission encpas ability
     }
 

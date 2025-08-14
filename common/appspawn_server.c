@@ -168,7 +168,7 @@ static void AppSpawnForkChildProcess(AppSpawnContent *content, AppSpawnClient *c
         struct timespec forkEnd = {0};
         clock_gettime(CLOCK_MONOTONIC, &forkEnd);
         uint64_t diff = DiffTime(&forkStart, &forkEnd);
-        APPSPAWN_CHECK_ONLY_LOG(diff < MAX_FORK_TIME, "fork time %{public}" PRId64 " us", diff);
+        APPSPAWN_CHECK_ONLY_LOGW(diff < MAX_FORK_TIME, "fork time %{public}" PRId64 " us", diff);
 #ifndef OHOS_LITE
         // Inherit the error level of the original process
         (void)fdsan_set_error_level(errorLevel);
