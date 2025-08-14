@@ -75,9 +75,6 @@
 #define HM_DEC_IOCTL_BASE 's'
 #define HM_ADD_ISOLATE_DIR 16
 #define ADD_ISOLATE_DIR_CMD _IOWR(HM_DEC_IOCTL_BASE, HM_ADD_ISOLATE_DIR, IsolateDirInfo)
-#ifdef APPSPAWN_SUPPORT_NOSHAREFS
-#define READ_PROCESS_GROUP 3009
-#endif
 
 static int SetProcessName(const AppSpawnMgr *content, const AppSpawningCtx *property)
 {
@@ -729,23 +726,6 @@ APPSPAWN_STATIC int RecordStartTime(AppSpawnMgr *content, AppSpawningCtx *proper
     return 0;
 }
 
-static int AddSpecialGroupToProcess(AppSpawnMgr *content, AppSpawningCtx *property)
-{
-#ifdef APPSPAWN_SUPPORT_NOSHAREFS
-    APPSPAWN_LOGV("add 3009 groups int native process");
-    if (GetAppSpawnMsgType(property) != MSG_SPAWN_NATIVE_PROCESS) {
-        return 0;
-    }
-    AppSpawnMsgDacInfo *dacInfo = (AppSpawnMsgDacInfo *)GetAppProperty(property, TLV_DAC_INFO);
-    APPSPAWN_CHECK(dacInfo != NULL, return APPSPAWN_TLV_NONE,
-        "No tlv %{public}d in msg %{public}s", TLV_DAC_INFO, GetProcessName(property));
-    APPSPAWN_CHECK(dacInfo->gidCount < APP_MAX_GIDS, return -1,
-        "Failed to add groups:%{public}d due to current gidCount is MAX", READ_PROCESS_GROUP);
-    dacInfo->gidTable[dacInfo->gidCount++] = READ_PROCESS_GROUP;
-#endif
-    return 0;
-}
-
 MODULE_CONSTRUCTOR(void)
 {
     APPSPAWN_LOGV("Load common module ...");
@@ -764,5 +744,4 @@ MODULE_CONSTRUCTOR(void)
     AddAppSpawnHook(STAGE_PARENT_POST_FORK, HOOK_PRIO_HIGHEST, CloseFdArgs);
     AddAppSpawnHook(STAGE_CHILD_PRE_COLDBOOT, HOOK_PRIO_HIGHEST, SetFdEnv);
     AddAppSpawnHook(STAGE_CHILD_PRE_RUN, HOOK_PRIO_HIGHEST, RecordStartTime);
-    AddAppSpawnHook(STAGE_CHILD_EXECUTE, HOOK_PRIO_COMMON, AddSpecialGroupToProcess);
 }
