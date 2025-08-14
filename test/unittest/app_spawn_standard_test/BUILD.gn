@@ -140,9 +140,7 @@ ohos_unittest("AppSpawn_ut") {
     ]
     defines += [ "APPSPAWN_SANDBOX_NEW" ]
   } else {
-    sources += [
-      "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_sandbox_test.cpp",
-    ]
+    sources += [ "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_sandbox_test.cpp" ]
   }
 
   configs = [ "${appspawn_path}:appspawn_config" ]
@@ -174,6 +172,10 @@ ohos_unittest("AppSpawn_ut") {
   if (appspawn_hitrace_option == true) {
     defines += [ "APPSPAWN_HITRACE_OPTION" ]
     external_deps += [ "hitrace:libhitrace_option" ]
+  }
+
+  if (appspawn_support_nweb) {
+    external_deps += [ "webview:libarkweb_utils" ]
   }
 
   if (enable_appspawn_dump_catcher) {
@@ -362,6 +364,10 @@ ohos_unittest("AppSpawn_coldrun_ut") {
     sources += [ "${appspawn_path}/modules/asan/asan_detector.c" ]
   }
 
+  if (appspawn_support_nweb) {
+    external_deps += [ "webview:libarkweb_utils" ]
+  }
+
   if (build_selinux) {
     defines += [ "WITH_SELINUX" ]
     external_deps += [
@@ -536,6 +542,10 @@ ohos_unittest("AppSpawn_common_ut") {
   if (asan_detector || is_asan) {
     defines += [ "ASAN_DETECTOR" ]
     sources += [ "${appspawn_path}/modules/asan/asan_detector.c" ]
+  }
+
+  if (appspawn_support_nweb) {
+    external_deps += [ "webview:libarkweb_utils" ]
   }
 
   if (build_selinux) {

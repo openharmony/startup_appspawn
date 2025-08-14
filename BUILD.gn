@@ -84,7 +84,6 @@ group("appspawn_all") {
     deps += [ "etc:etc_files" ]
     deps += [ "modules/ace_adapter:appspawn_ace" ]
     deps += [ "modules/asan:appspawn_asan" ]
-    deps += [ "modules/nweb_adapter:appspawn_nweb" ]
     deps += [ "modules/native_adapter:nativespawn" ]
     deps += [ "modules/sandbox:appspawn_sandbox" ]
     deps += [ "modules/common:appspawn_common" ]
@@ -102,6 +101,9 @@ group("appspawn_all") {
         ":cjappspawn.rc",
         "standard:cjappspawn",
       ]
+    }
+    if (appspawn_support_nweb) {
+      deps += [ "modules/nweb_adapter:appspawn_nweb" ]
     }
     if (appspawn_support_native) {  # for support nativespawn
       deps += [

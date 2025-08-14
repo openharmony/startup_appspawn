@@ -27,6 +27,9 @@
 #include "appspawn_service.h"
 #include "appspawn_manager.h"
 #include "appspawn_utils.h"
+#ifdef ARKWEB_UTILS_ENABLE
+#include "arkweb_utils.h"
+#endif
 #include "command_lexer.h"
 #include "config_policy_utils.h"
 #include "hitrace_meter.h"
@@ -369,6 +372,9 @@ APPSPAWN_STATIC int DlopenAppSpawn(AppSpawnMgr *content)
 #endif
     APPSPAWN_LOGI("DlopenAppSpawn: Start reclaim file cache");
     OHOS::Ace::AceForwardCompatibility::ReclaimFileCache(getpid());
+#ifdef ARKWEB_UTILS_ENABLE
+    OHOS::ArkWeb::PreloadArkWebLibForBrowser();
+#endif
     return 0;
 }
 

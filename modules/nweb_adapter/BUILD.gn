@@ -40,6 +40,11 @@ ohos_shared_library("appspawn_nweb") {
     "hilog:libhilog",
     "init:libbegetutil",
   ]
+
+  if (appspawn_support_nweb) {
+    external_deps += [ "webview:libarkweb_utils" ]
+  }
+
   if (build_seccomp) {
     cflags += [ "-DWITH_SECCOMP" ]
     if (appspawn_seccomp_privilege) {
