@@ -43,6 +43,9 @@
 #include "init_utils.h"
 #include "parameter.h"
 #include "appspawn_adapter.h"
+#ifndef OHOS_LITE
+#include "appspawn_reclaim.h"
+#endif
 #include "securec.h"
 #include "cJSON.h"
 #ifdef APPSPAWN_HISYSEVENT
@@ -1758,7 +1761,7 @@ static void ProcessSpawnDlopenMsg(AppSpawnConnection *connection, AppSpawnMsgNod
         msg->msgLen,
         msg->processName);
 
-#ifdef PRE_DLOPEN_ARKWEB_LIB
+#if (defined(PRE_DLOPEN_ARKWEB_LIB) && !defined(ASAN_DETECTOR))
     Dl_namespace dlns;
     if (dlns_get("nweb_ns", &dlns) != 0) {
         char arkwebLibPath[PATH_SIZE] = "";
@@ -1786,6 +1789,9 @@ static void ProcessSpawnDlopenMsg(AppSpawnConnection *connection, AppSpawnMsgNod
     } else {
         APPSPAWN_LOGI("SUCCESS to dlopen libarkweb_engine.so in appspawn");
         SendResponse(connection, msg, 0, 0);
+#ifndef OHOS_LITE
+        ReclaimFileCache();
+#endif
     }
 #else
     SendResponse(connection, msg, 0, 0);
