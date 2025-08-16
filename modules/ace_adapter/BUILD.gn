@@ -30,9 +30,6 @@ ohos_shared_library("appspawn_ace") {
     "${appspawn_path}/util:libappspawn_util",
   ]
   defines = []
-  if (target_cpu == "arm64") {
-    defines += [ "PRE_DLOPEN_ARKWEB_LIB" ]
-  }
   if (asan_detector || is_asan) {
     defines += [ "ASAN_DETECTOR" ]
   }
