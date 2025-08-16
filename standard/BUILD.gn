@@ -50,6 +50,12 @@ ohos_executable("appspawn") {
     "${appspawn_path}/standard/appspawn_msgmgr.c",
     "${appspawn_path}/standard/appspawn_service.c",
   ]
+  if (!defined(ohos_lite)) {
+    sources += [
+      "${appspawn_path}/standard/appspawn_reclaim.h",
+      "${appspawn_path}/standard/appspawn_reclaim.cpp",
+    ]
+  }
 
   defines = []
   if (target_cpu == "arm64") {
@@ -82,6 +88,10 @@ ohos_executable("appspawn") {
     "hitrace:hitrace_meter",
     "init:libbegetutil",
   ]
+  if (!defined(ohos_lite)) {
+    external_deps += [ "ace_engine:ace_forward_compatibility" ]
+  }
+
   if (enable_appspawn_dump_catcher) {
     external_deps += [ "faultloggerd:libdfx_dumpcatcher" ]
   }
