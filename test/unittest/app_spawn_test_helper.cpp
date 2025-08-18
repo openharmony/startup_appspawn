@@ -58,6 +58,14 @@ uint32_t AppSpawnTestServer::serverId = 0;
 static int TestChildLoopRun(AppSpawnContent *content, AppSpawnClient *client)
 {
     APPSPAWN_LOGV("ChildLoopRun ...");
+    AppSpawningCtx *property = (AppSpawningCtx *)client;
+    APPSPAWN_CHECK(content != NULL && property != NULL, return 0, "invlid param in clearEnv");
+    int fd = property->forkCtx.fd[1];
+    property->forkCtx.fd[1] = -1;
+    APPSPAWN_CHECK(fd >= 0, return 0, "invalid fd for notify parent");
+    int ret = 0;
+    (void)write(fd, &ret, sizeof(ret));
+    (void)close(fd);
     sleep(1);
     return 0;
 }
