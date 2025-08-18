@@ -303,8 +303,15 @@ static int MountWithOther(const AppSpawningCtx *property, const AppDacInfo *info
         return APPSPAWN_ERROR_UTILS_MEM_FAIL;
     }
 #ifdef APPSPAWN_SUPPORT_NOSHAREFS
+    char nosharefsDocsDir[PATH_MAX_LEN] = {0};
+    ret = snprintf_s(nosharefsDocsDir, PATH_MAX_LEN, PATH_MAX_LEN - 1, "/mnt/user/%u/nosharefs/docs",
+                         info->uid / UID_BASE);
+    if (ret <= 0) {
+        APPSPAWN_LOGE("snprintf nosharefsDocsDir failed, errno %{public}d", errno);
+        return APPSPAWN_ERROR_UTILS_MEM_FAIL;
+    }
     SharedMountArgs arg = {
-        .srcPath = sharefsDocsDir,
+        .srcPath = nosharefsDocsDir,
         .destPath = storageUserPath,
         .fsType = nullptr,
         .mountFlags = MS_BIND | MS_REC,
