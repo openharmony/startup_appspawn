@@ -220,6 +220,20 @@ static int BuildFdInfoMap(const AppSpawnMsgNode *message, std::map<std::string, 
     return 0;
 }
 
+APPSPAWN_STATIC void ClearEnvAndReturnSuccess(AppSpawnContent *content, AppSpawnClient *client)
+{
+    AppSpawningCtx *property = (AppSpawningCtx *)client;
+    APPSPAWN_CHECK(content != NULL && property != NULL, return, "invlid param in clearEnv");
+    int fd = property->forkCtx.fd[1];
+    property->forkCtx.fd[1] = -1;
+    AppSpawnEnvClear(content, client);
+    APPSPAWN_CHECK(fd >= 0, return, "invalid fd for notify parent");
+    int ret = 0;
+    ssize_t written = write(fd, &ret, sizeof(ret));
+    (void)close(fd);
+    APPSPAWN_LOGI("ClearEnvAndReturnSuccess %{public}u %{public}zd", client->id, written);
+}
+
 APPSPAWN_STATIC int RunChildThread(const AppSpawnMgr *content, const AppSpawningCtx *property)
 {
     std::string checkExit;
@@ -230,10 +244,10 @@ APPSPAWN_STATIC int RunChildThread(const AppSpawnMgr *content, const AppSpawning
     if (CheckAppMsgFlagsSet(property, APP_FLAGS_CHILDPROCESS)) {
         std::map<std::string, int> fdMap;
         BuildFdInfoMap(property->message, fdMap, IsColdRunMode(content));
-        AppSpawnEnvClear((AppSpawnContent *)&content->content, (AppSpawnClient *)&property->client);
+        ClearEnvAndReturnSuccess((AppSpawnContent *)&content->content, (AppSpawnClient *)&property->client);
         OHOS::AppExecFwk::MainThread::StartChild(fdMap);
     } else {
-        AppSpawnEnvClear((AppSpawnContent *)&content->content, (AppSpawnClient *)&property->client);
+        ClearEnvAndReturnSuccess((AppSpawnContent *)&content->content, (AppSpawnClient *)&property->client);
         OHOS::AppExecFwk::MainThread::Start();
     }
     unsetenv(APPSPAWN_CHECK_EXIT);
@@ -265,7 +279,7 @@ APPSPAWN_STATIC int RunChildByRenderCmd(const AppSpawnMgr *content, const AppSpa
     }
     options.push_back(nullptr);
     // clear appspawn env, do not user any content and property
-    AppSpawnEnvClear((AppSpawnContent *)&content->content, (AppSpawnClient *)&property->client);
+    ClearEnvAndReturnSuccess((AppSpawnContent *)&content->content, (AppSpawnClient *)&property->client);
     execvp(args[0].c_str(), options.data());
     // If it succeeds calling execvp, it never returns.
     int err = errno;

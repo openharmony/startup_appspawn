@@ -262,9 +262,9 @@ HWTEST_F(AppSpawnColdRunTest, App_Spawn_Cold_Run_005, TestSize.Level0)
     appProperty.message->msgHeader.msgLen = 1024;
     char msg[] = "test-xxx-xxx";
     appProperty.message->buffer = (uint8_t *)msg;
-    AppSpawnClient client = {0, 1};
     struct ListNode node;
-    appProperty.client = client;
+    appProperty.client.id = 0;
+    appProperty.client.flags = 1;
     appProperty.node = node;
     appProperty.forkCtx.fd[0] = 0;
     appProperty.forkCtx.fd[1] = 1;
@@ -275,8 +275,8 @@ HWTEST_F(AppSpawnColdRunTest, App_Spawn_Cold_Run_005, TestSize.Level0)
     AppSpawnMgr spawnMgr;
     spawnMgr.content = content;
 
-    ret = AppSpawnColdStartApp(&content, &client);
-    ASSERT_EQ(ret, APPSPAWN_SYSTEM_ERROR);
+    ret = AppSpawnColdStartApp(&content, &appProperty.client);
+    ASSERT_EQ(ret, 0);
     free(appProperty.message);
 }
 }  // namespace OHOS

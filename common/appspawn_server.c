@@ -37,9 +37,9 @@ static void NotifyResToParent(struct AppSpawnContent *content, AppSpawnClient *c
 {
     StartAppspawnTrace("NotifyResToParent");
     APPSPAWN_LOGI("NotifyResToParent: %{public}d", result);
-    if (content->notifyResToParent != NULL) {
-        content->notifyResToParent(content, client, result);
-    }
+    APPSPAWN_CHECK(content != NULL && content->notifyResToParent != NULL, FinishAppspawnTrace();
+        return, "invalid param");
+    content->notifyResToParent(content, client, result);
     FinishAppspawnTrace();
 }
 
@@ -104,8 +104,9 @@ int AppSpawnChild(AppSpawnContent *content, AppSpawnClient *client)
         AppSpawnEnvClear(content, client);
         return 0);
 
-    // notify success to father process and start app process
-    NotifyResToParent(content, client, 0);
+    bool isAppspawn = (content->mode == MODE_FOR_APP_SPAWN || content->mode == MODE_FOR_APP_COLD_RUN);
+    APPSPAWN_CHECK_ONLY_EXPER(isAppspawn,
+        NotifyResToParent(content, client, 0));
 
     StartAppspawnTrace("AppSpawnExecutePostReplyHook");
     (void)AppSpawnExecutePostReplyHook(content, client);
@@ -115,6 +116,8 @@ int AppSpawnChild(AppSpawnContent *content, AppSpawnClient *client)
         ret = content->runChildProcessor(content, client);
     }
     if (ret != 0) {
+        APPSPAWN_CHECK_ONLY_EXPER(!isAppspawn,
+            NotifyResToParent(content, client, ret));
         AppSpawnEnvClear(content, client);
     }
     return 0;
