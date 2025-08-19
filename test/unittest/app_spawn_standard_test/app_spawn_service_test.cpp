@@ -1185,4 +1185,54 @@ HWTEST_F(AppSpawnServiceTest, App_Spawn_ConvertEnvValue_001, TestSize.Level0)
     EXPECT_EQ(strcmp(outEnv, "/path/to/lib/envtest"), 0);
     EXPECT_EQ(unsetenv("ENV_TEST_VALUE"), 0);
 }
+
+/**
+ * @brief 向appspawn发送MSG_LOAD_WEBLIB_IN_APPSPAWN类型的消息，传入arkweb包名
+ *
+ */
+HWTEST_F(AppSpawnServiceTest, App_Spawn_MSG_LOAD_WEBLIB_IN_APPSPAWN_001, TestSize.Level0)
+{
+    int ret = 0;
+    AppSpawnClientHandle clientHandle = nullptr;
+    do {
+        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", APPSPAWN_SERVER_NAME);
+
+        char bundleName[64] = {0};
+        ret = GetParameter("persist.arkwebcore.package_name", "", bundleName, 64);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to get arkweb bundleName");
+
+        AppSpawnReqMsgHandle reqHandle;
+        ret = AppSpawnReqMsgCreate(MSG_LOAD_WEBLIB_IN_APPSPAWN, bundleName, &reqHandle);
+        AppSpawnResult result = {};
+        ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to send MSG_LOAD_WEBLIB_IN_APPSPAWN, ret %{public}d", ret);
+    } while (0);
+
+    AppSpawnClientDestroy(clientHandle);
+    ASSERT_EQ(ret, 0);
+}
+
+/**
+ * @brief 向appspawn发送MSG_LOAD_WEBLIB_IN_APPSPAWN类型的消息，传入空字符串
+ *
+ */
+HWTEST_F(AppSpawnServiceTest, App_Spawn_MSG_LOAD_WEBLIB_IN_APPSPAWN_002, TestSize.Level0)
+{
+    int ret = 0;
+    AppSpawnClientHandle clientHandle = nullptr;
+    do {
+        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", APPSPAWN_SERVER_NAME);
+
+        AppSpawnReqMsgHandle reqHandle;
+        ret = AppSpawnReqMsgCreate(MSG_LOAD_WEBLIB_IN_APPSPAWN, "", &reqHandle);
+        AppSpawnResult result = {};
+        ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to send MSG_LOAD_WEBLIB_IN_APPSPAWN, ret %{public}d", ret);
+    } while (0);
+
+    AppSpawnClientDestroy(clientHandle);
+    ASSERT_EQ(ret, 0);
+}
 }  // namespace OHOS
