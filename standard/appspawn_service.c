@@ -1115,6 +1115,7 @@ static void ProcessChildResponse(const WatcherHandle taskHandle, int fd, uint32_
 static void NotifyResToParent(AppSpawnContent *content, AppSpawnClient *client, int result)
 {
     AppSpawningCtx *property = (AppSpawningCtx *)client;
+    APPSPAWN_CHECK(property != NULL && client != NULL, return, "invalid param");
     int fd = property->forkCtx.fd[1];
     if (fd >= 0) {
         (void)write(fd, &result, sizeof(result));
