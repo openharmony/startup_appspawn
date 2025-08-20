@@ -126,17 +126,24 @@ APPSPAWN_STATIC int AddPermissionStrToValue(const char *valueStr, UserEncap *enc
     APPSPAWN_CHECK(valueStr != NULL, return APPSPAWN_ARG_INVALID, "Invalid string value");
     uint32_t valueLen = strlen(valueStr) + 1;
     APPSPAWN_CHECK(valueLen > 1 && valueLen <= OH_ENCAPS_VALUE_MAX_LEN, return APPSPAWN_ARG_INVALID,
-        "String value len is invalied, len: %{public}u", valueLen);
-    char *value = (char *)calloc(1, valueLen);
-    APPSPAWN_CHECK(value != NULL, return APPSPAWN_SYSTEM_ERROR, "Failed to calloc value");
+        "String value len is invalid, len: %{public}u", valueLen);
+    APPSPAWN_LOGV("valueStr:%{public}s", valueStr);
+    cJSON *valueJson = cJSON_Parse(valueStr);
+    APPSPAWN_CHECK(valueJson != NULL, return APPSPAWN_ERROR_UTILS_CREATE_JSON_FAIL, "Invalid valueStr");
+    cJSON *firstItem = cJSON_GetArrayItem(valueJson, 0);
+    APPSPAWN_CHECK(firstItem != NULL && cJSON_IsString(firstItem), cJSON_Delete(valueJson);
+        return APPSPAWN_ARG_INVALID, "get first valueJson element failed");
 
-    int ret = strcpy_s(value, valueLen, valueStr);
-    APPSPAWN_CHECK(ret == EOK, free(value);
-        return APPSPAWN_SYSTEM_ERROR, "Failed to copy string value");
+    const char *value = firstItem->valuestring;
+    valueLen = strlen(value) + 1;
+    APPSPAWN_LOGV("firstItem->valuestring:%{public}s", value);
 
-    encap->value.ptrValue = (void *)value;
+    encap->value.ptrValue = (void *)strdup(value);
+    APPSPAWN_CHECK(encap->value.ptrValue != NULL, cJSON_Delete(valueJson);
+        return APPSPAWN_ERROR_UTILS_MEM_FAIL, "strdup value failed");
     encap->valueLen = valueLen;
     encap->type = ENCAPS_CHAR_ARRAY;
+    cJSON_Delete(valueJson);
     return 0;
 }
 

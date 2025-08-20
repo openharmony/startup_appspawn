@@ -761,7 +761,8 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_Encaps_003, TestSize.Level0)
         APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break,
             "Failed to create req %{public}s", APPSPAWN_SERVER_NAME);
         const char *permissions = "{\"name\":\"Permissions\",\"ohos.encaps.count\":0,\"permissions\":"
-        "[{\"ohos.permission.bool\":true},{\"ohos.permission.int\":3225},{\"ohos.permission.string\":\"test\"},"
+        "[{\"ohos.permission.bool\":true},{\"ohos.permission.int\":3225},"
+        "{\"ohos.permission.string\":\"{\\\"key\\\":\\\"value\\\"}\"},"
         "{\"ohos.permission.array\":[1,2,3,4,5]}]}";
         ret = AppSpawnReqMsgAddExtInfo(reqHandle, MSG_EXT_NAME_JIT_PERMISSIONS,
             reinterpret_cast<uint8_t *>(const_cast<char *>(permissions)), strlen(permissions) + 1);
@@ -822,7 +823,8 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_Encaps_005, TestSize.Level0)
 HWTEST_F(AppSpawnCommonTest, App_Spawn_Encaps_006, TestSize.Level0)
 {
     const char encapsJsonStr[] = "{\"name\":\"Permissions\",\"ohos.encaps.count\":5,\"permissions\":"
-        "[{\"ohos.permission.bool\":true},{\"ohos.permission.int\":3225},{\"ohos.permission.string\":\"test\"},"
+        "[{\"ohos.permission.bool\":true},{\"ohos.permission.int\":3225},"
+        "{\"ohos.permission.string\":\"{\\\"key\\\":\\\"value\\\"}\"},"
         "{\"ohos.permission.array\":[1,2,3,4,5]}]}";
 
     cJSON *encapsJson = cJSON_Parse(encapsJsonStr);
@@ -842,8 +844,9 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_Encaps_006, TestSize.Level0)
 HWTEST_F(AppSpawnCommonTest, App_Spawn_Encaps_007, TestSize.Level0)
 {
     const char encapsJsonStr[] = "{\"name\":\"Permissions\",\"ohos.encaps.count\":4,\"permissions\":"
-        "[{\"ohos.permission.bool\":true},{\"ohos.permission.int\":3225},{\"ohos.permission.string\":\"test\"},"
-        "{\"ohos.permission.array\":[1,\"abc\",3,4,5]}]}";
+        "[{\"ohos.permission.bool\":true},{\"ohos.permission.int\":3225},"
+        "{\"ohos.permission.string\":\"{\\\"key\\\":\\\"value\\\"}\"},"
+        "{\"ohos.permission.array\":[1,\"{\\\"key\\\":\\\"value\\\"}\",3,4,5]}]}";
 
     cJSON *encapsJson = cJSON_Parse(encapsJsonStr);
     EXPECT_NE(encapsJson, nullptr);
@@ -989,7 +992,8 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_Encaps_014, TestSize.Level0)
 HWTEST_F(AppSpawnCommonTest, App_Spawn_Encaps_015, TestSize.Level0)
 {
     // key len = 64 + "\0"
-    const char permissionItemStr[] = "{\"ohos.permission.strarrayabcdefghijklmnopqrstuvwxyzaaaaaaaaaaaaaa\":\"abc\"}";
+    const char permissionItemStr[] = "{\"ohos.permission.strarrayabcdefghijklmnopqrstuvwxyzaaaaaaaaaaaaaa\":"
+        "\"{\\\"key\\\":\\\"value\\\"}\"}";
 
     cJSON *permissionItem = cJSON_Parse(permissionItemStr);
     EXPECT_NE(permissionItem, nullptr);
@@ -1006,7 +1010,8 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_Encaps_015, TestSize.Level0)
 HWTEST_F(AppSpawnCommonTest, App_Spawn_Encaps_016, TestSize.Level0)
 {
     // key len = 63 + "\0"
-    const char permissionItemStr[] = "{\"ohos.permission.strarrayabcdefghijklmnopqrstuvwxyzaaaaaaaaaaaaa\":\"abc\"}";
+    const char permissionItemStr[] = "{\"ohos.permission.strarrayabcdefghijklmnopqrstuvwxyzaaaaaaaaaaaaa\":"
+        "\"{\\\"key\\\":\\\"value\\\"}\"}";
 
     cJSON *permissionItem = cJSON_Parse(permissionItemStr);
     EXPECT_NE(permissionItem, nullptr);
@@ -1248,7 +1253,8 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_Encaps_030, TestSize.Level0)
         APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break,
             "Failed to create req %{public}s", APPSPAWN_SERVER_NAME);
         const char *permissions = "{\"name\":\"Permissions\",\"ohos.encaps.count\":4,\"permissions\":"
-        "[{\"ohos.permission.bool\":true},{\"ohos.permission.int\":3225},{\"ohos.permission.string\":\"test\"},"
+        "[{\"ohos.permission.bool\":true},{\"ohos.permission.int\":3225},"
+        "{\"ohos.permission.string\":\"{\\\"key\\\":\\\"value\\\"}\"},"
         "{\"ohos.permission.array\":[1,2,3,4,5]}]}";
         ret = AppSpawnReqMsgAddExtInfo(reqHandle, MSG_EXT_NAME_JIT_PERMISSIONS,
             reinterpret_cast<uint8_t *>(const_cast<char *>(permissions)), strlen(permissions) + 1);
@@ -1284,7 +1290,8 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_Encaps_031, TestSize.Level0)
         APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break,
             "Failed to create req %{public}s", APPSPAWN_SERVER_NAME);
         const char *permissions = "{\"name\":\"Permissions\",\"ohos.encaps.count\":4,\"permissions\":"
-        "[{\"ohos.permission.bool\":true},{\"ohos.permission.int\":3225},{\"ohos.permission.string\":\"test\"},"
+        "[{\"ohos.permission.bool\":true},{\"ohos.permission.int\":3225},"
+        "{\"ohos.permission.string\":\"{\\\"key\\\":\\\"value\\\"}\"},"
         "{\"ohos.permission.array\":[1,2,3,4,5]}]}";
         ret = AppSpawnReqMsgAddExtInfo(reqHandle, MSG_EXT_NAME_JIT_PERMISSIONS,
             reinterpret_cast<uint8_t *>(const_cast<char *>(permissions)), strlen(permissions) + 1);
