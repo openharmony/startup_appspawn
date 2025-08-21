@@ -1187,7 +1187,7 @@ HWTEST_F(AppSpawnServiceTest, App_Spawn_ConvertEnvValue_001, TestSize.Level0)
 }
 
 /**
- * @brief 向appspawn发送MSG_LOAD_WEBLIB_IN_APPSPAWN类型的消息，传入arkweb包名
+ * @brief 向appspawn发送MSG_LOAD_WEBLIB_IN_APPSPAWN类型的消息，传入任意包名
  *
  */
 HWTEST_F(AppSpawnServiceTest, App_Spawn_MSG_LOAD_WEBLIB_IN_APPSPAWN_001, TestSize.Level0)
@@ -1198,12 +1198,8 @@ HWTEST_F(AppSpawnServiceTest, App_Spawn_MSG_LOAD_WEBLIB_IN_APPSPAWN_001, TestSiz
         ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
         APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", APPSPAWN_SERVER_NAME);
 
-        char bundleName[64] = {0};
-        ret = GetParameter("persist.arkwebcore.package_name", "", bundleName, 64);
-        APPSPAWN_CHECK(ret == 0, break, "Failed to get arkweb bundleName");
-
         AppSpawnReqMsgHandle reqHandle;
-        ret = AppSpawnReqMsgCreate(MSG_LOAD_WEBLIB_IN_APPSPAWN, bundleName, &reqHandle);
+        ret = AppSpawnReqMsgCreate(MSG_LOAD_WEBLIB_IN_APPSPAWN, "com.example.myapplication", &reqHandle);
         AppSpawnResult result = {};
         ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
         APPSPAWN_CHECK(ret == 0, break, "Failed to send MSG_LOAD_WEBLIB_IN_APPSPAWN, ret %{public}d", ret);
@@ -1214,10 +1210,10 @@ HWTEST_F(AppSpawnServiceTest, App_Spawn_MSG_LOAD_WEBLIB_IN_APPSPAWN_001, TestSiz
 }
 
 /**
- * @brief 向appspawn发送MSG_LOAD_WEBLIB_IN_APPSPAWN类型的消息，传入空字符串
+ * @brief 向appspawn发送MSG_UNLOAD_WEBLIB_IN_APPSPAWN类型的消息，传入任意包名
  *
  */
-HWTEST_F(AppSpawnServiceTest, App_Spawn_MSG_LOAD_WEBLIB_IN_APPSPAWN_002, TestSize.Level0)
+HWTEST_F(AppSpawnServiceTest, App_Spawn_MSG_UNLOAD_WEBLIB_IN_APPSPAWN_001, TestSize.Level0)
 {
     int ret = 0;
     AppSpawnClientHandle clientHandle = nullptr;
@@ -1226,10 +1222,10 @@ HWTEST_F(AppSpawnServiceTest, App_Spawn_MSG_LOAD_WEBLIB_IN_APPSPAWN_002, TestSiz
         APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", APPSPAWN_SERVER_NAME);
 
         AppSpawnReqMsgHandle reqHandle;
-        ret = AppSpawnReqMsgCreate(MSG_LOAD_WEBLIB_IN_APPSPAWN, "", &reqHandle);
+        ret = AppSpawnReqMsgCreate(MSG_UNLOAD_WEBLIB_IN_APPSPAWN, "com.example.myapplication", &reqHandle);
         AppSpawnResult result = {};
         ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
-        APPSPAWN_CHECK(ret == 0, break, "Failed to send MSG_LOAD_WEBLIB_IN_APPSPAWN, ret %{public}d", ret);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to send MSG_UNLOAD_WEBLIB_IN_APPSPAWN, ret %{public}d", ret);
     } while (0);
 
     AppSpawnClientDestroy(clientHandle);
