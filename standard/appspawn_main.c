@@ -21,6 +21,7 @@
 #include "appspawn_modulemgr.h"
 #include "appspawn_manager.h"
 #include "appspawn_service.h"
+#include "appspawn_trace.h"
 #include "parameter.h"
 #include "securec.h"
 
@@ -151,7 +152,9 @@ int main(int argc, char *const argv[])
                 arg->serviceName);
         }
     }
+    StartAppspawnTrace("StartSpawnService");
     AppSpawnContent *content = StartSpawnService(arg, argvSize, argc, argv);
+    FinishAppspawnTrace();
     if (content != NULL) {
         content->runAppSpawn(content, argc, argv);
     }
