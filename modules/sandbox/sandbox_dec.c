@@ -21,6 +21,7 @@
 #include <unistd.h>
 #include "appspawn_utils.h"
 #include "appspawn_hook.h"
+#include "appspawn_manager.h"
 
 static const char *g_decConstraintDir[] = {
     "/storage/Users",
@@ -106,7 +107,7 @@ static int SetDenyConstraintDirs(AppSpawnMgr *content)
     const char *decFilename = "/dev/dec";
     int fd = open(decFilename, O_RDWR);
     if (fd < 0) {
-        APPSPAWN_LOGE("open dec file fail.");
+        APPSPAWN_CHECK_ONLY_LOG(IsNativeSpawnMode(content) != 0, "open dec file fail.");
         return 0;
     }
 
@@ -140,7 +141,7 @@ static int SetForcedPrefixDirs(AppSpawnMgr *content)
     const char *decFilename = "/dev/dec";
     int fd = open(decFilename, O_RDWR);
     if (fd < 0) {
-        APPSPAWN_LOGE("open dec file fail.");
+        APPSPAWN_CHECK_ONLY_LOG(IsNativeSpawnMode(content) != 0, "open dec file fail.");
         return 0;
     }
 

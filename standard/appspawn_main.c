@@ -73,8 +73,11 @@ static void CheckPreload(char *const argv[])
     ssize_t nread = readlink("/proc/self/exe", buf, sizeof(buf) - 1);
     APPSPAWN_CHECK(nread != -1, return, "readlink fail: /proc/self/exe: %{public}d", errno);
     buf[nread] = 0;
-    ret = execv(buf, argv);
-    APPSPAWN_LOGE("execv fail: %{public}s: %{public}d: %{public}d", buf, errno, ret);
+    int result = strcmp(buf, "/system/bin/nativespawn");
+    if (result != 0) {
+        ret = execv(buf, argv);
+        APPSPAWN_LOGE("execv fail: %{public}s: %{public}d: %{public}d", buf, errno, ret);
+    }
 }
 
 #ifndef NATIVE_SPAWN
