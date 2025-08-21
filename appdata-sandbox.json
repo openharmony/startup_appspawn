@@ -1108,6 +1108,12 @@
                     "sandbox-flags": ["bind", "rec"],
                     "mount-shared-flag": "true",
                     "check-action-status": "false"
+                }, {
+                    "src-path" : "/mnt/hmdfs/<currentUserId>/cloud/data/<variablePackageName>",
+                    "sandbox-path" : "/data/storage/el2/cloud",
+                    "sandbox-flags": ["bind", "rec"],
+                    "mount-shared-flag": "true",
+                    "check-action-status": "false"
                 }
             ]
         }],
