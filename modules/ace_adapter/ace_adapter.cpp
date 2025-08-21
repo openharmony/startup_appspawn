@@ -35,7 +35,6 @@
 #include "hitrace_meter.h"
 #include "js_runtime.h"
 #include "json_utils.h"
-#include "parameter.h"
 #include "parameters.h"
 #include "resource_manager.h"
 #ifndef APPSPAWN_TEST
@@ -300,9 +299,7 @@ APPSPAWN_STATIC int PreLoadAppSpawn(AppSpawnMgr *content)
 
     bool isHybrid = IsHybridSpawnMode(content) ? true : false;
     APPSPAWN_LOGI("PreLoadAppSpawn: mode %{public}d, isHybrid is %{public}d", content->content.mode, isHybrid);
-    if (content->content.mode != MODE_FOR_APP_COLD_RUN) {
-        LoadExtendLib(isHybrid);
-    }
+    LoadExtendLib(isHybrid);
     return 0;
 }
 
