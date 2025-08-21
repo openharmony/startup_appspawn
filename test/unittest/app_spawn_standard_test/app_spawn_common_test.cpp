@@ -775,7 +775,8 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_Encaps_003, TestSize.Level0)
         ret = SpawnSetPermissions(property, &encapsInfo);
     } while (0);
 
-    EXPECT_EQ(ret, APPSPAWN_ARG_INVALID);
+    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(encapsInfo.encapsCount, 0);
     DeleteAppSpawningCtx(property);
     AppSpawnClientDestroy(clientHandle);
     FreeEncapsInfo(&encapsInfo);
@@ -815,8 +816,8 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_Encaps_004, TestSize.Level0)
 HWTEST_F(AppSpawnCommonTest, App_Spawn_Encaps_005, TestSize.Level0)
 {
     UserEncaps encapsInfo = {0};
-    int ret = AddMembersToEncapsInfo(NULL, &encapsInfo);
-    EXPECT_EQ(ret, APPSPAWN_ARG_INVALID);
+    int ret = AddMembersToEncapsInfo(NULL, &encapsInfo, 0);
+    EXPECT_EQ(ret, 0);
 }
 
 HWTEST_F(AppSpawnCommonTest, App_Spawn_Encaps_006, TestSize.Level0)
@@ -827,16 +828,12 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_Encaps_006, TestSize.Level0)
 
     cJSON *encapsJson = cJSON_Parse(encapsJsonStr);
     EXPECT_NE(encapsJson, nullptr);
-    cJSON *permissions = cJSON_GetObjectItemCaseSensitive(encapsJson, "permissions");
-    EXPECT_NE(permissions, nullptr);
-    cJSON *emptyItem = cJSON_CreateObject();
-    EXPECT_TRUE(cJSON_AddItemToArray(permissions, emptyItem));
-    UserEncaps encapsInfo = {0};
-    int ret = AddMembersToEncapsInfo(encapsJson, &encapsInfo);
-    EXPECT_EQ(ret, APPSPAWN_ERROR_UTILS_DECODE_JSON_FAIL);
+    int count = 0;
+    cJSON *permissions = GetEncapsPermissions(encapsJson, &count);
+    EXPECT_EQ(permissions, nullptr);
+    EXPECT_EQ(count, 0);
 
     cJSON_Delete(encapsJson);
-    FreeEncapsInfo(&encapsInfo);
 }
 
 HWTEST_F(AppSpawnCommonTest, App_Spawn_Encaps_007, TestSize.Level0)
@@ -847,9 +844,17 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_Encaps_007, TestSize.Level0)
 
     cJSON *encapsJson = cJSON_Parse(encapsJsonStr);
     EXPECT_NE(encapsJson, nullptr);
+    int count = 0;
+    cJSON *permissions = GetEncapsPermissions(encapsJson, &count);
+    EXPECT_NE(permissions, nullptr);
+    EXPECT_EQ(count, 4);
+
     UserEncaps encapsInfo = {0};
-    int ret = AddMembersToEncapsInfo(encapsJson, &encapsInfo);
+    encapsInfo.encap = (UserEncap *)calloc(count, sizeof(UserEncap));
+    EXPECT_NE(encapsInfo.encap, nullptr);
+    int ret = AddMembersToEncapsInfo(permissions, &encapsInfo, count);
     EXPECT_EQ(ret, APPSPAWN_ERROR_UTILS_ADD_JSON_FAIL);
+    EXPECT_EQ(encapsInfo.encapsCount, 3);
 
     cJSON_Delete(encapsJson);
     FreeEncapsInfo(&encapsInfo);
@@ -1062,12 +1067,12 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_Encaps_019, TestSize.Level0)
 
     cJSON *encapsJson = cJSON_Parse(encapsJsonStr);
     EXPECT_NE(encapsJson, nullptr);
-    UserEncaps encapsInfo = {0};
-    int ret = AddMembersToEncapsInfo(encapsJson, &encapsInfo);
-    EXPECT_EQ(ret, APPSPAWN_ARG_INVALID);
+    int count = 0;
+    cJSON *permissions = GetEncapsPermissions(encapsJson, &count);
+    EXPECT_EQ(permissions, nullptr);
+    EXPECT_EQ(count, 0);
 
     cJSON_Delete(encapsJson);
-    FreeEncapsInfo(&encapsInfo);
 }
 
 HWTEST_F(AppSpawnCommonTest, App_Spawn_Encaps_020, TestSize.Level0)
@@ -1079,12 +1084,12 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_Encaps_020, TestSize.Level0)
 
     cJSON *encapsJson = cJSON_Parse(encapsJsonStr);
     EXPECT_NE(encapsJson, nullptr);
-    UserEncaps encapsInfo = {0};
-    int ret = AddMembersToEncapsInfo(encapsJson, &encapsInfo);
-    EXPECT_EQ(ret, APPSPAWN_ARG_INVALID);
+    int count = 0;
+    cJSON *permissions = GetEncapsPermissions(encapsJson, &count);
+    EXPECT_EQ(permissions, nullptr);
+    EXPECT_EQ(count, 0);
 
     cJSON_Delete(encapsJson);
-    FreeEncapsInfo(&encapsInfo);
 }
 
 HWTEST_F(AppSpawnCommonTest, App_Spawn_Encaps_021, TestSize.Level0)
@@ -1225,12 +1230,12 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_Encaps_029, TestSize.Level0)
 
     cJSON *encapsJson = cJSON_Parse(encapsJsonStr);
     EXPECT_NE(encapsJson, nullptr);
-    UserEncaps encapsInfo = {0};
-    int ret = AddMembersToEncapsInfo(encapsJson, &encapsInfo);
-    EXPECT_EQ(ret, APPSPAWN_ARG_INVALID);
+    int count = 0;
+    cJSON *permissions = GetEncapsPermissions(encapsJson, &count);
+    EXPECT_EQ(permissions, nullptr);
+    EXPECT_EQ(count, 0);
 
     cJSON_Delete(encapsJson);
-    FreeEncapsInfo(&encapsInfo);
 }
 
 HWTEST_F(AppSpawnCommonTest, App_Spawn_Encaps_030, TestSize.Level0)
