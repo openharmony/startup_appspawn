@@ -85,10 +85,8 @@ private:
     static cJSON *GetFirstSubConfig(cJSON *parent, const char *key);
 
     // 处理dlpmanager挂载
-    static int32_t DoDlpAppMountStrategy(const AppSpawningCtx *appProperty, const std::string &srcPath,
-        const std::string &sandboxPath, const std::string &fsType, unsigned long mountFlags);
-    static int32_t HandleSpecialAppMount(const AppSpawningCtx *appProperty, const std::string &srcPath,
-        const std::string &sandboxPath, const std::string &fsType, unsigned long mountFlags);
+    static int32_t HandleDlpMount(const AppSpawnMsgDacInfo *dacInfo);
+    static bool CheckDlpMount(const AppSpawningCtx *appProperty);
 
     // 处理应用私有挂载
     static cJSON *GetPrivateJsonInfo(const AppSpawningCtx *appProperty, cJSON *wholeConfig);
