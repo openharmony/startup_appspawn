@@ -59,7 +59,6 @@ struct SharedMountArgs {
 bool IsValidDataGroupItem(cJSON *item);
 int GetElxInfoFromDir(const char *path);
 const DataGroupSandboxPathTemplate *GetDataGroupArgTemplate(uint32_t category);
-void *GetEl1BundleMountCount(void);
 int MountToShared(AppSpawnMgr *content, const AppSpawningCtx *property);
 
 #ifdef __cplusplus

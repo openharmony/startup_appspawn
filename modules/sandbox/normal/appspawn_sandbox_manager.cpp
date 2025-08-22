@@ -27,13 +27,7 @@ int32_t SetAppSandboxProperty(AppSpawnMgr *content, AppSpawningCtx *property)
 {
     APPSPAWN_CHECK(property != nullptr, return -1, "Invalid appspawn client");
     APPSPAWN_CHECK(content != nullptr, return -1, "Invalid appspawn content");
-    // clear g_mountInfo in the child process
-    std::map<std::string, int>* mapPtr = static_cast<std::map<std::string, int>*>(GetEl1BundleMountCount());
-    if (mapPtr == nullptr) {
-        APPSPAWN_LOGE("Get el1 bundle mount count failed");
-        return APPSPAWN_ARG_INVALID;
-    }
-    mapPtr->clear();
+
     int ret = 0;
     // no sandbox
     if (CheckAppMsgFlagsSet(property, APP_FLAGS_NO_SANDBOX)) {
@@ -93,60 +87,6 @@ static int InstallDebugSandbox(AppSpawnMgr *content, AppSpawningCtx *property)
     return OHOS::AppSpawn::SandboxCore::InstallDebugSandbox(content, property);
 }
 
-static void UmountDir(const char *rootPath, const char *targetPath, const AppSpawnedProcessInfo *appInfo)
-{
-    size_t allPathSize = strlen(rootPath) + USER_ID_SIZE + strlen(appInfo->name) + strlen(targetPath) + 2;
-    char *path = reinterpret_cast<char *>(malloc(sizeof(char) * (allPathSize)));
-    APPSPAWN_CHECK(path != nullptr, return, "Failed to malloc path");
-
-    int ret = sprintf_s(path, allPathSize, "%s%u/%s%s", rootPath, appInfo->uid / UID_BASE,
-        appInfo->name, targetPath);
-    APPSPAWN_CHECK(ret > 0 && ((size_t)ret < allPathSize), free(path);
-        return, "Failed to get sandbox path errno %{public}d", errno);
-
-    ret = umount2(path, MNT_DETACH);
-    if (ret == 0) {
-        APPSPAWN_LOGI("Umount2 sandbox path %{public}s success", path);
-    } else {
-        APPSPAWN_LOGW("Failed to umount2 sandbox path %{public}s errno %{public}d", path, errno);
-    }
-    free(path);
-}
-
-static int UmountSandboxPath(const AppSpawnMgr *content, const AppSpawnedProcessInfo *appInfo)
-{
-    APPSPAWN_CHECK(content != nullptr && appInfo != nullptr && appInfo->name != NULL,
-        return -1, "Invalid content or appInfo");
-    if (!IsAppSpawnMode(content)) {
-        return 0;
-    }
-    APPSPAWN_LOGV("UmountSandboxPath name %{public}s pid %{public}d", appInfo->name, appInfo->pid);
-    const char rootPath[] = "/mnt/sandbox/";
-    const char el1Path[] = "/data/storage/el1/bundle";
-
-    std::string varBundleName = std::string(appInfo->name);
-    if (appInfo->appIndex > 0) {
-        varBundleName = "+clone-" + std::to_string(appInfo->appIndex) + "+" + varBundleName;
-    }
-
-    uint32_t userId = appInfo->uid / UID_BASE;
-    std::string key = std::to_string(userId) + "-" + varBundleName;
-    std::map<std::string, int> *el1BundleCountMap = static_cast<std::map<std::string, int>*>(GetEl1BundleMountCount());
-    if (el1BundleCountMap == nullptr || el1BundleCountMap->find(key) == el1BundleCountMap->end()) {
-        return 0;
-    }
-    (*el1BundleCountMap)[key]--;
-    if ((*el1BundleCountMap)[key] == 0) {
-        APPSPAWN_LOGV("no app %{public}s use it in userId %{public}u, need umount", appInfo->name, userId);
-        UmountDir(rootPath, el1Path, appInfo);
-        el1BundleCountMap->erase(key);
-    } else {
-        APPSPAWN_LOGV("app %{public}s use it mount times %{public}d in userId %{public}u, not need umount",
-            appInfo->name, (*el1BundleCountMap)[key], userId);
-    }
-    return 0;
-}
-
 #ifndef APPSPAWN_SANDBOX_NEW
 MODULE_CONSTRUCTOR(void)
 {
@@ -157,7 +97,6 @@ MODULE_CONSTRUCTOR(void)
     (void)AddAppSpawnHook(STAGE_CHILD_EXECUTE, HOOK_PRIO_SANDBOX, SetAppSandboxProperty);
     (void)AddAppSpawnHook(STAGE_PARENT_UNINSTALL, HOOK_PRIO_SANDBOX, UninstallDebugSandbox);
     (void)AddAppSpawnHook(STAGE_PARENT_PRE_FORK, HOOK_PRIO_SANDBOX, InstallDebugSandbox);
-    (void)AddProcessMgrHook(STAGE_SERVER_APP_UMOUNT, HOOK_PRIO_SANDBOX, UmountSandboxPath);
     (void)AddServerStageHook(STAGE_SERVER_EXIT, HOOK_PRIO_SANDBOX,
                              OHOS::AppSpawn::SandboxCommon::FreeAppSandboxConfigCJson);
 }

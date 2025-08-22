@@ -34,7 +34,6 @@ static AppSpawnStartArgTemplate g_appSpawnStartArgTemplate[PROCESS_INVALID] = {
     {"nweb_cold", {MODE_FOR_NWEB_COLD_RUN, MODULE_NWEBSPAWN, APPSPAWN_SOCKET_NAME, NWEBSPAWN_SERVER_NAME, 0}},
     {NATIVESPAWN_SERVER_NAME, {MODE_FOR_NATIVE_SPAWN, MODULE_NATIVESPAWN, NATIVESPAWN_SOCKET_NAME,
         NATIVESPAWN_SERVER_NAME, 1}},
-    {NWEBSPAWN_RESTART, {MODE_FOR_NWEB_SPAWN, MODULE_NWEBSPAWN, NWEBSPAWN_SOCKET_NAME, NWEBSPAWN_SERVER_NAME, 1}},
     {HYBRIDSPAWN_SERVER_NAME, {MODE_FOR_HYBRID_SPAWN, MODULE_HYBRIDSPAWN, HYBRIDSPAWN_SOCKET_NAME,
         HYBRIDSPAWN_SERVER_NAME, 1}},
 };
@@ -144,12 +143,8 @@ int main(int argc, char *const argv[])
     if (arg->initArg == 0) {
         APPSPAWN_CHECK(argc >= ARG_NULL, return 0, "Invalid arg for cold start %{public}d", argc);
     } else {
-        if (strcmp(argTemp->serverName, NWEBSPAWN_RESTART) == 0) {  // nweb spawn restart
-            APPSPAWN_CHECK_ONLY_EXPER(argvSize >= APP_LEN_PROC_NAME, argvSize = APP_LEN_PROC_NAME);
-        } else {
-            APPSPAWN_CHECK(argvSize >= APP_LEN_PROC_NAME, return 0, "Invalid arg size for service %{public}s",
-                arg->serviceName);
-        }
+        APPSPAWN_CHECK(argvSize >= APP_LEN_PROC_NAME, return 0, "Invalid arg size for service %{public}s",
+            arg->serviceName);
     }
     AppSpawnContent *content = StartSpawnService(arg, argvSize, argc, argv);
     if (content != NULL) {

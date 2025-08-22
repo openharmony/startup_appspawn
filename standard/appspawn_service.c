@@ -16,7 +16,6 @@
 #include "appspawn_service.h"
 
 #include <dlfcn.h>
-#include <dirent.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -27,7 +26,6 @@
 #include <sys/mman.h>
 #include <sys/syscall.h>
 #include <signal.h>
-#include <sys/mount.h>
 #include <unistd.h>
 #include <sys/prctl.h>
 #include <sched.h>
@@ -181,7 +179,6 @@ static void HandleDiedPid(pid_t pid, uid_t uid, int status)
     DumpStatus(appInfo->name, pid, status, &signal);
     WriteSignalInfoToFd(appInfo, content, signal);
     ProcessMgrHookExecute(STAGE_SERVER_APP_DIED, GetAppSpawnContent(), appInfo);
-    ProcessMgrHookExecute(STAGE_SERVER_APP_UMOUNT, GetAppSpawnContent(), appInfo);
 
     // move app info to died queue in NWEBSPAWN, or delete appinfo
     TerminateSpawnedProcess(appInfo);
@@ -1453,134 +1450,18 @@ static void ProcessBegetCmdMsg(AppSpawnConnection *connection, AppSpawnMsgNode *
     DeleteAppSpawnMsg(&msgNode);
 }
 
-static int GetArkWebInstallPath(const char *key, char *value)
-{
-    int len = GetParameter(key, "", value, PATH_SIZE);
-    APPSPAWN_CHECK(len > 0, return -1, "Failed to get arkwebcore install path from param, len %{public}d", len);
-    for (int i = len - 1; i >= 0; i--) {
-        if (value[i] == '/') {
-            value[i] = '\0';
-            return i;
-        }
-        value[i] = '\0';
-    }
-    return -1;
-}
 
-static bool CheckAllDigit(char *userId)
-{
-    for (int i = 0; userId[i] != '\0'; i++) {
-        if (!isdigit(userId[i])) {
-            return false;
-        }
-    }
-    return true;
-}
-
-#ifdef APPSPAWN_SANDBOX_NEW
 static int ProcessSpawnRemountMsg(AppSpawnConnection *connection, AppSpawnMsgNode *message)
 {
-    APPSPAWN_LOGI("ProcessSpawnRemountMsg in new sandbox, do not handle it");
+    APPSPAWN_LOGI("ProcessSpawnRemountMsg, do not handle it");
     return 0;
 }
 
 static void ProcessSpawnRestartMsg(AppSpawnConnection *connection, AppSpawnMsgNode *message)
 {
-    APPSPAWN_LOGI("ProcessSpawnRestartMsg in new sandbox, do not handle it");
+    APPSPAWN_LOGI("ProcessSpawnRestartMsg, do not handle it");
     SendResponse(connection, &message->msgHeader, 0, 0);
 }
-#else
-static int ProcessSpawnRemountMsg(AppSpawnConnection *connection, AppSpawnMsgNode *message)
-{
-    char srcPath[PATH_SIZE] = {0};
-    int len = GetArkWebInstallPath("persist.arkwebcore.install_path", srcPath);
-    APPSPAWN_CHECK(len > 0, return -1, "Failed to get arkwebcore install path");
-
-    char *rootPath = "/mnt/sandbox";
-    DIR *rootDir = opendir(rootPath);
-    APPSPAWN_CHECK(rootDir != NULL, return -1, "Failed to opendir %{public}s, errno %{public}d", rootPath, errno);
-
-    struct dirent *ent;
-    while ((ent = readdir(rootDir)) != NULL) {
-        char *userId = ent->d_name;
-        if (strcmp(userId, ".") == 0 || strcmp(userId, "..") == 0 || !CheckAllDigit(userId)) {
-            continue;
-        }
-
-        char userIdPath[PATH_SIZE] = {0};
-        int ret = snprintf_s(userIdPath, sizeof(userIdPath), sizeof(userIdPath) - 1, "%s/%s", rootPath, userId);
-        APPSPAWN_CHECK(ret > 0, continue, "Failed to snprintf_s, errno %{public}d", errno);
-
-        DIR *userIdDir = opendir(userIdPath);
-        APPSPAWN_CHECK(userIdDir != NULL, continue, "Failed to open %{public}s, errno %{public}d", userIdPath, errno);
-
-        while ((ent = readdir(userIdDir)) != NULL) {
-            char *bundleName = ent->d_name;
-            if (strcmp(bundleName, ".") == 0 || strcmp(bundleName, "..") == 0) {
-                continue;
-            }
-            char destPath[PATH_SIZE] = {0};
-            ret = snprintf_s(destPath, sizeof(destPath), sizeof(destPath) - 1,
-                "%s/%s/data/storage/el1/bundle/arkwebcore", userIdPath, bundleName);
-            APPSPAWN_CHECK(ret > 0, continue, "Failed to snprintf_s, errno %{public}d", errno);
-
-            umount2(destPath, MNT_DETACH);
-            ret = mount(srcPath, destPath, NULL, MS_BIND | MS_REC, NULL);
-            if (ret != 0 && errno == EBUSY) {
-                ret = mount(srcPath, destPath, NULL, MS_BIND | MS_REC, NULL);
-                APPSPAWN_LOGV("mount again %{public}s to %{public}s, ret %{public}d", srcPath, destPath, ret);
-            }
-            APPSPAWN_CHECK(ret == 0, continue,
-                "Failed to bind mount %{public}s to %{public}s, errno %{public}d", srcPath, destPath, errno);
-
-            ret = mount(NULL, destPath, NULL, MS_SHARED, NULL);
-            APPSPAWN_CHECK(ret == 0, continue,
-                "Failed to shared mount %{public}s to %{public}s, errno %{public}d", srcPath, destPath, errno);
-
-            APPSPAWN_LOGV("Remount %{public}s to %{public}s success", srcPath, destPath);
-        }
-        closedir(userIdDir);
-    }
-    closedir(rootDir);
-    return 0;
-}
-
-static void ProcessSpawnRestartMsg(AppSpawnConnection *connection, AppSpawnMsgNode *message)
-{
-    AppSpawnContent *content = GetAppSpawnContent();
-    if (!IsNWebSpawnMode((AppSpawnMgr *)content)) {
-        SendResponse(connection, &message->msgHeader, APPSPAWN_MSG_INVALID, 0);
-        DeleteAppSpawnMsg(&message);
-        APPSPAWN_LOGE("Restart msg only support nwebspawn");
-        return;
-    }
-
-    TraversalSpawnedProcess(AppQueueDestroyProc, NULL);
-    SendResponse(connection, &message->msgHeader, 0, 0);
-    DeleteAppSpawnMsg(&message);
-    (void) ServerStageHookExecute(STAGE_SERVER_EXIT, content);
-
-    errno = 0;
-    int fd = GetControlSocket(NWEBSPAWN_SOCKET_NAME);
-    APPSPAWN_CHECK(fd >= 0, return, "Get fd failed %{public}d, errno %{public}d", fd, errno);
-
-    int ret = 0;
-    int op = fcntl(fd, F_GETFD);
-    APPSPAWN_CHECK_ONLY_LOG(op >= 0, "fcntl failed %{public}d", op);
-    if (op > 0) {
-        ret = fcntl(fd, F_SETFD, (unsigned int)op & ~FD_CLOEXEC);
-        if (ret < 0) {
-            APPSPAWN_LOGE("Set fd failed %{public}d, %{public}d, ret %{public}d, errno %{public}d", fd, op, ret, errno);
-        }
-    }
-
-    char *path = "/system/bin/nwebspawn";
-    char *mode = NWEBSPAWN_RESTART;
-    const char *const formatCmds[] = {path, "-mode", mode, NULL};
-    ret = execv(path, (char **)formatCmds);
-    APPSPAWN_LOGE("Failed to execv, ret %{public}d, errno %{public}d", ret, errno);
-}
-#endif
 
 APPSPAWN_STATIC void ProcessUninstallDebugHap(AppSpawnConnection *connection, AppSpawnMsgNode *message)
 {
@@ -1591,7 +1472,7 @@ APPSPAWN_STATIC void ProcessUninstallDebugHap(AppSpawnConnection *connection, Ap
         DeleteAppSpawnMsg(&message);
         return;
     }
-    
+
     property->message = message;
     property->message->connection = connection;
     int ret = AppSpawnHookExecute(STAGE_PARENT_UNINSTALL, 0, GetAppSpawnContent(), &property->client);
