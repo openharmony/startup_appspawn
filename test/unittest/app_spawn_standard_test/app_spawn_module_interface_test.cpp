@@ -189,14 +189,14 @@ HWTEST_F(AppSpawnModuleInterfaceTest, App_Spawn_Process_Hook_001, TestSize.Level
     for (int i = 0; i < STAGE_MAX; i++) {
         for (int k = 0; k <= HOOK_PRIO_LOWEST + 1000; k += 1000) { // 1000
             ret = AddProcessMgrHook(static_cast<AppSpawnHookStage>(i), k, ReportProcessExitInfo);
-            EXPECT_EQ(ret == 0, (i >= STAGE_SERVER_APP_ADD && i <= STAGE_SERVER_APP_UMOUNT));
+            EXPECT_EQ(ret == 0, (i >= STAGE_SERVER_APP_ADD && i <= STAGE_SERVER_APP_DIED));
         }
 
         ret = AddProcessMgrHook(static_cast<AppSpawnHookStage>(i), 0, nullptr);
         EXPECT_EQ(ret == 0, 0);
 
         ret = ProcessMgrHookExecute(static_cast<AppSpawnHookStage>(i), reinterpret_cast<AppSpawnContent *>(mgr), app);
-        EXPECT_EQ(ret == 0, (i >= STAGE_SERVER_APP_ADD && i <= STAGE_SERVER_APP_UMOUNT));
+        EXPECT_EQ(ret == 0, (i >= STAGE_SERVER_APP_ADD && i <= STAGE_SERVER_APP_DIED));
 
         ret = ProcessMgrHookExecute(static_cast<AppSpawnHookStage>(i), nullptr, app);
         EXPECT_NE(ret, 0);

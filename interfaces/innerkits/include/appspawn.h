@@ -49,7 +49,6 @@ typedef void *AppSpawnClientHandle;
 #define NWEBSPAWN_SERVER_NAME "nwebspawn"
 #define APPSPAWN_SERVER_NAME "appspawn"
 #define CJAPPSPAWN_SERVER_NAME "cjappspawn"
-#define NWEBSPAWN_RESTART "nwebRestart"
 #define NATIVESPAWN_SERVER_NAME "nativespawn"
 #define HYBRIDSPAWN_SERVER_NAME "hybridspawn"
 
