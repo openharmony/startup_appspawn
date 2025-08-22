@@ -115,7 +115,7 @@ public:
     int CreateSocket(int type = 0);
     int CreateSendMsg(std::vector<uint8_t> &buffer, uint32_t msgType, uint32_t &msgLen,
         const std::vector<AddTlvFunction> &addTlvFuncs);
-    const std::vector<const char *> &GetPermissions()
+    std::vector<const char *> &GetPermissions()
     {
         return permissions_;
     }
@@ -149,7 +149,6 @@ private:
     int fdArg = -1;
     std::vector<const char *> permissions_ = {
         const_cast<char *>("ohos.permission.MANAGE_PRIVATE_PHOTOS"),
-        const_cast<char *>("ohos.permission.FILE_CROSS_APP"),
         const_cast<char *>("ohos.permission.ACTIVATE_THEME_PACKAGE"),
         const_cast<char *>("ohos.permission.GET_WALLPAPER"),
         const_cast<char *>("ohos.permission.FILE_ACCESS_MANAGER")

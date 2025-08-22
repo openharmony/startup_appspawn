@@ -150,63 +150,56 @@ std::string SandboxCore::GetSandboxPath(const AppSpawningCtx *appProperty, cJSON
     return sandboxPath;
 }
 
-int32_t SandboxCore::DoDlpAppMountStrategy(const AppSpawningCtx *appProperty, const std::string &srcPath,
-        const std::string &sandboxPath, const std::string &fsType, unsigned long mountFlags)
+int32_t SandboxCore::HandleDlpMount(const AppSpawnMsgDacInfo *dacInfo)
 {
-    AppSpawnMsgDacInfo *dacInfo = reinterpret_cast<AppSpawnMsgDacInfo *>(GetAppProperty(appProperty, TLV_DAC_INFO));
-    if (dacInfo == nullptr) {
-        return -1;
-    }
-
+    std::string fusePath = "/mnt/data/" + std::to_string(dacInfo->uid / UID_BASE) + "/fuse";
     // umount fuse path, make sure that sandbox path is not a mount point
-    umount2(sandboxPath.c_str(), MNT_DETACH);
+    umount2(fusePath.c_str(), MNT_DETACH);
+
+    int32_t ret = SandboxCommon::CreateDirRecursive(fusePath, SandboxCommonDef::FILE_MODE);
+    APPSPAWN_CHECK(ret == 0, return APPSPAWN_SANDBOX_ERROR_MKDIR_FAIL,
+                    "Create sandbox path failed, errno is %{public}d", errno);
 
     int fd = open("/dev/fuse", O_RDWR);
-    APPSPAWN_CHECK(fd != -1, return -EINVAL, "open /dev/fuse failed, errno is %{public}d", errno);
+    APPSPAWN_CHECK(fd > 0, return -EINVAL, "Open /dev/fuse failed, errno is %{public}d", errno);
 
     char options[SandboxCommonDef::OPTIONS_MAX_LEN];
-    (void)sprintf_s(options, sizeof(options), "fd=%d,"
-        "rootmode=40000,user_id=%u,group_id=%u,allow_other,"
-        "context=\"u:object_r:dlp_fuse_file:s0\","
-        "fscontext=u:object_r:dlp_fuse_file:s0",
-        fd, dacInfo->uid, dacInfo->gid);
-
-    // To make sure destinationPath exist
-    (void)SandboxCommon::CreateDirRecursive(sandboxPath, SandboxCommonDef::FILE_MODE);
+    ret = sprintf_s(options, sizeof(options), "fd=%d,"
+                            "rootmode=40000,user_id=%u,group_id=%u,allow_other,"
+                            "context=\"u:object_r:dlp_fuse_file:s0\","
+                            "fscontext=u:object_r:dlp_fuse_file:s0",
+                            fd, dacInfo->uid, dacInfo->gid);
+    APPSPAWN_CHECK(ret >= 0, close(fd);
+                   return APPSPAWN_ERROR_UTILS_MEM_FAIL, "Make mount fuse option failed, errno is %{public}d", errno);
 
 #ifndef APPSPAWN_TEST
-    APPSPAWN_LOGV("Bind mount %{public}s to %{public}s '%{public}s' '%{public}lu' '%{public}s'",
-        srcPath.c_str(), sandboxPath.c_str(), fsType.c_str(), mountFlags, options);
-    int ret = mount(srcPath.c_str(), sandboxPath.c_str(), fsType.c_str(), mountFlags, options);
+    ret = mount("/dev/fuse", fusePath.c_str(), "fuse",
+                MS_NOSUID | MS_NODEV | MS_NOEXEC | MS_NOATIME | MS_LAZYTIME, options);
     APPSPAWN_CHECK(ret == 0, close(fd);
-        return ret, "DoDlpAppMountStrategy failed, bind mount %{public}s to %{public}s failed %{public}d",
-        srcPath.c_str(), sandboxPath.c_str(), errno);
-
-    ret = mount(nullptr, sandboxPath.c_str(), nullptr, MS_SHARED, nullptr);
+        return ret, "Mount fuse failed %{public}s, errno: %{public}d", fusePath.c_str(), errno);
+    ret = mount(nullptr, fusePath.c_str(), nullptr, MS_SHARED, nullptr);
     APPSPAWN_CHECK(ret == 0, close(fd);
-        return ret, "errno is: %{public}d, private mount to %{public}s failed", errno, sandboxPath.c_str());
+        return ret, "Shared mount %{public}s, errno: %{public}d", fusePath.c_str(), errno);
 #endif
+
     /* set DLP_FUSE_FD  */
 #ifdef WITH_DLP
     SetDlpFuseFd(fd);
 #endif
-    return fd;
+    return 0;
 }
 
-int32_t SandboxCore::HandleSpecialAppMount(const AppSpawningCtx *appProperty, const std::string &srcPath,
-        const std::string &sandboxPath, const std::string &fsType, unsigned long mountFlags)
+bool SandboxCore::CheckDlpMount(const AppSpawningCtx *appProperty)
 {
     std::string bundleName = GetBundleName(appProperty);
     std::string processName = GetProcessName(appProperty);
     /* dlp application mount strategy */
     /* dlp is an example, we should change to real bundle name later */
-    if (bundleName.find(SandboxCommonDef::g_dlpBundleName) != std::string::npos &&
-        processName.compare(SandboxCommonDef::g_dlpBundleName) == 0) {
-        if (!fsType.empty()) {
-            return DoDlpAppMountStrategy(appProperty, srcPath, sandboxPath, fsType, mountFlags);
-        }
+    if (!(bundleName.find(SandboxCommonDef::g_dlpBundleName) != std::string::npos &&
+        processName.compare(SandboxCommonDef::g_dlpBundleName) == 0)) {
+        return false;
     }
-    return -1;
+    return true;
 }
 
 cJSON *SandboxCore::GetPrivateJsonInfo(const AppSpawningCtx *appProperty, cJSON *wholeConfig)
@@ -554,11 +547,7 @@ int32_t SandboxCore::ProcessMountPoint(cJSON *mntPoint, MountPointProcessParams 
             GetBoolValueFromJsonObj(mntPoint, SandboxCommonDef::g_mountSharedFlag, false) ? MS_SHARED : MS_SLAVE
     };
 
-    /* if app mount failed for special strategy, we need deal with common mount config */
-    int ret = HandleSpecialAppMount(params.appProperty, arg.srcPath, arg.destPath, arg.fsType, arg.mountFlags);
-    if (ret < 0) {
-        ret = SandboxCommon::DoAppSandboxMountOnce(params.appProperty, &arg);
-    }
+    int ret = SandboxCommon::DoAppSandboxMountOnce(params.appProperty, &arg);
     APPSPAWN_CHECK(ret == 0 || !SandboxCommon::IsMountSuccessful(mntPoint),
 #ifdef APPSPAWN_HISYSEVENT
         ReportMountFail(params.bundleName.c_str(), arg.srcPath, arg.destPath, errno);
@@ -913,20 +902,23 @@ int32_t SandboxCore::SetSandboxProperty(AppSpawningCtx *appProperty, std::string
 
 int32_t SandboxCore::SetAppSandboxProperty(AppSpawningCtx *appProperty, uint32_t sandboxNsFlags)
 {
-    APPSPAWN_CHECK(appProperty != nullptr, return -1, "Invalid appspawn client");
-    if (SandboxCommon::CheckBundleName(GetBundleName(appProperty)) != 0) {
-        return -1;
+    APPSPAWN_CHECK(appProperty != nullptr, return APPSPAWN_SANDBOX_INVALID, "Invalid appspawn client");
+    const std::string bundleName = GetBundleName(appProperty);
+    if (SandboxCommon::CheckBundleName(bundleName) != 0) {
+        return APPSPAWN_SANDBOX_INVALID;
     }
     AppSpawnMsgDacInfo *dacInfo = reinterpret_cast<AppSpawnMsgDacInfo *>(GetAppProperty(appProperty, TLV_DAC_INFO));
-    APPSPAWN_CHECK(dacInfo != nullptr, return -1, "No dac info in msg app property");
+    APPSPAWN_CHECK(dacInfo != nullptr, return APPSPAWN_SANDBOX_INVALID, "No dac info in msg app property");
 
-    const std::string bundleName = GetBundleName(appProperty);
-    cJSON *tmpJson = nullptr;
-    std::string sandboxPackagePath = SandboxCommon::GetSandboxRootPath(appProperty, tmpJson);
+    std::string sandboxPackagePath = SandboxCommon::GetSandboxRootPath(appProperty, nullptr);
     SandboxCommon::CreateDirRecursiveWithClock(sandboxPackagePath.c_str(), SandboxCommonDef::FILE_MODE);
-    bool sandboxSharedStatus = SandboxCommon::IsPrivateSharedStatus(bundleName, appProperty) ||
-        (CheckAppPermissionFlagSet(appProperty, static_cast<uint32_t>(GetPermissionIndex(nullptr,
-        SandboxCommonDef::ACCESS_DLP_FILE_MODE.c_str()))) != 0);
+
+    bool dlpStatus = (CheckAppPermissionFlagSet(appProperty,
+        static_cast<uint32_t>(GetPermissionIndex(nullptr, SandboxCommonDef::ACCESS_DLP_FILE_MODE.c_str()))) != 0);
+    if (dlpStatus && CheckDlpMount(appProperty)) {
+        int ret = HandleDlpMount(dacInfo);
+        APPSPAWN_CHECK_ONLY_LOG(ret == 0, "Handle dlp mount failed");
+    }
 
     // add pid to a new mnt namespace
     StartAppspawnTrace("EnableSandboxNamespace");
@@ -940,7 +932,7 @@ int32_t SandboxCore::SetAppSandboxProperty(AppSpawningCtx *appProperty, uint32_t
     // check app sandbox switch
     if (!SandboxCommon::IsTotalSandboxEnabled(appProperty) || !SandboxCommon::IsAppSandboxEnabled(appProperty)) {
         rc = DoSandboxRootFolderCreateAdapt(sandboxPackagePath);
-    } else if (!sandboxSharedStatus) {
+    } else {
         rc = DoSandboxRootFolderCreate(appProperty, sandboxPackagePath);
     }
     APPSPAWN_CHECK(rc == 0, return rc, "DoSandboxRootFolderCreate failed, %{public}s", bundleName.c_str());
@@ -953,7 +945,7 @@ int32_t SandboxCore::SetAppSandboxProperty(AppSpawningCtx *appProperty, uint32_t
 
 #ifndef APPSPAWN_TEST
     StartAppspawnTrace("ChangeCurrentDir");
-    rc = ChangeCurrentDir(sandboxPackagePath, bundleName, sandboxSharedStatus);
+    rc = ChangeCurrentDir(sandboxPackagePath, bundleName, false);
     FinishAppspawnTrace();
     APPSPAWN_CHECK(rc == 0, return rc, "change current dir failed");
     APPSPAWN_LOGV("Change root dir success");
