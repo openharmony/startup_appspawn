@@ -140,7 +140,9 @@ ohos_unittest("AppSpawn_ut") {
     ]
     defines += [ "APPSPAWN_SANDBOX_NEW" ]
   } else {
-    sources += [ "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_sandbox_test.cpp" ]
+    sources += [
+      "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_sandbox_test.cpp",
+    ]
   }
 
   configs = [ "${appspawn_path}:appspawn_config" ]

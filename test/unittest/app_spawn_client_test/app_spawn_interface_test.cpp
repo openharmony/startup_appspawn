@@ -617,7 +617,7 @@ HWTEST_F(AppSpawnInterfaceTest, App_SpawnListenFdSet_001, TestSize.Level0)
 
     ret = SpawnListenFdSet(pipefd[1]);
     EXPECT_EQ(ret, 0);
-    
+
     close(pipefd[0]);
     close(pipefd[1]);
 }
@@ -646,7 +646,7 @@ HWTEST_F(AppSpawnInterfaceTest, Native_SpawnListenFdSet_001, TestSize.Level0)
 
     ret = NativeSpawnListenFdSet(pipefd[1]);
     EXPECT_EQ(ret, 0);
-    
+
     close(pipefd[0]);
     close(pipefd[1]);
 }
