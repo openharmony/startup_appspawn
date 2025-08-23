@@ -137,7 +137,7 @@ static int SetAmbientCapabilities(const AppSpawningCtx *property)
 {
     const int caps[] = {CAP_DAC_OVERRIDE, CAP_DAC_READ_SEARCH, CAP_FOWNER};
     size_t capCount = sizeof(caps) / sizeof(caps[0]);
-    for (size_t i = 0;i < capCount; ++i) {
+    for (size_t i = 0; i < capCount; ++i) {
         if (SetAmbientCapability(caps[i]) != 0) {
             APPSPAWN_LOGE("set cap failed: %{public}d", caps[i]);
             return -1;
@@ -160,7 +160,7 @@ APPSPAWN_STATIC int SetCapabilities(const AppSpawnMgr *content, const AppSpawnin
 
     capHeader.version = _LINUX_CAPABILITY_VERSION_3;
     capHeader.pid = 0;
-    struct __user_cap_data_struct capData[2]; // 2 is data number
+    struct __user_cap_data_struct capData[2];
     isRet = memset_s(&capData, sizeof(capData), 0, sizeof(capData)) != EOK;
     APPSPAWN_CHECK(!isRet, return -EINVAL, "Failed to memset cap data");
 
@@ -195,10 +195,9 @@ APPSPAWN_STATIC int SetCapabilities(const AppSpawnMgr *content, const AppSpawnin
     capData[1].permitted = (__u32)(permitted >> BITLEN32);
     capData[0].effective = (__u32)(effective);
     capData[1].effective = (__u32)(effective >> BITLEN32);
-
-    // set capabilities
     isRet = capset(&capHeader, &capData[0]) != 0;
     APPSPAWN_CHECK(!isRet, return -errno, "Failed to capset errno: %{public}d", errno);
+
 #ifdef APPSPAWN_SUPPORT_NOSHAREFS
     if (!CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX_TYPE) &&
         (IsAppSpawnMode(content) || IsNativeSpawnMode(content))) {
@@ -558,7 +557,7 @@ APPSPAWN_STATIC int FilterAppSpawnTrace(AppSpawnMgr *content, AppSpawningCtx *pr
         APPSPAWN_LOGV("processName: %{public}s pid: %{public}d", processName, pid);
         FilterAppTrace(processName, pid);
     } else {
-        APPSPAWN_LOGV("processName is NULL");
+        APPSPAWN_LOGI("processName is NULL");
     }
 
     return 0;

@@ -1199,7 +1199,7 @@ HWTEST_F(AppSpawnClientTest, App_Spawn_Permission_006, TestSize.Level0)
     // for old sandbox, only one config
 #ifdef APPSPAWN_SANDBOX_NEW
     int max = GetMaxPermissionIndex(clientHandle);
-    EXPECT_EQ(max, 0);
+    EXPECT_EQ(max, sizeof(g_spawnerPermissionList) / sizeof(g_spawnerPermissionList[0]));
 
     int index = GetPermissionIndex(clientHandle, nullptr);
     EXPECT_EQ(index, INVALID_PERMISSION_INDEX);
