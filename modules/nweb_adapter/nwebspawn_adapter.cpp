@@ -36,17 +36,11 @@
 #endif
 
 #include "arkweb_utils.h"
+#include "arkweb_preload_common.h"
 
 namespace {
 const std::string ARK_WEB_ENGINE_LIB_NAME = "libarkweb_engine.so";
 const std::string ARK_WEB_RENDER_LIB_NAME = "libarkweb_render.so";
-
-typedef enum {
-    PRELOAD_NO = 0,         // 不预加载
-    PRELOAD_PARTIAL = 1,    // 只预加载libohos_adapter_glue_source.z.so
-    PRELOAD_FULL = 2        // 预加载libohos_adapter_glue_source.z.so和libarkweb_engine.so
-} RenderPreLoadMode;
-
 }  // namespace
 
 static bool SetSeccompPolicyForRenderer(void *nwebRenderHandle)
@@ -160,81 +154,6 @@ APPSPAWN_STATIC int RunChildProcessor(AppSpawnContent *content, AppSpawnClient *
     return 0;
 }
 
-static std::string GetOhosAdptGlueSrcLibPath()
-{
-#ifdef webview_arm64
-    const std::string ARK_WEB_CORE_HAP_LIB_PATH =
-        "/system/lib64/libohos_adapter_glue_source.z.so";
-#elif webview_x86_64
-    const std::string ARK_WEB_CORE_HAP_LIB_PATH = "";
-#else
-    const std::string ARK_WEB_CORE_HAP_LIB_PATH =
-        "/system/lib/libohos_adapter_glue_source.z.so";
-#endif
-    return ARK_WEB_CORE_HAP_LIB_PATH;
-}
-
-static std::string GetArkWebEngineLibPath()
-{
-    char bundleName[PATH_MAX] = {0};
-    GetParameter("persist.arkwebcore.package_name", "", bundleName, PATH_MAX);
-    if (strlen(bundleName) == 0) {
-        APPSPAWN_LOGE("Fail to get persist.arkwebcore.package_name, empty");
-        return "";
-    }
-#ifdef webview_arm64
-    const std::string ARK_WEB_CORE_HAP_LIB_PATH =
-        "/data/app/el1/bundle/public/" + std::string(bundleName) + "/libs/arm64";
-#elif webview_x86_64
-    const std::string ARK_WEB_CORE_HAP_LIB_PATH = "";
-#else
-    const std::string ARK_WEB_CORE_HAP_LIB_PATH =
-        "/data/app/el1/bundle/public/" + std::string(bundleName) + "/libs/arm";
-#endif
-    return ARK_WEB_CORE_HAP_LIB_PATH;
-}
-
-static void PreLoadArkWebEngineLib()
-{
-    Dl_namespace dlns;
-    Dl_namespace ndkns;
-    dlns_init(&dlns, "nweb_ns");
-    const std::string arkWebEngineLibPath = GetArkWebEngineLibPath();
-    if (arkWebEngineLibPath.empty()) {
-        return;
-    }
-    dlns_create(&dlns, arkWebEngineLibPath.c_str());
-    dlns_get("ndk", &ndkns);
-    dlns_inherit(&dlns, &ndkns, "allow_all_shared_libs");
-    void *webEngineHandle = dlopen_ns(&dlns, ARK_WEB_ENGINE_LIB_NAME.c_str(), RTLD_NOW | RTLD_GLOBAL);
-    if (!webEngineHandle) {
-        APPSPAWN_LOGE("Fail to dlopen libarkweb_engine.so, errno: %{public}d", errno);
-    }
-}
-
-static void PreLoadOHOSAdptGlueSrcLib()
-{
-    const std::string ohosAdptGlueSrcLibPath = GetOhosAdptGlueSrcLibPath();
-    if (ohosAdptGlueSrcLibPath.empty()) {
-        return;
-    }
-    void *ohosAdptGlueSrcHandle = dlopen(ohosAdptGlueSrcLibPath.c_str(), RTLD_NOW | RTLD_GLOBAL);
-    if (!ohosAdptGlueSrcHandle) {
-        APPSPAWN_LOGE("Fail to dlopen libohos_adapter_glue_source.z.so, errno: %{public}d", errno);
-    }
-}
-
-#ifndef arkweb_preload
-static int GetSysParamPreLoadMode()
-{
-    const int BUFFER_LEN = 8;
-    char preLoadMode[BUFFER_LEN] = {0};
-    GetParameter("const.startup.nwebspawn.preloadMode", "0", preLoadMode, BUFFER_LEN);
-    int ret = std::atoi(preLoadMode);
-    return ret;
-}
-#endif
-
 APPSPAWN_STATIC int PreLoadNwebSpawn(AppSpawnMgr *content)
 {
     APPSPAWN_LOGI("PreLoadNwebSpawn %{public}d", IsNWebSpawnMode(content));
@@ -244,21 +163,8 @@ APPSPAWN_STATIC int PreLoadNwebSpawn(AppSpawnMgr *content)
     // register
     RegChildLooper(&content->content, RunChildProcessor);
 
-    // preload render lib
-#ifdef arkweb_preload
-    int preloadMode = RenderPreLoadMode::PRELOAD_FULL;
-#else
-    int preloadMode = GetSysParamPreLoadMode();
-#endif
-    APPSPAWN_LOGI("NwebSpawn preload render lib mode: %{public}d", preloadMode);
-    if (preloadMode == PRELOAD_PARTIAL) {
-        PreLoadOHOSAdptGlueSrcLib();
-    }
-    if (preloadMode == PRELOAD_FULL) {
-        PreLoadArkWebEngineLib();
-        PreLoadOHOSAdptGlueSrcLib();
-    }
-
+    OHOS::ArkWeb::PreloadArkWebLibForRender();
+    
     return 0;
 }
 
