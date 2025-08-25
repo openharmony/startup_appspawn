@@ -160,7 +160,7 @@ int SandboxCommon::LoadAppSandboxConfigCJson(AppSpawnMgr *content)
         std::string isolatedPath = path + SandboxCommonDef::APP_ISOLATED_JSON_CONFIG;
         APPSPAWN_LOGI("LoadAppSandboxConfig %{public}s", isolatedPath.c_str());
         sandboxCJsonRoot = GetJsonObjFromFile(isolatedPath.c_str());
-        APPSPAWN_CHECK((sandboxCJsonRoot != nullptr && cJSON_IsObject(sandboxCJsonRoot)), continue,
+        APPSPAWN_CHECK_LOGW((sandboxCJsonRoot != nullptr && cJSON_IsObject(sandboxCJsonRoot)), continue,
                        "Failed to load app data sandbox config %{public}s", isolatedPath.c_str());
         StoreCJsonConfig(sandboxCJsonRoot, SandboxCommonDef::SANDBOX_ISOLATED_JSON_CONFIG);
     }
@@ -507,8 +507,13 @@ bool SandboxCommon::IsCreateSandboxPathEnabled(cJSON *json, std::string srcPath)
 
 bool SandboxCommon::IsTotalSandboxEnabled(const AppSpawningCtx *appProperty) // CheckTotalSandboxSwitchStatus
 {
-    SandboxCommonDef::SandboxConfigType type = CheckAppMsgFlagsSet(appProperty, APP_FLAGS_ISOLATED_SANDBOX_TYPE) ?
-        SandboxCommonDef::SANDBOX_ISOLATED_JSON_CONFIG : SandboxCommonDef::SANDBOX_APP_JSON_CONFIG;
+    SandboxCommonDef::SandboxConfigType type;
+    if (appProperty == nullptr) {
+        type = SandboxCommonDef::SANDBOX_APP_JSON_CONFIG;
+    } else {
+        type = CheckAppMsgFlagsSet(appProperty, APP_FLAGS_ISOLATED_SANDBOX_TYPE) ?
+            SandboxCommonDef::SANDBOX_ISOLATED_JSON_CONFIG : SandboxCommonDef::SANDBOX_APP_JSON_CONFIG;
+    }
 
     for (auto& wholeConfig : GetCJsonConfig(type)) {
         // 获取 "common" 数组
