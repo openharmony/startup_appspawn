@@ -90,7 +90,6 @@ HWTEST_F(AppSpawnCGroupTest, App_Spawn_CGroup_001, TestSize.Level0)
         APPSPAWN_CHECK(ret == 0, break, "Failed to get real path errno: %{public}d", errno);
         APPSPAWN_CHECK(strstr(path, "200") != nullptr && strstr(path, "33") != nullptr && strstr(path, name) != nullptr,
             break, "Invalid path: %s", path);
-        ret = 0;
     } while (0);
     if (appInfo) {
         free(appInfo);
@@ -165,8 +164,7 @@ HWTEST_F(AppSpawnCGroupTest, App_Spawn_CGroup_003, TestSize.Level0)
 
         content = AppSpawnCreateContent(APPSPAWN_SOCKET_NAME, path, sizeof(path), MODE_FOR_APP_SPAWN);
         APPSPAWN_CHECK_ONLY_EXPER(content != nullptr, break);
-        ProcessMgrHookExecute(STAGE_SERVER_APP_DIED, content, appInfo);
-        ret = 0;
+        ret = ProcessMgrHookExecute(STAGE_SERVER_APP_DIED, content, appInfo);
     } while (0);
     if (appInfo) {
         free(appInfo);
@@ -227,8 +225,7 @@ HWTEST_F(AppSpawnCGroupTest, App_Spawn_CGroup_005, TestSize.Level0)
 
         content = AppSpawnCreateContent(APPSPAWN_SOCKET_NAME, path, sizeof(path), MODE_FOR_NWEB_SPAWN);
         APPSPAWN_CHECK_ONLY_EXPER(content != nullptr, break);
-        ProcessMgrHookExecute(STAGE_SERVER_APP_DIED, content, appInfo);
-        ret = 0;
+        ret = ProcessMgrHookExecute(STAGE_SERVER_APP_DIED, content, appInfo);
     } while (0);
     if (appInfo) {
         free(appInfo);

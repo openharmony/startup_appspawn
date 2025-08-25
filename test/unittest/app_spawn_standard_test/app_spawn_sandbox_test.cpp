@@ -1747,9 +1747,8 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_dec_02, TestSize.Level0)
             int decPathSize = mountConfig.decPaths.size();
             EXPECT_EQ(decPathSize, 0);
         }
-        EXPECT_EQ(ret, 0);
     } while (0);
-
+    EXPECT_EQ(ret, 0);
     cJSON_Delete(j_config);
     DeleteAppSpawningCtx(appProperty);
 }
@@ -1793,7 +1792,6 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_dec_03, TestSize.Level0)
         }
         EXPECT_EQ(ret, 0);
     } while (0);
-
     cJSON_Delete(j_config);
     DeleteAppSpawningCtx(appProperty);
 }

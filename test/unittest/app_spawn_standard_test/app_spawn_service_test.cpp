@@ -552,13 +552,11 @@ HWTEST_F(AppSpawnServiceTest, App_Spawn_Msg_002, TestSize.Level0)
         ret = testServer->CreateSendMsg(buffer, MSG_APP_SPAWN, msgLen, {});
         APPSPAWN_CHECK(ret == 0, break, "Failed to create msg %{public}s", testServer->GetDefaultTestAppBundleName());
 
-        ret = -1;
         int len = write(socketId, buffer.data(), msgLen - 10);  // 10
         APPSPAWN_CHECK(len > 0, break, "Failed to send msg %{public}s", testServer->GetDefaultTestAppBundleName());
         // recv timeout
         len = RecvMsg(socketId, buffer.data(), buffer.size());
         APPSPAWN_CHECK(len <= 0, break, "Failed to recv msg len: %{public}d", len);
-        ret = 0;
     } while (0);
     if (socketId >= 0) {
         CloseClientSocket(socketId);
@@ -687,7 +685,6 @@ HWTEST_F(AppSpawnServiceTest, App_Spawn_Msg_005, TestSize.Level0)
         ret = respMsg->result.result;
         (void)RecvMsg(socketId, buffer2.data(), buffer2.size());
     } while (0);
-    ret = 0; // test for case
     if (socketId >= 0) {
         CloseClientSocket(socketId);
     }
