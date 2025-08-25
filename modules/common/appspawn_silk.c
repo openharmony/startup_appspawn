@@ -110,7 +110,7 @@ APPSPAWN_STATIC bool ParseSilkConfig(const cJSON *root, struct SilkConfig *confi
 void LoadSilkConfig(void)
 {
     cJSON *root = GetJsonObjFromFile(SILK_JSON_CONFIG_PATH);
-    APPSPAWN_CHECK(root != NULL, return, "Failed to load silk config");
+    APPSPAWN_CHECK_LOGV(root != NULL, return, "Failed to load silk config");
     (void)ParseSilkConfig(root, &g_silkConfig);
     cJSON_Delete(root);
 }

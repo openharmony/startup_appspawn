@@ -127,6 +127,7 @@ static int CheckKernelType(bool *isLinux)
 APPSPAWN_STATIC int SpawnKickDogStart(AppSpawnMgr *mgrContent)
 {
     APPSPAWN_CHECK(mgrContent != NULL, return 0, "content is null");
+    APPSPAWN_CHECK_ONLY_EXPER(mgrContent->content.mode != MODE_FOR_NATIVE_SPAWN, return 0);
     APPSPAWN_CHECK((mgrContent->content.mode == MODE_FOR_APP_SPAWN) ||
         (mgrContent->content.mode == MODE_FOR_NWEB_SPAWN) || (mgrContent->content.mode == MODE_FOR_HYBRID_SPAWN),
         return 0, "Mode %{public}u no need enable watchdog", mgrContent->content.mode);
