@@ -140,16 +140,15 @@ HWTEST_F(AppSpawnColdRunTest, App_Spawn_Cold_Run_001, TestSize.Level0)
         // set cold start flags
         AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_COLD_BOOT);
 
-        ret = -1;
+        int msgRet = -1;
         node->flags |= STUB_NEED_CHECK;
         node->arg = reinterpret_cast<void *>(HandleExecvStub);
         AppSpawnResult result = {};
-        ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
+        msgRet = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
         APPSPAWN_LOGV("App_Spawn_Cold_Run_001 Kill pid %{public}d %{public}d", result.pid, result.result);
-        if (ret == 0 && result.pid > 0) {
+        if (msgRet == 0 && result.pid > 0) {
             kill(result.pid, SIGKILL);
         }
-        ret = 0;
     } while (0);
     AppSpawnClientDestroy(clientHandle);
     ASSERT_EQ(ret, 0);
@@ -168,16 +167,15 @@ HWTEST_F(AppSpawnColdRunTest, App_Spawn_Cold_Run_002, TestSize.Level0)
         // set cold start flags
         AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_COLD_BOOT);
 
-        ret = -1;
+        int msgRet = -1;
         node->flags |= STUB_NEED_CHECK;
         node->arg = reinterpret_cast<void *>(HandleExecvStub);
         AppSpawnResult result = {};
-        ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
+        msgRet = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
         APPSPAWN_LOGV("App_Spawn_Cold_Run_002 Kill pid %{public}d %{public}d", result.pid, result.result);
-        if (ret == 0 && result.pid > 0) {
+        if (msgRet == 0 && result.pid > 0) {
             kill(result.pid, SIGKILL);
         }
-        ret = 0;
     } while (0);
     AppSpawnClientDestroy(clientHandle);
     node->flags &= ~STUB_NEED_CHECK;
@@ -202,16 +200,15 @@ HWTEST_F(AppSpawnColdRunTest, App_Spawn_Cold_Run_003, TestSize.Level0)
         // set cold start flags
         AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_COLD_BOOT);
 
-        ret = -1;
+        int msgRet = -1;
         node->flags |= STUB_NEED_CHECK;
         node->arg = reinterpret_cast<void *>(ExecvAbortStub);
         AppSpawnResult result = {};
-        ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
+        msgRet = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
         APPSPAWN_LOGV("App_Spawn_Cold_Run_003 Kill pid %{public}d %{public}d", result.pid, result.result);
-        if (ret == 0 && result.pid > 0) {
+        if (msgRet == 0 && result.pid > 0) {
             kill(result.pid, SIGKILL);
         }
-        ret = 0;
     } while (0);
     AppSpawnClientDestroy(clientHandle);
     node->flags &= ~STUB_NEED_CHECK;
@@ -235,16 +232,15 @@ HWTEST_F(AppSpawnColdRunTest, App_Spawn_Cold_Run_004, TestSize.Level0)
         // set cold start flags
         AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_COLD_BOOT);
 
-        ret = -1;
+        int msgRet = -1;
         node->flags |= STUB_NEED_CHECK;
         node->arg = reinterpret_cast<void *>(ExecvTimeoutStub);
         AppSpawnResult result = {};
-        ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
+        msgRet = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
         APPSPAWN_LOGV("App_Spawn_Cold_Run_004 Kill pid %{public}d %{public}d", result.pid, result.result);
-        if (ret == 0 && result.pid > 0) {
+        if (msgRet == 0 && result.pid > 0) {
             kill(result.pid, SIGKILL);
         }
-        ret = 0;
     } while (0);
     AppSpawnClientDestroy(clientHandle);
     node->flags &= ~STUB_NEED_CHECK;
