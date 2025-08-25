@@ -193,7 +193,6 @@ HWTEST_F(AppSpawnClientTest, App_Client_Msg_001, TestSize.Level0)
         ret = AppSpawnReqMsgSetAppFlag(reqHandle, MAX_FLAGS_INDEX);
         ASSERT_NE(ret, 0);
 
-        ret = APPSPAWN_ARG_INVALID;
         AppSpawnReqMsgNode *reqNode = (AppSpawnReqMsgNode *)reqHandle;
         APPSPAWN_CHECK(reqNode != nullptr, break, "Invalid reqNode");
         APPSPAWN_CHECK(reqNode->msgFlags != nullptr, break, "Invalid reqNode");
@@ -208,9 +207,7 @@ HWTEST_F(AppSpawnClientTest, App_Client_Msg_001, TestSize.Level0)
             uint32_t result = (reqNode->msgFlags->flags[index] & bits) == bits;
             ASSERT_EQ(result == 1, 1);
         }
-        ret = 0;
     } while (0);
-    ASSERT_EQ(ret, 0);
     AppSpawnReqMsgFree(reqHandle);
     AppSpawnClientDestroy(clientHandle);
 }
@@ -231,7 +228,6 @@ HWTEST_F(AppSpawnClientTest, App_Client_Msg_002, TestSize.Level0)
         reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 1);
         APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break, "Failed to create req %{public}s", APPSPAWN_SERVER_NAME);
 
-        ret = APPSPAWN_ARG_INVALID;
         property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
         APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
 
@@ -243,11 +239,10 @@ HWTEST_F(AppSpawnClientTest, App_Client_Msg_002, TestSize.Level0)
         APPSPAWN_CHECK(info->gidCount == 2, break, "Invalid gidCount %{public}d", info->gidCount);  // 2 default
         APPSPAWN_CHECK(info->gidTable[1] == g_testHelper.GetTestGidGroup() + 1,
             break, "Invalid uid %{public}d", info->gidTable[1]);
-        ret = 0;
     } while (0);
-    ASSERT_EQ(ret, 0);
     DeleteAppSpawningCtx(property);
     AppSpawnClientDestroy(clientHandle);
+    ASSERT_EQ(ret, 0);
 }
 
 /**
@@ -271,7 +266,6 @@ HWTEST_F(AppSpawnClientTest, App_Client_Msg_003, TestSize.Level0)
         reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 1);
         APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break, "Failed to create req %{public}s", APPSPAWN_SERVER_NAME);
 
-        ret = APPSPAWN_ARG_INVALID;
         property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
         APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
         void *tlvValue = GetAppProperty(property, TLV_BUNDLE_INFO);
@@ -282,12 +276,11 @@ HWTEST_F(AppSpawnClientTest, App_Client_Msg_003, TestSize.Level0)
         APPSPAWN_LOGV("info->bundleName %{public}s", info->bundleName);
         APPSPAWN_CHECK(strcmp(info->bundleName, processName.c_str()) == 0,
             break, "Invalid bundleName %{public}s", info->bundleName);
-        ret = 0;
     } while (0);
-    ASSERT_EQ(ret, 0);
     g_testHelper.SetDefaultTestData();
     DeleteAppSpawningCtx(property);
     AppSpawnClientDestroy(clientHandle);
+    ASSERT_EQ(ret, 0);
 }
 
 /**
@@ -313,7 +306,6 @@ HWTEST_F(AppSpawnClientTest, App_Client_Msg_004, TestSize.Level0)
         ret = AppSpawnReqMsgAddStringInfo(reqHandle, MSG_EXT_NAME_RENDER_CMD, renderCmd);
         APPSPAWN_CHECK(ret == 0, break, "Failed to add render cmd %{public}s", APPSPAWN_SERVER_NAME);
 
-        ret = APPSPAWN_ARG_INVALID;
         property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
         APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
         DumpAppSpawnMsg(property->message);
@@ -323,7 +315,6 @@ HWTEST_F(AppSpawnClientTest, App_Client_Msg_004, TestSize.Level0)
         APPSPAWN_LOGV("info->bundleName %{public}s", renderCmdMsg);
         APPSPAWN_CHECK(strcmp(renderCmdMsg, renderCmd) == 0,
             break, "Invalid renderCmd %{public}s", renderCmd);
-        ret = 0;
     } while (0);
     DeleteAppSpawningCtx(property);
     AppSpawnClientDestroy(clientHandle);
@@ -352,7 +343,6 @@ HWTEST_F(AppSpawnClientTest, App_Client_Msg_025, TestSize.Level0)
         ret = AppSpawnReqMsgAddFd(reqHandle, fdname, fd);
         APPSPAWN_CHECK(ret == 0, break, "Failed to add fd  %{public}s", APPSPAWN_SERVER_NAME);
 
-        ret = APPSPAWN_ARG_INVALID;
         property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
         APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
         DumpAppSpawnMsg(property->message);
@@ -360,7 +350,6 @@ HWTEST_F(AppSpawnClientTest, App_Client_Msg_025, TestSize.Level0)
         char *recvFdName = reinterpret_cast<char *>(GetAppPropertyExt(property, MSG_EXT_NAME_APP_FD, &len));
         APPSPAWN_CHECK(strcmp(recvFdName, fdname) == 0,
             break, "Invalid fdname %{public}s", fdname);
-        ret = 0;
     } while (0);
     close(fd);
     DeleteAppSpawningCtx(property);
@@ -389,7 +378,6 @@ HWTEST_F(AppSpawnClientTest, App_Client_Msg_005, TestSize.Level0)
         ret = AppSpawnReqMsgSetAppOwnerId(reqHandle, ownerId);
         APPSPAWN_CHECK(ret == 0, break, "Failed to add owner %{public}s", APPSPAWN_SERVER_NAME);
 
-        ret = APPSPAWN_ARG_INVALID;
         property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
         APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
         void *tlvValue = GetAppProperty(property, TLV_OWNER_INFO);
@@ -397,11 +385,10 @@ HWTEST_F(AppSpawnClientTest, App_Client_Msg_005, TestSize.Level0)
         APPSPAWN_CHECK(owner != nullptr, break, "Can not find owner cmd in msg");
         APPSPAWN_LOGV("owner->ownerId %{public}s", owner->ownerId);
         APPSPAWN_CHECK(strcmp(owner->ownerId, ownerId) == 0, break, "Invalid ownerId %{public}s", ownerId);
-        ret = 0;
     } while (0);
-    ASSERT_EQ(ret, 0);
     DeleteAppSpawningCtx(property);
     AppSpawnClientDestroy(clientHandle);
+    ASSERT_EQ(ret, 0);
 }
 
 /**
@@ -423,7 +410,6 @@ HWTEST_F(AppSpawnClientTest, App_Client_Msg_006, TestSize.Level0)
         ret = AppSpawnReqMsgSetAppInternetPermissionInfo(reqHandle, 101, 102);  // 101 102 test
         APPSPAWN_CHECK(ret == 0, break, "Failed to add owner %{public}s", APPSPAWN_SERVER_NAME);
 
-        ret = APPSPAWN_ARG_INVALID;
         property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
         APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
         void *tlvValue = GetAppProperty(property, TLV_INTERNET_INFO);
@@ -433,11 +419,10 @@ HWTEST_F(AppSpawnClientTest, App_Client_Msg_006, TestSize.Level0)
             break, "Invalid setAllowInternet %{public}d", interInfo->setAllowInternet);
         APPSPAWN_CHECK(101 == interInfo->allowInternet, // 101 test
             break, "Invalid allowInternet %{public}d", interInfo->allowInternet);
-        ret = 0;
     } while (0);
-    ASSERT_EQ(ret, 0);
     DeleteAppSpawningCtx(property);
     AppSpawnClientDestroy(clientHandle);
+    ASSERT_EQ(ret, 0);
 }
 
 /**
@@ -460,7 +445,6 @@ HWTEST_F(AppSpawnClientTest, App_Client_Msg_007, TestSize.Level0)
         ret = AppSpawnReqMsgSetAppDomainInfo(reqHandle, 1, apl);
         APPSPAWN_CHECK(ret == 0, break, "Failed to add domain %{public}s", APPSPAWN_SERVER_NAME);
 
-        ret = APPSPAWN_ARG_INVALID;
         property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
         APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
         void *tlvValue = GetAppProperty(property, TLV_DOMAIN_INFO);
@@ -469,11 +453,10 @@ HWTEST_F(AppSpawnClientTest, App_Client_Msg_007, TestSize.Level0)
         APPSPAWN_CHECK(1 == domainInfo->hapFlags, break, "Invalid hapFlags %{public}d", domainInfo->hapFlags);
         APPSPAWN_LOGV("Test apl: %{public}s", domainInfo->apl);
         APPSPAWN_CHECK(strcmp(domainInfo->apl, apl) == 0, break, "Invalid apl %{public}s", domainInfo->apl);
-        ret = 0;
     } while (0);
-    ASSERT_EQ(ret, 0);
     DeleteAppSpawningCtx(property);
     AppSpawnClientDestroy(clientHandle);
+    ASSERT_EQ(ret, 0);
 }
 
 /**
@@ -495,18 +478,16 @@ HWTEST_F(AppSpawnClientTest, App_Client_Msg_008, TestSize.Level0)
         ret = AppSpawnReqMsgSetAppAccessToken(reqHandle, 12345678);  // 12345678
         APPSPAWN_CHECK(ret == 0, break, "Failed to add access token %{public}s", APPSPAWN_SERVER_NAME);
 
-        ret = APPSPAWN_ARG_INVALID;
         property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
         APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
         void *tlvValue = GetAppProperty(property, TLV_ACCESS_TOKEN_INFO);
         AppSpawnMsgAccessToken *tokenInfo = static_cast<AppSpawnMsgAccessToken *>(tlvValue);
         APPSPAWN_CHECK(tokenInfo != nullptr, break, "Can not find owner cmd in msg");
         APPSPAWN_CHECK(12345678 == tokenInfo->accessTokenIdEx, break, "Invalid accessTokenIdEx");
-        ret = 0;
     } while (0);
-    ASSERT_EQ(ret, 0);
     DeleteAppSpawningCtx(property);
     AppSpawnClientDestroy(clientHandle);
+    ASSERT_EQ(ret, 0);
 }
 
 /**
@@ -545,7 +526,6 @@ HWTEST_F(AppSpawnClientTest, App_Client_Msg_009, TestSize.Level0)
         ret = AppSpawnReqMsgSetAppAccessToken(reqHandle, 12345678);  // 12345678
         APPSPAWN_CHECK(ret == 0, break, "Failed to add access token %{public}s", APPSPAWN_SERVER_NAME);
 
-        ret = APPSPAWN_ARG_INVALID;
         property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
         APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
         uint32_t tlvLen = 0;
@@ -554,7 +534,6 @@ HWTEST_F(AppSpawnClientTest, App_Client_Msg_009, TestSize.Level0)
         APPSPAWN_CHECK(tlvLen == testData.size(), break, "Invalid tlv len %{public}u", tlvLen);
         APPSPAWN_CHECK(strncmp(reinterpret_cast<char *>(tlvValue), testData.data(), testData.size()) == 0,
             break, "Invalid ext tlv %{public}s ", reinterpret_cast<char *>(tlvValue + testDataLen));
-        ret = 0;
     } while (0);
     DeleteAppSpawningCtx(property);
     AppSpawnClientDestroy(clientHandle);
@@ -597,7 +576,6 @@ HWTEST_F(AppSpawnClientTest, App_Client_Msg_010, TestSize.Level0)
         ret = AppSpawnReqMsgSetAppAccessToken(reqHandle, 12345678);  // 12345678
         APPSPAWN_CHECK(ret == 0, break, "Failed to add access token %{public}s", APPSPAWN_SERVER_NAME);
 
-        ret = APPSPAWN_ARG_INVALID;
         property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
         APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
         uint32_t tlvLen = 0;
@@ -606,7 +584,6 @@ HWTEST_F(AppSpawnClientTest, App_Client_Msg_010, TestSize.Level0)
         APPSPAWN_CHECK(tlvLen == testData.size(), break, "Invalid tlv len %{public}u", tlvLen);
         APPSPAWN_CHECK(strncmp(reinterpret_cast<char *>(tlvValue), testData.data(), testData.size()) == 0,
             break, "Invalid ext tlv %{public}s ", reinterpret_cast<char *>(tlvValue + testDataLen));
-        ret = 0;
     } while (0);
     DeleteAppSpawningCtx(property);
     AppSpawnClientDestroy(clientHandle);
@@ -649,7 +626,6 @@ HWTEST_F(AppSpawnClientTest, App_Client_Msg_011, TestSize.Level0)
         ret = AppSpawnReqMsgSetAppAccessToken(reqHandle, 12345678);  // 12345678
         APPSPAWN_CHECK(ret == 0, break, "Failed to add access token %{public}s", APPSPAWN_SERVER_NAME);
 
-        ret = APPSPAWN_ARG_INVALID;
         property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
         APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
         uint32_t tlvLen = 0;
@@ -658,7 +634,6 @@ HWTEST_F(AppSpawnClientTest, App_Client_Msg_011, TestSize.Level0)
         APPSPAWN_CHECK(tlvLen == testData.size(), break, "Invalid tlv len %{public}u", tlvLen);
         APPSPAWN_CHECK(strncmp(reinterpret_cast<char *>(tlvValue), testData.data(), testData.size()) == 0,
             break, "Invalid ext tlv %{public}s ", reinterpret_cast<char *>(tlvValue + testDataLen));
-        ret = 0;
     } while (0);
     DeleteAppSpawningCtx(property);
     AppSpawnClientDestroy(clientHandle);

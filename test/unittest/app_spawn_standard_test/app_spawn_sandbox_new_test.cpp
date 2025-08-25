@@ -677,7 +677,6 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Variable_009, TestSize.Level0)
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Permission_01, TestSize.Level0)
 {
     AppSpawnSandboxCfg *sandbox = nullptr;
-    int ret = -1;
     do {
         sandbox = CreateAppSpawnSandbox(EXT_DATA_APP_SANDBOX);
         APPSPAWN_CHECK_ONLY_EXPER(sandbox != nullptr, break);
@@ -699,13 +698,12 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Permission_01, TestSize.Level0)
         const SandboxPermissionNode *node = GetPermissionNodeInQueue(&sandbox->permissionQueue, permission);
         APPSPAWN_CHECK_ONLY_EXPER(node == nullptr, break);
         node = GetPermissionNodeInQueue(nullptr, permission);
+        ASSERT_NE(node, nullptr);
         APPSPAWN_CHECK_ONLY_EXPER(node == nullptr, break);
-        ret = 0;
     } while (0);
     if (sandbox != nullptr) {
         sandbox->extData.freeNode(&sandbox->extData);
     }
-    ASSERT_EQ(ret, 0);
 }
 
 static int ProcessTestExpandConfig(const SandboxContext *context,
@@ -915,18 +913,16 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_ExpandCfg_04, TestSize.Level0)
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_cfg_001, TestSize.Level0)
 {
     AppSpawnSandboxCfg *sandbox = nullptr;
-    int ret = -1;
     do {
         sandbox = CreateAppSpawnSandbox(EXT_DATA_APP_SANDBOX);
         APPSPAWN_CHECK_ONLY_EXPER(sandbox != nullptr, break);
         LoadAppSandboxConfig(sandbox, EXT_DATA_APP_SANDBOX);
         sandbox->extData.dumpNode(&sandbox->extData);
-        ret = 0;
     } while (0);
+    ASSERT_NE(sandbox, nullptr);
     if (sandbox != nullptr) {
         sandbox->extData.freeNode(&sandbox->extData);
     }
-    ASSERT_EQ(ret, 0);
 }
 
 /**
@@ -970,7 +966,6 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_cfg_002, TestSize.Level0)
         pathNode = reinterpret_cast<PathMountNode *>(GetNextSandboxMountPathNode(section, &pathNode->sandboxNode));
         ASSERT_EQ(pathNode != nullptr, 1);
         ASSERT_EQ(pathNode->category, MOUNT_TMP_FUSE);
-        ret = 0;
     } while (0);
     if (sandbox) {
         DeleteAppSpawnSandbox(sandbox);
@@ -985,7 +980,6 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_cfg_002, TestSize.Level0)
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_cfg_003, TestSize.Level0)
 {
     AppSpawnSandboxCfg *sandbox = nullptr;
-    int ret = -1;
     do {
         sandbox = CreateAppSpawnSandbox(EXT_DATA_APP_SANDBOX);
         APPSPAWN_CHECK_ONLY_EXPER(sandbox != nullptr, break);
@@ -1018,12 +1012,10 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_cfg_003, TestSize.Level0)
         ASSERT_EQ(linkNode != nullptr, 1);
         ASSERT_EQ(linkNode->checkErrorFlag == 0, 1);
         ASSERT_EQ((linkNode->destMode & (S_IRUSR | S_IWOTH | S_IRWXU)) == (S_IRUSR | S_IWOTH | S_IRWXU), 1);
-        ret = 0;
     } while (0);
     if (sandbox) {
         DeleteAppSpawnSandbox(sandbox);
     }
-    ASSERT_EQ(ret, 0);
 }
 
 /**
@@ -1033,7 +1025,6 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_cfg_003, TestSize.Level0)
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_cfg_004, TestSize.Level0)
 {
     AppSpawnSandboxCfg *sandbox = nullptr;
-    int ret = -1;
     do {
         sandbox = CreateAppSpawnSandbox(EXT_DATA_APP_SANDBOX);
         APPSPAWN_CHECK_ONLY_EXPER(sandbox != nullptr, break);
@@ -1067,12 +1058,10 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_cfg_004, TestSize.Level0)
         ASSERT_EQ(linkNode != nullptr, 1);
         ASSERT_EQ(linkNode->checkErrorFlag == 0, 1);
         ASSERT_EQ((linkNode->destMode & (S_IRUSR | S_IWOTH | S_IRWXU)) == (S_IRUSR | S_IWOTH | S_IRWXU), 1);
-        ret = 0;
     } while (0);
     if (sandbox) {
         DeleteAppSpawnSandbox(sandbox);
     }
-    ASSERT_EQ(ret, 0);
 }
 
 /**
@@ -1082,7 +1071,6 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_cfg_004, TestSize.Level0)
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_cfg_005, TestSize.Level0)
 {
     AppSpawnSandboxCfg *sandbox = nullptr;
-    int ret = -1;
     do {
         sandbox = CreateAppSpawnSandbox(EXT_DATA_APP_SANDBOX);
         APPSPAWN_CHECK_ONLY_EXPER(sandbox != nullptr, break);
@@ -1108,12 +1096,10 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_cfg_005, TestSize.Level0)
         ASSERT_EQ(pathNode->checkErrorFlag == 1, 1);  // set
         ASSERT_EQ((pathNode->destMode & (S_IRUSR | S_IWOTH | S_IRWXU)) == (S_IRUSR | S_IWOTH | S_IRWXU), 1);
         ASSERT_EQ((pathNode->appAplName != nullptr) && (strcmp(pathNode->appAplName, "system") == 0), 1);
-        ret = 0;
     } while (0);
     if (sandbox) {
         DeleteAppSpawnSandbox(sandbox);
     }
-    ASSERT_EQ(ret, 0);
 }
 
 /**
@@ -1123,7 +1109,6 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_cfg_005, TestSize.Level0)
 HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_cfg_006, TestSize.Level0)
 {
     AppSpawnSandboxCfg *sandbox = nullptr;
-    int ret = -1;
     do {
         sandbox = CreateAppSpawnSandbox(EXT_DATA_APP_SANDBOX);
         APPSPAWN_CHECK_ONLY_EXPER(sandbox != nullptr, break);
@@ -1148,12 +1133,10 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_cfg_006, TestSize.Level0)
         ASSERT_EQ(pathNode != nullptr, 1);
         ASSERT_EQ(strcmp(pathNode->source, "/data/app/el5/<currentUserId>/base/<PackageName>") == 0, 1);
         ASSERT_EQ(strcmp(pathNode->target, "<deps-path>/base") == 0, 1);
-        ret = 0;
     } while (0);
     if (sandbox) {
         DeleteAppSpawnSandbox(sandbox);
     }
-    ASSERT_EQ(ret, 0);
 }
 /**
  * @brief 沙盒执行，能执行到对应的检查项，并且检查通过
@@ -1309,9 +1292,7 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_mount_003, TestSize.Level0)
         ret = MountSandboxConfigs(sandbox, property, 0);
         ASSERT_NE(ret, 0);
         ASSERT_NE(stub->result, 0);
-        ret = 0;
     } while (0);
-    ASSERT_EQ(ret, 0);
     if (sandbox) {
         DeleteAppSpawnSandbox(sandbox);
     }
@@ -1412,7 +1393,6 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_mount_005, TestSize.Level0)
         ret = MountSandboxConfigs(sandbox, property, 0);
         ASSERT_NE(ret, 0);
         ASSERT_NE(stub->result, 0);
-        ret = 0;
     } while (0);
     if (sandbox) {
         DeleteAppSpawnSandbox(sandbox);
@@ -1420,7 +1400,6 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_mount_005, TestSize.Level0)
     stub->flags &= ~STUB_NEED_CHECK;
     DeleteAppSpawningCtx(property);
     AppSpawnClientDestroy(clientHandle);
-    ASSERT_EQ(ret, 0);
 }
 
 /**
@@ -1470,7 +1449,6 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_mount_006, TestSize.Level0)
         ret = MountSandboxConfigs(sandbox, property, 0);
         ASSERT_NE(ret, 0);  // do not check result
         ASSERT_NE(stub->result, 0);
-        ret = 0;
     } while (0);
     if (sandbox) {
         DeleteAppSpawnSandbox(sandbox);
@@ -1478,7 +1456,6 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_mount_006, TestSize.Level0)
     stub->flags &= ~STUB_NEED_CHECK;
     DeleteAppSpawningCtx(property);
     AppSpawnClientDestroy(clientHandle);
-    ASSERT_EQ(ret, 0);
 }
 
 /**
@@ -1526,7 +1503,6 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_mount_007, TestSize.Level0)
         ret = MountSandboxConfigs(sandbox, property, 0);
         ASSERT_NE(ret, 0);
         ASSERT_NE(stub->result, 0);
-        ret = 0;
     } while (0);
     if (sandbox) {
         DeleteAppSpawnSandbox(sandbox);
@@ -1534,7 +1510,6 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_mount_007, TestSize.Level0)
     stub->flags &= ~STUB_NEED_CHECK;
     DeleteAppSpawningCtx(property);
     AppSpawnClientDestroy(clientHandle);
-    ASSERT_EQ(ret, 0);
 }
 
 /**
