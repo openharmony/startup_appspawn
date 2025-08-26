@@ -384,7 +384,7 @@ static int MountDebugDirBySharefs(const SandboxContext *context, const AppSpawnS
     return 0;
 }
 
-static int InstallDebugSandbox(AppSpawnMgr *content, AppSpawningCtx *property)
+APPSPAWN_STATIC int InstallDebugSandbox(AppSpawnMgr *content, AppSpawningCtx *property)
 {
     APPSPAWN_CHECK(property != NULL && content != NULL, return APPSPAWN_ARG_INVALID,
                    "Invalid appspawn client or property");
@@ -410,6 +410,8 @@ static int InstallDebugSandbox(AppSpawnMgr *content, AppSpawningCtx *property)
     APPSPAWN_CHECK_ONLY_EXPER(ret == 0, DeleteSandboxContext(&context);
                                         return ret);
 
+    APPSPAWN_LOGI("Set sandbox config %{public}s sandboxNsFlags 0x%{public}x",
+                  context->rootPath, context->sandboxNsFlags);
     do {
         ret = MountDebugTmpConfig(context, sandboxCfg);
         APPSPAWN_CHECK_ONLY_EXPER(ret == 0, break);
