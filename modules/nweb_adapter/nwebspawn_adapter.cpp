@@ -86,7 +86,7 @@ static void UpdateAppWebEngineVersion(std::string& renderCmd)
         return;
     }
     auto version = static_cast<OHOS::ArkWeb::ArkWebEngineVersion>(v);
-    OHOS::ArkWeb::setActiveWebEngineVersion(version);
+    OHOS::ArkWeb::SetActiveWebEngineVersionInner(version);
 
     // remove arg APP_ENGINE_VERSION_PREFIX
     size_t eraseLength = (posEnd == std::string::npos) ?
