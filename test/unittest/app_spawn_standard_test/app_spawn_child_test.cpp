@@ -1228,7 +1228,6 @@ HWTEST_F(AppSpawnChildTest, App_Spawn_Cold_Run_001, TestSize.Level0)
         // set cold start flags
         AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_COLD_BOOT);
 
-        ret = APPSPAWN_ARG_INVALID;
         property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
         APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
 
@@ -1243,7 +1242,6 @@ HWTEST_F(AppSpawnChildTest, App_Spawn_Cold_Run_001, TestSize.Level0)
         // child run in TestRunChildProcessor
         RegChildLooper(content, TestRunChildProcessor);
         content->runAppSpawn(content, args->argc, args->argv);
-        ret = 0;
     } while (0);
     if (args) {
         free(args);
@@ -1269,7 +1267,6 @@ HWTEST_F(AppSpawnChildTest, App_Spawn_Cold_Run_002, TestSize.Level0)
         // set cold start flags
         AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_COLD_BOOT);
 
-        ret = APPSPAWN_ARG_INVALID;
         property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
         APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
 
@@ -1285,7 +1282,6 @@ HWTEST_F(AppSpawnChildTest, App_Spawn_Cold_Run_002, TestSize.Level0)
         // child run in TestRunChildProcessor
         RegChildLooper(content, TestRunChildProcessor);
         content->runAppSpawn(content, args->argc, args->argv);
-        ret = 0;
     } while (0);
     if (args) {
         free(args);
@@ -1318,7 +1314,6 @@ HWTEST_F(AppSpawnChildTest, App_Spawn_Cold_Run_003, TestSize.Level0)
         AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_ASANENABLED);
         AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_GWP_ENABLED_FORCE);
 
-        ret = APPSPAWN_ARG_INVALID;
         property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
         APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
 
@@ -1334,7 +1329,6 @@ HWTEST_F(AppSpawnChildTest, App_Spawn_Cold_Run_003, TestSize.Level0)
         // child run in TestRunChildProcessor
         RegChildLooper(content, TestRunChildProcessor);
         content->runAppSpawn(content, args->argc, args->argv);
-        ret = 0;
     } while (0);
     if (args) {
         free(args);
@@ -1367,7 +1361,6 @@ HWTEST_F(AppSpawnChildTest, App_Spawn_Cold_Run_004, TestSize.Level0)
         AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_ASANENABLED);
         AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_GWP_ENABLED_NORMAL);
 
-        ret = APPSPAWN_ARG_INVALID;
         property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
         APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
 
@@ -1386,7 +1379,6 @@ HWTEST_F(AppSpawnChildTest, App_Spawn_Cold_Run_004, TestSize.Level0)
         RegChildLooper(content, TestRunChildProcessor);
         content->runAppSpawn(content, args->argc, args->argv);
         property = nullptr;
-        ret = 0;
     } while (0);
     if (args) {
         free(args);
