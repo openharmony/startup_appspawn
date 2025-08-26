@@ -48,7 +48,7 @@ APPSPAWN_STATIC void RunAppSandbox(const char *ptyName)
     }
     APPSPAWN_CHECK(realPath != NULL, _exit(1), "Failed get realpath, err=%{public}d", errno);
     int n = strncmp(realPath, "/dev/pts/", strlen("/dev/pts/"));
-    APPSPAWN_CHECK(n == 0, free(realPath); _exit(1), "pts path %{public}s is invaild", realPath);
+    APPSPAWN_CHECK(n == 0, free(realPath); _exit(1), "pts path %{public}s is invalid", realPath);
     int fd = open(realPath, O_RDWR);
     free(realPath);
     APPSPAWN_CHECK(fd >= 0, _exit(1), "Failed open %{public}s, err=%{public}d", ptyName, errno);
