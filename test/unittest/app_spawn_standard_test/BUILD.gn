@@ -137,6 +137,7 @@ ohos_unittest("AppSpawn_ut") {
       "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_sandbox_new_mount_test.cpp",
       "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_sandbox_new_test.cpp",
       "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_sandboxmgr_test.cpp",
+      "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_sandbox_new_debug_mode.cpp",
     ]
     defines += [ "APPSPAWN_SANDBOX_NEW" ]
   } else {
@@ -209,6 +210,103 @@ ohos_unittest("AppSpawn_ut") {
   if (target_cpu == "arm64" || target_cpu == "x86_64" ||
       target_cpu == "riscv64") {
     defines += [ "APPSPAWN_64" ]
+  }
+
+  if (dlp_permission_enable) {
+    cflags_cc = [ "-DWITH_DLP" ]
+    external_deps += [ "dlp_permission_service:libdlp_fuse" ]
+  }
+}
+
+ohos_unittest("AppSpawnDebugSandbox") {
+  module_out_path = "appspawn/appspawn"
+  cflags = [ "-Dprivate=public" ]
+  if (appspawn_unittest_coverage) {
+    cflags += [ "--coverage" ]
+    ldflags = [ "--coverage" ]
+    cflags_cc = [ "--coverage" ]
+  }
+  deps = []
+  defines = [
+    "APPSPAWN_BASE_DIR=\"/data/appspawn_ut\"",
+    "APPSPAWN_LABEL=\"APPSPAWN_UT\"",
+    "APPSPAWN_TEST",
+    "APPSPAWN_CLIENT",
+    "APPSPAWN_DEBUG",
+    "DEBUG_BEGETCTL_BOOT",
+    "USER_TIMER_TO_CHECK",
+    "OHOS_DEBUG",
+  ]
+
+  include_dirs = [
+    "${appspawn_path}",
+    "${appspawn_path}/common",
+    "${appspawn_path}/standard",
+    "${appspawn_innerkits_path}/client",
+    "${appspawn_innerkits_path}/permission",
+    "${appspawn_path}/test/mock",
+    "${appspawn_path}/test/unittest",
+    "${appspawn_path}/util/include",
+    "${appspawn_path}/modules/module_engine/include",
+    "${appspawn_path}/modules/sandbox",
+    "${appspawn_path}/modules/sandbox/normal"
+  ]
+
+  sources = [
+    "${appspawn_path}/util/src/appspawn_utils.c",
+    "${appspawn_path}/modules/modulemgr/appspawn_modulemgr.c",
+    "${appspawn_path}/standard/appspawn_msgmgr.c",
+    "${appspawn_path}/common/appspawn_trace.cpp",
+    "${appspawn_innerkits_path}/permission/appspawn_mount_permission.c",
+  ]
+
+  if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
+    defines += [ "APPSPAWN_SANDBOX_NEW" ]
+  } else {
+    sources += [
+      "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_sandbox_debug_mode.cpp",
+      "${appspawn_path}/test/mock/lib_func_mock/lib_func_mock.cpp",
+      "${appspawn_path}/modules/sandbox/sandbox_dec.c",
+      "${appspawn_path}/modules/sandbox/appspawn_permission.c",
+      "${appspawn_path}/modules/sandbox/normal/sandbox_shared_mount.cpp",
+      "${appspawn_path}/modules/sandbox/normal/appspawn_sandbox_manager.cpp",
+      "${appspawn_path}/modules/sandbox/normal/sandbox_common.cpp",
+    ]
+    include_dirs += [ "${appspawn_path}/test/mock/lib_func_mock" ]
+  }
+
+  configs = [ "${appspawn_path}:appspawn_config" ]
+  external_deps = [
+    "cJSON:cjson",
+    "c_utils:utils",
+    "config_policy:configpolicy_util",
+    "hilog:libhilog",
+    "hitrace:hitrace_meter",
+    "init:libbegetutil",
+    "googletest:gmock_main",
+  ]
+
+  if (target_cpu == "arm64" || target_cpu == "x86_64" ||
+      target_cpu == "riscv64") {
+    defines += [ "APPSPAWN_64" ]
+  }
+
+  if (build_selinux) {
+    defines += [ "WITH_SELINUX" ]
+    external_deps += [
+      "selinux:libselinux",
+      "selinux_adapter:libhap_restorecon",
+    ]
+  }
+
+  if (appspawn_report_event) {
+    defines += [ "REPORT_EVENT" ]
+    external_deps += [ "hisysevent:libhisysevent" ]
+    sources += [
+      "${appspawn_path}/modules/sysevent/appspawn_hisysevent.cpp",
+      "${appspawn_path}/modules/sysevent/event_reporter.cpp",
+      "${appspawn_path}/modules/sysevent/hisysevent_adapter.cpp",
+    ]
   }
 
   if (dlp_permission_enable) {
@@ -310,10 +408,6 @@ ohos_unittest("AppSpawn_coldrun_ut") {
     "${appspawn_path}/modules/nweb_adapter/nwebspawn_adapter.cpp",
   ]
   sources += appspawn_sandbox_src
-
-  if (appspawn_use_encaps == true) {
-    sources += [ "${appspawn_path}/modules/common/appspawn_encaps.c" ]
-  }
 
   # add stub
   include_dirs += [ "${appspawn_path}/test/mock" ]

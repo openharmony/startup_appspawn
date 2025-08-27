@@ -43,7 +43,7 @@ static int CheckFileContent(const char *filePath, const char *targetStr)
     char buf[100];
 
     if (filePath == nullptr) {
-        printf("para invaild\n");
+        printf("para invalid\n");
         return -1;
     }
 
