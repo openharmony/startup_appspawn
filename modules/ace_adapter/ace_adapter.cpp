@@ -240,6 +240,11 @@ APPSPAWN_STATIC int RunChildThread(const AppSpawnMgr *content, const AppSpawning
     if (OHOS::system::GetBoolParameter("persist.init.debug.checkexit", true)) {
         checkExit = std::to_string(getpid());
     }
+#ifdef ARKWEB_UTILS_ENABLE
+    const char* bundleName = GetBundleName(property);
+    std::string bundleNameStr = (bundleName != NULL) ? std::string(bundleName) : "";
+    OHOS::ArkWeb::SelectWebcoreBeforeProcessRun(bundleNameStr);
+#endif
     setenv(APPSPAWN_CHECK_EXIT, checkExit.c_str(), true);
     if (CheckAppMsgFlagsSet(property, APP_FLAGS_CHILDPROCESS)) {
         std::map<std::string, int> fdMap;
