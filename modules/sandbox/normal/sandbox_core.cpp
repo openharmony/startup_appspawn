@@ -1032,7 +1032,7 @@ int32_t SandboxCore::SetAppSandboxPropertyNweb(AppSpawningCtx *appProperty, uint
     }
     APPSPAWN_CHECK(rc == 0, return rc, "DoSandboxRootFolderCreate failed, %{public}s", bundleName.c_str());
 
-    // rendering process can be created by different apps, and the bundle names of these apps are different
+    // rendering process can be created by different apps, and the bundle names of these apps are different,
     // so we can't use the method SetPrivateAppSandboxProperty which mount dirs by using bundle name.
     rc = SetRenderSandboxPropertyNweb(appProperty, sandboxPackagePath);
     APPSPAWN_CHECK(rc == 0, return rc, "SetRenderSandboxPropertyNweb for %{public}s failed", bundleName.c_str());

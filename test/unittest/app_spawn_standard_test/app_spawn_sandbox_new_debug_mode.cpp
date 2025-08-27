@@ -104,7 +104,7 @@ static SandboxContext *AppSpawnDebugSandboxTestGetSandboxContext(const AppSpawni
 
 /**
  * @tc.name: InstallDebugSandbox_ShouldReturnInvalidArg_WhenPropertyIsNull
- * @tc.desc: 测试当 property 为 NULL 时,函数应返回 APPSPAWN_ARG_INVAILD.
+ * @tc.desc: 测试当 property 为 NULL 时,函数应返回 APPSPAWN_ARG_INVALID.
  * @tc.number: InstallDebugSandboxTest_001
  */
 HWTEST_F(AppSpawnDebugSandboxTest, ATC_InstallDebugSandbox_ShouldReturnInvalidArg_WhenPropertyIsNull, TestSize.Level0)
@@ -119,7 +119,7 @@ HWTEST_F(AppSpawnDebugSandboxTest, ATC_InstallDebugSandbox_ShouldReturnInvalidAr
 
 /**
  * @tc.name: InstallDebugSandbox_ShouldReturnInvalidArg_WhenContentIsNull
- * @tc.desc: 测试当 content 为 NULL 时,函数应返回 APPSPAWN_ARG_INVAILD.
+ * @tc.desc: 测试当 content 为 NULL 时,函数应返回 APPSPAWN_ARG_INVALID.
  * @tc.number: InstallDebugSandboxTest_002
  */
 HWTEST_F(AppSpawnDebugSandboxTest, ATC_InstallDebugSandbox_ShouldReturnInvalidArg_WhenContentIsNull, TestSize.Level0)

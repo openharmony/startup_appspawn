@@ -19,7 +19,7 @@
 #include "appspawn_utils.h"
 #include "parameter.h"
 #include "securec.h"
-
+#define OHOS_PERMISSION_FOWNER "ohos.permission.FOWNER"
 static inline int CalcFlagsUnits(uint32_t maxIndex)
 {
     return ((maxIndex / 32) + ((maxIndex % 32 == 0) ? 0 : 1));  // 32 max bit in uint32_t
@@ -552,10 +552,17 @@ int AppSpawnClientAddPermission(AppSpawnClientHandle handle, AppSpawnReqMsgHandl
     APPSPAWN_CHECK(permission != NULL, return APPSPAWN_ARG_INVALID, "Invalid permission ");
     APPSPAWN_CHECK(reqNode->permissionFlags != NULL, return APPSPAWN_ARG_INVALID, "No permission tlv ");
 
+    if (strcmp(permission, OHOS_PERMISSION_FOWNER) == 0) {
+        APPSPAWN_LOGI("AppSpawnClientAddPermission %{public}s", permission);
+        return AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_SET_CAPS_FOWNER);
+    }
+
+#ifdef APPSPAWN_SANDBOX_NEW
     // Don't need to transmit sandbox permission in nwebspawn mode
     if (reqMgr->type == CLIENT_FOR_NWEBSPAWN) {
         return 0;
     }
+#endif
 
     int32_t maxIndex = GetMaxPermissionIndex(handle);
     int index = GetPermissionIndex(handle, permission);
