@@ -67,7 +67,6 @@ static AppSpawnReqMsgHandle CreateMsg(AppSpawnClientHandle handle, const char *b
 
         static const char *permissions[] = {
             "ohos.permission.MANAGE_PRIVATE_PHOTOS",
-            "ohos.permission.FILE_CROSS_APP",
             "ohos.permission.ACTIVATE_THEME_PACKAGE",
             "ohos.permission.GET_WALLPAPER",
         };

@@ -46,7 +46,7 @@ extern "C" {
 }
 
 namespace OHOS {
-AppSpawnTestHelper g_testHelper;
+static AppSpawnTestHelper g_testHelper;
 class AppSpawnDebugSandboxTest : public testing::Test {
 public:
     static void SetUpTestCase() {}
@@ -80,7 +80,7 @@ static AppSpawningCtx *AppSpawnDebugSandboxTestCreateAppSpawningCtx(int base)
     return nullptr;
 }
 
-static SandboxContext *AppSpawnDebugSandboxTestGetSandboxContext(const AppSpawningCtx *property, int newbspawn)
+static SandboxContext *AppSpawnDebugSandboxTestGetSandboxContext(const AppSpawningCtx *property, int nwebspawn)
 {
     AppSpawnMsgFlags *msgFlags = (AppSpawnMsgFlags *)GetAppProperty(property, TLV_MSG_FLAGS);
     APPSPAWN_CHECK(msgFlags != nullptr, return nullptr, "No msg flags in msg %{public}s", GetProcessName(property));
@@ -88,7 +88,7 @@ static SandboxContext *AppSpawnDebugSandboxTestGetSandboxContext(const AppSpawni
     SandboxContext *context = GetSandboxContext();
     APPSPAWN_CHECK(context != nullptr, return nullptr, "Failed to get context");
 
-    context->nwebspawn = newbspawn;
+    context->nwebspawn = nwebspawn;
     context->bundleName = GetBundleName(property);
     context->bundleHasWps = strstr(context->bundleName, "wps") != nullptr;
     context->dlpBundle = strcmp(GetProcessName(property), "com.ohos.dlpmanager") == 0;
@@ -104,7 +104,7 @@ static SandboxContext *AppSpawnDebugSandboxTestGetSandboxContext(const AppSpawni
 
 /**
  * @tc.name: InstallDebugSandbox_ShouldReturnInvalidArg_WhenPropertyIsNull
- * @tc.desc: 测试当 property 为NULL 时, 函数应返回 APPSPAWN_ARG_INVAILD.
+ * @tc.desc: 测试当 property 为 NULL 时,函数应返回 APPSPAWN_ARG_INVALID.
  * @tc.number: InstallDebugSandboxTest_001
  */
 HWTEST_F(AppSpawnDebugSandboxTest, ATC_InstallDebugSandbox_ShouldReturnInvalidArg_WhenPropertyIsNull, TestSize.Level0)
@@ -119,7 +119,7 @@ HWTEST_F(AppSpawnDebugSandboxTest, ATC_InstallDebugSandbox_ShouldReturnInvalidAr
 
 /**
  * @tc.name: InstallDebugSandbox_ShouldReturnInvalidArg_WhenContentIsNull
- * @tc.desc: 测试当 content 为NULL 时, 函数应返回 APPSPAWN_ARG_INVAILD.
+ * @tc.desc: 测试当 content 为 NULL 时,函数应返回 APPSPAWN_ARG_INVALID.
  * @tc.number: InstallDebugSandboxTest_002
  */
 HWTEST_F(AppSpawnDebugSandboxTest, ATC_InstallDebugSandbox_ShouldReturnInvalidArg_WhenContentIsNull, TestSize.Level0)
@@ -137,7 +137,7 @@ HWTEST_F(AppSpawnDebugSandboxTest, ATC_InstallDebugSandbox_ShouldReturnInvalidAr
  * @tc.desc: 测试当不在开发者模式时,函数应返回 0.
  * @tc.number: InstallDebugSandboxTest_003
  */
-HWTEST_F(AppSpawnDebugSandboxTest, ATC_InstallDebugSandbox_ShouldReturnZero_WhenNotDeveloperMode, TestSize.Level0)
+HWTEST_F(AppSpawnDebugSandboxTest, InstallDebugSandbox_ShouldReturnZero_WhenNotDeveloperMode, TestSize.Level0)
 {
     AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
     AppSpawningCtx *property = AppSpawnDebugSandboxTestCreateAppSpawningCtx(0);
@@ -167,11 +167,11 @@ HWTEST_F(AppSpawnDebugSandboxTest, ATC_InstallDebugSandbox_ShouldReturnZero_When
 
 /**
  * @tc.name: InstallDebugSandbox_ShouldReturnSandboxInvalid_WhenSandboxConfigNotFound
- * @tc.desc: 测试当找不到沙箱配置时,函数3应返回 APPSPAWN_SANDBOX_INVALID.
+ * @tc.desc: 测试当找不到沙箱配置时,函数应返回 APPSPAWN_SANDBOX_INVALID.
  * @tc.number: InstallDebugSandboxTest_005
  */
 HWTEST_F(AppSpawnDebugSandboxTest,
-         ATC_InstallDebugSandbox_ShouldReturnSandboxInvalid_WhenSandboxConfigNotFound, TestSize.Level0)
+         InstallDebugSandbox_ShouldReturnSandboxInvalid_WhenSandboxConfigNotFound, TestSize.Level0)
 {
     AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
     AppSpawningCtx *property = AppSpawnDebugSandboxTestCreateAppSpawningCtx(1);
@@ -185,11 +185,11 @@ HWTEST_F(AppSpawnDebugSandboxTest,
 
 /**
  * @tc.name: InstallDebugSandbox_ShouldReturnSystemError_WhenSandboxContextIsNull
- * @tc.desc: 测试当沙箱上下文获取失败时,函数应返回 APPSPAWN_SYSTEM_ERROR
+ * @tc.desc: 测试当沙箱上下文获取失败时,函数应返回 APPSPAWN_SYSTEM_ERROR.
  * @tc.number: InstallDebugSandboxTest_006
  */
 HWTEST_F(AppSpawnDebugSandboxTest,
-         ATC_InstallDebugSandbox_ShouldReturnSystemError_WhenSandboxContextIsNull, TestSize.Level0)
+         InstallDebugSandbox_ShouldReturnSystemError_WhenSandboxContextIsNull, TestSize.Level0)
 {
     AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
     AppSpawningCtx *property = AppSpawnDebugSandboxTestCreateAppSpawningCtx(1);
@@ -201,4 +201,5 @@ HWTEST_F(AppSpawnDebugSandboxTest,
     // delete
     DeleteAppSpawningCtx(property);
     DeleteAppSpawnMgr(mgr);
+}
 }
