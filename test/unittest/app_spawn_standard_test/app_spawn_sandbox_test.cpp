@@ -2363,6 +2363,18 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_DevModel_001, TestSize.Level0)
     DeleteAppSpawningCtx(spawningCtx);
 }
 
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_permissionUserId_001, TestSize.Level0)
+{
+    AppSpawningCtx* spawningCtx = GetTestAppProperty();
+    std::string path = AppSpawn::SandboxCommon::ConvertToRealPathWithPermission(spawningCtx,
+                        "/mnt/sandbox/<permissionUserId>/storage/Users/currentUser");
+    ASSERT_NE(path.c_str(), nullptr);
+    std::string examplePath = "/mnt/sandbox/100/storage/Users/currentUser";
+
+    ASSERT_EQ(strcmp(path.c_str(), examplePath.c_str()), 0);
+    DeleteAppSpawningCtx(spawningCtx);
+}
+
 HWTEST_F(AppSpawnSandboxTest, Handle_Flag_Point_PreInstall_Shell_Hap_001, TestSize.Level0)
 {
     std::string flagPointConfigStr = "{ \

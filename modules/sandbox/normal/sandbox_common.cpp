@@ -900,9 +900,8 @@ std::string SandboxCommon::ConvertToRealPathWithPermission(const AppSpawningCtx 
     AppSpawnMsgBundleInfo *info =
         reinterpret_cast<AppSpawnMsgBundleInfo *>(GetAppProperty(appProperty, TLV_BUNDLE_INFO));
     AppSpawnMsgDacInfo *dacInfo = reinterpret_cast<AppSpawnMsgDacInfo *>(GetAppProperty(appProperty, TLV_DAC_INFO));
-    if (info == nullptr || dacInfo == nullptr) {
-        return "";
-    }
+    APPSPAWN_CHECK((info != nullptr && dacInfo != nullptr), return "", "Invalid params");
+
     if (path.find(SandboxCommonDef::g_packageNameIndex) != std::string::npos) {
         std::string bundleNameWithIndex = info->bundleName;
         if (info->bundleIndex != 0) {

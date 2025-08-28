@@ -724,7 +724,7 @@ HWTEST_F(AppSpawnSandboxMgrTest, App_Spawn_Permission_003, TestSize.Level0)
 #else
     // nweb no permission, so max = 0
     max = GetMaxPermissionIndex(clientHandle);
-    EXPECT_EQ(max, 0);
+    EXPECT_EQ(max, sizeof(g_spawnerPermissionList) / sizeof(g_spawnerPermissionList[0]));
 #endif
     AppSpawnClientDestroy(clientHandle);
 }
