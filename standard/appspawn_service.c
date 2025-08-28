@@ -441,8 +441,7 @@ static void OnReceiveRequest(const TaskHandle taskHandle, const uint8_t *buffer,
     connection->receiverCtx.incompleteMsg = NULL;
     int ret = 0;
     do {
-        APPSPAWN_LOGI("connectionId:%{public}u buffLen:%{public}d",
-            connection->connectionId, buffLen - currLen);
+        APPSPAWN_LOGI("connectionId:%{public}u buffLen:%{public}d", connection->connectionId, buffLen - currLen);
 
         ret = GetAppSpawnMsgFromBuffer(buffer + currLen, buffLen - currLen,
             &message, &connection->receiverCtx.msgRecvLen, &reminder);
@@ -1115,6 +1114,7 @@ static void ProcessChildResponse(const WatcherHandle taskHandle, int fd, uint32_
 static void NotifyResToParent(AppSpawnContent *content, AppSpawnClient *client, int result)
 {
     AppSpawningCtx *property = (AppSpawningCtx *)client;
+    APPSPAWN_CHECK(property != NULL && client != NULL, return, "invalid param");
     int fd = property->forkCtx.fd[1];
     if (fd >= 0) {
         (void)write(fd, &result, sizeof(result));
@@ -1605,7 +1605,7 @@ APPSPAWN_STATIC int AppspawpnDevicedebugKill(int pid, cJSON *args)
         "appspawn devicedebug process is not debuggable, pid=%{public}d", pid);
 
     APPSPAWN_LOGI("appspawn devicedebug debugable=%{public}d, pid=%{public}d, signal=%{public}d",
-        appInfo->isDebuggable, pid, (int)signal->valueint);
+        appInfo->isDebuggable, pid, signal->valueint);
 
     if (kill(pid, signal->valueint) != 0) {
         APPSPAWN_LOGE("appspawn devicedebug unable to kill process, pid: %{public}d ret %{public}d", pid, errno);
@@ -1620,7 +1620,7 @@ APPSPAWN_STATIC int AppspawnDevicedebugDeal(const char* op, int pid, cJSON *args
     if (strcmp(op, "kill") == 0) {
         return AppspawpnDevicedebugKill(pid, args);
     }
-    APPSPAWN_LOGE("appspawn devicedebug op:%{public}s invaild", op);
+    APPSPAWN_LOGE("appspawn devicedebug op:%{public}s invalid", op);
 
     return -1;
 }

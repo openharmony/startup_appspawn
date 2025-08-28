@@ -149,7 +149,6 @@ private:
     int fdArg = -1;
     std::vector<const char *> permissions_ = {
         const_cast<char *>("ohos.permission.MANAGE_PRIVATE_PHOTOS"),
-        const_cast<char *>("ohos.permission.FILE_CROSS_APP"),
         const_cast<char *>("ohos.permission.ACTIVATE_THEME_PACKAGE"),
         const_cast<char *>("ohos.permission.GET_WALLPAPER"),
         const_cast<char *>("ohos.permission.FILE_ACCESS_MANAGER")

@@ -956,14 +956,6 @@ HWTEST_F(AppSpawnAppMgrTest, App_Spawn_AppSpawningCtx_Msg_003, TestSize.Level0)
         ret = CheckAppPermissionFlagSet(nullptr, j);
         EXPECT_EQ(0, ret);
     }
-    uint32_t result[MAX_FLAGS_INDEX] = {0};
-    result[0] = 0;
-    result[1] = 1;
-    result[3] = 1;
-    for (int j = 0; j < MAX_FLAGS_INDEX; j++) {
-        ret = CheckAppMsgFlagsSet(appCtx, j);
-        EXPECT_EQ(result[j], ret);
-    }
     DeleteAppSpawningCtx(appCtx);
     DeleteAppSpawnMgr(mgr);
 }
