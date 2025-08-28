@@ -1471,7 +1471,7 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_SetCapabilities, TestSize.Level0)
         // create msg
         ret = AppSpawnClientInit(NWEBSPAWN_SERVER_NAME, &clientHandle);
         APPSPAWN_CHECK(ret == 0, break, "Failed to create reqMgr %{public}s", NWEBSPAWN_SERVER_NAME);
-        reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+        reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_SPAWN_NATIVE_PROCESS, 0);
         APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break,
             "Failed to create req %{public}s", NWEBSPAWN_SERVER_NAME);
         property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
@@ -1483,5 +1483,4 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_SetCapabilities, TestSize.Level0)
     DeleteAppSpawnMgr(mgr);
     ASSERT_EQ(ret, 0);
 }
-
 }  // namespace OHOS
