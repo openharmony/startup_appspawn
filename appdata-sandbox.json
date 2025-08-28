@@ -952,7 +952,7 @@
             "sandbox-switch": "ON",
             "mount-paths": [{
                     "src-path": "/data/service/el1/public/update/cloudRom/",
-                    "sandbox-path": "/data/service/el1/public/updatecloudRom",
+                    "sandbox-path": "/data/service/el1/public/update/cloudRom",
                     "sandbox-flags": [ "bind", "rec" ],
                     "check-action-status": "false"
                 }
