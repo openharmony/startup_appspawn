@@ -411,6 +411,12 @@
                 "sandbox-path": "/data/service/el1/public/update/param_service/install/system/etc/<PackageName>"
             }]
         }, {
+            "name": "ohos.permission.CLOUD_ROM_UPDATE",
+            "mount-paths": [{
+                "src-path": "/data/service/el1/public/update/cloudRom/",
+                "sandbox-path": "/data/service/el1/public/updatecloudRom",
+            }]
+        }, {
             "name": "ohos.permission.READ_WRITE_DOWNLOAD_DIRECTORY",
             "mount-paths": [{
                 "src-path": "none",
