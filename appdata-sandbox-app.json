@@ -414,7 +414,7 @@
             "name": "ohos.permission.CLOUD_ROM_UPDATE",
             "mount-paths": [{
                 "src-path": "/data/service/el1/public/update/cloudRom/",
-                "sandbox-path": "/data/service/el1/public/updatecloudRom",
+                "sandbox-path": "/data/service/el1/public/update/cloudRom",
             }]
         }, {
             "name": "ohos.permission.READ_WRITE_DOWNLOAD_DIRECTORY",
