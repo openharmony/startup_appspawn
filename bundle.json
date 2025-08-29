@@ -66,7 +66,6 @@
                 "os_account",
                 "hilog_lite",
                 "samgr_lite",
-                "ipc_single",
                 "kv_store",
                 "ability_lite",
                 "ace_engine_lite",
