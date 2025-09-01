@@ -320,6 +320,7 @@ void DeleteAppSpawningCtx(AppSpawningCtx *property)
     DeleteAppSpawnMsg(&property->message);
 
     OH_ListRemove(&property->node);
+    OH_ListInit(&property->node);
     if (property->forkCtx.timer) {
         LE_StopTimer(LE_GetDefaultLoop(), property->forkCtx.timer);
         property->forkCtx.timer = NULL;
