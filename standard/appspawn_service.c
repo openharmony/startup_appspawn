@@ -200,7 +200,8 @@ APPSPAWN_STATIC void ProcessSignal(const struct signalfd_siginfo *siginfo)
                 HandleDiedPid(pid, siginfo->ssi_uid, status);
             }
 #if (defined(CJAPP_SPAWN) || defined(NATIVE_SPAWN))
-            if (OH_ListGetCnt(&GetAppSpawnMgr()->appQueue) == 0) {
+            if (OH_ListGetCnt(&GetAppSpawnMgr()->appQueue) == 0 &&
+                OH_ListGetCnt(&GetAppSpawnMgr()->appSpawnQueue) == 0) {
                 LE_StopLoop(LE_GetDefaultLoop());
             }
 #endif
@@ -1394,14 +1395,18 @@ AppSpawnContent *StartSpawnService(const AppSpawnStartArg *startArg, uint32_t ar
     }
 
     // load module appspawn/common
+    StartAppspawnTrace("AppSpawnLoadCommonModules");
     AppSpawnLoadAutoRunModules(MODULE_COMMON);
+    FinishAppspawnTrace();
     AppSpawnModuleMgrInstall(ASAN_MODULE_PATH);
 
     APPSPAWN_CHECK(LE_GetDefaultLoop() != NULL, return NULL, "Invalid default loop");
     AppSpawnContent *content = AppSpawnCreateContent(arg->socketName, argv[0], argvSize, arg->mode);
     APPSPAWN_CHECK(content != NULL, return NULL, "Failed to create content for %{public}s", arg->socketName);
 
+    StartAppspawnTrace("AppSpawnLoadAutoRunModules");
     AppSpawnLoadAutoRunModules(arg->moduleType);  // load corresponding plugin according to startup mode
+    FinishAppspawnTrace();
     int ret = ServerStageHookExecute(STAGE_SERVER_PRELOAD, content);   // Preload, prase the sandbox
     APPSPAWN_CHECK(ret == 0, AppSpawnDestroyContent(content);
         return NULL, "Failed to prepare load %{public}s result: %{public}d", arg->serviceName, ret);
