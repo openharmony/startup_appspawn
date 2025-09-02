@@ -507,7 +507,8 @@ static char *GetMapMem(uint32_t clientId, const char *processName, uint32_t size
     int fd = open(path, mode, S_IRWXU);
     APPSPAWN_CHECK(fd >= 0, return NULL, "Failed to open errno %{public}d path %{public}s", errno, path);
     if (!readOnly) {
-        ftruncate(fd, size);
+        APPSPAWN_CHECK(fallocate(fd, 0, 0, size) == 0, close(fd);
+            return NULL, "failed fallocate %{public}s %{public}d", processName, errno);
     }
     void *areaAddr = (void *)mmap(NULL, size, prot, MAP_SHARED, fd, 0);
     close(fd);
@@ -682,21 +683,41 @@ static bool IsSupportRunHnp()
     return false;
 }
 
-static void ClearMMAP(int clientId, uint32_t memSize)
+APPSPAWN_STATIC void ClearMMAP(int clientId, uint32_t memSize)
 {
+    AppSpawnContent *content = GetAppSpawnContent();
+    if (content != NULL && content->propertyBuffer != NULL) {
+        int ret = munmap(content->propertyBuffer, memSize);
+        APPSPAWN_CHECK_ONLY_LOG(ret == 0, "munmap failed %{public}d %{public}d", ret, errno);
+        content->propertyBuffer = NULL;
+    }
+
     char path[PATH_MAX] = {0};
     int ret = snprintf_s(path, sizeof(path), sizeof(path) - 1, APPSPAWN_MSG_DIR "appspawn/prefork_%d", clientId);
     APPSPAWN_CHECK_ONLY_LOG(ret > 0, "snprintf failed with %{public}d %{public}d", ret, errno);
     if (ret > 0 && access(path, F_OK) == 0) {
-        ret =  unlink(path);
+        ret = unlink(path);
         APPSPAWN_CHECK_ONLY_LOG(ret == 0, "prefork unlink result %{public}d %{public}d", ret, errno);
     }
+}
 
-    AppSpawnContent *content = GetAppSpawnContent();
-    if (content != NULL && content->propertyBuffer != NULL) {
-        ret = munmap(content->propertyBuffer, memSize);
+APPSPAWN_STATIC void ClearPreforkInfo(AppSpawningCtx *property)
+{
+    APPSPAWN_CHECK(property != NULL, return, "invalid property");
+
+    if (property->forkCtx.childMsg != NULL) {
+        int ret = munmap(property->forkCtx.childMsg, property->forkCtx.msgSize);
         APPSPAWN_CHECK_ONLY_LOG(ret == 0, "munmap failed %{public}d %{public}d", ret, errno);
-        content->propertyBuffer = NULL;
+        property->forkCtx.childMsg = NULL;
+    }
+
+    char path[PATH_MAX] = {0};
+    int ret = snprintf_s(path, sizeof(path), sizeof(path) - 1, APPSPAWN_MSG_DIR "appspawn/prefork_%d",
+        property->client.id);
+    APPSPAWN_CHECK_ONLY_LOG(ret > 0, "snprintf failed with %{public}d %{public}d", ret, errno);
+    if (ret > 0 && access(path, F_OK) == 0) {
+        ret = unlink(path);
+        APPSPAWN_CHECK_ONLY_LOG(ret == 0, "prefork unlink result %{public}d %{public}d", ret, errno);
     }
 }
 
@@ -818,12 +839,12 @@ static void ProcessPreFork(AppSpawnContent *content, AppSpawningCtx *property)
         const uint32_t memSize = (preforkMsg.msgLen / MAX_MSG_BLOCK_LEN + 1) * MAX_MSG_BLOCK_LEN;
         if (GetAppSpawnMsg(property, memSize) == -1) {
             APPSPAWN_LOGE("prefork child read GetAppSpawnMsg failed");
-            ClearMMAP(property->client.id, memSize);
+            ClearPreforkInfo(property);
             content->notifyResToParent(content, &property->client, APPSPAWN_MSG_INVALID);
             ProcessExit(0);
             return;
         }
-        ClearMMAP(property->client.id, memSize);
+        ClearPreforkInfo(property);
         // Inherit the error level of the original process
         (void)fdsan_set_error_level(errorLevel);
         ProcessExit(AppSpawnChild(content, &property->client));
@@ -1382,7 +1403,6 @@ AppSpawnContent *AppSpawnCreateContent(const char *socketName, char *longProcNam
 AppSpawnContent *StartSpawnService(const AppSpawnStartArg *startArg, uint32_t argvSize, int argc, char *const argv[])
 {
     APPSPAWN_CHECK(startArg != NULL && argv != NULL, return NULL, "Invalid start arg");
-    pid_t pid = 0;
     AppSpawnStartArg *arg = (AppSpawnStartArg *)startArg;
     APPSPAWN_LOGV("Start appspawn argvSize %{public}d mode %{public}d service %{public}s",
         argvSize, arg->mode, arg->serviceName);
