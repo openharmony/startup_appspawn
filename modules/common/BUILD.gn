@@ -29,6 +29,9 @@ ohos_shared_library("appspawn_common") {
   if (is_debug || build_variant == "root") {
     sources += [ "appspawn_begetctl.c" ]
   }
+  if (appspawn_custom_sandbox == true) {
+    sources += [ "appspawn_isolate.c" ]
+  }
 
   include_dirs = [
     ".",
