@@ -53,8 +53,6 @@ static const DataGroupSandboxPathTemplate DATA_GROUP_SANDBOX_PATH_MAP[] = {
     {"el5", EL5, "/data/storage/el5/group/", "ohos.permission.PROTECT_SCREEN_LOCK_DATA"},
 };
 
-static std::map<std::string, int> g_mountInfoMap;
-
 int GetElxInfoFromDir(const char *path)
 {
     int ret = ELX_MAX;
@@ -101,11 +99,6 @@ bool IsValidDataGroupItem(cJSON *item)
         return true;
     }
     return false;
-}
-
-void *GetEl1BundleMountCount(void)
-{
-    return static_cast<void*>(&g_mountInfoMap);
 }
 
 #ifndef APPSPAWN_SANDBOX_NEW
@@ -160,60 +153,6 @@ static bool SetSandboxPathShared(const std::string &sandboxPath)
         return false;
     }
     return true;
-}
-
-static int MountEl1Bundle(const AppSpawningCtx *property, const AppDacInfo *info, const char *varBundleName)
-{
-    /* /data/app/el1/bundle/public/<bundleName> */
-    AppSpawnMsgBundleInfo *bundleInfo =
-        reinterpret_cast<AppSpawnMsgBundleInfo *>(GetAppProperty(property, TLV_BUNDLE_INFO));
-    if (bundleInfo == nullptr) {
-        return APPSPAWN_SANDBOX_INVALID;
-    }
-    char sourcePath[PATH_MAX_LEN] = {0};
-    int ret = snprintf_s(sourcePath, PATH_MAX_LEN, PATH_MAX_LEN - 1, "/data/app/el1/bundle/public/%s",
-                         bundleInfo->bundleName);
-    if (ret <= 0) {
-        APPSPAWN_LOGE("snprintf data/app/el1/bundle/public/%{public}s failed, errno %{public}d",
-                      bundleInfo->bundleName, errno);
-        return APPSPAWN_ERROR_UTILS_MEM_FAIL;
-    }
-
-    /* /mnt/sandbox/<currentUserId>/<varBundleName>/data/storage/el1/bundle */
-    char targetPath[PATH_MAX_LEN] = {0};
-    ret = snprintf_s(targetPath, PATH_MAX_LEN, PATH_MAX_LEN - 1, "/mnt/sandbox/%u/%s/data/storage/el1/bundle",
-                     info->uid/ UID_BASE, varBundleName);
-    if (ret <= 0) {
-        APPSPAWN_LOGE("snprintf el1 bundle sandbox path failed, errno %{public}d", errno);
-        return APPSPAWN_ERROR_UTILS_MEM_FAIL;
-    }
-
-    ret = MakeDirRec(targetPath, DIR_MODE, 1);
-    if (ret != 0) {
-        APPSPAWN_LOGE("mkdir %{public}s failed, errno %{public}d", targetPath, errno);
-        return APPSPAWN_SANDBOX_ERROR_MKDIR_FAIL;
-    }
-
-    ret = umount2(targetPath, MNT_DETACH);
-    if (ret != 0) {
-        APPSPAWN_LOGW("umount2 %{public}s failed, errno %{public}d", targetPath, errno);
-    }
-
-    SharedMountArgs arg = {
-        .srcPath = sourcePath,
-        .destPath = targetPath,
-        .fsType = nullptr,
-        .mountFlags = MS_BIND | MS_REC,
-        .options = nullptr,
-        .mountSharedFlag = MS_SHARED
-    };
-    ret = DoSharedMount(&arg);
-    if (ret != 0) {
-        APPSPAWN_LOGE("mount %{public}s shared failed, ret %{public}d", targetPath, ret);
-    }
-    std::string key = std::to_string(info->uid / UID_BASE) + "-" + std::string(varBundleName);
-    g_mountInfoMap[key]++;
-    return ret;
 }
 
 static int MountWithFileMgr(const AppSpawningCtx *property, const AppDacInfo *info, const char *varBundleName)
@@ -614,8 +553,6 @@ static void MountDirToShared(AppSpawnMgr *content, const AppSpawningCtx *propert
         APPSPAWN_LOGE("Invalid app dac info or varBundleName");
         return;
     }
-
-    MountEl1Bundle(property, info, varBundleName.c_str());
 
     if (IsUnlockStatus(info->uid)) {
         SetAppSpawnMsgFlag(property->message, TLV_MSG_FLAGS, APP_FLAGS_UNLOCKED_STATUS);

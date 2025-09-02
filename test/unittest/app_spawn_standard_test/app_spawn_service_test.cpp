@@ -288,7 +288,7 @@ HWTEST_F(AppSpawnServiceTest, App_Spawn_MSG_BEGET_SPAWNTIME_001, TestSize.Level0
 
 /**
  * @brief 向appspawn发送MSG_UPDATE_MOUNT_POINTS类型的消息
- * @note 预期结果：appspawn接收到请求消息，遍历沙箱包名更新挂载点
+ * @note 预期结果：appspawn接收到请求消息，不做处理直接返回
  *
  */
 HWTEST_F(AppSpawnServiceTest, App_Spawn_MSG_UPDATE_MOUNT_POINTS_001, TestSize.Level0)
@@ -312,7 +312,7 @@ HWTEST_F(AppSpawnServiceTest, App_Spawn_MSG_UPDATE_MOUNT_POINTS_001, TestSize.Le
 
 /**
  * @brief 向appspawn发送MSG_RESTART_SPAWNER类型的消息
- * @note 预期结果：appspawn不支持处理该类型消息，返回APPSPAWN_MSG_INVALID
+ * @note 预期结果：appspawn接收到请求消息，不做处理直接返回
  *
  */
 HWTEST_F(AppSpawnServiceTest, App_Spawn_MSG_RESTART_SPAWNER_001, TestSize.Level0)
@@ -326,7 +326,7 @@ HWTEST_F(AppSpawnServiceTest, App_Spawn_MSG_RESTART_SPAWNER_001, TestSize.Level0
 
         AppSpawnResult result = {};
         ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
-        APPSPAWN_CHECK(ret == 0 && result.result == APPSPAWN_MSG_INVALID, ret = -1;
+        APPSPAWN_CHECK(ret == 0 && result.result == 0, ret = -1;
             break, "Failed to send MSG_RESTART_SPAWNER, ret %{public}d result %{public}d", ret, result.result);
     } while (0);
 
