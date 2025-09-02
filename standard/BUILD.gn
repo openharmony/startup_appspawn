@@ -113,10 +113,6 @@ ohos_executable("appspawn") {
   }
   cflags = []
 
-  if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
-    defines += [ "APPSPAWN_SANDBOX_NEW" ]
-  }
-
   #ldflags = [ "-Wl,--dynamic-linker,/system/bin/linker64z" ]
   if (!defined(global_parts_info) ||
       defined(global_parts_info.security_code_signature)) {
@@ -215,10 +211,6 @@ ohos_executable("cjappspawn") {
   }
   cflags = []
 
-  if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
-    defines += [ "APPSPAWN_SANDBOX_NEW" ]
-  }
-
   #ldflags = [ "-Wl,--dynamic-linker,/system/bin/linker64z" ]
   if (!defined(global_parts_info) ||
       defined(global_parts_info.security_code_signature)) {
@@ -281,10 +273,6 @@ ohos_executable("nativespawn") {
     ]
   }
   cflags = []
-
-  if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
-    defines += [ "APPSPAWN_SANDBOX_NEW" ]
-  }
 
   #ldflags = [ "-Wl,--dynamic-linker,/system/bin/linker64z" ]
   if (!defined(global_parts_info) ||
@@ -381,10 +369,6 @@ ohos_executable("nwebspawn") {
   }
   cflags = []
 
-  if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
-    defines += [ "APPSPAWN_SANDBOX_NEW" ]
-  }
-
   #ldflags = [ "-Wl,--dynamic-linker,/system/bin/linker64z" ]
   if (defined(global_parts_info) &&
       defined(global_parts_info.security_code_signature)) {
@@ -465,10 +449,6 @@ ohos_executable("hybridspawn") {
     ]
   }
   cflags = []
-
-  if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
-    defines += [ "APPSPAWN_SANDBOX_NEW" ]
-  }
 
   #ldflags = [ "-Wl,--dynamic-linker,/system/bin/linker64z" ]
   if (defined(global_parts_info) &&
