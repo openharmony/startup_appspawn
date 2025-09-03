@@ -30,7 +30,7 @@ constexpr int32_t FILE_ACCESS_COMMON_DIR_STATUS = 0;
 constexpr int32_t FILE_CROSS_APP_STATUS = 1;
 constexpr static mode_t FILE_MODE = 0711;
 constexpr static mode_t BASIC_MOUNT_FLAGS = MS_REC | MS_BIND;
-constexpr int32_t MAX_MOUNT_TIME = 500;  // 500us
+constexpr int32_t MAX_MOUNT_TIME = 5000;  // 5000us
 constexpr int32_t LOCK_STATUS_SIZE = 16;
 
 // 沙盒配置文件

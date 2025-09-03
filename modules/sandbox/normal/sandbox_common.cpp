@@ -306,8 +306,8 @@ bool SandboxCommon::VerifyDirRecursive(const std::string &path)
         index = pathIndex == std::string::npos ? size : pathIndex + 1;
         std::string dir = path.substr(0, index);
 #ifndef APPSPAWN_TEST
-        APPSPAWN_CHECK_LOGW(access(dir.c_str(), F_OK) == 0,
-            return false, "check dir %{public}s failed, strerror: %{public}s", dir.c_str(), strerror(errno));
+        APPSPAWN_CHECK_DUMPI(access(dir.c_str(), F_OK) == 0,
+            return false, "check dir %{public}s failed,strerror:%{public}s", dir.c_str(), strerror(errno));
 #endif
     } while (index < size);
     return true;
@@ -316,7 +316,7 @@ bool SandboxCommon::VerifyDirRecursive(const std::string &path)
 void SandboxCommon::CreateFileIfNotExist(const char *file)
 {
     if (access(file, F_OK) == 0) {
-        APPSPAWN_LOGI("file %{public}s already exist", file);
+        APPSPAWN_DUMPI("file %{public}s already exist", file);
         return;
     }
     std::string path = file;
@@ -1006,7 +1006,7 @@ int32_t SandboxCommon::DoAppSandboxMountOnce(const AppSpawningCtx *appProperty, 
     APPSPAWN_CHECK_ONLY_EXPER(diff < FUNC_REPORT_DURATION, ReportAbnormalDuration(arg->srcPath, diff));
 #endif
     if (ret != 0) {
-        APPSPAWN_LOGI("errno is: %{public}d, bind mount %{public}s to %{public}s", errno, arg->srcPath, arg->destPath);
+        APPSPAWN_DUMPI("errno:%{public}d bind mount %{public}s to %{public}s", errno, arg->srcPath, arg->destPath);
         if (errno == ENOENT && IsNeededCheckPathStatus(appProperty, arg->srcPath)) {
             VerifyDirRecursive(arg->srcPath);
         }
@@ -1015,7 +1015,7 @@ int32_t SandboxCommon::DoAppSandboxMountOnce(const AppSpawningCtx *appProperty, 
 
     ret = mount(nullptr, arg->destPath, nullptr, arg->mountSharedFlag, nullptr);
     if (ret != 0) {
-        APPSPAWN_LOGI("errno is: %{public}d, private mount to %{public}s '%{public}u' failed",
+        APPSPAWN_DUMPI("errno:%{public}d private mount to %{public}s '%{public}u' failed",
             errno, arg->destPath, arg->mountSharedFlag);
         if (errno == EINVAL) {
             CheckMountStatus(arg->destPath);

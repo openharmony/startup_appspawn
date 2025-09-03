@@ -434,7 +434,7 @@ int32_t SandboxCore::MountAllHsp(const AppSpawningCtx *appProperty, std::string 
     APPSPAWN_CHECK(count == cJSON_GetArraySize(modules), return -1, "MountAllHsp: sizes are not same");
     APPSPAWN_CHECK(count == cJSON_GetArraySize(versions), return -1, "MountAllHsp: sizes are not same");
 
-    APPSPAWN_LOGI("MountAllHsp app: %{public}s, count: %{public}d", GetBundleName(appProperty), count);
+    APPSPAWN_LOGV("MountAllHsp app: %{public}s, count: %{public}d", GetBundleName(appProperty), count);
     for (int i = 0; i < count; i++) {
         if (!(cJSON_IsString(cJSON_GetArrayItem(bundles, i)) && cJSON_IsString(cJSON_GetArrayItem(modules, i)) &&
             cJSON_IsString(cJSON_GetArrayItem(versions, i)))) {

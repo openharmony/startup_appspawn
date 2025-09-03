@@ -45,7 +45,7 @@ static void NotifyResToParent(struct AppSpawnContent *content, AppSpawnClient *c
 
 void ProcessExit(int code)
 {
-    APPSPAWN_LOGI("ExitCode:%{public}d", code);
+    APPSPAWN_DUMPI("ExitCode:%{public}d", code);
 #ifdef OHOS_LITE
     _exit(0x7f); // 0x7f user exit
 #else
@@ -73,7 +73,7 @@ void exit(int code)
 int AppSpawnChild(AppSpawnContent *content, AppSpawnClient *client)
 {
     APPSPAWN_CHECK(content != NULL && client != NULL, return -1, "Invalid arg for appspawn child");
-    APPSPAWN_LOGI("AppSpawnChild id %{public}u flags: 0x%{public}x", client->id, client->flags);
+    APPSPAWN_DUMPI("AppSpawnChild id %{public}u flags:0x%{public}x", client->id, client->flags);
     StartAppspawnTrace("AppSpawnExecuteClearEnvHook");
     int ret = AppSpawnExecuteClearEnvHook(content, client);
     FinishAppspawnTrace();
