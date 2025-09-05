@@ -127,7 +127,7 @@ static int SetDenyConstraintDirs(AppSpawnMgr *content)
     } else {
         APPSPAWN_LOGI("set CONSTRAINT_DEC_POLICY_CMD sandbox policy success.");
         for (uint32_t i = 0; i < decPolicyInfos.pathNum; i++) {
-            APPSPAWN_LOGI("policy info: %{public}s", decPolicyInfos.path[i].path);
+            APPSPAWN_DUMPI("%{public}s", decPolicyInfos.path[i].path);
         }
     }
     close(fd);
@@ -159,9 +159,9 @@ static int SetForcedPrefixDirs(AppSpawnMgr *content)
     if (ioctl(fd, SET_DEC_PREFIX_CMD, &decPolicyInfos) < 0) {
         APPSPAWN_LOGE("set sandbox forced prefix failed.");
     } else {
-        APPSPAWN_LOGI("set SET_DEC_PREFIX_CMD sandbox policy success.");
+        APPSPAWN_LOGV("set SET_DEC_PREFIX_CMD sandbox policy success.");
         for (uint32_t i = 0; i < decPolicyInfos.pathNum; i++) {
-            APPSPAWN_LOGI("policy info: %{public}s", decPolicyInfos.path[i].path);
+            APPSPAWN_DUMPI("%{public}s", decPolicyInfos.path[i].path);
         }
     }
     close(fd);
@@ -190,9 +190,9 @@ void SetDecPolicy(void)
     if (ioctl(fd, SET_DEC_POLICY_CMD, g_decPolicyInfos) < 0) {
         APPSPAWN_LOGE("set sandbox policy failed.");
     } else {
-        APPSPAWN_LOGI("set SET_DEC_POLICY_CMD sandbox policy success. timestamp:%{public}" PRId64 "", timestamp);
+        APPSPAWN_LOGV("set SET_DEC_POLICY_CMD sandbox policy success. timestamp:%{public}" PRId64 "", timestamp);
         for (uint32_t i = 0; i < g_decPolicyInfos->pathNum; i++) {
-            APPSPAWN_LOGI("policy info: path %{public}s, mode 0x%{public}x",
+            APPSPAWN_DUMPI("path %{public}s mode 0x%{public}x",
                 g_decPolicyInfos->path[i].path, g_decPolicyInfos->path[i].mode);
         }
     }
