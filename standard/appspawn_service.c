@@ -41,14 +41,14 @@
 #include "init_utils.h"
 #include "parameter.h"
 #include "appspawn_adapter.h"
-#ifndef OHOS_LITE
-#include "appspawn_reclaim.h"
-#endif
 #include "securec.h"
 #include "cJSON.h"
 #ifdef APPSPAWN_HISYSEVENT
 #include "appspawn_hisysevent.h"
 #include "hisysevent_adapter.h"
+#endif
+#ifdef ARKWEB_UTILS_ENABLE
+#include "arkweb_preload.h"
 #endif
 #define PARAM_BUFFER_SIZE 10
 #define PATH_SIZE 256
@@ -61,11 +61,6 @@
 #define LOCK_STATUS_PARAM_SIZE 64
 #ifndef PIDFD_NONBLOCK
 #define PIDFD_NONBLOCK O_NONBLOCK
-#endif
-
-#if (defined(PRE_DLOPEN_ARKWEB_LIB) && !defined(ASAN_DETECTOR))
-#define MAX_DLCLOSE_COUNT 10
-#define LIB_ARKWEB_ENGINE "libarkweb_engine.so"
 #endif
 
 static void WaitChildTimeout(const TimerHandle taskHandle, void *context);
@@ -1661,106 +1656,6 @@ APPSPAWN_STATIC void ProcessObserveProcessSignalMsg(AppSpawnConnection *connecti
     DeleteAppSpawnMsg(&message);
 }
 
-#if (defined(PRE_DLOPEN_ARKWEB_LIB) && !defined(ASAN_DETECTOR))
-static bool IsNWebLibLoaded(Dl_namespace dlns)
-{
-    void* handler = dlopen_ns(&dlns, LIB_ARKWEB_ENGINE, RTLD_NOW | RTLD_NOLOAD);
-    if (handler) {
-        dlclose(handler);
-        return true;
-    }
-    return false;
-}
-#endif
-
-static void ProcessSpawnDlcloseMsg(AppSpawnConnection *connection, AppSpawnMsgNode *message)
-{
-    AppSpawnMsg* msg = &message->msgHeader;
-    APPSPAWN_LOGI("Recv ProcessSpawnDlcloseMsg message header magic: 0x%{public}x type: %{public}u"
-                  "id: %{public}u len: %{public}u processName: %{public}s",
-        msg->magic,
-        msg->msgType,
-        msg->msgId,
-        msg->msgLen,
-        msg->processName);
-
-#if (defined(PRE_DLOPEN_ARKWEB_LIB) && !defined(ASAN_DETECTOR))
-    Dl_namespace dlns;
-    if (dlns_get("nweb_ns", &dlns) != 0) {
-        APPSPAWN_LOGI("Failed to get nweb_ns");
-        SendResponse(connection, msg, 0, 0);
-        return;
-    }
-
-    void* webEngineHandle = dlopen_ns(&dlns, LIB_ARKWEB_ENGINE, RTLD_NOW | RTLD_NOLOAD);
-    if (!webEngineHandle) {
-        APPSPAWN_LOGE("FAILED to find %{public}s in appspawn %{public}s", LIB_ARKWEB_ENGINE, dlerror());
-        SendResponse(connection, msg, 0, 0);
-        return;
-    }
-
-    int cnt = MAX_DLCLOSE_COUNT;
-    do {
-        cnt--;
-        dlclose(webEngineHandle);
-    } while (cnt > 0 && IsNWebLibLoaded(dlns));
-
-    if (cnt == 0 && IsNWebLibLoaded(dlns)) {
-        SendResponse(connection, msg, -1, 0);
-        return;
-    }
-#endif
-    SendResponse(connection, msg, 0, 0);
-}
-
-static void ProcessSpawnDlopenMsg(AppSpawnConnection *connection, AppSpawnMsgNode *message)
-{
-    AppSpawnMsg* msg = &message->msgHeader;
-    APPSPAWN_LOGI("Recv ProcessSpawnReqMsg message header magic: 0x%{public}x type: %{public}u"
-                  "id: %{public}u len: %{public}u processName: %{public}s",
-        msg->magic,
-        msg->msgType,
-        msg->msgId,
-        msg->msgLen,
-        msg->processName);
-
-#if (defined(PRE_DLOPEN_ARKWEB_LIB) && !defined(ASAN_DETECTOR))
-    Dl_namespace dlns;
-    if (dlns_get("nweb_ns", &dlns) != 0) {
-        char arkwebLibPath[PATH_SIZE] = "";
-        if (snprintf_s(arkwebLibPath, sizeof(arkwebLibPath), sizeof(arkwebLibPath) - 1,
-                       "%s%s%s", "/data/app/el1/bundle/public/", msg->processName,
-                       "/libs/arm64:/data/storage/el1/bundle/arkwebcore/libs/arm64") < 0) {
-            APPSPAWN_LOGE("FAILED to get arkwebLibPath");
-            SendResponse(connection, msg, -1, 0);
-            return;
-        }
-        APPSPAWN_LOGI("ProcessSpawnDlopenMsg arkwebLibPath: %{public}s", arkwebLibPath);
-
-        dlns_init(&dlns, "nweb_ns");
-        dlns_create(&dlns, arkwebLibPath);
-
-        Dl_namespace ndkns;
-        dlns_get("ndk", &ndkns);
-        dlns_inherit(&dlns, &ndkns, "allow_all_shared_libs");
-    }
-
-    void* webEngineHandle = dlopen_ns(&dlns, LIB_ARKWEB_ENGINE, RTLD_NOW | RTLD_GLOBAL);
-    if (!webEngineHandle) {
-        APPSPAWN_LOGE("FAILED to dlopen %{public}s in appspawn %{public}s", LIB_ARKWEB_ENGINE, dlerror());
-        SendResponse(connection, msg, -1, 0);
-    } else {
-        APPSPAWN_LOGI("SUCCESS to dlopen %{public}s in appspawn", LIB_ARKWEB_ENGINE);
-        SendResponse(connection, msg, 0, 0);
-#ifndef OHOS_LITE
-        ReclaimFileCache();
-#endif
-    }
-#else
-    SendResponse(connection, msg, 0, 0);
-#endif
-}
-
 static void ProcessRecvMsg(AppSpawnConnection *connection, AppSpawnMsgNode *message)
 {
     AppSpawnMsg *msg = &message->msgHeader;
@@ -1822,11 +1717,19 @@ static void ProcessRecvMsg(AppSpawnConnection *connection, AppSpawnMsgNode *mess
             ProcessObserveProcessSignalMsg(connection, message);
             break;
         case MSG_UNLOAD_WEBLIB_IN_APPSPAWN:
-            ProcessSpawnDlcloseMsg(connection, message);
+#ifdef ARKWEB_UTILS_ENABLE
+            ret = ProcessSpawnDlcloseMsg();
+#else
+            ret = 0;
+#endif
+            SendResponse(connection, msg, ret, 0);
             DeleteAppSpawnMsg(&message);
             break;
         case MSG_LOAD_WEBLIB_IN_APPSPAWN:
-            ProcessSpawnDlopenMsg(connection, message);
+#ifdef ARKWEB_UTILS_ENABLE
+            ProcessSpawnDlopenMsg();
+#endif
+            SendResponse(connection, msg, 0, 0);
             DeleteAppSpawnMsg(&message);
             break;
         default:
