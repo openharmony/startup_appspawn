@@ -588,6 +588,10 @@ ohos_unittest("AppSpawn_common_ut") {
   ]
   sources += appspawn_sandbox_src
 
+  if (appspawn_custom_sandbox == true) {
+    sources += [ "${appspawn_path}/modules/common/appspawn_isolate.c" ]
+  }
+
   # add stub
   include_dirs += [ "${appspawn_path}/test/mock" ]
   sources += [
@@ -605,6 +609,10 @@ ohos_unittest("AppSpawn_common_ut") {
 
   if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
     defines += [ "APPSPAWN_SANDBOX_NEW" ]
+  }
+
+  if (appspawn_custom_sandbox == true) {
+    sources += [ "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_isolate_test.cpp" ]
   }
 
   configs = [ "${appspawn_path}:appspawn_config" ]
