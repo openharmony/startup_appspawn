@@ -218,17 +218,23 @@ static void AppSpawningCtxOnClose(const AppSpawnMgr *mgr, AppSpawningCtx *ctx, v
 
 static void OnClose(const TaskHandle taskHandle)
 {
+    int fd = LE_GetSocketFd(taskHandle);
+    APPSPAWN_LOGV("OnClose socket fd %{public}d", fd);
     if (!IsSpawnServer(GetAppSpawnMgr())) {
+        if (fd > 0) {
+            close(fd);
+            fd = -1;
+        }
         return;
     }
+
     AppSpawnConnection *connection = (AppSpawnConnection *)LE_GetUserData(taskHandle);
     APPSPAWN_CHECK(connection != NULL, return, "Invalid connection");
     if (connection->receiverCtx.timer) {
         LE_StopTimer(LE_GetDefaultLoop(), connection->receiverCtx.timer);
         connection->receiverCtx.timer = NULL;
     }
-    APPSPAWN_LOGI("OnClose connectionId: %{public}u socket %{public}d",
-        connection->connectionId, LE_GetSocketFd(taskHandle));
+    APPSPAWN_LOGI("OnClose connectionId: %{public}u socket %{public}d", connection->connectionId, fd);
     DeleteAppSpawnMsg(&connection->receiverCtx.incompleteMsg);
     connection->receiverCtx.incompleteMsg = NULL;
     // connect close, to close spawning app
@@ -398,6 +404,26 @@ static int OnConnection(const LoopHandle loopHandle, const TaskHandle server)
     APPSPAWN_LOGI("OnConnection connectionId: %{public}u fd %{public}d ",
         connection->connectionId, LE_GetSocketFd(stream));
     return 0;
+}
+
+static void OnListenFdClose(const TaskHandle taskHandle)
+{
+    /**
+     * The socket fd of the parent process appspawn is executed in the AppSpawnDestroyContent function,
+     * and executing it in the OnListen function will result in a badfd
+     */
+#ifndef APPSPAWN_TEST
+    if (IsSpawnServer(GetAppSpawnMgr())) {
+        return;
+    }
+#endif
+    // close socket listen fd in child process
+    int fd = LE_GetSocketFd(taskHandle);
+    APPSPAWN_LOGV("OnListenFdClose listen fd: %{public}d", fd);
+    if (fd > 0) {
+        close(fd);
+    }
+    fd = -1;
 }
 
 APPSPAWN_STATIC bool MsgDevicedebugCheck(TaskHandle stream, AppSpawnMsgNode *message)
@@ -617,11 +643,11 @@ static void WatchChildProcessFd(AppSpawningCtx *property)
 
 static int IsChildColdRun(AppSpawningCtx *property)
 {
-    return CheckAppMsgFlagsSet(property, APP_FLAGS_UBSAN_ENABLED)
-        || CheckAppMsgFlagsSet(property, APP_FLAGS_ASANENABLED)
-        || CheckAppMsgFlagsSet(property, APP_FLAGS_TSAN_ENABLED)
-        || CheckAppMsgFlagsSet(property, APP_FLAGS_HWASAN_ENABLED)
-        || (property->client.flags & APP_COLD_START);
+    return CheckAppMsgFlagsSet(property, APP_FLAGS_UBSAN_ENABLED) ||
+        CheckAppMsgFlagsSet(property, APP_FLAGS_ASANENABLED) ||
+        CheckAppMsgFlagsSet(property, APP_FLAGS_TSAN_ENABLED) ||
+        CheckAppMsgFlagsSet(property, APP_FLAGS_HWASAN_ENABLED) ||
+        (property->client.flags & APP_COLD_START);
 }
 
 static int AddChildWatcher(AppSpawningCtx *property)
@@ -1092,7 +1118,7 @@ static int CreateAppSpawnServer(TaskHandle *server, const char *socketName)
     info.baseInfo.flags = TASK_STREAM | TASK_PIPE | TASK_SERVER;
     info.socketId = socketId;
     info.server = path;
-    info.baseInfo.close = NULL;
+    info.baseInfo.close = OnListenFdClose;
     info.incommingConnect = OnConnection;
 
     MakeDirRec(path, 0711, 0);  // 0711 default mask
