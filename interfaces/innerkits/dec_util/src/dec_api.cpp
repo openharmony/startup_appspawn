@@ -121,6 +121,7 @@ static void ProcessConfig(const cJSON *config, std::map<std::string, std::vector
     int arraySize = cJSON_GetArraySize(permission);
     for (int i = 0; i < arraySize; ++i) {
         cJSON *item = cJSON_GetArrayItem(permission, i);
+        APPSPAWN_CHECK(item != nullptr && cJSON_IsObject(item), continue, "Invalid item in permission array");
         cJSON *permissionChild = item->child;
         while (permissionChild != nullptr && cJSON_IsArray(permissionChild)) {
             cJSON *permItem = cJSON_GetArrayItem(permissionChild, 0);
