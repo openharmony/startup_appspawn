@@ -31,9 +31,6 @@ ohos_shared_library("appspawn_nweb") {
   if (target_cpu == "x86_64") {
     defines += [ "webview_x86_64" ]
   }
-  if (appspawn_arkweb_preload) {
-    defines += [ "arkweb_preload" ]
-  }
 
   external_deps = [
     "c_utils:utils",
