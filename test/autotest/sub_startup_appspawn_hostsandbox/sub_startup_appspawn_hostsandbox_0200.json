@@ -1,0 +1,15 @@
+{
+  "description": "Config for OpenHarmony devicetest test cases",
+  "environment": [
+    {
+      "type": "device",
+      "label": "2in1"
+    }
+  ],
+  "driver": {
+    "type": "DeviceTest",
+    "py_file": [
+      "sub_startup_appspawn_hostsandbox/sub_startup_appspawn_hostsandbox_0200.py"
+    ]
+  }
+}
