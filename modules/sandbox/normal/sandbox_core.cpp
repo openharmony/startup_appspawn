@@ -72,7 +72,7 @@ int SandboxCore::EnableSandboxNamespace(AppSpawningCtx *appProperty, uint32_t sa
 
     if ((sandboxNsFlags & CLONE_NEWNET) == CLONE_NEWNET) {
         rc = EnableNewNetNamespace();
-        APPSPAWN_CHECK(rc == 0, return rc, "Set %{public}s new netnamespace failed", GetBundleName(appProperty));
+        APPSPAWN_CHECK_ONLY_LOG(rc == 0, "Set %{public}s new netnamespace failed", GetBundleName(appProperty));
     }
     return 0;
 }
@@ -924,7 +924,7 @@ int32_t SandboxCore::SetAppSandboxProperty(AppSpawningCtx *appProperty, uint32_t
     StartAppspawnTrace("EnableSandboxNamespace");
     int rc = EnableSandboxNamespace(appProperty, sandboxNsFlags);
     FinishAppspawnTrace();
-    APPSPAWN_CHECK(rc == 0, return rc, "unshare failed, packagename is %{public}s", bundleName.c_str());
+    APPSPAWN_CHECK(rc == 0, return rc, "Enable new namespace failed for %{public}s", bundleName.c_str());
     APPSPAWN_CHECK(UpdatePointFlags(appProperty) == 0, return -1, "Set app permission flag fail.");
 
     UpdateMsgFlagsWithPermission(appProperty, SandboxCommonDef::GET_ALL_PROCESSES_MODE, APP_FLAGS_GET_ALL_PROCESSES);
@@ -1021,7 +1021,7 @@ int32_t SandboxCore::SetAppSandboxPropertyNweb(AppSpawningCtx *appProperty, uint
     StartAppspawnTrace("EnableSandboxNamespace");
     int rc = EnableSandboxNamespace(appProperty, sandboxNsFlags);
     FinishAppspawnTrace();
-    APPSPAWN_CHECK(rc == 0, return rc, "unshare failed, packagename is %{public}s", bundleName.c_str());
+    APPSPAWN_CHECK(rc == 0, return rc, "Enable new namespace failed for %{public}s", bundleName.c_str());
 
     // check app sandbox switch
     if ((SandboxCommon::IsTotalSandboxEnabled(appProperty) == false) ||
