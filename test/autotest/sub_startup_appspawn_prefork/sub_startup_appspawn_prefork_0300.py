@@ -1,0 +1,81 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# Copyright (c) 2025 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+from time import sleep
+from devicetest.core.test_case import Step, TestCase
+from hypium import *
+from hypium.action.os_hypium.device_logger import DeviceLogger
+from aw import Common
+
+
+class SubStartupAppspawnPrefork0300(TestCase):
+
+    def __init__(self, controllers):
+        self.TAG = self.__class__.__name__
+        self.tests = [
+            "test_step1"
+        ]
+        TestCase.__init__(self, self.TAG, controllers)
+        self.driver = UiDriver(self.device1)
+
+    def setup(self):
+        Step("预置工作:初始化手机开始.................")
+        Step(self.devices[0].device_id)
+        Step("设置参数..........................")
+        self.driver.shell("param set persist.sys.prefork.enable true")
+        Step("重启手机..........................")
+        self.driver.shell("reboot")
+        self.driver.System.wait_for_boot_complete()
+        Step("安装测试hap.................")
+        sourpath = Common.sourcepath("asan.hap", "sub_startup_appspawn_prefork")
+        Step(sourpath)
+        self.driver.AppManager.install_app(sourpath)
+        Step("预置工作:检测屏幕是否亮.................")
+        self.driver.Screen.wake_up()
+        self.driver.ScreenLock.unlock()
+        self.driver.Screen.enable_stay_awake()
+
+    def test_step1(self):
+        self.d = UiExplorer(self.device1)
+        device_logger = DeviceLogger(self.d)
+        Step("设置关键字..........................")
+        device_logger.set_filter_string("prefork fork finish")
+        Step("设置日志级别..........................")
+        self.driver.shell("hilog -b D;hilog -G16M")
+        Step("开启日志..........................")
+        device_logger.start_log("testFile/Log/log.txt")
+        Step("打开备忘录应用.................")
+        self.driver.stop_app("com.huawei.hmos.notepad")
+        self.driver.start_app("com.huawei.hmos.notepad", "MainAbility", wait_time=2)
+        sleep(3)
+        Step("打开asan应用.................")
+        self.driver.stop_app("com.example.myapplication")
+        self.driver.start_app("com.example.myapplication", "EntryAbility", wait_time=2)
+        sleep(10)
+        pid = self.driver.System.get_pid("com.example.myapplication")
+        Step("停止日志..........................")
+        device_logger.stop_log()
+        Step("校验日志内容..........................")
+        device_logger.check_not_exist_keyword(str(pid))
+
+    def teardown(self):
+        Step("收尾工作.................")
+        Step("关闭备忘录................")
+        self.driver.stop_app("com.huawei.hmos.notepad")
+        Step("关闭并卸载asan应用................")
+        self.driver.AppManager.clear_app_data("com.example.myapplication")
+        self.driver.AppManager.uninstall_app("com.example.myapplication")
+        Step("恢复日志级别..........................")
+        self.driver.shell("hilog -b I")
