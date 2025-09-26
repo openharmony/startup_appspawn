@@ -100,10 +100,6 @@ ohos_executable("appspawn") {
     ]
   }
 
-  if (appspawn_support_nweb) {
-    external_deps += [ "webview:libarkweb_utils" ]
-    defines += [ "ARKWEB_UTILS_ENABLE" ]
-  }
   cflags = []
 
   #ldflags = [ "-Wl,--dynamic-linker,/system/bin/linker64z" ]

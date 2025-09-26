@@ -47,9 +47,6 @@
 #include "appspawn_hisysevent.h"
 #include "hisysevent_adapter.h"
 #endif
-#ifdef ARKWEB_UTILS_ENABLE
-#include "arkweb_preload.h"
-#endif
 #define PARAM_BUFFER_SIZE 10
 #define PATH_SIZE 256
 #define FD_PATH_SIZE 128
@@ -1741,18 +1738,12 @@ static void ProcessRecvMsg(AppSpawnConnection *connection, AppSpawnMsgNode *mess
             ProcessObserveProcessSignalMsg(connection, message);
             break;
         case MSG_UNLOAD_WEBLIB_IN_APPSPAWN:
-#ifdef ARKWEB_UTILS_ENABLE
-            ret = ProcessSpawnDlcloseMsg();
-#else
-            ret = 0;
-#endif
+            ret = ServerStageHookExecute(STAGE_SERVER_ARKWEB_UNLOAD, GetAppSpawnContent());
             SendResponse(connection, msg, ret, 0);
             DeleteAppSpawnMsg(&message);
             break;
         case MSG_LOAD_WEBLIB_IN_APPSPAWN:
-#ifdef ARKWEB_UTILS_ENABLE
-            ProcessSpawnDlopenMsg();
-#endif
+            (void)ServerStageHookExecute(STAGE_SERVER_ARKWEB_PRELOAD, GetAppSpawnContent());
             SendResponse(connection, msg, 0, 0);
             DeleteAppSpawnMsg(&message);
             break;
