@@ -354,10 +354,29 @@ APPSPAWN_STATIC int DlopenAppSpawn(AppSpawnMgr *content)
 
     (void)ParseJsonConfig("etc/appspawn", SYSTEMLIB_JSON, DoDlopenLibs, nullptr);
 
-    APPSPAWN_LOGI("DlopenAppSpawn: Start reclaim file cache");
-    OHOS::Ace::AceForwardCompatibility::ReclaimFileCache(getpid());
 #ifdef ARKWEB_UTILS_ENABLE
     OHOS::ArkWeb::PreloadArkWebLibForBrowser();
+#endif
+    APPSPAWN_LOGI("DlopenAppSpawn: Start reclaim file cache");
+    OHOS::Ace::AceForwardCompatibility::ReclaimFileCache(getpid());
+    return 0;
+}
+
+APPSPAWN_STATIC int ProcessSpawnDlopenMsg(AppSpawnMgr *content)
+{
+#ifdef ARKWEB_UTILS_ENABLE
+    // dlopen libarkweb_engine.so
+    OHOS::ArkWeb::DlopenArkWebLib();
+    OHOS::Ace::AceForwardCompatibility::ReclaimFileCache(getpid());
+#endif
+    return 0;
+}
+
+APPSPAWN_STATIC int ProcessSpawnDlcloseMsg(AppSpawnMgr *content)
+{
+#ifdef ARKWEB_UTILS_ENABLE
+    // dlclose libarkweb_engine.so
+    return OHOS::ArkWeb::DlcloseArkWebLib();
 #endif
     return 0;
 }
@@ -367,4 +386,6 @@ MODULE_CONSTRUCTOR(void)
     APPSPAWN_LOGV("Load ace module ...");
     AddPreloadHook(HOOK_PRIO_HIGHEST, PreLoadAppSpawn);
     AddPreloadHook(HOOK_PRIO_HIGHEST, DlopenAppSpawn);
+    AddServerStageHook(STAGE_SERVER_ARKWEB_PRELOAD, HOOK_PRIO_COMMON, ProcessSpawnDlopenMsg);
+    AddServerStageHook(STAGE_SERVER_ARKWEB_UNLOAD, HOOK_PRIO_COMMON, ProcessSpawnDlcloseMsg);
 }
