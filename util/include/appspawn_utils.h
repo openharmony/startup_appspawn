@@ -192,6 +192,9 @@ int EnableNewNetNamespace(void);
 #define APPSPAWN_KLOGI(fmt, ...) \
     ((void)HiLogPrint(LOG_KMSG, LOG_INFO, LOG_DOMAIN, LOG_TAG, \
     "[%{public}s:%{public}d]" fmt, (APP_FILE_NAME), (__LINE__), ##__VA_ARGS__))
+#define APPSPAWN_KLOGE(fmt, ...) \
+    ((void)HiLogPrint(LOG_KMSG, LOG_ERROR, LOG_DOMAIN, LOG_TAG, \
+    "[%{public}s:%{public}d]" fmt, (APP_FILE_NAME), (__LINE__), ##__VA_ARGS__))
 #else
 
 #define APPSPAWN_LOGI(fmt, ...) \
