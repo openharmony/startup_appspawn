@@ -1447,8 +1447,12 @@ AppSpawnContent *StartSpawnService(const AppSpawnStartArg *startArg, uint32_t ar
     APPSPAWN_CHECK(ret == 0, AppSpawnDestroyContent(content);
         return NULL, "Failed to prepare load %{public}s result: %{public}d", arg->serviceName, ret);
 #ifndef APPSPAWN_TEST
-    APPSPAWN_CHECK(content->runChildProcessor != NULL, AppSpawnDestroyContent(content);
-        return NULL, "No child processor %{public}s result: %{public}d", arg->serviceName, ret);
+    if (content->runChildProcessor == NULL) {
+        APPSPAWN_LOGE("ChildLooper is not registered for %{public}s ret %{public}d", arg->serviceName, ret);
+        APPSPAWN_KLOGE("ChildLooper is not registered for %{public}s ret %{public}d", arg->serviceName, ret);
+        AppSpawnDestroyContent(content);
+        return NULL;
+    }
 #endif
     AddAppSpawnHook(STAGE_CHILD_PRE_RUN, HOOK_PRIO_LOWEST, AppSpawnClearEnv);
     if (arg->mode == MODE_FOR_APP_SPAWN) {
