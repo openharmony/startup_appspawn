@@ -32,6 +32,8 @@ APPSPAWN_STATIC int RunChildThread(const AppSpawnMgr *content, const AppSpawning
 APPSPAWN_STATIC int RunChildByRenderCmd(const AppSpawnMgr *content, const AppSpawningCtx *property);
 APPSPAWN_STATIC int PreLoadAppSpawn(AppSpawnMgr *content);
 APPSPAWN_STATIC int DlopenAppSpawn(AppSpawnMgr *content);
+APPSPAWN_STATIC int ProcessSpawnDlopenMsg(AppSpawnMgr *content);
+APPSPAWN_STATIC int ProcessSpawnDlcloseMsg(AppSpawnMgr *content);
 
 namespace OHOS {
 static AppSpawnTestHelper g_testHelper;
@@ -259,5 +261,35 @@ HWTEST_F(AppSpawnAceTest, App_Spawn_Ace_RunChild_002, TestSize.Level0)
     DeleteAppSpawningCtx(property);
     DeleteAppSpawnMgr(mgr);
     EXPECT_EQ(ret, -1);
+}
+
+/**
+ * @brief Appspawn dlopen arkweb so
+ * @note Expected result: Normal execution
+ *
+ */
+HWTEST_F(AppSpawnAceTest, App_Spawn_Ace_ProcessSpawnDlopenMsg_001, TestSize.Level0)
+{
+    AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+    ASSERT_NE(mgr, nullptr);
+
+    int ret = ProcessSpawnDlopenMsg(mgr);
+    DeleteAppSpawnMgr(mgr);
+    EXPECT_EQ(ret, 0);
+}
+
+/**
+ * @brief Appspawn dlclose arkweb so
+ * @note Expected result: Normal execution
+ *
+ */
+HWTEST_F(AppSpawnAceTest, App_Spawn_Ace_ProcessSpawnDlcloseMsg_001, TestSize.Level0)
+{
+    AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+    ASSERT_NE(mgr, nullptr);
+
+    int ret = ProcessSpawnDlcloseMsg(mgr);
+    DeleteAppSpawnMgr(mgr);
+    EXPECT_EQ(ret, 0);
 }
 }   // namespace OHOS
