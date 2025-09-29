@@ -103,7 +103,9 @@ ohos_unittest("AppSpawn_client_ut") {
   }
   if (appspawn_report_event) {
     external_deps += [ "hisysevent:libhisysevent" ]
-    sources += [ "${appspawn_path}/modules/sysevent/appspawn_hisysevent.cpp" ]
+    sources += [
+      "${appspawn_path}/modules/sysevent/hisysevent_adapter.cpp",
+    ]
   }
   if (build_selinux) {
     defines += [ "WITH_SELINUX" ]

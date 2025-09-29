@@ -32,7 +32,7 @@ constexpr static mode_t FILE_MODE = 0711;
 constexpr static mode_t BASIC_MOUNT_FLAGS = MS_REC | MS_BIND;
 constexpr int32_t MAX_MOUNT_TIME = 5000;  // 5000us
 constexpr int32_t LOCK_STATUS_SIZE = 16;
-
+constexpr int32_t MAX_MOUNT_INVALID_COUNT = 8;
 // 沙盒配置文件
 const std::string APP_JSON_CONFIG = "/appdata-sandbox.json";
 const std::string APP_ISOLATED_JSON_CONFIG = "/appdata-sandbox-isolated.json";

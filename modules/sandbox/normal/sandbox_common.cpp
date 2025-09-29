@@ -41,6 +41,8 @@ namespace OHOS {
 namespace AppSpawn {
 
 int32_t SandboxCommon::deviceTypeEnable_ = -1;
+int32_t SandboxCommon::mountFailedCount = 0;
+
 std::map<SandboxCommonDef::SandboxConfigType, std::vector<cJSON *>> SandboxCommon::appSandboxCJsonConfig_ = {};
 
 // 加载配置文件
@@ -978,6 +980,35 @@ std::string SandboxCommon::ConvertToRealPath(const AppSpawningCtx *appProperty, 
     return path;
 }
 
+#ifdef APPSPAWN_HISYSEVENT
+static void WriteMountInfo()
+{
+    AppSpawnMgr *mgr = GetAppSpawnMgr();
+    APPSPAWN_CHECK(mgr != nullptr, return, "invalid mgr");
+
+    int pid = mgr->servicePid;
+    std::stringstream ss;
+    ss << "/proc/" << pid << "/mountinfo";
+    std::string mountinfoPath = ss.str();
+
+    std::ifstream mountinfoFile(mountinfoPath);
+    APPSPAWN_CHECK(mountinfoFile.is_open(), return, "open mountinfo failed %{public}d", errno);
+
+    std::ofstream logFile("/data/service/el1/startup/log/mountinfo.log");
+    APPSPAWN_CHECK(logFile.is_open(), mountinfoFile.close();
+        return, "open logfile failed %{public}d", errno);
+
+    std::string buffer;
+    while (std::getline(mountinfoFile, buffer)) {
+        logFile << buffer << std::endl;
+        logFile.flush();
+    }
+
+    mountinfoFile.close();
+    logFile.close();
+}
+#endif
+
 // 挂载操作
 int32_t SandboxCommon::DoAppSandboxMountOnce(const AppSpawningCtx *appProperty, const SharedMountArgs *arg)
 {
@@ -1007,6 +1038,13 @@ int32_t SandboxCommon::DoAppSandboxMountOnce(const AppSpawningCtx *appProperty, 
 #endif
     if (ret != 0) {
         APPSPAWN_DUMPI("errno:%{public}d bind mount %{public}s to %{public}s", errno, arg->srcPath, arg->destPath);
+#ifdef APPSPAWN_HISYSEVENT
+        if (errno == EINVAL && ++mountFailedCount == SandboxCommonDef::MAX_MOUNT_INVALID_COUNT) {
+            WriteMountInfo();
+            ReportMountFull(getpid(), 0, 0, APPSPAWN_SANDBOX_MOUNT_FULL);
+            abort();
+        }
+#endif
         if (errno == ENOENT && IsNeededCheckPathStatus(appProperty, arg->srcPath)) {
             VerifyDirRecursive(arg->srcPath);
         }
