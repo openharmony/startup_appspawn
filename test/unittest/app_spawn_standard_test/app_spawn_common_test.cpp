@@ -32,7 +32,7 @@
 #include "appspawn.h"
 #include "appspawn_hook.h"
 #include "appspawn_permission.h"
-#include "appspawn_hisysevent.h"
+#include "hisysevent_adapter.h"
 #include "app_spawn_stub.h"
 #include "app_spawn_test_helper.h"
 #include "securec.h"
@@ -384,6 +384,12 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_016, TestSize.Level0)
     EXPECT_EQ(hookMgr != nullptr, 1);
     DeleteAppSpawnHookMgr();
     AppSpawnHiSysEventWrite();
+
+    AppSpawnHisyseventInfo *info = (AppSpawnHisyseventInfo *)calloc(1, sizeof(AppSpawnHisyseventInfo));
+    EXPECT_EQ(info != nullptr, 1);
+    ReportSpawnStatisticDuration(nullptr, (void *)info);
+    ReportMountFull(getpid(), 0, 0, 0);
+    free(info);
 }
 
 HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_021, TestSize.Level0)
@@ -1470,4 +1476,5 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_SetCapabilities, TestSize.Level0)
     DeleteAppSpawnMgr(mgr);
     ASSERT_EQ(ret, 0);
 }
+
 }  // namespace OHOS

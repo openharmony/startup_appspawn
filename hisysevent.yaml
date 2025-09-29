@@ -37,3 +37,17 @@ SPAWN_ABNORMAL_DURATION:
   __BASE: {type: BEHAVIOR, level: CRITICAL, desc: Scene Duration}
   SCENE_NAME: {type: STRING, desc: Scene Name}
   DURATION: {type: INT64, desc: Scene Duration}
+
+SPAWN_MOUNT_FULL:
+  __BASE: {type: FAULT, level: CRITICAL, desc: Mount Full}
+  ERROR_CODE: {type: INT32, desc: Error Code}
+  NAMESPACE_MOUNT_COUNT: {type: INT32, desc: Main Namespace Mount Count}
+  DEVICE_MOUNT_COUNT: {type: INT32, desc: Device Mount Count}
+  SPAWN_RESULT: {type: INT32, desc: Process Spawn Result}
+
+SPAWN_MOUNT_COUNT:
+  __BASE: {type: STATISTIC, level: CRITICAL, desc: Mount Number}
+  MAX_NAMESPACE_MOUNT_COUNT: {type: INT32, desc: Max Main Namespace Mount Count}
+  MAX_DEVICE_MOUNT_COUNT: {type: INT32, desc: Max Device Mount Count}
+  AVG_NAMESPACE_MOUNT_COUNT: {type: INT32, desc: Average Main Namespace Mount Count}
+  AVG_DEVICE_MOUNT_COUNT: {type: INT32, desc: Average Device Mount Count}
