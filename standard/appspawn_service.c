@@ -725,7 +725,7 @@ APPSPAWN_STATIC void ClearPreforkInfo(AppSpawningCtx *property)
     }
 
     char path[PATH_MAX] = {0};
-    int ret = snprintf_s(path, sizeof(path), sizeof(path) - 1, APPSPAWN_MSG_DIR "appspawn/prefork_%d",
+    int ret = snprintf_s(path, sizeof(path), sizeof(path) - 1, APPSPAWN_MSG_DIR "appspawn/prefork_%u",
         property->client.id);
     APPSPAWN_CHECK_ONLY_LOG(ret > 0, "snprintf failed with %{public}d %{public}d", ret, errno);
     if (ret > 0 && access(path, F_OK) == 0) {
