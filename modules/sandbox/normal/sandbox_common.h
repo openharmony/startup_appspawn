@@ -128,7 +128,7 @@ private:
     static std::string ReplaceClonePackageName(const AppSpawningCtx *appProperty, const std::string &path);
     static const std::string &GetArkWebPackageName(void);
     static const std::string &GetDevModel(void);
-
+    static int32_t mountFailedCount;
 private:
     static int32_t deviceTypeEnable_;
     static std::map<SandboxCommonDef::SandboxConfigType, std::vector<cJSON *>> appSandboxCJsonConfig_;
