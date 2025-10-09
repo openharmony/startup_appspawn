@@ -44,7 +44,6 @@
 #include "securec.h"
 #include "cJSON.h"
 #ifdef APPSPAWN_HISYSEVENT
-#include "appspawn_hisysevent.h"
 #include "hisysevent_adapter.h"
 #endif
 #define PARAM_BUFFER_SIZE 10

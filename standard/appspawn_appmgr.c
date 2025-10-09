@@ -105,6 +105,7 @@ void DeleteAppSpawnMgr(AppSpawnMgr *mgr)
     OH_ListRemoveAll(&mgr->dataGroupCtxQueue, NULL);
 #ifdef APPSPAWN_HISYSEVENT
     DeleteHisyseventInfo(mgr->hisyseventInfo);
+    mgr->hisyseventInfo = NULL;
 #endif
 
     APPSPAWN_LOGV("DeleteAppSpawnMgr %{public}d %{public}d", mgr->servicePid, getpid());

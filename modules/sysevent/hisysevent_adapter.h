@@ -25,7 +25,9 @@ extern "C" {
 
 
 // 错误码定义规范：子系统ID（28-21位）| 模块ID（20-16位）| 具体错误ID（15-0位）
-#define APPSPAWN_HISYSEVENT_REPORT_TIME (24 * 60 * 60 * 1000)   // 24h
+#define DURATION_TIMER_TIMEOUT (24 * 60 * 60 * 1000)   // 24h
+#define MOUNT_TIMER_TIMEOUT (2 * 60 * 60 * 1000)   // 2h
+
 #define SUBSYS_STARTUP_ID   39
 #define SUBSYSTEM_BIT_NUM   21
 #define MODULE_BIT_NUM  16
@@ -82,6 +84,11 @@ typedef struct {
     uint32_t maxDuration;
     uint32_t minDuration;
     uint32_t totalDuration;
+
+    uint32_t maxNsMountCount;
+    uint32_t maxDeviceMountCount;
+    uint32_t avgNsMountCount;
+    uint32_t avgDeviceMountCount;
 } AppSpawnHisysevent;
 
 typedef struct {
@@ -108,6 +115,9 @@ void ReportKeyEvent(const char *eventName);
 void ReportAbnormalDuration(const char* funcName, uint64_t duration);
 void ReportSpawnStatisticDuration(const TimerHandle taskHandle, void* content);
 
+void AppSpawnHiSysEventWrite();
+
+void ReportMountFull(int32_t errCode, int32_t nsMountCount, int32_t deviceMountCount, int32_t spawnResult);
 #ifdef __cplusplus
 }
 #endif

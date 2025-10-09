@@ -16,6 +16,7 @@
 #include "securec.h"
 #include "hisysevent.h"
 #include "appspawn_utils.h"
+#include <chrono>
 
 using namespace OHOS::HiviewDFX;
 namespace {
@@ -48,6 +49,40 @@ constexpr const char* EVENTCOUNT = "EVENTCOUNT";
 constexpr const char* STAGE = "STAGE";
 constexpr const char* BOOTSTAGE = "BOOTSTAGE";
 constexpr const char* BOOTFINISHEDSTAGE = "BOOTFINISHEDSTAGE";
+
+// cpu event
+static constexpr char PERFORMANCE_DOMAIN[] = "PERFORMANCE";
+constexpr const char* CPU_SCENE_ENTRY = "CPU_SCENE_ENTRY";
+constexpr const char* PACKAGE_NAME = "PACKAGE_NAME";
+constexpr const char* SCENE_ID = "SCENE_ID";
+constexpr const char* HAPPEN_TIME = "HAPPEN_TIME";
+constexpr const char* APPSPAWN = "APPSPAWN";
+
+// for Mount Full
+constexpr const char* SPAWN_MOUNT_FULL = "SPAWN_MOUNT_FULL";
+constexpr const char* NAMESPACE_MOUNT_COUNT = "NAMESPACE_MOUNT_COUNT";
+constexpr const char* DEVICE_MOUNT_COUNT = "DEVICE_MOUNT_COUNT";
+
+// for Mount count
+constexpr const char* SPAWN_MOUNT_COUNT = "SPAWN_MOUNT_COUNT";
+constexpr const char* MAX_NAMESPACE_MOUNT_COUNT = "MAX_NAMESPACE_MOUNT_COUNT";
+constexpr const char* MAX_DEVICE_MOUNT_COUNT = "MAX_DEVICE_MOUNT_COUNT";
+constexpr const char* AVG_NAMESPACE_MOUNT_COUNT = "AVG_NAMESPACE_MOUNT_COUNT";
+constexpr const char* AVG_DEVICE_MOUNT_COUNT = "AVG_DEVICE_MOUNT_COUNT";
+}
+
+void AppSpawnHiSysEventWrite()
+{
+    auto now = std::chrono::system_clock::now();
+    int64_t timeStamp = std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch()).count();
+    int32_t sceneld = 0;
+    int ret = HiSysEventWrite(PERFORMANCE_DOMAIN, CPU_SCENE_ENTRY,
+        OHOS::HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
+        PACKAGE_NAME, APPSPAWN,
+        SCENE_ID, std::to_string(sceneld).c_str(),
+        HAPPEN_TIME, timeStamp);
+
+    APPSPAWN_CHECK_ONLY_LOG(ret == 0, "HiSysEventWrite error,ret = %{public}d", ret);
 }
 
 static void AddStatisticEvent(AppSpawnHisysevent *event, uint32_t duration)
@@ -80,6 +115,10 @@ static void InitStatisticEvent(AppSpawnHisysevent *event)
     event->maxDuration = 0;
     event->minDuration = UINT32_MAX;
     event->totalDuration = 0;
+    event->avgDeviceMountCount = 0;
+    event->avgNsMountCount = 0;
+    event->maxDeviceMountCount = 0;
+    event->maxNsMountCount = 0;
 }
 
 static void InitStatisticEventInfo(AppSpawnHisyseventInfo *appSpawnHisysInfo)
@@ -88,30 +127,78 @@ static void InitStatisticEventInfo(AppSpawnHisyseventInfo *appSpawnHisysInfo)
     InitStatisticEvent(&appSpawnHisysInfo->manualEvent);
 }
 
-static int CreateHisysTimerLoop(AppSpawnHisyseventInfo *hisyseventInfo)
+static int StartTimer(LE_ProcessTimer processTimer, void *context, uint64_t timeout, uint64_t repeat)
 {
     LoopHandle loop = LE_GetDefaultLoop();
+    APPSPAWN_CHECK(loop != NULL, return -1, "getDeafult loop failed");
+
     TimerHandle timer = NULL;
-    int ret = LE_CreateTimer(loop, &timer, ReportSpawnStatisticDuration, (void *)hisyseventInfo);
-    APPSPAWN_CHECK(ret == 0, return -1, "fail to create HisysTimer, ret is: %{public}d", ret);
-    // start a timer to report event every 24h
-    ret = LE_StartTimer(loop, timer, APPSPAWN_HISYSEVENT_REPORT_TIME, INT64_MAX);
-    APPSPAWN_CHECK(ret == 0, return -1, "fail to start HisysTimer, ret is: %{public}d", ret);
+    int ret = LE_CreateTimer(loop, &timer, processTimer, context);
+    APPSPAWN_CHECK(ret == 0, return ret, "LE_CreateTimer failed %{public}d", ret);
+    ret = LE_StartTimer(loop, timer, timeout, repeat);
+    APPSPAWN_CHECK(ret == 0, LE_StopTimer(LE_GetDefaultLoop(), timer);
+        return ret, "LE_StartTimer failed %{public}d", ret);
     return ret;
+}
+
+void ReportMountCount(AppSpawnHisyseventInfo *hisysEvent)
+{
+    int ret = HiSysEventWrite(HiSysEvent::Domain::APPSPAWN, SPAWN_MOUNT_COUNT,
+        HiSysEvent::EventType::STATISTIC,
+        MAX_NAMESPACE_MOUNT_COUNT, hisysEvent->manualEvent.maxNsMountCount,
+        MAX_DEVICE_MOUNT_COUNT, hisysEvent->manualEvent.maxDeviceMountCount,
+        AVG_NAMESPACE_MOUNT_COUNT, hisysEvent->manualEvent.avgNsMountCount,
+        AVG_DEVICE_MOUNT_COUNT, hisysEvent->manualEvent.avgDeviceMountCount);
+
+    APPSPAWN_CHECK_ONLY_LOG(ret == 0, "ReportMountCount error, ret: %{public}d", ret);
+}
+
+static void UpdateMountCountInfo(const TimerHandle taskHandle, void *content)
+{
+    APPSPAWN_LOGI("Start Update Mount Behavior info");
+    AppSpawnHisyseventInfo *hisysEvent = static_cast<AppSpawnHisyseventInfo *>(content);
+    APPSPAWN_CHECK(hisysEvent != nullptr, return, "invalid hisys info");
+    // get mountinfo from proc
+    // update mount info
+    ReportMountCount(hisysEvent);
+}
+void ReportSpawnProcessDuration(AppSpawnHisysevent *hisysevent, const char* stage)
+{
+    int ret = HiSysEventWrite(HiSysEvent::Domain::APPSPAWN, SPAWN_PROCESS_DURATION,
+        HiSysEvent::EventType::STATISTIC,
+        MAXDURATION, hisysevent->maxDuration,
+        MINDURATION, hisysevent->minDuration,
+        TOTALDURATION, hisysevent->totalDuration,
+        EVENTCOUNT, hisysevent->eventCount,
+        STAGE, stage);
+
+    APPSPAWN_CHECK_ONLY_LOG(ret == 0, "ReportSpawnProcessDuration error, ret: %{public}d", ret);
+}
+
+void ReportSpawnStatisticDuration(const TimerHandle taskHandle, void *content)
+{
+    AppSpawnHisyseventInfo *hisyseventInfo = static_cast<AppSpawnHisyseventInfo *>(content);
+    ReportSpawnProcessDuration(&hisyseventInfo->bootEvent, BOOTSTAGE);
+    ReportSpawnProcessDuration(&hisyseventInfo->manualEvent, BOOTFINISHEDSTAGE);
+
+    InitStatisticEventInfo(hisyseventInfo);
+}
+
+APPSPAWN_STATIC int CreateHisysTimerLoop(AppSpawnHisyseventInfo *hisyseventInfo)
+{
+    APPSPAWN_CHECK(hisyseventInfo != NULL, return -1, "invalid hisysevent info");
+    int ret = StartTimer(ReportSpawnStatisticDuration, (void *)hisyseventInfo, DURATION_TIMER_TIMEOUT, INT64_MAX);
+    APPSPAWN_CHECK(ret == 0, return -1, "fail to start statistic timer");
+    ret = StartTimer(UpdateMountCountInfo, (void *)hisyseventInfo, MOUNT_TIMER_TIMEOUT, INT64_MAX);
+    APPSPAWN_CHECK(ret == 0, return -1, "fail to start mount timer");
+    return 0;
 }
 
 AppSpawnHisyseventInfo *GetAppSpawnHisyseventInfo(void)
 {
     AppSpawnHisyseventInfo *hisyseventInfo =
-        static_cast<AppSpawnHisyseventInfo *>(malloc(sizeof(AppSpawnHisyseventInfo)));
+        static_cast<AppSpawnHisyseventInfo *>(calloc(1, sizeof(AppSpawnHisyseventInfo)));
     APPSPAWN_CHECK(hisyseventInfo != NULL, return NULL, "fail to alloc memory for hisyseventInfo");
-    int ret = memset_s(hisyseventInfo, sizeof(AppSpawnHisyseventInfo), 0, sizeof(AppSpawnHisyseventInfo));
-    if (ret != 0) {
-        free(hisyseventInfo);
-        hisyseventInfo = NULL;
-        APPSPAWN_LOGE("Failed to memset hisyseventInfo");
-        return NULL;
-    }
     InitStatisticEventInfo(hisyseventInfo);
     return hisyseventInfo;
 }
@@ -120,7 +207,7 @@ void DeleteHisyseventInfo(AppSpawnHisyseventInfo *hisyseventInfo)
 {
     APPSPAWN_CHECK_ONLY_EXPER(hisyseventInfo != NULL, return);
     free(hisyseventInfo);
-    hisyseventInfo = NULL;
+    hisyseventInfo = nullptr;
 }
 
 AppSpawnHisyseventInfo *InitHisyseventTimer(void)
@@ -130,7 +217,7 @@ AppSpawnHisyseventInfo *InitHisyseventTimer(void)
     int ret = CreateHisysTimerLoop(hisyseventInfo);
     if (ret != 0) {
         DeleteHisyseventInfo(hisyseventInfo);
-        hisyseventInfo = NULL;
+        hisyseventInfo = nullptr;
         APPSPAWN_LOGE("fail to create hisys timer loop, ret: %{public}d", ret);
     }
     return hisyseventInfo;
@@ -193,25 +280,15 @@ void ReportAbnormalDuration(const char* scene, uint64_t duration)
     }
 }
 
-void ReportSpawnProcessDuration(AppSpawnHisysevent *hisysevent, const char* stage)
+void ReportMountFull(int32_t errCode, int32_t nsMountCount, int32_t deviceMountCount, int32_t spawnResult)
 {
-    int ret = HiSysEventWrite(HiSysEvent::Domain::APPSPAWN, SPAWN_PROCESS_DURATION,
-        HiSysEvent::EventType::STATISTIC,
-        MAXDURATION, hisysevent->maxDuration,
-        MINDURATION, hisysevent->minDuration,
-        TOTALDURATION, hisysevent->totalDuration,
-        EVENTCOUNT, hisysevent->eventCount,
-        STAGE, stage);
-    if (ret != 0) {
-        APPSPAWN_LOGE("ReportSpawnProcessDuration error, ret: %{public}d", ret);
-    }
+    int ret = HiSysEventWrite(HiSysEvent::Domain::APPSPAWN, SPAWN_MOUNT_FULL,
+        HiSysEvent::EventType::FAULT,
+        ERROR_CODE, errCode,
+        NAMESPACE_MOUNT_COUNT, nsMountCount,
+        DEVICE_MOUNT_COUNT, deviceMountCount,
+        SPAWN_RESULT, spawnResult);
+
+    APPSPAWN_CHECK_ONLY_LOG(ret == 0, "ReportMountFull error, ret: %{public}d", ret);
 }
 
-void ReportSpawnStatisticDuration(const TimerHandle taskHandle, void *content)
-{
-    AppSpawnHisyseventInfo *hisyseventInfo = static_cast<AppSpawnHisyseventInfo *>(content);
-    ReportSpawnProcessDuration(&hisyseventInfo->bootEvent, BOOTSTAGE);
-    ReportSpawnProcessDuration(&hisyseventInfo->manualEvent, BOOTFINISHEDSTAGE);
-
-    InitStatisticEventInfo(hisyseventInfo);
-}
