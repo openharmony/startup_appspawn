@@ -1,0 +1,15 @@
+{
+  "description": "Config for OpenHarmony devicetest test cases",
+  "environment": [
+    {
+      "type": "device",
+      "label": "phone"
+    }
+  ],
+  "driver": {
+    "type": "DeviceTest",
+    "py_file": [
+      "sub_startup_appspawn_coldstartablity/Substartupappspawncoldstartablity0100.py"
+    ]
+  }
+}
