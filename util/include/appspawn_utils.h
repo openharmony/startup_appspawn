@@ -185,6 +185,9 @@ int EnableNewNetNamespace(void);
     HILOG_FATAL(LOG_CORE, "[%{public}s:%{public}d]" fmt, (APP_FILE_NAME), (__LINE__), ##__VA_ARGS__)
 #define APPSPAWN_DUMPI(fmt, ...) \
     HILOG_INFO(LOG_CORE, fmt, ##__VA_ARGS__)
+#define APPSPAWN_DUMPW(fmt, ...) \
+    HILOG_WARN(LOG_CORE, fmt, ##__VA_ARGS__)
+
 #define APPSPAWN_DUMP(fmt, ...) \
     do { \
         HILOG_INFO(LOG_CORE, fmt, ##__VA_ARGS__); \
@@ -208,6 +211,8 @@ int EnableNewNetNamespace(void);
     HILOG_FATAL(HILOG_MODULE_HIVIEW, "[%{public}s:%{public}d]" fmt,  (APP_FILE_NAME), (__LINE__), ##__VA_ARGS__)
 #define APPSPAWN_DUMPI(fmt, ...) \
     HILOG_INFO(HILOG_MODULE_HIVIEW, fmt, ##__VA_ARGS__)
+#define APPSPAWN_DUMPW(fmt, ...) \
+    HILOG_FATAL(HILOG_MODULE_HIVIEW, fmt, ##__VA_ARGS__)
 #define APPSPAWN_KLOGI(fmt, ...) \
     HILOG_INFO(HILOG_MODULE_HIVIEW, "[%{public}s:%{public}d]" fmt,  (APP_FILE_NAME), (__LINE__), ##__VA_ARGS__)
 #endif
@@ -236,6 +241,12 @@ int EnableNewNetNamespace(void);
         exper;                           \
     }
 
+#define APPSPAWN_CHECK_DUMPW(retCode, exper, fmt, ...) \
+    if (!(retCode)) {                    \
+        APPSPAWN_DUMPW(fmt, ##__VA_ARGS__);         \
+        exper;                           \
+    }
+
 #define APPSPAWN_CHECK_LOGI(retCode, exper, fmt, ...) \
     if (!(retCode)) {                    \
         APPSPAWN_LOGI(fmt, ##__VA_ARGS__);         \
@@ -260,6 +271,11 @@ int EnableNewNetNamespace(void);
 #define APPSPAWN_CHECK_ONLY_LOGW(retCode, fmt, ...) \
     if (!(retCode)) {                    \
         APPSPAWN_LOGW(fmt, ##__VA_ARGS__);      \
+    }
+
+#define APPSPAWN_CHECK_ONLY_DUMPW(retCode, fmt, ...) \
+    if (!(retCode)) {                    \
+        APPSPAWN_DUMPW(fmt, ##__VA_ARGS__);      \
     }
 
 #ifdef __cplusplus

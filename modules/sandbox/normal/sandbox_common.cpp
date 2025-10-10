@@ -308,7 +308,7 @@ bool SandboxCommon::VerifyDirRecursive(const std::string &path)
         index = pathIndex == std::string::npos ? size : pathIndex + 1;
         std::string dir = path.substr(0, index);
 #ifndef APPSPAWN_TEST
-        APPSPAWN_CHECK_DUMPI(access(dir.c_str(), F_OK) == 0,
+        APPSPAWN_CHECK_DUMPW(access(dir.c_str(), F_OK) == 0,
             return false, "check dir %{public}s failed,strerror:%{public}s", dir.c_str(), strerror(errno));
 #endif
     } while (index < size);
@@ -1031,13 +1031,13 @@ int32_t SandboxCommon::DoAppSandboxMountOnce(const AppSpawningCtx *appProperty, 
     struct timespec mountEnd = {0};
     clock_gettime(CLOCK_MONOTONIC_COARSE, &mountEnd);
     uint64_t diff = DiffTime(&mountStart, &mountEnd);
-    APPSPAWN_CHECK_ONLY_LOGW(diff < SandboxCommonDef::MAX_MOUNT_TIME, "mount %{public}s time %{public}" PRId64 " us",
+    APPSPAWN_CHECK_ONLY_DUMPW(diff < SandboxCommonDef::MAX_MOUNT_TIME, "mount %{public}s time %{public}" PRId64 " us",
                             arg->srcPath, diff);
 #ifdef APPSPAWN_HISYSEVENT
     APPSPAWN_CHECK_ONLY_EXPER(diff < FUNC_REPORT_DURATION, ReportAbnormalDuration(arg->srcPath, diff));
 #endif
     if (ret != 0) {
-        APPSPAWN_DUMPI("errno:%{public}d bind mount %{public}s to %{public}s", errno, arg->srcPath, arg->destPath);
+        APPSPAWN_DUMPW("errno:%{public}d bind mount %{public}s to %{public}s", errno, arg->srcPath, arg->destPath);
 #ifdef APPSPAWN_HISYSEVENT
         if (errno == EINVAL && ++mountFailedCount == SandboxCommonDef::MAX_MOUNT_INVALID_COUNT) {
             WriteMountInfo();
@@ -1053,7 +1053,7 @@ int32_t SandboxCommon::DoAppSandboxMountOnce(const AppSpawningCtx *appProperty, 
 
     ret = mount(nullptr, arg->destPath, nullptr, arg->mountSharedFlag, nullptr);
     if (ret != 0) {
-        APPSPAWN_DUMPI("errno:%{public}d private mount to %{public}s '%{public}u' failed",
+        APPSPAWN_DUMPW("errno:%{public}d private mount to %{public}s '%{public}u' failed",
             errno, arg->destPath, arg->mountSharedFlag);
         if (errno == EINVAL) {
             CheckMountStatus(arg->destPath);
