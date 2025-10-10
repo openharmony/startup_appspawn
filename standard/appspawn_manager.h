@@ -89,6 +89,7 @@ typedef struct TagAppSpawningCtx {
     pid_t pid;
     int state;
     struct timespec spawnStart;
+    bool allowDumpable;
 } AppSpawningCtx;
 
 typedef struct TagAppSpawnedProcess {
