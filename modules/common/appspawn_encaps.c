@@ -400,6 +400,18 @@ APPSPAWN_STATIC int SpawnSetPermissions(AppSpawningCtx *property, UserEncaps *en
     return ret;
 }
 
+APPSPAWN_STATIC void SetAllowDumpable(AppSpawningCtx *property, UserEncaps *encapsInfo)
+{
+#ifdef ALLOW_DUMPABLE
+    for (int i = 0; i < encapsInfo.encapsCount; i++) {
+        if (strcmp(encapsInfo.encap[i].key, "ohos.permission.kernel.ALLOW_DEBUG") == 0) {
+            APPSPAWN_LOGI("App allowDumpable sucess");
+            property->allowDumpable = true;
+        }
+    }
+#endif
+}
+
 APPSPAWN_STATIC int SpawnSetEncapsPermissions(AppSpawnMgr *content, AppSpawningCtx *property)
 {
     if (content == NULL || property == NULL) {
@@ -434,6 +446,7 @@ APPSPAWN_STATIC int SpawnSetEncapsPermissions(AppSpawnMgr *content, AppSpawningC
     if (encapsInfo.encapsCount > 0) {
         (void)WriteEncapsInfo(encapsFileFd, ENCAPS_PERMISSION_TYPE_MODE, &encapsInfo, OH_ENCAPS_DEFAULT_FLAG);
         APPSPAWN_LOGV("Set encaps info finish, encapsCount: %{public}u", encapsInfo.encapsCount);
+        SetAllowDumpable(property, &encapsInfo);
     }
 
     FreeEncapsInfo(&encapsInfo);

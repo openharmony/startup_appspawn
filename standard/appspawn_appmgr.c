@@ -306,6 +306,7 @@ AppSpawningCtx *CreateAppSpawningCtx(void)
     property->message = NULL;
     property->pid = 0;
     property->state = APP_STATE_IDLE;
+    property->allowDumpable = false;
     OH_ListInit(&property->node);
     if (g_appSpawnMgr) {
         OH_ListAddTail(&g_appSpawnMgr->appSpawnQueue, &property->node);

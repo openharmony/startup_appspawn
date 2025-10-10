@@ -1389,6 +1389,46 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_Encaps_033, TestSize.Level0)
     DeleteAppSpawnMgr(mgr);
 }
 
+HWTEST_F(AppSpawnCommonTest, App_Spawn_Encaps_034, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = nullptr;
+    AppSpawnReqMsgHandle reqHandle = 0;
+    AppSpawningCtx *property = nullptr;
+    AppSpawnMgr *mgr = nullptr;
+    int ret = -1;
+    do {
+        mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+        EXPECT_EQ(mgr != nullptr, 1);
+        // create msg
+        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create reqMgr %{public}s", APPSPAWN_SERVER_NAME);
+        reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+        APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break, "Failed to create req %{public}s", APPSPAWN_SERVER_NAME);
+        const char *permissions = "{\"name\":\"Permissions\",\"ohos.encaps.count\":6,\"permissions\":"
+            "[{\"ohos.permission.kernel.ALLOW_DEBUG\":true},{\"ohos.permission.kernel.ALLOW_DEBUG\":3225}, \
+             {\"ohos.permission.kernel.ALLOW_DEBUG\":\"nihaoma\"},"
+            "{\"ohos.permission.kernel.ALLOW_DEBUG\":[\"abc\",\"def\"]}, \
+             {\"ohos.permission.kernel.ALLOW_DEBUG\":[1,2,3,4,5]},"
+            "{\"ohos.permission.kernel.ALLOW_DEBUG\":[true,false,true]}]}";
+        ret = AppSpawnReqMsgAddExtInfo(reqHandle, MSG_EXT_NAME_JIT_PERMISSIONS,
+            reinterpret_cast<uint8_t *>(const_cast<char *>(permissions)), strlen(permissions) + 1);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to add permissions");
+        const char *maxChildProcess = "512";
+        ret = AppSpawnReqMsgAddExtInfo(reqHandle, MSG_EXT_NAME_MAX_CHILD_PROCCESS_MAX,
+            reinterpret_cast<uint8_t *>(const_cast<char *>(maxChildProcess)), strlen(maxChildProcess) + 1);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to add maxChildProcess");
+        property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
+        APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
+
+        ret = SpawnSetEncapsPermissions(mgr, property);
+    } while (0);
+
+    EXPECT_EQ(ret, 0);
+    DeleteAppSpawningCtx(property);
+    AppSpawnClientDestroy(clientHandle);
+    DeleteAppSpawnMgr(mgr);
+}
+
 HWTEST_F(AppSpawnCommonTest, App_Spawn_SetFdEnv, TestSize.Level0)
 {
     int ret = SetFdEnv(nullptr, nullptr);
