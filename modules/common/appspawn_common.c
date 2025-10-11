@@ -582,6 +582,12 @@ static int SpawnLoadConfig(AppSpawnMgr *content)
     return 0;
 }
 
+static int SpawnLoadSeLinuxConfig(AppSpawnMgr *content)
+{
+    APPSPAWN_CHECK_LOGV(LoadSeLinuxConfig() == 0, return -1, "Failed to load selinux config");
+    return 0;
+}
+
 static int CloseFdArgs(AppSpawnMgr *content, AppSpawningCtx *property)
 {
     APPSPAWN_CHECK(property != NULL && property->message != NULL
@@ -661,6 +667,7 @@ MODULE_CONSTRUCTOR(void)
     APPSPAWN_LOGV("Load common module ...");
     AddPreloadHook(HOOK_PRIO_COMMON, PreLoadSetSeccompFilter);
     AddPreloadHook(HOOK_PRIO_COMMON, SpawnLoadConfig);
+    AddPreloadHook(HOOK_PRIO_COMMON, SpawnLoadSeLinuxConfig);
 
     AddAppSpawnHook(STAGE_PARENT_PRE_FORK, HOOK_PRIO_HIGHEST, SpawnGetSpawningFlag);
     AddAppSpawnHook(STAGE_CHILD_PRE_COLDBOOT, HOOK_PRIO_HIGHEST, SpawnInitSpawningEnv);

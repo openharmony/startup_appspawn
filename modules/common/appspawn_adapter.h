@@ -29,6 +29,7 @@ int SetUidGidFilter(const AppSpawnMgr *content);
 int SetSeccompFilter(const AppSpawnMgr *content, const AppSpawningCtx *property);
 int SetInternetPermission(const AppSpawningCtx *property);
 int32_t SetEnvInfo(const AppSpawnMgr *content, const AppSpawningCtx *property);
+int32_t LoadSeLinuxConfig(void);
 
 // stub for extend func
 void DisallowInternet(void);
