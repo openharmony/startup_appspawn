@@ -17,6 +17,7 @@
 
 #include "appspawn.h"
 #include "appspawn_hook.h"
+#include "appspawn_manager.h"
 #include "app_spawn_stub.h"
 #include "app_spawn_test_helper.h"
 
