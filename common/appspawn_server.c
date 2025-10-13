@@ -36,7 +36,7 @@
 static void NotifyResToParent(struct AppSpawnContent *content, AppSpawnClient *client, int result)
 {
     StartAppspawnTrace("NotifyResToParent");
-    APPSPAWN_LOGI("NotifyResToParent: %{public}d", result);
+    APPSPAWN_DUMPI("NotifyResToParent:%{public}d", result);
     APPSPAWN_CHECK(content != NULL && content->notifyResToParent != NULL, FinishAppspawnTrace();
         return, "invalid param");
     content->notifyResToParent(content, client, result);
@@ -126,7 +126,7 @@ int AppSpawnChild(AppSpawnContent *content, AppSpawnClient *client)
 static int CloneAppSpawn(void *arg)
 {
     APPSPAWN_CHECK(arg != NULL, return -1, "Invalid content for appspawn");
-    APPSPAWN_LOGI("CloneNwebSpawn done.");
+    APPSPAWN_DUMPI("CloneNwebSpawn done");
 #ifndef APPSPAWN_HELPER
     ffrt_child_init();
 #endif
@@ -186,7 +186,7 @@ int AppSpawnProcessMsg(AppSpawnContent *content, AppSpawnClient *client, pid_t *
 {
     APPSPAWN_CHECK(content != NULL, return -1, "Invalid content for appspawn");
     APPSPAWN_CHECK(client != NULL && childPid != NULL, return -1, "Invalid client for appspawn");
-    APPSPAWN_LOGI("AppSpawnProcessMsg id: %{public}d mode: %{public}d sandboxNsFlags: 0x%{public}x",
+    APPSPAWN_DUMPI("AppSpawnProcessMsg id:%{public}d mode:%{public}d sandboxNsFlags:0x%{public}x",
         client->id, content->mode, content->sandboxNsFlags);
 
     pid_t pid = 0;

@@ -167,7 +167,7 @@ AppSpawnedProcess *AddSpawnedProcess(pid_t pid, const char *processName, uint32_
         return NULL, "Failed to strcpy process name");
 
     OH_ListInit(&node->node);
-    APPSPAWN_LOGI("Add %{public}s, pid=%{public}d success", processName, pid);
+    APPSPAWN_DUMPI("Add %{public}s,pid=%{public}d success", processName, pid);
     OH_ListAddWithOrder(&g_appSpawnMgr->appQueue, &node->node, AppInfoCompareProc);
     return node;
 }

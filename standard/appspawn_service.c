@@ -177,7 +177,7 @@ static void HandleDiedPid(pid_t pid, uid_t uid, int status)
 
 APPSPAWN_STATIC void ProcessSignal(const struct signalfd_siginfo *siginfo)
 {
-    APPSPAWN_LOGI("ProcessSignal signum %{public}d %{public}d", siginfo->ssi_signo, siginfo->ssi_pid);
+    APPSPAWN_DUMPI("ProcessSignal signum %{public}d %{public}d", siginfo->ssi_signo, siginfo->ssi_pid);
     switch (siginfo->ssi_signo) {
         case SIGCHLD: { // delete pid from app map
             pid_t pid;
@@ -264,7 +264,7 @@ static void SendMessageComplete(const TaskHandle taskHandle, BufferHandle handle
     if (appInfo == NULL) {
         return;
     }
-    APPSPAWN_LOGI("SendMessageComplete connectionId: %{public}u result %{public}d app %{public}s pid %{public}d",
+    APPSPAWN_DUMPI("SendMessageComplete connectionId:%{public}u result:%{public}d app:%{public}s pid:%{public}d",
         connection->connectionId, LE_GetSendResult(handle), appInfo->name, msg->result.pid);
     if (LE_GetSendResult(handle) != 0 && msg->result.pid > 0) {
         kill(msg->result.pid, SIGKILL);
@@ -583,7 +583,7 @@ static void ProcessChildProcessFd(const WatcherHandle taskHandle, int fd, uint32
 {
     APPSPAWN_CHECK_ONLY_EXPER(context != NULL, return);
     pid_t pid = *(pid_t *)context;
-    APPSPAWN_LOGI("Clear process group with pid %{public}d, pidFd %{public}d", pid, fd);
+    APPSPAWN_DUMPI("Clear process group with pid:%{public}d,pidFd:%{public}d", pid, fd);
     AppSpawnedProcess *appInfo = GetSpawnedProcess(pid);
     if (appInfo == NULL) {
         APPSPAWN_LOGW("Cannot get app info by bundle name: %{public}d", pid);
@@ -619,7 +619,7 @@ static void WatchChildProcessFd(AppSpawningCtx *property)
             GetBundleName(property), errno);
         return;
     }
-    APPSPAWN_LOGI("watch app process pid %{public}d, pidFd %{public}d", property->pid, fd);
+    APPSPAWN_DUMPI("watch app process pid:%{public}d,pidFd:%{public}d", property->pid, fd);
     LE_WatchInfo watchInfo = {};
     watchInfo.fd = fd;
     watchInfo.flags = WATCHER_ONCE;
@@ -1069,7 +1069,7 @@ static int ProcessChildFdCheck(int fd, AppSpawningCtx *property)
 {
     int result = 0;
     (void)read(fd, &result, sizeof(result));
-    APPSPAWN_LOGI("Child process %{public}s success pid %{public}d appId: %{public}d result: %{public}d",
+    APPSPAWN_DUMPI("Child process:%{public}s success pid:%{public}d appId:%{public}d result:%{public}d",
         GetProcessName(property), property->pid, property->client.id, result);
     APPSPAWN_CHECK(property->message != NULL, return -1, "Invalid message in ctx %{public}d", property->client.id);
 
@@ -1683,7 +1683,7 @@ APPSPAWN_STATIC void ProcessObserveProcessSignalMsg(AppSpawnConnection *connecti
 static void ProcessRecvMsg(AppSpawnConnection *connection, AppSpawnMsgNode *message)
 {
     AppSpawnMsg *msg = &message->msgHeader;
-    APPSPAWN_LOGI("Recv message header magic 0x%{public}x type %{public}u id %{public}u len %{public}u %{public}s",
+    APPSPAWN_DUMPI("Recv msgHeader magic:0x%{public}x type:%{public}u id:%{public}u len:%{public}u %{public}s",
         msg->magic, msg->msgType, msg->msgId, msg->msgLen, msg->processName);
     APPSPAWN_CHECK_ONLY_LOG(connection->receiverCtx.nextMsgId == msg->msgId,
         "Invalid msg id %{public}u %{public}u", connection->receiverCtx.nextMsgId, msg->msgId);
