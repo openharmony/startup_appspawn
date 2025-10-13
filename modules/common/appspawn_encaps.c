@@ -403,9 +403,9 @@ APPSPAWN_STATIC int SpawnSetPermissions(AppSpawningCtx *property, UserEncaps *en
 APPSPAWN_STATIC void SetAllowDumpable(AppSpawningCtx *property, UserEncaps *encapsInfo)
 {
 #ifdef ALLOW_DUMPABLE
-    for (int i = 0; i < encapsInfo.encapsCount; i++) {
-        if (strcmp(encapsInfo.encap[i].key, "ohos.permission.kernel.ALLOW_DEBUG") == 0) {
-            APPSPAWN_LOGI("App allowDumpable sucess");
+    for (int i = 0; i < encapsInfo->encapsCount; i++) {
+        if (strcmp(encapsInfo->encap[i].key, "ohos.permission.kernel.ALLOW_DEBUG") == 0) {
+            APPSPAWN_LOGI("App allowDumpable success");
             property->allowDumpable = true;
         }
     }
