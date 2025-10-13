@@ -35,6 +35,10 @@ config("appspawn_config") {
       cflags += [ "-DCUSTOM_SANDBOX" ]
     }
   }
+
+  if (appspawn_allow_dumpable) {
+      cflags += [ "-DALLOW_DUMPABLE" ]
+  }
 }
 
 if (!defined(ohos_lite)) {

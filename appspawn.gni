@@ -41,6 +41,7 @@ declare_args() {
   appspawn_support_local_debugger = false
   appspawn_hitrace_option = true
   appspawn_napi_preload_path = "../appspawn_preload.json"
+  appspawn_allow_dumpable = false
 }
 
 if (!defined(global_parts_info) ||
