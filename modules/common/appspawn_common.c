@@ -323,7 +323,8 @@ static int SetUidGid(const AppSpawnMgr *content, const AppSpawningCtx *property)
     APPSPAWN_CHECK(ret == 0, return errno,
         "setuid(%{public}u) failed: %{public}d", dacInfo->uid, errno);
 
-    if (CheckAppMsgFlagsSet(property, APP_FLAGS_DEBUGGABLE) && IsDeveloperModeOn(property)) {
+    if ((CheckAppMsgFlagsSet(property, APP_FLAGS_DEBUGGABLE) || property->allowDumpable) &&
+         IsDeveloperModeOn(property)) {
         setenv("HAP_DEBUGGABLE", "true", 1);
         if (prctl(PR_SET_DUMPABLE, 1, 0, 0, 0) == -1) {
             APPSPAWN_LOGE("Failed to set app dumpable: %{public}s", strerror(errno));
