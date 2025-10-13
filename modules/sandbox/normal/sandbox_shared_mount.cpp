@@ -348,7 +348,7 @@ static void MountSharedMap(const AppSpawningCtx *property, const AppDacInfo *inf
             }
         }
     }
-    APPSPAWN_LOGI("mount shared map success");
+    APPSPAWN_DUMPI("mount shared map success");
 }
 
 static inline bool CheckPath(const std::string& name)
@@ -435,7 +435,7 @@ static int ParseDataGroupList(AppSpawnMgr *content, const AppSpawningCtx *proper
 {
     int ret = 0;
     cJSON *dataGroupList = GetJsonObjFromExtInfo(property, DATA_GROUP_SOCKET_TYPE);
-    APPSPAWN_CHECK(dataGroupList != nullptr, return APPSPAWN_ARG_INVALID, "dataGroupList is empty");
+    APPSPAWN_CHECK_LOGV(dataGroupList != nullptr, return 0, "dataGroupList is empty");
     APPSPAWN_CHECK(cJSON_IsArray(dataGroupList), cJSON_Delete(dataGroupList);
         return APPSPAWN_ARG_INVALID, "dataGroupList is not Array");
 

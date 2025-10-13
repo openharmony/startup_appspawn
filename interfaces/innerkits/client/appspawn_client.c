@@ -432,7 +432,7 @@ int AppSpawnClientSendMsg(AppSpawnClientHandle handle, AppSpawnReqMsgHandle reqH
     APPSPAWN_CHECK(reqNode != NULL && reqNode->msg != NULL, AppSpawnReqMsgFree(reqHandle);
         return APPSPAWN_ARG_INVALID, "Invalid msgReq");
 
-    APPSPAWN_LOGI("AppSpawnClientSendMsg reqId: %{public}u msgLen: %{public}u fd: %{public}d %{public}s",
+    APPSPAWN_DUMPI("AppSpawnClientSendMsg reqId:%{public}u msgLen:%{public}u fd:%{public}d %{public}s",
         reqNode->reqId, reqNode->msg->msgLen, reqMgr->socketId, reqNode->msg->processName);
     pthread_mutex_lock(&reqMgr->mutex);
     int ret = ClientSendMsg(reqMgr, reqNode, result);
@@ -440,7 +440,7 @@ int AppSpawnClientSendMsg(AppSpawnClientHandle handle, AppSpawnReqMsgHandle reqH
         result->result = ret;
     }
     pthread_mutex_unlock(&reqMgr->mutex);
-    APPSPAWN_LOGI("AppSpawnClientSendMsg reqId: %{public}u fd: %{public}d end result: 0x%{public}x pid: %{public}d",
+    APPSPAWN_DUMPI("AppSpawnClientSendMsg reqId:%{public}u fd:%{public}d end result:0x%{public}x pid:%{public}d",
         reqNode->reqId, reqMgr->socketId, result->result, result->pid);
     AppSpawnReqMsgFree(reqHandle);
     return ret;
