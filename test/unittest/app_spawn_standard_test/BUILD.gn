@@ -529,6 +529,7 @@ ohos_unittest("AppSpawn_common_ut") {
     "ioctl=IoctlStub",
     "execve=ExecveStub",
     "setcon=SetconStub",
+    "prctl=PrctlStub",
   ]
 
   include_dirs = [

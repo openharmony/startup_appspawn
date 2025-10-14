@@ -148,6 +148,9 @@ int AddPermissionBoolArrayToValue(cJSON *arrayItem, UserEncap *encap, uint32_t a
 int AddPermissionStrArrayToValue(cJSON *arrayItem, UserEncap *encap);
 int AddPermissionArrayToValue(cJSON *permissionItemArr, UserEncap *encap);
 
+int SetUidGid(const AppSpawnMgr *content, const AppSpawningCtx *property);
+int PrctlStub(int option, ...);
+
 #ifdef APPSPAWN_HITRACE_OPTION
 int FilterAppSpawnTrace(AppSpawnMgr *content, AppSpawningCtx *property);
 #endif
