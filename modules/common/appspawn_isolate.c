@@ -122,20 +122,6 @@ static int FillIsolateInfo(const AppSpawningCtx *property, IsolateDirInfo *isola
     return 0;
 }
 
-/*
- * Open isolate dir to prevent vnode from being released and ensure that
- * vflag in vnode which we set by ioctl is valid during the app running.
- * Fd will be automatically released when process exits.
- */
-static void HoldIsolateDir(IsolateDirInfo *isolateDirInfo)
-{
-    for (int i = 0; i < isolateDirInfo->dirNum; ++i) {
-        DIR *dir = opendir(isolateDirInfo->dirs[i].path);
-        APPSPAWN_CHECK_ONLY_LOG(dir != NULL, "Open isolate dir %{public}s failed, errno is %{public}d",
-            isolateDirInfo->dirs[i].path, errno);
-    }
-}
-
 APPSPAWN_STATIC int SetIsolateDir(const AppSpawningCtx *property)
 {
     int ret = 0;
@@ -153,8 +139,6 @@ APPSPAWN_STATIC int SetIsolateDir(const AppSpawningCtx *property)
         FreeIsolatePath(&isolateDirInfo);
         return APPSPAWN_SYSTEM_ERROR;
     }
-
-    HoldIsolateDir(&isolateDirInfo);
 
     int fd = open("/dev/dec", O_RDWR);
     if (fd < 0) {
