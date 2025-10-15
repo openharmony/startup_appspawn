@@ -40,17 +40,10 @@
 #include "appspawn_permission.h"
 #include "sandbox_dec.h"
 
-#ifdef WITH_SELINUX
-#ifdef APPSPAWN_MOUNT_TMPSHM
-#include "policycoreutils.h"
-#endif // APPSPAWN_MOUNT_TMPSHM
-#endif // WITH_SELINUX
-
 #define USER_ID_SIZE 16
 #define DIR_MODE     0711
 #define LOCK_STATUS_PARAM_SIZE     64
 #define LOCK_STATUS_SIZE     16
-#define DEV_SHM_DIR "/dev/shm/"
 
 APPSPAWN_STATIC bool CheckDirRecursive(const char *path)
 {
@@ -1288,21 +1281,6 @@ int StagedMountPostUnshare(const SandboxContext *context, const AppSpawnSandboxC
     return ret;
 }
 
-#ifdef APPSPAWN_MOUNT_TMPSHM
-static void MountDevShmPath(SandboxContext *context)
-{
-    char sandboxDevShmPath[PATH_MAX] = {};
-    int ret = strcpy_s(sandboxDevShmPath, sizeof(sandboxDevShmPath), context->rootPath);
-    APPSPAWN_CHECK(ret == 0, return, "Failed to strcpy rootPath");
-    ret = strcat_s(sandboxDevShmPath, sizeof(sandboxDevShmPath), DEV_SHM_DIR);
-    APPSPAWN_CHECK(ret == 0, return, "Failed to format devShmPath");
-    int result = mount("tmpfs", sandboxDevShmPath, "tmpfs", MS_NOSUID | MS_NOEXEC | MS_NODEV, "size=32M");
-    if (result != 0) {
-        APPSPAWN_LOGW("Error mounting %{public}s to tmpfs, errno %{public}d", sandboxDevShmPath, errno);
-    }
-}
-#endif
-
 int MountSandboxConfigs(AppSpawnSandboxCfg *sandbox, const AppSpawningCtx *property, int nwebspawn)
 {
     APPSPAWN_CHECK_ONLY_EXPER(property != NULL, return -1);
@@ -1341,16 +1319,10 @@ int MountSandboxConfigs(AppSpawnSandboxCfg *sandbox, const AppSpawningCtx *prope
         ret = SetBundleResourceSandboxConfig(context, sandbox);
         APPSPAWN_CHECK_ONLY_EXPER(ret == 0, break);
 
-#ifdef APPSPAWN_MOUNT_TMPSHM
-        MountDevShmPath(context);
-#endif
         ret = ChangeCurrentDir(context);
         APPSPAWN_CHECK_ONLY_EXPER(ret == 0, break);
         SetDecPolicyWithDir(context);
         SetDecPolicy();
-#if defined(APPSPAWN_MOUNT_TMPSHM) && defined(WITH_SELINUX)
-        Restorecon(DEV_SHM_DIR);
-#endif
         APPSPAWN_LOGV("Change root dir success %{public}s ", context->rootPath);
     } while (0);
     DeleteSandboxContext(&context);
