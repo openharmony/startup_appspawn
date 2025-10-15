@@ -32,9 +32,6 @@
 
 #ifdef WITH_SELINUX
 #include "hap_restorecon.h"
-#ifdef APPSPAWN_MOUNT_TMPSHM
-#include "policycoreutils.h"
-#endif // APPSPAWN_MOUNT_TMPSHM
 #endif // WITH_SELINUX
 
 namespace OHOS {

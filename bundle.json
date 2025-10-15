@@ -24,7 +24,6 @@
             "appspawn_support_native",
             "appspawn_support_hybrid",
             "appspawn_use_encaps",
-            "appspawn_mount_tmpshm",
             "appspawn_seccomp_privilege",
             "appspawn_support_prefork",
             "appspawn_support_code_signature",
