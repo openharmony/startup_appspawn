@@ -44,12 +44,6 @@ if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
       defines += [ "WITH_SELINUX" ]
       external_deps += [ "selinux_adapter:libhap_restorecon" ]
     }
-    if (appspawn_mount_tmpshm) {
-      defines += [ "APPSPAWN_MOUNT_TMPSHM" ]
-      if (build_selinux) {
-        external_deps += [ "selinux_adapter:librestorecon" ]
-      }
-    }
 
     subsystem_name = "${subsystem_name}"
     part_name = "${part_name}"
@@ -104,12 +98,6 @@ if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
     if (build_selinux) {
       defines += [ "WITH_SELINUX" ]
       external_deps += [ "selinux_adapter:libhap_restorecon" ]
-    }
-    if (appspawn_mount_tmpshm) {
-      defines += [ "APPSPAWN_MOUNT_TMPSHM" ]
-      if (build_selinux) {
-        external_deps += [ "selinux_adapter:librestorecon" ]
-      }
     }
     if (appspawn_report_event) {
       defines += [ "APPSPAWN_HISYSEVENT" ]
