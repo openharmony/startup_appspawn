@@ -31,7 +31,6 @@ declare_args() {
   appspawn_use_encaps = false
   enable_appspawn_dump_catcher = true
   appspawn_unittest_coverage = false
-  appspawn_mount_tmpshm = false
   appspawn_seccomp_privilege = false
   appspawn_support_prefork = true
   appspawn_support_code_signature = true

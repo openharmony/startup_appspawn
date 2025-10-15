@@ -32,6 +32,7 @@ constexpr static mode_t FILE_MODE = 0711;
 constexpr static mode_t BASIC_MOUNT_FLAGS = MS_REC | MS_BIND;
 constexpr int32_t MAX_MOUNT_TIME = 5000;  // 5000us
 constexpr int32_t LOCK_STATUS_SIZE = 16;
+constexpr mode_t SHM_FILE_MODE = 01777;
 constexpr int32_t MAX_MOUNT_INVALID_COUNT = 8;
 // 沙盒配置文件
 const std::string APP_JSON_CONFIG = "/appdata-sandbox.json";
@@ -51,6 +52,11 @@ constexpr const char *g_permissionPrefix = "permission";
 constexpr const char *g_appBase = "app-base";
 constexpr const char *g_appResources = "app-resources";
 constexpr const char *g_flagePoint = "flags-point";
+constexpr const char *g_createOnDaemon = "create-on-daemon";
+constexpr const char *g_srcPathInfo = "src-path-info";
+constexpr const char *g_srcPathUid = "uid";
+constexpr const char *g_srcPathGid = "gid";
+constexpr const char *g_srcPathMode = "mode";
 const std::string g_internal = "__internal__";
 const std::string g_mntTmpRoot = "/mnt/debugtmp/";
 const std::string g_mntShareRoot = "/mnt/debug/";
@@ -127,7 +133,6 @@ const std::string g_bundleResourceDestPath = "/data/storage/bundle_resources/";
 /* 配置文件中value校验值 */
 const std::string g_sandBoxRootDir = "/mnt/sandbox/";
 const std::string g_sandBoxRootDirNweb = "/mnt/sandbox/com.ohos.render/";
-const std::string  DEV_SHM_DIR = "/dev/shm/";
 const std::string g_statusCheck = "true";
 const std::string g_sbxSwitchCheck = "ON";
 const std::string g_dlpBundleName = "com.ohos.dlpmanager";

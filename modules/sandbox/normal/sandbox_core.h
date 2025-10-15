@@ -44,6 +44,8 @@ public:
     static int32_t SetBundleResourceAppSandboxProperty(const AppSpawningCtx *appProperty,
                                                        std::string &sandboxPackagePath);
     static bool NeedNetworkIsolated(AppSpawningCtx *property);
+    static int32_t DoAllCreateOnDaemonMount(const AppSpawningCtx *appProperty, cJSON *appConfig,
+        const std::string &section = "create-on-daemon");
 
     // 处理应用沙箱挂载
     static int32_t SetCommonAppSandboxProperty(const AppSpawningCtx *appProperty, std::string &sandboxPackagePath);
@@ -111,6 +113,7 @@ private:
 
     // 沙箱回调函数
     static int32_t ProcessMountPoint(cJSON *mntPoint, MountPointProcessParams &params);
+    static int32_t ProcessCreateOnDaemonMount(cJSON *mntPoint, MountPointProcessParams &params);
 
     // debug hap
     static std::string ConvertDebugRealPath(const AppSpawningCtx *appProperty, std::string path);

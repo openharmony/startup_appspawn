@@ -41,6 +41,12 @@ APP_SANDBOX_DEFAULT = '''
             "mount-paths" : [],
             "flags-point" : [],
             "symbol-links" : []
+        }],
+        "create-on-daemon" : [{
+            "sandbox-root" : "/mnt/sandbox/<currentUserId>/<PackageName>",
+            "mount-paths" : [],
+            "flags-point" : [],
+            "symbol-links" : []
         }]
     }],
     "individual" : [{}],
@@ -178,6 +184,12 @@ def _merge_scope_common(origin, new):
     app = new.get("app-resources")
     if app is not None and len(app) > 0:
         _merge_scope_app(origin.get("app-resources"), app)
+        pass
+
+    #处理 create-on-daemon
+    app = new.get("create-on-daemon")
+    if app is not None and len(app) > 0:
+        _merge_scope_app(origin.get("create-on-daemon"), app)
         pass
 
 
