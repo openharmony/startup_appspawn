@@ -307,6 +307,11 @@ int IoctlStub(int fd, unsigned long request, ...)
     return 0;
 }
 
+int PrctlStub(int option, ...)
+{
+    return -1;
+}
+
 #ifdef __cplusplus
 }
 #endif
