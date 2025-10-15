@@ -280,7 +280,7 @@ static int SetXpmConfig(const AppSpawnMgr *content, const AppSpawningCtx *proper
     return 0;
 }
 
-static int SetUidGid(const AppSpawnMgr *content, const AppSpawningCtx *property)
+APPSPAWN_STATIC int SetUidGid(const AppSpawnMgr *content, const AppSpawningCtx *property)
 {
     if (IsAppSpawnMode(content) || IsHybridSpawnMode(content)) {
         struct sched_param param = { 0 };
