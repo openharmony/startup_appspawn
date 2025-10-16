@@ -142,6 +142,7 @@ typedef enum {
     /* devicedebug errno */
     APPSPAWN_DEVICEDEBUG_ERROR_APP_NOT_EXIST,
     APPSPAWN_DEVICEDEBUG_ERROR_APP_NOT_DEBUGGABLE,
+    APPSPAWN_NATIVE_NOT_ALLOW
 } AppSpawnErrorCode;
 
 uint64_t DiffTime(const struct timespec *startTime, const struct timespec *endTime);
