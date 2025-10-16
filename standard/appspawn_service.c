@@ -1229,7 +1229,8 @@ APPSPAWN_STATIC int AppSpawnColdStartApp(struct AppSpawnContent *content, AppSpa
     char *path = property->forkCtx.coldRunPath != NULL ? property->forkCtx.coldRunPath : "/system/bin/appspawn";
 #endif
     APPSPAWN_LOGI("ColdStartApp::processName: %{public}s path: %{public}s", GetProcessName(property), path);
-
+    APPSPAWN_CHECK(!IsNativeSpawnMode((AppSpawnMgr *)content), return APPSPAWN_NATIVE_NOT_ALLOW,
+        "nativespawn not support coldrun");
     // for cold run, use shared memory to exchange message
     APPSPAWN_LOGV("Write msg to child %{public}s", GetProcessName(property));
     int ret = WriteMsgToChild(property, IsNWebSpawnMode((AppSpawnMgr *)content));
