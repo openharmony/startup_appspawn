@@ -209,8 +209,8 @@
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
-                    "src-path" : "/data/service/el1/public/cert_manager_service/certificates/user_open/<currentUserId>",
-                    "sandbox-path" : "/data/certificates/user_cacerts/<currentUserId>",
+                    "src-path" : "/data/service/el1/public/cert_manager_service/certificates/user_open",
+                    "sandbox-path" : "/data/certificates/user_cacerts",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
@@ -256,11 +256,6 @@
                 }, {
                     "src-path" : "/vendor/etc/passthrough",
                     "sandbox-path" : "/vendor/etc/passthrough",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/data/service/el1/public/cert_manager_service/certificates/user_open/0",
-                    "sandbox-path" : "/data/certificates/user_cacerts/0",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }
