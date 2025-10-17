@@ -43,6 +43,9 @@ using GetPermissionFunc = int32_t (*)(void *, const char *);
 #define MAX_USERID_LEN  32
 using namespace OHOS::Security::AccessToken;
 
+void CheckSpecialSpawnMode(const AppSpawnMgr *content, const AppSpawningCtx *property,
+    HapDomainInfo *hapDomainInfo);
+
 int SetAppAccessToken(const AppSpawnMgr *content, const AppSpawningCtx *property)
 {
     int32_t ret = 0;
@@ -83,13 +86,14 @@ int SetSelinuxConNweb(const AppSpawnMgr *content, const AppSpawningCtx *property
 }
 
 #ifdef WITH_SELINUX
-void SetHapDomainInfo(HapDomainInfo *hapDomainInfo, const AppSpawningCtx *property,
-    AppSpawnMsgDomainInfo *msgDomainInfo, AppDacInfo *appInfo)
+void SetHapDomainInfo(const AppSpawnMgr *content, const AppSpawningCtx *property,
+    AppSpawnMsgDomainInfo *msgDomainInfo, HapDomainInfo *hapDomainInfo)
 {
     hapDomainInfo->apl = msgDomainInfo->apl;
     hapDomainInfo->packageName = GetBundleName(property);
     hapDomainInfo->hapFlags = msgDomainInfo->hapFlags;
     // The value of 0 is invalid. Its purpose is to initialize.
+    AppDacInfo *appInfo = reinterpret_cast<AppDacInfo *>(GetAppProperty(property, TLV_DAC_INFO));
     hapDomainInfo->uid = appInfo == nullptr ? 0 : appInfo->uid;
     if (CheckAppMsgFlagsSet(property, APP_FLAGS_DEBUGGABLE)) {
         hapDomainInfo->hapFlags |= SELINUX_HAP_DEBUGGABLE;
@@ -111,6 +115,7 @@ void SetHapDomainInfo(HapDomainInfo *hapDomainInfo, const AppSpawningCtx *proper
             reinterpret_cast<char *>(GetAppPropertyExt(property, MSG_EXT_NAME_EXTENSION_TYPE, &len));
         hapDomainInfo->extensionType = extensionType;
     }
+    CheckSpecialSpawnMode(content, property, hapDomainInfo);
 }
 #endif
 
@@ -125,23 +130,18 @@ int SetSelinuxCon(const AppSpawnMgr *content, const AppSpawningCtx *property)
         }
         return 0;
     }
+#ifdef APPSPAWN_TEST
     if (IsNWebSpawnMode(content)) {
-#ifndef APPSPAWN_TEST
-        return SetSelinuxConNweb(content, property);
-#else
         return 0;
-#endif
-    } else if (IsIsolatedNativeSpawnMode(content, property)) {
-        return setcon("u:r:isolated_render:s0");
     }
+#endif
     AppSpawnMsgDomainInfo *msgDomainInfo =
         reinterpret_cast<AppSpawnMsgDomainInfo *>(GetAppProperty(property, TLV_DOMAIN_INFO));
     APPSPAWN_CHECK(msgDomainInfo != NULL, return APPSPAWN_TLV_NONE,
         "No domain info in req form %{public}s", GetProcessName(property));
-    AppDacInfo *appInfo = reinterpret_cast<AppDacInfo *>(GetAppProperty(property, TLV_DAC_INFO));
-    HapContext hapContext;
     HapDomainInfo hapDomainInfo;
-    SetHapDomainInfo(&hapDomainInfo, property, msgDomainInfo, appInfo);
+    SetHapDomainInfo(content, property, msgDomainInfo, &hapDomainInfo);
+    HapContext hapContext;
     int32_t ret = hapContext.HapDomainSetcontext(hapDomainInfo);
     APPSPAWN_CHECK(ret == 0, return APPSPAWN_ACCESS_TOKEN_INVALID,
         "Set domain context failed, ret: %{public}d %{public}s", ret, GetProcessName(property));
@@ -282,4 +282,48 @@ int32_t SetEnvInfo(const AppSpawnMgr *content, const AppSpawningCtx *property)
     cJSON_Delete(root);
     APPSPAWN_LOGV("SetEnvInfo success");
     return ret;
+}
+
+int LoadSeLinuxConfig(void)
+{
+    return HapContextLoadConfig();
+}
+
+int GetHostId(const AppSpawningCtx *property)
+{
+    int32_t hostId = 0;
+    const char *userId =
+        (const char *)(GetAppSpawnMsgExtInfo(property->message, MSG_EXT_NAME_PARENT_UID, nullptr));
+    if (userId == nullptr) {
+        APPSPAWN_LOGE("AppSpawn get hostId failed, userId is null");
+        return hostId;
+    }
+
+    char *end;
+    errno = 0;
+    const int numberBase = 10;
+    hostId = strtol(userId, &end, numberBase);
+    if (errno == ERANGE || *end != '\0') {
+        APPSPAWN_LOGE("AppSpawn get hostId failed, errno=%u.", errno);
+    }
+    return hostId;
+}
+
+void CheckSpecialSpawnMode(const AppSpawnMgr *content, const AppSpawningCtx *property,
+    HapDomainInfo *hapDomainInfo)
+{
+    if (IsNWebSpawnMode(content)) {
+        hapDomainInfo->uid = GetHostId(property);
+        uint32_t len = 0;
+        std::string processType =
+        reinterpret_cast<char *>(GetAppPropertyExt(property, MSG_EXT_NAME_PROCESS_TYPE, &len));
+        if (processType == "render") {
+            hapDomainInfo->hapFlags |= SELINUX_HAP_ISOLATED_RENDER;
+        } else {
+            hapDomainInfo->hapFlags |= SELINUX_HAP_ISOLATED_GPU;
+        }
+    } else if (IsIsolatedNativeSpawnMode(content, property)) {
+        hapDomainInfo->uid = GetHostId(property);
+        hapDomainInfo->hapFlags |= SELINUX_HAP_ISOLATED_RENDER;
+    }
 }
