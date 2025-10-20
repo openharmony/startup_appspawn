@@ -289,9 +289,9 @@ int LoadSeLinuxConfig(void)
     return HapContextLoadConfig();
 }
 
-int GetHostId(const AppSpawningCtx *property)
+uint32_t GetHostId(const AppSpawningCtx *property)
 {
-    int32_t hostId = 0;
+    uint32_t hostId = 0; // The value of 0 is invalid. Its purpose is to initialize.
     const char *userId =
         (const char *)(GetAppSpawnMsgExtInfo(property->message, MSG_EXT_NAME_PARENT_UID, nullptr));
     if (userId == nullptr) {
@@ -302,10 +302,8 @@ int GetHostId(const AppSpawningCtx *property)
     char *end;
     errno = 0;
     const int numberBase = 10;
-    hostId = strtol(userId, &end, numberBase);
-    if (errno == ERANGE || *end != '\0') {
-        APPSPAWN_LOGE("AppSpawn get hostId failed, errno=%u.", errno);
-    }
+    hostId = strtoul(userId, &end, numberBase);
+    APPSPAWN_CHECK(errno != ERANGE && *end == '\0', return 0, "AppSpawn get hostId failed, errno=%d.", errno);
     return hostId;
 }
 
