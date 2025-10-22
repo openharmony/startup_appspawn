@@ -82,6 +82,7 @@ constexpr const char *g_sandBoxFlagsCustomized = "sandbox-flags-customized";
 constexpr const char *g_appAplName = "app-apl-name";
 constexpr const char *g_sandBoxDecPath = "dec-paths";
 constexpr const char *CREATE_SANDBOX_PATH = "create-sandbox-path";
+constexpr const char *APP_IDENTIFIER = "appIdentifier";
 
 // link目录字段
 constexpr const char *g_symlinkPrefix = "symbol-links";

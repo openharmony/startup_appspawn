@@ -37,7 +37,9 @@
 
 namespace OHOS {
 namespace AppSpawn {
-
+namespace {
+static const uint64_t SYSTEM_APP_MASK = (static_cast<uint64_t>(1) << 32);
+}
 bool SandboxCore::NeedNetworkIsolated(AppSpawningCtx *property)
 {
     int developerMode = IsDeveloperModeOpen();
@@ -213,12 +215,48 @@ cJSON *SandboxCore::GetPrivateJsonInfo(const AppSpawningCtx *appProperty, cJSON 
     return GetFirstSubConfig(firstPrivate, bundleName);
 }
 
+bool SandboxCore::CheckSystemAppByTokenId(const AppSpawningCtx *appProperty)
+{
+    if (appProperty == nullptr) {
+        return false;
+    }
+    AppSpawnMsgAccessToken *tokenInfo =
+        reinterpret_cast<AppSpawnMsgAccessToken *>(GetAppProperty(appProperty, TLV_ACCESS_TOKEN_INFO));
+    APPSPAWN_CHECK(tokenInfo != nullptr, return false, "No access token");
+    return (tokenInfo->accessTokenIdEx & SYSTEM_APP_MASK) == SYSTEM_APP_MASK;
+}
+
+bool SandboxCore::CheckPrivateOwnerId(const AppSpawningCtx *appProperty, cJSON *appConfig)
+{
+    AppSpawnMsgOwnerId *ownerInfo =
+        reinterpret_cast<AppSpawnMsgOwnerId *>(GetAppProperty(appProperty, TLV_OWNER_INFO));
+    APPSPAWN_CHECK(ownerInfo != nullptr, return false, "No owner id");
+
+    std::string ownerInfoStr = ownerInfo->ownerId;
+    const char *appIdentifier = GetStringFromJsonObj(appConfig, SandboxCommonDef::APP_IDENTIFIER);
+    APPSPAWN_CHECK(appIdentifier != nullptr, return false, "No appIdentifier field");
+    std::string appIdentifierStr = appIdentifier;
+
+    return ownerInfoStr == appIdentifierStr;
+}
+
 int32_t SandboxCore::DoSandboxFilePrivateBind(const AppSpawningCtx *appProperty, cJSON *wholeConfig)
 {
     cJSON *bundleNameInfo = GetPrivateJsonInfo(appProperty, wholeConfig);
     if (bundleNameInfo == nullptr) {
         return 0;
     }
+
+    // Verify whether it is a system application
+    if (!CheckSystemAppByTokenId(appProperty)) {
+        APPSPAWN_LOGV("This is not a system app");
+        // Verify whether the ownerId matches the configuration
+        if (!CheckPrivateOwnerId(appProperty, bundleNameInfo)) {
+            APPSPAWN_LOGE("Check owner id failed, no need mount private configs");
+            return 0;
+        }
+    }
+    
     (void)DoAddGid((AppSpawningCtx *)appProperty, bundleNameInfo, "", SandboxCommonDef::g_privatePrefix);
     return DoAllMntPointsMount(appProperty, bundleNameInfo, nullptr, SandboxCommonDef::g_privatePrefix);
 }
