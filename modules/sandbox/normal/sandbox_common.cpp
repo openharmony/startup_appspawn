@@ -573,7 +573,11 @@ void SandboxCommon::GetSandboxMountConfig(const AppSpawningCtx *appProperty, con
     } else {
         mountConfig.fsType = GetFsType(mntPoint);
         mountConfig.optionsPoint = "";
+#ifdef APPSPAWN_SUPPORT_NOSHAREFS
+        mountConfig.decPaths = GetDecPath(appProperty, mntPoint);
+#else
         mountConfig.decPaths = {};
+#endif
     }
     return;
 }

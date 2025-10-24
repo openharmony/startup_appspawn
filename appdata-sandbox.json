@@ -172,7 +172,7 @@
                     "src-path" : "/data/app/el1/public/shader_cache/cloud/<PackageName>",
                     "sandbox-path" : "/data/storage/shader_cache/cloud",
                     "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
+                    "dec-paths": [ "/data/storage/shader_cache/cloud" ]
                 }, {
                     "src-path" : "/data/app/el1/public/shader_cache/cloud/common",
                     "sandbox-path" : "/data/storage/shader_cache/common",
@@ -693,7 +693,7 @@
                     "src-path" : "/data/app/el1/public/shader_cache/cloud/<PackageName>",
                     "sandbox-path" : "/data/storage/shader_cache/cloud",
                     "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
+                    "dec-paths": [ "/data/storage/shader_cache/cloud" ]
                 }, {
                     "src-path" : "/data/app/el1/public/shader_cache/cloud/common",
                     "sandbox-path" : "/data/storage/shader_cache/common",
