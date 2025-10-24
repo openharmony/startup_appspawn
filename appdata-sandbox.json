@@ -414,6 +414,7 @@
     "individual" : [{
         "com.ohos.medialibrary.medialibrarydata" : [{
             "sandbox-switch": "ON",
+            "appIdentifier": "5765880207854616753",
             "mount-paths" : [{
                     "src-path" : "/storage/media/<currentUserId>",
                     "sandbox-path" : "/storage/media",
@@ -446,6 +447,7 @@
         }],
         "com.ohos.sceneboard" : [{
             "sandbox-switch": "ON",
+            "appIdentifier": "5765880207853062833",
             "gids": [1065],
             "mount-paths" : [{
                     "src-path" : "/data/app/el1/bundle/public/",
@@ -458,12 +460,14 @@
         }],
         "com.ohos.settingsdata":[{
             "sandbox-switch": "ON",
+            "appIdentifier": "5765880207853771197",
             "gids": [1065],
             "mount-paths": [],
             "symbol-links": []
         }],
         "com.ohos.permissionmanager" : [{
             "sandbox-switch": "ON",
+            "appIdentifier": "5765880207853534317",
             "mount-paths" : [{
                     "src-path" : "/data/app/el1/bundle/public/",
                     "sandbox-path" : "/data/bundles/",
@@ -475,6 +479,7 @@
         }],
         "com.ohos.amsdialog" : [{
             "sandbox-switch": "ON",
+            "appIdentifier": "5765880207853534317",
             "mount-paths" : [{
                     "src-path" : "/data/app/el1/bundle/public/",
                     "sandbox-path" : "/data/bundles/",

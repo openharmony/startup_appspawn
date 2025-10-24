@@ -92,6 +92,8 @@ private:
 
     // 处理应用私有挂载
     static cJSON *GetPrivateJsonInfo(const AppSpawningCtx *appProperty, cJSON *wholeConfig);
+    static bool CheckSystemAppByTokenId(const AppSpawningCtx *appProperty);
+    static bool CheckPrivateOwnerId(const AppSpawningCtx *appProperty, cJSON *appConfig);
     static int32_t DoSandboxFilePrivateBind(const AppSpawningCtx *appProperty, cJSON *wholeConfig);
     static int32_t DoSandboxFilePrivateSymlink(const AppSpawningCtx *appProperty, cJSON *wholeConfig);
     static int32_t DoSandboxFilePrivateFlagsPointHandle(const AppSpawningCtx *appProperty, cJSON *wholeConfig);
