@@ -75,7 +75,12 @@ static int InitClientInstance(AppSpawnClientType type)
     // init
     clientInstance->type = type;
     clientInstance->msgNextId = 1;
-    clientInstance->timeout = GetDefaultTimeout(TIMEOUT_DEF);
+    // Since cjappspawn is non-resident, set client timeout larger than default.
+    if (type == CLIENT_FOR_CJAPPSPAWN) {
+        clientInstance->timeout = CJAPPSPAWN_CLIENT_TIMEOUT;
+    } else {
+        clientInstance->timeout = GetDefaultTimeout(TIMEOUT_DEF);
+    }
     clientInstance->maxRetryCount = MAX_RETRY_SEND_COUNT;
     clientInstance->socketId = -1;
     pthread_mutex_init(&clientInstance->mutex, NULL);
