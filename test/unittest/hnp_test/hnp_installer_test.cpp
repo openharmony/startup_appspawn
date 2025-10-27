@@ -840,7 +840,7 @@ static void HnpVersionV2Install()
     char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9,  arg10, arg11, arg12, arg13};
     int argc = sizeof(argv) / sizeof(argv[0]);
     // install v1
-    EXPECT_EQ(HnpCmdInstall(argc, argv), 0);
+    EXPECT_EQ(HnpCmdInstall(argc, argv), HNP_ERRNO_SYMLINK_CHECK_FAILED);
 }
 
 static void HnpVersionV3Install()
@@ -862,7 +862,7 @@ static void HnpVersionV3Install()
     char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9,  arg10, arg11, arg12, arg13};
     int argc = sizeof(argv) / sizeof(argv[0]);
     // install v1
-    EXPECT_EQ(HnpCmdInstall(argc, argv), 0);
+    EXPECT_EQ(HnpCmdInstall(argc, argv), HNP_ERRNO_SYMLINK_CHECK_FAILED);
 }
 
 static void HnpVersionV4Install()
@@ -884,7 +884,7 @@ static void HnpVersionV4Install()
     char* argv[] = {arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9,  arg10, arg11, arg12, arg13};
     int argc = sizeof(argv) / sizeof(argv[0]);
     // install v1
-    EXPECT_EQ(HnpCmdInstall(argc, argv), 0);
+    EXPECT_EQ(HnpCmdInstall(argc, argv), HNP_ERRNO_SYMLINK_CHECK_FAILED);
 }
 
 static void HnpVersionV1Uninstall()
@@ -991,43 +991,47 @@ HWTEST_F(HnpInstallerTest, Hnp_Install_010, TestSize.Level0)
     HnpVersionV3Install();
     // check v1 v2 v3 exist
     EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_1", F_OK), 0);
-    EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_2", F_OK), 0);
-    EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_3", F_OK), 0);
-    EXPECT_EQ(HnpSymlinkCheck(HNP_BASE_PATH"/hnppublic/bin/out", "../sample_public.org/sample_public_3/bin/out"), true);
+    EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_2", F_OK), -1);
+    EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_3", F_OK), -1);
+    EXPECT_EQ(HnpSymlinkCheck(HNP_BASE_PATH"/hnppublic/bin/out", "../sample_public.org/sample_public_1/bin/out"), true);
 
     // uninstall v3
     HnpVersionV3Uninstall();
     // check v1 v2 v3 exist
     EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_1", F_OK), 0);
-    EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_2", F_OK), 0);
-    EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_3", F_OK), 0);
-    EXPECT_EQ(HnpSymlinkCheck(HNP_BASE_PATH"/hnppublic/bin/out", "../sample_public.org/sample_public_3/bin/out"), true);
+    EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_2", F_OK), -1);
+    EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_3", F_OK), -1);
+    EXPECT_EQ(HnpSymlinkCheck(HNP_BASE_PATH"/hnppublic/bin/out",
+        "../sample_public.org/sample_public_3/bin/out"), false);
 
     HnpVersionV4Install();
     // check v1 v2 v4 exist v3 is uninstall
     EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_1", F_OK), 0);
-    EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_2", F_OK), 0);
+    EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_2", F_OK), -1);
     EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_3", F_OK), -1);
-    EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_4", F_OK), 0);
-    EXPECT_EQ(HnpSymlinkCheck(HNP_BASE_PATH"/hnppublic/bin/out", "../sample_public.org/sample_public_4/bin/out"), true);
+    EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_4", F_OK), -1);
+    EXPECT_EQ(HnpSymlinkCheck(HNP_BASE_PATH"/hnppublic/bin/out",
+        "../sample_public.org/sample_public_4/bin/out"), false);
 
     // uninstall v1
     HnpVersionV1Uninstall();
     // check v2 v4 exist v1 v3 is uninstall
     EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_1", F_OK), -1);
-    EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_2", F_OK), 0);
+    EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_2", F_OK), -1);
     EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_3", F_OK), -1);
-    EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_4", F_OK), 0);
-    EXPECT_EQ(HnpSymlinkCheck(HNP_BASE_PATH"/hnppublic/bin/out", "../sample_public.org/sample_public_4/bin/out"), true);
+    EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_4", F_OK), -1);
+    EXPECT_EQ(HnpSymlinkCheck(HNP_BASE_PATH"/hnppublic/bin/out",
+        "../sample_public.org/sample_public_4/bin/out"), false);
 
     // uninstall v4
     HnpVersionV4Uninstall();
     // check v2 v4 exist v1 v3 is uninstall
     EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_1", F_OK), -1);
-    EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_2", F_OK), 0);
+    EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_2", F_OK), -1);
     EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_3", F_OK), -1);
-    EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_4", F_OK), 0);
-    EXPECT_EQ(HnpSymlinkCheck(HNP_BASE_PATH"/hnppublic/bin/out", "../sample_public.org/sample_public_4/bin/out"), true);
+    EXPECT_EQ(access(HNP_BASE_PATH"/hnppublic/sample_public.org/sample_public_4", F_OK), -1);
+    EXPECT_EQ(HnpSymlinkCheck(HNP_BASE_PATH"/hnppublic/bin/out",
+        "../sample_public.org/sample_public_4/bin/out"), false);
 
     // uninstall v2
     HnpVersionV2Uninstall();

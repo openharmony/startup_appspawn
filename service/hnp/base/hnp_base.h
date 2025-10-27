@@ -55,6 +55,10 @@ extern "C" {
 #define HNP_PACKAGE_INFO_JSON_FILE_PATH "/data/service/el1/startup/hnp_info.json"
 #define HNP_ELF_FILE_CHECK_HEAD_LEN 4
 
+#define HAP_PACKAGE_INFO_HAP_PREFIX "hap"
+#define HAP_PACKAGE_INFO_HNP_PREFIX "hnp"
+#define HAP_PACKAGE_INFO_NAME_PREFIX "name"
+
 #ifdef _WIN32
 #define DIR_SPLIT_SYMBOL '\\'
 #else
@@ -262,6 +266,9 @@ enum {
 // 0x801120 二进制文件过多
 #define HNP_ERRNO_BASE_FILE_COUNT_OVER          HNP_ERRNO_COMMON(HNP_MID_BASE, 0x20)
 
+// 0x801121 软连接覆盖校验失败
+#define HNP_ERRNO_SYMLINK_CHECK_FAILED          HNP_ERRNO_COMMON(HNP_MID_BASE, 0x21)
+
 int GetFileSizeByHandle(FILE *file, int *size);
 
 int ReadFileToStream(const char *filePath, char **stream, int *streamLen);
@@ -279,7 +286,9 @@ void HnpLogPrintf(int logLevel, char *module, const char *format, ...);
 
 int HnpCfgGetFromZip(const char *inputFile, HnpCfgInfo *hnpCfg);
 
-int HnpSymlink(const char *srcFile, const char *dstFile);
+bool CanRecovery(const char *hnpPackageName, HnpCfgInfo *hnpcfgInfo);
+
+int HnpSymlink(const char *srcFile, const char *dstFile, HnpCfgInfo *hnpCfg, bool canRecovery, bool isPublic);
 
 int HnpProcessRunCheck(const char *runPath);
 
@@ -327,6 +336,26 @@ char *HnpCurrentVersionGet(const char *name);
     HILOG_ERROR(LOG_CORE, "[%{public}s:%{public}d]" args, (__FILE_NAME__), (__LINE__), ##__VA_ARGS__); \
     HnpLogPrintf(HNP_LOG_ERROR, "HNP", "[%{public}s:%{public}d]" args, (__FILE_NAME__), (__LINE__), ##__VA_ARGS__)
 #endif
+#define HNP_ERROR_CHECK(ret, statement, format, ...) \
+    do {                                                  \
+        if (!(ret)) {                                     \
+            HNP_LOGE(format, ##__VA_ARGS__);             \
+            statement;                                    \
+        }                                                 \
+    } while (0)
+
+#define HNP_INFO_CHECK(ret, statement, format, ...) \
+    do {                                                  \
+        if (!(ret)) {                                    \
+            HNP_LOGI(format, ##__VA_ARGS__);            \
+            statement;                                   \
+        }                                          \
+    } while (0)
+
+#define HNP_ONLY_EXPER(ret, exper) \
+    if ((ret)) {                                    \
+        exper;                                      \
+    }
 
 #ifdef __cplusplus
 }
