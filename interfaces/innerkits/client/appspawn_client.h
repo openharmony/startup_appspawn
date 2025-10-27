@@ -34,6 +34,7 @@ extern "C" {
 #define ASAN_TIMEOUT 10
 #endif
 
+#define CJAPPSPAWN_CLIENT_TIMEOUT 10
 #define RETRY_TIME (200 * 1000)     // 200 * 1000 wait 200ms CONNECT_RETRY_DELAY = 200 * 1000
 #define MAX_RETRY_SEND_COUNT 2      // 2 max retry count CONNECT_RETRY_MAX_TIMES = 2;
 
