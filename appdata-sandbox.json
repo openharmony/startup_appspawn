@@ -258,6 +258,11 @@
                     "sandbox-path" : "/vendor/etc/passthrough",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
+                }, {
+                    "src-path" : "/data/service/el1/public/fonts/<currentUserId>",
+                    "sandbox-path" : "/data/service/el1/public/for-all-app/fonts",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
                 }
             ],
             "symbol-links" : [{
