@@ -514,7 +514,7 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_025, TestSize.Level0)
     ASSERT_EQ(ret, APPSPAWN_NATIVE_NOT_SUPPORT);
 }
 
-HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_026, TestSize.Level0)
+HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_026_01, TestSize.Level0)
 {
     AppSpawnClientHandle clientHandle = nullptr;
     AppSpawnReqMsgHandle reqHandle = 0;
@@ -522,24 +522,56 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_026, TestSize.Level0)
     AppSpawnMgr *mgr = nullptr;
     int ret = -1;
     do {
-        mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
+        mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
         EXPECT_EQ(mgr != nullptr, 1);
         // create msg
         ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
         APPSPAWN_CHECK(ret == 0, break, "Failed to create reqMgr %{public}s", APPSPAWN_SERVER_NAME);
-        reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_SPAWN_NATIVE_PROCESS, 0);
+        reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
         APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break,
             "Failed to create req %{public}s", APPSPAWN_SERVER_NAME);
         property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
-        property->client.flags |= APP_BEGETCTL_BOOT;
         APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
-        SetAppSpawnMsgFlag(property->message, APP_FLAGS_DLP_MANAGER, 1);
+        property->client.flags |= APP_DEVELOPER_MODE;
+        ret = SetSelinuxCon(mgr, property);
+        APPSPAWN_CHECK_ONLY_EXPER(ret == 0, break);
+        SetAppSpawnMsgFlag(property->message, TLV_MSG_FLAGS, APP_FLAGS_DLP_MANAGER_FULL_CONTROL);
         ret = SetSelinuxCon(mgr, property);
     } while (0);
     DeleteAppSpawningCtx(property);
     AppSpawnClientDestroy(clientHandle);
     DeleteAppSpawnMgr(mgr);
-    ASSERT_EQ(ret, APPSPAWN_NATIVE_NOT_SUPPORT);
+    ASSERT_EQ(ret, 0);
+}
+
+HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_026_02, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = nullptr;
+    AppSpawnReqMsgHandle reqHandle = 0;
+    AppSpawningCtx *property = nullptr;
+    AppSpawnMgr *mgr = nullptr;
+    int ret = -1;
+    do {
+        mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+        EXPECT_EQ(mgr != nullptr, 1);
+        // create msg
+        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create reqMgr %{public}s", APPSPAWN_SERVER_NAME);
+        reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+        APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break,
+            "Failed to create req %{public}s", APPSPAWN_SERVER_NAME);
+        property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
+        APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
+        property->client.flags |= APP_DEVELOPER_MODE;
+        ret = SetSelinuxCon(mgr, property);
+        APPSPAWN_CHECK_ONLY_EXPER(ret == 0, break);
+        SetAppSpawnMsgFlag(property->message, TLV_MSG_FLAGS, APP_FLAGS_DLP_MANAGER_READ_ONLY);
+        ret = SetSelinuxCon(mgr, property);
+    } while (0);
+    DeleteAppSpawningCtx(property);
+    AppSpawnClientDestroy(clientHandle);
+    DeleteAppSpawnMgr(mgr);
+    ASSERT_EQ(ret, 0);
 }
 
 HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_027, TestSize.Level0)

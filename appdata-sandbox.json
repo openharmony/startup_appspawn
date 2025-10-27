@@ -308,7 +308,7 @@
                 }
             ],
         "flags-point" : [{
-            "flags": "DLP_MANAGER",
+            "flags": "DLP_MANAGER_FULL_CONTROL",
             "mount-paths" : [{
                     "src-path" : "/data/app/el2/<currentUserId>/base/<PackageName_index>",
                     "sandbox-path" : "/data/storage/el2/base",
@@ -339,6 +339,53 @@
                     "sandbox-path" : "/data/storage/el2/share",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
+                }, {
+                    "src-path" : "/mnt/data/<currentUserId>/fuse",
+                    "sandbox-path" : "/mnt/data/fuse",
+                    "sandbox-flags": [ "MS_NODEV" ],
+                    "dac-override-sensitive": "true",
+                    "fs-type": "sharefs",
+                    "options": "override"
+                }
+            ]}, {
+            "flags": "DLP_MANAGER_READ_ONLY",
+            "mount-paths" : [{
+                    "src-path" : "/data/app/el2/<currentUserId>/base/<PackageName_index>",
+                    "sandbox-path" : "/data/storage/el2/base",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/data/app/el1/<currentUserId>/database/<PackageName_index>",
+                    "sandbox-path" : "/data/storage/el1/database",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/data/app/el2/<currentUserId>/database/<PackageName_index>",
+                    "sandbox-path" : "/data/storage/el2/database",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/data/app/el1/<currentUserId>/base/<PackageName_index>",
+                    "sandbox-path" : "/data/storage/el1/base",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/data/app/el2/<currentUserId>/log/<PackageName_index>",
+                    "sandbox-path" : "/data/storage/el2/log",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/mnt/share/<currentUserId>/<PackageName_index>",
+                    "sandbox-path" : "/data/storage/el2/share",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/mnt/data/<currentUserId>/fuse",
+                    "sandbox-path" : "/mnt/data/fuse",
+                    "sandbox-flags": [ "MS_NODEV" ],
+                    "dac-override-sensitive": "true",
+                    "fs-type": "sharefs",
+                    "options": "override"
                 }
             ]}, {
             "flags": "START_FLAGS_BACKUP",
