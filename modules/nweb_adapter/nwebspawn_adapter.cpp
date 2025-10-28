@@ -136,8 +136,9 @@ APPSPAWN_STATIC int RunChildProcessor(AppSpawnContent *content, AppSpawnClient *
         return -1;
     }
 
-    std::string processType = reinterpret_cast<char *>(GetAppPropertyExt(
+    char *processTypeChar = reinterpret_cast<char *>(GetAppPropertyExt(
         reinterpret_cast<AppSpawningCtx *>(client), MSG_EXT_NAME_PROCESS_TYPE, &len));
+    std::string processType = (processTypeChar != nullptr) ? std::string(processTypeChar) : "";
     if (processType == "render" && !SetSeccompPolicyForRenderer(nwebRenderHandle)) {
         return -1;
     }
