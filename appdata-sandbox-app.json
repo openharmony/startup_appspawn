@@ -472,7 +472,22 @@
             "name": "ohos.permission.ACCESS_DFX_LOG_DIR",
             "sandbox-switch": "ON",
             "gids": ["log"],
-            "mount-paths": []
+            "mount-paths": [{
+                "src-path": "/data/log/hilog",
+                "sandbox-path": "/data/log/hilog"
+            }, {
+                "src-path": "/data/log/logpack",
+                "sandbox-path": "/data/log/logpack"
+            }, {
+                "src-path": "/data/log/hiview/unified_collection/trace",
+                "sandbox-path": "/data/log/hiview/unified_collection/trace"
+            }, {
+                "src-path": "/data/virt_service/rgm_hmos/anco_hmos_data/log/LogService/uploading",
+                "sandbox-path": "/data/virt_service/rgm_hmos/anco_hmos_data/log/LogService/uploading"
+            }, {
+                "src-path": "/data/virt_service/rgm_hmos/anco_hmos_log/LogService",
+                "sandbox-path": "/data/virt_service/rgm_hmos/anco_hmos_log/LogService"
+            }]
         }],
         "spawn-flag": [{
             "name": "START_FLAGS_BACKUP",
