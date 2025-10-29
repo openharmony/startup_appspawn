@@ -98,8 +98,11 @@ void SetHapDomainInfo(const AppSpawnMgr *content, const AppSpawningCtx *property
     if (CheckAppMsgFlagsSet(property, APP_FLAGS_DEBUGGABLE)) {
         hapDomainInfo->hapFlags |= SELINUX_HAP_DEBUGGABLE;
     }
-    if (CheckAppMsgFlagsSet(property, APP_FLAGS_DLP_MANAGER)) {
-        hapDomainInfo->hapFlags |= SELINUX_HAP_DLP;
+    if (CheckAppMsgFlagsSet(property, APP_FLAGS_DLP_MANAGER_FULL_CONTROL)) {
+        hapDomainInfo->hapFlags |= SELINUX_HAP_DLP_FULL_CONTROL;
+    }
+    if (CheckAppMsgFlagsSet(property, APP_FLAGS_DLP_MANAGER_READ_ONLY)) {
+        hapDomainInfo->hapFlags |= SELINUX_HAP_DLP_READ_ONLY;
     }
     if (CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX)) {
         hapDomainInfo->hapFlags |= SELINUX_HAP_INPUT_ISOLATE;
