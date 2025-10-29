@@ -896,6 +896,7 @@ int32_t SandboxCore::SetOverlayAppSandboxProperty(const AppSpawningCtx *appPrope
         }
 
         auto bundleNameIndex = srcPath.find_last_of(SandboxCommonDef::g_fileSeparator);
+        APPSPAWN_ONLY_EXPER(bundleNameIndex == std::string::npos, continue);
         std::string destPath = sandboxOverlayPath + srcPath.substr(bundleNameIndex + 1, srcPath.length());
         SharedMountArgs arg = {
             .srcPath = srcPath.c_str(),

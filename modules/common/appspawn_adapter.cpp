@@ -72,8 +72,9 @@ int SetSelinuxConNweb(const AppSpawnMgr *content, const AppSpawningCtx *property
 {
 #if defined(WITH_SELINUX) && !defined(APPSPAWN_TEST)
     uint32_t len = 0;
-    std::string processType =
+    char *processTypeChar =
         reinterpret_cast<char *>(GetAppPropertyExt(property, MSG_EXT_NAME_PROCESS_TYPE, &len));
+    std::string processType = (processTypeChar != nullptr) ? std::string(processTypeChar) : "";
     int32_t ret;
     if (processType == "render") {
         ret = setcon("u:r:isolated_render:s0");
@@ -114,8 +115,9 @@ void SetHapDomainInfo(const AppSpawnMgr *content, const AppSpawningCtx *property
 #endif
     if (CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SELINUX_LABEL)) {
         uint32_t len = 0;
-        std::string extensionType =
+        char *extensionTypeChar =
             reinterpret_cast<char *>(GetAppPropertyExt(property, MSG_EXT_NAME_EXTENSION_TYPE, &len));
+        std::string extensionType = (extensionTypeChar != nullptr) ? std::string(extensionTypeChar) : "";
         hapDomainInfo->extensionType = extensionType;
     }
     CheckSpecialSpawnMode(content, property, hapDomainInfo);
@@ -186,8 +188,9 @@ int SetSeccompFilter(const AppSpawnMgr *content, const AppSpawningCtx *property)
 
     if (IsNWebSpawnMode(content)) {
         uint32_t len = 0;
-        std::string processType =
+        char *processTypeChar =
             reinterpret_cast<char *>(GetAppPropertyExt(property, MSG_EXT_NAME_PROCESS_TYPE, &len));
+        std::string processType = (processTypeChar != NULL) ? std::string(processTypeChar) : "";
         if (processType == "render") {
             return 0;
         }
@@ -318,8 +321,9 @@ void CheckSpecialSpawnMode(const AppSpawnMgr *content, const AppSpawningCtx *pro
     if (IsNWebSpawnMode(content)) {
         hapDomainInfo->uid = GetHostId(property);
         uint32_t len = 0;
-        std::string processType =
-        reinterpret_cast<char *>(GetAppPropertyExt(property, MSG_EXT_NAME_PROCESS_TYPE, &len));
+        char *processTypeChar =
+            reinterpret_cast<char *>(GetAppPropertyExt(property, MSG_EXT_NAME_PROCESS_TYPE, &len));
+        std::string processType = (processTypeChar != nullptr) ? std::string(processTypeChar) : "";
         if (processType == "render") {
             hapDomainInfo->hapFlags |= SELINUX_HAP_ISOLATED_RENDER;
         } else {
