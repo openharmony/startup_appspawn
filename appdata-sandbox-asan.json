@@ -19,6 +19,16 @@
                     "sandbox-path" : "/system/asan/bin",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
+                }, {
+                    "src-path" : "/system/asan/lib64",
+                    "sandbox-path" : "/system/asan/lib64",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/vendor/asan/lib64",
+                    "sandbox-path" : "/vendor/asan/lib64",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
                 }
             ],
             "symbol-links" : [
