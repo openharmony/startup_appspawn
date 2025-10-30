@@ -209,11 +209,6 @@
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
-                    "src-path" : "/data/service/el1/public/cert_manager_service/certificates/user_open",
-                    "sandbox-path" : "/data/certificates/user_cacerts",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
                     "src-path" : "/data/app/el3/<currentUserId>/base/<variablePackageName>",
                     "sandbox-path" : "/data/storage/el3/base",
                     "sandbox-flags" : [ "bind", "rec" ],
@@ -461,7 +456,32 @@
                 }
             ]}],
             "symbol-links" : []
-        }]
+        }],
+        "create-on-daemon" : [
+            {
+                "mount-paths" : [{
+                    "src-path" : "/data/service/el1/public/cert_manager_service/certificates/user_open/<currentUserId>",
+                    "sandbox-path" : "/data/certificates/user_cacerts/<currentUserId>",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status" : "false",
+                    "src-path-info": {
+                        "uid" : 3515,
+                        "gid" : 3515,
+                        "mode" : 453
+                    }
+                }, {
+                    "src-path" : "/data/service/el1/public/cert_manager_service/certificates/user_open/0",
+                    "sandbox-path" : "/data/certificates/user_cacerts/0",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status" : "false",
+                    "src-path-info": {
+                        "uid" : 3515,
+                        "gid" : 3515,
+                        "mode" : 453
+                    }
+                }]
+            }
+        ]
     }],
     "individual" : [{
         "com.ohos.medialibrary.medialibrarydata" : [{

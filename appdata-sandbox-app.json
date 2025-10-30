@@ -108,9 +108,6 @@
                 "src-path" : "/system/app/SystemResources",
                 "sandbox-path" : "/data/global/systemResources"
             }, {
-                "src-path" : "/data/service/el1/public/cert_manager_service/certificates/user_open",
-                "sandbox-path" : "/data/certificates/user_cacerts"
-            },{
                 "src-path" : "/chip_prod/etc/passthrough",
                 "sandbox-path" : "/chip_prod/etc/passthrough"
             }],
