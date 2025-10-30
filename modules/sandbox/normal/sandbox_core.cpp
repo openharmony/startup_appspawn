@@ -504,7 +504,7 @@ int32_t SandboxCore::MountAllHsp(const AppSpawningCtx *appProperty, std::string 
             .destPath = mntPath.c_str()
         };
         ret = SandboxCommon::DoAppSandboxMountOnce(appProperty, &arg);
-        APPSPAWN_CHECK(ret == 0, return 0, "mount library failed %{public}d", ret);
+        APPSPAWN_CHECK_ONLY_LOG(ret == 0, "mount library failed %{public}d", ret);
     }
     return 0;
 }
