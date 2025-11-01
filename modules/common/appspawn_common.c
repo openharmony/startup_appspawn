@@ -298,16 +298,7 @@ APPSPAWN_STATIC int SetUidGid(const AppSpawnMgr *content, const AppSpawningCtx *
         "setgroups failed: %{public}d, gids.size=%{public}u", errno, dacInfo->gidCount);
 
     // set gid
-    if (IsNWebSpawnMode(content)) {
-        gid_t gid = dacInfo->gid / UID_BASE;
-        if (gid >= 100) { // 100
-            APPSPAWN_LOGE("SetUidGid invalid uid for nwebspawn %{public}d", dacInfo->gid);
-            return 0;
-        }
-        ret = setresgid(dacInfo->gid, dacInfo->gid, dacInfo->gid);
-    } else {
-        ret = setresgid(dacInfo->gid, dacInfo->gid, dacInfo->gid);
-    }
+    ret = setresgid(dacInfo->gid, dacInfo->gid, dacInfo->gid);
     APPSPAWN_CHECK(ret == 0, return errno,
         "setgid(%{public}u) failed: %{public}d", dacInfo->gid, errno);
 
