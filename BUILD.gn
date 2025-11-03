@@ -37,7 +37,8 @@ config("appspawn_config") {
   }
 
   if (appspawn_allow_dumpable) {
-      cflags += [ "-DALLOW_DUMPABLE" ]
+    cflags += [ "-DALLOW_DUMPABLE" ]
+    cflags += [ "-DALLOW_DEBUG_PLATFORM" ]
   }
 }
 
