@@ -193,8 +193,10 @@ int32_t SandboxCore::HandleDlpMount(const AppSpawnMsgDacInfo *dacInfo)
 
 bool SandboxCore::CheckDlpMount(const AppSpawningCtx *appProperty)
 {
-    std::string bundleName = GetBundleName(appProperty);
-    std::string processName = GetProcessName(appProperty);
+    const char* bundleNameChar = GetBundleName(appProperty);
+    std::string bundleName = (bundleNameChar != nullptr) ? std::string(bundleNameChar) : "";
+    const char* processNameChar = GetProcessName(appProperty);
+    std::string processName = (processNameChar != nullptr) ? std::string(processNameChar) : "";
     /* dlp application mount strategy */
     /* dlp is an example, we should change to real bundle name later */
     if (!(bundleName.find(SandboxCommonDef::g_dlpBundleName) != std::string::npos &&
@@ -610,7 +612,8 @@ int32_t SandboxCore::ProcessMountPoint(cJSON *mntPoint, MountPointProcessParams 
 int32_t SandboxCore::DoAllMntPointsMount(const AppSpawningCtx *appProperty, cJSON *appConfig,
                                          const char *typeName, const std::string &section)
 {
-    std::string bundleName = GetBundleName(appProperty);
+    const char* bundleNameChar = GetBundleName(appProperty);
+    std::string bundleName = (bundleNameChar != nullptr) ? std::string(bundleNameChar) : "";
     cJSON *mountPoints = cJSON_GetObjectItemCaseSensitive(appConfig, SandboxCommonDef::g_mountPrefix);
     if (mountPoints == nullptr || !cJSON_IsArray(mountPoints)) {
         APPSPAWN_LOGI("mount config is not found in %{public}s, app name is %{public}s",
@@ -691,7 +694,8 @@ int32_t SandboxCore::ProcessCreateOnDaemonMount(cJSON *mntPoint, MountPointProce
 int32_t SandboxCore::DoAllCreateOnDaemonMount(const AppSpawningCtx *appProperty, cJSON *appConfig,
                                               const std::string &section)
 {
-    std::string bundleName = GetBundleName(appProperty);
+    const char* bundleNameChar = GetBundleName(appProperty);
+    std::string bundleName = (bundleNameChar != nullptr) ? std::string(bundleNameChar) : "";
     cJSON *mountPoints = cJSON_GetObjectItemCaseSensitive(appConfig, SandboxCommonDef::g_mountPrefix);
     if (mountPoints == nullptr || !cJSON_IsArray(mountPoints)) {
         APPSPAWN_LOGI("mount config is not found in %{public}s, app name is %{public}s",
@@ -729,8 +733,8 @@ int32_t SandboxCore::DoAddGid(AppSpawningCtx *appProperty, cJSON *appConfig,
     if (mountPoints == nullptr || !cJSON_IsArray(mountPoints)) {
         return 0;
     }
-
-    std::string bundleName = GetBundleName(appProperty);
+    const char* bundleNameChar = GetBundleName(appProperty);
+    std::string bundleName = (bundleNameChar != nullptr) ? std::string(bundleNameChar) : "";
     auto processor = [&dacInfo](cJSON *item) {
         gid_t gid = 0;
         if (cJSON_IsNumber(item)) {
@@ -1002,7 +1006,8 @@ int32_t SandboxCore::SetPermissionAppSandboxProperty(AppSpawningCtx *appProperty
 int32_t SandboxCore::SetSandboxProperty(AppSpawningCtx *appProperty, std::string &sandboxPackagePath)
 {
     int32_t ret = 0;
-    const std::string bundleName = GetBundleName(appProperty);
+    const char* bundleNameChar = GetBundleName(appProperty);
+    const std::string bundleName = (bundleNameChar != nullptr) ? std::string(bundleNameChar) : "";
     StartAppspawnTrace("SetCommonAppSandboxProperty");
     ret = SetCommonAppSandboxProperty(appProperty, sandboxPackagePath);
     FinishAppspawnTrace();
@@ -1033,7 +1038,8 @@ int32_t SandboxCore::SetSandboxProperty(AppSpawningCtx *appProperty, std::string
 int32_t SandboxCore::SetAppSandboxProperty(AppSpawningCtx *appProperty, uint32_t sandboxNsFlags)
 {
     APPSPAWN_CHECK(appProperty != nullptr, return APPSPAWN_SANDBOX_INVALID, "Invalid appspawn client");
-    const std::string bundleName = GetBundleName(appProperty);
+    const char* bundleNameChar = GetBundleName(appProperty);
+    const std::string bundleName = (bundleNameChar != nullptr) ? std::string(bundleNameChar) : "";
     if (SandboxCommon::CheckBundleName(bundleName) != 0) {
         return APPSPAWN_SANDBOX_INVALID;
     }
@@ -1131,11 +1137,12 @@ int32_t SandboxCore::SetRenderSandboxPropertyNweb(const AppSpawningCtx *appPrope
 int32_t SandboxCore::SetAppSandboxPropertyNweb(AppSpawningCtx *appProperty, uint32_t sandboxNsFlags)
 {
     APPSPAWN_CHECK(appProperty != nullptr, return -1, "Invalid appspawn client");
-    if (SandboxCommon::CheckBundleName(GetBundleName(appProperty)) != 0) {
+    const char* bundleNameChar = GetBundleName(appProperty);
+    const std::string bundleName = (bundleNameChar != nullptr) ? std::string(bundleNameChar) : "";
+    if (SandboxCommon::CheckBundleName(bundleName) != 0) {
         return -1;
     }
     std::string sandboxPackagePath = SandboxCommonDef::g_sandBoxRootDirNweb;
-    const std::string bundleName = GetBundleName(appProperty);
     bool sandboxSharedStatus = SandboxCommon::IsPrivateSharedStatus(bundleName, appProperty);
     sandboxPackagePath += bundleName;
     SandboxCommon::CreateDirRecursiveWithClock(sandboxPackagePath.c_str(), SandboxCommonDef::FILE_MODE);
@@ -1471,7 +1478,8 @@ int32_t SandboxCore::UninstallDebugSandbox(AppSpawnMgr *content, AppSpawningCtx 
 
 int32_t SandboxCore::DoMountDebugPoints(const AppSpawningCtx *appProperty, cJSON *appConfig)
 {
-    std::string bundleName = GetBundleName(appProperty);
+    const char* bundleNameChar = GetBundleName(appProperty);
+    std::string bundleName = (bundleNameChar != nullptr) ? std::string(bundleNameChar) : "";
     cJSON *mountPoints = cJSON_GetObjectItemCaseSensitive(appConfig, SandboxCommonDef::g_mountPrefix);
     if (mountPoints == nullptr || !cJSON_IsArray(mountPoints)) {
         APPSPAWN_LOGI("mount config is not found, app name is %{public}s", bundleName.c_str());
