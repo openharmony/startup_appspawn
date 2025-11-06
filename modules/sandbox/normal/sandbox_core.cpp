@@ -650,7 +650,7 @@ int32_t SandboxCore::ProcessCreateOnDaemonMount(cJSON *mntPoint, MountPointProce
 
     uid_t uid = 0;
     gid_t gid = 0;
-    mode_t mode = SandboxCommonDef::DEFAULT_FILE_MODE;
+    mode_t mode = SandboxCommonDef::FILE_MODE;
     cJSON *pathInfoPoints = cJSON_GetObjectItemCaseSensitive(mntPoint, SandboxCommonDef::g_srcPathInfo);
     APPSPAWN_CHECK(pathInfoPoints != nullptr, return 0, "Invalid json object");
     cJSON *item = cJSON_GetObjectItemCaseSensitive(pathInfoPoints, SandboxCommonDef::g_srcPathUid);
@@ -674,17 +674,16 @@ int32_t SandboxCore::ProcessCreateOnDaemonMount(cJSON *mntPoint, MountPointProce
     struct stat statBuff;
     int ret = stat(srcPath.c_str(), &statBuff);
     if (ret < 0 || statBuff.st_uid != uid || statBuff.st_gid != gid ||
-            (statBuff.st_mode & SandboxCommonDef::DEFAULT_FILE_MODE) != mode) {
-        APPSPAWN_LOGV("srcPath stat failed or uid/gid/mode not as expected");
+            (statBuff.st_mode & SandboxCommonDef::ALL_FILE_MODE_BITS) != mode) {
         ret = SandboxCommon::CreateDirRecursive(srcPath, SandboxCommonDef::FILE_MODE);
         APPSPAWN_CHECK(ret == 0, return 0, "mkdir %{private}s failed, errno %{public}d", srcPath.c_str(), errno);
         if (chmod(srcPath.c_str(), mode) < 0 || chown(srcPath.c_str(), uid, gid) < 0) {
-            APPSPAWN_LOGI("chown or chmod %{private}s failed, errno %{public}d", srcPath.c_str(), errno);
             if (stat(srcPath.c_str(), &statBuff) < 0) {
-                APPSPAWN_LOGV("srcPath stat failed");
+                APPSPAWN_LOGI("stat srcPath failed, path: %{private}s", srcPath.c_str());
             } else if (statBuff.st_uid != uid || statBuff.st_gid != gid ||
-                (statBuff.st_mode & SandboxCommonDef::DEFAULT_FILE_MODE) != mode) {
-                APPSPAWN_LOGV("srcPath uid/gid/mode not as expected");
+                (statBuff.st_mode & SandboxCommonDef::ALL_FILE_MODE_BITS) != mode) {
+                APPSPAWN_LOGI("chmod or chown failed. statBuff.st_uid = %{public}d, statBuff.st_gid = %{public}d, \
+                    statBuff.st_mode = %{public}d", statBuff.st_uid, statBuff.st_gid, statBuff.st_mode);
             }
         }
     }
