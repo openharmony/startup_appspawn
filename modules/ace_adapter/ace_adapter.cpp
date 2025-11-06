@@ -35,7 +35,6 @@
 #include "hitrace_meter.h"
 #include "js_runtime.h"
 #include "json_utils.h"
-#include "parameter.h"
 #include "parameters.h"
 #include "resource_manager.h"
 #ifndef APPSPAWN_TEST
@@ -223,7 +222,7 @@ static int BuildFdInfoMap(const AppSpawnMsgNode *message, std::map<std::string, 
 APPSPAWN_STATIC void ClearEnvAndReturnSuccess(AppSpawnContent *content, AppSpawnClient *client)
 {
     AppSpawningCtx *property = (AppSpawningCtx *)client;
-    APPSPAWN_CHECK(content != NULL && property != NULL, return, "invlid param in clearEnv");
+    APPSPAWN_CHECK(content != NULL && property != NULL, return, "invalid param in clearEnv");
     int fd = property->forkCtx.fd[1];
     property->forkCtx.fd[1] = -1;
     AppSpawnEnvClear(content, client);
@@ -351,7 +350,6 @@ APPSPAWN_STATIC int DlopenAppSpawn(AppSpawnMgr *content)
     if (!(IsAppSpawnMode(content) || IsHybridSpawnMode(content))) {
         return 0;
     }
-
     (void)ParseJsonConfig("etc/appspawn", SYSTEMLIB_JSON, DoDlopenLibs, nullptr);
 
 #ifdef ARKWEB_UTILS_ENABLE

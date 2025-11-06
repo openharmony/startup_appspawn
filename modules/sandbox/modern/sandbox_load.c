@@ -41,7 +41,7 @@ static const SandboxFlagInfo NAMESPACE_FLAGS_MAP[] = {
     {"pid", CLONE_NEWPID}, {"net", CLONE_NEWNET}
 };
 
-static const SandboxFlagInfo FLAGE_POINT_MAP[] = {
+static const SandboxFlagInfo FLAGS_POINT_MAP[] = {
     {"0", 0},
     {"START_FLAGS_BACKUP", (unsigned long)APP_FLAGS_BACKUP_EXTENSION},
     {"DLP_MANAGER", (unsigned long)APP_FLAGS_DLP_MANAGER},
@@ -189,7 +189,7 @@ APPSPAWN_STATIC uint32_t GetFlagIndexFromJson(const cJSON *config)
     if (flagStr == NULL) {
         return 0;
     }
-    const SandboxFlagInfo *info = GetSandboxFlagInfo(flagStr, FLAGE_POINT_MAP, ARRAY_LENGTH(FLAGE_POINT_MAP));
+    const SandboxFlagInfo *info = GetSandboxFlagInfo(flagStr, FLAGS_POINT_MAP, ARRAY_LENGTH(FLAGS_POINT_MAP));
     if (info != NULL) {
         return info->flags;
     }

@@ -1445,8 +1445,8 @@ AppSpawnContent *StartSpawnService(const AppSpawnStartArg *startArg, uint32_t ar
         return NULL, "Failed to prepare load %{public}s result: %{public}d", arg->serviceName, ret);
 #ifndef APPSPAWN_TEST
     if (content->runChildProcessor == NULL) {
-        APPSPAWN_LOGE("ChildLooper is not registered for %{public}s ret %{public}d", arg->serviceName, ret);
-        APPSPAWN_KLOGE("ChildLooper is not registered for %{public}s ret %{public}d", arg->serviceName, ret);
+        APPSPAWN_LOGE("ChildLooper is not registered for %{public}s", arg->serviceName);
+        APPSPAWN_KLOGE("ChildLooper is not registered for %{public}s", arg->serviceName);
         AppSpawnDestroyContent(content);
         return NULL;
     }

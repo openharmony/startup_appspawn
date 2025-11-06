@@ -156,7 +156,7 @@ APPSPAWN_STATIC int AddPermissionIntArrayToValue(cJSON *arrayItem, UserEncap *en
     APPSPAWN_CHECK(value != NULL, return APPSPAWN_SYSTEM_ERROR, "Failed to calloc int array value");
 
     cJSON *arrayItemTemp = arrayItem;
-    for (size_t index = 0; index < arraySize; index++) {
+    for (uint32_t index = 0; index < arraySize; index++) {
         if (arrayItemTemp == NULL || !cJSON_IsNumber(arrayItemTemp)) {
             free(value);
             APPSPAWN_LOGE("Invalid int array item type");
@@ -180,7 +180,7 @@ APPSPAWN_STATIC int AddPermissionBoolArrayToValue(cJSON *arrayItem, UserEncap *e
     APPSPAWN_CHECK(value != NULL, return APPSPAWN_SYSTEM_ERROR, "Failed to calloc bool array value");
 
     cJSON *arrayItemTemp = arrayItem;
-    for (size_t index = 0; index < arraySize; index++) {
+    for (uint32_t index = 0; index < arraySize; index++) {
         if (arrayItemTemp == NULL || !cJSON_IsBool(arrayItemTemp)) {
             free(value);
             APPSPAWN_LOGE("Invalid bool array item type");
@@ -388,9 +388,7 @@ APPSPAWN_STATIC int SpawnSetPermissions(AppSpawningCtx *property, UserEncaps *en
             break, "Failed to calloc encap");
 
         ret = AddMembersToEncapsInfo(permissionsJson, encapsInfo, count);
-        if (ret != 0) {
-            APPSPAWN_LOGW("Add member to encaps failed, ret: %{public}d", ret);
-        }
+        APPSPAWN_CHECK_ONLY_LOGW(ret == 0, "Add member to encaps failed, ret: %{public}d", ret);
 
         ret = SpawnSetMaxPids(property, encapsInfo);
         APPSPAWN_CHECK(ret == 0, break, "Set max fork count to encaps failed, ret: %{public}d", ret);
