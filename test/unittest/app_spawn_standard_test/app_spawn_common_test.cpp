@@ -652,7 +652,7 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_032, TestSize.Level0)
     AppSpawningCtx *property = nullptr;
     AppSpawnMgr *mgr = nullptr;
     int ret = -1;
-    HapDomainInfo hapDomainInfo = {0};
+    HapDomainInfo hapDomainInfo;
     do {
         mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
         EXPECT_EQ(mgr != nullptr, 1);
@@ -680,7 +680,7 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_032, TestSize.Level0)
     AppSpawnClientDestroy(clientHandle);
     DeleteAppSpawnMgr(mgr);
     EXPECT_EQ(hapDomainInfo.uid, 123);
-    EXPECT_EQ(hapDomainInfo.hapFlags & SELINUX_HAP_ISOLATED_RENDER, 1);
+    EXPECT_EQ(hapDomainInfo.hapFlags & SELINUX_HAP_ISOLATED_RENDER, SELINUX_HAP_ISOLATED_RENDER);
     ASSERT_EQ(ret, 0);
 }
 
@@ -691,7 +691,7 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_033, TestSize.Level0)
     AppSpawningCtx *property = nullptr;
     AppSpawnMgr *mgr = nullptr;
     int ret = -1;
-    HapDomainInfo hapDomainInfo = {0};
+    HapDomainInfo hapDomainInfo;
     do {
         mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
         EXPECT_EQ(mgr != nullptr, 1);
@@ -719,7 +719,7 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_033, TestSize.Level0)
     AppSpawnClientDestroy(clientHandle);
     DeleteAppSpawnMgr(mgr);
     EXPECT_EQ(hapDomainInfo.uid, 123);
-    EXPECT_EQ(hapDomainInfo.hapFlags & SELINUX_HAP_ISOLATED_GPU, 1);
+    EXPECT_EQ(hapDomainInfo.hapFlags & SELINUX_HAP_ISOLATED_GPU, SELINUX_HAP_ISOLATED_GPU);
     ASSERT_EQ(ret, 0);
 }
 
@@ -730,7 +730,7 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_034, TestSize.Level0)
     AppSpawningCtx *property = nullptr;
     AppSpawnMgr *mgr = nullptr;
     int ret = -1;
-    HapDomainInfo hapDomainInfo = {0};
+    HapDomainInfo hapDomainInfo;
     do {
         mgr = CreateAppSpawnMgr(MODE_FOR_NATIVE_SPAWN);
         EXPECT_EQ(mgr != nullptr, 1);
@@ -741,6 +741,8 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_034, TestSize.Level0)
         APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break,
             "Failed to create req %{public}s", APPSPAWN_SERVER_NAME);
         ret = AppSpawnReqMsgAddStringInfo(reqHandle, MSG_EXT_NAME_PARENT_UID, "123");
+        APPSPAWN_CHECK_ONLY_EXPER(ret == 0, break);
+        ret = AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_ISOLATED_SANDBOX_TYPE);
         APPSPAWN_CHECK_ONLY_EXPER(ret == 0, break);
         property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
         property->client.flags |= APP_DEVELOPER_MODE;
@@ -755,7 +757,43 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_034, TestSize.Level0)
     AppSpawnClientDestroy(clientHandle);
     DeleteAppSpawnMgr(mgr);
     EXPECT_EQ(hapDomainInfo.uid, 123);
-    EXPECT_EQ(hapDomainInfo.hapFlags & SELINUX_HAP_ISOLATED_RENDER, 1);
+    EXPECT_EQ(hapDomainInfo.hapFlags & SELINUX_HAP_ISOLATED_RENDER, SELINUX_HAP_ISOLATED_RENDER);
+    ASSERT_EQ(ret, 0);
+}
+
+HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_035, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = nullptr;
+    AppSpawnReqMsgHandle reqHandle = 0;
+    AppSpawningCtx *property = nullptr;
+    AppSpawnMgr *mgr = nullptr;
+    int ret = -1;
+    HapDomainInfo hapDomainInfo;
+    do {
+        mgr = CreateAppSpawnMgr(MODE_FOR_NATIVE_SPAWN);
+        EXPECT_EQ(mgr != nullptr, 1);
+        // create msg
+        ret = AppSpawnClientInit(NWEBSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create reqMgr %{public}s", APPSPAWN_SERVER_NAME);
+        reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_SPAWN_NATIVE_PROCESS, 0);
+        APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break,
+            "Failed to create req %{public}s", APPSPAWN_SERVER_NAME);
+        ret = AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_ISOLATED_SANDBOX_TYPE);
+        APPSPAWN_CHECK_ONLY_EXPER(ret == 0, break);
+        property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
+        property->client.flags |= APP_DEVELOPER_MODE;
+        APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
+        AppSpawnMsgDomainInfo *msgDomainInfo =
+            reinterpret_cast<AppSpawnMsgDomainInfo *>(GetAppProperty(property, TLV_DOMAIN_INFO));
+        APPSPAWN_CHECK(msgDomainInfo != NULL, break,
+            "No domain info in req form %{public}s", GetProcessName(property));
+        SetHapDomainInfo(mgr, property, msgDomainInfo, &hapDomainInfo);
+    } while (0);
+    DeleteAppSpawningCtx(property);
+    AppSpawnClientDestroy(clientHandle);
+    DeleteAppSpawnMgr(mgr);
+    EXPECT_EQ(hapDomainInfo.uid, 0);
+    EXPECT_EQ(hapDomainInfo.hapFlags & SELINUX_HAP_ISOLATED_RENDER, SELINUX_HAP_ISOLATED_RENDER);
     ASSERT_EQ(ret, 0);
 }
 #endif // WITH_SELINUX
