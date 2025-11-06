@@ -833,7 +833,7 @@ int32_t SandboxCore::MountNonShellPreInstallHap(const AppSpawningCtx *appPropert
     GetSpecialMountCondition(isPreInstalled, isHaveSandBoxPermission, appProperty);
     bool preInstallMount = (isPreInstalled && !isHaveSandBoxPermission);
     if (preInstallMount) {
-        return DoAllMntPointsMount(appProperty, item, nullptr, SandboxCommonDef::g_flagePoint);
+        return DoAllMntPointsMount(appProperty, item, nullptr, SandboxCommonDef::g_flagsPoint);
     }
     return 0;
 }
@@ -845,14 +845,14 @@ int32_t SandboxCore::MountShellPreInstallHap(const AppSpawningCtx *appProperty, 
     GetSpecialMountCondition(isPreInstalled, isHaveSandBoxPermission, appProperty);
     bool preInstallShellMount = (isPreInstalled && isHaveSandBoxPermission);
     if (preInstallShellMount) {
-        return DoAllMntPointsMount(appProperty, item, nullptr, SandboxCommonDef::g_flagePoint);
+        return DoAllMntPointsMount(appProperty, item, nullptr, SandboxCommonDef::g_flagsPoint);
     }
     return 0;
 }
 
 int32_t SandboxCore::HandleFlagsPoint(const AppSpawningCtx *appProperty, cJSON *appConfig)
 {
-    cJSON *flagsPoints = cJSON_GetObjectItemCaseSensitive(appConfig, SandboxCommonDef::g_flagePoint);
+    cJSON *flagsPoints = cJSON_GetObjectItemCaseSensitive(appConfig, SandboxCommonDef::g_flagsPoint);
     if (flagsPoints == nullptr || !cJSON_IsArray(flagsPoints)) {
         APPSPAWN_LOGV("flag points config is not found");
         return 0;
@@ -880,7 +880,7 @@ int32_t SandboxCore::HandleFlagsPoint(const AppSpawningCtx *appProperty, cJSON *
         if (CheckAppMsgFlagsSet(appProperty, flag) == 0) {
             return 0;
         }
-        return DoAllMntPointsMount(appProperty, item, nullptr, SandboxCommonDef::g_flagePoint);
+        return DoAllMntPointsMount(appProperty, item, nullptr, SandboxCommonDef::g_flagsPoint);
     };
     return SandboxCommon::HandleArrayForeach(flagsPoints, processor);
 }
