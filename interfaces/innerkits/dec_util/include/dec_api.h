@@ -21,7 +21,8 @@
 #include <vector>
 
 /**
- * @brief Get decPaths map from sandbox json config file
+ * @brief Get decPaths map from sandbox json config file, Only allowed to be called by sandbox_manager_services,
+ *        used to clean up decPaths when the application package changes
  *
  * @param void
  *

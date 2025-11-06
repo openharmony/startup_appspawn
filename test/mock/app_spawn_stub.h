@@ -29,7 +29,6 @@
 #include "appspawn_encaps.h"
 
 void SetBoolParamResult(const char *key, bool flag);
-int SetSelinuxConNweb(const AppSpawnMgr *content, const AppSpawningCtx *property);
 
 #ifdef __cplusplus
 extern "C" {

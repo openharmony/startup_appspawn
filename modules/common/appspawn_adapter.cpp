@@ -68,24 +68,6 @@ int SetAppAccessToken(const AppSpawnMgr *content, const AppSpawningCtx *property
     return 0;
 }
 
-int SetSelinuxConNweb(const AppSpawnMgr *content, const AppSpawningCtx *property)
-{
-#if defined(WITH_SELINUX) && !defined(APPSPAWN_TEST)
-    uint32_t len = 0;
-    char *processTypeChar =
-        reinterpret_cast<char *>(GetAppPropertyExt(property, MSG_EXT_NAME_PROCESS_TYPE, &len));
-    std::string processType = (processTypeChar != nullptr) ? std::string(processTypeChar) : "";
-    int32_t ret;
-    if (processType == "render") {
-        ret = setcon("u:r:isolated_render:s0");
-    } else {
-        ret = setcon("u:r:isolated_gpu:s0");
-    }
-    APPSPAWN_CHECK_ONLY_LOG(ret == 0, "Setcon failed, errno: %{public}d", errno);
-#endif
-    return 0;
-}
-
 #ifdef WITH_SELINUX
 void SetHapDomainInfo(const AppSpawnMgr *content, const AppSpawningCtx *property,
     AppSpawnMsgDomainInfo *msgDomainInfo, HapDomainInfo *hapDomainInfo)
@@ -135,11 +117,6 @@ int SetSelinuxCon(const AppSpawnMgr *content, const AppSpawningCtx *property)
         }
         return 0;
     }
-#ifdef APPSPAWN_TEST
-    if (IsNWebSpawnMode(content)) {
-        return 0;
-    }
-#endif
     AppSpawnMsgDomainInfo *msgDomainInfo =
         reinterpret_cast<AppSpawnMsgDomainInfo *>(GetAppProperty(property, TLV_DOMAIN_INFO));
     APPSPAWN_CHECK(msgDomainInfo != NULL, return APPSPAWN_TLV_NONE,

@@ -453,7 +453,7 @@ HWTEST_F(AppSpawnAppMgrTest, App_Spawn_AppSpawnMsgNode_004, TestSize.Level0)
 
 static int AddRenderTerminationTlv(uint8_t *buffer, uint32_t bufferLen, uint32_t &realLen, uint32_t &tlvCount)
 {
-    // add app flage
+    // add app flags
     uint32_t currLen = 0;
     AppSpawnTlv tlv = {};
     tlv.tlvType = TLV_RENDER_TERMINATION_INFO;

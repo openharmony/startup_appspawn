@@ -515,7 +515,7 @@ int UpdateDataGroupDirs(AppSpawnMgr *content)
         };
         ret = DoSharedMount(&args);
         if (ret != 0) {
-            APPSPAWN_LOGE("Shared mount %{public}s to %{public}s failed, errno %{public}d", args.srcPath,
+            APPSPAWN_LOGE("Shared mount %{public}s to %{public}s failed, ret %{public}d", args.srcPath,
                           sandboxPath, ret);
         }
         node = node->next;
