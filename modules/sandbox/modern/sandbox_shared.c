@@ -103,7 +103,7 @@ static bool IsUnlockStatus(uint32_t uid)
         return true;
     }
     char lockStatusParam[PARAM_BUFFER_SIZE] = {0};
-    int ret = snprintf_s(lockStatusParam, PARAM_BUFFER_SIZE, PARAM_BUFFER_SIZE - 1, 
+    int ret = snprintf_s(lockStatusParam, PARAM_BUFFER_SIZE, PARAM_BUFFER_SIZE - 1,
                          "startup.appspawn.lockstatus_%u", uid);
     APPSPAWN_CHECK(ret > 0, return APPSPAWN_ERROR_UTILS_MEM_FAIL,
                    "Format lock status param failed, errno: %{public}d", errno);

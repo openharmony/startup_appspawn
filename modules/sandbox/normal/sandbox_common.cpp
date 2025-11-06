@@ -566,7 +566,7 @@ void SandboxCommon::GetSandboxMountConfig(const AppSpawningCtx *appProperty, con
                                           cJSON *mntPoint, SandboxMountConfig &mountConfig)
 {
     if (section.compare(SandboxCommonDef::g_permissionPrefix) == 0 ||
-        section.compare(SandboxCommonDef::g_flagePoint) == 0 ||
+        section.compare(SandboxCommonDef::g_flagsPoint) == 0 ||
         section.compare(SandboxCommonDef::g_debughap) == 0) {
         mountConfig.optionsPoint = GetOptions(appProperty, mntPoint);
         mountConfig.fsType = GetFsType(mntPoint);

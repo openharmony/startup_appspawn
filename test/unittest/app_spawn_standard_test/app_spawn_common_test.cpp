@@ -57,37 +57,61 @@ public:
     void TearDown() {}
 };
 
-HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_001, TestSize.Level0)
-{
-    int ret = SetSelinuxConNweb(nullptr, nullptr);
-    EXPECT_EQ(ret, 0);
-}
-
-HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_002, TestSize.Level0)
-{
-    int ret = SetAppAccessToken(nullptr, nullptr);
-    EXPECT_NE(ret, 0);
-}
-
-HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_003, TestSize.Level0)
+/**
+ * @brief 非开发模式下appspawn不支持为MSG_SPAWN_NATIVE_PROCESS设置selinux标签
+ *
+ */
+HWTEST_F(AppSpawnCommonTest, App_Spawn_SetSelinuxCon_01, TestSize.Level0)
 {
     AppSpawnClientHandle clientHandle = nullptr;
-    AppSpawnReqMsgHandle reqHandle = 0;
     AppSpawningCtx *property = nullptr;
     AppSpawnMgr *mgr = nullptr;
     int ret = -1;
     do {
-        mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
-        EXPECT_EQ(mgr != nullptr, 1);
-        // create msg
-        ret = AppSpawnClientInit(NWEBSPAWN_SERVER_NAME, &clientHandle);
-        APPSPAWN_CHECK(ret == 0, break, "Failed to create reqMgr %{public}s", APPSPAWN_SERVER_NAME);
-        reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_SPAWN_NATIVE_PROCESS, 0);
-        APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break,
-            "Failed to create req %{public}s", APPSPAWN_SERVER_NAME);
+        mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+        EXPECT_NE(mgr, nullptr);
+
+        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", APPSPAWN_SERVER_NAME);
+
+        AppSpawnReqMsgHandle reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_SPAWN_NATIVE_PROCESS, 0);
+        APPSPAWN_CHECK(reqHandle != nullptr, break, "Failed to create msg type %{public}d", MSG_SPAWN_NATIVE_PROCESS);
+
         property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
+        APPSPAWN_CHECK(property != nullptr, break, "Failed to get app property");
+
+        ret = SetSelinuxCon(mgr, property);
+    } while (0);
+    DeleteAppSpawningCtx(property);
+    AppSpawnClientDestroy(clientHandle);
+    DeleteAppSpawnMgr(mgr);
+    ASSERT_EQ(ret, APPSPAWN_NATIVE_NOT_SUPPORT);
+}
+
+/**
+ * @brief 开发模式下appspawn不为MSG_SPAWN_NATIVE_PROCESS设置selinux标签，直接返回
+ *
+ */
+HWTEST_F(AppSpawnCommonTest, App_Spawn_SetSelinuxCon_02, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = nullptr;
+    AppSpawningCtx *property = nullptr;
+    AppSpawnMgr *mgr = nullptr;
+    int ret = -1;
+    do {
+        mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+        EXPECT_NE(mgr, nullptr);
+
+        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", APPSPAWN_SERVER_NAME);
+
+        AppSpawnReqMsgHandle reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_SPAWN_NATIVE_PROCESS, 0);
+        APPSPAWN_CHECK(reqHandle != nullptr, break, "Failed to create msg type %{public}d", MSG_SPAWN_NATIVE_PROCESS);
+
+        property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
+        APPSPAWN_CHECK(property != nullptr, break, "Failed to get app property");
         property->client.flags |= APP_DEVELOPER_MODE;
-        APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
+
         ret = SetSelinuxCon(mgr, property);
     } while (0);
     DeleteAppSpawningCtx(property);
@@ -96,31 +120,375 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_003, TestSize.Level0)
     ASSERT_EQ(ret, 0);
 }
 
-HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_004, TestSize.Level0)
+/**
+ * @brief appspawn为不携带任何flag的应用设置selinux标签
+ *
+ */
+HWTEST_F(AppSpawnCommonTest, App_Spawn_SetSelinuxCon_03, TestSize.Level0)
 {
     AppSpawnClientHandle clientHandle = nullptr;
-    AppSpawnReqMsgHandle reqHandle = 0;
     AppSpawningCtx *property = nullptr;
     AppSpawnMgr *mgr = nullptr;
     int ret = -1;
     do {
-        mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
-        EXPECT_EQ(mgr != nullptr, 1);
-        // create msg
+        mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+        EXPECT_NE(mgr, nullptr);
+
         ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
-        APPSPAWN_CHECK(ret == 0, break, "Failed to create reqMgr %{public}s", APPSPAWN_SERVER_NAME);
-        reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_SPAWN_NATIVE_PROCESS, 0);
-        APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break,
-            "Failed to create req %{public}s", APPSPAWN_SERVER_NAME);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", APPSPAWN_SERVER_NAME);
+
+        AppSpawnReqMsgHandle reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+        APPSPAWN_CHECK(reqHandle != nullptr, break, "Failed to create msg type %{public}d", MSG_APP_SPAWN);
+
         property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
-        property->client.flags |= APP_BEGETCTL_BOOT;
-        APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
+        APPSPAWN_CHECK(property != nullptr, break, "Failed to get app property");
+
         ret = SetSelinuxCon(mgr, property);
     } while (0);
     DeleteAppSpawningCtx(property);
     AppSpawnClientDestroy(clientHandle);
     DeleteAppSpawnMgr(mgr);
-    ASSERT_EQ(ret, APPSPAWN_NATIVE_NOT_SUPPORT);
+    ASSERT_EQ(ret, 0);
+}
+
+/**
+ * @brief appspawn为携带APP_FLAGS_DEBUGGABLE的应用设置selinux标签
+ *
+ */
+HWTEST_F(AppSpawnCommonTest, App_Spawn_SetSelinuxCon_04, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = nullptr;
+    AppSpawningCtx *property = nullptr;
+    AppSpawnMgr *mgr = nullptr;
+    int ret = -1;
+    do {
+        mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+        EXPECT_NE(mgr, nullptr);
+
+        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", APPSPAWN_SERVER_NAME);
+
+        AppSpawnReqMsgHandle reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+        APPSPAWN_CHECK(reqHandle != nullptr, break, "Failed to create msg type %{public}d", MSG_APP_SPAWN);
+        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_DEBUGGABLE);
+
+        property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
+        APPSPAWN_CHECK(property != nullptr, break, "Failed to get app property");
+        EXPECT_NE(CheckAppMsgFlagsSet(property, APP_FLAGS_DEBUGGABLE), 0);
+
+        ret = SetSelinuxCon(mgr, property);
+    } while (0);
+    DeleteAppSpawningCtx(property);
+    AppSpawnClientDestroy(clientHandle);
+    DeleteAppSpawnMgr(mgr);
+    ASSERT_EQ(ret, 0);
+}
+
+/**
+ * @brief appspawn为携带APP_FLAGS_DLP_MANAGER_FULL_CONTROL的应用设置selinux标签
+ *
+ */
+HWTEST_F(AppSpawnCommonTest, App_Spawn_SetSelinuxCon_05, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = nullptr;
+    AppSpawningCtx *property = nullptr;
+    AppSpawnMgr *mgr = nullptr;
+    int ret = -1;
+    do {
+        mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+        EXPECT_NE(mgr, nullptr);
+
+        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", APPSPAWN_SERVER_NAME);
+
+        AppSpawnReqMsgHandle reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+        APPSPAWN_CHECK(reqHandle != nullptr, break, "Failed to create msg type %{public}d", MSG_APP_SPAWN);
+        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_DLP_MANAGER_FULL_CONTROL);
+
+        property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
+        APPSPAWN_CHECK(property != nullptr, break, "Failed to get app property");
+        EXPECT_NE(CheckAppMsgFlagsSet(property, APP_FLAGS_DLP_MANAGER_FULL_CONTROL), 0);
+
+        ret = SetSelinuxCon(mgr, property);
+    } while (0);
+    DeleteAppSpawningCtx(property);
+    AppSpawnClientDestroy(clientHandle);
+    DeleteAppSpawnMgr(mgr);
+    ASSERT_EQ(ret, 0);
+}
+
+/**
+ * @brief appspawn为携带APP_FLAGS_DLP_MANAGER_READ_ONLY的应用设置selinux标签
+ *
+ */
+HWTEST_F(AppSpawnCommonTest, App_Spawn_SetSelinuxCon_06, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = nullptr;
+    AppSpawningCtx *property = nullptr;
+    AppSpawnMgr *mgr = nullptr;
+    int ret = -1;
+    do {
+        mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+        EXPECT_NE(mgr, nullptr);
+
+        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", APPSPAWN_SERVER_NAME);
+
+        AppSpawnReqMsgHandle reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+        APPSPAWN_CHECK(reqHandle != nullptr, break, "Failed to create reqMsg type %{public}d", MSG_APP_SPAWN);
+        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_DLP_MANAGER_READ_ONLY);
+
+        property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
+        APPSPAWN_CHECK(property != nullptr, break, "Failed to get app property");
+        EXPECT_NE(CheckAppMsgFlagsSet(property, APP_FLAGS_DLP_MANAGER_READ_ONLY), 0);
+
+        ret = SetSelinuxCon(mgr, property);
+    } while (0);
+    DeleteAppSpawningCtx(property);
+    AppSpawnClientDestroy(clientHandle);
+    DeleteAppSpawnMgr(mgr);
+    ASSERT_EQ(ret, 0);
+}
+
+/**
+ * @brief appspawn为携带APP_FLAGS_ISOLATED_SANDBOX的应用设置selinux标签
+ *
+ */
+HWTEST_F(AppSpawnCommonTest, App_Spawn_SetSelinuxCon_07, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = nullptr;
+    AppSpawningCtx *property = nullptr;
+    AppSpawnMgr *mgr = nullptr;
+    int ret = -1;
+    do {
+        mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+        EXPECT_NE(mgr, nullptr);
+
+        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", APPSPAWN_SERVER_NAME);
+
+        AppSpawnReqMsgHandle reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+        APPSPAWN_CHECK(reqHandle != nullptr, break, "Failed to create msg type %{public}d", MSG_APP_SPAWN);
+        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_ISOLATED_SANDBOX);
+
+        property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
+        APPSPAWN_CHECK(property != nullptr, break, "Failed to get app property");
+        EXPECT_NE(CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX), 0);
+
+        ret = SetSelinuxCon(mgr, property);
+    } while (0);
+    DeleteAppSpawningCtx(property);
+    AppSpawnClientDestroy(clientHandle);
+    DeleteAppSpawnMgr(mgr);
+    ASSERT_EQ(ret, 0);
+}
+
+/**
+ * @brief appspawn为携带APP_FLAGS_CUSTOM_SANDBOX的应用设置selinux标签
+ *
+ */
+HWTEST_F(AppSpawnCommonTest, App_Spawn_SetSelinuxCon_08, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = nullptr;
+    AppSpawningCtx *property = nullptr;
+    AppSpawnMgr *mgr = nullptr;
+    int ret = -1;
+    do {
+        mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+        EXPECT_NE(mgr, nullptr);
+
+        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", APPSPAWN_SERVER_NAME);
+
+        AppSpawnReqMsgHandle reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+        APPSPAWN_CHECK(reqHandle != nullptr, break, "Failed to create msg type %{public}d", MSG_APP_SPAWN);
+        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_CUSTOM_SANDBOX);
+
+        property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
+        APPSPAWN_CHECK(property != nullptr, break, "Failed to get app property");
+        EXPECT_NE(CheckAppMsgFlagsSet(property, APP_FLAGS_CUSTOM_SANDBOX), 0);
+
+        ret = SetSelinuxCon(mgr, property);
+    } while (0);
+    DeleteAppSpawningCtx(property);
+    AppSpawnClientDestroy(clientHandle);
+    DeleteAppSpawnMgr(mgr);
+    ASSERT_EQ(ret, 0);
+}
+
+/**
+ * @brief appspawn为携带APP_FLAGS_ISOLATED_SELINUX_LABEL的应用设置selinux标签
+ *
+ */
+HWTEST_F(AppSpawnCommonTest, App_Spawn_SetSelinuxCon_09, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = nullptr;
+    AppSpawningCtx *property = nullptr;
+    AppSpawnMgr *mgr = nullptr;
+    int ret = -1;
+    do {
+        mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+        EXPECT_NE(mgr, nullptr);
+
+        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", APPSPAWN_SERVER_NAME);
+
+        AppSpawnReqMsgHandle reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+        APPSPAWN_CHECK(reqHandle != nullptr, break, "Failed to create msg type %{public}d", MSG_APP_SPAWN);
+        ret = AppSpawnReqMsgAddStringInfo(reqHandle, MSG_EXT_NAME_EXTENSION_TYPE, "test");
+        APPSPAWN_CHECK(ret == 0, break, "Failed to add MSG_EXT_NAME_EXTENSION_TYPE %{public}s", "test");
+        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_ISOLATED_SELINUX_LABEL);
+
+        property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
+        APPSPAWN_CHECK(property != nullptr, break, "Failed to get app property");
+        EXPECT_NE(CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SELINUX_LABEL), 0);
+
+        ret = SetSelinuxCon(mgr, property);
+    } while (0);
+    DeleteAppSpawningCtx(property);
+    AppSpawnClientDestroy(clientHandle);
+    DeleteAppSpawnMgr(mgr);
+    ASSERT_EQ(ret, 0);
+}
+
+/**
+ * @brief nwebspawn为render进程设置selinux标签
+ *
+ */
+HWTEST_F(AppSpawnCommonTest, Nweb_Spawn_SetSelinuxCon_01, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = nullptr;
+    AppSpawningCtx *property = nullptr;
+    AppSpawnMgr *mgr = nullptr;
+    int ret = -1;
+    do {
+        mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+        EXPECT_NE(mgr, nullptr);
+
+        ret = AppSpawnClientInit(NWEBSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", NWEBSPAWN_SERVER_NAME);
+
+        AppSpawnReqMsgHandle reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+        APPSPAWN_CHECK(reqHandle != nullptr, break, "Failed to create msg type %{public}d", MSG_APP_SPAWN);
+        ret = AppSpawnReqMsgAddStringInfo(reqHandle, MSG_EXT_NAME_PROCESS_TYPE, "render");
+        APPSPAWN_CHECK(ret == 0, break, "Failed to add MSG_EXT_NAME_PROCESS_TYPE %{public}s", "render");
+
+        property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
+        APPSPAWN_CHECK(property != nullptr, break, "Failed to get app property");
+
+        ret = SetSelinuxCon(mgr, property);
+    } while (0);
+    DeleteAppSpawningCtx(property);
+    AppSpawnClientDestroy(clientHandle);
+    DeleteAppSpawnMgr(mgr);
+    ASSERT_EQ(ret, 0);
+}
+
+/**
+ * @brief nwebspawn为gpu进程设置selinux标签
+ *
+ */
+HWTEST_F(AppSpawnCommonTest, Nweb_Spawn_SetSelinuxCon_02, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = nullptr;
+    AppSpawningCtx *property = nullptr;
+    AppSpawnMgr *mgr = nullptr;
+    int ret = -1;
+    do {
+        mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+        EXPECT_NE(mgr, nullptr);
+
+        ret = AppSpawnClientInit(NWEBSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", NWEBSPAWN_SERVER_NAME);
+
+        AppSpawnReqMsgHandle reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+        APPSPAWN_CHECK(reqHandle != nullptr, break, "Failed to create msg type %{public}d", MSG_APP_SPAWN);
+        ret = AppSpawnReqMsgAddStringInfo(reqHandle, MSG_EXT_NAME_PROCESS_TYPE, "gpu");
+        APPSPAWN_CHECK(ret == 0, break, "Failed to add MSG_EXT_NAME_PROCESS_TYPE %{public}s", "gpu");
+
+        property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
+        APPSPAWN_CHECK(property != nullptr, break, "Failed to get app property");
+
+        ret = SetSelinuxCon(mgr, property);
+    } while (0);
+    DeleteAppSpawningCtx(property);
+    AppSpawnClientDestroy(clientHandle);
+    DeleteAppSpawnMgr(mgr);
+    ASSERT_EQ(ret, 0);
+}
+
+/**
+ * @brief nativespawn为isolated模式下hostId为null的应用设置selinux标签
+ *
+ */
+HWTEST_F(AppSpawnCommonTest, Native_Spawn_SetSelinuxCon_01, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = nullptr;
+    AppSpawningCtx *property = nullptr;
+    AppSpawnMgr *mgr = nullptr;
+    int ret = -1;
+    do {
+        mgr = CreateAppSpawnMgr(MODE_FOR_NATIVE_SPAWN);
+        EXPECT_NE(mgr, nullptr);
+
+        ret = AppSpawnClientInit(NATIVESPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", NATIVESPAWN_SERVER_NAME);
+
+        AppSpawnReqMsgHandle reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+        APPSPAWN_CHECK(reqHandle != nullptr, break, "Failed to create msg type %{public}d", MSG_APP_SPAWN);
+        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_ISOLATED_SANDBOX_TYPE);
+
+        property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
+        APPSPAWN_CHECK(property != nullptr, break, "Failed to get app property");
+        EXPECT_NE(CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX_TYPE), 0);
+
+        ret = SetSelinuxCon(mgr, property);
+    } while (0);
+    DeleteAppSpawningCtx(property);
+    AppSpawnClientDestroy(clientHandle);
+    DeleteAppSpawnMgr(mgr);
+    ASSERT_EQ(ret, 0);
+}
+
+/**
+ * @brief nativespawn为isolated模式下hostId不为null的应用设置selinux标签
+ *
+ */
+HWTEST_F(AppSpawnCommonTest, Native_Spawn_SetSelinuxCon_02, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = nullptr;
+    AppSpawningCtx *property = nullptr;
+    AppSpawnMgr *mgr = nullptr;
+    int ret = -1;
+    do {
+        mgr = CreateAppSpawnMgr(MODE_FOR_NATIVE_SPAWN);
+        EXPECT_NE(mgr, nullptr);
+
+        ret = AppSpawnClientInit(NATIVESPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", NATIVESPAWN_SERVER_NAME);
+
+        AppSpawnReqMsgHandle reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+        APPSPAWN_CHECK(reqHandle != nullptr, break, "Failed to create msg type %{public}d", MSG_APP_SPAWN);
+        ret = AppSpawnReqMsgAddStringInfo(reqHandle, MSG_EXT_NAME_PARENT_UID, "100");
+        APPSPAWN_CHECK(ret == 0, break, "Failed to add MSG_EXT_NAME_PARENT_UID %{public}s", "100");
+        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_ISOLATED_SANDBOX_TYPE);
+
+        property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
+        APPSPAWN_CHECK(property != nullptr, break, "Failed to get app property");
+        EXPECT_NE(CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX_TYPE), 0);
+
+        ret = SetSelinuxCon(mgr, property);
+    } while (0);
+    DeleteAppSpawningCtx(property);
+    AppSpawnClientDestroy(clientHandle);
+    DeleteAppSpawnMgr(mgr);
+    ASSERT_EQ(ret, 0);
+}
+
+HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_002, TestSize.Level0)
+{
+    int ret = SetAppAccessToken(nullptr, nullptr);
+    EXPECT_NE(ret, 0);
 }
 
 HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_005, TestSize.Level0)
@@ -484,122 +852,6 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_024, TestSize.Level0)
     AppSpawnReqMsgFree(reqHandle);
     AppSpawnClientDestroy(clientHandle);
     ASSERT_EQ(ret, 0);
-}
-
-HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_025, TestSize.Level0)
-{
-    AppSpawnClientHandle clientHandle = nullptr;
-    AppSpawnReqMsgHandle reqHandle = 0;
-    AppSpawningCtx *property = nullptr;
-    AppSpawnMgr *mgr = nullptr;
-    int ret = -1;
-    do {
-        mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
-        EXPECT_EQ(mgr != nullptr, 1);
-        // create msg
-        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
-        APPSPAWN_CHECK(ret == 0, break, "Failed to create reqMgr %{public}s", APPSPAWN_SERVER_NAME);
-        reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_SPAWN_NATIVE_PROCESS, 0);
-        APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break,
-            "Failed to create req %{public}s", APPSPAWN_SERVER_NAME);
-        property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
-        property->client.flags |= APP_BEGETCTL_BOOT;
-        APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
-        SetAppSpawnMsgFlag(property->message, APP_FLAGS_ISOLATED_SANDBOX, 16);
-        ret = SetSelinuxCon(mgr, property);
-    } while (0);
-    DeleteAppSpawningCtx(property);
-    AppSpawnClientDestroy(clientHandle);
-    DeleteAppSpawnMgr(mgr);
-    ASSERT_EQ(ret, APPSPAWN_NATIVE_NOT_SUPPORT);
-}
-
-HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_026_01, TestSize.Level0)
-{
-    AppSpawnClientHandle clientHandle = nullptr;
-    AppSpawnReqMsgHandle reqHandle = 0;
-    AppSpawningCtx *property = nullptr;
-    AppSpawnMgr *mgr = nullptr;
-    int ret = -1;
-    do {
-        mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
-        EXPECT_EQ(mgr != nullptr, 1);
-        // create msg
-        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
-        APPSPAWN_CHECK(ret == 0, break, "Failed to create reqMgr %{public}s", APPSPAWN_SERVER_NAME);
-        reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
-        APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break,
-            "Failed to create req %{public}s", APPSPAWN_SERVER_NAME);
-        property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
-        APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
-        property->client.flags |= APP_DEVELOPER_MODE;
-        ret = SetSelinuxCon(mgr, property);
-        APPSPAWN_CHECK_ONLY_EXPER(ret == 0, break);
-        SetAppSpawnMsgFlag(property->message, TLV_MSG_FLAGS, APP_FLAGS_DLP_MANAGER_FULL_CONTROL);
-        ret = SetSelinuxCon(mgr, property);
-    } while (0);
-    DeleteAppSpawningCtx(property);
-    AppSpawnClientDestroy(clientHandle);
-    DeleteAppSpawnMgr(mgr);
-    ASSERT_EQ(ret, 0);
-}
-
-HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_026_02, TestSize.Level0)
-{
-    AppSpawnClientHandle clientHandle = nullptr;
-    AppSpawnReqMsgHandle reqHandle = 0;
-    AppSpawningCtx *property = nullptr;
-    AppSpawnMgr *mgr = nullptr;
-    int ret = -1;
-    do {
-        mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
-        EXPECT_EQ(mgr != nullptr, 1);
-        // create msg
-        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
-        APPSPAWN_CHECK(ret == 0, break, "Failed to create reqMgr %{public}s", APPSPAWN_SERVER_NAME);
-        reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
-        APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break,
-            "Failed to create req %{public}s", APPSPAWN_SERVER_NAME);
-        property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
-        APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
-        property->client.flags |= APP_DEVELOPER_MODE;
-        ret = SetSelinuxCon(mgr, property);
-        APPSPAWN_CHECK_ONLY_EXPER(ret == 0, break);
-        SetAppSpawnMsgFlag(property->message, TLV_MSG_FLAGS, APP_FLAGS_DLP_MANAGER_READ_ONLY);
-        ret = SetSelinuxCon(mgr, property);
-    } while (0);
-    DeleteAppSpawningCtx(property);
-    AppSpawnClientDestroy(clientHandle);
-    DeleteAppSpawnMgr(mgr);
-    ASSERT_EQ(ret, 0);
-}
-
-HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_027, TestSize.Level0)
-{
-    AppSpawnClientHandle clientHandle = nullptr;
-    AppSpawnReqMsgHandle reqHandle = 0;
-    AppSpawningCtx *property = nullptr;
-    AppSpawnMgr *mgr = nullptr;
-    int ret = -1;
-    do {
-        mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
-        EXPECT_EQ(mgr != nullptr, 1);
-        // create msg
-        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
-        APPSPAWN_CHECK(ret == 0, break, "Failed to create reqMgr %{public}s", APPSPAWN_SERVER_NAME);
-        reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_SPAWN_NATIVE_PROCESS, 0);
-        APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break,
-            "Failed to create req %{public}s", APPSPAWN_SERVER_NAME);
-        property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
-        property->client.flags |= APP_BEGETCTL_BOOT;
-        APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
-        SetAppSpawnMsgFlag(property->message, APP_FLAGS_DEBUGGABLE, 1);
-        ret = SetSelinuxCon(mgr, property);
-    } while (0);
-    DeleteAppSpawningCtx(property);
-    AppSpawnClientDestroy(clientHandle);
-    DeleteAppSpawnMgr(mgr);
-    ASSERT_EQ(ret, APPSPAWN_NATIVE_NOT_SUPPORT);
 }
 
 HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_028, TestSize.Level0)
