@@ -444,15 +444,8 @@
             "flags": "FILE_ACCESS_COMMON_DIR",
             "mount-paths": [{
                     "src-path": "/mnt/user/<currentUserId>/sharefs/docs",
-                    "sandbox-path": "/mnt/storage/Users",
-                    "sandbox-flags": [ "bind", "rec" ]
-                }, {
-                    "src-path": "/mnt/sandbox/<currentUserId>/<clonePackageName>/mnt/storage/Users",
                     "sandbox-path": "/storage/Users",
-                    "sandbox-flags-customized": [ "MS_NODEV"],
-                    "dac-override-sensitive": "true",
-                    "fs-type": "sharefs",
-                    "options": "override"
+                    "sandbox-flags": [ "bind", "rec" ]
                 }
             ]}],
             "symbol-links" : []
