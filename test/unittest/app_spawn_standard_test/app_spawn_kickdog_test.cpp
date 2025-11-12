@@ -152,6 +152,7 @@ HWTEST_F(AppSpawnKickDogTest, App_Spawn_AppSpawnKickDog_002, TestSize.Level0)
         std::make_unique<OHOS::AppSpawnTestServer>("appspawn -mode nwebspawn");
     AddPreloadHook(HOOK_PRIO_COMMON, SpawnKickDogStart);
     testServer->Start(nullptr);
+    sleep(1); // wait 1s for writing kick log before reading
     if (CheckDeviceInLinux()) {
         EXPECT_EQ(CheckFileContent(HM_APPSPAWN_WATCHDOG_FILE, LINUX_APPSPAWN_WATCHDOG_ON), 0);
         EXPECT_EQ(CheckFileContent(HM_APPSPAWN_WATCHDOG_FILE, LINUX_APPSPAWN_WATCHDOG_KICK), -1);
