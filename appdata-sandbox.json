@@ -863,6 +863,15 @@
                 }
             ]
         }],
+        "ohos.permission.ENTERPRISE_READ_LOG":[{
+            "sandbox-switch": "ON",
+            "mount-paths": [{
+                    "src-path": "/data/service/el1/public/edm/log/<currentUserId>/<PackageName>",
+                    "sandbox-path": "/data/edm/log",
+                    "sandbox-flags": [ "bind", "rec" ]
+                }
+            ]
+        }],
         "ohos.permission.ACTIVATE_THEME_PACKAGE":[{
             "sandbox-switch": "ON",
             "gids": [3817],
