@@ -1796,6 +1796,39 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_55, TestSize.Level0)
     DeleteAppSpawningCtx(appProperty);
 }
 
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_56, TestSize.Level0)
+{
+    g_testHelper.SetProcessName("com.//ohos.dlpmanager");
+    g_testHelper.SetTestApl("normal");
+    AppSpawningCtx *appProperty = GetTestAppProperty();
+    int32_t ret = AppSpawn::SandboxCore::SetAppSandboxPropertyNweb(appProperty, CLONE_NEWPID);
+    EXPECT_NE(ret, 0);
+    DeleteAppSpawningCtx(appProperty);
+    g_testHelper.SetProcessName("com.example.myapplication");
+}
+
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_57, TestSize.Level0)
+{
+    g_testHelper.SetProcessName("com.ohos.dlpmanager");
+    g_testHelper.SetTestApl("normal");
+    AppSpawningCtx *appProperty = GetTestAppProperty();
+    int32_t ret = AppSpawn::SandboxCore::SetAppSandboxPropertyNweb(appProperty, CLONE_NEWPID);
+    EXPECT_NE(ret, 0);
+    DeleteAppSpawningCtx(appProperty);
+    g_testHelper.SetProcessName("com.example.myapplication");
+}
+
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_58, TestSize.Level0)
+{
+    g_testHelper.SetProcessName("");
+    g_testHelper.SetTestApl("normal");
+    AppSpawningCtx *appProperty = GetTestAppProperty();
+    int32_t ret = AppSpawn::SandboxCore::SetAppSandboxPropertyNweb(appProperty, CLONE_NEWPID);
+    EXPECT_NE(ret, 0);
+    DeleteAppSpawningCtx(appProperty);
+    g_testHelper.SetProcessName("com.example.myapplication");
+}
+
 /**
  * @brief 测试app extension
  *
