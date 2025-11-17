@@ -36,10 +36,14 @@
 #define OH_APP_MAX_PIDS_NUM            512
 #define OH_ENCAPS_PROC_TYPE_BASE       0x18
 #define OH_ENCAPS_PERMISSION_TYPE_BASE 0x1E
+#define HM_ENCAPS_PROC_FLAG_BASE       0x1F
+
 #define OH_ENCAPS_MAGIC                'E'
 #define OH_PROC_HAP                    4
 #define OH_ENCAPS_DEFAULT_FLAG         0
 #define OH_ENCAPS_DEFAULT_STR          ""
+#define CUSTOM_SANDBOX_PROCESS_TYPE    (1U << 0)
+
 // permission value max len is 512
 #define OH_ENCAPS_VALUE_MAX_LEN 512
 // encapsCount max count is 64
@@ -47,6 +51,7 @@
 
 #define SET_ENCAPS_PROC_TYPE_CMD _IOW(OH_ENCAPS_MAGIC, OH_ENCAPS_PROC_TYPE_BASE, uint32_t)
 #define SET_ENCAPS_PERMISSION_TYPE_CMD _IOW(OH_ENCAPS_MAGIC, OH_ENCAPS_PERMISSION_TYPE_BASE, UserEncaps)
+#define SET_ENCAPS_PROC_FLAG_CMD _IOW(OH_ENCAPS_MAGIC, HM_ENCAPS_PROC_FLAG_BASE, uint32_t)
 
 APPSPAWN_STATIC int OpenEncapsFile(void)
 {
@@ -432,13 +437,20 @@ APPSPAWN_STATIC int SpawnSetEncapsPermissions(AppSpawnMgr *content, AppSpawningC
         return 0;         // Can't enable encaps ability
     }
 
+    if (CheckAppMsgFlagsSet(property, APP_FLAGS_CUSTOM_SANDBOX)) {
+        APPSPAWN_LOGV("set proc flag for custom sanbdox");
+        int proc_flag = CUSTOM_SANDBOX_PROCESS_TYPE;
+        ret = ioctl(encapsFileFd, SET_ENCAPS_PROC_FLAG_CMD, &proc_flag);
+        APPSPAWN_CHECK_ONLY_LOG(ret == 0, "ioctl SET_ENCAPS_PROC_FLAG_CMD failed, errno %{public}d", errno);
+    }
+
     UserEncaps encapsInfo = {0};
     ret = SpawnSetPermissions(property, &encapsInfo);
     if (ret != 0) {
         close(encapsFileFd);
         FreeEncapsInfo(&encapsInfo);
         APPSPAWN_LOGV("Build encaps info failed, ret: %{public}d", ret);
-        return 0;        // Can't set permission encpas ability
+        return 0;        // Can't set permission encaps ability
     }
 
     if (encapsInfo.encapsCount > 0) {

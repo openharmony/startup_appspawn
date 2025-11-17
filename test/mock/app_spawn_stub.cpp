@@ -114,9 +114,7 @@ void SetTraceDisabled(int disable) {}
 #ifdef WITH_SECCOMP
 bool SetSeccompPolicyWithName(SeccompFilterType filter, const char *filterName)
 {
-    static int result = 0;
-    result++;
-    return true;  // (result % 3) == 0; // 3 is test data
+    return true;
 }
 
 bool IsEnableSeccomp(void)
