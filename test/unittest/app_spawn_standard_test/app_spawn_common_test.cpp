@@ -53,8 +53,18 @@ class AppSpawnCommonTest : public testing::Test {
 public:
     static void SetUpTestCase() {}
     static void TearDownTestCase() {}
-    void SetUp() {}
-    void TearDown() {}
+    void SetUp()
+    {
+        const TestInfo *info = UnitTest::GetInstance()->current_test_info();
+        GTEST_LOG_(INFO) << info->test_suite_name() << "." << info->name() << " start";
+        APPSPAWN_LOGI("%{public}s.%{public}s start", info->test_suite_name(), info->name());
+    }
+    void TearDown()
+    {
+        const TestInfo *info = UnitTest::GetInstance()->current_test_info();
+        GTEST_LOG_(INFO) << info->test_suite_name() << "." << info->name() << " end";
+        APPSPAWN_LOGI("%{public}s.%{public}s end", info->test_suite_name(), info->name());
+    }
 };
 
 /**
@@ -491,124 +501,29 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_002, TestSize.Level0)
     EXPECT_NE(ret, 0);
 }
 
-HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_005, TestSize.Level0)
+/**
+ * @brief appspawn为不携带任何flag的应用设置Seccomp Filter
+ *
+ */
+HWTEST_F(AppSpawnCommonTest, App_Spawn_SetSeccompFilter_01, TestSize.Level0)
 {
-    AppSpawnClientHandle clientHandle = nullptr;
-    AppSpawnReqMsgHandle reqHandle = 0;
-    AppSpawningCtx *property = nullptr;
-    AppSpawnMgr *mgr = nullptr;
     int ret = -1;
-    do {
-        mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
-        EXPECT_EQ(mgr != nullptr, 1);
-        // create msg
-        ret = AppSpawnClientInit(NWEBSPAWN_SERVER_NAME, &clientHandle);
-        APPSPAWN_CHECK(ret == 0, break, "Failed to create reqMgr %{public}s", APPSPAWN_SERVER_NAME);
-        reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_SPAWN_NATIVE_PROCESS, 0);
-        APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break,
-            "Failed to create req %{public}s", APPSPAWN_SERVER_NAME);
-
-        ret = AppSpawnReqMsgAddExtInfo(reqHandle, MSG_EXT_NAME_PROCESS_TYPE,
-            reinterpret_cast<uint8_t *>(const_cast<char *>("render")), 7); // 7 is value len
-        APPSPAWN_CHECK_ONLY_EXPER(ret == 0, break);
-        property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
-        APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
-        ret = SetSeccompFilter(mgr, property);
-    } while (0);
-    DeleteAppSpawningCtx(property);
-    AppSpawnClientDestroy(clientHandle);
-    DeleteAppSpawnMgr(mgr);
-    ASSERT_EQ(ret, 0);
-}
-
-HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_006, TestSize.Level0)
-{
-    AppSpawnClientHandle clientHandle = nullptr;
-    AppSpawnReqMsgHandle reqHandle = 0;
-    AppSpawningCtx *property = nullptr;
     AppSpawnMgr *mgr = nullptr;
-    int ret = -1;
-    do {
-        mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
-        EXPECT_EQ(mgr != nullptr, 1);
-        // create msg
-        ret = AppSpawnClientInit(NWEBSPAWN_SERVER_NAME, &clientHandle);
-        APPSPAWN_CHECK(ret == 0, break, "Failed to create reqMgr %{public}s", APPSPAWN_SERVER_NAME);
-        reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_SPAWN_NATIVE_PROCESS, 0);
-        APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break,
-            "Failed to create req %{public}s", APPSPAWN_SERVER_NAME);
-
-        ret = AppSpawnReqMsgAddExtInfo(reqHandle, MSG_EXT_NAME_PROCESS_TYPE,
-            reinterpret_cast<uint8_t *>(const_cast<char *>("xxx")), 7); // 7 is value len
-        APPSPAWN_CHECK_ONLY_EXPER(ret == 0, break);
-        ret = AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_ISOLATED_SANDBOX);
-        APPSPAWN_CHECK_ONLY_EXPER(ret == 0, break);
-        property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
-        APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
-        ret = SetSeccompFilter(mgr, property);
-    } while (0);
-    DeleteAppSpawningCtx(property);
-    AppSpawnClientDestroy(clientHandle);
-    DeleteAppSpawnMgr(mgr);
-    ASSERT_EQ(ret, 0);
-}
-
-HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_007, TestSize.Level0)
-{
     AppSpawnClientHandle clientHandle = nullptr;
-    AppSpawnReqMsgHandle reqHandle = 0;
     AppSpawningCtx *property = nullptr;
-    AppSpawnMgr *mgr = nullptr;
-    int ret = -1;
-    do {
-        mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
-        EXPECT_EQ(mgr != nullptr, 1);
-        // create msg
-        ret = AppSpawnClientInit(NWEBSPAWN_SERVER_NAME, &clientHandle);
-        APPSPAWN_CHECK(ret == 0, break, "Failed to create reqMgr %{public}s", APPSPAWN_SERVER_NAME);
-        reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_SPAWN_NATIVE_PROCESS, 0);
-        APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break,
-            "Failed to create req %{public}s", APPSPAWN_SERVER_NAME);
-
-        ret = AppSpawnReqMsgAddExtInfo(reqHandle, MSG_EXT_NAME_PROCESS_TYPE,
-            reinterpret_cast<uint8_t *>(const_cast<char *>("xxx")), 7); // 7 is value len
-        APPSPAWN_CHECK_ONLY_EXPER(ret == 0, break);
-        ret = AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_IGNORE_SANDBOX);
-        APPSPAWN_CHECK_ONLY_EXPER(ret == 0, break);
-        property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
-        APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
-        ret = SetSeccompFilter(mgr, property);
-    } while (0);
-    DeleteAppSpawningCtx(property);
-    AppSpawnClientDestroy(clientHandle);
-    DeleteAppSpawnMgr(mgr);
-    ASSERT_EQ(ret, 0);
-}
-
-HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_008, TestSize.Level0)
-{
-    AppSpawnClientHandle clientHandle = nullptr;
-    AppSpawnReqMsgHandle reqHandle = 0;
-    AppSpawningCtx *property = nullptr;
-    AppSpawnMgr *mgr = nullptr;
-    int ret = -1;
     do {
         mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
-        EXPECT_EQ(mgr != nullptr, 1);
-        // create msg
-        ret = AppSpawnClientInit(NWEBSPAWN_SERVER_NAME, &clientHandle);
-        APPSPAWN_CHECK(ret == 0, break, "Failed to create reqMgr %{public}s", APPSPAWN_SERVER_NAME);
-        reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_SPAWN_NATIVE_PROCESS, 0);
-        APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break,
-            "Failed to create req %{public}s", APPSPAWN_SERVER_NAME);
+        EXPECT_NE(mgr, nullptr);
 
-        ret = AppSpawnReqMsgAddExtInfo(reqHandle, MSG_EXT_NAME_PROCESS_TYPE,
-            reinterpret_cast<uint8_t *>(const_cast<char *>("xxx")), 7); // 7 is value len
-        APPSPAWN_CHECK_ONLY_EXPER(ret == 0, break);
-        ret = AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_IGNORE_SANDBOX);
-        APPSPAWN_CHECK_ONLY_EXPER(ret == 0, break);
+        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", APPSPAWN_SERVER_NAME);
+
+        AppSpawnReqMsgHandle reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+        APPSPAWN_CHECK(reqHandle != nullptr, break, "Failed to create msg type %{public}d", MSG_APP_SPAWN);
+
         property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
-        APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
+        APPSPAWN_CHECK(property != nullptr, break, "Failed to get app property");
+
         ret = SetSeccompFilter(mgr, property);
     } while (0);
     DeleteAppSpawningCtx(property);
@@ -617,21 +532,97 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_008, TestSize.Level0)
     ASSERT_EQ(ret, 0);
 }
 
-HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_009, TestSize.Level0)
+/**
+ * @brief appspawn为携带多个flag的应用设置Seccomp Filter
+ *
+ */
+HWTEST_F(AppSpawnCommonTest, App_Spawn_SetSeccompFilter_02, TestSize.Level0)
 {
-    AppSpawnClientHandle clientHandle = nullptr;
-    AppSpawnReqMsgHandle reqHandle = 0;
-    AppSpawningCtx *property = nullptr;
     int ret = -1;
+    AppSpawnMgr *mgr = nullptr;
+    AppSpawnClientHandle clientHandle = nullptr;
+    AppSpawningCtx *property = nullptr;
     do {
-        // create msg
+        mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+        EXPECT_NE(mgr, nullptr);
+
         ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
-        APPSPAWN_CHECK(ret == 0, break, "Failed to create reqMgr %{public}s", APPSPAWN_SERVER_NAME);
-        reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_SPAWN_NATIVE_PROCESS, 0);
-        APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break,
-            "Failed to create req %{public}s", APPSPAWN_SERVER_NAME);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", APPSPAWN_SERVER_NAME);
+
+        AppSpawnReqMsgHandle reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+        APPSPAWN_CHECK(reqHandle != nullptr, break, "Failed to create msg type %{public}d", MSG_APP_SPAWN);
+        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_ISOLATED_SANDBOX);
+        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_ATOMIC_SERVICE);
+        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_ALLOW_IOURING);
+
+        property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
+        APPSPAWN_CHECK(property != nullptr, break, "Failed to get app property");
+        EXPECT_NE(CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX), 0);
+        EXPECT_NE(CheckAppMsgFlagsSet(property, APP_FLAGS_ATOMIC_SERVICE), 0);
+        EXPECT_NE(CheckAppMsgFlagsSet(property, APP_FLAGS_ALLOW_IOURING), 0);
+
+        ret = SetSeccompFilter(mgr, property);
+    } while (0);
+    DeleteAppSpawningCtx(property);
+    AppSpawnClientDestroy(clientHandle);
+    DeleteAppSpawnMgr(mgr);
+    ASSERT_EQ(ret, 0);
+}
+
+/**
+ * @brief nwebspawn为render进程设置Seccomp Filter，直接返回
+ *
+ */
+HWTEST_F(AppSpawnCommonTest, Nweb_Spawn_SetSeccompFilter_01, TestSize.Level0)
+{
+    int ret = -1;
+    AppSpawnMgr *mgr = nullptr;
+    AppSpawnClientHandle clientHandle = nullptr;
+    AppSpawningCtx *property = nullptr;
+    do {
+        mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
+        EXPECT_NE(mgr, nullptr);
+
+        ret = AppSpawnClientInit(NWEBSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", NWEBSPAWN_SERVER_NAME);
+
+        AppSpawnReqMsgHandle reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+        APPSPAWN_CHECK(reqHandle != nullptr, break, "Failed to create msg type %{public}d", MSG_APP_SPAWN);
+        ret = AppSpawnReqMsgAddStringInfo(reqHandle, MSG_EXT_NAME_PROCESS_TYPE, "render");
+        APPSPAWN_CHECK(ret == 0, break, "Failed to add MSG_EXT_NAME_PROCESS_TYPE %{public}s", "render");
+
+        property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
+        APPSPAWN_CHECK(property != nullptr, break, "Failed to get app property");
+
+        ret = SetSeccompFilter(mgr, property);
+    } while (0);
+    DeleteAppSpawningCtx(property);
+    AppSpawnClientDestroy(clientHandle);
+    DeleteAppSpawnMgr(mgr);
+    ASSERT_EQ(ret, 0);
+}
+
+/**
+ * @brief appspawn为应用设置Internet Permission [0, 0]
+ *
+ */
+HWTEST_F(AppSpawnCommonTest, App_Spawn_SetInternetPermission_01, TestSize.Level0)
+{
+    int ret = -1;
+    AppSpawnClientHandle clientHandle = nullptr;
+    AppSpawningCtx *property = nullptr;
+    do {
+        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", APPSPAWN_SERVER_NAME);
+
+        AppSpawnReqMsgHandle reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+        APPSPAWN_CHECK(reqHandle != nullptr, break, "Failed to create msg type %{public}d", MSG_APP_SPAWN);
         ret = AppSpawnReqMsgSetAppInternetPermissionInfo(reqHandle, 0, 0);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to add internet permission info");
+
         property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
+        APPSPAWN_CHECK(property != nullptr, break, "Failed to get app property");
+
         ret = SetInternetPermission(property);
     } while (0);
     DeleteAppSpawningCtx(property);
@@ -639,21 +630,27 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_009, TestSize.Level0)
     ASSERT_EQ(ret, 0);
 }
 
-HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_010, TestSize.Level0)
+/**
+ * @brief appspawn为应用设置Internet Permission [0, 1]
+ *
+ */
+HWTEST_F(AppSpawnCommonTest, App_Spawn_SetInternetPermission_02, TestSize.Level0)
 {
-    AppSpawnClientHandle clientHandle = nullptr;
-    AppSpawnReqMsgHandle reqHandle = 0;
-    AppSpawningCtx *property = nullptr;
     int ret = -1;
+    AppSpawnClientHandle clientHandle = nullptr;
+    AppSpawningCtx *property = nullptr;
     do {
-        // create msg
         ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
-        APPSPAWN_CHECK(ret == 0, break, "Failed to create reqMgr %{public}s", APPSPAWN_SERVER_NAME);
-        reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_SPAWN_NATIVE_PROCESS, 0);
-        APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break,
-            "Failed to create req %{public}s", APPSPAWN_SERVER_NAME);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", APPSPAWN_SERVER_NAME);
+
+        AppSpawnReqMsgHandle reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+        APPSPAWN_CHECK(reqHandle != nullptr, break, "Failed to create msg type %{public}d", MSG_APP_SPAWN);
         ret = AppSpawnReqMsgSetAppInternetPermissionInfo(reqHandle, 0, 1);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to add internet permission info");
+
         property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
+        APPSPAWN_CHECK(property != nullptr, break, "Failed to get app property");
+
         ret = SetInternetPermission(property);
     } while (0);
     DeleteAppSpawningCtx(property);
@@ -661,21 +658,27 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_010, TestSize.Level0)
     ASSERT_EQ(ret, 0);
 }
 
-HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_011, TestSize.Level0)
+/**
+ * @brief appspawn为应用设置Internet Permission [1, 0]
+ *
+ */
+HWTEST_F(AppSpawnCommonTest, App_Spawn_SetInternetPermission_03, TestSize.Level0)
 {
-    AppSpawnClientHandle clientHandle = nullptr;
-    AppSpawnReqMsgHandle reqHandle = 0;
-    AppSpawningCtx *property = nullptr;
     int ret = -1;
+    AppSpawnClientHandle clientHandle = nullptr;
+    AppSpawningCtx *property = nullptr;
     do {
-        // create msg
         ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
-        APPSPAWN_CHECK(ret == 0, break, "Failed to create reqMgr %{public}s", APPSPAWN_SERVER_NAME);
-        reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_SPAWN_NATIVE_PROCESS, 0);
-        APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break,
-            "Failed to create req %{public}s", APPSPAWN_SERVER_NAME);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", APPSPAWN_SERVER_NAME);
+
+        AppSpawnReqMsgHandle reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+        APPSPAWN_CHECK(reqHandle != nullptr, break, "Failed to create msg type %{public}d", MSG_APP_SPAWN);
         ret = AppSpawnReqMsgSetAppInternetPermissionInfo(reqHandle, 1, 0);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to add internet permission info");
+
         property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
+        APPSPAWN_CHECK(property != nullptr, break, "Failed to get app property");
+
         ret = SetInternetPermission(property);
     } while (0);
     DeleteAppSpawningCtx(property);
@@ -683,22 +686,69 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_011, TestSize.Level0)
     ASSERT_EQ(ret, 0);
 }
 
-HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_012, TestSize.Level0)
+/**
+ * @brief appspawn为应用设置Internet Permission [1, 1]
+ *
+ */
+HWTEST_F(AppSpawnCommonTest, App_Spawn_SetInternetPermission_04, TestSize.Level0)
 {
-    AppSpawnClientHandle clientHandle = nullptr;
-    AppSpawnReqMsgHandle reqHandle = 0;
-    AppSpawningCtx *property = nullptr;
     int ret = -1;
+    AppSpawnClientHandle clientHandle = nullptr;
+    AppSpawningCtx *property = nullptr;
     do {
-        // create msg
         ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
-        APPSPAWN_CHECK(ret == 0, break, "Failed to create reqMgr %{public}s", APPSPAWN_SERVER_NAME);
-        reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_SPAWN_NATIVE_PROCESS, 0);
-        APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break,
-            "Failed to create req %{public}s", APPSPAWN_SERVER_NAME);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", APPSPAWN_SERVER_NAME);
+
+        AppSpawnReqMsgHandle reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+        APPSPAWN_CHECK(reqHandle != nullptr, break, "Failed to create msg type %{public}d", MSG_APP_SPAWN);
         ret = AppSpawnReqMsgSetAppInternetPermissionInfo(reqHandle, 1, 1);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to add internet permission info");
+
         property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
+        APPSPAWN_CHECK(property != nullptr, break, "Failed to get app property");
+
         ret = SetInternetPermission(property);
+    } while (0);
+    DeleteAppSpawningCtx(property);
+    AppSpawnClientDestroy(clientHandle);
+    ASSERT_EQ(ret, 0);
+}
+
+/**
+ * @brief property为NULL时，appspawn为应用设置Internet Permission
+ *
+ */
+HWTEST_F(AppSpawnCommonTest, App_Spawn_SetInternetPermission_05, TestSize.Level0)
+{
+    int ret = SetInternetPermission(nullptr);
+    ASSERT_EQ(ret, 0);
+}
+
+/**
+ * @brief appspawn为应用设置env环境变量
+ *
+ */
+HWTEST_F(AppSpawnCommonTest, App_Spawn_SetEnvInfo_01, TestSize.Level0)
+{
+    int ret = -1;
+    AppSpawnClientHandle clientHandle = nullptr;
+    AppSpawningCtx *property = nullptr;
+    do {
+        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", APPSPAWN_SERVER_NAME);
+
+        AppSpawnReqMsgHandle reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+        APPSPAWN_CHECK(reqHandle != nullptr, break, "Failed to create msg type %{public}d", MSG_APP_SPAWN);
+        const char *appEnv = "{\"name1\": \"value1\", \"name2\": \"value2\"}";
+        ret = AppSpawnReqMsgAddStringInfo(reqHandle, MSG_EXT_NAME_APP_ENV, appEnv);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to add MSG_EXT_NAME_APP_ENV %{public}s", appEnv);
+
+        property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
+        APPSPAWN_CHECK(property != nullptr, break, "Failed to get app property");
+
+        ret = SetEnvInfo(nullptr, property);
+        EXPECT_EQ(strcmp(getenv("name1"), "value1"), 0);
+        EXPECT_EQ(strcmp(getenv("name2"), "value2"), 0);
     } while (0);
     DeleteAppSpawningCtx(property);
     AppSpawnClientDestroy(clientHandle);
@@ -764,94 +814,6 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_016, TestSize.Level0)
     ReportSpawnStatisticDuration(nullptr, (void *)info);
     ReportMountFull(getpid(), 0, 0, 0);
     free(info);
-}
-
-HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_021, TestSize.Level0)
-{
-    int ret = SetInternetPermission(nullptr);
-    ASSERT_EQ(ret, 0);
-}
-
-HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_022, TestSize.Level0)
-{
-    AppSpawnClientHandle clientHandle = nullptr;
-    AppSpawnReqMsgHandle reqHandle = 0;
-    AppSpawningCtx *property = nullptr;
-    int ret = -1;
-    do {
-        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
-        APPSPAWN_CHECK(ret == 0, break, "Failed to create reqMgr %{public}s", APPSPAWN_SERVER_NAME);
-        reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_SPAWN_NATIVE_PROCESS, 0);
-        APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break, "Failed to create req %{public}s", APPSPAWN_SERVER_NAME);
-        const char *appEnv = "{\"test\"}";
-        ret = AppSpawnReqMsgAddExtInfo(reqHandle, "AppEnv",
-            reinterpret_cast<uint8_t *>(const_cast<char *>(appEnv)), strlen(appEnv) + 1);
-        APPSPAWN_CHECK(ret == 0, break, "Failed to add ext tlv %{public}s", appEnv);
-
-        property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
-        reqHandle = nullptr;
-        APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
-        SetEnvInfo(nullptr, property);
-        // spawn
-        property = nullptr;
-    } while (0);
-    DeleteAppSpawningCtx(property);
-    AppSpawnReqMsgFree(reqHandle);
-    AppSpawnClientDestroy(clientHandle);
-    ASSERT_EQ(ret, 0);
-}
-
-HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_023, TestSize.Level0)
-{
-    AppSpawnClientHandle clientHandle = nullptr;
-    AppSpawnReqMsgHandle reqHandle = 0;
-    AppSpawningCtx *property = nullptr;
-    int ret = -1;
-    do {
-        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
-        APPSPAWN_CHECK(ret == 0, break, "Failed to create reqMgr %{public}s", APPSPAWN_SERVER_NAME);
-        reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_SPAWN_NATIVE_PROCESS, 0);
-        APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break, "Failed to create req %{public}s", APPSPAWN_SERVER_NAME);
-        const char *appEnv = "%";
-        ret = AppSpawnReqMsgAddExtInfo(reqHandle, "AppEnv",
-            reinterpret_cast<uint8_t *>(const_cast<char *>(appEnv)), strlen(appEnv) + 1);
-        APPSPAWN_CHECK(ret == 0, break, "Failed to add ext tlv %{public}s", appEnv);
-
-        property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
-        reqHandle = nullptr;
-        APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
-        SetEnvInfo(nullptr, property);
-        // spawn
-        property = nullptr;
-    } while (0);
-    DeleteAppSpawningCtx(property);
-    AppSpawnReqMsgFree(reqHandle);
-    AppSpawnClientDestroy(clientHandle);
-    ASSERT_EQ(ret, 0);
-}
-
-HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_024, TestSize.Level0)
-{
-    AppSpawnClientHandle clientHandle = nullptr;
-    AppSpawnReqMsgHandle reqHandle = 0;
-    AppSpawningCtx *property = nullptr;
-    int ret = -1;
-    do {
-        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
-        APPSPAWN_CHECK(ret == 0, break, "Failed to create reqMgr %{public}s", APPSPAWN_SERVER_NAME);
-        reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_SPAWN_NATIVE_PROCESS, 0);
-        APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break, "Failed to create req %{public}s", APPSPAWN_SERVER_NAME);
-        property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
-        reqHandle = nullptr;
-        APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
-        SetEnvInfo(nullptr, property);
-        // spawn
-        property = nullptr;
-    } while (0);
-    DeleteAppSpawningCtx(property);
-    AppSpawnReqMsgFree(reqHandle);
-    AppSpawnClientDestroy(clientHandle);
-    ASSERT_EQ(ret, 0);
 }
 
 HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_028, TestSize.Level0)
@@ -1871,6 +1833,70 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_Encaps_034, TestSize.Level0)
     DeleteAppSpawningCtx(property);
     AppSpawnClientDestroy(clientHandle);
     DeleteAppSpawnMgr(mgr);
+}
+
+/**
+ * @brief appspawn为未携带APP_FLAGS_CUSTOM_SANDBOX的非弱沙箱应用应用，不传递标识给内核进行设置
+ *
+ */
+HWTEST_F(AppSpawnCommonTest, App_Spawn_Encaps_035, TestSize.Level0)
+{
+    int ret = -1;
+    AppSpawnMgr *mgr = nullptr;
+    AppSpawnClientHandle clientHandle = nullptr;
+    AppSpawningCtx *property = nullptr;
+    do {
+        mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+        EXPECT_NE(mgr, nullptr);
+
+        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", APPSPAWN_SERVER_NAME);
+
+        AppSpawnReqMsgHandle reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+        APPSPAWN_CHECK(reqHandle != nullptr, break, "Failed to create msg type %{public}d", MSG_APP_SPAWN);
+
+        property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
+        APPSPAWN_CHECK(property != nullptr, break, "Failed to get app property");
+
+        ret = SpawnSetEncapsPermissions(mgr, property);
+    } while (0);
+    DeleteAppSpawningCtx(property);
+    AppSpawnClientDestroy(clientHandle);
+    DeleteAppSpawnMgr(mgr);
+    ASSERT_EQ(ret, 0);
+}
+
+/**
+ * @brief appspawn为携带了APP_FLAGS_CUSTOM_SANDBOX的弱沙箱应用应用，传递标识给内核进行设置
+ *
+ */
+HWTEST_F(AppSpawnCommonTest, App_Spawn_Encaps_036, TestSize.Level0)
+{
+    int ret = -1;
+    AppSpawnMgr *mgr = nullptr;
+    AppSpawnClientHandle clientHandle = nullptr;
+    AppSpawningCtx *property = nullptr;
+    do {
+        mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+        EXPECT_NE(mgr, nullptr);
+
+        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", APPSPAWN_SERVER_NAME);
+
+        AppSpawnReqMsgHandle reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+        APPSPAWN_CHECK(reqHandle != nullptr, break, "Failed to create msg type %{public}d", MSG_APP_SPAWN);
+        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_CUSTOM_SANDBOX);
+
+        property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
+        APPSPAWN_CHECK(property != nullptr, break, "Failed to get app property");
+        EXPECT_NE(CheckAppMsgFlagsSet(property, APP_FLAGS_CUSTOM_SANDBOX), 0);
+
+        ret = SpawnSetEncapsPermissions(mgr, property);
+    } while (0);
+    DeleteAppSpawningCtx(property);
+    AppSpawnClientDestroy(clientHandle);
+    DeleteAppSpawnMgr(mgr);
+    ASSERT_EQ(ret, 0);
 }
 
 HWTEST_F(AppSpawnCommonTest, App_Spawn_SetFdEnv, TestSize.Level0)
