@@ -271,9 +271,9 @@ char *ReadFile(const char *fileName)
 
 cJSON *GetJsonObjFromFile(const char *jsonPath)
 {
-    APPSPAWN_CHECK_ONLY_EXPER(jsonPath != NULL && *jsonPath != '\0', NULL);
+    APPSPAWN_CHECK_ONLY_EXPER(jsonPath != NULL && *jsonPath != '\0', return NULL);
     char *buffer = ReadFile(jsonPath);
-    APPSPAWN_CHECK_ONLY_EXPER(buffer != NULL, NULL);
+    APPSPAWN_CHECK_ONLY_EXPER(buffer != NULL, return NULL);
     cJSON *json = cJSON_Parse(buffer);
     free(buffer);
     return json;
