@@ -5,6 +5,11 @@
             "sandbox-ns-flags" : [ "net" ],
             "sandbox-root" : "/mnt/sandbox/<PackageName>",
             "mount-paths" : [{
+                "src-path" : "/data/service/el1/public/fonts/<currentUserId>",
+                "sandbox-path" : "/data/service/el1/public/for-all-app/fonts",
+                "sandbox-flags" : [ "bind", "rec" ],
+                "check-action-status": "false"
+            }, {
                 "src-path" : "/dev",
                 "sandbox-path" : "/dev",
                 "sandbox-flags" : [ "bind", "rec" ],

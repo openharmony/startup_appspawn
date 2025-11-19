@@ -110,6 +110,9 @@
             }, {
                 "src-path" : "/chip_prod/etc/passthrough",
                 "sandbox-path" : "/chip_prod/etc/passthrough"
+            },{
+                "src-path" : "/data/service/el1/public/fonts/<currentUserId>",
+                "sandbox-path" : "/data/service/el1/public/for-all-app/fonts"
             }],
             "mount-files": [{
                 "src-path" : "/system/etc/hosts",
