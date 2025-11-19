@@ -130,7 +130,7 @@ static int SetAmbientCapability(int cap)
 
 static int SetAmbientCapabilities(const AppSpawningCtx *property)
 {
-    const int caps[] = {CAP_DAC_OVERRIDE, CAP_DAC_READ_SEARCH, CAP_FOWNER};
+    const int caps[] = {CAP_DAC_OVERRIDE, CAP_FOWNER};
     size_t capCount = sizeof(caps) / sizeof(caps[0]);
     for (size_t i = 0; i < capCount; ++i) {
         if (SetAmbientCapability(caps[i]) != 0) {
@@ -165,15 +165,10 @@ APPSPAWN_STATIC int SetCapabilities(const AppSpawnMgr *content, const AppSpawnin
 #ifdef APPSPAWN_SUPPORT_NOSHAREFS
     if (!CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX_TYPE) &&
             (IsAppSpawnMode(content) || IsNativeSpawnMode(content))) {
-        baseCaps = CAP_TO_MASK(CAP_DAC_OVERRIDE) | CAP_TO_MASK(CAP_DAC_READ_SEARCH) |
-                   CAP_TO_MASK(CAP_FOWNER);
+        baseCaps = CAP_TO_MASK(CAP_DAC_OVERRIDE) | CAP_TO_MASK(CAP_FOWNER);
         if (CheckAppMsgFlagsSet(property, APP_FLAGS_CUSTOM_SANDBOX)) {
             baseCaps |= CAP_TO_MASK(CAP_KILL);
         }
-    }
-#else
-    if (IsAppSpawnMode(content)) {
-        baseCaps = CheckAppMsgFlagsSet(property, APP_FLAGS_SET_CAPS_FOWNER) ? (1 << CAP_FOWNER) : 0;
     }
 #endif
     const uint64_t inheriTable = baseCaps;
