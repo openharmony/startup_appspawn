@@ -38,6 +38,10 @@ ohos_shared_library("appspawn_nweb") {
     "init:libbegetutil",
   ]
 
+  if (!defined(ohos_lite)) {
+    external_deps += [ "ace_engine:ace_forward_compatibility" ]
+  }
+
   if (appspawn_support_nweb) {
     external_deps += [ "webview:libarkweb_utils" ]
   }
