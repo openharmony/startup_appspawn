@@ -74,6 +74,11 @@ constexpr const char *g_actionStatuc = "check-action-status";
 constexpr const char *g_destMode = "dest-mode";
 constexpr const char *g_flags = "flags";
 
+// param参数配置字段
+constexpr const char *g_preParamPath = "pre-param-src-path";
+constexpr const char *g_paramPath = "param-src-path";
+constexpr const char *g_postParamPath = "post-param-src-path";
+
 // 挂载可选属性
 constexpr const char *g_sandBoxShared = "sandbox-shared";
 constexpr const char *g_mountSharedFlag = "mount-shared-flag";
