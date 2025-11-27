@@ -426,13 +426,6 @@ APPSPAWN_STATIC int SpawnSetEncapsPermissions(AppSpawnMgr *content, AppSpawningC
         return 0;
     }
 
-#ifdef ALLOW_DUMPABLE
-    if (CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX)) {
-        APPSPAWN_LOGI("App property is APP_FLAGS_ISOLATED_SANDBOX, not need kernel.permission");
-        return 0;
-    }
-#endif
-
     int encapsFileFd = OpenEncapsFile();
     if (encapsFileFd <= 0) {
         return 0;         // Not support encaps ability
@@ -442,6 +435,12 @@ APPSPAWN_STATIC int SpawnSetEncapsPermissions(AppSpawnMgr *content, AppSpawningC
     if (ret != 0) {
         close(encapsFileFd);
         return 0;         // Can't enable encaps ability
+    }
+
+    if (CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX)) {
+        APPSPAWN_LOGI("App property is APP_FLAGS_ISOLATED_SANDBOX, not need kernel.permission");
+        close(encapsFileFd);
+        return 0;
     }
 
     if (CheckAppMsgFlagsSet(property, APP_FLAGS_CUSTOM_SANDBOX)) {
