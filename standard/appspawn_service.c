@@ -486,7 +486,7 @@ static void OnReceiveRequest(const TaskHandle taskHandle, const uint8_t *buffer,
         (void)ProcessRecvMsg(connection, message);
         FinishAppspawnTrace();
         message = NULL;
-        currLen += buffLen - reminder;
+        currLen = buffLen - reminder;
     } while (reminder > 0);
 
     if (message) {
