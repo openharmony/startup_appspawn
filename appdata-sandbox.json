@@ -254,7 +254,7 @@
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
-                    "src-path" : "/data/service/el1/public/fonts/<currentUserId>",
+                    "src-path" : "/data/service/el1/<currentUserId>/for-all-app/fonts",
                     "sandbox-path" : "/data/service/el1/public/for-all-app/fonts",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
@@ -652,6 +652,11 @@
                 }, {
                     "src-path" : "/module_update/ArkWebCore/app/<arkWebPackageName>",
                     "sandbox-path" : "/module_update/ArkWebCore/app/<arkWebPackageName>",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/data/service/el1/<hostUserId>/for-all-app/fonts",
+                    "sandbox-path" : "/data/service/el1/public/for-all-app/fonts",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }
