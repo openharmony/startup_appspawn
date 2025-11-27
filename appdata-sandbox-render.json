@@ -47,6 +47,9 @@
             }, {
                 "src-path" : "/vendor/asan/lib64",
                 "sandbox-path" : "/vendor/asan/lib64"
+            }, {
+                "src-path" : "/data/service/el1/<hostUserId>/for-all-app/fonts",
+                "sandbox-path" : "/data/service/el1/public/for-all-app/fonts"
             }],
             "symbol-links" : [{
                     "target-name" : "/system/etc",
