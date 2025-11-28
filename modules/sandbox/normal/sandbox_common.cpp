@@ -21,6 +21,9 @@
 #include <fcntl.h>
 #include <sstream>
 #include <cerrno>
+#include <vector>
+#include <regex>
+
 #include "appspawn_manager.h"
 #include "appspawn_utils.h"
 #include "sandbox_def.h"
@@ -38,7 +41,7 @@ namespace OHOS {
 namespace AppSpawn {
 
 int32_t SandboxCommon::deviceTypeEnable_ = -1;
-int32_t SandboxCommon::mountFailedCount = 0;
+int32_t SandboxCommon::mountFailedCount_ = 0;
 
 std::map<SandboxCommonDef::SandboxConfigType, std::vector<cJSON *>> SandboxCommon::appSandboxCJsonConfig_ = {};
 
@@ -685,9 +688,11 @@ bool SandboxCommon::IsValidMountConfig(cJSON *mntPoint, const AppSpawningCtx *ap
 {
     const char *srcPath = GetStringFromJsonObj(mntPoint, SandboxCommonDef::g_srcPath);
     const char *sandboxPath = GetStringFromJsonObj(mntPoint, SandboxCommonDef::g_sandBoxPath);
+    const char *srcParamPathChr = GetStringFromJsonObj(mntPoint, SandboxCommonDef::g_paramPath);
     cJSON *customizedFlags = cJSON_GetObjectItemCaseSensitive(mntPoint, SandboxCommonDef::g_sandBoxFlagsCustomized);
     cJSON *flags = cJSON_GetObjectItemCaseSensitive(mntPoint, SandboxCommonDef::g_sandBoxFlags);
-    if (srcPath == nullptr || sandboxPath == nullptr || (customizedFlags == nullptr && flags == nullptr)) {
+    if ((srcPath == nullptr && srcParamPathChr == nullptr) || sandboxPath == nullptr ||
+        (customizedFlags == nullptr && flags == nullptr)) {
         APPSPAWN_LOGE("read mount config failed, app name is %{public}s", GetBundleName(appProperty));
         return false;
     }
@@ -702,7 +707,7 @@ bool SandboxCommon::IsValidMountConfig(cJSON *mntPoint, const AppSpawningCtx *ap
         }
     }
 
-    const std::string configSrcPath = srcPath;
+    const std::string configSrcPath = srcPath == nullptr ? "" : srcPath;
     // special handle wps and don't use /data/app/xxx/<Package> config
     if (checkFlag && (configSrcPath.find("/data/app") != std::string::npos &&
         (configSrcPath.find("/base") != std::string::npos ||
@@ -904,6 +909,66 @@ const std::string& SandboxCommon::GetDevModel(void)
     return devModel;
 }
 
+// Parsing parameters in <param> format
+std::string SandboxCommon::ParseParamTemplate(const std::string &templateStr)
+{
+    if (templateStr.empty()) {
+        return templateStr;
+    }
+
+    std::regex pattern("<([^>]+)>");
+    std::smatch matches;
+    std::string result = templateStr;
+
+    // Find all parameters in the <param> format and replace them.
+    while (regex_search(result, matches, pattern)) {
+        if (matches.size() > 1) {
+            std::string paramName = matches[1].str();
+            std::string paramValue = system::GetParameter(paramName, "");
+            if (paramValue.empty()) {
+                return "";
+            }
+
+            // Replace the first matching parameter
+            result = regex_replace(result, std::regex("<" + regex_replace(paramName, std::regex("\\."), "\\.") +
+                                   ">"), paramValue, std::regex_constants::format_first_only);
+        }
+    }
+
+    return result;
+}
+
+// Path concatenation function (handling path separators)
+std::string SandboxCommon::JoinParamPaths(const std::vector<std::string> &paths)
+{
+    std::string result = "";
+    for (const auto &path : paths) {
+        if (path.empty()) {
+            continue;
+        }
+        // Prevent path traversal
+        if (path.find("..") != std::string::npos) {
+            APPSPAWN_LOGE("Param src path invalid");
+            return "";
+        }
+
+        if (!result.empty() && result.back() != '/' && !path.empty() && path.front() != '/') {
+            APPSPAWN_LOGV("Param src path need add slash");
+            result += '/';
+        }
+
+        // Remove duplicate path separators
+        std::string cleanPath = path;
+        if (cleanPath.front() == '/' && !result.empty() && result.back() == '/') {
+            cleanPath = cleanPath.substr(1);
+        }
+
+        result += cleanPath;
+    }
+
+    return result;
+}
+
 std::string SandboxCommon::ConvertToRealPathWithPermission(const AppSpawningCtx *appProperty, std::string path)
 {
     AppSpawnMsgBundleInfo *info =
@@ -1041,7 +1106,7 @@ int32_t SandboxCommon::DoAppSandboxMountOnce(const AppSpawningCtx *appProperty, 
     if (ret != 0) {
         APPSPAWN_DUMPW("errno:%{public}d bind mount %{public}s to %{public}s", errno, arg->srcPath, arg->destPath);
 #ifdef APPSPAWN_HISYSEVENT
-        if (errno == EINVAL && ++mountFailedCount == SandboxCommonDef::MAX_MOUNT_INVALID_COUNT) {
+        if (errno == EINVAL && ++mountFailedCount_ == SandboxCommonDef::MAX_MOUNT_INVALID_COUNT) {
             WriteMountInfo();
             ReportMountFull(getpid(), 0, 0, APPSPAWN_SANDBOX_MOUNT_FULL);
             abort();
@@ -1065,5 +1130,33 @@ int32_t SandboxCommon::DoAppSandboxMountOnce(const AppSpawningCtx *appProperty, 
     return 0;
 }
 
+// Construct the full param-src-path
+std::string SandboxCommon::BuildFullParamSrcPath(cJSON *mntPoint)
+{
+    const char *srcParamPathChr = GetStringFromJsonObj(mntPoint, SandboxCommonDef::g_paramPath);
+    if (srcParamPathChr == nullptr) {
+        return "";
+    }
+
+    const char *srcPreParamPathChr = GetStringFromJsonObj(mntPoint, SandboxCommonDef::g_preParamPath);
+    const char *srcPostParamPathChr = GetStringFromJsonObj(mntPoint, SandboxCommonDef::g_postParamPath);
+
+    std::string srcParamPath = ParseParamTemplate(srcParamPathChr);
+    std::string srcPreParamPath = srcPreParamPathChr == nullptr ? "" : srcPreParamPathChr;
+    std::string srcPostParmPath = srcPostParamPathChr == nullptr ? "" : srcPostParamPathChr;
+
+    std::vector<std::string> pathComponents;
+    if (!srcPreParamPath.empty()) {
+        pathComponents.push_back(srcPreParamPath);
+    }
+    if (!srcParamPath.empty()) {
+        pathComponents.push_back(srcParamPath);
+    }
+    if (!srcPostParmPath.empty()) {
+        pathComponents.push_back(srcPostParmPath);
+    }
+
+    return JoinParamPaths(pathComponents);
+}
 } // namespace AppSpawn
 } // namespace OHOS

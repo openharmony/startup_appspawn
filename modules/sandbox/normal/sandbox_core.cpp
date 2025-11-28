@@ -574,9 +574,16 @@ int32_t SandboxCore::ProcessMountPoint(cJSON *mntPoint, MountPointProcessParams 
 {
     APPSPAWN_CHECK_ONLY_EXPER(SandboxCommon::IsValidMountConfig(mntPoint, params.appProperty, params.checkFlag),
                               return 0);
+    std::string paramSrcPath = "";
     const char *srcPathChr = GetStringFromJsonObj(mntPoint, SandboxCommonDef::g_srcPath);
+    if (srcPathChr == nullptr) {
+        paramSrcPath = SandboxCommon::BuildFullParamSrcPath(mntPoint);
+        if (paramSrcPath.empty()) {
+            return 0;
+        }
+    }
     const char *sandboxPathChr = GetStringFromJsonObj(mntPoint, SandboxCommonDef::g_sandBoxPath);
-    if (srcPathChr == nullptr || sandboxPathChr == nullptr) {
+    if (sandboxPathChr == nullptr) {
         return 0;
     }
     std::string srcPath(srcPathChr);
