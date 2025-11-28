@@ -30,7 +30,8 @@ static const char *g_decConstraintDir[] = {
     "/storage/hmdfs",
     "/mnt/data/fuse",
     "/mnt/debug",
-    "/storage/userExternal"
+    "/storage/userExternal",
+    "/storage/ANCO_APP_DATA"
 };
 
 static const char *g_decForcedPrefix[] = {
