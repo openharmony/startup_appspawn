@@ -3062,7 +3062,7 @@ HWTEST_F(AppSpawnSandboxTest, JoinParamPathsTest_06, TestSize.Level0)
 {
     std::vector<std::string> paths = {"system", "test", "opt"};
     std::string result = AppSpawn::SandboxCommon::JoinParamPaths(paths);
-    std::string srcPath = "system/test/opt/";
+    std::string srcPath = "system/test/opt";
     EXPECT_EQ(result == srcPath, true);
 }
 
