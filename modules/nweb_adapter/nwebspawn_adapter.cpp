@@ -118,7 +118,13 @@ APPSPAWN_STATIC int RunChildProcessor(AppSpawnContent *content, AppSpawnClient *
     dlns_get("ndk", &ndkns);
     dlns_inherit(&dlns, &ndkns, "allow_all_shared_libs");
     // preload libweb_engine
-    webEngineHandle = dlopen_ns(&dlns, engineLibName.c_str(), RTLD_NOW | RTLD_GLOBAL);
+    webEngineHandle = OHOS::ArkWeb::LoadWithRelroFile(engineLibName, &dlns);
+    if (webEngineHandle) {
+        APPSPAWN_LOGI("dlopen_ns_ext success!!!");
+    } else {
+        APPSPAWN_LOGW("dlopen_ns_ext failed, fallback to dlopen_ns");
+        webEngineHandle = dlopen_ns(&dlns, engineLibName.c_str(), RTLD_NOW | RTLD_GLOBAL);
+    }
     // load libnweb_render
     nwebRenderHandle = dlopen_ns(&dlns, renderLibName.c_str(), RTLD_NOW | RTLD_GLOBAL);
 #else
@@ -163,6 +169,11 @@ APPSPAWN_STATIC int PreLoadNwebSpawn(AppSpawnMgr *content)
     if (!IsNWebSpawnMode(content)) {
         return 0;
     }
+#ifdef __MUSL__
+    if (OHOS::ArkWeb::ReserveAddressSpace()) {
+        OHOS::ArkWeb::CreateRelroFileInSubProc();
+    }
+#endif
     // register
     RegChildLooper(&content->content, RunChildProcessor);
 
