@@ -35,7 +35,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-#include "access_token.h"
+#include "accesstoken_kit.h"
 #include "hilog/log.h"
 #include "securec.h"
 #include "token_setproc.h"
@@ -85,6 +85,10 @@ namespace Security {
         uint64_t TokenIdKit::GetRenderTokenID(uint64_t tokenId)
         {
             return tokenId;
+        }
+        ATokenTypeEnum AccessTokenKit::GetTokenTypeFlag(AccessTokenID tokenId)
+        {
+            return TOKEN_HAP;
         }
     }  // namespace AccessToken
 }  // namespace Security
