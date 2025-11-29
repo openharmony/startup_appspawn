@@ -15,7 +15,7 @@
 
 #include "appspawn_adapter.h"
 
-#include "access_token.h"
+#include "accesstoken_kit.h"
 #include "appspawn_hook.h"
 #include "appspawn_manager.h"
 #include "appspawn_utils.h"
@@ -43,6 +43,7 @@ using GetPermissionFunc = int32_t (*)(void *, const char *);
 #define MAX_USERID_LEN  32
 using namespace OHOS::Security::AccessToken;
 
+static const uint64_t TOKEN_ID_LOWMASK = 0xffffffff;
 void CheckSpecialSpawnMode(const AppSpawnMgr *content, const AppSpawningCtx *property,
     HapDomainInfo *hapDomainInfo);
 
@@ -61,6 +62,10 @@ int SetAppAccessToken(const AppSpawnMgr *content, const AppSpawningCtx *property
     } else {
         tokenId = tokenInfo->accessTokenIdEx;
     }
+    AccessTokenID accessTokenId = tokenId & TOKEN_ID_LOWMASK;
+    ATokenTypeEnum type = AccessTokenKit::GetTokenTypeFlag(accessTokenId);
+    APPSPAWN_CHECK(type == TOKEN_HAP, return APPSPAWN_ACCESS_TOKEN_INVALID, "token type %{public}d is invalid", type);
+
     ret = SetSelfTokenID(tokenId);
     APPSPAWN_CHECK(ret == 0, return APPSPAWN_ACCESS_TOKEN_INVALID,
         "set access token id failed, ret: %{public}d %{public}s", ret, GetProcessName(property));
