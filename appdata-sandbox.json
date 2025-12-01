@@ -258,17 +258,6 @@
                     "sandbox-path" : "/data/service/el1/public/for-all-app/fonts",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
-                }, {
-                    "src-path" : "/mnt/data/ANCO_APP_DATA",
-                    "sandbox-path" : "/mnt/storage/ANCO_APP_DATA",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/data/sandbox/<currentUserId>/<clonePackageName>/mnt/storage/ANCO_APP_DATA",
-                    "sandbox-path" : "/storage/ANCO_APP_DATA",
-                    "sandbox-flags-customized" : [ "MS_NODEV" ],
-                    "dac-override-sensitive" : "true",
-                    "options": "override_support_delete"
                 }
             ],
             "symbol-links" : [{
