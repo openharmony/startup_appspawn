@@ -109,6 +109,11 @@ ohos_shared_library("appspawn_common") {
   if (appspawn_allow_internet_permission) {
     defines += [ "APPSPAWN_ALLOW_INTERNET_PERMISSION" ]
   }
+
+  if (appspawn_change_sched) {
+    defines += [ "APPSPAWN_CHANGE_SCHED_ENABLE" ]
+  }
+
   if (appspawn_report_event) {
     defines += [ "APPSPAWN_HISYSEVENT" ]
     external_deps += [ "hisysevent:libhisysevent" ]

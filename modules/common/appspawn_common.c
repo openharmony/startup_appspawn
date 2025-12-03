@@ -283,12 +283,6 @@ static int SetXpmConfig(const AppSpawnMgr *content, const AppSpawningCtx *proper
 
 APPSPAWN_STATIC int SetUidGid(const AppSpawnMgr *content, const AppSpawningCtx *property)
 {
-    if (IsAppSpawnMode(content) || IsHybridSpawnMode(content)) {
-        struct sched_param param = { 0 };
-        param.sched_priority = 0;
-        int ret = sched_setscheduler(0, SCHED_OTHER, &param);
-        APPSPAWN_CHECK_ONLY_LOG(ret == 0, "UpdateSchedPrio failed ret: %{public}d, %{public}d", ret, errno);
-    }
     AppSpawnMsgDacInfo *dacInfo = (AppSpawnMsgDacInfo *)GetAppProperty(property, TLV_DAC_INFO);
     APPSPAWN_CHECK(dacInfo != NULL, return APPSPAWN_TLV_NONE,
         "No tlv %{public}d in msg %{public}s", TLV_DAC_INFO, GetProcessName(property));
@@ -333,6 +327,19 @@ APPSPAWN_STATIC int SetUidGid(const AppSpawnMgr *content, const AppSpawningCtx *
     } else {
         setenv("HAP_DEBUGGABLE", "false", 1);
     }
+    return 0;
+}
+
+static int SetSchedPriority(const AppSpawnMgr *content, const AppSpawningCtx *property)
+{
+#ifdef APPSPAWN_CHANGE_SCHED_ENABLE
+    if (IsAppSpawnMode(content) || IsHybridSpawnMode(content)) {
+        struct sched_param param = { 0 };
+        param.sched_priority = 0;
+        int ret = sched_setscheduler(0, SCHED_OTHER, &param);
+        APPSPAWN_CHECK_ONLY_LOG(ret == 0, "UpdateSchedPrio failed ret: %{public}d, %{public}d", ret, errno);
+    }
+#endif
     return 0;
 }
 
@@ -508,6 +515,9 @@ static int SpawnSetProperties(AppSpawnMgr *content, AppSpawningCtx *property)
     APPSPAWN_CHECK_ONLY_EXPER(ret == 0, return ret);
 
     ret = SetProcessName(content, property);
+    APPSPAWN_CHECK_ONLY_EXPER(ret == 0, return ret);
+
+    ret = SetSchedPriority(content, property);
     APPSPAWN_CHECK_ONLY_EXPER(ret == 0, return ret);
 
     ret = SetUidGid(content, property);
