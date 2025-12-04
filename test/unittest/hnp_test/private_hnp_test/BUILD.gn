@@ -1,0 +1,91 @@
+# Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+import("//base/startup/appspawn/appspawn.gni")
+import("//build/test.gni")
+
+if (!defined(ohos_lite)) {
+  ohos_unittest("HnpPrivateTest") {
+    module_out_path = "appspawn/appspawn"
+    cflags = [
+      "-Wno-implicit-fallthrough",
+      "-Wno-unused-function",
+      "-Dprivate=public",
+      "-Dprotected=public",
+    ]
+
+    cflags_cc = [
+      "-Wno-implicit-fallthrough",
+      "-fexceptions",
+    ]
+    ldflags = [
+      "-Wl,--wrap=execve",
+      "-Wl,--wrap=read",
+      "-Wl,--wrap=fread",
+      "-Wl,--wrap=memcmp",
+      "-Wl,--wrap=fseek",
+      "-Wl,--wrap=fopen",
+      "-Wl,--wrap=ftell",
+      "-Wl,--wrap=strdup",
+      "-Wl,--wrap=malloc",
+      "-Wl,--wrap=strncat_s",
+      "-Wl,--wrap=mkdir",
+      "-Wl,--wrap=mount",
+    ]
+    #cflags = [
+    #  "-DEnforceCodeSignForApp=EnforceCodeSignForAppStub",
+    #]
+    include_dirs = [
+      "${appspawn_path}/service/hnp/base",
+      "${appspawn_path}/service/hnp/pack/include",
+      "${appspawn_path}/service/hnp/installer/include",
+      "${appspawn_path}/interfaces/innerkits/hnp/include",
+      "${appspawn_path}/util/include",
+      "${appspawn_path}/test/unittest/hnp_test/private_hnp_test/include",
+      "${appspawn_path}/test/mock/wrapper/include",
+    ]
+
+    sources = [
+      "${appspawn_path}/interfaces/innerkits/hnp/src/hnp_api.c",
+      "${appspawn_path}/service/hnp/base/hnp_file.c",
+      "${appspawn_path}/service/hnp/base/hnp_json.c",
+      "${appspawn_path}/service/hnp/base/hnp_log.c",
+      "${appspawn_path}/service/hnp/base/hnp_sal.c",
+      "${appspawn_path}/service/hnp/base/hnp_zip.c",
+      "${appspawn_path}/service/hnp/installer/src/hnp_installer.c",
+      "${appspawn_path}/service/hnp/pack/src/hnp_pack.c",
+      "${appspawn_path}/test/mock/wrapper/src/lib_wrapper.c",
+      "${appspawn_path}/test/unittest/hnp_test/private_hnp_test/src/hnp_installer_private_test.cpp",
+    ]
+
+    defines = [ 
+      "APPSPAWN_TEST",
+      "APPSPAWN_BASE_DIR=\"/data\"",
+    ]
+
+    deps = [ "${appspawn_path}/util:libappspawn_util" ]
+    defines += [ "CODE_SIGNATURE_ENABLE" ]
+
+    external_deps = [
+      "bounds_checking_function:libsec_shared",
+      "cJSON:cjson",
+      "hilog:libhilog",
+      "init:libbegetutil",
+      "selinux_adapter:librestorecon",
+      "zlib:shared_libz",
+    ]   
+    if (appspawn_support_code_signature) {
+      defines += [ "CODE_SIGNATURE_ENABLE" ]
+      external_deps += [ "code_signature:libcode_sign_utils" ]
+    }
+  }
+}

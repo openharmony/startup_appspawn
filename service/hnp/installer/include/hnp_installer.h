@@ -54,6 +54,9 @@ typedef struct HapInstallInfoStru {
     char *hapPath;                            // hap目录
     char *abi;                                // 系统abi路径
     bool isForce;                             // 是否强制安装
+    int signHnpSize;                          // 独立签名的hnp数量
+    char **signHnpPaths;                      // 独立签名hnp包路径
+    char *appIdentifier;
 } HapInstallInfo;
 
 /* hnp安装信息 */

@@ -15,9 +15,20 @@
 
 #ifndef HNP_API_H
 #define HNP_API_H
+#include "hilog/log.h"
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+#ifndef APPSPAWN_TEST
+#ifndef APPSPAWN_STATIC
+#define APPSPAWN_STATIC static
+#endif
+#else
+#ifndef APPSPAWN_STATIC
+#define APPSPAWN_STATIC
+#endif
 #endif
 
 typedef enum {
@@ -26,6 +37,9 @@ typedef enum {
 } HnpInstallOptionIndex;
 
 #define HNP_API_ERRNO_BASE 0x2000
+#define FD_BUFFER_LEN (64)
+#define HNP_INFO_RET_FD_ENV "HNP_INFO_RET_FD_ENV"
+
 
 // 0x2001 参数非法
 #define HNP_API_ERRNO_PARAM_INVALID             (HNP_API_ERRNO_BASE + 0x1)
@@ -54,16 +68,26 @@ typedef enum {
 // 0x2009 产品不支持安装hnp软件包
 #define HNP_API_ERRNO_HNP_INSTALL_DISABLED      (HNP_API_ERRNO_BASE + 0x9)
 
+// 0x2010 参数超过上限
+#define HNP_API_ERRNO_TOO_MANY_PARAM      (HNP_API_ERRNO_BASE + 0x10)
+
 #define PACK_NAME_LENTH 256
 #define HAP_PATH_LENTH 256
 #define ABI_LENTH 128
+#define APP_IDENTIFIER_LEN 64
 
 typedef struct HapInfo {
-    char packageName[PACK_NAME_LENTH]; // package name
-    char hapPath[HAP_PATH_LENTH];      // hap file path
-    char abi[ABI_LENTH];               // system abi
+    char packageName[PACK_NAME_LENTH];          // package name
+    char hapPath[HAP_PATH_LENTH];               // hap file path
+    char abi[ABI_LENTH];                        // system abi
+    char appIdentifier[APP_IDENTIFIER_LEN];     // appIdentifier
+    int count;                                  // independentSignHnpPaths counts
+    char **independentSignHnpPaths;             // independentSign Hnp Paths
 } HapInfo;
 
+typedef struct HnpResult {
+    int result;
+} HnpResult;
 /**
  * Install native software package.
  *
@@ -85,6 +109,28 @@ int NativeInstallHnp(const char *userId, const char *hnpRootPath, const HapInfo 
  * @return 0:success;other means failure.
  */
 int NativeUnInstallHnp(const char *userId, const char *packageName);
+
+#define HNPAPI_LOG(fmt, ...) \
+    HILOG_INFO(LOG_CORE, "[%{public}s:%{public}d]" fmt, (__FILE_NAME__), (__LINE__), ##__VA_ARGS__)
+
+#define HNPAPI_INFO_CHECK(ret, statement, format, ...) \
+    do {                                                  \
+        if (!(ret)) {                                    \
+            HNPAPI_LOG(format, ##__VA_ARGS__);            \
+            statement;                                   \
+        }                                          \
+    } while (0)
+
+#define HNPAPI_LOG_ERR(fmt, ...) \
+    HILOG_ERROR(LOG_CORE, "[%{public}s:%{public}d]" fmt, (__FILE_NAME__), (__LINE__), ##__VA_ARGS__)
+
+#define HNPAPI_ERROR_CHECK(ret, statement, format, ...) \
+    do {                                                  \
+        if (!(ret)) {                                     \
+            HNPAPI_LOG_ERR(format, ##__VA_ARGS__);             \
+            statement;                                    \
+        }                                                 \
+    } while (0)
 
 #ifdef __cplusplus
 }
