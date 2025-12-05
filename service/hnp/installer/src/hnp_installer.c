@@ -22,6 +22,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <getopt.h>
+#include <dlfcn.h>
 
 #include "policycoreutils.h"
 #ifdef CODE_SIGNATURE_ENABLE
@@ -29,6 +30,12 @@
 #endif
 #include "hnp_installer.h"
 
+#if defined(__aarch64__) || defined(__x86_64__)
+#define BIN_SEC_PATH "/system/lib64/libsps_binary_security_sdk.z.so"
+#else
+#define BIN_SEC_PATH "/system/lib/libsps_binary_security_sdk.z.so"
+#endif
+#define HNP_BASE_DEC (10)
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -182,15 +189,45 @@ static int HnpGenerateSoftLink(HnpInstallInfo *hnpInfo, HnpCfgInfo *hnpCfg)
     return ret;
 }
 
+/*
+* 判断当前hnp是否在main函数入参installInfo->independentSignHnpPaths中
+* 如果hnpFile与installInfo->independentSignHnpPaths中某个文件的realpath一致
+* 则认为该hnp为独立签名hnp 此时返回true
+*/
+static bool CheckIsSignHnp(const char *hnpFile, HapInstallInfo *installInfo)
+{
+    HNP_ONLY_EXPER(hnpFile == NULL || installInfo == NULL || installInfo->signHnpPaths == NULL ||
+        installInfo->signHnpSize <= 0, return false);
+
+    bool isSign = false;
+    for (int i = 0; i < installInfo->signHnpSize; i++) {
+        HNP_ONLY_EXPER(installInfo->signHnpPaths[i] == NULL, continue);
+
+        char hnpReal[PATH_MAX] = {0};
+        HNP_INFO_CHECK(realpath(hnpFile, hnpReal) != NULL, continue,
+            "file %{public}s not exist", hnpFile);
+        HNP_ONLY_EXPER(strcmp(installInfo->signHnpPaths[i], hnpReal) == 0, isSign = true;
+            break);
+    }
+    HNP_LOGI("hnp %{public}s isSign %{public}d", hnpFile, isSign);
+    return isSign;
+}
+
 static int HnpInstall(const char *hnpFile, HnpInstallInfo *hnpInfo, HnpCfgInfo *hnpCfg,
     HnpSignMapInfo *hnpSignMapInfos, int *count)
 {
     int ret;
-
+    int currentIndex = *count;
     /* 解压hnp文件 */
     ret = HnpUnZip(hnpFile, hnpInfo->hnpVersionPath, hnpInfo->hnpSignKeyPrefix, hnpSignMapInfos, count);
     if (ret != 0) {
         return ret; /* 内部已打印日志 */
+    }
+    // 判断当前hnp是否独立签名并填充本次解压产生的二进制文件数据
+    bool isSign = CheckIsSignHnp(hnpFile, hnpInfo->hapInstallInfo);
+    for (int i = currentIndex; i < *count; i++) {
+        hnpSignMapInfos[i].independentSign = isSign;
+        hnpSignMapInfos[i].hnpType = hnpInfo->isPublic;
     }
 
     /* 生成软链 */
@@ -332,6 +369,35 @@ static int HnpNativeUnInstall(HnpPackageInfo *packageInfo, int uid, const char *
     return 0;
 }
 
+/**
+* 卸载bss信息，so不存在时返回0，其他情况按照执行结果返回
+*/
+static int BssUninstall(int uid, const char *packageName)
+{
+    HNP_INFO_CHECK(access(BIN_SEC_PATH, F_OK) == 0, return 0,
+        "bin file not exist %{public}d ignore", errno);
+
+    void *handle = dlopen(BIN_SEC_PATH, RTLD_NOW | RTLD_LOCAL);
+    HNP_ERROR_CHECK(handle != NULL, return HNP_ERRNO_DL_FAILED,
+        "Failed to dlopen errno:%{public}s", dlerror());
+    
+    ProcessHnpUninstall bssUninstall = (ProcessHnpUninstall)dlsym(handle, "ProcessHnpUninstall");
+    HNP_ERROR_CHECK(bssUninstall != NULL, dlclose(handle);
+        return HNP_ERRNO_BSS_ERROR, "ProcessHnpUninstall not found errno:%{public}s", dlerror());
+
+    BssString bundleName = {
+        .str = (char*)packageName,
+        .len = strlen(packageName)
+    };
+    int32_t ret = bssUninstall(bundleName, uid);
+    
+    dlclose(handle);
+    HNP_ERROR_CHECK(ret == 0, return HNP_ERRNO_BSS_ERROR,
+        "exec bss uninstall failed %{public}d", ret);
+
+    return ret;
+}
+
 static int HnpUnInstall(int uid, const char *packageName)
 {
     HnpPackageInfo *packageInfo = NULL;
@@ -379,7 +445,7 @@ static int HnpUnInstall(int uid, const char *packageName)
 
     (void)HnpDeleteFolder(privatePath);
 
-    return 0;
+    return BssUninstall(uid, packageName);
 }
 
 static int HnpInstallForceCheck(HnpCfgInfo *hnpCfgInfo, HnpInstallInfo *hnpInfo)
@@ -745,6 +811,22 @@ static int SetHnpRestorecon(char *path)
         return HNP_ERRNO_INSTALLER_RESTORECON_HNP_PATH_FAIL;
     }
 
+    // 重置hnp目录权限标签
+    char privatePath[MAX_FILE_PATH_LEN] = {0};
+    ret = sprintf_s(privatePath, MAX_FILE_PATH_LEN, "%s/hnp", path);
+    HNP_ERROR_CHECK(ret > 0, return HNP_ERRNO_INSTALLER_RESTORECON_HNP_PATH_FAIL,
+        "sprintf fail, get hnp restorecon path fail %{public}d", ret);
+
+    ret = access(privatePath, F_OK);
+    HNP_ONLY_EXPER(ret != 0, ret = mkdir(privatePath, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH));
+
+    HNP_ONLY_EXPER((ret != 0) && (errno != EEXIST), HNP_LOGE("mkdir private path fail");
+        return HNP_ERRNO_BASE_MKDIR_PATH_FAILED);
+
+    ret = RestoreconRecurse(privatePath);
+    HNP_ERROR_CHECK(ret == 0, return HNP_ERRNO_INSTALLER_RESTORECON_HNP_PATH_FAIL,
+        "restorecon private hnp path fail %{public}d %{public}d", errno, ret);
+
     return 0;
 }
 
@@ -766,7 +848,81 @@ static int CheckInstallPath(char *dstPath, HapInstallInfo *installInfo)
     return SetHnpRestorecon(dstPath);
 }
 
-static int HnpInsatllPre(HapInstallInfo *installInfo)
+APPSPAWN_STATIC void HapInstallInfoDestory(HapInstallInfo **installInfo)
+{
+    HNP_ERROR_CHECK(installInfo != NULL && *installInfo != NULL, return,
+        "free installinfo with invaliddata");
+
+    HapInstallInfo *info = *installInfo;
+    if (info->signHnpPaths != NULL) {
+        for (int i = 0; i < info->signHnpSize; i++) {
+            free(info->signHnpPaths[i]);
+            info->signHnpPaths[i] = NULL;
+        }
+        free(info->signHnpPaths);
+        info->signHnpPaths = NULL;
+    }
+    free(info);
+    *installInfo = NULL;
+}
+
+#ifdef CODE_SIGNATURE_ENABLE
+static int BssInstall(HnpSignMapInfo *hnpSignMapInfos, int count, HapInstallInfo *installInfo, int execFilesCount)
+{
+    HNP_INFO_CHECK(access(BIN_SEC_PATH, F_OK) == 0, return 0,
+        "bin file not exist ignore install bss %{public}d", errno);
+
+    void *handle = dlopen(BIN_SEC_PATH, RTLD_NOW | RTLD_LOCAL);
+    HNP_ERROR_CHECK(handle != NULL, return HNP_ERRNO_DL_FAILED,
+        "Failed to dlopen errno:%{public}s", dlerror());
+    
+    ProcessHnpInstall bssInstall = (ProcessHnpInstall)dlsym(handle, "ProcessHnpInstall");
+    HNP_ERROR_CHECK(bssInstall != NULL, dlclose(handle);
+        return HNP_ERRNO_BSS_ERROR, "ProcessHnpInstall not found errno:%{public}s", dlerror());
+
+    HnpFileInfo *hnpFiles = (HnpFileInfo *)calloc(1, execFilesCount * sizeof(HnpFileInfo));
+    HNP_ERROR_CHECK(hnpFiles != NULL, dlclose(handle);
+        return HNP_ERRNO_ALLOC_FAILED, "Failed to get hnpfile mem:%{public}d", errno);
+    int ret = 0;
+    do {
+        int currentHnpIndex = 0;
+        // 获取isExec的signInfo, 组装参数
+        for (int i = 0; i < count; i++) {
+            HNP_ONLY_EXPER(!hnpSignMapInfos[i].isExec, continue);
+            HNP_ERROR_CHECK(currentHnpIndex < execFilesCount, ret = HNP_ERRNO_BSS_ERROR;
+                break, "TooMany bss file %{public}d %{public}d", currentHnpIndex, execFilesCount);
+            hnpFiles[currentHnpIndex].rootPath.str = hnpSignMapInfos[i].value;
+            hnpFiles[currentHnpIndex].rootPath.len = strlen(hnpSignMapInfos[i].value);
+            hnpFiles[currentHnpIndex].independentSign = hnpSignMapInfos[i].independentSign;
+            hnpFiles[currentHnpIndex].hnpType = hnpSignMapInfos[i].hnpType;
+            HNP_LOGI("add bss info %{public}s %{public}d %{public}d", hnpFiles[currentHnpIndex].rootPath.str,
+                hnpFiles[currentHnpIndex].independentSign, hnpFiles[currentHnpIndex].hnpType);
+            currentHnpIndex++;
+        }
+        HNP_ONLY_EXPER(ret != 0, break);
+        HnpFiles files = {
+            .files = hnpFiles,
+            .len = execFilesCount
+        };
+        BssString bundleName = {
+            .str = installInfo->hapPackageName,
+            .len= strlen(installInfo->hapPackageName)
+        };
+        BssString appIdentifier = {
+            .str = installInfo->appIdentifier,
+            .len= strlen(installInfo->appIdentifier)
+        };
+        //调用bss接口
+        ret = bssInstall(bundleName, appIdentifier, installInfo->uid, files);
+        HNP_LOGI("bss intall finish %{public}d", ret);
+    } while (0);
+    dlclose(handle);
+    free(hnpFiles);
+    return ret;
+}
+#endif
+
+static int HnpInstallPre(HapInstallInfo *installInfo)
 {
     char dstPath[MAX_FILE_PATH_LEN];
     int count = 0;
@@ -776,19 +932,12 @@ static int HnpInsatllPre(HapInstallInfo *installInfo)
     int i;
 #endif
     int ret;
-
-    if ((ret = CheckInstallPath(dstPath, installInfo)) != 0 ||
-        (ret = HnpInstallHapFileCountGet(installInfo->hnpRootPath, &count)) != 0) {
-        return ret;
-    }
-
+    HNP_ONLY_EXPER((ret = CheckInstallPath(dstPath, installInfo)) != 0 ||
+        (ret = HnpInstallHapFileCountGet(installInfo->hnpRootPath, &count)) != 0, return ret);
     if (count > 0) {
         hnpSignMapInfos = (HnpSignMapInfo *)malloc(sizeof(HnpSignMapInfo) * count);
-        if (hnpSignMapInfos == NULL) {
-            return HNP_ERRNO_NOMEM;
-        }
+        HNP_ONLY_EXPER(hnpSignMapInfos == NULL, return HNP_ERRNO_NOMEM);
     }
-
     count = 0;
     ret = HapReadAndInstall(dstPath, installInfo, hnpSignMapInfos, &count);
     HNP_LOGI("sign start hap path[%{public}s],abi[%{public}s],count=%{public}d", installInfo->hapPath, installInfo->abi,
@@ -800,9 +949,11 @@ static int HnpInsatllPre(HapInstallInfo *installInfo)
             free(hnpSignMapInfos);
             return HNP_ERRNO_NOMEM;
         }
+        int exeFileCount = 0;
         for (i = 0; i < count; i++) {
             data.entries[i].key = hnpSignMapInfos[i].key;
             data.entries[i].value = hnpSignMapInfos[i].value;
+            exeFileCount += (hnpSignMapInfos[i].isExec ? 1 : 0);
         }
         data.count = count;
         ret = EnforceCodeSignForApp(installInfo->hapPath, &data, FILE_ENTRY_ONLY);
@@ -813,10 +964,55 @@ static int HnpInsatllPre(HapInstallInfo *installInfo)
             HnpUnInstall(installInfo->uid, installInfo->hapPackageName);
             ret = HNP_ERRNO_INSTALLER_CODE_SIGN_APP_FAILED;
         }
+        HNP_ONLY_EXPER(ret == 0 && installInfo->appIdentifier != NULL && exeFileCount > 0,
+            ret = BssInstall(hnpSignMapInfos, count, installInfo, exeFileCount));
+        HNP_ERROR_CHECK(ret == 0, HnpUnInstall(installInfo->uid, installInfo->hapPackageName);
+            ret = HNP_ERRNO_BSS_ERROR, "bssinstall failed %{public}d", ret);
     }
 #endif
     free(hnpSignMapInfos);
     return ret;
+}
+
+/**
+* 获取-S参数，解析获取realpath并设置到installInfo->signHnps中
+*/
+static int HandleSignParameter(HapInstallInfo *installInfo, const char *signHnp)
+{
+    HNP_ERROR_CHECK(signHnp != NULL && strstr(signHnp, "..") == NULL,
+        return HNP_ERRNO_PARAM_INVALID, "invalid signHnp param %{public}s", signHnp);
+    HNP_ERROR_CHECK(installInfo != NULL && installInfo->hnpRootPath,
+        return HNP_ERRNO_PARAM_INVALID, "installinfo or rootpath invalid");
+
+    char **temp = (char **)malloc(sizeof(char *) * (installInfo->signHnpSize + 1));
+    HNP_ERROR_CHECK(temp != NULL, return HNP_ERRNO_ALLOC_FAILED,
+        "get for signHnp failed %{public}d", errno);
+    int ret = 0;
+    HNP_ONLY_EXPER(installInfo->signHnpPaths != NULL,
+        ret = memcpy_s(temp, sizeof(char *) * (installInfo->signHnpSize + 1),
+            installInfo->signHnpPaths, sizeof(char *) * (installInfo->signHnpSize)));
+    HNP_ERROR_CHECK(ret == 0, free(temp);
+        return HNP_ERRNO_BASE_COPY_FAILED, "copy sign hnps failed");
+    HNP_ONLY_EXPER(installInfo->signHnpPaths != NULL, free(installInfo->signHnpPaths));
+    installInfo->signHnpPaths = temp;
+    installInfo->signHnpPaths[installInfo->signHnpSize] = NULL;
+    
+    char hnpPath[MAX_FILE_PATH_LEN] = {0};
+    size_t bytes = snprintf_s(hnpPath, MAX_FILE_PATH_LEN, MAX_FILE_PATH_LEN - 1,
+        "%s/%s", installInfo->hnpRootPath, signHnp);
+    HNP_ERROR_CHECK(bytes > 0, return HNP_ERRNO_BASE_SPRINTF_FAILED,
+        "build hnp path filed");
+    char realHnpPath[PATH_MAX] = {0};
+    char *real = realpath(hnpPath, realHnpPath);
+    HNP_ERROR_CHECK(real != NULL, return HNP_ERRNO_PARAM_INVALID,
+        "hnp path invalid %{public}s", signHnp);
+    char *dupHnpRealPath = strdup(realHnpPath);
+    HNP_ERROR_CHECK(dupHnpRealPath != NULL, return HNP_ERRNO_ALLOC_FAILED,
+        "copy hnpreal path failed %{public}d", errno);
+
+    HNP_LOGI("get real path success %{public}s", dupHnpRealPath);
+    installInfo->signHnpPaths[installInfo->signHnpSize++] = dupHnpRealPath;
+    return 0;
 }
 
 static int ParseInstallArgs(int argc, char *argv[], HapInstallInfo *installInfo)
@@ -825,7 +1021,7 @@ static int ParseInstallArgs(int argc, char *argv[], HapInstallInfo *installInfo)
     int ch;
 
     optind = 1; // 从头开始遍历参数
-    while ((ch = getopt_long(argc, argv, "hu:p:i:s:a:f", NULL, NULL)) != -1) {
+    while ((ch = getopt_long(argc, argv, "hu:p:i:s:a:S:I:f", NULL, NULL)) != -1) {
         switch (ch) {
             case 'h' :
                 return HNP_ERRNO_OPERATOR_ARGV_MISS;
@@ -851,6 +1047,13 @@ static int ParseInstallArgs(int argc, char *argv[], HapInstallInfo *installInfo)
             case 'f': // is force
                 installInfo->isForce = true;
                 break;
+            case 'S':
+                ret = HandleSignParameter(installInfo, optarg);
+                HNP_ERROR_CHECK(ret == 0, return ret, "handle sign param failed %{public}s", optarg);
+                break;
+            case 'I':
+                installInfo->appIdentifier = (char*)optarg;
+                break;
             default:
                 break;
         }
@@ -865,18 +1068,49 @@ static int ParseInstallArgs(int argc, char *argv[], HapInstallInfo *installInfo)
     return 0;
 }
 
+/*
+* 获取环境变量中的pipe，用于回写执行结果
+*/
+static int GetRespFd()
+{
+    char *fdEnv = getenv(HNP_INFO_RET_FD_ENV);
+    HNP_ERROR_CHECK(fdEnv != NULL, return -1, "no fd env for resp");
+
+    for (int i = 0; fdEnv[i] != '\0'; i++) {
+        HNP_ERROR_CHECK(isdigit(fdEnv[i]), return -1,
+            "invalid fdevc info %{public}s", fdEnv);
+    }
+    long fd = strtol(fdEnv, NULL, HNP_BASE_DEC);
+    HNP_ERROR_CHECK(fd >= 0 && fd < INT_MAX, return -1, "fd out of range");
+    return (int)fd;
+}
+
 int HnpCmdInstall(int argc, char *argv[])
 {
-    HapInstallInfo installInfo = {0};
+    HapInstallInfo *installInfo = (HapInstallInfo *)calloc(1, sizeof(HapInstallInfo));
+    HNP_ERROR_CHECK(installInfo != NULL, return HNP_ERRNO_ALLOC_FAILED,
+        "get mem for install info failed");
 
-    installInfo.uid = -1; // 预设值，判断简单
+    installInfo->uid = -1;
+    installInfo->signHnpPaths = NULL;
+    installInfo->signHnpSize = 0;
     // 解析参数并生成安装信息
-    int ret = ParseInstallArgs(argc, argv, &installInfo);
+    int ret = ParseInstallArgs(argc, argv, installInfo);
     if (ret != 0) {
+        HapInstallInfoDestory(&installInfo);
         return ret;
     }
+    ret = HnpInstallPre(installInfo);
+    HapInstallInfoDestory(&installInfo);
 
-    return HnpInsatllPre(&installInfo);
+    int respFd = GetRespFd();
+    HNP_ONLY_EXPER(respFd <= 0, return ret);
+    HnpApiResult result = {
+        .result = ret,
+    };
+    HNP_ERROR_CHECK(write(respFd, &result, sizeof(HnpApiResult)) == sizeof(HnpApiResult),
+        return HNP_ERRNO_WRITE_ERROR, "write result failed %{public}d", errno);
+    return ret;
 }
 
 int HnpCmdUnInstall(int argc, char *argv[])
@@ -912,8 +1146,15 @@ int HnpCmdUnInstall(int argc, char *argv[])
         HNP_LOGE("hnp uninstall params invalid uid[%{public}s], package name[%{public}s]", uidArg, packageName);
         return HNP_ERRNO_OPERATOR_ARGV_MISS;
     }
-
-    return HnpUnInstall(uid, packageName);
+    ret = HnpUnInstall(uid, packageName);
+    int respFd = GetRespFd();
+    HNP_ONLY_EXPER(respFd <= 0, return ret);
+    HnpApiResult result = {
+        .result = ret,
+    };
+    HNP_ERROR_CHECK(write(respFd, &result, sizeof(HnpApiResult)) == sizeof(HnpApiResult),
+        return HNP_ERRNO_WRITE_ERROR, "write result failed");
+    return ret;
 }
 
 #ifdef __cplusplus

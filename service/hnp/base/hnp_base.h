@@ -20,7 +20,7 @@
 #include <stdlib.h>
 #include <limits.h>
 #include <stdbool.h>
-
+#include <stdint.h>
 #include "securec.h"
 
 #include "contrib/minizip/zip.h"
@@ -58,6 +58,7 @@ extern "C" {
 #define HAP_PACKAGE_INFO_HAP_PREFIX "hap"
 #define HAP_PACKAGE_INFO_HNP_PREFIX "hnp"
 #define HAP_PACKAGE_INFO_NAME_PREFIX "name"
+#define HNP_INFO_RET_FD_ENV "HNP_INFO_RET_FD_ENV"
 
 #ifdef _WIN32
 #define DIR_SPLIT_SYMBOL '\\'
@@ -66,11 +67,14 @@ extern "C" {
 #endif
 
 #ifndef APPSPAWN_TEST
+#ifndef APPSPAWN_STATIC
 #define APPSPAWN_STATIC static
+#endif
 #else
+#ifndef APPSPAWN_STATIC
 #define APPSPAWN_STATIC
 #endif
-
+#endif
 /* Native软件二进制软链接配置 */
 typedef struct NativeBinLinkStru {
     char source[MAX_FILE_PATH_LEN];
@@ -85,6 +89,26 @@ typedef struct HnpCfgInfoStru {
     unsigned int linkNum;             // 软链接配置个数
     NativeBinLink *links;
 } HnpCfgInfo;
+
+typedef struct HnpApiResult {
+    int result;
+} HnpApiResult;
+
+typedef struct BssString {
+    const char *str;
+    uint32_t len;
+} BssString;
+
+typedef struct HnpFileInfo {
+    BssString rootPath;
+    int32_t hnpType;
+    int32_t independentSign;
+} HnpFileInfo;
+
+typedef struct HnpFiles {
+    HnpFileInfo *files;
+    uint32_t len;
+} HnpFiles;
 
 /* hnp package文件信息
  * @attention:版本控住逻辑如下
@@ -132,6 +156,9 @@ typedef enum  {
 typedef struct HnpSignMapInfoStru {
     char key[MAX_FILE_PATH_LEN];
     char value[MAX_FILE_PATH_LEN];
+    bool independentSign;
+    int isExec;
+    int hnpType;
 } HnpSignMapInfo;
 
 /* 数字索引 */
@@ -269,6 +296,21 @@ enum {
 // 0x801121 软连接覆盖校验失败
 #define HNP_ERRNO_SYMLINK_CHECK_FAILED          HNP_ERRNO_COMMON(HNP_MID_BASE, 0x21)
 
+// 0x801122 内存申请失败
+#define HNP_ERRNO_ALLOC_FAILED            HNP_ERRNO_COMMON(HNP_MID_BASE, 0x22)
+
+// 0x801123 返回结果失败
+#define HNP_ERRNO_RET_FD_INVALID HNP_ERRNO_COMMON(HNP_MID_BASE, 0x23)
+
+// 0x801124 write函数异常
+#define HNP_ERRNO_WRITE_ERROR           HNP_ERRNO_COMMON(HNP_MID_BASE, 0x24)
+
+// 0x801125 dl异常
+#define HNP_ERRNO_DL_FAILED         HNP_ERRNO_COMMON(HNP_MID_BASE, 0x25)
+
+// 0x801126 BSSAPI 执行异常
+#define HNP_ERRNO_BSS_ERROR          HNP_ERRNO_COMMON(HNP_MID_BASE, 0x26)
+
 int GetFileSizeByHandle(FILE *file, int *size);
 
 int ReadFileToStream(const char *filePath, char **stream, int *streamLen);
@@ -318,6 +360,10 @@ int HnpFileCountGet(const char *path, int *count);
 int HnpPathFileCount(const char *path);
 
 char *HnpCurrentVersionGet(const char *name);
+
+typedef int32_t (*ProcessHnpInstall)(BssString bundleName, BssString appIdentifier, int32_t userId, HnpFiles hnpFiles);
+
+typedef int32_t (*ProcessHnpUninstall)(BssString bundleName, int32_t userId);
 
 #ifdef HNP_CLI
 #define HNP_LOGI(args, ...) \
