@@ -2029,6 +2029,27 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_SetCapabilities, TestSize.Level0)
     ASSERT_EQ(ret, 0);
 }
 
+HWTEST_F(AppSpawnCommonTest, App_Spawn_SetSchedPriority_01, TestSize.Level0)
+{
+    AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+    EXPECT_NE(mgr, nullptr);
+    int ret = SetSchedPriority(mgr, nullptr);
+    DeleteAppSpawnMgr(mgr);
+    ASSERT_EQ(ret, 0);
+
+    mgr = CreateAppSpawnMgr(MODE_FOR_HYBRID_SPAWN);
+    EXPECT_NE(mgr, nullptr);
+    ret = SetSchedPriority(mgr, nullptr);
+    DeleteAppSpawnMgr(mgr);
+    ASSERT_EQ(ret, 0);
+
+    mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
+    EXPECT_NE(mgr, nullptr);
+    ret = SetSchedPriority(mgr, nullptr);
+    DeleteAppSpawnMgr(mgr);
+    ASSERT_EQ(ret, 0);
+}
+
 HWTEST_F(AppSpawnCommonTest, App_Spawn_SetUidGid_001, TestSize.Level0)
 {
     AppSpawnClientHandle clientHandle = nullptr;
