@@ -35,17 +35,18 @@ HAP工程根目录
 
 hnp目录准备完成后，参考第4步在hap打包命令中用--hnp-path指定hnp根目录。
 
-3. 修改hap工程根目录下entry/src/main/module.json5文件，配置hnp包信息，需要在"module"字段下增加以下字段。"package"字段指定hnp包在ABI文件夹下相对路径，"type"指定hnp包类型，包含公有（"public"）和私有（"private"）类型。点击DevEco Studio软件菜单栏中"Build"按钮下的"Build Hap(s)/APP(s)"按钮，点击"Build Hap(s)"，编译Hap工程。
-
+3. 修改hap工程根目录下entry/src/main/module.json5文件，配置hnp包信息，需要在"module"字段下增加以下字段。"package"字段指定hnp包在ABI文件夹下相对路径，"type"指定hnp包类型，包含公有（"public"）和私有（"private"）类型，"independentSign"为可选参数，默认值为false，用于指定是否为独立签名hnp包。点击DevEco Studio软件菜单栏中"Build"按钮下的"Build Hap(s)/APP(s)"按钮，点击"Build Hap(s)"，编译Hap工程。
 ```
 "hnpPackages":[
   {
     "package": "python.hnp",
-    "type": "public"
+    "type": "public",
+    "independentSign": true
   },
   {
     "package": "sub_dir/test.hnp",
-    "type": "private"
+    "type": "private",
+    "independentSign": false
   }
 ]
 ```
