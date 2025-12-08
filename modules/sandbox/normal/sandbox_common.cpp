@@ -1130,6 +1130,34 @@ int32_t SandboxCommon::DoAppSandboxMountOnce(const AppSpawningCtx *appProperty, 
     return 0;
 }
 
+int32_t SandboxCommon::DoAppSandboxMountOnceNocheck(const AppSpawningCtx *appProperty, const SharedMountArgs *arg)
+{
+    if (!(arg && arg->srcPath && arg->destPath && arg->srcPath[0] != '\0' && arg->destPath[0] != '\0')) {
+        return 0;
+    }
+    if ((strncmp(arg->srcPath, SandboxCommonDef::g_hostsPrefix, strlen(SandboxCommonDef::g_hostsPrefix)) == 0) ||
+        (strncmp(arg->srcPath, SandboxCommonDef::g_profilePrefix, strlen(SandboxCommonDef::g_profilePrefix)) == 0)) {
+        CreateFileIfNotExist(arg->destPath);
+    } else {
+        (void)CreateDirRecursive(arg->destPath, SandboxCommonDef::FILE_MODE);
+    }
+
+    int ret = 0;
+    APPSPAWN_LOGV("Bind mount %{public}s to %{public}s '%{public}s' '%{public}lu' '%{public}s' '%{public}u'",
+        arg->srcPath, arg->destPath, arg->fsType, arg->mountFlags, arg->options, arg->mountSharedFlag);
+    ret = mount(arg->srcPath, arg->destPath, arg->fsType, arg->mountFlags, arg->options);
+    APPSPAWN_CHECK_LOGV(ret == 0, return ret, "errno is: %{public}d, bind mount %{public}s to %{public}s",
+        errno, arg->srcPath, arg->destPath);
+    if (ret != 0) {
+        APPSPAWN_LOGV("errno is: %{public}d, bind mount %{public}s to %{public}s", errno, arg->srcPath, arg->destPath);
+        return ret;
+    }
+    ret = mount(nullptr, arg->destPath, nullptr, arg->mountSharedFlag, nullptr);
+    APPSPAWN_CHECK_LOGV(ret == 0, return ret, "errno is:%{public}d,private mount to %{public}s '%{public}u'failed",
+        errno, arg->destPath, arg->mountSharedFlag)
+    return 0;
+}
+
 // Construct the full param-src-path
 std::string SandboxCommon::BuildFullParamSrcPath(cJSON *mntPoint)
 {

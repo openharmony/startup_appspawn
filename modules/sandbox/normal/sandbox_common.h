@@ -97,7 +97,7 @@ public:
 
     // 挂载操作
     static int32_t DoAppSandboxMountOnce(const AppSpawningCtx *appProperty, const SharedMountArgs *arg);
-
+    static int32_t DoAppSandboxMountOnceNocheck(const AppSpawningCtx *appProperty, const SharedMountArgs *arg);
     // 拼接系统参数路径
     static std::string BuildFullParamSrcPath(cJSON *mntPoint);
 
