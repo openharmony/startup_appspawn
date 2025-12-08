@@ -34,8 +34,8 @@
         -s    : [required]    hap source path
         -a    : [required]    system abi
         -f    : [optional]    if provided, the hnp package will be installed forcely, ignoring old versions of the hnp package
-
-    uninstall: uninstall one hap package
+        -I    : [optional]    appIdentifier, This parameter needs to be transferred when an independent signed hnp package needs to be specified
+        -S    : [optional]    The path of the independent sign hnp packet, must be used together with the -I parameter.
         hnp uninstall <-u [user id]> <-p [hap package name]>
         -u    : [required]    user id
         -p    : [required]    hap package name
@@ -46,7 +46,7 @@
   ```
 2） hnp命令行安装：
   ```
-    hnp install -u [系统用户ID] -p [hap包名] <-i [hnp安装包所在路径]> <-f>
+    hnp install -u [系统用户ID] -p [hap包名] <-i [hnp安装包所在路径]> <-f> <-I [应用唯一标识appIdentifier]>  <-S [独立签名hnp包相对-i参数路径]> 
   ```
   -u [必选] 用户ID。
 
@@ -55,6 +55,10 @@
   -i [必选] 表示hnp安装包所在路径。
 
   -f [可选] 选项表示是否开启强制安装，强制安装下如果发现软件已安装则会将已安装软件先卸载再安装新的。
+
+  -I [可选] 应用唯一标识appIdentifier 需要使用独立签名hnp时需要传入该参数
+
+  -S [可选] 独立签名hnp包相对-i参数路径。
 
   注：-i指向的路径需要满足以下目录格式。Native公私有软件需要通过所在目录名public和private进行区分。
   ```
