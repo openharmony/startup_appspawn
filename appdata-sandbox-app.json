@@ -234,6 +234,14 @@
                 "sandbox-flags": [ "bind", "rec" ]
             }]
         }, {
+            "name": "ohos.permission.ENTERPRISE_READ_LOG",
+            "sandbox-switch": "ON",
+            "mount-paths": [{
+                "src-path": "/data/service/el1/public/edm/log/<currentUserId>/<PackageName>",
+                "sandbox-path": "/data/edm/log",
+                "sandbox-flags": [ "bind", "rec" ]
+            }]
+        }, {
             "name": "ohos.permission.FILE_CROSS_APP",
             "gids": ["file_manager"],
             "mount-paths": [{
