@@ -386,6 +386,12 @@ int32_t SandboxCore::DoSandboxFileCommonBind(const AppSpawningCtx *appProperty, 
         return 0;
     }
     ret = DoAllCreateOnDaemonMount(appProperty, createOnDaemonConfig);
+    APPSPAWN_ONLY_EXPER(ret, return ret);
+    cJSON *appNocheckConfig = GetFirstSubConfig(firstCommon, SandboxCommonDef::g_appNocheck);
+    if (!appNocheckConfig) {
+        return 0;
+    }
+    ret = DoAllMntPointsMountNocheck(appProperty, appNocheckConfig, nullptr, SandboxCommonDef::g_appNocheck);
     return ret;
 }
 
@@ -570,7 +576,7 @@ int32_t SandboxCore::MountAllGroup(const AppSpawningCtx *appProperty, std::strin
     return ret;
 }
 
-int32_t SandboxCore::ProcessMountPoint(cJSON *mntPoint, MountPointProcessParams &params)
+int32_t SandboxCore::ProcessMountPointCommmon(cJSON *mntPoint, MountPointProcessParams &params, bool enableLogging)
 {
     APPSPAWN_CHECK_ONLY_EXPER(SandboxCommon::IsValidMountConfig(mntPoint, params.appProperty, params.checkFlag),
                               return 0);
@@ -578,9 +584,7 @@ int32_t SandboxCore::ProcessMountPoint(cJSON *mntPoint, MountPointProcessParams 
     const char *srcPathChr = GetStringFromJsonObj(mntPoint, SandboxCommonDef::g_srcPath);
     if (srcPathChr == nullptr) {
         paramSrcPath = SandboxCommon::BuildFullParamSrcPath(mntPoint);
-        if (paramSrcPath.empty()) {
-            return 0;
-        }
+        APPSPAWN_CHECK_ONLY_EXPER(!paramSrcPath.empty(), return 0);
     }
     const char *sandboxPathChr = GetStringFromJsonObj(mntPoint, SandboxCommonDef::g_sandBoxPath);
 
@@ -600,18 +604,35 @@ int32_t SandboxCore::ProcessMountPoint(cJSON *mntPoint, MountPointProcessParams 
         .mountSharedFlag =
             GetBoolValueFromJsonObj(mntPoint, SandboxCommonDef::g_mountSharedFlag, false) ? MS_SHARED : MS_SLAVE
     };
-
-    int ret = SandboxCommon::DoAppSandboxMountOnce(params.appProperty, &arg);
-    APPSPAWN_CHECK(ret == 0 || !SandboxCommon::IsMountSuccessful(mntPoint),
+    int ret = 0;
+    if (enableLogging) {
+        ret = SandboxCommon::DoAppSandboxMountOnce(params.appProperty, &arg);
+        APPSPAWN_CHECK(ret == 0 || !SandboxCommon::IsMountSuccessful(mntPoint),
 #ifdef APPSPAWN_HISYSEVENT
         ReportMountFail(params.bundleName.c_str(), arg.srcPath, arg.destPath, errno);
         ret = APPSPAWN_SANDBOX_MOUNT_FAIL;
 #endif
         return ret,
         "DoAppSandboxMountOnce section %{public}s failed, %{public}s", params.section.c_str(), arg.destPath);
+    } else {
+        ret = SandboxCommon::DoAppSandboxMountOnceNocheck(params.appProperty, &arg);
+        APPSPAWN_CHECK(ret == 0 || !SandboxCommon::IsMountSuccessful(mntPoint),
+        return ret,
+        "DoAppSandboxMountOnceNocheck section %{public}s failed, %{public}s", params.section.c_str(), arg.destPath);
+    }
     SetDecPolicyWithPermission(params.appProperty, mountConfig);
     SandboxCommon::SetSandboxPathChmod(mntPoint, params.sandboxRoot);
     return 0;
+}
+
+int32_t SandboxCore::ProcessMountPoint(cJSON *mntPoint, MountPointProcessParams &params)
+{
+    return ProcessMountPointCommmon(mntPoint, params, true);
+}
+
+int32_t SandboxCore::ProcessMountPointNocheck(cJSON *mntPoint, MountPointProcessParams &params)
+{
+    return ProcessMountPointCommmon(mntPoint, params, false);
 }
 
 int32_t SandboxCore::DoAllMntPointsMount(const AppSpawningCtx *appProperty, cJSON *appConfig,
@@ -638,6 +659,34 @@ int32_t SandboxCore::DoAllMntPointsMount(const AppSpawningCtx *appProperty, cJSO
 
     auto processor = [&mountPointParams](cJSON *mntPoint) {
         return ProcessMountPoint(mntPoint, mountPointParams);
+    };
+
+    return SandboxCommon::HandleArrayForeach(mountPoints, processor);
+}
+
+int32_t SandboxCore::DoAllMntPointsMountNocheck(const AppSpawningCtx *appProperty, cJSON *appConfig,
+    const char *typeName, const std::string &section)
+{
+    std::string bundleName = GetBundleName(appProperty);
+    cJSON *mountPoints = cJSON_GetObjectItemCaseSensitive(appConfig, SandboxCommonDef::g_mountPrefix);
+    if (mountPoints == nullptr || !cJSON_IsArray(mountPoints)) {
+        APPSPAWN_LOGI("mount config is not found in %{public}s, app name is %{public}s",
+            section.c_str(), bundleName.c_str());
+        return 0;
+    }
+
+    std::string sandboxRoot = SandboxCommon::GetSandboxRootPath(appProperty, appConfig);
+    bool checkFlag = CheckMountFlag(appProperty, bundleName, appConfig);
+    MountPointProcessParams mountPointParams = {
+        .appProperty = appProperty,
+        .checkFlag = checkFlag,
+        .section = section,
+        .sandboxRoot = sandboxRoot,
+        .bundleName = bundleName
+    };
+
+    auto processor = [&mountPointParams](cJSON *mntPoint) {
+        return ProcessMountPointNocheck(mntPoint, mountPointParams);
     };
 
     return SandboxCommon::HandleArrayForeach(mountPoints, processor);
