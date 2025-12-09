@@ -34,6 +34,8 @@ public:
     // 沙箱挂载公共处理
     static int32_t DoAllMntPointsMount(const AppSpawningCtx *appProperty, cJSON *appConfig,
         const char *typeName, const std::string &section = "app-base");
+    static int32_t DoAllMntPointsMountNocheck(const AppSpawningCtx *appProperty, cJSON *appConfig,
+        const char *typeName, const std::string &section = "app-nocheck");
     static int32_t DoAddGid(AppSpawningCtx *appProperty, cJSON *appConfig,
                             const char* permissionName, const std::string &section);
     static int32_t DoAllSymlinkPointslink(const AppSpawningCtx *appProperty, cJSON *appConfig);
@@ -116,6 +118,8 @@ private:
     // 沙箱回调函数
     static int32_t ProcessMountPoint(cJSON *mntPoint, MountPointProcessParams &params);
     static int32_t ProcessCreateOnDaemonMount(cJSON *mntPoint, MountPointProcessParams &params);
+    static int32_t ProcessMountPointNocheck(cJSON *mntPoint, MountPointProcessParams &params);
+    static int32_t ProcessMountPointCommmon(cJSON *mntPoint, MountPointProcessParams &params, bool eableLogging);
 
     // debug hap
     static std::string ConvertDebugRealPath(const AppSpawningCtx *appProperty, std::string path);

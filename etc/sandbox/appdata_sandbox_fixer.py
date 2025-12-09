@@ -23,7 +23,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir,
     os.pardir, os.pardir, os.pardir, "build"))
 from scripts.util import build_utils  # noqa: E402
 
-#default json
+# default json
 
 APP_SANDBOX_DEFAULT = '''
 {
@@ -47,13 +47,19 @@ APP_SANDBOX_DEFAULT = '''
             "mount-paths" : [],
             "flags-point" : [],
             "symbol-links" : []
+        }],
+        "app-nocheck" : [{
+            "sandbox-root" : "/mnt/sandbox/<currentUserId>/<PackageName>",
+            "mount-paths" : [],
+            "flags-point" : [],
+            "symbol-links" : []
         }]
     }],
     "individual" : [{}],
     "permission" :[{}]
 }
 '''
-#only string in list
+# only string in list
 
 
 def _merge_list(origin, new):
@@ -70,7 +76,7 @@ def _is_same_data(data1, data2, keys):
             return False
     return True
 
-#for object in list
+# for object in list
 
 
 def _handle_same_array(data1, data2):
@@ -174,22 +180,28 @@ def _merge_scope_common(origin, new):
         if new.get(name) :
             origin[name] = new.get(name)
 
-    #处理 app-base
+    # 处理 app-base
     app = new.get("app-base")
     if app is not None and len(app) > 0:
         _merge_scope_app(origin.get("app-base"), app)
         pass
 
-    #处理 app-resources
+    # 处理 app-resources
     app = new.get("app-resources")
     if app is not None and len(app) > 0:
         _merge_scope_app(origin.get("app-resources"), app)
         pass
 
-    #处理 create-on-daemon
+    # 处理 create-on-daemon
     app = new.get("create-on-daemon")
     if app is not None and len(app) > 0:
         _merge_scope_app(origin.get("create-on-daemon"), app)
+        pass
+
+    # 处理 app-nocheck
+    app = new.get("app-nocheck")
+    if app is not None and len(app) > 0:
+        _merge_scope_app(origin.get("app-nocheck"), app)
         pass
 
 
@@ -221,7 +233,7 @@ def __substitude_contents(options, source_file):
 
 def _get_json_list(options):
     data_list = []
-    #decode source file
+    # decode source file
     contents = __substitude_contents(options, options.source_file)
     if contents :
         data_list.append(contents)
@@ -229,7 +241,7 @@ def _get_json_list(options):
     if options.extra_sandbox_cfgs is None:
         return data_list
 
-    #decode extra file
+    # decode extra file
     for sandbox_cfg in options.extra_sandbox_cfgs:
         contents = __substitude_contents(options, sandbox_cfg)
         if contents :
@@ -239,7 +251,7 @@ def _get_json_list(options):
 
 def fix_sandbox_config_file(options):
     data_list = _get_json_list(options)
-    #decode template
+    # decode template
     origin_json = json.loads(APP_SANDBOX_DEFAULT)
 
     for data in data_list:
@@ -248,7 +260,7 @@ def fix_sandbox_config_file(options):
         if common is not None and len(common) > 0:
             _merge_scope_common(origin_json.get("common")[0], common[0])
 
-        #处理individual
+        # 处理individual
         individuals = data.get("individual")
         if individuals is not None and len(individuals) > 0:
             _merge_scope_individual(origin_json.get("individual")[0], individuals[0])
