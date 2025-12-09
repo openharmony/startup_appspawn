@@ -49,11 +49,6 @@
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
-                    "src-path" : "/system/data",
-                    "sandbox-path" : "/system/data",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
                     "src-path" : "/system/usr",
                     "sandbox-path" : "/system/usr",
                     "sandbox-flags" : [ "bind", "rec" ],
@@ -79,18 +74,8 @@
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
-                    "src-path" : "/system/etc/hosts",
-                    "sandbox-path" : "/data/service/el1/public/hosts_user/hosts",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
                     "src-path" : "/system/resource",
                     "sandbox-path" : "/system/resource",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/vendor/lib",
-                    "sandbox-path" : "/vendor/lib",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
@@ -159,11 +144,6 @@
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
-                    "src-path" : "/data/app/el1/public/aot_compiler/ark_cache/<PackageName>",
-                    "sandbox-path" : "/data/storage/ark-cache",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
                     "src-path" : "/data/app/el1/<currentUserId>/aot_compiler/ark_profile/<PackageName>",
                     "sandbox-path" : "/data/storage/ark-profile",
                     "sandbox-flags" : [ "bind", "rec" ],
@@ -229,18 +209,8 @@
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
-                    "src-path" : "/chip_prod/etc/passthrough",
-                    "sandbox-path" : "/chip_prod/etc/passthrough",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
                     "src-path" : "/mnt/hmdfs/<currentUserId>/cloud/data/<PackageName>",
                     "sandbox-path" : "/data/storage/el2/cloud",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/vendor/etc/vulkan",
-                    "sandbox-path" : "/vendor/etc/vulkan",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
@@ -283,11 +253,6 @@
             "mount-paths" : [{
                     "src-path" : "/data/app/el1/bundle/public/<arkWebPackageName>",
                     "sandbox-path" : "/data/storage/el1/bundle/arkwebcore",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/system/app/ohos.global.systemres",
-                    "sandbox-path" : "/data/global/systemResources",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
@@ -474,7 +439,46 @@
                     }
                 }]
             }
-        ]
+        ],
+        "app-nocheck" : [{
+            "mount-paths" : [{
+                    "src-path" : "/system/data",
+                    "sandbox-path" : "/system/data",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/system/etc/hosts",
+                    "sandbox-path" : "/data/service/el1/public/hosts_user/hosts",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/vendor/lib",
+                    "sandbox-path" : "/vendor/lib",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/system/app/ohos.global.systemres",
+                    "sandbox-path" : "/data/global/systemResources",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/data/app/el1/public/aot_compiler/ark_cache/<PackageName>",
+                    "sandbox-path" : "/data/storage/ark-cache",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/chip_prod/etc/passthrough",
+                    "sandbox-path" : "/chip_prod/etc/passthrough",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/vendor/etc/vulkan",
+                    "sandbox-path" : "/vendor/etc/vulkan",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }
+            ]
+        }]
     }],
     "individual" : [{
         "com.ohos.medialibrary.medialibrarydata" : [{

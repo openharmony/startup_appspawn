@@ -51,6 +51,7 @@ constexpr const char *g_privatePrefix = "individual";
 constexpr const char *g_permissionPrefix = "permission";
 constexpr const char *g_appBase = "app-base";
 constexpr const char *g_appResources = "app-resources";
+constexpr const char *g_appNocheck = "app-nocheck";
 constexpr const char *g_flagsPoint = "flags-point";
 constexpr const char *g_createOnDaemon = "create-on-daemon";
 constexpr const char *g_srcPathInfo = "src-path-info";
@@ -151,6 +152,10 @@ constexpr const char *g_debughap = "debug";
 /* 分割符 */
 constexpr const char *g_fileSeparator = "/";
 constexpr const char *g_overlayDecollator = "|";
+
+/* system/etc */
+constexpr const char *g_hostsPrefix = "/system/etc/hosts";
+constexpr const char *g_profilePrefix = "/system/etc/profile";
 
 /* 权限名 */
 const std::string FILE_CROSS_APP_MODE = "ohos.permission.FILE_CROSS_APP";

@@ -1829,6 +1829,174 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_58, TestSize.Level0)
     g_testHelper.SetProcessName("com.example.myapplication");
 }
 
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_59, TestSize.Level0)
+{
+    int32_t ret = 0;
+    ret = AppSpawn::SandboxCommon::DoAppSandboxMountOnceNocheck(nullptr, nullptr);
+    EXPECT_EQ(ret, 0);
+
+    SharedMountArgs arg = {
+        .srcPath = NULL,
+        .destPath = "/ABC"
+    };
+    ret = AppSpawn::SandboxCommon::DoAppSandboxMountOnceNocheck(nullptr, &arg);
+    EXPECT_EQ(ret, 0);
+
+        SharedMountArgs arg1 = {
+        .srcPath = "",
+        .destPath = "/ABC"
+    };
+    ret = AppSpawn::SandboxCommon::DoAppSandboxMountOnceNocheck(nullptr, &arg1);
+    EXPECT_EQ(ret, 0);
+
+    SharedMountArgs arg2 = {
+        .srcPath = "/ABC",
+        .destPath = NULL
+    };
+    ret = AppSpawn::SandboxCommon::DoAppSandboxMountOnceNocheck(nullptr, &arg2);
+    EXPECT_EQ(ret, 0);
+
+    SharedMountArgs arg3 = {
+        .srcPath = "/ABC",
+        .destPath = ""
+    };
+    ret = AppSpawn::SandboxCommon::DoAppSandboxMountOnceNocheck(nullptr, &arg3);
+    EXPECT_EQ(ret, 0);
+
+    SharedMountArgs arg4 = {
+        .srcPath = "/config",
+        .destPath = "/config"
+    };
+    ret = AppSpawn::SandboxCommon::DoAppSandboxMountOnceNocheck(nullptr, &arg4);
+    EXPECT_EQ(ret, 0);
+
+    SharedMountArgs arg5 = {
+        .srcPath = "system/etc/hosts/ABC",
+        .destPath = "system/etc/hosts/ABC"
+    };
+    ret = AppSpawn::SandboxCommon::DoAppSandboxMountOnceNocheck(nullptr, &arg5);
+    EXPECT_EQ(ret, 0);
+
+        SharedMountArgs arg6 = {
+        .srcPath = "system/etc/profile/ABC",
+        .destPath = "system/etc/profile/ABC"
+    };
+    ret = AppSpawn::SandboxCommon::DoAppSandboxMountOnceNocheck(nullptr, &arg6);
+    EXPECT_EQ(ret, 0);
+}
+
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_60, TestSize.Level0)
+{
+    g_testHelper.SetTestUid(1000);  // 1000 test
+    g_testHelper.SetTestGid(1000);  // 1000 test
+    g_testHelper.SetProcessName("com.example.myapplication");
+    g_testHelper.SetTestApl("system_basic");
+    AppSpawningCtx *appProperty = GetTestAppProperty();
+
+    std::string mJsconfig1 = "{ \
+        \"common\":[{ \
+            \"app-base\" : [{ \
+                \"sandbox-root\" : \"/mnt/sandbox/<currentUserId>/<PackageName>\", \
+                \"mount-paths\" : [{ \
+                    \"src-path\" : \"/data/app/el2/<currentUserId>/base/<PackageName_index>\", \
+                    \"sandbox-path\" : \"/data/storage/el2/base\", \
+                    \"sandbox-flags\" : [ \"bind\", \"rec\" ], \
+                    \"check-action-status\": \"false\" \
+                }] \
+            }], \
+            \"app-resources\" : [{ \
+                \"sandbox-root\" : \"/mnt/sandbox/<currentUserId>/<PackageName>\" \
+            }], \
+            \"create-on-daemon\" : [{ \
+                \"sandbox-root\" : \"/mnt/sandbox/<currentUserId>/<PackageName>\" \
+            }], \
+            \"app-nocheck\" : [{ \
+                \"sandbox-root\" : \"/mnt/sandbox/<currentUserId>/<PackageName>\", \
+                \"mount-paths\" : [{ \
+                    \"src-path\" : \"/mnt/sandbox/shm/<currentUserId>/app/<variablePackageName>\", \
+                    \"sandbox-path\" : \"/dev/shm\", \
+                    \"sandbox-flags\" : [ \"bind\", \"rec\" ], \
+                    \"check-action-status\": \"false\", \
+                    \"src-path-info\": { \
+                        \"uid\": 0, \
+                        \"gid\": 0, \
+                        \"mode\": 1023 \
+                    } \
+                }] \
+            }] \
+        }] \
+    }";
+    cJSON *j_config1 = cJSON_Parse(mJsconfig1.c_str());
+    ASSERT_NE(j_config1, nullptr);
+    int32_t ret = AppSpawn::SandboxCore::DoSandboxFileCommonBind(appProperty, j_config1);
+    EXPECT_EQ(ret, 0);
+
+    cJSON_Delete(j_config1);
+    DeleteAppSpawningCtx(appProperty);
+}
+
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_61, TestSize.Level0)
+{
+    g_testHelper.SetTestUid(1000);  // 1000 test
+    g_testHelper.SetTestGid(1000);  // 1000 test
+    g_testHelper.SetProcessName("com.ohos.wps");
+    g_testHelper.SetTestApl("apl123");
+    g_testHelper.SetTestMsgFlags(4);  // 4 is test parameter
+    AppSpawningCtx *appProperty = GetTestAppProperty();
+
+    std::string mJsconfig3 = "{ \
+        \"flags\": \"DLP_MANAGER\", \
+        \"sandbox-root\" : \"/mnt/sandbox/<currentUserId>/<PackageName>\" \
+    }";
+    cJSON *j_config3 = cJSON_Parse(mJsconfig3.c_str());
+    ASSERT_NE(j_config3, nullptr);
+    int32_t ret = AppSpawn::SandboxCore::DoAllMntPointsMount(appProperty, j_config3, nullptr);
+    EXPECT_EQ(ret, 0);
+
+    std::string mJsconfig4 = "{ \
+        \"flags\": \"DLP_MANAGER\", \
+        \"sandbox-root\" : \"/mnt/sandbox/<currentUserId>/<PackageName>\", \
+        \"mount-paths\" : \"abc\" \
+    }";
+    cJSON *j_config4 = cJSON_Parse(mJsconfig4.c_str());
+    ASSERT_NE(j_config4, nullptr);
+    ret = AppSpawn::SandboxCore::DoAllMntPointsMountNocheck(appProperty, j_config4, nullptr);
+    EXPECT_EQ(ret, 0);
+
+    cJSON_Delete(j_config3);
+    cJSON_Delete(j_config4);
+    DeleteAppSpawningCtx(appProperty);
+}
+
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_62, TestSize.Level0)
+{
+    g_testHelper.SetTestUid(1000);  // 1000 test
+    g_testHelper.SetTestGid(1000);  // 1000 test
+    g_testHelper.SetProcessName("com.example.myapplication");
+    g_testHelper.SetTestApl("apl123");
+    g_testHelper.SetTestMsgFlags(4);  // 4 is test parameter
+    AppSpawningCtx *appProperty = GetTestAppProperty();
+
+    std::string mJsconfig = "{ \
+        \"sandbox-root\" : \"/mnt/sandbox/<currentUserId>/<PackageName>\", \
+        \"mount-paths\" : [{ \
+            \"src-path\" : \"/data/service/el1/public/themes/<currentUserId>/a/app/createSandboxPath01\", \
+            \"sandbox-path\" : \"/data/themes/a/app/createSandboxPath01\", \
+            \"sandbox-flags\" : [ \"bind\", \"rec\" ], \
+            \"check-action-status\": \"false\", \
+            \"create-sandbox-path\": \"false\" \
+        }] \
+    }";
+    cJSON *j_config = cJSON_Parse(mJsconfig.c_str());
+    ASSERT_NE(j_config, nullptr);
+    int32_t ret = 0;
+    ret = AppSpawn::SandboxCore::DoAllMntPointsMountNocheck(appProperty, j_config, nullptr);
+    EXPECT_EQ(ret, 0);
+
+    cJSON_Delete(j_config);
+    DeleteAppSpawningCtx(appProperty);
+}
+
 /**
  * @brief 测试app extension
  *
