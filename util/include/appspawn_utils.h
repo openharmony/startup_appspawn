@@ -93,7 +93,7 @@ typedef struct {
 } EnvConfig;
 
 #define MAX_ENV_VALUE_LEN 1024
-
+#define DUMP_MAX_LOG_BUFF_LEN 1024
 typedef struct TagAppSpawnCommonEnv {
     const char *envName;
     const char *envValue;

@@ -228,9 +228,9 @@ APPSPAWN_STATIC void ClearEnvAndReturnSuccess(AppSpawnContent *content, AppSpawn
     AppSpawnEnvClear(content, client);
     APPSPAWN_CHECK(fd >= 0, return, "invalid fd for notify parent");
     int ret = 0;
-    ssize_t written = write(fd, &ret, sizeof(ret));
+    ssize_t len = write(fd, &ret, sizeof(ret));
     (void)close(fd);
-    APPSPAWN_DUMPI("ClearEnvAndReturnSuccess %{public}zd", written);
+    APPSPAWN_CHECK_ONLY_DUMPW(len == sizeof(ret), "error %{public}d len %{public}zd", errno, len);
 }
 
 APPSPAWN_STATIC int RunChildThread(const AppSpawnMgr *content, const AppSpawningCtx *property)
