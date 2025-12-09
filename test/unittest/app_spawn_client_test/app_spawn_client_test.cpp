@@ -309,6 +309,7 @@ HWTEST_F(AppSpawnClientTest, App_Client_Msg_004, TestSize.Level0)
         property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
         APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
         DumpAppSpawnMsg(property->message);
+        DumpMsgFlags(property->message);
         uint32_t len = 0;
         char *renderCmdMsg = reinterpret_cast<char *>(GetAppPropertyExt(property, MSG_EXT_NAME_RENDER_CMD, &len));
         APPSPAWN_CHECK(renderCmdMsg != nullptr, break, "Can not find render cmd in msg");
@@ -1196,4 +1197,21 @@ HWTEST_F(AppSpawnClientTest, App_Spawn_interface001, TestSize.Level0)
     EXPECT_EQ(clientInstance->socketId, 1);
     free(clientInstance);
 }
+
+/**
+ * @brief 测试DumpMsgFlags函数
+ *
+ */
+HWTEST_F(AppSpawnClientTest, DumpMsgFlags_001, TestSize.Level0)
+{
+    int ret = 0;
+    AppSpawnMsgNode *node = nullptr;
+    do {
+        node = CreateAppSpawnMsg();
+        DumpMsgFlags(node);
+    } while (0);
+    DeleteAppSpawnMsg(&node);
+    ASSERT_EQ(node, nullptr);
+}
+
 }  // namespace OHOS
