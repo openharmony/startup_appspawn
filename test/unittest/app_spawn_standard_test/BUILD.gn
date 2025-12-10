@@ -657,6 +657,10 @@ if (!defined(ohos_lite)) {
       sources += [ "${appspawn_path}/modules/sysevent/hisysevent_adapter.cpp" ]
     }
 
+    if (appspawn_change_sched) {
+      defines += [ "APPSPAWN_CHANGE_SCHED_ENABLE" ]
+    }
+
     if (target_cpu == "arm64" || target_cpu == "x86_64" ||
         target_cpu == "riscv64") {
       defines += [ "APPSPAWN_64" ]
