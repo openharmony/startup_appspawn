@@ -25,9 +25,9 @@ void DumpSpawnStack(pid_t pid)
     std::string stackTrace;
     bool ret = dumpLog.DumpCatch(pid, 0, stackTrace);
     if (ret) {
-        APPSPAWN_KLOGI("dumpMsg: pid %{public}d. %{public}s", pid, stackTrace.c_str());
+        APPSPAWN_LOGI("dumpCatch stackTrace for pid %{public}d success", pid);
     } else {
-        APPSPAWN_KLOGE("dumpCatch stackTrace failed.");
+        APPSPAWN_LOGE("dumpCatch stackTrace for pid %{public}d failed", pid);
     }
 #endif
 }

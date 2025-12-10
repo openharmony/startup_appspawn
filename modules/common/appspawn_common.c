@@ -71,6 +71,7 @@
 #define PID_NS_INIT_GID 100000
 #define PREINSTALLED_HAP_FLAG 0x01 // hapFlags 0x01: SELINUX_HAP_RESTORECON_PREINSTALLED_APP in selinux
 #define MIN_VALID_APP_UID 10000
+#define MIN_VALID_APP_GID 10000
 
 static int SetProcessName(const AppSpawnMgr *content, const AppSpawningCtx *property)
 {
@@ -286,6 +287,8 @@ APPSPAWN_STATIC int SetUidGid(const AppSpawnMgr *content, const AppSpawningCtx *
     AppSpawnMsgDacInfo *dacInfo = (AppSpawnMsgDacInfo *)GetAppProperty(property, TLV_DAC_INFO);
     APPSPAWN_CHECK(dacInfo != NULL, return APPSPAWN_TLV_NONE,
         "No tlv %{public}d in msg %{public}s", TLV_DAC_INFO, GetProcessName(property));
+    APPSPAWN_CHECK(dacInfo->uid >= MIN_VALID_APP_UID && dacInfo->gid >= MIN_VALID_APP_GID, return APPSPAWN_MSG_INVALID,
+        "uid %{public}u or gid %{public}u is invalid", dacInfo->uid, dacInfo->gid);
 
     // set gids
     int ret = setgroups(dacInfo->gidCount, (const gid_t *)(&dacInfo->gidTable[0]));
@@ -313,8 +316,6 @@ APPSPAWN_STATIC int SetUidGid(const AppSpawnMgr *content, const AppSpawningCtx *
     /* If the effective user ID is changed from 0 to nonzero,
      * then all capabilities are cleared from the effective set
      */
-    APPSPAWN_CHECK(dacInfo->uid >= MIN_VALID_APP_UID, return APPSPAWN_MSG_INVALID,
-        "uid %{public}d is invalid, must be greater than %{public}d", dacInfo->uid, MIN_VALID_APP_UID);
     ret = setresuid(dacInfo->uid, dacInfo->uid, dacInfo->uid);
     APPSPAWN_CHECK(ret == 0, return errno, "setuid(%{public}u) failed: %{public}d", dacInfo->uid, errno);
 
@@ -330,7 +331,7 @@ APPSPAWN_STATIC int SetUidGid(const AppSpawnMgr *content, const AppSpawningCtx *
     return 0;
 }
 
-static int SetSchedPriority(const AppSpawnMgr *content, const AppSpawningCtx *property)
+APPSPAWN_STATIC int SetSchedPriority(const AppSpawnMgr *content, const AppSpawningCtx *property)
 {
 #ifdef APPSPAWN_CHANGE_SCHED_ENABLE
     if (IsAppSpawnMode(content) || IsHybridSpawnMode(content)) {
