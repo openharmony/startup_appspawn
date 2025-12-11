@@ -6,7 +6,7 @@
     "required": {
         "system-const": {
             "mount-paths": [{
-                "src-path" : "/data/service/el1/public/fonts/<currentUserId>",
+                "src-path" : "/data/service/el1/<currentUserId>/for-all-app/fonts",
                 "sandbox-path" : "/data/service/el1/public/for-all-app/fonts"
             }, {
                 "src-path" : "/dev",
