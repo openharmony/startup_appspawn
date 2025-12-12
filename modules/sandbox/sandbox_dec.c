@@ -97,7 +97,7 @@ void SetDecPolicyInfos(DecPolicyInfo *decPolicyInfos)
     }
     g_decPolicyInfos->tokenId = decPolicyInfos->tokenId;
     g_decPolicyInfos->pathNum += decPolicyInfos->pathNum;
-    g_decPolicyInfos->flag = true;
+    g_decPolicyInfos->flag = false;
     g_decPolicyInfos->userId = 0;
 }
 

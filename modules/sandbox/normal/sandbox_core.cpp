@@ -1309,7 +1309,6 @@ int32_t SandboxCore::SetDecWithDir(const AppSpawningCtx *appProperty, uint32_t u
     pathInfo.mode = SANDBOX_MODE_WRITE | SANDBOX_MODE_READ;
     decPolicyInfo.path[0] = pathInfo;
     decPolicyInfo.tokenId = tokenInfo->accessTokenIdEx;
-    decPolicyInfo.flag = true;
     SetDecPolicyInfos(&decPolicyInfo);
 
     if (decPolicyInfo.path[0].path) {
@@ -1344,7 +1343,6 @@ int32_t SandboxCore::SetDecPolicyWithPermission(const AppSpawningCtx *appPropert
         decPolicyInfo.path[i] = pathInfo;
     }
     decPolicyInfo.tokenId = tokenInfo->accessTokenIdEx;
-    decPolicyInfo.flag = true;
     SetDecPolicyInfos(&decPolicyInfo);
 EXIT:
     for (uint32_t i = 0; i < decPolicyInfo.pathNum; i++) {
@@ -1386,7 +1384,6 @@ void SandboxCore::SetDecDenyWithDir(const AppSpawningCtx *appProperty)
         decPolicyInfo.pathNum += 1;
     }
     decPolicyInfo.tokenId = tokenInfo->accessTokenIdEx;
-    decPolicyInfo.flag = true;
     SetDecPolicyInfos(&decPolicyInfo);
 }
 
