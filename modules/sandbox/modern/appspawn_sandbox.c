@@ -488,7 +488,6 @@ static int SetDecPolicyWithCond(const SandboxContext *context, const PathMountNo
     }
 
     decPolicyInfo.tokenId = tokenInfo->accessTokenIdEx;
-    decPolicyInfo.flag = true;
     SetDecPolicyInfos(&decPolicyInfo);
     FreeDecPolicyPaths(&decPolicyInfo);
     return 0;
@@ -526,8 +525,6 @@ static int SetDecPolicyWithDir(const SandboxContext *context)
     pathInfo.mode = SANDBOX_MODE_WRITE | SANDBOX_MODE_READ;
     decPolicyInfo.path[0] = pathInfo;
     decPolicyInfo.tokenId = tokenInfo->accessTokenIdEx;
-    decPolicyInfo.flag = true;
-
     SetDecPolicyInfos(&decPolicyInfo);
     return 0;
 }
