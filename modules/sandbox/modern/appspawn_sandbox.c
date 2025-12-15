@@ -342,7 +342,7 @@ static int32_t SandboxMountFusePath(const SandboxContext *context, const MountAr
 APPSPAWN_STATIC void CheckAndCreateSandboxFile(const char *file)
 {
     if (access(file, F_OK) == 0) {
-        APPSPAWN_LOGI("file %{public}s already exist", file);
+        APPSPAWN_LOGV("file %{public}s already exist", file);
         return;
     }
     MakeDirRec(file, FILE_MODE, 0);
