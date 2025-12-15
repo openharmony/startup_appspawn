@@ -29,7 +29,6 @@
 #include "appspawn_encaps.h"
 
 void SetBoolParamResult(const char *key, bool flag);
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -149,7 +148,7 @@ int AddPermissionArrayToValue(cJSON *permissionItemArr, UserEncap *encap);
 int SetSchedPriority(const AppSpawnMgr *content, const AppSpawningCtx *property);
 int SetUidGid(const AppSpawnMgr *content, const AppSpawningCtx *property);
 int PrctlStub(int option, ...);
-
+void DumpMsgFlags(const AppSpawnMsgNode *message);
 #ifdef APPSPAWN_HITRACE_OPTION
 int FilterAppSpawnTrace(AppSpawnMgr *content, AppSpawningCtx *property);
 #endif

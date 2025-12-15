@@ -318,7 +318,7 @@ bool SandboxCommon::VerifyDirRecursive(const std::string &path)
 void SandboxCommon::CreateFileIfNotExist(const char *file)
 {
     if (access(file, F_OK) == 0) {
-        APPSPAWN_DUMPI("file %{public}s already exist", file);
+        APPSPAWN_LOGV("file %{public}s already exist", file);
         return;
     }
     std::string path = file;
