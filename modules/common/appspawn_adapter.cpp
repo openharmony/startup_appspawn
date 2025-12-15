@@ -15,7 +15,7 @@
 
 #include "appspawn_adapter.h"
 
-#include "access_token.h"
+#include "accesstoken_kit.h"
 #include "appspawn_hook.h"
 #include "appspawn_manager.h"
 #include "appspawn_utils.h"
@@ -43,6 +43,7 @@ using GetPermissionFunc = int32_t (*)(void *, const char *);
 #define MAX_USERID_LEN  32
 using namespace OHOS::Security::AccessToken;
 
+static const uint64_t TOKEN_ID_LOWMASK = 0xffffffff;
 void CheckSpecialSpawnMode(const AppSpawnMgr *content, const AppSpawningCtx *property,
     HapDomainInfo *hapDomainInfo);
 
@@ -61,28 +62,14 @@ int SetAppAccessToken(const AppSpawnMgr *content, const AppSpawningCtx *property
     } else {
         tokenId = tokenInfo->accessTokenIdEx;
     }
+    AccessTokenID accessTokenId = tokenId & TOKEN_ID_LOWMASK;
+    ATokenTypeEnum type = AccessTokenKit::GetTokenTypeFlag(accessTokenId);
+    APPSPAWN_CHECK(type == TOKEN_HAP, return APPSPAWN_ACCESS_TOKEN_INVALID, "token type %{public}d is invalid", type);
+
     ret = SetSelfTokenID(tokenId);
     APPSPAWN_CHECK(ret == 0, return APPSPAWN_ACCESS_TOKEN_INVALID,
         "set access token id failed, ret: %{public}d %{public}s", ret, GetProcessName(property));
     APPSPAWN_LOGV("SetAppAccessToken success for %{public}s", GetProcessName(property));
-    return 0;
-}
-
-int SetSelinuxConNweb(const AppSpawnMgr *content, const AppSpawningCtx *property)
-{
-#if defined(WITH_SELINUX) && !defined(APPSPAWN_TEST)
-    uint32_t len = 0;
-    char *processTypeChar =
-        reinterpret_cast<char *>(GetAppPropertyExt(property, MSG_EXT_NAME_PROCESS_TYPE, &len));
-    std::string processType = (processTypeChar != nullptr) ? std::string(processTypeChar) : "";
-    int32_t ret;
-    if (processType == "render") {
-        ret = setcon("u:r:isolated_render:s0");
-    } else {
-        ret = setcon("u:r:isolated_gpu:s0");
-    }
-    APPSPAWN_CHECK_ONLY_LOG(ret == 0, "Setcon failed, errno: %{public}d", errno);
-#endif
     return 0;
 }
 
@@ -135,11 +122,6 @@ int SetSelinuxCon(const AppSpawnMgr *content, const AppSpawningCtx *property)
         }
         return 0;
     }
-#ifdef APPSPAWN_TEST
-    if (IsNWebSpawnMode(content)) {
-        return 0;
-    }
-#endif
     AppSpawnMsgDomainInfo *msgDomainInfo =
         reinterpret_cast<AppSpawnMsgDomainInfo *>(GetAppProperty(property, TLV_DOMAIN_INFO));
     APPSPAWN_CHECK(msgDomainInfo != NULL, return APPSPAWN_TLV_NONE,
@@ -295,9 +277,9 @@ int LoadSeLinuxConfig(void)
     return HapContextLoadConfig();
 }
 
-int GetHostId(const AppSpawningCtx *property)
+uint32_t GetHostId(const AppSpawningCtx *property)
 {
-    int32_t hostId = 0;
+    uint32_t hostId = 0; // The value of 0 is invalid. Its purpose is to initialize.
     const char *userId =
         (const char *)(GetAppSpawnMsgExtInfo(property->message, MSG_EXT_NAME_PARENT_UID, nullptr));
     if (userId == nullptr) {
@@ -308,10 +290,8 @@ int GetHostId(const AppSpawningCtx *property)
     char *end;
     errno = 0;
     const int numberBase = 10;
-    hostId = strtol(userId, &end, numberBase);
-    if (errno == ERANGE || *end != '\0') {
-        APPSPAWN_LOGE("AppSpawn get hostId failed, errno=%u.", errno);
-    }
+    hostId = strtoul(userId, &end, numberBase);
+    APPSPAWN_CHECK(errno != ERANGE && *end == '\0', return 0, "AppSpawn get hostId failed, errno=%d.", errno);
     return hostId;
 }
 

@@ -34,15 +34,25 @@ class AppSpawnKickDogTest : public testing::Test {
 public:
     static void SetUpTestCase() {}
     static void TearDownTestCase() {}
-    void SetUp() {}
-    void TearDown() {}
+    void SetUp()
+    {
+        const TestInfo *info = UnitTest::GetInstance()->current_test_info();
+        GTEST_LOG_(INFO) << info->test_suite_name() << "." << info->name() << " start";
+        APPSPAWN_LOGI("%{public}s.%{public}s start", info->test_suite_name(), info->name());
+    }
+    void TearDown()
+    {
+        const TestInfo *info = UnitTest::GetInstance()->current_test_info();
+        GTEST_LOG_(INFO) << info->test_suite_name() << "." << info->name() << " end";
+        APPSPAWN_LOGI("%{public}s.%{public}s end", info->test_suite_name(), info->name());
+    }
 };
 
 static int CheckFileContent(const char *filePath, const char *targetStr)
 {
     char buf[100];
 
-    if (filePath == nullptr) {
+    if (filePath == nullptr || targetStr == nullptr) {
         printf("para invalid\n");
         return -1;
     }
@@ -142,6 +152,7 @@ HWTEST_F(AppSpawnKickDogTest, App_Spawn_AppSpawnKickDog_002, TestSize.Level0)
         std::make_unique<OHOS::AppSpawnTestServer>("appspawn -mode nwebspawn");
     AddPreloadHook(HOOK_PRIO_COMMON, SpawnKickDogStart);
     testServer->Start(nullptr);
+    sleep(1); // wait 1s for writing kick log before reading
     if (CheckDeviceInLinux()) {
         EXPECT_EQ(CheckFileContent(HM_APPSPAWN_WATCHDOG_FILE, LINUX_APPSPAWN_WATCHDOG_ON), 0);
         EXPECT_EQ(CheckFileContent(HM_APPSPAWN_WATCHDOG_FILE, LINUX_APPSPAWN_WATCHDOG_KICK), -1);

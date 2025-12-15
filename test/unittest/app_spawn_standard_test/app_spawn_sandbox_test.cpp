@@ -1796,6 +1796,207 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_55, TestSize.Level0)
     DeleteAppSpawningCtx(appProperty);
 }
 
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_56, TestSize.Level0)
+{
+    g_testHelper.SetProcessName("com.//ohos.dlpmanager");
+    g_testHelper.SetTestApl("normal");
+    AppSpawningCtx *appProperty = GetTestAppProperty();
+    int32_t ret = AppSpawn::SandboxCore::SetAppSandboxPropertyNweb(appProperty, CLONE_NEWPID);
+    EXPECT_NE(ret, 0);
+    DeleteAppSpawningCtx(appProperty);
+    g_testHelper.SetProcessName("com.example.myapplication");
+}
+
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_57, TestSize.Level0)
+{
+    g_testHelper.SetProcessName("com.ohos.dlpmanager");
+    g_testHelper.SetTestApl("normal");
+    AppSpawningCtx *appProperty = GetTestAppProperty();
+    int32_t ret = AppSpawn::SandboxCore::SetAppSandboxPropertyNweb(appProperty, CLONE_NEWPID);
+    EXPECT_NE(ret, 0);
+    DeleteAppSpawningCtx(appProperty);
+    g_testHelper.SetProcessName("com.example.myapplication");
+}
+
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_58, TestSize.Level0)
+{
+    g_testHelper.SetProcessName("");
+    g_testHelper.SetTestApl("normal");
+    AppSpawningCtx *appProperty = GetTestAppProperty();
+    int32_t ret = AppSpawn::SandboxCore::SetAppSandboxPropertyNweb(appProperty, CLONE_NEWPID);
+    EXPECT_NE(ret, 0);
+    DeleteAppSpawningCtx(appProperty);
+    g_testHelper.SetProcessName("com.example.myapplication");
+}
+
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_59, TestSize.Level0)
+{
+    int32_t ret = 0;
+    ret = AppSpawn::SandboxCommon::DoAppSandboxMountOnceNocheck(nullptr, nullptr);
+    EXPECT_EQ(ret, 0);
+
+    SharedMountArgs arg = {
+        .srcPath = NULL,
+        .destPath = "/ABC"
+    };
+    ret = AppSpawn::SandboxCommon::DoAppSandboxMountOnceNocheck(nullptr, &arg);
+    EXPECT_EQ(ret, 0);
+
+        SharedMountArgs arg1 = {
+        .srcPath = "",
+        .destPath = "/ABC"
+    };
+    ret = AppSpawn::SandboxCommon::DoAppSandboxMountOnceNocheck(nullptr, &arg1);
+    EXPECT_EQ(ret, 0);
+
+    SharedMountArgs arg2 = {
+        .srcPath = "/ABC",
+        .destPath = NULL
+    };
+    ret = AppSpawn::SandboxCommon::DoAppSandboxMountOnceNocheck(nullptr, &arg2);
+    EXPECT_EQ(ret, 0);
+
+    SharedMountArgs arg3 = {
+        .srcPath = "/ABC",
+        .destPath = ""
+    };
+    ret = AppSpawn::SandboxCommon::DoAppSandboxMountOnceNocheck(nullptr, &arg3);
+    EXPECT_EQ(ret, 0);
+
+    SharedMountArgs arg4 = {
+        .srcPath = "/config",
+        .destPath = "/config"
+    };
+    ret = AppSpawn::SandboxCommon::DoAppSandboxMountOnceNocheck(nullptr, &arg4);
+    EXPECT_EQ(ret, 0);
+
+    SharedMountArgs arg5 = {
+        .srcPath = "system/etc/hosts/ABC",
+        .destPath = "system/etc/hosts/ABC"
+    };
+    ret = AppSpawn::SandboxCommon::DoAppSandboxMountOnceNocheck(nullptr, &arg5);
+    EXPECT_EQ(ret, 0);
+
+        SharedMountArgs arg6 = {
+        .srcPath = "system/etc/profile/ABC",
+        .destPath = "system/etc/profile/ABC"
+    };
+    ret = AppSpawn::SandboxCommon::DoAppSandboxMountOnceNocheck(nullptr, &arg6);
+    EXPECT_EQ(ret, 0);
+}
+
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_60, TestSize.Level0)
+{
+    g_testHelper.SetTestUid(1000);  // 1000 test
+    g_testHelper.SetTestGid(1000);  // 1000 test
+    g_testHelper.SetProcessName("com.example.myapplication");
+    g_testHelper.SetTestApl("system_basic");
+    AppSpawningCtx *appProperty = GetTestAppProperty();
+
+    std::string mJsconfig1 = "{ \
+        \"common\":[{ \
+            \"app-base\" : [{ \
+                \"sandbox-root\" : \"/mnt/sandbox/<currentUserId>/<PackageName>\", \
+                \"mount-paths\" : [{ \
+                    \"src-path\" : \"/data/app/el2/<currentUserId>/base/<PackageName_index>\", \
+                    \"sandbox-path\" : \"/data/storage/el2/base\", \
+                    \"sandbox-flags\" : [ \"bind\", \"rec\" ], \
+                    \"check-action-status\": \"false\" \
+                }] \
+            }], \
+            \"app-resources\" : [{ \
+                \"sandbox-root\" : \"/mnt/sandbox/<currentUserId>/<PackageName>\" \
+            }], \
+            \"create-on-daemon\" : [{ \
+                \"sandbox-root\" : \"/mnt/sandbox/<currentUserId>/<PackageName>\" \
+            }], \
+            \"app-nocheck\" : [{ \
+                \"sandbox-root\" : \"/mnt/sandbox/<currentUserId>/<PackageName>\", \
+                \"mount-paths\" : [{ \
+                    \"src-path\" : \"/mnt/sandbox/shm/<currentUserId>/app/<variablePackageName>\", \
+                    \"sandbox-path\" : \"/dev/shm\", \
+                    \"sandbox-flags\" : [ \"bind\", \"rec\" ], \
+                    \"check-action-status\": \"false\", \
+                    \"src-path-info\": { \
+                        \"uid\": 0, \
+                        \"gid\": 0, \
+                        \"mode\": 1023 \
+                    } \
+                }] \
+            }] \
+        }] \
+    }";
+    cJSON *j_config1 = cJSON_Parse(mJsconfig1.c_str());
+    ASSERT_NE(j_config1, nullptr);
+    int32_t ret = AppSpawn::SandboxCore::DoSandboxFileCommonBind(appProperty, j_config1);
+    EXPECT_EQ(ret, 0);
+
+    cJSON_Delete(j_config1);
+    DeleteAppSpawningCtx(appProperty);
+}
+
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_61, TestSize.Level0)
+{
+    g_testHelper.SetTestUid(1000);  // 1000 test
+    g_testHelper.SetTestGid(1000);  // 1000 test
+    g_testHelper.SetProcessName("com.ohos.wps");
+    g_testHelper.SetTestApl("apl123");
+    g_testHelper.SetTestMsgFlags(4);  // 4 is test parameter
+    AppSpawningCtx *appProperty = GetTestAppProperty();
+
+    std::string mJsconfig3 = "{ \
+        \"flags\": \"DLP_MANAGER\", \
+        \"sandbox-root\" : \"/mnt/sandbox/<currentUserId>/<PackageName>\" \
+    }";
+    cJSON *j_config3 = cJSON_Parse(mJsconfig3.c_str());
+    ASSERT_NE(j_config3, nullptr);
+    int32_t ret = AppSpawn::SandboxCore::DoAllMntPointsMount(appProperty, j_config3, nullptr);
+    EXPECT_EQ(ret, 0);
+
+    std::string mJsconfig4 = "{ \
+        \"flags\": \"DLP_MANAGER\", \
+        \"sandbox-root\" : \"/mnt/sandbox/<currentUserId>/<PackageName>\", \
+        \"mount-paths\" : \"abc\" \
+    }";
+    cJSON *j_config4 = cJSON_Parse(mJsconfig4.c_str());
+    ASSERT_NE(j_config4, nullptr);
+    ret = AppSpawn::SandboxCore::DoAllMntPointsMountNocheck(appProperty, j_config4, nullptr);
+    EXPECT_EQ(ret, 0);
+
+    cJSON_Delete(j_config3);
+    cJSON_Delete(j_config4);
+    DeleteAppSpawningCtx(appProperty);
+}
+
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_62, TestSize.Level0)
+{
+    g_testHelper.SetTestUid(1000);  // 1000 test
+    g_testHelper.SetTestGid(1000);  // 1000 test
+    g_testHelper.SetProcessName("com.example.myapplication");
+    g_testHelper.SetTestApl("apl123");
+    g_testHelper.SetTestMsgFlags(4);  // 4 is test parameter
+    AppSpawningCtx *appProperty = GetTestAppProperty();
+
+    std::string mJsconfig = "{ \
+        \"sandbox-root\" : \"/mnt/sandbox/<currentUserId>/<PackageName>\", \
+        \"mount-paths\" : [{ \
+            \"src-path\" : \"/data/service/el1/public/themes/<currentUserId>/a/app/createSandboxPath01\", \
+            \"sandbox-path\" : \"/data/themes/a/app/createSandboxPath01\", \
+            \"sandbox-flags\" : [ \"bind\", \"rec\" ], \
+            \"check-action-status\": \"false\", \
+            \"create-sandbox-path\": \"false\" \
+        }] \
+    }";
+    cJSON *j_config = cJSON_Parse(mJsconfig.c_str());
+    ASSERT_NE(j_config, nullptr);
+    int32_t ret = 0;
+    ret = AppSpawn::SandboxCore::DoAllMntPointsMountNocheck(appProperty, j_config, nullptr);
+    EXPECT_EQ(ret, 0);
+
+    cJSON_Delete(j_config);
+    DeleteAppSpawningCtx(appProperty);
+}
+
 /**
  * @brief 测试app extension
  *
@@ -2814,4 +3015,473 @@ HWTEST_F(AppSpawnSandboxTest, Set_App_Sandbox_Property_For_Dlp_04, TestSize.Leve
     DeleteAppSpawningCtx(spawningCtx);
 }
 
+/**
+ * @tc.name: BuildFullParamSrcPathTest_01
+ * @tc.desc: Test whether the param-src-path, pre-param-src-path,
+ *           and post-param-src-path directories can be concatenated to form a complete src-path
+ * @tc.type: FUNC
+ */
+HWTEST_F(AppSpawnSandboxTest, BuildFullParamSrcPathTest_01, TestSize.Level0)
+{
+    char paramSrcPathStr[] = R"(
+        {
+            "pre-param-src-path": "/system",
+            "param-src-path": "<ohos.boot.hardware>",
+            "post-param-src-path": "/opt",
+            "sandbox-path": "/opt"
+        }
+    )";
+
+    cJSON *j_config = cJSON_Parse(paramSrcPathStr);
+    ASSERT_NE(j_config, nullptr);
+    std::string result = AppSpawn::SandboxCommon::BuildFullParamSrcPath(j_config);
+    std::string srcPath = "/system/" + system::GetParameter("ohos.boot.hardware", "") + "/opt";
+    EXPECT_EQ(result == srcPath, true);
+
+    cJSON_Delete(j_config);
+}
+
+/**
+ * @tc.name: BuildFullParamSrcPathTest_02
+ * @tc.desc: Test whether the param-src-path, and post-param-src-path,
+ *           directories can be concatenated to form a complete src-path
+ * @tc.type: FUNC
+ */
+HWTEST_F(AppSpawnSandboxTest, BuildFullParamSrcPathTest_02, TestSize.Level0)
+{
+    char paramSrcPathStr[] = R"(
+        {
+            "param-src-path": "/<ohos.boot.hardware>",
+            "post-param-src-path": "/opt",
+            "sandbox-path": "/opt"
+        }
+    )";
+
+    cJSON *j_config = cJSON_Parse(paramSrcPathStr);
+    ASSERT_NE(j_config, nullptr);
+    std::string result = AppSpawn::SandboxCommon::BuildFullParamSrcPath(j_config);
+    std::string srcPath = "/" + system::GetParameter("ohos.boot.hardware", "") + "/opt";
+    EXPECT_EQ(result == srcPath, true);
+
+    cJSON_Delete(j_config);
+}
+
+/**
+ * @tc.name: BuildFullParamSrcPathTest_03
+ * @tc.desc: Test whether the param-src-path, and pre-param-src-path,
+ *           directories can be concatenated to form a complete src-path
+ * @tc.type: FUNC
+ */
+HWTEST_F(AppSpawnSandboxTest, BuildFullParamSrcPathTest_03, TestSize.Level0)
+{
+    char paramSrcPathStr[] = R"(
+        {
+            "pre-param-src-path": "/system",
+            "param-src-path": "<ohos.boot.hardware>",
+            "sandbox-path": "/opt"
+        }
+    )";
+
+    cJSON *j_config = cJSON_Parse(paramSrcPathStr);
+    ASSERT_NE(j_config, nullptr);
+    std::string result = AppSpawn::SandboxCommon::BuildFullParamSrcPath(j_config);
+    std::string srcPath = "/system/" + system::GetParameter("ohos.boot.hardware", "");
+    EXPECT_EQ(result == srcPath, true);
+
+    cJSON_Delete(j_config);
+}
+
+/**
+ * @tc.name: BuildFullParamSrcPathTest_04
+ * @tc.desc: Test whether the param-src-path,
+ *           directories can be concatenated to form a complete src-path
+ * @tc.type: FUNC
+ */
+HWTEST_F(AppSpawnSandboxTest, BuildFullParamSrcPathTest_04, TestSize.Level0)
+{
+    char paramSrcPathStr[] = R"(
+        {
+            "param-src-path": "/<ohos.boot.hardware>",
+            "sandbox-path": "/opt"
+        }
+    )";
+
+    cJSON *j_config = cJSON_Parse(paramSrcPathStr);
+    ASSERT_NE(j_config, nullptr);
+    std::string result = AppSpawn::SandboxCommon::BuildFullParamSrcPath(j_config);
+    std::string srcPath = "/" + system::GetParameter("ohos.boot.hardware", "");
+    EXPECT_EQ(result == srcPath, true);
+
+    cJSON_Delete(j_config);
+}
+
+/**
+ * @tc.name: BuildFullParamSrcPathTest_05
+ * @tc.desc: Test whether the complete src-path is generated when the param-src-path directories is not configured.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AppSpawnSandboxTest, BuildFullParamSrcPathTest_05, TestSize.Level0)
+{
+    char paramSrcPathStr[] = R"(
+        {
+            "param-src-path": "",
+            "sandbox-path": "/opt"
+        }
+    )";
+
+    cJSON *j_config = cJSON_Parse(paramSrcPathStr);
+    ASSERT_NE(j_config, nullptr);
+    std::string result = AppSpawn::SandboxCommon::BuildFullParamSrcPath(j_config);
+    EXPECT_EQ(result.empty(), true);
+
+    cJSON_Delete(j_config);
+}
+
+/**
+ * @tc.name: BuildFullParamSrcPathTest_06
+ * @tc.desc: Test whether the complete src-path is generated when the param-src-path directories is not configured.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AppSpawnSandboxTest, BuildFullParamSrcPathTest_06, TestSize.Level0)
+{
+    char paramSrcPathStr[] = R"(
+        {
+            "sandbox-path": "/opt"
+        }
+    )";
+
+    cJSON *j_config = cJSON_Parse(paramSrcPathStr);
+    ASSERT_NE(j_config, nullptr);
+    std::string result = AppSpawn::SandboxCommon::BuildFullParamSrcPath(j_config);
+    EXPECT_EQ(result.empty(), true);
+
+    cJSON_Delete(j_config);
+}
+
+/**
+ * @tc.name: JoinParamPathsTest_01
+ * @tc.desc: All paths in the paths list are empty.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AppSpawnSandboxTest, JoinParamPathsTest_01, TestSize.Level0)
+{
+    std::vector<std::string> paths = {"", "", ""};
+    std::string result = AppSpawn::SandboxCommon::JoinParamPaths(paths);
+    EXPECT_EQ(result.empty(), true);
+}
+
+/**
+ * @tc.name: JoinParamPathsTest_02
+ * @tc.desc: All paths in the paths list start with '/'.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AppSpawnSandboxTest, JoinParamPathsTest_02, TestSize.Level0)
+{
+    std::vector<std::string> paths = {"/system", "/test", "/opt"};
+    std::string result = AppSpawn::SandboxCommon::JoinParamPaths(paths);
+    std::string srcPath = "/system/test/opt";
+    EXPECT_EQ(result == srcPath, true);
+}
+
+/**
+ * @tc.name: JoinParamPathsTest_03
+ * @tc.desc: In paths, a slash(/) is carried at the end of path.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AppSpawnSandboxTest, JoinParamPathsTest_03, TestSize.Level0)
+{
+    std::vector<std::string> paths = {"/system/", "/test/", "/opt/"};
+    std::string result = AppSpawn::SandboxCommon::JoinParamPaths(paths);
+    std::string srcPath = "/system/test/opt/";
+    EXPECT_EQ(result == srcPath, true);
+}
+
+/**
+ * @tc.name: JoinParamPathsTest_04
+ * @tc.desc: In paths, a slash(/) is carried at the end of path.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AppSpawnSandboxTest, JoinParamPathsTest_04, TestSize.Level0)
+{
+    std::vector<std::string> paths = {"/system/", "test/", "opt/"};
+    std::string result = AppSpawn::SandboxCommon::JoinParamPaths(paths);
+    std::string srcPath = "/system/test/opt/";
+    EXPECT_EQ(result == srcPath, true);
+}
+
+/**
+ * @tc.name: JoinParamPathsTest_05
+ * @tc.desc: The paths in the path list contain ''..''
+ * @tc.type: FUNC
+ */
+HWTEST_F(AppSpawnSandboxTest, JoinParamPathsTest_05, TestSize.Level0)
+{
+    std::vector<std::string> paths = {"/system/..", "test", "opt"};
+    std::string result = AppSpawn::SandboxCommon::JoinParamPaths(paths);
+    EXPECT_EQ(result.empty(), true);
+}
+
+/**
+ * @tc.name: JoinParamPathsTest_06
+ * @tc.desc: Path is the paths list do not start or end with '/'
+ * @tc.type: FUNC
+ */
+HWTEST_F(AppSpawnSandboxTest, JoinParamPathsTest_06, TestSize.Level0)
+{
+    std::vector<std::string> paths = {"system", "test", "opt"};
+    std::string result = AppSpawn::SandboxCommon::JoinParamPaths(paths);
+    std::string srcPath = "system/test/opt";
+    EXPECT_EQ(result == srcPath, true);
+}
+
+/**
+ * @tc.name: ParseParamTemplateTest_01
+ * @tc.desc: The templateStr string carried <>
+ * @tc.type: FUNC
+ */
+HWTEST_F(AppSpawnSandboxTest, ParseParamTemplateTest_01, TestSize.Level0)
+{
+    std::string templateStr = "<>";
+    std::string result = AppSpawn::SandboxCommon::ParseParamTemplate(templateStr);
+    std::string srcPath = "system/test/opt/";
+    EXPECT_EQ(result == templateStr, true);
+}
+
+/**
+ * @tc.name: ParseParamTemplateTest_02
+ * @tc.desc: The templateStr string carried <system-param>
+ * @tc.type: FUNC
+ */
+HWTEST_F(AppSpawnSandboxTest, ParseParamTemplateTest_02, TestSize.Level0)
+{
+    std::string templateStr = "<ohos.boot.hardware>";
+    std::string result = AppSpawn::SandboxCommon::ParseParamTemplate(templateStr);
+    std::string srcPath = system::GetParameter("ohos.boot.hardware", "");
+    EXPECT_EQ(result == srcPath, true);
+}
+
+/**
+ * @tc.name: ParseParamTemplateTest_03
+ * @tc.desc: The templateStr string carried <system-param1>/<system-param2>
+ * @tc.type: FUNC
+ */
+HWTEST_F(AppSpawnSandboxTest, ParseParamTemplateTest_03, TestSize.Level0)
+{
+    std::string templateStr = "<ohos.boot.hardware>/<ohos.boot.hardware>";
+    std::string result = AppSpawn::SandboxCommon::ParseParamTemplate(templateStr);
+    std::string srcPath = system::GetParameter("ohos.boot.hardware", "") + "/" +
+                          system::GetParameter("ohos.boot.hardware", "");
+    EXPECT_EQ(result == srcPath, true);
+}
+
+/**
+ * @tc.name: ParseParamTemplateTest_04
+ * @tc.desc: The templateStr string carried <system-param1>/<system-param2>/<system-param3>
+ * @tc.type: FUNC
+ */
+HWTEST_F(AppSpawnSandboxTest, ParseParamTemplateTest_04, TestSize.Level0)
+{
+    std::string templateStr = "<ohos.boot.hardware>/<ohos.boot.hardware>/<ohos.boot.hardware>";
+    std::string result = AppSpawn::SandboxCommon::ParseParamTemplate(templateStr);
+    std::string srcPath = system::GetParameter("ohos.boot.hardware", "") + "/" +
+                          system::GetParameter("ohos.boot.hardware", "") + "/" +
+                          system::GetParameter("ohos.boot.hardware", "");
+    EXPECT_EQ(result == srcPath, true);
+}
+
+/**
+ * @tc.name: ParseParamTemplateTest_05
+ * @tc.desc: The templateStr string carried <system-param>, and the value obtained through GetParameter is "".
+ * @tc.type: FUNC
+ */
+HWTEST_F(AppSpawnSandboxTest, ParseParamTemplateTest_05, TestSize.Level0)
+{
+    std::string templateStr = "<test.ParseParamTemplateTest_05>";
+    std::string result = AppSpawn::SandboxCommon::ParseParamTemplate(templateStr);
+    EXPECT_EQ(result.empty(), true);
+}
+
+/**
+ * @tc.name: ProcessMountPointTest_01
+ * @tc.desc: The obtained srcPathChr value is nullptr.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AppSpawnSandboxTest, ProcessMountPointTest_01, TestSize.Level0)
+{
+    g_testHelper.SetTestUid(1000);
+    g_testHelper.SetTestGid(1000);
+    g_testHelper.SetProcessName("ohos.sample.test");
+    AppSpawningCtx *appProperty = GetTestAppProperty();
+
+    char paramSrcPathStr[] = R"(
+        {
+            "param-src-path": "<ohos.boot.hardware>",
+            "sandbox-path": "/opt",
+            "sandbox-flags": [ "bind", "rec" ]
+        }
+    )";
+
+    cJSON *j_config = cJSON_Parse(paramSrcPathStr);
+    ASSERT_NE(j_config, nullptr);
+
+    MountPointProcessParams mountPointParams = {
+        .appProperty = appProperty,
+        .checkFlag = false,
+        .section = "",
+        .sandboxRoot = "/mnt/sandbox",
+        .bundleName = "ohos.sample.test"
+    };
+
+    int32_t result = AppSpawn::SandboxCore::ProcessMountPoint(j_config, mountPointParams);
+    EXPECT_EQ(result, 0);
+    DeleteAppSpawningCtx(appProperty);
+    cJSON_Delete(j_config);
+}
+
+/**
+ * @tc.name: ProcessMountPointTest_02
+ * @tc.desc: The obtained srcPathChr value is nullptr.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AppSpawnSandboxTest, ProcessMountPointTest_02, TestSize.Level0)
+{
+    g_testHelper.SetTestUid(1000);
+    g_testHelper.SetTestGid(1000);
+    g_testHelper.SetProcessName("ohos.sample.test");
+    AppSpawningCtx *appProperty = GetTestAppProperty();
+
+    char paramSrcPathStr[] = R"(
+        {
+            "param-src-path": "",
+            "sandbox-path": "/opt",
+            "sandbox-flags": [ "bind", "rec" ]
+        }
+    )";
+
+    cJSON *j_config = cJSON_Parse(paramSrcPathStr);
+    ASSERT_NE(j_config, nullptr);
+
+    MountPointProcessParams mountPointParams = {
+        .appProperty = appProperty,
+        .checkFlag = false,
+        .section = "",
+        .sandboxRoot = "/mnt/sandbox",
+        .bundleName = "ohos.sample.test"
+    };
+
+    int32_t result = AppSpawn::SandboxCore::ProcessMountPoint(j_config, mountPointParams);
+    EXPECT_EQ(result, 0);
+    DeleteAppSpawningCtx(appProperty);
+    cJSON_Delete(j_config);
+}
+
+/**
+ * @tc.name: ProcessMountPointTest_03
+ * @tc.desc: The obtained srcPathChr and param-src-path value is nullptr.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AppSpawnSandboxTest, ProcessMountPointTest_03, TestSize.Level0)
+{
+    g_testHelper.SetTestUid(1000);
+    g_testHelper.SetTestGid(1000);
+    g_testHelper.SetProcessName("ohos.sample.test");
+    AppSpawningCtx *appProperty = GetTestAppProperty();
+
+    char paramSrcPathStr[] = R"(
+        {
+            "sandbox-path": "/opt",
+            "sandbox-flags": [ "bind", "rec" ]
+        }
+    )";
+
+    cJSON *j_config = cJSON_Parse(paramSrcPathStr);
+    ASSERT_NE(j_config, nullptr);
+
+    MountPointProcessParams mountPointParams = {
+        .appProperty = appProperty,
+        .checkFlag = false,
+        .section = "",
+        .sandboxRoot = "/mnt/sandbox",
+        .bundleName = "ohos.sample.test"
+    };
+
+    int32_t result = AppSpawn::SandboxCore::ProcessMountPoint(j_config, mountPointParams);
+    EXPECT_EQ(result, 0);
+    DeleteAppSpawningCtx(appProperty);
+    cJSON_Delete(j_config);
+}
+
+/**
+ * @tc.name: ProcessMountPointTest_04
+ * @tc.desc: The obtained sandboxPathChr value is nullptr.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AppSpawnSandboxTest, ProcessMountPointTest_04, TestSize.Level0)
+{
+    g_testHelper.SetTestUid(1000);
+    g_testHelper.SetTestGid(1000);
+    g_testHelper.SetProcessName("ohos.sample.test");
+    AppSpawningCtx *appProperty = GetTestAppProperty();
+
+    char paramSrcPathStr[] = R"(
+        {
+            "param-src-path": "<ohos.boot.hardware>",
+            "sandbox-flags": [ "bind", "rec" ]
+        }
+    )";
+
+    cJSON *j_config = cJSON_Parse(paramSrcPathStr);
+    ASSERT_NE(j_config, nullptr);
+
+    MountPointProcessParams mountPointParams = {
+        .appProperty = appProperty,
+        .checkFlag = false,
+        .section = "",
+        .sandboxRoot = "/mnt/sandbox",
+        .bundleName = "ohos.sample.test"
+    };
+
+    int32_t result = AppSpawn::SandboxCore::ProcessMountPoint(j_config, mountPointParams);
+    EXPECT_EQ(result, 0);
+    DeleteAppSpawningCtx(appProperty);
+    cJSON_Delete(j_config);
+}
+
+/**
+ * @tc.name: ProcessMountPointTest_05
+ * @tc.desc: The obtained all path value is nullptr.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AppSpawnSandboxTest, ProcessMountPointTest_05, TestSize.Level0)
+{
+    g_testHelper.SetTestUid(1000);
+    g_testHelper.SetTestGid(1000);
+    g_testHelper.SetProcessName("ohos.sample.test");
+    AppSpawningCtx *appProperty = GetTestAppProperty();
+
+    char paramSrcPathStr[] = R"(
+        {
+            "src-path": "",
+            "param-src-path": "<ohos.boot.hardware>",
+            "sandbox-path": "",
+            "sandbox-flags": [ "bind", "rec" ]
+        }
+    )";
+
+    cJSON *j_config = cJSON_Parse(paramSrcPathStr);
+    ASSERT_NE(j_config, nullptr);
+
+    MountPointProcessParams mountPointParams = {
+        .appProperty = appProperty,
+        .checkFlag = false,
+        .section = "",
+        .sandboxRoot = "/mnt/sandbox",
+        .bundleName = "ohos.sample.test"
+    };
+
+    int32_t result = AppSpawn::SandboxCore::ProcessMountPoint(j_config, mountPointParams);
+    EXPECT_EQ(result, 0);
+    DeleteAppSpawningCtx(appProperty);
+    cJSON_Delete(j_config);
+}
 }  // namespace OHOS

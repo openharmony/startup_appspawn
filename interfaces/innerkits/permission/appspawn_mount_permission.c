@@ -111,6 +111,7 @@ static int LoadPermissionConfig(PermissionManager *mgr)
     for (size_t i = 0; i < count; i++) {
         AddSandboxPermissionNode(g_spawnerPermissionList[i], &mgr->permissionQueue);
     }
+
     mgr->maxPermissionIndex = PermissionRenumber(&mgr->permissionQueue);
     return 0;
 }

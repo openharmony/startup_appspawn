@@ -36,10 +36,14 @@
 #define OH_APP_MAX_PIDS_NUM            512
 #define OH_ENCAPS_PROC_TYPE_BASE       0x18
 #define OH_ENCAPS_PERMISSION_TYPE_BASE 0x1E
+#define HM_ENCAPS_PROC_FLAG_BASE       0x1F
+
 #define OH_ENCAPS_MAGIC                'E'
 #define OH_PROC_HAP                    4
 #define OH_ENCAPS_DEFAULT_FLAG         0
 #define OH_ENCAPS_DEFAULT_STR          ""
+#define CUSTOM_SANDBOX_PROCESS_TYPE    (1U << 0)
+
 // permission value max len is 512
 #define OH_ENCAPS_VALUE_MAX_LEN 512
 // encapsCount max count is 64
@@ -47,6 +51,7 @@
 
 #define SET_ENCAPS_PROC_TYPE_CMD _IOW(OH_ENCAPS_MAGIC, OH_ENCAPS_PROC_TYPE_BASE, uint32_t)
 #define SET_ENCAPS_PERMISSION_TYPE_CMD _IOW(OH_ENCAPS_MAGIC, OH_ENCAPS_PERMISSION_TYPE_BASE, UserEncaps)
+#define SET_ENCAPS_PROC_FLAG_CMD _IOW(OH_ENCAPS_MAGIC, HM_ENCAPS_PROC_FLAG_BASE, uint32_t)
 
 APPSPAWN_STATIC int OpenEncapsFile(void)
 {
@@ -156,7 +161,7 @@ APPSPAWN_STATIC int AddPermissionIntArrayToValue(cJSON *arrayItem, UserEncap *en
     APPSPAWN_CHECK(value != NULL, return APPSPAWN_SYSTEM_ERROR, "Failed to calloc int array value");
 
     cJSON *arrayItemTemp = arrayItem;
-    for (size_t index = 0; index < arraySize; index++) {
+    for (uint32_t index = 0; index < arraySize; index++) {
         if (arrayItemTemp == NULL || !cJSON_IsNumber(arrayItemTemp)) {
             free(value);
             APPSPAWN_LOGE("Invalid int array item type");
@@ -180,7 +185,7 @@ APPSPAWN_STATIC int AddPermissionBoolArrayToValue(cJSON *arrayItem, UserEncap *e
     APPSPAWN_CHECK(value != NULL, return APPSPAWN_SYSTEM_ERROR, "Failed to calloc bool array value");
 
     cJSON *arrayItemTemp = arrayItem;
-    for (size_t index = 0; index < arraySize; index++) {
+    for (uint32_t index = 0; index < arraySize; index++) {
         if (arrayItemTemp == NULL || !cJSON_IsBool(arrayItemTemp)) {
             free(value);
             APPSPAWN_LOGE("Invalid bool array item type");
@@ -388,9 +393,7 @@ APPSPAWN_STATIC int SpawnSetPermissions(AppSpawningCtx *property, UserEncaps *en
             break, "Failed to calloc encap");
 
         ret = AddMembersToEncapsInfo(permissionsJson, encapsInfo, count);
-        if (ret != 0) {
-            APPSPAWN_LOGW("Add member to encaps failed, ret: %{public}d", ret);
-        }
+        APPSPAWN_CHECK_ONLY_LOGW(ret == 0, "Add member to encaps failed, ret: %{public}d", ret);
 
         ret = SpawnSetMaxPids(property, encapsInfo);
         APPSPAWN_CHECK(ret == 0, break, "Set max fork count to encaps failed, ret: %{public}d", ret);
@@ -434,13 +437,26 @@ APPSPAWN_STATIC int SpawnSetEncapsPermissions(AppSpawnMgr *content, AppSpawningC
         return 0;         // Can't enable encaps ability
     }
 
+    if (CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX)) {
+        APPSPAWN_LOGI("App property is APP_FLAGS_ISOLATED_SANDBOX, not need kernel.permission");
+        close(encapsFileFd);
+        return 0;
+    }
+
+    if (CheckAppMsgFlagsSet(property, APP_FLAGS_CUSTOM_SANDBOX)) {
+        APPSPAWN_LOGV("set proc flag for custom sanbdox");
+        int proc_flag = CUSTOM_SANDBOX_PROCESS_TYPE;
+        ret = ioctl(encapsFileFd, SET_ENCAPS_PROC_FLAG_CMD, &proc_flag);
+        APPSPAWN_CHECK_ONLY_LOG(ret == 0, "ioctl SET_ENCAPS_PROC_FLAG_CMD failed, errno %{public}d", errno);
+    }
+
     UserEncaps encapsInfo = {0};
     ret = SpawnSetPermissions(property, &encapsInfo);
     if (ret != 0) {
         close(encapsFileFd);
         FreeEncapsInfo(&encapsInfo);
         APPSPAWN_LOGV("Build encaps info failed, ret: %{public}d", ret);
-        return 0;        // Can't set permission encpas ability
+        return 0;        // Can't set permission encaps ability
     }
 
     if (encapsInfo.encapsCount > 0) {

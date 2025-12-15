@@ -97,6 +97,9 @@ public:
 
     // 挂载操作
     static int32_t DoAppSandboxMountOnce(const AppSpawningCtx *appProperty, const SharedMountArgs *arg);
+    static int32_t DoAppSandboxMountOnceNocheck(const AppSpawningCtx *appProperty, const SharedMountArgs *arg);
+    // 拼接系统参数路径
+    static std::string BuildFullParamSrcPath(cJSON *mntPoint);
 
 private:
     // 加载配置文件
@@ -128,9 +131,13 @@ private:
     static std::string ReplaceClonePackageName(const AppSpawningCtx *appProperty, const std::string &path);
     static const std::string &GetArkWebPackageName(void);
     static const std::string &GetDevModel(void);
-    static int32_t mountFailedCount;
+
+    // 解析系统参数配置
+    static std::string ParseParamTemplate(const std::string &templateStr);
+    static std::string JoinParamPaths(const std::vector<std::string> &paths);
 private:
     static int32_t deviceTypeEnable_;
+    static int32_t mountFailedCount_;
     static std::map<SandboxCommonDef::SandboxConfigType, std::vector<cJSON *>> appSandboxCJsonConfig_;
     typedef enum {
         SANDBOX_PACKAGENAME_DEFAULT = 0,

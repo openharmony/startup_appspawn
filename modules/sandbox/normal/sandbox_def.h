@@ -32,8 +32,7 @@ constexpr static mode_t FILE_MODE = 0711;
 constexpr static mode_t BASIC_MOUNT_FLAGS = MS_REC | MS_BIND;
 constexpr int32_t MAX_MOUNT_TIME = 5000;  // 5000us
 constexpr int32_t LOCK_STATUS_SIZE = 16;
-constexpr mode_t SHM_FILE_MODE = 01777;
-constexpr mode_t DEFAULT_FILE_MODE = 07777;
+constexpr mode_t ALL_FILE_MODE_BITS = 07777;
 constexpr int32_t MAX_MOUNT_INVALID_COUNT = 8;
 // 沙盒配置文件
 const std::string APP_JSON_CONFIG = "/appdata-sandbox.json";
@@ -52,7 +51,8 @@ constexpr const char *g_privatePrefix = "individual";
 constexpr const char *g_permissionPrefix = "permission";
 constexpr const char *g_appBase = "app-base";
 constexpr const char *g_appResources = "app-resources";
-constexpr const char *g_flagePoint = "flags-point";
+constexpr const char *g_appNocheck = "app-nocheck";
+constexpr const char *g_flagsPoint = "flags-point";
 constexpr const char *g_createOnDaemon = "create-on-daemon";
 constexpr const char *g_srcPathInfo = "src-path-info";
 constexpr const char *g_srcPathUid = "uid";
@@ -74,6 +74,11 @@ constexpr const char *g_sandBoxOptions = "options";
 constexpr const char *g_actionStatuc = "check-action-status";
 constexpr const char *g_destMode = "dest-mode";
 constexpr const char *g_flags = "flags";
+
+// param参数配置字段
+constexpr const char *g_preParamPath = "pre-param-src-path";
+constexpr const char *g_paramPath = "param-src-path";
+constexpr const char *g_postParamPath = "post-param-src-path";
 
 // 挂载可选属性
 constexpr const char *g_sandBoxShared = "sandbox-shared";
@@ -147,6 +152,10 @@ constexpr const char *g_debughap = "debug";
 /* 分割符 */
 constexpr const char *g_fileSeparator = "/";
 constexpr const char *g_overlayDecollator = "|";
+
+/* system/etc */
+constexpr const char *g_hostsPrefix = "/system/etc/hosts";
+constexpr const char *g_profilePrefix = "/system/etc/profile";
 
 /* 权限名 */
 const std::string FILE_CROSS_APP_MODE = "ohos.permission.FILE_CROSS_APP";

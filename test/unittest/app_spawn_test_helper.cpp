@@ -59,7 +59,7 @@ static int TestChildLoopRun(AppSpawnContent *content, AppSpawnClient *client)
 {
     APPSPAWN_LOGV("ChildLoopRun ...");
     AppSpawningCtx *property = (AppSpawningCtx *)client;
-    APPSPAWN_CHECK(content != NULL && property != NULL, return 0, "invlid param in clearEnv");
+    APPSPAWN_CHECK(content != NULL && property != NULL, return 0, "invalid param in clearEnv");
     int fd = property->forkCtx.fd[1];
     property->forkCtx.fd[1] = -1;
     APPSPAWN_CHECK(fd >= 0, return 0, "invalid fd for notify parent");
@@ -678,7 +678,7 @@ do {    \
 
 int AppSpawnTestHelper::AddBaseTlv(uint8_t *buffer, uint32_t bufferLen, uint32_t &realLen, uint32_t &tlvCount)
 {
-    // add app flage
+    // add app flags
     uint32_t currLen = 0;
     uint32_t flags[3] = {2, 0b1010, 0};
     AppSpawnTlv tlv = {};
