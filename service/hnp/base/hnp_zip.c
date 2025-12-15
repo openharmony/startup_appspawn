@@ -29,6 +29,21 @@
 #include "zlib.h"
 #include "contrib/minizip/zip.h"
 #include "contrib/minizip/unzip.h"
+#ifndef HNP_CLI
+#include "elf.h"
+#endif
+
+#ifndef ELFMAG
+#define ELFMAG "\177ELF"
+#endif
+
+#ifndef SELFMAG
+#define SELFMAG (4)
+#endif
+
+#ifndef EI_NIDENT
+#define EI_NIDENT (16)
+#endif
 
 #include "securec.h"
 
@@ -336,29 +351,55 @@ static int HnpUnZipForFile(const char *filePath, unzFile zipFile, unz_file_info 
 #endif
 }
 
-static bool HnpELFFileCheck(const char *path)
+/**
+* 判断是否为elf文件
+* 1.非二进制文件/读取文件头失败时 返回false
+* 2.当文件头符合要求时（`\\177ELF`） 返回true
+*   此时会额外判断是否为exec文件, 通过文件头判断如下均符合要求
+*   1.ehdr.e_type == ET_DYN && ehdr.e_entry != 0 动态库文件且e_entry非空时 认为是可执行文件
+*   2.ehdr.e_type == ET_EXEC 直接为可执行文件
+*/
+APPSPAWN_STATIC bool HnpELFFileCheck(const char *path, HnpSignMapInfo *signInfo)
 {
     FILE *fp;
-    char buff[HNP_ELF_FILE_CHECK_HEAD_LEN];
+    char buff[EI_NIDENT];
 
     fp = fopen(path, "rb");
     if (fp == NULL) {
         return false;
     }
 
-    size_t readLen = fread(buff, sizeof(char), HNP_ELF_FILE_CHECK_HEAD_LEN, fp);
-    if (readLen != HNP_ELF_FILE_CHECK_HEAD_LEN) {
-        (void)fclose(fp);
-        return false;
-    }
+    size_t readLen = fread(buff, sizeof(char), EI_NIDENT, fp);
+    HNP_ONLY_EXPER(readLen != EI_NIDENT, (void)fclose(fp);
+        return false);
+    HNP_ONLY_EXPER(memcmp(buff, ELFMAG, SELFMAG) != 0, (void)fclose(fp);
+        return false);
 
-    if (buff[HNP_INDEX_0] == 0x7F && buff[HNP_INDEX_1] == 'E' && buff[HNP_INDEX_2] == 'L' && buff[HNP_INDEX_3] == 'F') {
-        (void)fclose(fp);
-        return true;
-    }
+#ifndef HNP_CLI
+    HNP_INFO_CHECK(buff[EI_CLASS] == ELFCLASS32 || buff[EI_CLASS] == ELFCLASS64, (void)fclose(fp);
+        return true, "unknown elf type %{public}d", buff[EI_CLASS]);
 
+    int ret = fseek(fp, 0, SEEK_SET);
+    HNP_ERROR_CHECK(ret == 0, (void)fclose(fp);
+        return true, "set seek_set failed %{public}d %{public}s", errno, path);
+
+    if (buff[EI_CLASS] == ELFCLASS32) {
+        Elf32_Ehdr ehdr = {0};
+        readLen = fread(&ehdr, sizeof(Elf32_Ehdr), 1, fp);
+        HNP_ERROR_CHECK(readLen != sizeof(Elf32_Ehdr),  (void)fclose(fp);
+            return true, "fread ehdr failed");
+        signInfo->isExec = (ehdr.e_type == ET_DYN && ehdr.e_entry != 0) || (ehdr.e_type == ET_EXEC);
+    } else {
+        Elf64_Ehdr ehdr = {0};
+        readLen = fread(&ehdr, sizeof(Elf64_Ehdr), 1, fp);
+        HNP_ERROR_CHECK(readLen != sizeof(Elf64_Ehdr),  (void)fclose(fp);
+            return true, "fread ehdr failed");
+        signInfo->isExec = (ehdr.e_type == ET_DYN && ehdr.e_entry != 0) || (ehdr.e_type == ET_EXEC);
+    }
+    HNP_LOGI("get elffile with %{public}s %{public}d", path, signInfo->isExec);
+#endif
     (void)fclose(fp);
-    return false;
+    return true;
 }
 
 static int HnpInstallAddSignMap(const char* hnpSignKeyPrefix, const char *key, const char *value,
@@ -367,10 +408,10 @@ static int HnpInstallAddSignMap(const char* hnpSignKeyPrefix, const char *key, c
     int ret;
     int sum = *count;
 
-    if (HnpELFFileCheck(value) == false) {
-        return 0;
-    }
+    HnpSignMapInfo temp = {0};
+    HNP_ONLY_EXPER(HnpELFFileCheck(value, &temp) == false, return 0);
 
+    hnpSignMapInfos[sum].isExec = temp.isExec;
     ret = sprintf_s(hnpSignMapInfos[sum].key, MAX_FILE_PATH_LEN, "%s!/%s", hnpSignKeyPrefix, key);
     if (ret < 0) {
         HNP_LOGE("add sign map sprintf unsuccess.");

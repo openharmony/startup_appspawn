@@ -39,8 +39,18 @@ class AppSpawnAppMgrTest : public testing::Test {
 public:
     static void SetUpTestCase() {}
     static void TearDownTestCase() {}
-    void SetUp() {}
-    void TearDown() {}
+    void SetUp()
+    {
+        const TestInfo *info = UnitTest::GetInstance()->current_test_info();
+        GTEST_LOG_(INFO) << info->test_suite_name() << "." << info->name() << " start";
+        APPSPAWN_LOGI("%{public}s.%{public}s start", info->test_suite_name(), info->name());
+    }
+    void TearDown()
+    {
+        const TestInfo *info = UnitTest::GetInstance()->current_test_info();
+        GTEST_LOG_(INFO) << info->test_suite_name() << "." << info->name() << " end";
+        APPSPAWN_LOGI("%{public}s.%{public}s end", info->test_suite_name(), info->name());
+    }
 };
 
 /**
@@ -453,7 +463,7 @@ HWTEST_F(AppSpawnAppMgrTest, App_Spawn_AppSpawnMsgNode_004, TestSize.Level0)
 
 static int AddRenderTerminationTlv(uint8_t *buffer, uint32_t bufferLen, uint32_t &realLen, uint32_t &tlvCount)
 {
-    // add app flage
+    // add app flags
     uint32_t currLen = 0;
     AppSpawnTlv tlv = {};
     tlv.tlvType = TLV_RENDER_TERMINATION_INFO;

@@ -51,6 +51,9 @@ int NativeInstallHnp(const char *userId, const char *hnpRootPath, const HapInfo 
         char packageName[PACK_NAME_LENTH]; // 包名
         char hapPath[HAP_PATH_LENTH];      // hap文件路径
         char abi[ABI_LENTH];               // abi路径
+        char appIdentifier[APP_IDENTIFIER_LEN];     // 应用唯一标识appIdentifier
+        int count;                                  // 独立签名hnp包数量
+        char **independentSignHnpPaths;             // 独立签名hnp包相对hapPath路径
     } HapInfo;
   ```
 

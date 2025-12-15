@@ -38,6 +38,7 @@ using namespace testing::ext;
 using namespace OHOS;
 
 APPSPAWN_STATIC int PreLoadNwebSpawn(AppSpawnMgr *content);
+APPSPAWN_STATIC int RunChildProcessor(AppSpawnContent *content, AppSpawnClient *client);
 
 namespace OHOS {
 class NWebSpawnServiceTest : public testing::Test {
@@ -46,6 +47,10 @@ public:
     static void TearDownTestCase() {}
     void SetUp()
     {
+        const TestInfo *info = UnitTest::GetInstance()->current_test_info();
+        GTEST_LOG_(INFO) << info->test_suite_name() << "." << info->name() << " start";
+        APPSPAWN_LOGI("%{public}s.%{public}s start", info->test_suite_name(), info->name());
+
         testServer = std::make_unique<OHOS::AppSpawnTestServer>("appspawn -mode nwebspawn");
         if (testServer != nullptr) {
             testServer->Start(nullptr);
@@ -56,6 +61,10 @@ public:
         if (testServer != nullptr) {
             testServer->Stop();
         }
+
+        const TestInfo *info = UnitTest::GetInstance()->current_test_info();
+        GTEST_LOG_(INFO) << info->test_suite_name() << "." << info->name() << " end";
+        APPSPAWN_LOGI("%{public}s.%{public}s end", info->test_suite_name(), info->name());
     }
 public:
     std::unique_ptr<OHOS::AppSpawnTestServer> testServer = nullptr;
@@ -563,5 +572,22 @@ HWTEST_F(NWebSpawnServiceTest, NWeb_Spawn_Msg_010, TestSize.Level0)
 
     int ret = PreLoadNwebSpawn(mgr);
     EXPECT_EQ(ret, 0);
+}
+
+/**
+ * @brief nwebspawn执行RunChildProcessor
+ * @note 预期结果: 根据NeedShareRelro()判断是否需要共享relro，需要的话成功加载relro共享文件
+ *
+ */
+HWTEST_F(NWebSpawnServiceTest, NWeb_Spawn_RunChildProcessor, TestSize.Level0)
+{
+    GTEST_LOG_(INFO) << "NWebSpawnServiceTest NWeb_Spawn_RunChildProcessor start run";
+    AppSpawnClientHandle clientHandle = nullptr;
+    AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+    AppSpawnReqMsgHandle reqHandle = testServer->CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+    AppSpawningCtx *spawningCtx = testServer->GetAppProperty(clientHandle, reqHandle);
+    AppSpawnClient *client = reinterpret_cast<AppSpawnClient *>(spawningCtx);
+    EXPECT_EQ(RunChildProcessor(nullptr, client), 0);
+    AppSpawnClientDestroy(clientHandle);
 }
 }  // namespace OHOS

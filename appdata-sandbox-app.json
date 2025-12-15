@@ -108,11 +108,11 @@
                 "src-path" : "/system/app/SystemResources",
                 "sandbox-path" : "/data/global/systemResources"
             }, {
-                "src-path" : "/data/service/el1/public/cert_manager_service/certificates/user_open",
-                "sandbox-path" : "/data/certificates/user_cacerts"
-            },{
                 "src-path" : "/chip_prod/etc/passthrough",
                 "sandbox-path" : "/chip_prod/etc/passthrough"
+            },{
+                "src-path" : "/data/service/el1/<currentUserId>/for-all-app/fonts",
+                "sandbox-path" : "/data/service/el1/public/for-all-app/fonts"
             }],
             "mount-files": [{
                 "src-path" : "/system/etc/hosts",
@@ -231,6 +231,14 @@
             {
                 "src-path": "/data/service/el1/public/edm/config/application/<PackageName>/<currentUserId>",
                 "sandbox-path": "/data/ecust/currentUser",
+                "sandbox-flags": [ "bind", "rec" ]
+            }]
+        }, {
+            "name": "ohos.permission.ENTERPRISE_READ_LOG",
+            "sandbox-switch": "ON",
+            "mount-paths": [{
+                "src-path": "/data/service/el1/public/edm/log/<currentUserId>/<PackageName>",
+                "sandbox-path": "/data/edm/log",
                 "sandbox-flags": [ "bind", "rec" ]
             }]
         }, {

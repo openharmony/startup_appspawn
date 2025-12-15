@@ -29,7 +29,6 @@
 #include "appspawn_encaps.h"
 
 void SetBoolParamResult(const char *key, bool flag);
-int SetSelinuxConNweb(const AppSpawnMgr *content, const AppSpawningCtx *property);
 
 #ifdef __cplusplus
 extern "C" {
@@ -147,7 +146,7 @@ int AddPermissionIntArrayToValue(cJSON *arrayItem, UserEncap *encap, uint32_t ar
 int AddPermissionBoolArrayToValue(cJSON *arrayItem, UserEncap *encap, uint32_t arraySize);
 int AddPermissionStrArrayToValue(cJSON *arrayItem, UserEncap *encap);
 int AddPermissionArrayToValue(cJSON *permissionItemArr, UserEncap *encap);
-
+int SetSchedPriority(const AppSpawnMgr *content, const AppSpawningCtx *property);
 int SetUidGid(const AppSpawnMgr *content, const AppSpawningCtx *property);
 int PrctlStub(int option, ...);
 

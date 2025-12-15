@@ -70,6 +70,8 @@
 #define PID_NS_INIT_UID 100000  // reserved for pid_ns_init process, avoid app, render proc, etc.
 #define PID_NS_INIT_GID 100000
 #define PREINSTALLED_HAP_FLAG 0x01 // hapFlags 0x01: SELINUX_HAP_RESTORECON_PREINSTALLED_APP in selinux
+#define MIN_VALID_APP_UID 10000
+#define MIN_VALID_APP_GID 10000
 
 static int SetProcessName(const AppSpawnMgr *content, const AppSpawningCtx *property)
 {
@@ -130,7 +132,7 @@ static int SetAmbientCapability(int cap)
 
 static int SetAmbientCapabilities(const AppSpawningCtx *property)
 {
-    const int caps[] = {CAP_DAC_OVERRIDE, CAP_DAC_READ_SEARCH, CAP_FOWNER};
+    const int caps[] = {CAP_DAC_OVERRIDE, CAP_FOWNER};
     size_t capCount = sizeof(caps) / sizeof(caps[0]);
     for (size_t i = 0; i < capCount; ++i) {
         if (SetAmbientCapability(caps[i]) != 0) {
@@ -165,15 +167,10 @@ APPSPAWN_STATIC int SetCapabilities(const AppSpawnMgr *content, const AppSpawnin
 #ifdef APPSPAWN_SUPPORT_NOSHAREFS
     if (!CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX_TYPE) &&
             (IsAppSpawnMode(content) || IsNativeSpawnMode(content))) {
-        baseCaps = CAP_TO_MASK(CAP_DAC_OVERRIDE) | CAP_TO_MASK(CAP_DAC_READ_SEARCH) |
-                   CAP_TO_MASK(CAP_FOWNER);
+        baseCaps = CAP_TO_MASK(CAP_DAC_OVERRIDE) | CAP_TO_MASK(CAP_FOWNER);
         if (CheckAppMsgFlagsSet(property, APP_FLAGS_CUSTOM_SANDBOX)) {
             baseCaps |= CAP_TO_MASK(CAP_KILL);
         }
-    }
-#else
-    if (IsAppSpawnMode(content)) {
-        baseCaps = CheckAppMsgFlagsSet(property, APP_FLAGS_SET_CAPS_FOWNER) ? (1 << CAP_FOWNER) : 0;
     }
 #endif
     const uint64_t inheriTable = baseCaps;
@@ -268,6 +265,11 @@ static int SetXpmConfig(const AppSpawnMgr *content, const AppSpawningCtx *proper
     } else if (CheckAppMsgFlagsSet(property, APP_FLAGS_TEMP_JIT)) {
         idType = PROCESS_OWNERID_APP_TEMP_ALLOW;
         ownerId = ownerInfo->ownerId;
+#ifdef ALLOW_DEBUG_PLATFORM
+    } else if (GetAppSpawnMsgType(property) == MSG_SPAWN_NATIVE_PROCESS) {
+        idType = PROCESS_OWNERID_DEBUG_PLATFORM;
+        ownerId = ownerInfo->ownerId;
+#endif
     } else {
         idType = PROCESS_OWNERID_APP;
         ownerId = ownerInfo->ownerId;
@@ -282,15 +284,11 @@ static int SetXpmConfig(const AppSpawnMgr *content, const AppSpawningCtx *proper
 
 APPSPAWN_STATIC int SetUidGid(const AppSpawnMgr *content, const AppSpawningCtx *property)
 {
-    if (IsAppSpawnMode(content) || IsHybridSpawnMode(content)) {
-        struct sched_param param = { 0 };
-        param.sched_priority = 0;
-        int ret = sched_setscheduler(0, SCHED_OTHER, &param);
-        APPSPAWN_CHECK_ONLY_LOG(ret == 0, "UpdateSchedPrio failed ret: %{public}d, %{public}d", ret, errno);
-    }
     AppSpawnMsgDacInfo *dacInfo = (AppSpawnMsgDacInfo *)GetAppProperty(property, TLV_DAC_INFO);
     APPSPAWN_CHECK(dacInfo != NULL, return APPSPAWN_TLV_NONE,
         "No tlv %{public}d in msg %{public}s", TLV_DAC_INFO, GetProcessName(property));
+    APPSPAWN_CHECK(dacInfo->uid >= MIN_VALID_APP_UID && dacInfo->gid >= MIN_VALID_APP_GID, return APPSPAWN_MSG_INVALID,
+        "uid %{public}u or gid %{public}u is invalid", dacInfo->uid, dacInfo->gid);
 
     // set gids
     int ret = setgroups(dacInfo->gidCount, (const gid_t *)(&dacInfo->gidTable[0]));
@@ -299,8 +297,7 @@ APPSPAWN_STATIC int SetUidGid(const AppSpawnMgr *content, const AppSpawningCtx *
 
     // set gid
     ret = setresgid(dacInfo->gid, dacInfo->gid, dacInfo->gid);
-    APPSPAWN_CHECK(ret == 0, return errno,
-        "setgid(%{public}u) failed: %{public}d", dacInfo->gid, errno);
+    APPSPAWN_CHECK(ret == 0, return errno, "setgid(%{public}u) failed: %{public}d", dacInfo->gid, errno);
 
     StartAppspawnTrace("SetSeccompFilter");
     ret = SetSeccompFilter(content, property);
@@ -311,8 +308,7 @@ APPSPAWN_STATIC int SetUidGid(const AppSpawnMgr *content, const AppSpawningCtx *
      * then all capabilities are cleared from the effective set
      */
     ret = setresuid(dacInfo->uid, dacInfo->uid, dacInfo->uid);
-    APPSPAWN_CHECK(ret == 0, return errno,
-        "setuid(%{public}u) failed: %{public}d", dacInfo->uid, errno);
+    APPSPAWN_CHECK(ret == 0, return errno, "setuid(%{public}u) failed: %{public}d", dacInfo->uid, errno);
 
     if ((CheckAppMsgFlagsSet(property, APP_FLAGS_DEBUGGABLE) || property->allowDumpable) &&
          IsDeveloperModeOn(property)) {
@@ -323,6 +319,19 @@ APPSPAWN_STATIC int SetUidGid(const AppSpawnMgr *content, const AppSpawningCtx *
     } else {
         setenv("HAP_DEBUGGABLE", "false", 1);
     }
+    return 0;
+}
+
+APPSPAWN_STATIC int SetSchedPriority(const AppSpawnMgr *content, const AppSpawningCtx *property)
+{
+#ifdef APPSPAWN_CHANGE_SCHED_ENABLE
+    if (IsAppSpawnMode(content) || IsHybridSpawnMode(content)) {
+        struct sched_param param = { 0 };
+        param.sched_priority = 0;
+        int ret = sched_setscheduler(0, SCHED_OTHER, &param);
+        APPSPAWN_CHECK_ONLY_LOG(ret == 0, "UpdateSchedPrio failed ret: %{public}d, %{public}d", ret, errno);
+    }
+#endif
     return 0;
 }
 
@@ -498,6 +507,9 @@ static int SpawnSetProperties(AppSpawnMgr *content, AppSpawningCtx *property)
     APPSPAWN_CHECK_ONLY_EXPER(ret == 0, return ret);
 
     ret = SetProcessName(content, property);
+    APPSPAWN_CHECK_ONLY_EXPER(ret == 0, return ret);
+
+    ret = SetSchedPriority(content, property);
     APPSPAWN_CHECK_ONLY_EXPER(ret == 0, return ret);
 
     ret = SetUidGid(content, property);

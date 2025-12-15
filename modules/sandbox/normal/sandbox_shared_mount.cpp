@@ -155,146 +155,6 @@ static bool SetSandboxPathShared(const std::string &sandboxPath)
     return true;
 }
 
-static int MountWithFileMgr(const AppSpawningCtx *property, const AppDacInfo *info, const char *varBundleName)
-{
-    /* /mnt/user/<currentUserId>/nosharefs/docs */
-    char nosharefsDocsDir[PATH_MAX_LEN] = {0};
-    int ret = snprintf_s(nosharefsDocsDir, PATH_MAX_LEN, PATH_MAX_LEN - 1, "/mnt/user/%u/nosharefs/docs",
-                         info->uid / UID_BASE);
-    if (ret <= 0) {
-        APPSPAWN_LOGE("snprintf nosharefsDocsDir failed, errno %{public}d", errno);
-        return APPSPAWN_ERROR_UTILS_MEM_FAIL;
-    }
-
-    /* /mnt/sandbox/<currentUser/<varBundleName>/storage/Users */
-    char storageUserPath[PATH_MAX_LEN] = {0};
-    ret = snprintf_s(storageUserPath, PATH_MAX_LEN, PATH_MAX_LEN - 1, "/mnt/sandbox/%u/%s/storage/Users",
-                     info->uid / UID_BASE, varBundleName);
-    if (ret <= 0) {
-        APPSPAWN_LOGE("snprintf storageUserPath failed, errno %{public}d", errno);
-        return APPSPAWN_ERROR_UTILS_MEM_FAIL;
-    }
-
-    // Check whether the directory is a shared mount point
-    if (SetSandboxPathShared(storageUserPath)) {
-        APPSPAWN_LOGV("shared mountpoint is exist");
-        return 0;
-    }
-
-    ret = MakeDirRec(storageUserPath, DIR_MODE, 1);
-    if (ret != 0) {
-        APPSPAWN_LOGE("mkdir %{public}s failed, errno %{public}d", storageUserPath, errno);
-        return APPSPAWN_SANDBOX_ERROR_MKDIR_FAIL;
-    }
-
-    SharedMountArgs arg = {
-        .srcPath = nosharefsDocsDir,
-        .destPath = storageUserPath,
-        .fsType = nullptr,
-        .mountFlags = MS_BIND | MS_REC,
-        .options = nullptr,
-        .mountSharedFlag = MS_SHARED
-    };
-    ret = DoSharedMount(&arg);
-    if (ret != 0) {
-        APPSPAWN_LOGE("mount %{public}s shared failed, ret %{public}d", storageUserPath, ret);
-    }
-    return ret;
-}
-
-static int MountWithOther(const AppSpawningCtx *property, const AppDacInfo *info, const char *varBundleName)
-{
-    /* /mnt/user/<currentUserId>/sharefs/docs */
-    char sharefsDocsDir[PATH_MAX_LEN] = {0};
-    int ret = snprintf_s(sharefsDocsDir, PATH_MAX_LEN, PATH_MAX_LEN - 1, "/mnt/user/%u/sharefs/docs",
-                         info->uid / UID_BASE);
-    if (ret <= 0) {
-        APPSPAWN_LOGE("snprintf sharefsDocsDir failed, errno %{public}d", errno);
-        return APPSPAWN_ERROR_UTILS_MEM_FAIL;
-    }
-
-    /* /mnt/sandbox/<currentUser/<varBundleName>/storage/Users */
-    char storageUserPath[PATH_MAX_LEN] = {0};
-    ret = snprintf_s(storageUserPath, PATH_MAX_LEN, PATH_MAX_LEN - 1, "/mnt/sandbox/%u/%s/storage/Users",
-                     info->uid / UID_BASE, varBundleName);
-    if (ret <= 0) {
-        APPSPAWN_LOGE("snprintf storageUserPath failed, errno %{public}d", errno);
-        return APPSPAWN_ERROR_UTILS_MEM_FAIL;
-    }
-
-    // Check whether the directory is a shared mount point
-    if (SetSandboxPathShared(storageUserPath)) {
-        APPSPAWN_LOGV("shared mountpoint is exist");
-        return 0;
-    }
-
-    ret = MakeDirRec(storageUserPath, DIR_MODE, 1);
-    if (ret != 0) {
-        APPSPAWN_LOGE("mkdir %{public}s failed, errno %{public}d", storageUserPath, errno);
-        return APPSPAWN_SANDBOX_ERROR_MKDIR_FAIL;
-    }
-
-    char options[PATH_MAX_LEN] = {0};
-    ret = snprintf_s(options, PATH_MAX_LEN, PATH_MAX_LEN - 1, "override_support_delete,user_id=%u",
-                     info->uid / UID_BASE);
-    if (ret <= 0) {
-        APPSPAWN_LOGE("snprintf options failed, errno %{public}d", errno);
-        return APPSPAWN_ERROR_UTILS_MEM_FAIL;
-    }
-#ifdef APPSPAWN_SUPPORT_NOSHAREFS
-    char nosharefsDocsDir[PATH_MAX_LEN] = {0};
-    ret = snprintf_s(nosharefsDocsDir, PATH_MAX_LEN, PATH_MAX_LEN - 1, "/mnt/user/%u/nosharefs/docs",
-                         info->uid / UID_BASE);
-    if (ret <= 0) {
-        APPSPAWN_LOGE("snprintf nosharefsDocsDir failed, errno %{public}d", errno);
-        return APPSPAWN_ERROR_UTILS_MEM_FAIL;
-    }
-    SharedMountArgs arg = {
-        .srcPath = nosharefsDocsDir,
-        .destPath = storageUserPath,
-        .fsType = nullptr,
-        .mountFlags = MS_BIND | MS_REC,
-        .options = nullptr,
-        .mountSharedFlag = MS_SHARED
-    };
-#else
-    SharedMountArgs arg = {
-        .srcPath = sharefsDocsDir,
-        .destPath = storageUserPath,
-        .fsType = "sharefs",
-        .mountFlags = MS_NODEV,
-        .options = options,
-        .mountSharedFlag = MS_SHARED
-    };
-#endif
-    ret = DoSharedMount(&arg);
-    if (ret != 0) {
-        APPSPAWN_LOGE("mount %{public}s shared failed, ret %{public}d", storageUserPath, ret);
-    }
-    return ret;
-}
-
-static void MountStorageUsers(const AppSpawningCtx *property, const AppDacInfo *info, const char *varBundleName)
-{
-    int ret = 0;
-    int index = GetPermissionIndex(nullptr, "ohos.permission.FILE_ACCESS_MANAGER");
-    int checkRes = CheckAppPermissionFlagSet(property, static_cast<uint32_t>(index));
-    if (checkRes == 0) {
-        /* mount /mnt/user/<currentUserId>/sharefs/docs to /mnt/sandbox/<currentUserId>/<varBundleName>/storage/Users */
-        ret = MountWithOther(property, info, varBundleName);
-    } else {
-        /* mount /mnt/user/<currentUserId>/nosharefs/docs to /mnt/sandbox/<currentUserId>/<varBundleName>/storage/Users
-         */
-        ret = MountWithFileMgr(property, info, varBundleName);
-    }
-    if (ret != 0) {
-        APPSPAWN_LOGE("Update %{public}s storage dir failed, ret %{public}d",
-                      checkRes == 0 ? "sharefs dir" : "no sharefs dir", ret);
-    } else {
-        APPSPAWN_LOGI("Update %{public}s storage dir success", checkRes == 0 ? "sharefs dir" : "no sharefs dir");
-    }
-}
-
 static int MountSharedMapItem(const AppSpawningCtx *property, const AppDacInfo *info, const char *varBundleName,
                               const char *sandboxPathItem)
 {
@@ -515,7 +375,7 @@ int UpdateDataGroupDirs(AppSpawnMgr *content)
         };
         ret = DoSharedMount(&args);
         if (ret != 0) {
-            APPSPAWN_LOGE("Shared mount %{public}s to %{public}s failed, errno %{public}d", args.srcPath,
+            APPSPAWN_LOGE("Shared mount %{public}s to %{public}s failed, ret %{public}d", args.srcPath,
                           sandboxPath, ret);
         }
         node = node->next;
@@ -560,7 +420,6 @@ static void MountDirToShared(AppSpawnMgr *content, const AppSpawningCtx *propert
     }
 
     MountSharedMap(property, info, varBundleName.c_str());
-    MountStorageUsers(property, info, varBundleName.c_str());
     ParseDataGroupList(content, property, info, varBundleName.c_str());
 
     std::string lockSbxPathStamp = "/mnt/sandbox/" + std::to_string(info->uid / UID_BASE) + "/";
