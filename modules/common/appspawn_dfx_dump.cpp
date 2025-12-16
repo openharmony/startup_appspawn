@@ -16,7 +16,10 @@
 #include "appspawn_adapter.h"
 
 #include "appspawn_utils.h"
+
+#ifndef APPSPAWN_TEST
 #include "dfx_dump_catcher.h"
+#endif
 
 void DumpSpawnStack(pid_t pid)
 {
