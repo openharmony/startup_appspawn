@@ -149,6 +149,8 @@ int SetSchedPriority(const AppSpawnMgr *content, const AppSpawningCtx *property)
 int SetUidGid(const AppSpawnMgr *content, const AppSpawningCtx *property);
 int PrctlStub(int option, ...);
 void DumpMsgFlags(const AppSpawnMsgNode *message);
+int SetXpmConfig(AppSpawnMgr *content, AppSpawningCtx *property);
+
 #ifdef APPSPAWN_HITRACE_OPTION
 int FilterAppSpawnTrace(AppSpawnMgr *content, AppSpawningCtx *property);
 #endif
