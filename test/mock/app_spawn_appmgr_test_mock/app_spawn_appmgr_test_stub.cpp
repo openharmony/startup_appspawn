@@ -57,6 +57,10 @@ static AppSpawnMgr *g_appSpawnMgr = nullptr;
 
 AppSpawnMgr *CreateAppSpawnMgr(int mode)
 {
+    if (mode == 0) {
+        printf("CreateAppSpawnMgr is mode 0");
+    }
+
     return nullptr;
 }
 
@@ -93,6 +97,10 @@ void DeleteAppSpawnMgr(AppSpawnMgr *mgr)
 
 void TraversalSpawnedProcess(AppTraversal traversal, void *data)
 {
+    if (traversal == nullptr) {
+        printf("TraversalSpawnedProcess traversal is null");
+    }
+
     if (data == nullptr) {
         printf("TraversalSpawnedProcess data is null");
     }
@@ -100,21 +108,61 @@ void TraversalSpawnedProcess(AppTraversal traversal, void *data)
 
 int AppInfoPidComparePro(ListNode *node, void *data)
 {
+    if (node == nullptr) {
+        printf("AppInfoPidComparePro node is null");
+    }
+
+    if (data == nullptr) {
+        printf("AppInfoPidComparePro data is null");
+    }
+
     return 0;
 }
 
 int AppInfoNameComparePro(ListNode *node, void *data)
 {
+    if (node == nullptr) {
+        printf("AppInfoNameComparePro node is null");
+    }
+
+    if (data == nullptr) {
+        printf("AppInfoNameComparePro data is null");
+    }
+
     return 0;
 }
 
 int AppInfoCompareProc(ListNode *node, ListNode *newNode)
 {
+    if (node == nullptr) {
+        printf("AppInfoCompareProc node is null");
+    }
+
+    if (newNode == nullptr) {
+        printf("AppInfoCompareProc newNode is null");
+    }
+
     return 0;
 }
 
 AppSpawnedProcess *AddSpawnedProcess(pid_t pid, const char *processName, uint32_t appIndex, bool isDebuggable)
 {
+    if (pid == nullptr) {
+        printf("AddSpawnedProcess pid is null");
+    }
+
+    if (processName == nullptr) {
+        printf("AddSpawnedProcess processName is null");
+    }
+
+    if (appIndex == 0) {
+        printf("AddSpawnedProcess appIndex is 0");
+    }
+
+    if (isDebuggable == true) {
+        printf("AddSpawnedProcess isDebuggable is true");
+    }
+
     return nullptr;
 }
 
@@ -127,11 +175,19 @@ void TerminateSpawnedProcess(AppSpawnedProcess *node)
 
 AppSpawnedProcess *GetSpawnedProcess(pid_t pid)
 {
+    if (pid == nullptr) {
+        printf("AddSpawnedProcess pid is null");
+    }
+
     return nullptr;
 }
 
 AppSpawnedProcess *GetSpawnedProcessByName(const char *name)
 {
+    if (name == nullptr) {
+        printf("GetSpawnedProcessByName name is null");
+    }
+
     return nullptr;
 }
 
@@ -144,38 +200,71 @@ void DumpProcessSpawnStack(pid_t pid)
 
 int KillAndWaitStatus(pid_t pid, int sig, int *exitStatus)
 {
+    if (pid == nullptr) {
+        printf("KillAndWaitStatus pid is null");
+    }
+
+    if (sig == 0) {
+        printf("KillAndWaitStatus sig is 0");
+    }
+
+    if (exitStatus == nullptr) {
+        printf("KillAndWaitStatus exitStatus is null");
+    }
+
     return 0;
 }
 
 int GetProcessTerminationStatus(pid_t pid)
 {
+    if (pid == nullptr) {
+        printf("GetProcessTerminationStatus pid is null");
+    }
+
     return 0;
 }
 
 AppSpawningCtx *CreateAppSpawningCtx(void)
 {
+    printf("CreateAppSpawningCtx");
     return nullptr;
 }
 
 void DeleteAppSpawningCtx(AppSpawningCtx *property)
 {
     if (property == nullptr) {
-        printf("DeleteAppSpawningCtx pid is null");
+        printf("DeleteAppSpawningCtx property is null");
     }
 }
 
 int AppPropertyComparePid(ListNode *node, void *data)
 {
+    if (node == nullptr) {
+        printf("AppPropertyComparePid node is null");
+    }
+
+    if (data == nullptr) {
+        printf("AppPropertyComparePid data is null");
+    }
+
     return 0;
 }
 
 AppSpawningCtx *GetAppSpawningCtxByPid(pid_t pid)
 {
+    if (pid == nullptr) {
+        printf("GetAppSpawningCtxByPid pid is null");
+    }
+
     return nullptr;
 }
 
 void AppSpawningCtxTraversal(ProcessTraversal traversal, void *data)
 {
+    if (traversal == nullptr) {
+        printf("AppSpawningCtxTraversal traversal is null");
+    }
+
     if (data == nullptr) {
         printf("AppSpawningCtxTraversal data is null");
     }
@@ -183,16 +272,40 @@ void AppSpawningCtxTraversal(ProcessTraversal traversal, void *data)
 
 int DumpAppSpawnQueue(ListNode *node, void *data)
 {
+    if (node == nullptr) {
+        printf("DumpAppSpawnQueue node is null");
+    }
+
+    if (data == nullptr) {
+        printf("DumpAppSpawnQueue data is null");
+    }
+
     return 0;
 }
 
 int DumpAppQueue(ListNode *node, void *data)
 {
+    if (node == nullptr) {
+        printf("DumpAppQueue node is null");
+    }
+
+    if (data == nullptr) {
+        printf("DumpAppQueue data is null");
+    }
+
     return 0;
 }
 
 int DumpExtData(ListNode *node, void *data)
 {
+    if (node == nullptr) {
+        printf("DumpExtData node is null");
+    }
+
+    if (data == nullptr) {
+        printf("DumpExtData data is null");
+    }
+
     return 0;
 }
 
@@ -205,6 +318,14 @@ void ProcessAppSpawnDumpMsg(const AppSpawnMsgNode *message)
 
 int ProcessTerminationStatusMsg(const AppSpawnMsgNode *message, AppSpawnResult *result)
 {
+    if (message == nullptr) {
+        printf("ProcessTerminationStatusMsg message is null");
+    }
+
+    if (result == nullptr) {
+        printf("ProcessTerminationStatusMsg result is null");
+    }
+
     return 0;
 }
 

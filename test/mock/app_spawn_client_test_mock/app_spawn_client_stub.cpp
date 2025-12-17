@@ -55,11 +55,19 @@ extern "C" {
 
 uint32_t GetDefaultTimeout(uint32_t def)
 {
+    if (def == 0) {
+        printf("GetDefaultTimeout def is 0");
+    }
+
     return 0;
 }
 
 int InitClientInstance(AppSpawnClientType type)
 {
+    if (type == nullptr) {
+        printf("InitClientInstance type is null");
+    }
+
     return 0;
 }
 
@@ -70,26 +78,94 @@ void CloseClientSocket(int socketId)
 
 int CreateClientSocket(uint32_t type, uint32_t timeout)
 {
+    if (type == 0) {
+        printf("CreateClientSocket type is 0");
+    }
+
+    if (timeout == 0) {
+        printf("CreateClientSocket timeout is 0");
+    }
+
     return 0;
 }
 
 int UpdateSocketTimeout(uint32_t timeout, int socketFd)
 {
+    if (timeout == 0) {
+        printf("UpdateSocketTimeout timeout is 0");
+    }
+
+    if (socketFd == 0) {
+        printf("UpdateSocketTimeout socketFd is 0");
+    }
+
     return 0;
 }
 
 int ReadMessage(int socketFd, uint8_t *buf, int len, AppSpawnReqMsgNode *reqNode, AppSpawnResult *result)
 {
+    if (socketFd == 0) {
+        printf("ReadMessage socketFd is 0");
+    }
+
+    if (buf == nullptr) {
+        printf("ReadMessage buf is null");
+    }
+
+    if (len == 0) {
+        printf("ReadMessage len is 0");
+    }
+
+    if (reqNode == nullptr) {
+        printf("ReadMessage reqNode is null");
+    }
+
+    if (result == nullptr) {
+        printf("ReadMessage result is null");
+    }
+
     return 0;
 }
 
 int WriteMessage(int socketFd, const uint8_t *buf, ssize_t len, int *fds, int *fdCount)
 {
+    if (socketFd == 0) {
+        printf("WriteMessage socketFd is 0");
+    }
+
+    if (buf == nullptr) {
+        printf("WriteMessage buf is null");
+    }
+
+    if (len == 0) {
+        printf("WriteMessage len is 0");
+    }
+
+    if (fds == nullptr) {
+        printf("WriteMessage fds is null");
+    }
+
+    if (fdCount == nullptr) {
+        printf("WriteMessage fdCount is null");
+    }
+
     return 0;
 }
 
 int HandleMsgSend(AppSpawnReqMsgMgr *reqMgr, int socketId, AppSpawnReqMsgNode *reqNode)
 {
+    if (reqMgr == nullptr) {
+        printf("HandleMsgSend reqMgr is null");
+    }
+
+    if (socketId == 0) {
+        printf("HandleMsgSend socketId is 0");
+    }
+
+    if (reqNode == nullptr) {
+        printf("HandleMsgSend reqNode is null");
+    }
+
     return 0;
 }
 
@@ -105,15 +181,47 @@ void SendSpawnListenMsg(AppSpawnReqMsgMgr *reqMgr, AppSpawnReqMsgNode *reqNode)
     if (reqMgr != nullptr) {
         printf("SendSpawnListenMsg socketId %d", reqMgr->socketId);
     }
+
+    if (reqNode == nullptr) {
+        printf("SendSpawnListenMsg reqNode is null");
+    }
 }
 
 int ClientSendMsg(AppSpawnReqMsgMgr *reqMgr, AppSpawnReqMsgNode *reqNode, AppSpawnResult *result)
 {
+    if (reqMgr == nullptr) {
+        printf("ClientSendMsg reqMgr is null");
+    }
+
+    if (reqNode == nullptr) {
+        printf("ClientSendMsg reqNode is null");
+    }
+
+    if (result == nullptr) {
+        printf("ClientSendMsg result is null");
+    }
+
     return 0;
 }
 
 int SpawnListenBase(AppSpawnReqMsgMgr *reqMgr, const char *processName, int fd, bool startFlag)
 {
+    if (reqMgr == nullptr) {
+        printf("SpawnListenBase reqMgr is null");
+    }
+
+    if (processName == nullptr) {
+        printf("SpawnListenBase processName is null");
+    }
+
+    if (fd == 0) {
+        printf("SpawnListenBase fd is 0");
+    }
+
+    if (startFlag == true) {
+        printf("SpawnListenBase startFlag is true");
+    }
+
     return 0;
 }
 
@@ -122,35 +230,79 @@ void SpawnListen(AppSpawnReqMsgMgr *reqMgr, const char *processName)
     if (reqMgr != nullptr) {
         printf("SendSpawnListenMsg socketId %d", reqMgr->socketId);
     }
+
+    if (processName == nullptr) {
+        printf("SpawnListen processName is null");
+    }
 }
 
 int AppSpawnClientInit(const char *serviceName, AppSpawnClientHandle *handle)
 {
+    if (serviceName == nullptr) {
+        printf("AppSpawnClientInit serviceName is null");
+    }
+
+    if (handle == nullptr) {
+        printf("AppSpawnClientInit handle is null");
+    }
+
     return 0;
 }
 
 int AppSpawnClientDestroy(AppSpawnClientHandle handle)
 {
+    if (handle == nullptr) {
+        printf("AppSpawnClientDestroy handle is null");
+    }
+
     return 0;
 }
 
 int AppSpawnClientSendMsg(AppSpawnClientHandle handle, AppSpawnReqMsgHandle reqHandle, AppSpawnResult *result)
 {
+    if (handle == nullptr) {
+        printf("AppSpawnClientSendMsg handle is null");
+    }
+
+    if (reqHandle == nullptr) {
+        printf("AppSpawnClientSendMsg reqHandle is null");
+    }
+
+    if (result == nullptr) {
+        printf("AppSpawnClientSendMsg result is null");
+    }
+
     return 0;
 }
 
 int AppSpawnClientSendUserLockStatus(uint32_t userId, bool isLocked)
 {
+    if (userId == 0) {
+        printf("AppSpawnClientSendUserLockStatus userId is 0");
+    }
+
+    if (isLocked == true) {
+        printf("AppSpawnClientSendUserLockStatus isLocked is true");
+    }
+
     return 0;
 }
 
 int SpawnListenFdSet(int fd)
 {
+    if (fd == 0) {
+        printf("SpawnListenFdSet fd is 0");
+    }
+
     return 0;
 }
 
 int NativeSpawnListenFdSet(int fd)
 {
+    if (fd == 0) {
+        printf("NativeSpawnListenFdSet fd is 0");
+    }
+
     return 0;
 }
 
