@@ -115,6 +115,7 @@ APPSPAWN_STATIC uint32_t SpawnGetMaxPids(AppSpawningCtx *property)
 
 static inline cJSON *GetJsonObjFromExtInfo(const AppSpawningCtx *property, const char *name)
 {
+    APPSPAWN_CHECK_LOGV(!CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX), return NULL, "ISOLATED process");
     uint32_t size = 0;
     char *extInfo = (char *)(GetAppSpawnMsgExtInfo(property->message, name, &size));
     if (size == 0 || extInfo == NULL) {
@@ -435,12 +436,6 @@ APPSPAWN_STATIC int SpawnSetEncapsPermissions(AppSpawnMgr *content, AppSpawningC
     if (ret != 0) {
         close(encapsFileFd);
         return 0;         // Can't enable encaps ability
-    }
-
-    if (CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX)) {
-        APPSPAWN_LOGI("App property is APP_FLAGS_ISOLATED_SANDBOX, not need kernel.permission");
-        close(encapsFileFd);
-        return 0;
     }
 
     if (CheckAppMsgFlagsSet(property, APP_FLAGS_CUSTOM_SANDBOX)) {
