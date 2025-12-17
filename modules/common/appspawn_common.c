@@ -72,6 +72,7 @@
 #define PREINSTALLED_HAP_FLAG 0x01 // hapFlags 0x01: SELINUX_HAP_RESTORECON_PREINSTALLED_APP in selinux
 #define MIN_VALID_APP_UID 10000
 #define MIN_VALID_APP_GID 10000
+#define APP_SIGN_TYPE_DEFAULT "none"
 
 static int SetProcessName(const AppSpawnMgr *content, const AppSpawningCtx *property)
 {
@@ -239,7 +240,7 @@ static void ClearEnvironment(const AppSpawnMgr *content, const AppSpawningCtx *p
     return;
 }
 
-static int SetXpmConfig(const AppSpawnMgr *content, const AppSpawningCtx *property)
+APPSPAWN_STATIC int SetXpmConfig(const AppSpawnMgr *content, const AppSpawningCtx *property)
 {
 #ifdef CODE_SIGNATURE_ENABLE
     // nwebspawn no permission set xpm config
@@ -254,29 +255,33 @@ static int SetXpmConfig(const AppSpawnMgr *content, const AppSpawningCtx *proper
         provisionType = PROVISION_TYPE_DEBUG;
     }
 
+    char *appSignType = GetAppPropertyExt(property, MSG_EXT_NAME_APP_SIGN_TYPE, &len);
+    if (appSignType == NULL) {
+        APPSPAWN_LOGE("get app sign type failed, default is %{public}s", APP_SIGN_TYPE_DEFAULT);
+        appSignType = APP_SIGN_TYPE_DEFAULT;
+    }
+
     AppSpawnMsgOwnerId *ownerInfo = (AppSpawnMsgOwnerId *)GetAppProperty(property, TLV_OWNER_INFO);
+    const char *ownerId = ownerInfo ? ownerInfo->ownerId : NULL;
+    char *apiTargetVersionStr = GetAppPropertyExt(property, MSG_EXT_NAME_API_TARGET_VERSION, &len);
+
     int jitfortEnable = IsJitFortModeOn(property) ? 1 : 0;
     int idType = PROCESS_OWNERID_UNINIT;
-    const char *ownerId = NULL;
     if (strcmp(provisionType, PROVISION_TYPE_DEBUG) == 0) {
         idType = PROCESS_OWNERID_DEBUG;
     } else if (ownerInfo == NULL) {
         idType = PROCESS_OWNERID_COMPAT;
     } else if (CheckAppMsgFlagsSet(property, APP_FLAGS_TEMP_JIT)) {
         idType = PROCESS_OWNERID_APP_TEMP_ALLOW;
-        ownerId = ownerInfo->ownerId;
 #ifdef ALLOW_DEBUG_PLATFORM
     } else if (GetAppSpawnMsgType(property) == MSG_SPAWN_NATIVE_PROCESS) {
         idType = PROCESS_OWNERID_DEBUG_PLATFORM;
-        ownerId = ownerInfo->ownerId;
 #endif
     } else {
         idType = PROCESS_OWNERID_APP;
-        ownerId = ownerInfo->ownerId;
     }
 
-    char *apiTargetVersionStr = GetAppPropertyExt(property, MSG_EXT_NAME_API_TARGET_VERSION, &len);
-    int ret = InitXpm(jitfortEnable, idType, ownerId, apiTargetVersionStr);
+    int ret = InitXpm(jitfortEnable, idType, ownerId, apiTargetVersionStr, appSignType);
     APPSPAWN_CHECK(ret == 0, return ret, "set xpm region failed: %{public}d", ret);
 #endif
     return 0;
