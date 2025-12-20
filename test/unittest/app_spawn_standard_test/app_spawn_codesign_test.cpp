@@ -100,7 +100,7 @@ HWTEST_F(AppSpawnCodeSignTest, App_Spawn_SetXpmConfig_002, TestSize.Level0)
         reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
         APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break, "Failed to create req %{public}s", APPSPAWN_SERVER_NAME);
 
-        const char *appSignType = "";
+        const char *appSignType = "none";
         ret = AppSpawnReqMsgAddStringInfo(reqHandle, MSG_EXT_NAME_APP_SIGN_TYPE, appSignType);
         APPSPAWN_CHECK(ret == 0, break, "Failed to add appSignType %{public}s", APPSPAWN_SERVER_NAME);
 
