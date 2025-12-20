@@ -133,17 +133,19 @@ static int SetAmbientCapability(int cap)
 
 static int SetAmbientCapabilities(const AppSpawningCtx *property)
 {
-    const int caps[] = {CAP_DAC_OVERRIDE, CAP_FOWNER};
-    size_t capCount = sizeof(caps) / sizeof(caps[0]);
-    for (size_t i = 0; i < capCount; ++i) {
-        if (SetAmbientCapability(caps[i]) != 0) {
-            APPSPAWN_LOGE("set cap failed: %{public}d", caps[i]);
-            return -1;
-        }
+    if (SetAmbientCapability(CAP_DAC_OVERRIDE) != 0) {
+        APPSPAWN_LOGE("set ambient failed:%{public}d", CAP_DAC_OVERRIDE);
+        return -1;
     }
+
     // Only custom sandbox app can set the CAP_KILL ambient to 1
     if (CheckAppMsgFlagsSet(property, APP_FLAGS_CUSTOM_SANDBOX)) {
         APPSPAWN_CHECK(SetAmbientCapability(CAP_KILL) == 0, return -1, "set ambient failed:%{public}d", CAP_KILL);
+    }
+
+    // Only OHOS_PERMISSION_FOWNER app can set the CAP_FOWNER ambient to 1
+    if (CheckAppMsgFlagsSet(property, APP_FLAGS_SET_CAPS_FOWNER)) {
+        APPSPAWN_CHECK(SetAmbientCapability(CAP_FOWNER) == 0, return -1, "set ambient failed:%{public}d", CAP_FOWNER);
     }
     return 0;
 }
@@ -167,11 +169,10 @@ APPSPAWN_STATIC int SetCapabilities(const AppSpawnMgr *content, const AppSpawnin
     u_int64_t baseCaps = 0;
 #ifdef APPSPAWN_SUPPORT_NOSHAREFS
     if (!CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX_TYPE) &&
-            (IsAppSpawnMode(content) || IsNativeSpawnMode(content))) {
-        baseCaps = CAP_TO_MASK(CAP_DAC_OVERRIDE) | CAP_TO_MASK(CAP_FOWNER);
-        if (CheckAppMsgFlagsSet(property, APP_FLAGS_CUSTOM_SANDBOX)) {
-            baseCaps |= CAP_TO_MASK(CAP_KILL);
-        }
+        (IsAppSpawnMode(content) || IsNativeSpawnMode(content))) {
+        baseCaps = CAP_TO_MASK(CAP_DAC_OVERRIDE);
+        baseCaps |= CheckAppMsgFlagsSet(property, APP_FLAGS_CUSTOM_SANDBOX) ? CAP_TO_MASK(CAP_KILL) : 0;
+        baseCaps |= CheckAppMsgFlagsSet(property, APP_FLAGS_SET_CAPS_FOWNER) ? CAP_TO_MASK(CAP_FOWNER) : 0;
     }
 #endif
     const uint64_t inheriTable = baseCaps;
