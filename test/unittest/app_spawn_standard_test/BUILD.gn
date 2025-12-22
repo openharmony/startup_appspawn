@@ -45,6 +45,7 @@ if (!defined(ohos_lite)) {
       "umount2=Umount2Stub",
       "access=AccessStub",
       "dlopen=DlopenStub",
+      "dlopen_ns=DlopenNsStub",
       "dlsym=DlsymStub",
       "dlclose=DlcloseStub",
       "execv=ExecvStub",

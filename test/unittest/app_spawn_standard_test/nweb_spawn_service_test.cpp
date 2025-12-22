@@ -583,7 +583,7 @@ HWTEST_F(NWebSpawnServiceTest, NWeb_Spawn_RunChildProcessor, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "NWebSpawnServiceTest NWeb_Spawn_RunChildProcessor start run";
     AppSpawnClientHandle clientHandle = nullptr;
-    AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+    AppSpawnClientInit(NWEBSPAWN_SERVER_NAME, &clientHandle);
     AppSpawnReqMsgHandle reqHandle = testServer->CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
     AppSpawningCtx *spawningCtx = testServer->GetAppProperty(clientHandle, reqHandle);
     AppSpawnClient *client = reinterpret_cast<AppSpawnClient *>(spawningCtx);
