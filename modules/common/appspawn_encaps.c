@@ -115,7 +115,7 @@ APPSPAWN_STATIC uint32_t SpawnGetMaxPids(AppSpawningCtx *property)
 
 static inline cJSON *GetJsonObjFromExtInfo(const AppSpawningCtx *property, const char *name)
 {
-    APPSPAWN_CHECK_LOGV(!CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX), return NULL, "ISOLATED process");
+    APPSPAWN_CHECK_LOGV(CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX) == 0, return NULL, "ISOLATED proc");
     uint32_t size = 0;
     char *extInfo = (char *)(GetAppSpawnMsgExtInfo(property->message, name, &size));
     if (size == 0 || extInfo == NULL) {
