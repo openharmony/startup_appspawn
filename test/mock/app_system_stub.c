@@ -14,7 +14,7 @@
  */
 
 #include "app_spawn_stub.h"
-
+#include <dlfcn.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <linux/capability.h>
@@ -61,6 +61,15 @@ void *DlopenStub(const char *pathname, int mode)
 {
     UNUSED(pathname);
     UNUSED(mode);
+    static size_t index = 0;
+    return &index;
+}
+
+void *DlopenNsStub(Dl_namespace *dlns, const char *libname, int flag)
+{
+    UNUSED(dlns);
+    UNUSED(libname);
+    UNUSED(flag);
     static size_t index = 0;
     return &index;
 }
