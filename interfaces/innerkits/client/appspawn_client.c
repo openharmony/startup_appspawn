@@ -44,6 +44,9 @@ static bool g_spawnListenStart = false;
 static pthread_mutex_t g_nativeSpawnListenMutex = PTHREAD_MUTEX_INITIALIZER;
 static int g_nativeSpawnListenFd = 0;
 static bool g_nativeSpawnListenStart = false;
+static pthread_mutex_t g_hybridSpawnListenMutex = PTHREAD_MUTEX_INITIALIZER;
+static int g_hybridSpawnListenFd = 0;
+static bool g_hybridSpawnListenStart = false;
 
 APPSPAWN_STATIC void SpawnListen(AppSpawnReqMsgMgr *reqMgr, const char *processName);
 
@@ -295,6 +298,12 @@ static void SendSpawnListenMsg(AppSpawnReqMsgMgr *reqMgr, AppSpawnReqMsgNode *re
         SpawnListen(reqMgr, reqNode->msg->processName);
         pthread_mutex_unlock(&g_nativeSpawnListenMutex);
     }
+
+    if (reqMgr->type == CLIENT_FOR_HYBRIDSPAWN && reqNode->msg->msgType != MSG_OBSERVE_PROCESS_SIGNAL_STATUS) {
+        pthread_mutex_lock(&g_hybridSpawnListenMutex);
+        SpawnListen(reqMgr, reqNode->msg->processName);
+        pthread_mutex_unlock(&g_hybridSpawnListenMutex);
+    }
 }
 
 static int ClientSendMsg(AppSpawnReqMsgMgr *reqMgr, AppSpawnReqMsgNode *reqNode, AppSpawnResult *result)
@@ -381,6 +390,11 @@ APPSPAWN_STATIC void SpawnListen(AppSpawnReqMsgMgr *reqMgr, const char *processN
     if (reqMgr->type == CLIENT_FOR_NATIVESPAWN) {
         ret = SpawnListenBase(reqMgr, processName, g_nativeSpawnListenFd, g_nativeSpawnListenStart);
         APPSPAWN_ONLY_EXPER(ret == 0, g_nativeSpawnListenStart = true);
+    }
+
+    if (reqMgr->type == CLIENT_FOR_HYBRIDSPAWN) {
+        ret = SpawnListenBase(reqMgr, processName, g_hybridSpawnListenFd, g_hybridSpawnListenStart);
+        APPSPAWN_ONLY_EXPER(ret == 0, g_hybridSpawnListenStart = true);
     }
 }
 
@@ -506,6 +520,17 @@ int NativeSpawnListenFdSet(int fd)
     return 0;
 }
 
+int HybridSpawnListenFdSet(int fd)
+{
+    if (fd <= 0) {
+        APPSPAWN_LOGE("HybridSpawn Listen fd set[%{public}d] failed", fd);
+        return APPSPAWN_ARG_INVALID;
+    }
+    g_hybridSpawnListenFd = fd;
+    APPSPAWN_LOGI("HybridSpawn Listen fd set[%{public}d] success", fd);
+    return 0;
+}
+
 int SpawnListenCloseSet(void)
 {
     pthread_mutex_lock(&g_spawnListenMutex);
@@ -521,5 +546,14 @@ int NativeSpawnListenCloseSet(void)
     g_nativeSpawnListenStart = false;
     pthread_mutex_unlock(&g_nativeSpawnListenMutex);
     APPSPAWN_LOGI("NativeSpawn Listen close set success");
+    return 0;
+}
+
+int HybridSpawnListenCloseSet(void)
+{
+    pthread_mutex_lock(&g_hybridSpawnListenMutex);
+    g_hybridSpawnListenStart = false;
+    pthread_mutex_unlock(&g_hybridSpawnListenMutex);
+    APPSPAWN_LOGI("HybridSpawn Listen close set success");
     return 0;
 }

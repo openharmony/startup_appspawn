@@ -124,11 +124,6 @@ void AppSpawnTestServer::ServiceThread()
             StartCheckHandler();
             AppSpawnMgr *content = reinterpret_cast<AppSpawnMgr *>(content_);
             APPSPAWN_CHECK_ONLY_EXPER(content != nullptr, return);
-            AppSpawnedProcess *info = GetSpawnedProcessByName(NWEBSPAWN_SERVER_NAME);
-            if (info != nullptr) {
-                APPSPAWN_LOGV("Save nwebspawn pid: %{public}d %{public}d", info->pid, serverId_);
-                appPid_.store(info->pid);
-            }
             // register
             RegChildLooper(&content->content, TestChildLoopRun);
         }
@@ -737,12 +732,12 @@ AppSpawnContent *AppSpawnTestHelper::StartSpawnServer(std::string &cmd, CmdArgs 
     startRrg.initArg = 1;
     if (args->argc <= MODE_VALUE_INDEX) {  // appspawn start
         startRrg.mode = MODE_FOR_APP_SPAWN;
-    } else if (strcmp(args->argv[MODE_VALUE_INDEX], "app_cold") == 0) {  // cold start
+    } else if (strcmp(args->argv[MODE_VALUE_INDEX], "app_cold") == 0) {  // app cold start
         APPSPAWN_CHECK(args->argc >= ARG_NULL, free(args);
             return nullptr, "Invalid arg for cold start %{public}d", args->argc);
         startRrg.mode = MODE_FOR_APP_COLD_RUN;
         startRrg.initArg = 0;
-    } else if (strcmp(args->argv[MODE_VALUE_INDEX], "nweb_cold") == 0) {  // cold start
+    } else if (strcmp(args->argv[MODE_VALUE_INDEX], "nweb_cold") == 0) {  // nweb cold start
         APPSPAWN_CHECK(args->argc >= ARG_NULL, free(args);
             return nullptr, "Invalid arg for cold start %{public}d", args->argc);
         startRrg.mode = MODE_FOR_NWEB_COLD_RUN;
@@ -753,6 +748,11 @@ AppSpawnContent *AppSpawnTestHelper::StartSpawnServer(std::string &cmd, CmdArgs 
         startRrg.moduleType = MODULE_NWEBSPAWN;
         startRrg.socketName = NWEBSPAWN_SOCKET_NAME;
         startRrg.serviceName = NWEBSPAWN_SERVER_NAME;
+    } else if (strcmp(args->argv[MODE_VALUE_INDEX], HYBRIDSPAWN_SERVER_NAME) == 0) {  // hybrid spawn start
+        startRrg.mode = MODE_FOR_HYBRID_SPAWN;
+        startRrg.moduleType = MODULE_HYBRIDSPAWN;
+        startRrg.socketName = HYBRIDSPAWN_SOCKET_NAME;
+        startRrg.serviceName = HYBRIDSPAWN_SERVER_NAME;
     }
     APPSPAWN_LOGV("Start service %{public}s", startRrg.serviceName);
     AppSpawnContent *content = StartSpawnService(&startRrg, APP_LEN_PROC_NAME, args->argc, args->argv);

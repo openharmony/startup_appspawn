@@ -388,6 +388,21 @@ int NativeSpawnListenFdSet(int fd);
  */
 int NativeSpawnListenCloseSet(void);
 
+/**
+ * @brief set up a pipe fd to capture the exit reason of hybridspawn's child process
+ *
+ * @param fd fd for write signal info
+ * @return if succeed return 0,else return other value
+ */
+int HybridSpawnListenFdSet(int fd);
+
+/**
+ * @brief close the listener for hybridspawn's child process exits
+ *
+ * @return if succeed return 0,else return other value
+ */
+int HybridSpawnListenCloseSet(void);
+
 #ifdef __cplusplus
 }
 #endif
