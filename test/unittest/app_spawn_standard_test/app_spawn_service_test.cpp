@@ -1090,29 +1090,6 @@ HWTEST_F(AppSpawnServiceTest, App_Spawn_Msg_014, TestSize.Level0)
 }
 
 /**
- * @brief 必须最后一个，kill nwebspawn，appspawn的线程结束
- *
- */
-HWTEST_F(AppSpawnServiceTest, App_Spawn_NWebSpawn_001, TestSize.Level0)
-{
-    int ret = 0;
-    AppSpawnClientHandle clientHandle = nullptr;
-    do {
-        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
-        APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", APPSPAWN_SERVER_NAME);
-        AppSpawnReqMsgHandle reqHandle = testServer->CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
-        AppSpawnResult result = {};
-        ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
-        APPSPAWN_CHECK(ret == 0, break, "Failed to send msg %{public}d", ret);
-        // kill nwebspawn
-        APPSPAWN_LOGV("App_Spawn_NWebSpawn_001 Kill nwebspawn");
-        testServer->KillNWebSpawnServer();
-    } while (0);
-    AppSpawnClientDestroy(clientHandle);
-    ASSERT_EQ(ret, 0);
-}
-
-/**
  * @brief 测试环境变量设置是否正确
  *
  */

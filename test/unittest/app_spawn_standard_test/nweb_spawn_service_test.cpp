@@ -51,7 +51,7 @@ public:
         GTEST_LOG_(INFO) << info->test_suite_name() << "." << info->name() << " start";
         APPSPAWN_LOGI("%{public}s.%{public}s start", info->test_suite_name(), info->name());
 
-        testServer = std::make_unique<OHOS::AppSpawnTestServer>("appspawn -mode nwebspawn");
+        testServer = std::make_unique<OHOS::AppSpawnTestServer>("nwebspawn -mode nwebspawn");
         if (testServer != nullptr) {
             testServer->Start(nullptr);
         }

@@ -37,6 +37,8 @@
     GetPermissionIndex;
     GetMaxPermissionIndex;
     GetPermissionByIndex;
+    HybridSpawnListenFdSet;
+    HybridSpawnListenCloseSet;
     NativeSpawnListenFdSet;
     NativeSpawnListenCloseSet;
     SpawnListenFdSet;
