@@ -130,6 +130,7 @@ if (!defined(ohos_lite)) {
       "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_module_interface_test.cpp",
       "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_service_test.cpp",
       "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_silk_test.cpp",
+      "${appspawn_path}/test/unittest/app_spawn_standard_test/hybrid_spawn_service_test.cpp",
       "${appspawn_path}/test/unittest/app_spawn_standard_test/nweb_spawn_service_test.cpp",
       "${appspawn_path}/test/unittest/app_spawn_test_helper.cpp",
     ]
