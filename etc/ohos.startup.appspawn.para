@@ -12,3 +12,5 @@
 # limitations under the License.
 
 persist.appspawn.hybridspawn.enable = false
+
+persist.appspawn.hybridspawn.unified = false
