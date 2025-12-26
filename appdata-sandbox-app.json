@@ -292,6 +292,14 @@
                 "sandbox-path": "/data/wallpaper"
             }]
         }, {
+            "name": "ohos.permission.MANAGE_MEDIA_SHARED_RESOURCE",
+            "sandbox-switch": "ON",
+            "mount-paths": [{
+                "src-path": "/data/service/el1/public/camera_service/network_resource",
+                "sandbox-path": "/data/camera_service/network_resource",
+                "sandbox-flags": [ "bind", "rec" ]
+            }]
+        }, {
             "name": "ohos.permission.ACCESS_BUNDLE_DIR",
             "gids": ["wifi"],
             "mount-paths": [{
