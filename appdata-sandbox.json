@@ -209,11 +209,6 @@
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
-                    "src-path" : "/mnt/hmdfs/<currentUserId>/cloud/data/<PackageName>",
-                    "sandbox-path" : "/data/storage/el2/cloud",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
                     "src-path" : "/mnt/data/<currentUserId>/media_fuse",
                     "sandbox-path" : "/data/storage/el2/media",
                     "sandbox-flags" : [ "bind", "rec" ],
@@ -410,6 +405,13 @@
             "mount-paths": [{
                     "src-path": "/mnt/user/<currentUserId>/sharefs/docs",
                     "sandbox-path": "/storage/Users",
+                    "sandbox-flags": [ "bind", "rec" ]
+                }
+            ]}, {
+            "flags": "CLOUD_FILE_SYNC_ENABLED",
+            "mount-paths": [{
+                    "src-path" : "/mnt/hmdfs/<currentUserId>/cloud/data/<PackageName>",
+                    "sandbox-path" : "/data/storage/el2/cloud",
                     "sandbox-flags": [ "bind", "rec" ]
                 }
             ]}],
@@ -829,6 +831,15 @@
                     "sandbox-path": "",
                     "sandbox-flags": [],
                     "dec-paths": [ "/storage/Users/<currentUserId>/appdata/el2/shareFiles" ]
+                }
+            ]
+        }],
+        "ohos.permission.SANDBOX_ACCESS_MANAGER":[{
+            "sandbox-switch": "ON",
+            "mount-paths": [{
+                    "src-path": "/mnt/hmdfs/<currentUserId>/cloud/data/<PackageName>",
+                    "sandbox-path": "/data/storage/el2/cloud",
+                    "sandbox-flags": [ "bind", "rec" ]
                 }
             ]
         }],

@@ -930,6 +930,7 @@ int32_t SandboxCore::HandleFlagsPoint(const AppSpawningCtx *appProperty, cJSON *
         }
 
         uint32_t flag = SandboxCommon::ConvertFlagStr(flagsStr);
+        APPSPAWN_LOGV("Convert flag %{public}u from %{public}s", flag, flagsStr.c_str());
         if (CheckAppMsgFlagsSet(appProperty, flag) == 0) {
             return 0;
         }
