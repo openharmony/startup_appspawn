@@ -92,8 +92,12 @@ void SetHapDomainInfo(const AppSpawnMgr *content, const AppSpawningCtx *property
     if (CheckAppMsgFlagsSet(property, APP_FLAGS_DLP_MANAGER_READ_ONLY)) {
         hapDomainInfo->hapFlags |= SELINUX_HAP_DLP_READ_ONLY;
     }
-    if (CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX)) {
-        hapDomainInfo->hapFlags |= SELINUX_HAP_INPUT_ISOLATE;
+    if (CheckAppMsgFlagsSet(property, APP_FLAGS_EXTENSION_SANDBOX)) {
+        if (CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX)) {
+            hapDomainInfo->hapFlags |= SELINUX_HAP_INPUT_ISOLATE;
+        } else {
+            hapDomainInfo->hapFlags |= SELINUX_HAP_INPUT_ISOLATE_FULL;
+        }
     }
 #ifdef CUSTOM_SANDBOX
     if (CheckAppMsgFlagsSet(property, APP_FLAGS_CUSTOM_SANDBOX)) {
