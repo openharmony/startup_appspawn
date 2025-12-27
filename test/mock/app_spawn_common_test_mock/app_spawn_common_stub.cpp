@@ -294,8 +294,8 @@ int SpawnGetSpawningFlag(AppSpawnMgr *content, AppSpawningCtx *property)
 
 int SpawnLoadConfig(AppSpawnMgr *content)
 {
-    if () {
-        printf("SpawnLoadConfig ");
+    if (content == nullptr) {
+        printf("SpawnLoadConfig content is null");
     }
 
     return 0;
@@ -303,8 +303,8 @@ int SpawnLoadConfig(AppSpawnMgr *content)
 
 int SpawnLoadSeLinuxConfig(AppSpawnMgr *content)
 {
-    if () {
-        printf("SpawnLoadSeLinuxConfig ");
+    if (content == nullptr) {
+        printf("SpawnLoadSeLinuxConfig content is null");
     }
 
     return 0;
