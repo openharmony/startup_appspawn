@@ -405,12 +405,12 @@ std::string ReplaceAllVariables(std::string str, const std::string& from, const 
 
 std::vector<std::string> SplitString(std::string &str, const std::string &delimiter)
 {
-    if () {
-        printf(" ");
+    if (str == "") {
+        printf("SplitString str is null");
     }
 
-    if () {
-        printf(" ");
+    if (delimiter == "") {
+        printf("SplitString delimiter is null");
     }
 
     return "";
