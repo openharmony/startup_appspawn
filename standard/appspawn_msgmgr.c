@@ -410,13 +410,10 @@ void DumpAppSpawnMsg(const AppSpawnMsgNode *message)
         }
     }
     AppSpawnMsgBundleInfo *bundleInfo = (AppSpawnMsgBundleInfo *)GetAppSpawnMsgInfo(message, TLV_BUNDLE_INFO);
-    APPSPAWN_ONLY_EXPER(bundleInfo != NULL,
-        APPSPAWN_DUMP("App BundleName:%{public}s index:%{public}d",
-        bundleInfo->bundleName, bundleInfo->bundleIndex));
-
     AppSpawnMsgDomainInfo *domainInfo = (AppSpawnMsgDomainInfo *)GetAppSpawnMsgInfo(message, TLV_DOMAIN_INFO);
-    APPSPAWN_ONLY_EXPER(domainInfo != NULL && strcmp(domainInfo->apl, "normal") != 0,
-        APPSPAWN_DUMP("apl:%{public}s 0x%{public}x", domainInfo->apl, domainInfo->hapFlags));
+    APPSPAWN_DUMP("%{public}s index:%{public}d apl:%{public}s hapFlags:0x%{public}x",
+        bundleInfo ? bundleInfo->bundleName : "", bundleInfo ? bundleInfo->bundleIndex : 0,
+        (domainInfo && domainInfo->apl != NULL) ? domainInfo->apl : "", domainInfo ? domainInfo->hapFlags : 0);
 
     AppSpawnMgr *mgr = GetAppSpawnMgr();
     if (mgr == NULL || ((mgr->flags & APP_DEVELOPER_MODE) != APP_DEVELOPER_MODE)) {
