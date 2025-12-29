@@ -998,7 +998,7 @@ static int HandleSignParameter(HapInstallInfo *installInfo, const char *signHnp)
     installInfo->signHnpPaths[installInfo->signHnpSize] = NULL;
     
     char hnpPath[MAX_FILE_PATH_LEN] = {0};
-    size_t bytes = snprintf_s(hnpPath, MAX_FILE_PATH_LEN, MAX_FILE_PATH_LEN - 1,
+    int bytes = snprintf_s(hnpPath, MAX_FILE_PATH_LEN, MAX_FILE_PATH_LEN - 1,
         "%s/%s", installInfo->hnpRootPath, signHnp);
     HNP_ERROR_CHECK(bytes > 0, return HNP_ERRNO_BASE_SPRINTF_FAILED,
         "build hnp path filed");

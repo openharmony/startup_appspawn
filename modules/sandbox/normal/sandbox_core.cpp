@@ -589,7 +589,7 @@ int32_t SandboxCore::ProcessMountPointCommmon(cJSON *mntPoint, MountPointProcess
     const char *sandboxPathChr = GetStringFromJsonObj(mntPoint, SandboxCommonDef::g_sandBoxPath);
 
     std::string srcPath = srcPathChr == nullptr ? paramSrcPath : srcPathChr;
-    std::string sandboxPath(sandboxPathChr);
+    std::string sandboxPath(sandboxPathChr != nullptr ? sandboxPathChr : "");
     srcPath = SandboxCommon::ConvertToRealPath(params.appProperty, srcPath);
     APPSPAWN_CHECK_ONLY_EXPER(SandboxCommon::IsCreateSandboxPathEnabled(mntPoint, srcPath), return 0);
     sandboxPath = GetSandboxPath(params.appProperty, mntPoint, params.section, params.sandboxRoot);
@@ -667,7 +667,8 @@ int32_t SandboxCore::DoAllMntPointsMount(const AppSpawningCtx *appProperty, cJSO
 int32_t SandboxCore::DoAllMntPointsMountNocheck(const AppSpawningCtx *appProperty, cJSON *appConfig,
     const char *typeName, const std::string &section)
 {
-    std::string bundleName = GetBundleName(appProperty);
+    const char* bundleNameChar = GetBundleName(appProperty);
+    std::string bundleName = (bundleNameChar != nullptr) ? std::string(bundleNameChar) : "";
     cJSON *mountPoints = cJSON_GetObjectItemCaseSensitive(appConfig, SandboxCommonDef::g_mountPrefix);
     if (mountPoints == nullptr || !cJSON_IsArray(mountPoints)) {
         APPSPAWN_LOGI("mount config is not found in %{public}s, app name is %{public}s",
