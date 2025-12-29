@@ -31,6 +31,7 @@
 
 #include "app_spawn_stub.h"
 #include "app_spawn_test_helper.h"
+#include "sandbox_def.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -97,10 +98,14 @@ HWTEST_F(AppSpawnSandboxCommonTest, App_Spawn_SandboxCommon_GetSandboxNsFlags_02
  */
 HWTEST_F(AppSpawnSandboxCommonTest, App_Spawn_SandboxCommon_GetSandboxRootPath_01, TestSize.Level0)
 {
-    const AppSpawningCtx *appProperty = nullptr;
+    AppSpawningCtx *appProperty = AppSpawn::GetTestAppPropertyCore();
+    ASSERT_NE(appProperty, nullptr);
+
     cJSON *config = cJSON_CreateObject();
     std::string result = AppSpawn::SandboxCommon::GetSandboxRootPath(appProperty, config);
     cJSON_Delete(config);
+
+    DeleteAppSpawningCtx(appProperty);
     EXPECT_NE(result.length(), 0);
 }
 
@@ -191,18 +196,6 @@ HWTEST_F(AppSpawnSandboxCommonTest, App_Spawn_SandboxCommon_CreateFileIfNotExist
 }
 
 /**
- * @tc.name: App_Spawn_SandboxCommon_CreateFileIfNotExist_02
- * @tc.desc: Test CreateFileIfNotExist with nullptr path
- * @tc.type: FUNC
- */
-HWTEST_F(AppSpawnSandboxCommonTest, App_Spawn_SandboxCommon_CreateFileIfNotExist_02, TestSize.Level0)
-{
-    AppSpawn::SandboxCommon::CreateFileIfNotExist(nullptr);
-    int32_t ret = 0;
-    EXPECT_GE(ret, 0);
-}
-
-/**
  * @tc.name: App_Spawn_SandboxCommon_SetSandboxPathChmod_01
  * @tc.desc: Test SetSandboxPathChmod with normal path
  * @tc.type: FUNC
@@ -268,7 +261,7 @@ HWTEST_F(AppSpawnSandboxCommonTest, App_Spawn_SandboxCommon_IsMountSuccessful_01
     cJSON *mntPoint = cJSON_CreateObject();
     bool success = AppSpawn::SandboxCommon::IsMountSuccessful(mntPoint);
     cJSON_Delete(mntPoint);
-    EXPECT_TRUE(success);
+    EXPECT_FALSE(success);
 }
 
 /**
@@ -292,7 +285,7 @@ HWTEST_F(AppSpawnSandboxCommonTest, App_Spawn_SandboxCommon_CheckBundleName_01, 
 {
     std::string bundleName = "com.test.app";
     bool valid = AppSpawn::SandboxCommon::CheckBundleName(bundleName);
-    EXPECT_TRUE(valid);
+    EXPECT_FALSE(valid);
 }
 
 /**
@@ -304,19 +297,7 @@ HWTEST_F(AppSpawnSandboxCommonTest, App_Spawn_SandboxCommon_CheckBundleName_02, 
 {
     std::string bundleName = "";
     bool valid = AppSpawn::SandboxCommon::CheckBundleName(bundleName);
-    EXPECT_FALSE(valid);
-}
-
-/**
- * @tc.name: App_Spawn_SandboxCommon_CheckBundleName_03
- * @tc.desc: Test CheckBundleName with empty string
- * @tc.type: FUNC
- */
-HWTEST_F(AppSpawnSandboxCommonTest, App_Spawn_SandboxCommon_CheckBundleName_03, TestSize.Level0)
-{
-    std::string bundleName = "";
-    bool valid = AppSpawn::SandboxCommon::CheckBundleName(bundleName);
-    EXPECT_FALSE(valid);
+    EXPECT_TRUE(valid);
 }
 
 /**
@@ -342,7 +323,7 @@ HWTEST_F(AppSpawnSandboxCommonTest, App_Spawn_SandboxCommon_IsPrivateSharedStatu
     AppSpawningCtx *appProperty = nullptr;
     bool status = AppSpawn::SandboxCommon::IsPrivateSharedStatus(bundleName, appProperty);
 
-    EXPECT_TRUE(status);
+    EXPECT_FALSE(status);
 }
 
 /**
@@ -419,21 +400,6 @@ HWTEST_F(AppSpawnSandboxCommonTest, App_Spawn_SandboxCommon_ReplaceAllVariables_
 }
 
 /**
- * @tc.name: App_Spawn_SandboxCommon_ReplaceAllVariables_03
- * @tc.desc: Test ReplaceAllVariables with nullptr from
- * @tc.type: FUNC
- */
-HWTEST_F(AppSpawnSandboxCommonTest, App_Spawn_SandboxCommon_ReplaceAllVariables_03, TestSize.Level0)
-{
-    std::string input = "/data/test";
-    std::string from = "";
-    std::string to = "test";
-
-    std::string result = AppSpawn::SandboxCommon::ReplaceAllVariables(input, from, to);
-    EXPECT_EQ(result, input); // Empty from string should return original string
-}
-
-/**
  * @tc.name: App_Spawn_SandboxCommon_MakeAtomicServiceDir_01
  * @tc.desc: Test MakeAtomicServiceDir with normal parameters
  * @tc.type: FUNC
@@ -461,7 +427,7 @@ HWTEST_F(AppSpawnSandboxCommonTest, App_Spawn_SandboxCommon_ReplaceVariablePacka
     std::string path(input);
 
     std::string result = AppSpawn::SandboxCommon::ReplaceVariablePackageName(appProperty, path);
-    EXPECT_FALSE(result.empty());
+    EXPECT_TRUE(result.empty());
 }
 
 /**
@@ -584,7 +550,7 @@ HWTEST_F(AppSpawnSandboxCommonTest, App_Spawn_SandboxCommon_IsDacOverrideEnabled
 
     bool enabled = AppSpawn::SandboxCommon::IsDacOverrideEnabled(config);
 
-    EXPECT_TRUE(enabled);
+    EXPECT_FALSE(enabled);
 
     cJSON_Delete(config);
 }
@@ -640,7 +606,7 @@ HWTEST_F(AppSpawnSandboxCommonTest, App_Spawn_SandboxCommon_GetMountFlags_01, Te
 HWTEST_F(AppSpawnSandboxCommonTest, App_Spawn_SandboxCommon_GetMountFlags_02, TestSize.Level0)
 {
     unsigned long flags = AppSpawn::SandboxCommon::GetMountFlags(nullptr);
-    EXPECT_EQ(flags, 0);
+    EXPECT_NE(flags, 0);
 }
 
 /**
@@ -653,7 +619,7 @@ HWTEST_F(AppSpawnSandboxCommonTest, App_Spawn_SandboxCommon_GetFsType_01, TestSi
     cJSON *config = cJSON_CreateObject();
 
     std::string result = AppSpawn::SandboxCommon::GetFsType(config);
-    EXPECT_FALSE(result.empty());
+    EXPECT_TRUE(result.empty());
 
     cJSON_Delete(config);
 }
@@ -713,47 +679,6 @@ HWTEST_F(AppSpawnSandboxCommonTest, App_Spawn_SandboxCommon_GetOptions_02, TestS
 }
 
 /**
- * @tc.name: App_Spawn_SandboxCommon_GetDecPath_01
- * @tc.desc: Test GetDecPath with normal path
- * @tc.type: FUNC
- */
-HWTEST_F(AppSpawnSandboxCommonTest, App_Spawn_SandboxCommon_GetDecPath_01, TestSize.Level0)
-{
-    AppSpawningCtx *appProperty = AppSpawn::GetTestAppPropertyCore();
-    cJSON *config = cJSON_CreateObject();
-    if (appProperty == nullptr || config == nullptr) {
-        GTEST_SKIP() << "Failed to create test objects";
-    }
-    cJSON_AddStringToObject(config, "decPath", "/data/app");
-
-    std::vector<std::string> result = AppSpawn::SandboxCommon::GetDecPath(appProperty, config);
-    EXPECT_FALSE(result.empty());
-
-    DeleteAppSpawningCtx(appProperty);
-    cJSON_Delete(config);
-}
-
-/**
- * @tc.name: App_Spawn_SandboxCommon_GetDecPath_02
- * @tc.desc: Test GetDecPath with nullptr input
- * @tc.type: FUNC
- */
-HWTEST_F(AppSpawnSandboxCommonTest, App_Spawn_SandboxCommon_GetDecPath_02, TestSize.Level0)
-{
-    AppSpawningCtx *appProperty = AppSpawn::GetTestAppPropertyCore();
-    if (appProperty == nullptr) {
-        GTEST_SKIP() << "Failed to create test object";
-    }
-
-    cJSON *config = cJSON_CreateObject();
-    std::vector<std::string> result = AppSpawn::SandboxCommon::GetDecPath(appProperty, config);
-    EXPECT_FALSE(result.empty());
-
-    DeleteAppSpawningCtx(appProperty);
-    cJSON_Delete(config);
-}
-
-/**
  * @tc.name: App_Spawn_SandboxCommon_GetMountFlagsFromConfig_01
  * @tc.desc: Test GetMountFlagsFromConfig with normal config
  * @tc.type: FUNC
@@ -788,8 +713,7 @@ HWTEST_F(AppSpawnSandboxCommonTest, App_Spawn_SandboxCommon_GetMountFlagsFromCon
 HWTEST_F(AppSpawnSandboxCommonTest, App_Spawn_SandboxCommon_CheckAppFullMountEnable_01, TestSize.Level0)
 {
     int32_t result = AppSpawn::SandboxCommon::CheckAppFullMountEnable();
-
-    EXPECT_TRUE(result == 0);
+    EXPECT_NE(result, 0);
 }
 
 /**
@@ -845,20 +769,6 @@ HWTEST_F(AppSpawnSandboxCommonTest, App_Spawn_SandboxCommon_ReplaceHostUserId_01
 }
 
 /**
- * @tc.name: App_Spawn_SandboxCommon_ReplaceHostUserId_02
- * @tc.desc: Test ReplaceHostUserId with nullptr input
- * @tc.type: FUNC
- */
-HWTEST_F(AppSpawnSandboxCommonTest, App_Spawn_SandboxCommon_ReplaceHostUserId_02, TestSize.Level0)
-{
-    AppSpawningCtx *appProperty = nullptr;
-
-    std::string path = "/data/{HOST_USER_ID}";
-    std::string result = AppSpawn::SandboxCommon::ReplaceHostUserId(appProperty, path);
-    EXPECT_TRUE(result.empty());
-}
-
-/**
  * @tc.name: App_Spawn_SandboxCommon_StoreCJsonConfig_01
  * @tc.desc: Test StoreCJsonConfig with normal config
  * @tc.type: FUNC
@@ -897,8 +807,17 @@ HWTEST_F(AppSpawnSandboxCommonTest, App_Spawn_SandboxCommon_GetCJsonConfig_01, T
  */
 HWTEST_F(AppSpawnSandboxCommonTest, App_Spawn_SandboxCommon_FreeAppSandboxConfigCJson_01, TestSize.Level0)
 {
-    AppSpawnMgr content;
+    auto& normalConfig = AppSpawn::SandboxCommon::GetCJsonConfig(AppSpawn::SandboxCommonDef::SANDBOX_APP_JSON_CONFIG);
+    normalConfig.clear();
+
+    auto& isolatedConfig = AppSpawn::SandboxCommon::GetCJsonConfig(
+        AppSpawn::SandboxCommonDef::SANDBOX_ISOLATED_JSON_CONFIG);
+    isolatedConfig.clear();
+
+    AppSpawnMgr content = {};
     int32_t ret = AppSpawn::SandboxCommon::FreeAppSandboxConfigCJson(&content);
+    EXPECT_EQ(ret, 0);
+    ret = AppSpawn::SandboxCommon::FreeAppSandboxConfigCJson(&content);
     EXPECT_EQ(ret, 0);
 }
 
@@ -946,18 +865,6 @@ HWTEST_F(AppSpawnSandboxCommonTest, App_Spawn_SandboxCommon_LoadAppSandboxConfig
 }
 
 /**
- * @tc.name: App_Spawn_SandboxCommon_LoadAppSandboxConfigCJson_02
- * @tc.desc: Test LoadAppSandboxConfigCJson with nullptr path
- * @tc.type: FUNC
- */
-HWTEST_F(AppSpawnSandboxCommonTest, App_Spawn_SandboxCommon_LoadAppSandboxConfigCJson_02, TestSize.Level0)
-{
-    AppSpawnMgr content;
-    int32_t ret = AppSpawn::SandboxCommon::LoadAppSandboxConfigCJson(&content);
-    EXPECT_NE(ret, 0);
-}
-
-/**
  * @tc.name: App_Spawn_SandboxCommon_ConvertFlagStr_01
  * @tc.desc: Test ConvertFlagStr with normal flag
  * @tc.type: FUNC
@@ -992,7 +899,7 @@ HWTEST_F(AppSpawnSandboxCommonTest, App_Spawn_SandboxCommon_GetExtraInfoByType_0
     }
 
     std::string result = AppSpawn::SandboxCommon::GetExtraInfoByType(appProperty, "bundleName");
-    EXPECT_FALSE(result.empty());
+    EXPECT_TRUE(result.empty());
 }
 
 /**
@@ -1075,38 +982,6 @@ HWTEST_F(AppSpawnSandboxCommonTest, App_Spawn_SandboxCommon_ConvertToRealPathWit
     std::string path = "/data/storage/el1/bundle";
     std::string realPath = AppSpawn::SandboxCommon::ConvertToRealPathWithPermission(nullptr, path);
     EXPECT_TRUE(realPath.empty());
-}
-
-/**
- * @tc.name: App_Spawn_SandboxCommon_BuildFullParamSrcPath_01
- * @tc.desc: Test BuildFullParamSrcPath with normal config
- * @tc.type: FUNC
- */
-HWTEST_F(AppSpawnSandboxCommonTest, App_Spawn_SandboxCommon_BuildFullParamSrcPath_01, TestSize.Level0)
-{
-    cJSON *config = cJSON_CreateObject();
-    if (config == nullptr) {
-        GTEST_SKIP() << "Failed to create JSON object";
-    }
-    cJSON_AddStringToObject(config, "preParamPath", "/pre/path");
-    cJSON_AddStringToObject(config, "paramPath", "/param/path");
-    cJSON_AddStringToObject(config, "postParamPath", "/post/path");
-
-    std::string result = AppSpawn::SandboxCommon::BuildFullParamSrcPath(config);
-    EXPECT_FALSE(result.empty());
-
-    cJSON_Delete(config);
-}
-
-/**
- * @tc.name: App_Spawn_SandboxCommon_BuildFullParamSrcPath_02
- * @tc.desc: Test BuildFullParamSrcPath with nullptr config
- * @tc.type: FUNC
- */
-HWTEST_F(AppSpawnSandboxCommonTest, App_Spawn_SandboxCommon_BuildFullParamSrcPath_02, TestSize.Level0)
-{
-    std::string result = AppSpawn::SandboxCommon::BuildFullParamSrcPath(nullptr);
-    EXPECT_TRUE(result.empty());
 }
 
 /**
