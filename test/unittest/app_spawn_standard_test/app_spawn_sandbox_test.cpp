@@ -3060,7 +3060,7 @@ HWTEST_F(AppSpawnSandboxTest, BuildFullParamSrcPathTest_02, TestSize.Level0)
     cJSON *j_config = cJSON_Parse(paramSrcPathStr);
     ASSERT_NE(j_config, nullptr);
     std::string result = AppSpawn::SandboxCommon::BuildFullParamSrcPath(j_config);
-    std::string srcPath = "/" + system::GetParameter("ohos.boot.hardware", "") + "/opt";
+    std::string srcPath = "/<ohos.boot.hardware>/opt";
     EXPECT_EQ(result == srcPath, true);
 
     cJSON_Delete(j_config);
@@ -3109,7 +3109,7 @@ HWTEST_F(AppSpawnSandboxTest, BuildFullParamSrcPathTest_04, TestSize.Level0)
     cJSON *j_config = cJSON_Parse(paramSrcPathStr);
     ASSERT_NE(j_config, nullptr);
     std::string result = AppSpawn::SandboxCommon::BuildFullParamSrcPath(j_config);
-    std::string srcPath = "/" + system::GetParameter("ohos.boot.hardware", "");
+    std::string srcPath = "/<ohos.boot.hardware>";
     EXPECT_EQ(result == srcPath, true);
 
     cJSON_Delete(j_config);
@@ -3262,43 +3262,14 @@ HWTEST_F(AppSpawnSandboxTest, ParseParamTemplateTest_02, TestSize.Level0)
 
 /**
  * @tc.name: ParseParamTemplateTest_03
- * @tc.desc: The templateStr string carried <system-param1>/<system-param2>
+ * @tc.desc: The templateStr string carried <system-param>, and the value obtained through GetParameter is "".
  * @tc.type: FUNC
  */
 HWTEST_F(AppSpawnSandboxTest, ParseParamTemplateTest_03, TestSize.Level0)
 {
-    std::string templateStr = "<ohos.boot.hardware>/<ohos.boot.hardware>";
-    std::string result = AppSpawn::SandboxCommon::ParseParamTemplate(templateStr);
-    std::string srcPath = system::GetParameter("ohos.boot.hardware", "") + "/" +
-                          system::GetParameter("ohos.boot.hardware", "");
-    EXPECT_EQ(result == srcPath, true);
-}
-
-/**
- * @tc.name: ParseParamTemplateTest_04
- * @tc.desc: The templateStr string carried <system-param1>/<system-param2>/<system-param3>
- * @tc.type: FUNC
- */
-HWTEST_F(AppSpawnSandboxTest, ParseParamTemplateTest_04, TestSize.Level0)
-{
-    std::string templateStr = "<ohos.boot.hardware>/<ohos.boot.hardware>/<ohos.boot.hardware>";
-    std::string result = AppSpawn::SandboxCommon::ParseParamTemplate(templateStr);
-    std::string srcPath = system::GetParameter("ohos.boot.hardware", "") + "/" +
-                          system::GetParameter("ohos.boot.hardware", "") + "/" +
-                          system::GetParameter("ohos.boot.hardware", "");
-    EXPECT_EQ(result == srcPath, true);
-}
-
-/**
- * @tc.name: ParseParamTemplateTest_05
- * @tc.desc: The templateStr string carried <system-param>, and the value obtained through GetParameter is "".
- * @tc.type: FUNC
- */
-HWTEST_F(AppSpawnSandboxTest, ParseParamTemplateTest_05, TestSize.Level0)
-{
     std::string templateStr = "<test.ParseParamTemplateTest_05>";
     std::string result = AppSpawn::SandboxCommon::ParseParamTemplate(templateStr);
-    EXPECT_EQ(result.empty(), true);
+    EXPECT_EQ(result == templateStr, true);
 }
 
 /**
