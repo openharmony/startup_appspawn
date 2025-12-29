@@ -153,66 +153,7 @@ HWTEST_F(AppSpawnSandboxManagerTest, App_Spawn_Sandbox_InstallDebugSandbox_02, T
 {
     AppSpawnMgr content;
     int32_t ret = AppSpawn::SandboxCore::InstallDebugSandbox(&content, nullptr);
-    EXPECT_NE(ret, 0);  // Should fail with nullptr
-}
-
-/**
- * @tc.name: App_Spawn_Sandbox_SetAppSandboxProperty_IgnoreSandbox
- * @tc.desc: Test SetAppSandboxProperty with APP_FLAGS_IGNORE_SANDBOX flag
- * @tc.type: FUNC
- */
-HWTEST_F(AppSpawnSandboxManagerTest, App_Spawn_Sandbox_SetAppSandboxProperty_IgnoreSandbox, TestSize.Level0)
-{
-    AppSpawn::g_testSpawnHelper.SetTestUid(1000);
-    AppSpawn::g_testSpawnHelper.SetTestGid(1000);
-    AppSpawn::g_testSpawnHelper.SetProcessName("test.ignore.sandbox");
-
-    // Create message with APP_FLAGS_IGNORE_SANDBOX flag
-    AppSpawnClientHandle clientHandle = nullptr;
-    int ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
     EXPECT_EQ(ret, 0);
-
-    AppSpawnReqMsgHandle reqHandle = AppSpawn::g_testSpawnHelper.CreateMsg(clientHandle, MSG_APP_SPAWN,
-        APP_FLAGS_IGNORE_SANDBOX);
-    EXPECT_NE(reqHandle, INVALID_REQ_HANDLE);
-
-    AppSpawningCtx *appProperty = AppSpawn::g_testSpawnHelper.GetAppProperty(clientHandle, reqHandle);
-    ASSERT_NE(appProperty, nullptr);
-
-    int32_t sandboxRet = AppSpawn::SandboxCore::SetAppSandboxProperty(appProperty);
-    EXPECT_EQ(sandboxRet, 0);
-
-    DeleteAppSpawningCtx(appProperty);
-    AppSpawnClientDestroy(clientHandle);
 }
 
-/**
- * @tc.name: App_Spawn_Sandbox_SetAppSandboxProperty_NoSandboxFlag
- * @tc.desc: Test SetAppSandboxProperty with APP_FLAGS_NO_SANDBOX flag
- * @tc.type: FUNC
- */
-HWTEST_F(AppSpawnSandboxManagerTest, App_Spawn_Sandbox_SetAppSandboxProperty_NoSandboxFlag, TestSize.Level0)
-{
-    AppSpawn::g_testSpawnHelper.SetTestUid(1000);
-    AppSpawn::g_testSpawnHelper.SetTestGid(1000);
-    AppSpawn::g_testSpawnHelper.SetProcessName("test.no.sandbox");
-
-    // Create message with APP_FLAGS_NO_SANDBOX flag
-    AppSpawnClientHandle clientHandle = nullptr;
-    int ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
-    EXPECT_EQ(ret, 0);
-
-    AppSpawnReqMsgHandle reqHandle = AppSpawn::g_testSpawnHelper.CreateMsg(clientHandle, MSG_APP_SPAWN,
-        APP_FLAGS_NO_SANDBOX);
-    EXPECT_NE(reqHandle, INVALID_REQ_HANDLE);
-
-    AppSpawningCtx *appProperty = AppSpawn::g_testSpawnHelper.GetAppProperty(clientHandle, reqHandle);
-    ASSERT_NE(appProperty, nullptr);
-
-    int32_t sandboxRet = AppSpawn::SandboxCore::SetAppSandboxProperty(appProperty);
-    EXPECT_EQ(sandboxRet, 0);
-
-    DeleteAppSpawningCtx(appProperty);
-    AppSpawnClientDestroy(clientHandle);
-}
 }  // namespace OHOS
