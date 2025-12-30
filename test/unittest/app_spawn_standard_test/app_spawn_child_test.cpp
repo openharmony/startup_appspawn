@@ -1202,10 +1202,10 @@ HWTEST_F(AppSpawnChildTest, App_Spawn_Child_Illegal_003, TestSize.Level0)
     ASSERT_EQ(ret, -1);
 }
 
-static std::string GetColdRunArgs(AppSpawningCtx *property, bool isNweb, const char *arg)
+static std::string GetColdRunArgs(AppSpawningCtx *property, RunMode mode, const char *arg)
 {
     std::string argStr = arg;
-    int ret = WriteMsgToChild(property, isNweb);
+    int ret = WriteMsgToChild(property, mode);
     APPSPAWN_CHECK(ret == 0, return nullptr,
         "Failed to get shm for %{public}s errno %{public}d", GetProcessName(property), errno);
 
@@ -1241,7 +1241,7 @@ HWTEST_F(AppSpawnChildTest, App_Spawn_Cold_Run_001, TestSize.Level0)
         property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
         APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
 
-        std::string cmd = GetColdRunArgs(property, false, "appspawn -mode app_cold ");
+        std::string cmd = GetColdRunArgs(property, MODE_FOR_APP_COLD_RUN, "appspawn -mode app_cold");
         content = AppSpawnTestHelper::StartSpawnServer(cmd, args);
         APPSPAWN_CHECK_ONLY_EXPER(content != nullptr, break);
 
@@ -1280,7 +1280,7 @@ HWTEST_F(AppSpawnChildTest, App_Spawn_Cold_Run_002, TestSize.Level0)
         property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
         APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
 
-        std::string cmd = GetColdRunArgs(property, true, "appspawn -mode nweb_cold ");
+        std::string cmd = GetColdRunArgs(property, MODE_FOR_NWEB_COLD_RUN, "nwebspawn -mode nweb_cold ");
         content = AppSpawnTestHelper::StartSpawnServer(cmd, args);
         APPSPAWN_CHECK_ONLY_EXPER(content != nullptr, break);
         ASSERT_EQ(content->mode, MODE_FOR_NWEB_COLD_RUN);
@@ -1327,7 +1327,7 @@ HWTEST_F(AppSpawnChildTest, App_Spawn_Cold_Run_003, TestSize.Level0)
         property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
         APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
 
-        std::string cmd = GetColdRunArgs(property, false, "appspawn -mode app_cold ");
+        std::string cmd = GetColdRunArgs(property, MODE_FOR_APP_COLD_RUN, "appspawn -mode app_cold");
         content = AppSpawnTestHelper::StartSpawnServer(cmd, args);
         APPSPAWN_CHECK_ONLY_EXPER(content != nullptr, break);
         ASSERT_EQ(content->mode, MODE_FOR_APP_COLD_RUN);
@@ -1374,7 +1374,7 @@ HWTEST_F(AppSpawnChildTest, App_Spawn_Cold_Run_004, TestSize.Level0)
         property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
         APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
 
-        std::string cmd = GetColdRunArgs(property, false, "appspawn -mode app_cold ");
+        std::string cmd = GetColdRunArgs(property, MODE_FOR_APP_COLD_RUN, "appspawn -mode app_cold");
         content = AppSpawnTestHelper::StartSpawnServer(cmd, args);
         APPSPAWN_CHECK_ONLY_EXPER(content != nullptr, break);
         ASSERT_EQ(content->mode, MODE_FOR_APP_COLD_RUN);

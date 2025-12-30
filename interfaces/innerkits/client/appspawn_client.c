@@ -50,19 +50,6 @@ static bool g_hybridSpawnListenStart = false;
 
 APPSPAWN_STATIC void SpawnListen(AppSpawnReqMsgMgr *reqMgr, const char *processName);
 
-static uint32_t GetDefaultTimeout(uint32_t def)
-{
-    uint32_t value = def;
-    char data[32] = {};  // 32 length
-    int ret = GetParameter("persist.appspawn.reqMgr.timeout", "0", data, sizeof(data));
-    if (ret > 0 && strcmp(data, "0") != 0) {
-        errno = 0;
-        value = (uint32_t)atoi(data);
-        return (errno != 0) ? def : value;
-    }
-    return value;
-}
-
 static int InitClientInstance(AppSpawnClientType type)
 {
     pthread_mutex_lock(&g_mutex);
@@ -82,7 +69,7 @@ static int InitClientInstance(AppSpawnClientType type)
     if (type == CLIENT_FOR_CJAPPSPAWN) {
         clientInstance->timeout = CJAPPSPAWN_CLIENT_TIMEOUT;
     } else {
-        clientInstance->timeout = GetDefaultTimeout(TIMEOUT_DEF);
+        clientInstance->timeout = GetSpawnTimeout(TIMEOUT_DEF, false);
     }
     clientInstance->maxRetryCount = MAX_RETRY_SEND_COUNT;
     clientInstance->socketId = -1;

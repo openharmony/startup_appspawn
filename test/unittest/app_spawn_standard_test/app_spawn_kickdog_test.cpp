@@ -149,7 +149,7 @@ HWTEST_F(AppSpawnKickDogTest, App_Spawn_AppSpawnKickDog_002, TestSize.Level0)
     close(fileFd);
 
     std::unique_ptr<OHOS::AppSpawnTestServer> testServer =
-        std::make_unique<OHOS::AppSpawnTestServer>("appspawn -mode nwebspawn");
+        std::make_unique<OHOS::AppSpawnTestServer>("nwebspawn -mode nwebspawn");
     AddPreloadHook(HOOK_PRIO_COMMON, SpawnKickDogStart);
     testServer->Start(nullptr);
     sleep(1); // wait 1s for writing kick log before reading

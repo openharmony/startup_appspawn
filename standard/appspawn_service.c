@@ -503,11 +503,27 @@ static void OnReceiveRequest(const TaskHandle taskHandle, const uint8_t *buffer,
     }
 }
 
-static char *GetMapMem(uint32_t clientId, const char *processName, uint32_t size, bool readOnly, bool isNweb)
+APPSPAWN_STATIC char *GetSpawnNameByRunMode(RunMode mode)
+{
+    if (mode == MODE_FOR_APP_SPAWN || mode == MODE_FOR_APP_COLD_RUN) {
+        return APPSPAWN_SERVER_NAME;
+    } else if (mode == MODE_FOR_NWEB_SPAWN || mode == MODE_FOR_NWEB_COLD_RUN) {
+        return NWEBSPAWN_SERVER_NAME;
+    } else if (mode == MODE_FOR_HYBRID_SPAWN || mode == MODE_FOR_HYBRID_COLD_RUN) {
+        return HYBRIDSPAWN_SERVER_NAME;
+    } else if (mode == MODE_FOR_NATIVE_SPAWN) {
+        return NATIVESPAWN_SERVER_NAME;
+    } else if (mode == MODE_FOR_CJAPP_SPAWN) {
+        return CJAPPSPAWN_SERVER_NAME;
+    }
+    return "";
+}
+
+static char *GetMapMem(uint32_t clientId, const char *processName, uint32_t size, bool readOnly, RunMode runMode)
 {
     char path[PATH_MAX] = {};
     int len = sprintf_s(path, sizeof(path), APPSPAWN_MSG_DIR "%s/%s_%u",
-        isNweb ? "nwebspawn" : "appspawn", processName, clientId);
+        GetSpawnNameByRunMode(runMode), processName, clientId);
     APPSPAWN_CHECK(len > 0, return NULL, "Failed to format path %{public}s", processName);
     APPSPAWN_LOGV("GetMapMem for child %{public}s memSize %{public}u", path, size);
     int prot = PROT_READ;
@@ -529,12 +545,12 @@ static char *GetMapMem(uint32_t clientId, const char *processName, uint32_t size
     return (char *)areaAddr;
 }
 
-APPSPAWN_STATIC int WriteMsgToChild(AppSpawningCtx *property, bool isNweb)
+APPSPAWN_STATIC int WriteMsgToChild(AppSpawningCtx *property, RunMode mode)
 {
     APPSPAWN_CHECK(property != NULL && property->message != NULL, return APPSPAWN_MSG_INVALID,
         "Failed to WriteMsgToChild property invalid");
     const uint32_t memSize = (property->message->msgHeader.msgLen / 4096 + 1) * 4096; // 4096 4K
-    char *buffer = GetMapMem(property->client.id, GetProcessName(property), memSize, false, isNweb);
+    char *buffer = GetMapMem(property->client.id, GetProcessName(property), memSize, false, mode);
     APPSPAWN_CHECK(buffer != NULL, return APPSPAWN_SYSTEM_ERROR,
         "Failed to map memory error %{public}d fileName %{public}s ", errno, GetProcessName(property));
     // copy msg header
@@ -651,7 +667,7 @@ static int IsChildColdRun(AppSpawningCtx *property)
 static int AddChildWatcher(AppSpawningCtx *property)
 {
     uint32_t defTimeout = IsChildColdRun(property) ? COLD_CHILD_RESPONSE_TIMEOUT : WAIT_CHILD_RESPONSE_TIMEOUT;
-    uint32_t timeout = GetSpawnTimeout(defTimeout);
+    uint32_t timeout = GetSpawnTimeout(defTimeout, IsChildColdRun(property));
 
     LE_WatchInfo watchInfo = {};
     watchInfo.fd = property->forkCtx.fd[0];
@@ -761,9 +777,9 @@ static int WritePreforkMsg(AppSpawningCtx *property, uint32_t memSize)
     return ret;
 }
 
-static int GetAppSpawnMsg(AppSpawningCtx *property, uint32_t memSize)
+static int GetAppSpawnMsg(AppSpawningCtx *property, uint32_t memSize, RunMode mode)
 {
-    uint8_t *buffer = (uint8_t *)GetMapMem(property->client.id, "prefork", memSize, true, false);
+    uint8_t *buffer = (uint8_t *)GetMapMem(property->client.id, "prefork", memSize, true, mode);
     APPSPAWN_CHECK(buffer != NULL, return -1, "prefork buffer is null can not write propery");
 
     uint32_t msgRecvLen = 0;
@@ -849,7 +865,7 @@ static void ProcessPreFork(AppSpawnContent *content, AppSpawningCtx *property)
         property->forkCtx.fd[1] = content->preforkFd[1];
         property->state = APP_STATE_SPAWNING;
         const uint32_t memSize = (preforkMsg.msgLen / MAX_MSG_BLOCK_LEN + 1) * MAX_MSG_BLOCK_LEN;
-        if (GetAppSpawnMsg(property, memSize) == -1) {
+        if (GetAppSpawnMsg(property, memSize, content->mode) == -1) {
             APPSPAWN_LOGE("prefork child read GetAppSpawnMsg failed");
             ClearPreforkInfo(property);
             content->notifyResToParent(content, &property->client, APPSPAWN_MSG_INVALID);
@@ -886,7 +902,7 @@ static int AppSpawnProcessMsgForPrefork(AppSpawnContent *content, AppSpawnClient
     } else {
         const uint32_t memSize = (property->message->msgHeader.msgLen / MAX_MSG_BLOCK_LEN + 1) *
             MAX_MSG_BLOCK_LEN;
-        content->propertyBuffer = GetMapMem(property->client.id, "prefork", memSize, false, false);
+        content->propertyBuffer = GetMapMem(property->client.id, "prefork", memSize, false, content->mode);
         if (content->propertyBuffer == NULL) {
             ClearMMAP(property->client.id, memSize);
             return NormalSpawnChild(content, client, childPid);
@@ -1216,7 +1232,16 @@ void AppSpawnDestroyContent(AppSpawnContent *content)
 
 APPSPAWN_STATIC int AppSpawnColdStartApp(struct AppSpawnContent *content, AppSpawnClient *client)
 {
+    AppSpawnMgr *mgr = (AppSpawnMgr *)content;
+    APPSPAWN_CHECK(!IsNativeSpawnMode(mgr), return APPSPAWN_NATIVE_NOT_ALLOW, "nativespawn not support coldrun");
     AppSpawningCtx *property = (AppSpawningCtx *)client;
+    const char *processName = GetProcessName(property);
+    APPSPAWN_CHECK(processName != NULL, return APPSPAWN_ARG_INVALID, "Faied to get process name");
+    // for cold run, use shared memory to exchange message
+    APPSPAWN_LOGV("Write msg to child %{public}s", processName);
+    int ret = WriteMsgToChild(property, content->mode);
+    APPSPAWN_CHECK(ret == 0, return APPSPAWN_SYSTEM_ERROR, "Failed to write msg to child");
+
 #ifdef CJAPP_SPAWN
     char *path = property->forkCtx.coldRunPath != NULL ? property->forkCtx.coldRunPath : "/system/bin/cjappspawn";
 #elif NATIVE_SPAWN
@@ -1228,37 +1253,28 @@ APPSPAWN_STATIC int AppSpawnColdStartApp(struct AppSpawnContent *content, AppSpa
 #else
     char *path = property->forkCtx.coldRunPath != NULL ? property->forkCtx.coldRunPath : "/system/bin/appspawn";
 #endif
-    APPSPAWN_LOGI("ColdStartApp::processName: %{public}s path: %{public}s", GetProcessName(property), path);
-    APPSPAWN_CHECK(!IsNativeSpawnMode((AppSpawnMgr *)content), return APPSPAWN_NATIVE_NOT_ALLOW,
-        "nativespawn not support coldrun");
-    // for cold run, use shared memory to exchange message
-    APPSPAWN_LOGV("Write msg to child %{public}s", GetProcessName(property));
-    int ret = WriteMsgToChild(property, IsNWebSpawnMode((AppSpawnMgr *)content));
-    APPSPAWN_CHECK(ret == 0, return APPSPAWN_SYSTEM_ERROR, "Failed to write msg to child");
-
     char buffer[4][32] = {0};  // 4 32 buffer for fd
     int len = sprintf_s(buffer[0], sizeof(buffer[0]), " %d ", property->forkCtx.fd[1]);
     APPSPAWN_CHECK(len > 0, return APPSPAWN_SYSTEM_ERROR, "Invalid to format fd");
     len = sprintf_s(buffer[1], sizeof(buffer[1]), " %u ", property->client.flags);
     APPSPAWN_CHECK(len > 0, return APPSPAWN_SYSTEM_ERROR, "Invalid to format flags");
     len = sprintf_s(buffer[2], sizeof(buffer[2]), " %u ", property->forkCtx.msgSize); // 2 2 index for dest path
-    APPSPAWN_CHECK(len > 0, return APPSPAWN_SYSTEM_ERROR, "Invalid to format shmId ");
+    APPSPAWN_CHECK(len > 0, return APPSPAWN_SYSTEM_ERROR, "Invalid to format msgSize");
     len = sprintf_s(buffer[3], sizeof(buffer[3]), " %u ", property->client.id); // 3 3 index for client id
-    APPSPAWN_CHECK(len > 0, return APPSPAWN_SYSTEM_ERROR, "Invalid to format shmId ");
-#ifndef APPSPAWN_TEST
-    char *mode = IsNWebSpawnMode((AppSpawnMgr *)content) ? "nweb_cold" : "app_cold";
-    // 2 2 index for dest path
-    const char *const formatCmds[] = {
-        path, "-mode", mode, "-fd", buffer[0], buffer[1], buffer[2],
-        "-param", GetProcessName(property), buffer[3], NULL
-    };
+    APPSPAWN_CHECK(len > 0, return APPSPAWN_SYSTEM_ERROR, "Invalid to format clientId");
+    char *mode = IsAppSpawnMode(mgr) ? "app_cold" : (IsNWebSpawnMode(mgr) ? "nweb_cold" : "hybrid_cold");
+    APPSPAWN_LOGI("ColdStartApp::processName:%{public}s path:%{public}s mode:%{public}s", processName, path, mode);
 
+#ifndef APPSPAWN_TEST
+    const char *const formatCmds[] = {
+        path, "-mode", mode, "-fd", buffer[0], buffer[1], buffer[2], "-param", processName, buffer[3], NULL
+    };
     ret = execv(path, (char **)formatCmds);
     if (ret != 0) {
         APPSPAWN_LOGE("Failed to execv, errno: %{public}d", errno);
     }
 #endif
-    APPSPAWN_LOGV("ColdStartApp::processName: %{public}s end", GetProcessName(property));
+    APPSPAWN_LOGV("ColdStartApp::processName:%{public}s end", processName);
     return 0;
 }
 
@@ -1270,11 +1286,10 @@ static AppSpawningCtx *GetAppSpawningCtxFromArg(AppSpawnMgr *content, int argc, 
     property->client.flags = (uint32_t)atoi(argv[FLAGS_VALUE_INDEX]);
     property->client.flags &= ~APP_COLD_START;
 
-    int isNweb = IsNWebSpawnMode(content);
     uint32_t size = (uint32_t)atoi(argv[SHM_SIZE_INDEX]);
     property->client.id = (uint32_t)atoi(argv[CLIENT_ID_INDEX]);
     uint8_t *buffer = (uint8_t *)GetMapMem(property->client.id,
-        argv[PARAM_VALUE_INDEX], size, true, isNweb);
+        argv[PARAM_VALUE_INDEX], size, true, content->content.mode);
     if (buffer == NULL) {
         APPSPAWN_LOGE("Failed to map errno %{public}d %{public}s", property->client.id, argv[PARAM_VALUE_INDEX]);
         NotifyResToParent(&content->content, &property->client, APPSPAWN_SYSTEM_ERROR);
@@ -1291,7 +1306,7 @@ static AppSpawningCtx *GetAppSpawningCtxFromArg(AppSpawnMgr *content, int argc, 
     //unlink
     char path[PATH_MAX] = {0};
     int len = sprintf_s(path, sizeof(path), APPSPAWN_MSG_DIR "%s/%s_%u",
-        isNweb ? "nwebspawn" : "appspawn", argv[PARAM_VALUE_INDEX], property->client.id);
+        GetSpawnNameByRunMode(content->content.mode), argv[PARAM_VALUE_INDEX], property->client.id);
     if (len > 0) {
         unlink(path);
     }
