@@ -27,6 +27,7 @@
 #include "appspawn_client.h"
 #include "appspawn_hook.h"
 #include "appspawn_encaps.h"
+#include "appspawn_server.h"
 
 void SetBoolParamResult(const char *key, bool flag);
 #ifdef __cplusplus
@@ -114,7 +115,8 @@ int CheckSandboxMountNode(const SandboxContext *context,
     const SandboxSection *section, const PathMountNode *sandboxNode, uint32_t operation);
 int AppSpawnClearEnv(AppSpawnMgr *content, AppSpawningCtx *property);
 int AppSpawnChild(AppSpawnContent *content, AppSpawnClient *client);
-int WriteMsgToChild(AppSpawningCtx *property, bool isNweb);
+char *GetSpawnNameByRunMode(RunMode mode);
+int WriteMsgToChild(AppSpawningCtx *property, RunMode mode);
 int WriteToFile(const char *path, int truncated, pid_t pids[], uint32_t count);
 int GetCgroupPath(const AppSpawnedProcess *appInfo, char *buffer, uint32_t buffLen);
 void SetDeveloperMode(bool mode);

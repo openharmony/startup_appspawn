@@ -1213,4 +1213,29 @@ HWTEST_F(AppSpawnServiceTest, App_Spawn_MSG_UNLOAD_WEBLIB_IN_APPSPAWN_001, TestS
     AppSpawnClientDestroy(clientHandle);
     ASSERT_EQ(ret, 0);
 }
+
+/**
+ * @brief 测试GetSpawnNameByRunMode
+ *
+ */
+HWTEST_F(AppSpawnServiceTest, App_Spawn_GetSpawnNameByRunMode_001, TestSize.Level0)
+{
+    for (int i = 0; i <= MODE_INVALID; i++) {
+        char *name = GetSpawnNameByRunMode((RunMode)i);
+        ASSERT_NE(name, nullptr);
+        if (i == MODE_FOR_APP_SPAWN || i == MODE_FOR_APP_COLD_RUN) {
+            EXPECT_EQ(strcmp(name, APPSPAWN_SERVER_NAME), 0);
+        } else if (i == MODE_FOR_NWEB_SPAWN || i == MODE_FOR_NWEB_COLD_RUN) {
+            EXPECT_EQ(strcmp(name, NWEBSPAWN_SERVER_NAME), 0);
+        } else if (i == MODE_FOR_HYBRID_SPAWN || i == MODE_FOR_HYBRID_COLD_RUN) {
+            EXPECT_EQ(strcmp(name, HYBRIDSPAWN_SERVER_NAME), 0);
+        } else if (i == MODE_FOR_NATIVE_SPAWN) {
+            EXPECT_EQ(strcmp(name, NATIVESPAWN_SERVER_NAME), 0);
+        } else if (i == MODE_FOR_CJAPP_SPAWN) {
+            EXPECT_EQ(strcmp(name, CJAPPSPAWN_SERVER_NAME), 0);
+        } else {
+            EXPECT_EQ(strcmp(name, ""), 0);
+        }
+    }
+}
 }  // namespace OHOS
