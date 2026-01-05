@@ -1,6 +1,6 @@
 {
     "class" : [
-        "L@ohos/app/ability/Want/Want;",
-        "L@ohos/deviceInfo/deviceInfo;"
+        "@ohos.app.ability.Want.Want",
+        "@ohos.deviceInfo.deviceInfo"
     ]
 }
