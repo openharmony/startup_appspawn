@@ -72,7 +72,7 @@ typedef enum {
 #define HNP_API_ERRNO_TOO_MANY_PARAM      (HNP_API_ERRNO_BASE + 0x10)
 
 #define PACK_NAME_LENTH 256
-#define HAP_PATH_LENTH 256
+#define HAP_PATH_LENTH 512
 #define ABI_LENTH 128
 #define APP_IDENTIFIER_LEN 64
 

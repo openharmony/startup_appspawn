@@ -13,20 +13,21 @@
  * limitations under the License.
  */
 #include "hnp_rebuild_cfg_test.h"
+
 #include <gtest/gtest.h>
+#include "hnp_installer.h"
+#include "hnp_base.h"
+#include "cJSON.h"
+#include "securec.h"
 
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <sys/stat.h>
 #include <cerrno>
-#include "hnp_installer.h"
-#include "cJSON.h"
-#include "securec.h"
-#include "hnp_base.h"
 
 #define TEST_UID_INDEX_1 (10000)
-#define TEST_UID_INDEX_1 (10001)
+#define TEST_UID_INDEX_2 (10001)
 #define TEST_HNP_NAME1 "testhnp1"
 #define TEST_HNP_NAME2 "testhnp2"
 #define TEST_HAP_NAME1 "com.example.testhap1"
@@ -35,7 +36,9 @@
 #define TEST_HNP_INSTALLVERSION2 "1.2"
 #define TEST_HNP_INDEX_1 (1)
 #define TEST_HNP_INDEX_2 (2)
-
+#ifndef HNP_TEST_DIR_MODE
+#define HNP_TEST_DIR_MODE (0771)
+#endif
 using namespace testing;
 using namespace testing::ext;
 
@@ -102,12 +105,12 @@ static int AddHapToRoot(cJSON *root, const char *hapName, cJSON *hnpArray)
 
 static int AddHnpToHnpArray(cJSON *hnpArray, int index)
 {
-    if (hnpArray == nullptr || packageInfo == nullptr) {
+    if (hnpArray == nullptr) {
         printf("invalid AddHnpToHnpArray param \r\n");
         return -1;
     }
 
-    if (!cJSON_IsArray(root)) {
+    if (!cJSON_IsArray(hnpArray)) {
         printf("hnpArray is not array\r\n");
         return -1;
     }
@@ -130,21 +133,6 @@ static int AddHnpToHnpArray(cJSON *hnpArray, int index)
     return 0;
 }
 
-static int CreateTestDir(const char *hnpName, const char *version, const int uid)
-{
-    char hnpVersionPath[PATH_MAX] = {0};
-    ret = snprintf_s(hnpVersionPath, PATH_MAX, PATH_MAX - 1,
-        APPSPAWN_BASE_DIR "/data/app/el1/bundle/%d/%s.org/%s_%s", uid, hnpName, hnpName,
-        version);
-
-    if (ret <= 0) {
-        return -1;
-    }
-
-    MakeDirRecursive(hnpVersionPath);
-    return 0;
-}
-
 #ifdef __cplusplus
     }
 #endif
@@ -158,22 +146,22 @@ public:
     void TearDown();
 };
 
-void HnpInstallerSingleTest::SetUpTestCase()
+void HnpRebuildCfgSingleTest::SetUpTestCase()
 {
     GTEST_LOG_(INFO) << "HnpRebuildCfgSingleTest SetUpTestCase";
 }
 
-void HnpInstallerSingleTest::TearDownTestCase()
+void HnpRebuildCfgSingleTest::TearDownTestCase()
 {
     GTEST_LOG_(INFO) << "HnpRebuildCfgSingleTest TearDownTestCase";
 }
 
-void HnpInstallerSingleTest::SetUp()
+void HnpRebuildCfgSingleTest::SetUp()
 {
     GTEST_LOG_(INFO) << "HnpRebuildCfgSingleTest SetUp";
 }
 
-void HnpInstallerSingleTest::TearDown()
+void HnpRebuildCfgSingleTest::TearDown()
 {
     GTEST_LOG_(INFO) << "HnpRebuildCfgSingleTest TearDown";
 }
@@ -199,11 +187,59 @@ static void MakeDirRecursive(const std::string &path, mode_t mode)
     } while (index < size);
 }
 
+void RemoveUidCfg(int uid)
+{
+    char newCfgPath[PATH_MAX] = {0};
+    int ret = snprintf_s(newCfgPath, PATH_MAX, PATH_MAX - 1,
+        HNP_PACKAGE_INFO_JSON_FILE_PATH, uid);
+    if (ret > 0) {
+        remove(newCfgPath);
+    }
+}
+static void CreateTestFile(const char *fileName, const char *data)
+{
+    FILE *tmpFile = fopen(fileName, "wr");
+    if (tmpFile != nullptr) {
+        if (data != nullptr) {
+            fprintf(tmpFile, "%s", data);
+            (void)fflush(tmpFile);
+        }
+        fclose(tmpFile);
+    }
+}
+
+static int CreateTestDir(const char *hnpName, const char *version, const int uid)
+{
+    char hnpVersionPath[PATH_MAX] = {0};
+    int ret = snprintf_s(hnpVersionPath, PATH_MAX, PATH_MAX - 1,
+        HNP_PUBLIC_BASE_PATH, uid, hnpName, hnpName, version);
+    if (ret <= 0) {
+        return -1;
+    }
+    MakeDirRecursive(hnpVersionPath, HNP_TEST_DIR_MODE);
+    return 0;
+}
+
+static int RemoveTestDir(const char *hnpName, const char *version, const int uid)
+{
+    char hnpVersionPath[PATH_MAX] = {0};
+    int ret = snprintf_s(hnpVersionPath, PATH_MAX, PATH_MAX - 1,
+        HNP_PUBLIC_BASE_PATH, uid, hnpName, hnpName, version);
+    if (ret <= 0) {
+        return -1;
+    }
+    if (access(hnpVersionPath, F_OK) == 0) {
+        remove(hnpVersionPath);
+    }
+    return 0;
+}
+
+// exist new cfg
 HWTEST_F(HnpRebuildCfgSingleTest, HnpRebuildCfgTest_001, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "hnp_rebuild_cfg_001 start";
 
-    MakeDirRecursive(APPSPAWN_BASE_DIR"/data/service/el1/startup");
+    MakeDirRecursive(APPSPAWN_BASE_DIR"/data/service/el1/startup", HNP_TEST_DIR_MODE);
     char newCfgPath[PATH_MAX] = {0};
     int ret = snprintf_s(newCfgPath, PATH_MAX, PATH_MAX - 1,
         HNP_PACKAGE_INFO_JSON_FILE_PATH, TEST_UID_INDEX_1);
@@ -211,7 +247,6 @@ HWTEST_F(HnpRebuildCfgSingleTest, HnpRebuildCfgTest_001, TestSize.Level0)
 
     // clear old cfg
     ret = remove(newCfgPath);
-    EXPECT_EQ(ret, 0);
 
     // build old cfg
     cJSON *emptyJson = cJSON_CreateArray();
@@ -230,11 +265,12 @@ HWTEST_F(HnpRebuildCfgSingleTest, HnpRebuildCfgTest_001, TestSize.Level0)
     GTEST_LOG_(INFO) << "hnp_rebuild_cfg_001 end";
 }
 
+// not exist new cfg and new cfg
 HWTEST_F(HnpRebuildCfgSingleTest, HnpRebuildCfgTest_002, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "hnp_rebuild_cfg_002 start";
 
-    MakeDirRecursive(APPSPAWN_BASE_DIR"/data/service/el1/startup");
+    MakeDirRecursive(APPSPAWN_BASE_DIR"/data/service/el1/startup", HNP_TEST_DIR_MODE);
     char newCfgPath[PATH_MAX] = {0};
     int ret = snprintf_s(newCfgPath, PATH_MAX, PATH_MAX - 1,
         HNP_PACKAGE_INFO_JSON_FILE_PATH, TEST_UID_INDEX_1);
@@ -242,20 +278,18 @@ HWTEST_F(HnpRebuildCfgSingleTest, HnpRebuildCfgTest_002, TestSize.Level0)
 
     // clear old cfg
     ret = remove(newCfgPath);
-    EXPECT_EQ(ret, 0);
 
     // do rebuild
     ret = RebuildHnpInfoCfg(TEST_UID_INDEX_1);
     EXPECT_EQ(ret, 0);
-
+    remove(newCfgPath);
     GTEST_LOG_(INFO) << "hnp_rebuild_cfg_002 end";
 }
 
+// exist empty old cfg
 HWTEST_F(HnpRebuildCfgSingleTest, HnpRebuildCfgTest_003, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "hnp_rebuild_cfg_003 start";
-
-    MakeDirRecursive(APPSPAWN_BASE_DIR"/data/service/el1/startup");
+    MakeDirRecursive(APPSPAWN_BASE_DIR"/data/service/el1/startup", HNP_TEST_DIR_MODE);
     char newCfgPath[PATH_MAX] = {0};
     int ret = snprintf_s(newCfgPath, PATH_MAX, PATH_MAX - 1,
         HNP_PACKAGE_INFO_JSON_FILE_PATH, TEST_UID_INDEX_1);
@@ -263,7 +297,6 @@ HWTEST_F(HnpRebuildCfgSingleTest, HnpRebuildCfgTest_003, TestSize.Level0)
 
     // clear old cfg
     ret = remove(newCfgPath);
-    EXPECT_EQ(ret, 0);
 
     // build old cfg
     cJSON *emptyJson = cJSON_CreateArray();
@@ -280,15 +313,14 @@ HWTEST_F(HnpRebuildCfgSingleTest, HnpRebuildCfgTest_003, TestSize.Level0)
 
     // clear test cfg
     ret = remove(newCfgPath);
+    remove(HNP_OLD_CFG_PATH);
     EXPECT_EQ(ret, 0);
-
-    GTEST_LOG_(INFO) << "hnp_rebuild_cfg_003 end";
 }
 
-
+// exist config but hnp source path not exist
 HWTEST_F(HnpRebuildCfgSingleTest, HnpRebuildCfgTest_004, TestSize.Level0)
 {
-    MakeDirRecursive(APPSPAWN_BASE_DIR"/data/service/el1/startup");
+    MakeDirRecursive(APPSPAWN_BASE_DIR"/data/service/el1/startup", HNP_TEST_DIR_MODE);
     char newCfgPath[PATH_MAX] = {0};
     int ret = snprintf_s(newCfgPath, PATH_MAX, PATH_MAX - 1,
         HNP_PACKAGE_INFO_JSON_FILE_PATH, TEST_UID_INDEX_1);
@@ -296,7 +328,6 @@ HWTEST_F(HnpRebuildCfgSingleTest, HnpRebuildCfgTest_004, TestSize.Level0)
 
     // clear new cfg
     ret = remove(newCfgPath);
-    EXPECT_EQ(ret, 0);
 
     // build old cfg
     cJSON *json = cJSON_CreateArray();
@@ -321,73 +352,73 @@ HWTEST_F(HnpRebuildCfgSingleTest, HnpRebuildCfgTest_004, TestSize.Level0)
     EXPECT_EQ(ret, 0);
     json = cJSON_Parse(infoStream);
     free(infoStream);
-    EXPECT_NE(ret, nullptr);
+    EXPECT_NE(json, nullptr);
     
     EXPECT_TRUE(cJSON_IsArray(json));
     EXPECT_EQ(cJSON_GetArraySize(json), 0);
-
-    // clear test cfg
-    ret = remove(newCfgPath);
-    EXPECT_EQ(ret, 0);
-
-    ret = remove(HNP_OLD_CFG_PATH);
-    EXPECT_EQ(ret, 0);
-}
-
-HWTEST_F(HnpRebuildCfgSingleTest, HnpRebuildCfgTest_004, TestSize.Level0)
-{
-    MakeDirRecursive(APPSPAWN_BASE_DIR"/data/service/el1/startup");
-    char newCfgPath[PATH_MAX] = {0};
-    int ret = snprintf_s(newCfgPath, PATH_MAX, PATH_MAX - 1,
-        HNP_PACKAGE_INFO_JSON_FILE_PATH, TEST_UID_INDEX_1);
-    EXPECT_NE(ret, 0);
-    ret = remove(newCfgPath);
-    EXPECT_EQ(ret, 0);
-
-    // build old cfg
-    cJSON *json = cJSON_CreateArray();
-    cJSON *hnpArray = cJSON_CreateArray();
-    AddHnpToHnpArray(hnpArray, TEST_HNP_INDEX_1);
-    AddHapToRoot(json, TEST_HAP_NAME1, hnpArray);
-    ret = HnpHapJsonWrite(json, HNP_OLD_CFG_PATH);
-    EXPECT_EQ(ret, 0);
-    char hnpVersionPath[PATH_MAX] = {0};
-    ret = snprintf_s(hnpVersionPath, PATH_MAX, PATH_MAX - 1,
-        APPSPAWN_BASE_DIR "/data/app/el1/bundle/%d/%s.org/%s_%s", TEST_UID_INDEX_1, TEST_HNP_NAME1, TEST_HNP_NAME1,
-        TEST_HNP_INSTALLVERSION1);
-    EXPECT_TRUE(ret > 0);
-
-    MakeDirRecursive(hnpVersionPath);
-    // do rebuild
-    ret = RebuildHnpInfoCfg(TEST_UID_INDEX_1);
-    EXPECT_EQ(ret, 0);
     cJSON_Delete(json);
 
-    ret = access(newCfgPath, F_OK) == 0;
-    EXPECT_TRUE(ret);
-
-    char *infoStream;
-    int size;
-    ret = ReadFileToStream(newCfgPath, &infoStream, &size);
-    EXPECT_EQ(ret, 0);
-
-    json = cJSON_Parse(infoStream);
-    free(infoStream);
-    EXPECT_NE(ret, nullptr);
-    
-    EXPECT_TRUE(cJSON_IsArray(json));
-    EXPECT_EQ(cJSON_GetArraySize(json), 1);
-
     // clear test cfg
     ret = remove(newCfgPath);
     EXPECT_EQ(ret, 0);
+
     ret = remove(HNP_OLD_CFG_PATH);
     EXPECT_EQ(ret, 0);
 }
 
 HWTEST_F(HnpRebuildCfgSingleTest, HnpRebuildCfgTest_005, TestSize.Level0)
 {
-    MakeDirRecursive(APPSPAWN_BASE_DIR"/data/service/el1/startup");
+    MakeDirRecursive(APPSPAWN_BASE_DIR"/data/service/el1/startup", HNP_TEST_DIR_MODE);
+    char newCfgPath[PATH_MAX] = {0};
+    int ret = snprintf_s(newCfgPath, PATH_MAX, PATH_MAX - 1,
+        HNP_PACKAGE_INFO_JSON_FILE_PATH, TEST_UID_INDEX_1);
+    EXPECT_NE(ret, 0);
+    ret = remove(newCfgPath);
+
+    // build old cfg
+    cJSON *json = cJSON_CreateArray();
+    cJSON *hnpArray = cJSON_CreateArray();
+    AddHnpToHnpArray(hnpArray, TEST_HNP_INDEX_1);
+    AddHapToRoot(json, TEST_HAP_NAME1, hnpArray);
+    ret = HnpHapJsonWrite(json, HNP_OLD_CFG_PATH);
+    EXPECT_EQ(ret, 0);
+    ret = CreateTestDir(TEST_HNP_NAME1, TEST_HNP_INSTALLVERSION1, TEST_UID_INDEX_1);
+    // do rebuild
+    ret = RebuildHnpInfoCfg(TEST_UID_INDEX_1);
+    EXPECT_EQ(ret, 0);
+    char *oldStr = cJSON_Print(json);
+    cJSON_Delete(json);
+
+    ret = access(newCfgPath, F_OK) == 0;
+    EXPECT_TRUE(ret);
+
+    char *infoStream;
+    int size;
+    ret = ReadFileToStream(newCfgPath, &infoStream, &size);
+    EXPECT_EQ(ret, 0);
+
+    json = cJSON_Parse(infoStream);
+    free(infoStream);
+    EXPECT_NE(json, nullptr);
+    
+    EXPECT_TRUE(cJSON_IsArray(json));
+    EXPECT_EQ(cJSON_GetArraySize(json), 1);
+    char *newStr = cJSON_Print(json);
+    EXPECT_TRUE(strcmp(oldStr, newStr) == 0);
+    free(newStr);
+    free(oldStr);
+    cJSON_Delete(json);
+
+    // clear test cfg
+    remove(newCfgPath);
+    remove(HNP_OLD_CFG_PATH);
+    ret = RemoveTestDir(TEST_HNP_NAME1, TEST_HNP_INSTALLVERSION1, TEST_UID_INDEX_1);
+    EXPECT_EQ(ret, 0);
+}
+
+HWTEST_F(HnpRebuildCfgSingleTest, HnpRebuildCfgTest_006, TestSize.Level0)
+{
+    MakeDirRecursive(APPSPAWN_BASE_DIR"/data/service/el1/startup", HNP_TEST_DIR_MODE);
     char newCfgPath[PATH_MAX] = {0};
     int ret = snprintf_s(newCfgPath, PATH_MAX, PATH_MAX - 1,
         HNP_PACKAGE_INFO_JSON_FILE_PATH, TEST_UID_INDEX_1);
@@ -395,13 +426,14 @@ HWTEST_F(HnpRebuildCfgSingleTest, HnpRebuildCfgTest_005, TestSize.Level0)
 
     // clear new cfg
     ret = remove(newCfgPath);
-    EXPECT_EQ(ret, 0);
 
     // build old cfg
     cJSON *json = cJSON_CreateArray();
     cJSON *hnpArray = cJSON_CreateArray();
     AddHnpToHnpArray(hnpArray, TEST_HNP_INDEX_1 | TEST_HNP_INDEX_2);
     AddHapToRoot(json, TEST_HAP_NAME1, hnpArray);
+    printf("old Json is %s \r\n", cJSON_Print(json));
+
     ret = HnpHapJsonWrite(json, HNP_OLD_CFG_PATH);
     EXPECT_EQ(ret, 0);
 
@@ -422,29 +454,29 @@ HWTEST_F(HnpRebuildCfgSingleTest, HnpRebuildCfgTest_005, TestSize.Level0)
 
     json = cJSON_Parse(infoStream);
     free(infoStream);
-    EXPECT_NE(ret, nullptr);
+    printf("current Json is %s \r\n", cJSON_Print(json));
+    EXPECT_NE(json, nullptr);
     EXPECT_TRUE(cJSON_IsArray(json));
     EXPECT_EQ(cJSON_GetArraySize(json), 1);
-
+    cJSON_Delete(json);
     ret = remove(newCfgPath);
     EXPECT_EQ(ret, 0);
-
+    ret = RemoveTestDir(TEST_HNP_NAME1, TEST_HNP_INSTALLVERSION1, TEST_UID_INDEX_1);
     ret = remove(HNP_OLD_CFG_PATH);
     EXPECT_EQ(ret, 0);
     GTEST_LOG_(INFO) << "hnp_rebuild_cfg_005 end";
 }
 
-HWTEST_F(HnpRebuildCfgSingleTest, HnpRebuildCfgTest_006, TestSize.Level0)
+HWTEST_F(HnpRebuildCfgSingleTest, HnpRebuildCfgTest_007, TestSize.Level0)
 {
     GTEST_LOG_(INFO) << "hnp_rebuild_cfg_006 start";
-    MakeDirRecursive(APPSPAWN_BASE_DIR"/data/service/el1/startup");
+    MakeDirRecursive(APPSPAWN_BASE_DIR"/data/service/el1/startup", HNP_TEST_DIR_MODE);
     char newCfgPath[PATH_MAX] = {0};
     int ret = snprintf_s(newCfgPath, PATH_MAX, PATH_MAX - 1,
         HNP_PACKAGE_INFO_JSON_FILE_PATH, TEST_UID_INDEX_1);
     EXPECT_NE(ret, 0);
 
     ret = remove(newCfgPath);
-    EXPECT_EQ(ret, 0);
 
     cJSON *json = cJSON_CreateArray();
     cJSON *hnpArray = cJSON_CreateArray();
@@ -470,29 +502,28 @@ HWTEST_F(HnpRebuildCfgSingleTest, HnpRebuildCfgTest_006, TestSize.Level0)
 
     json = cJSON_Parse(infoStream);
     free(infoStream);
-    EXPECT_NE(ret, nullptr);
+    EXPECT_NE(json, nullptr);
     EXPECT_TRUE(cJSON_IsArray(json));
     EXPECT_EQ(cJSON_GetArraySize(json), 1);
     cJSON *hapItem = cJSON_GetArrayItem(json, 0);
-    EXPECT_TRUE(cJSON_GetArraySize(json), 1);
+    EXPECT_TRUE(cJSON_GetArraySize(hapItem) == 2);
+    cJSON_Delete(json);
 
-    ret = remove(newCfgPath);
-    EXPECT_EQ(ret, 0);
-
-    ret = remove(HNP_OLD_CFG_PATH);
-    EXPECT_EQ(ret, 0);
+    remove(newCfgPath);
+    RemoveTestDir(TEST_HNP_NAME1, TEST_HNP_INSTALLVERSION1, TEST_UID_INDEX_1);
+    RemoveTestDir(TEST_HNP_NAME2, TEST_HNP_INSTALLVERSION2, TEST_UID_INDEX_1);
+    remove(HNP_OLD_CFG_PATH);
     GTEST_LOG_(INFO) << "hnp_rebuild_cfg_006 end";
 }
 
-HWTEST_F(HnpRebuildCfgSingleTest, HnpRebuildCfgTest_006, TestSize.Level0)
+HWTEST_F(HnpRebuildCfgSingleTest, HnpRebuildCfgTest_008, TestSize.Level0)
 {
-    MakeDirRecursive(APPSPAWN_BASE_DIR"/data/service/el1/startup");
+    MakeDirRecursive(APPSPAWN_BASE_DIR"/data/service/el1/startup", HNP_TEST_DIR_MODE);
     char newCfgPath[PATH_MAX] = {0};
     int ret = snprintf_s(newCfgPath, PATH_MAX, PATH_MAX - 1,
         HNP_PACKAGE_INFO_JSON_FILE_PATH, TEST_UID_INDEX_1);
     EXPECT_NE(ret, 0);
     ret = remove(newCfgPath);
-    EXPECT_EQ(ret, 0);
 
     cJSON *json = cJSON_CreateArray();
     cJSON *hnpArray = cJSON_CreateArray();
@@ -521,75 +552,26 @@ HWTEST_F(HnpRebuildCfgSingleTest, HnpRebuildCfgTest_006, TestSize.Level0)
 
     json = cJSON_Parse(infoStream);
     free(infoStream);
-    EXPECT_NE(ret, nullptr);
+    EXPECT_NE(json, nullptr);
     EXPECT_TRUE(cJSON_IsArray(json));
     EXPECT_EQ(cJSON_GetArraySize(json), 1);
+    cJSON_Delete(json);
 
     // clear test cfg
-    ret = remove(newCfgPath);
-    EXPECT_EQ(ret, 0);
-
-    ret = remove(HNP_OLD_CFG_PATH);
-    EXPECT_EQ(ret, 0);
-}
-
-HWTEST_F(HnpRebuildCfgSingleTest, HnpRebuildCfgTest_007, TestSize.Level0)
-{
-    MakeDirRecursive(APPSPAWN_BASE_DIR"/data/service/el1/startup");
-    char newCfgPath[PATH_MAX] = {0};
-    int ret = snprintf_s(newCfgPath, PATH_MAX, PATH_MAX - 1,
-        HNP_PACKAGE_INFO_JSON_FILE_PATH, TEST_UID_INDEX_1);
-    EXPECT_NE(ret, 0);
-    ret = remove(newCfgPath);
-    EXPECT_EQ(ret, 0);
-
-    cJSON *json = cJSON_CreateArray();
-    cJSON *hnpArray = cJSON_CreateArray();
-    AddHnpToHnpArray(hnpArray, TEST_HNP_INDEX_1);
-    AddHapToRoot(json, TEST_HAP_NAME1, hnpArray);
-    cJSON *hnpArray2 = cJSON_CreateArray();
-    AddHnpToHnpArray(hnpArray2, TEST_HNP_INDEX_2);
-    AddHapToRoot(json, TEST_HAP_NAME2, hnpArray2);
-    ret = HnpHapJsonWrite(json, HNP_OLD_CFG_PATH);
-    EXPECT_EQ(ret, 0);
-
-    ret = CreateTestDir(TEST_HNP_NAME1, TEST_HNP_INSTALLVERSION1, TEST_UID_INDEX_2);
-    EXPECT_EQ(ret, 0);
-
-    ret = RebuildHnpInfoCfg(TEST_UID_INDEX_1);
-    EXPECT_EQ(ret, 0);
-    ret = RebuildHnpInfoCfg(TEST_UID_INDEX_2);
-    EXPECT_EQ(ret, 0);
-    cJSON_Delete(json);
-    ret = access(newCfgPath, F_OK) == 0;
-    EXPECT_TRUE(ret);
-
-    char *infoStream;
-    int size;
-    ret = ReadFileToStream(newCfgPath, &infoStream, &size);
-    EXPECT_EQ(ret, 0);
-
-    json = cJSON_Parse(infoStream);
-    free(infoStream);
-    EXPECT_NE(ret, nullptr);
-    EXPECT_TRUE(cJSON_IsArray(json));
-    EXPECT_EQ(cJSON_GetArraySize(json), 0);
-    ret = remove(newCfgPath);
-    EXPECT_EQ(ret, 0);
-
-    ret = remove(HNP_OLD_CFG_PATH);
+    remove(newCfgPath);
+    RemoveTestDir(TEST_HNP_NAME1, TEST_HNP_INSTALLVERSION1, TEST_UID_INDEX_1);
+    remove(HNP_OLD_CFG_PATH);
     EXPECT_EQ(ret, 0);
 }
 
 HWTEST_F(HnpRebuildCfgSingleTest, HnpRebuildCfgTest_009, TestSize.Level0)
 {
-    MakeDirRecursive(APPSPAWN_BASE_DIR"/data/service/el1/startup");
+    MakeDirRecursive(APPSPAWN_BASE_DIR"/data/service/el1/startup", HNP_TEST_DIR_MODE);
     char newCfgPath[PATH_MAX] = {0};
     int ret = snprintf_s(newCfgPath, PATH_MAX, PATH_MAX - 1,
-        HNP_PACKAGE_INFO_JSON_FILE_PATH, TEST_UID_INDEX_2);
+        HNP_PACKAGE_INFO_JSON_FILE_PATH, TEST_UID_INDEX_1);
     EXPECT_NE(ret, 0);
     ret = remove(newCfgPath);
-    EXPECT_EQ(ret, 0);
 
     cJSON *json = cJSON_CreateArray();
     cJSON *hnpArray = cJSON_CreateArray();
@@ -619,13 +601,78 @@ HWTEST_F(HnpRebuildCfgSingleTest, HnpRebuildCfgTest_009, TestSize.Level0)
 
     json = cJSON_Parse(infoStream);
     free(infoStream);
-    EXPECT_NE(ret, nullptr);
+    EXPECT_NE(json, nullptr);
     EXPECT_TRUE(cJSON_IsArray(json));
-    EXPECT_EQ(cJSON_GetArraySize(json), 1);
+    EXPECT_EQ(cJSON_GetArraySize(json), 0);
+    cJSON_Delete(json);
+    remove(newCfgPath);
+    RemoveUidCfg(TEST_UID_INDEX_2);
+    RemoveTestDir(TEST_HNP_NAME1, TEST_HNP_INSTALLVERSION1, TEST_UID_INDEX_2);
+    ret = remove(HNP_OLD_CFG_PATH);
+    EXPECT_EQ(ret, 0);
+}
+
+HWTEST_F(HnpRebuildCfgSingleTest, HnpRebuildCfgTest_010, TestSize.Level0)
+{
+    MakeDirRecursive(APPSPAWN_BASE_DIR"/data/service/el1/startup", HNP_TEST_DIR_MODE);
+    char newCfgPath[PATH_MAX] = {0};
+    int ret = snprintf_s(newCfgPath, PATH_MAX, PATH_MAX - 1,
+        HNP_PACKAGE_INFO_JSON_FILE_PATH, TEST_UID_INDEX_2);
+    EXPECT_NE(ret, 0);
     ret = remove(newCfgPath);
+
+    cJSON *json = cJSON_CreateArray();
+    cJSON *hnpArray = cJSON_CreateArray();
+    AddHnpToHnpArray(hnpArray, TEST_HNP_INDEX_1);
+    AddHapToRoot(json, TEST_HAP_NAME1, hnpArray);
+    cJSON *hnpArray2 = cJSON_CreateArray();
+    AddHnpToHnpArray(hnpArray2, TEST_HNP_INDEX_2);
+    AddHapToRoot(json, TEST_HAP_NAME2, hnpArray2);
+    ret = HnpHapJsonWrite(json, HNP_OLD_CFG_PATH);
     EXPECT_EQ(ret, 0);
 
+    ret = CreateTestDir(TEST_HNP_NAME1, TEST_HNP_INSTALLVERSION1, TEST_UID_INDEX_2);
+    EXPECT_EQ(ret, 0);
+
+    ret = RebuildHnpInfoCfg(TEST_UID_INDEX_1);
+    EXPECT_EQ(ret, 0);
+    ret = RebuildHnpInfoCfg(TEST_UID_INDEX_2);
+    EXPECT_EQ(ret, 0);
+    cJSON_Delete(json);
+    ret = access(newCfgPath, F_OK) == 0;
+    EXPECT_TRUE(ret);
+
+    char *infoStream;
+    int size;
+    ret = ReadFileToStream(newCfgPath, &infoStream, &size);
+    EXPECT_EQ(ret, 0);
+
+    json = cJSON_Parse(infoStream);
+    free(infoStream);
+    EXPECT_NE(json, nullptr);
+    EXPECT_TRUE(cJSON_IsArray(json));
+    EXPECT_EQ(cJSON_GetArraySize(json), 1);
+    cJSON_Delete(json);
+    remove(newCfgPath);
+    RemoveUidCfg(TEST_UID_INDEX_2);
+    RemoveTestDir(TEST_HNP_NAME1, TEST_HNP_INSTALLVERSION1, TEST_UID_INDEX_2);
     ret = remove(HNP_OLD_CFG_PATH);
+    EXPECT_EQ(ret, 0);
+}
+
+HWTEST_F(HnpRebuildCfgSingleTest, HnpRebuildCfgTest_011, TestSize.Level0)
+{
+    MakeDirRecursive(APPSPAWN_BASE_DIR"/data/service/el1/startup", HNP_TEST_DIR_MODE);
+    char newCfgPath[PATH_MAX] = {0};
+    int ret = snprintf_s(newCfgPath, PATH_MAX, PATH_MAX - 1,
+        HNP_PACKAGE_INFO_JSON_FILE_PATH, TEST_UID_INDEX_1);
+    EXPECT_NE(ret, 0);
+    ret = remove(newCfgPath);
+    CreateTestFile(HNP_OLD_CFG_PATH, nullptr);
+
+    ret = RebuildHnpInfoCfg(TEST_UID_INDEX_1);
+    remove(newCfgPath);
+    remove(HNP_OLD_CFG_PATH);
     EXPECT_EQ(ret, 0);
 }
 }
