@@ -52,12 +52,20 @@ extern "C" {
 #define MAX_PACKAGE_HNP_NUM 256
 
 #define HNP_CFG_FILE_NAME "hnp.json"
-#define HNP_PACKAGE_INFO_JSON_FILE_PATH "/data/service/el1/startup/hnp_info.json"
+#ifndef APPSPAWN_BASE_DIR
+#define APPSPAWN_BASE_DIR ""
+#endif
+#define HNP_OLD_CFG_PATH  APPSPAWN_BASE_DIR "/data/service/el1/startup/hnp_info.json"
+#define HNP_PACKAGE_INFO_JSON_FILE_PATH APPSPAWN_BASE_DIR "/data/service/el1/startup/hnp_info_%d.json"
 #define HNP_ELF_FILE_CHECK_HEAD_LEN 4
 
+#define HNP_PUBLIC_BASE_PATH APPSPAWN_BASE_DIR "/data/app/el1/bundle/%d/hnppublic/%s.org/%s_%s/"
 #define HAP_PACKAGE_INFO_HAP_PREFIX "hap"
 #define HAP_PACKAGE_INFO_HNP_PREFIX "hnp"
 #define HAP_PACKAGE_INFO_NAME_PREFIX "name"
+#define HAP_PACKAGE_INFO_CURRENTIVERSION_PREFIX "current_version"
+#define HAP_PACKAGE_INFO_INSTALLVERSION_PREFIX "install_version"
+
 #define HNP_INFO_RET_FD_ENV "HNP_INFO_RET_FD_ENV"
 
 #ifdef _WIN32
@@ -83,6 +91,7 @@ typedef struct NativeBinLinkStru {
 
 /* hnp配置文件信息 */
 typedef struct HnpCfgInfoStru {
+    int uid;
     char name[MAX_FILE_PATH_LEN];
     char version[HNP_VERSION_LEN];    // Native软件包版本号
     bool isInstall;                   // 是否已安装
@@ -338,7 +347,6 @@ int HnpDeleteFolder(const char *path);
 
 int HnpCreateFolder(const char* path);
 
-
 int ParseHnpCfgFile(const char *hnpCfgPath, HnpCfgInfo *hnpCfg);
 
 int GetHnpJsonBuff(HnpCfgInfo *hnpCfg, char **buff);
@@ -347,20 +355,21 @@ int HnpCfgGetFromSteam(char *cfgStream, HnpCfgInfo *hnpCfg);
 
 int HnpInstallInfoJsonWrite(const char *hapPackageName, const HnpCfgInfo *hnpCfg);
 
-int HnpPackageInfoGet(const char *packageName, HnpPackageInfo **packageInfoOut, int *count);
+int HnpPackageInfoGet(const char *packageName, HnpPackageInfo **packageInfoOut, int *count, int uid);
 
-int HnpPackageInfoHnpDelete(const char *packageName, const char *name, const char *version);
+int HnpPackageInfoHnpDelete(const char *packageName, const char *name, const char *version, int uid);
 
-int HnpPackageInfoDelete(const char *packageName);
+int HnpPackageInfoDelete(const char *packageName, int uid);
 
-char *HnpCurrentVersionUninstallCheck(const char *name);
+char *HnpCurrentVersionUninstallCheck(const char *name, int uid);
 
 int HnpFileCountGet(const char *path, int *count);
 
 int HnpPathFileCount(const char *path);
 
-char *HnpCurrentVersionGet(const char *name);
+char *HnpCurrentVersionGet(const char *name, int uid);
 
+int DoRebuildHnpInfoCfg(int uid);
 typedef int32_t (*ProcessHnpInstall)(BssString bundleName, BssString appIdentifier, int32_t userId, HnpFiles hnpFiles);
 
 typedef int32_t (*ProcessHnpUninstall)(BssString bundleName, int32_t userId);

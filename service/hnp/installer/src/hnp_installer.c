@@ -36,6 +36,7 @@
 #define BIN_SEC_PATH "/system/lib/libsps_binary_security_sdk.z.so"
 #endif
 #define HNP_BASE_DEC (10)
+#define HNP_BASE_UID (100)
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -51,6 +52,7 @@ static int HnpInstallerUidGet(const char *uidIn, int *uidOut)
     }
 
     *uidOut = atoi(uidIn); // 转化为10进制
+    HNP_ERROR_CHECK(*uidOut >= HNP_BASE_UID, return HNP_ERRNO_PARAM_INVALID, "invalid uid");
     return 0;
 }
 
@@ -323,7 +325,7 @@ static int HnpUnInstallPublicHnp(const char* packageName, const char *name, cons
     }
 
     if (!isInstallVersion) {
-        ret = HnpPackageInfoHnpDelete(packageName, name, version);
+        ret = HnpPackageInfoHnpDelete(packageName, name, version, uid);
         if (ret != 0) {
             return ret;
         }
@@ -374,6 +376,7 @@ static int HnpNativeUnInstall(HnpPackageInfo *packageInfo, int uid, const char *
 */
 static int BssUninstall(int uid, const char *packageName)
 {
+#ifndef APPSPAWN_TEST
     HNP_INFO_CHECK(access(BIN_SEC_PATH, F_OK) == 0, return 0,
         "bin file not exist %{public}d ignore", errno);
 
@@ -396,10 +399,30 @@ static int BssUninstall(int uid, const char *packageName)
         "exec bss uninstall failed %{public}d", ret);
 
     return ret;
+#else
+    return 0;
+#endif
+}
+
+APPSPAWN_STATIC int RebuildHnpInfoCfg(int uid)
+{
+    char newCfg[PATH_MAX] = {0};
+    int ret = snprintf_s(newCfg, PATH_MAX, PATH_MAX - 1,
+        HNP_PACKAGE_INFO_JSON_FILE_PATH, uid);
+    HNP_ERROR_CHECK(ret > 0, return HNP_ERRNO_BASE_SPRINTF_FAILED,
+        "build cfg Path failed");
+    HNP_INFO_CHECK(access(newCfg, F_OK) != 0, return 0,
+        "already exist cfg ignore");
+    
+    HNP_INFO_CHECK(access(HNP_OLD_CFG_PATH, F_OK) == 0, return 0,
+        "old cfg not exist can't rebuild cfg");
+    return DoRebuildHnpInfoCfg(uid);
 }
 
 static int HnpUnInstall(int uid, const char *packageName)
 {
+    int ret = RebuildHnpInfoCfg(uid);
+    HNP_LOGI("rebuild cfg with ret %{public}d", ret);
     HnpPackageInfo *packageInfo = NULL;
     int count = 0;
     char privatePath[MAX_FILE_PATH_LEN];
@@ -417,7 +440,7 @@ static int HnpUnInstall(int uid, const char *packageName)
         return HNP_ERRNO_UNINSTALLER_HNP_PATH_NOT_EXIST;
     }
 
-    int ret = HnpPackageInfoGet(packageName, &packageInfo, &count);
+    ret = HnpPackageInfoGet(packageName, &packageInfo, &count, uid);
     if (ret != 0) {
         return ret;
     }
@@ -432,7 +455,7 @@ static int HnpUnInstall(int uid, const char *packageName)
     }
     free(packageInfo);
 
-    ret = HnpPackageInfoDelete(packageName);
+    ret = HnpPackageInfoDelete(packageName, uid);
     if (ret != 0) {
         return ret;
     }
@@ -501,9 +524,9 @@ static int HnpInstallPathGet(HnpCfgInfo *hnpCfgInfo, HnpInstallInfo *hnpInfo)
 
 static int HnpPublicDealAfterInstall(HnpInstallInfo *hnpInfo, HnpCfgInfo *hnpCfg)
 {
-    char *version = HnpCurrentVersionUninstallCheck(hnpCfg->name);
+    char *version = HnpCurrentVersionUninstallCheck(hnpCfg->name, hnpInfo->hapInstallInfo->uid);
     if (version == NULL) {
-        version = HnpCurrentVersionGet(hnpCfg->name);
+        version = HnpCurrentVersionGet(hnpCfg->name, hnpInfo->hapInstallInfo->uid);
         if (version != NULL) {
             HnpUnInstallPublicHnp(hnpInfo->hapInstallInfo->hapPackageName, hnpCfg->name, version,
                 hnpInfo->hapInstallInfo->uid, true);
@@ -514,7 +537,6 @@ static int HnpPublicDealAfterInstall(HnpInstallInfo *hnpInfo, HnpCfgInfo *hnpCfg
         version = NULL;
     }
     hnpCfg->isInstall = true;
-
     return HnpInstallInfoJsonWrite(hnpInfo->hapInstallInfo->hapPackageName, hnpCfg);
 }
 
@@ -522,7 +544,7 @@ static int HnpReadAndInstall(char *srcFile, HnpInstallInfo *hnpInfo, HnpSignMapI
 {
     int ret;
     HnpCfgInfo hnpCfg = {0};
-
+    hnpCfg.uid = hnpInfo->hapInstallInfo->uid;
     HNP_LOGI("hnp install start now! src file=%{public}s, dst path=%{public}s", srcFile, hnpInfo->hnpBasePath);
     /* 从hnp zip获取cfg信息 */
     ret = HnpCfgGetFromZip(srcFile, &hnpCfg);
@@ -940,8 +962,7 @@ static int HnpInstallPre(HapInstallInfo *installInfo)
     }
     count = 0;
     ret = HapReadAndInstall(dstPath, installInfo, hnpSignMapInfos, &count);
-    HNP_LOGI("sign start hap path[%{public}s],abi[%{public}s],count=%{public}d", installInfo->hapPath, installInfo->abi,
-        count);
+    HNP_LOGI("sign start [%{public}s],[%{public}s],%{public}d", installInfo->hapPath, installInfo->abi, count);
 #ifdef CODE_SIGNATURE_ENABLE
     if ((ret == 0) && (count > 0)) {
         data.entries = malloc(sizeof(struct EntryMapEntry) * count);
@@ -966,7 +987,8 @@ static int HnpInstallPre(HapInstallInfo *installInfo)
         }
         HNP_ONLY_EXPER(ret == 0 && installInfo->appIdentifier != NULL && exeFileCount > 0,
             ret = BssInstall(hnpSignMapInfos, count, installInfo, exeFileCount));
-        HNP_ERROR_CHECK(ret == 0, HnpUnInstall(installInfo->uid, installInfo->hapPackageName);
+        HNP_ERROR_CHECK(ret == 0 || ret == HNP_ERRNO_INSTALLER_CODE_SIGN_APP_FAILED,
+            HnpUnInstall(installInfo->uid, installInfo->hapPackageName);
             ret = HNP_ERRNO_BSS_ERROR, "bssinstall failed %{public}d", ret);
     }
 #endif
@@ -1100,6 +1122,8 @@ int HnpCmdInstall(int argc, char *argv[])
         HapInstallInfoDestory(&installInfo);
         return ret;
     }
+    ret = RebuildHnpInfoCfg(installInfo->uid);
+    HNP_LOGI("rebuild cfg with ret %{public}d", ret);
     ret = HnpInstallPre(installInfo);
     HapInstallInfoDestory(&installInfo);
 

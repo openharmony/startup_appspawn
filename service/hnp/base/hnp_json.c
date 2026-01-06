@@ -15,6 +15,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "cJSON.h"
 #include "securec.h"
@@ -249,9 +250,12 @@ static void HnpPackageVersionUpdateAll(cJSON *json, const HnpCfgInfo *hnpCfg)
     return;
 }
 
-static int HnpHapJsonWrite(cJSON *json)
+static int HnpHapJsonWrite(cJSON *json, int uid)
 {
-    FILE *fp = fopen(HNP_PACKAGE_INFO_JSON_FILE_PATH, "wb");
+    char cfgPath[PATH_MAX] = {0};
+    int ret = snprintf_s(cfgPath, PATH_MAX, PATH_MAX - 1, HNP_PACKAGE_INFO_JSON_FILE_PATH, uid);
+    HNP_ERROR_CHECK(ret > 0, return HNP_ERRNO_BASE_SPRINTF_FAILED, "build cfg path failed");
+    FILE *fp = fopen(cfgPath, "wb");
     if (fp == NULL) {
         HNP_LOGE("open file:%{public}s unsuccess!", HNP_PACKAGE_INFO_JSON_FILE_PATH);
         return HNP_ERRNO_BASE_FILE_OPEN_FAILED;
@@ -319,12 +323,13 @@ static int HnpHapJsonHnpAdd(bool hapExist, cJSON *json, cJSON *hapItem, const ch
 
     HnpPackageVersionUpdateAll(json, hnpCfg);
 
-    ret = HnpHapJsonWrite(json);
+    ret = HnpHapJsonWrite(json, hnpCfg->uid);
     return ret;
 }
 
 int HnpInstallInfoJsonWrite(const char *hapPackageName, const HnpCfgInfo *hnpCfg)
 {
+    HNP_ONLY_EXPER(hapPackageName == NULL || hnpCfg == NULL, return HNP_ERRNO_BASE_PARAMS_INVALID);
     bool hapExist = false;
     int hapIndex = 0;
     int hnpIndex = 0;
@@ -333,12 +338,10 @@ int HnpInstallInfoJsonWrite(const char *hapPackageName, const HnpCfgInfo *hnpCfg
     cJSON *hapItem = NULL;
     cJSON *hnpItem = NULL;
     cJSON *json = NULL;
-
-    if ((hapPackageName == NULL) || (hnpCfg == NULL)) {
-        return HNP_ERRNO_BASE_PARAMS_INVALID;
-    }
-
-    int ret = ReadFileToStream(HNP_PACKAGE_INFO_JSON_FILE_PATH, &infoStream, &size);
+    char cfgPath[PATH_MAX] = {0};
+    int ret = snprintf_s(cfgPath, PATH_MAX, PATH_MAX - 1, HNP_PACKAGE_INFO_JSON_FILE_PATH, hnpCfg->uid);
+    HNP_ERROR_CHECK(ret > 0, return HNP_ERRNO_BASE_SPRINTF_FAILED, "build cfg path failed");
+    ret = ReadFileToStream(cfgPath, &infoStream, &size);
     if (ret != 0) {
         if ((ret == HNP_ERRNO_BASE_FILE_OPEN_FAILED) || (ret == HNP_ERRNO_BASE_GET_FILE_LEN_NULL)) {
             if ((json = cJSON_CreateArray()) == NULL) {
@@ -352,13 +355,10 @@ int HnpInstallInfoJsonWrite(const char *hapPackageName, const HnpCfgInfo *hnpCfg
     } else {
         json = cJSON_Parse(infoStream);
         free(infoStream);
-        if (json == NULL) {
-            HNP_LOGE("hnp json write parse json file unsuccess.");
-            return HNP_ERRNO_BASE_PARSE_JSON_FAILED;
-        }
+        HNP_ERROR_CHECK(json != NULL, return HNP_ERRNO_BASE_PARSE_JSON_FAILED,
+            "hnp json write parse json file unsuccess.");
         hapExist = HnpInstallHapExistCheck(hapPackageName, json, &hapItem, &hapIndex);
     }
-
     if (hapExist) {
         cJSON *hnpItemArr = cJSON_GetObjectItem(hapItem, "hnp");
         bool hnpExist = HnpInstallHnpExistCheck(hnpItemArr, hnpCfg->name, &hnpItem, &hnpIndex, NULL);
@@ -367,13 +367,12 @@ int HnpInstallInfoJsonWrite(const char *hapPackageName, const HnpCfgInfo *hnpCfg
             if (versionJson != NULL) { // 当前版本存在，即非新增版本，仅更新current_version即可，无需更新install_version
                 cJSON_SetValuestring(versionJson, hnpCfg->version);
                 HnpPackageVersionUpdateAll(json, hnpCfg);
-                ret = HnpHapJsonWrite(json);
+                ret = HnpHapJsonWrite(json, hnpCfg->uid);
                 cJSON_Delete(json);
                 return ret;
             }
         }
     }
-
     ret = HnpHapJsonHnpAdd(hapExist, json, hapItem, hapPackageName, hnpCfg);
     cJSON_Delete(json);
     return ret;
@@ -425,12 +424,15 @@ static int HnpPackageInfoGetOut(HnpPackageInfo *packageInfos, int sum, HnpPackag
     return 0;
 }
 
-static int HnpPackageJsonGet(cJSON **pJson)
+static int HnpPackageJsonGet(cJSON **pJson, int uid)
 {
     char *infoStream;
     int size;
 
-    int ret = ReadFileToStream(HNP_PACKAGE_INFO_JSON_FILE_PATH, &infoStream, &size);
+    char cfgPath[PATH_MAX] = {0};
+    int ret = snprintf_s(cfgPath, PATH_MAX, PATH_MAX - 1, HNP_PACKAGE_INFO_JSON_FILE_PATH, uid);
+    HNP_ERROR_CHECK(ret > 0, return HNP_ERRNO_BASE_SPRINTF_FAILED, "build cfg path failed");
+    ret = ReadFileToStream(cfgPath, &infoStream, &size);
     if (ret != 0) {
         if (ret == HNP_ERRNO_BASE_FILE_OPEN_FAILED || ret == HNP_ERRNO_BASE_GET_FILE_LEN_NULL) {
             return 0;
@@ -458,7 +460,7 @@ bool CanRecovery(const char *hnpPackageName, HnpCfgInfo *hnpCfg)
 {
     cJSON *json = NULL;
 
-    int ret = HnpPackageJsonGet(&json);
+    int ret = HnpPackageJsonGet(&json, hnpCfg->uid);
     HNP_ERROR_CHECK(ret == 0, return false, "Get Package Json failed");
     HNP_INFO_CHECK(json != NULL, return true, "No Config, ingore");
     HNP_INFO_CHECK(cJSON_IsArray(json), cJSON_Delete(json);
@@ -486,7 +488,7 @@ bool CanRecovery(const char *hnpPackageName, HnpCfgInfo *hnpCfg)
             HNP_ONLY_EXPER(strcmp(name->valuestring, hnpCfg->name) != 0, continue);
             // 找到对应hnp的安装信息时 要求当前hap与安装hap包名一致
             canRecovery = false;
-            HNP_LOGI("Found hnp Info %{public}s %{public}s", hapJson->valuestring, hnpPackageName);
+            HNP_LOGI("Found hnp Info %{public}s %{public}s", hapJson->valuestring, name->valuestring);
             if (strcmp(hapJson->valuestring, hnpPackageName) == 0) {
                 cJSON_Delete(json);
                 return true;
@@ -497,7 +499,7 @@ bool CanRecovery(const char *hnpPackageName, HnpCfgInfo *hnpCfg)
     return canRecovery;
 }
 
-int HnpPackageInfoGet(const char *packageName, HnpPackageInfo **packageInfoOut, int *count)
+int HnpPackageInfoGet(const char *packageName, HnpPackageInfo **packageInfoOut, int *count, int uid)
 {
     bool hnpExist = false;
     int hapIndex = 0;
@@ -505,7 +507,7 @@ int HnpPackageInfoGet(const char *packageName, HnpPackageInfo **packageInfoOut, 
     int sum = 0;
     cJSON *json = NULL;
 
-    int ret = HnpPackageJsonGet(&json);
+    int ret = HnpPackageJsonGet(&json, uid);
     if (ret != 0 || json == NULL) {
         return ret;
     }
@@ -552,7 +554,7 @@ int HnpPackageInfoGet(const char *packageName, HnpPackageInfo **packageInfoOut, 
     return HnpPackageInfoGetOut(packageInfos, sum, packageInfoOut, count);
 }
 
-int HnpPackageInfoHnpDelete(const char *packageName, const char *name, const char *version)
+int HnpPackageInfoHnpDelete(const char *packageName, const char *name, const char *version, int uid)
 {
     char *infoStream;
     int size;
@@ -563,7 +565,10 @@ int HnpPackageInfoHnpDelete(const char *packageName, const char *name, const cha
     int hnpIndex = 0;
     bool hnpExist = false;
 
-    int ret = ReadFileToStream(HNP_PACKAGE_INFO_JSON_FILE_PATH, &infoStream, &size);
+    char cfgPath[PATH_MAX] = {0};
+    int ret = snprintf_s(cfgPath, PATH_MAX, PATH_MAX - 1, HNP_PACKAGE_INFO_JSON_FILE_PATH, uid);
+    HNP_ERROR_CHECK(ret > 0, return HNP_ERRNO_BASE_SPRINTF_FAILED, "build cfg path failed");
+    ret = ReadFileToStream(cfgPath, &infoStream, &size);
     if (ret != 0) {
         if (ret == HNP_ERRNO_BASE_FILE_OPEN_FAILED || ret == HNP_ERRNO_BASE_GET_FILE_LEN_NULL) {
             return 0;
@@ -592,12 +597,12 @@ int HnpPackageInfoHnpDelete(const char *packageName, const char *name, const cha
         cJSON_DeleteItemFromArray(hnpItemArr, hnpIndex);
     }
 
-    ret = HnpHapJsonWrite(json);
+    ret = HnpHapJsonWrite(json, uid);
     cJSON_Delete(json);
     return ret;
 }
 
-int HnpPackageInfoDelete(const char *packageName)
+int HnpPackageInfoDelete(const char *packageName, int uid)
 {
     char *infoStream;
     int size;
@@ -605,7 +610,10 @@ int HnpPackageInfoDelete(const char *packageName)
     int hapIndex = 0;
     bool hapExist = false;
 
-    int ret = ReadFileToStream(HNP_PACKAGE_INFO_JSON_FILE_PATH, &infoStream, &size);
+    char cfgPath[PATH_MAX] = {0};
+    int ret = snprintf_s(cfgPath, PATH_MAX, PATH_MAX, HNP_PACKAGE_INFO_JSON_FILE_PATH, uid);
+    HNP_ERROR_CHECK(ret > 0, return HNP_ERRNO_BASE_SPRINTF_FAILED, "build hnp info path failed");
+    ret = ReadFileToStream(cfgPath, &infoStream, &size);
     if (ret != 0) {
         if (ret == HNP_ERRNO_BASE_FILE_OPEN_FAILED || ret == HNP_ERRNO_BASE_GET_FILE_LEN_NULL) {
             return 0;
@@ -626,7 +634,64 @@ int HnpPackageInfoDelete(const char *packageName)
         cJSON_DeleteItemFromArray(json, hapIndex);
     }
 
-    ret = HnpHapJsonWrite(json);
+    ret = HnpHapJsonWrite(json, uid);
+    cJSON_Delete(json);
+    return ret;
+}
+
+// 处理单个 hap 项
+static int ProcessHnpArray(cJSON *hnpJson, const int uid)
+{
+    HNP_ERROR_CHECK(hnpJson != NULL && cJSON_IsArray(hnpJson),
+        return HNP_ERRNO_BASE_PARSE_JSON_FAILED, "invalid json info: hnpList");
+    for (int j = cJSON_GetArraySize(hnpJson) - 1; j >= 0; j--) {
+        cJSON *currentHnp = cJSON_GetArrayItem(hnpJson, j);
+        HNP_ERROR_CHECK(currentHnp != NULL && cJSON_IsObject(currentHnp),
+            return HNP_ERRNO_BASE_PARSE_JSON_FAILED, "invalid json info: hnpItem");
+        cJSON *ves = cJSON_GetObjectItem(currentHnp, HAP_PACKAGE_INFO_INSTALLVERSION_PREFIX);
+        HNP_ERROR_CHECK(ves != NULL && cJSON_IsString(ves) && ves->valuestring != NULL,
+            return HNP_ERRNO_BASE_PARSE_JSON_FAILED, "invalid json info: install_version");
+        cJSON *name = cJSON_GetObjectItem(currentHnp, HAP_PACKAGE_INFO_NAME_PREFIX);
+        HNP_ERROR_CHECK(name != NULL && cJSON_IsString(name) && name->valuestring != NULL,
+            return HNP_ERRNO_BASE_PARSE_JSON_FAILED, "invalid json info: hnpname");
+        char hnpPath[PATH_MAX] = {0};
+        int ret = snprintf_s(hnpPath, PATH_MAX, PATH_MAX, HNP_PUBLIC_BASE_PATH,
+            uid, name->valuestring, name->valuestring, ves->valuestring);
+        HNP_ERROR_CHECK(ret > 0,
+            return HNP_ERRNO_BASE_SPRINTF_FAILED, "get HNP path failed");
+        HNP_LOGI("get HNPPath with %{public}s", hnpPath);
+        HNP_ONLY_EXPER(access(hnpPath, F_OK) != 0, cJSON_DeleteItemFromArray(hnpJson, j));
+    }
+    return 0;
+}
+
+int DoRebuildHnpInfoCfg(int uid)
+{
+    char *infoStream;
+    int size;
+    int ret = ReadFileToStream(HNP_OLD_CFG_PATH, &infoStream, &size);
+    if (ret != 0) {
+        HNP_ONLY_EXPER(ret == HNP_ERRNO_BASE_GET_FILE_LEN_NULL, return 0);
+        return HNP_ERRNO_BASE_READ_FILE_STREAM_FAILED;
+    }
+    cJSON *json = cJSON_Parse(infoStream);
+    free(infoStream);
+    infoStream = NULL;
+    HNP_ERROR_CHECK(json != NULL && cJSON_IsArray(json),
+        return HNP_ERRNO_BASE_PARSE_JSON_FAILED, "invalid hnp cfg parse");
+    for (int i = cJSON_GetArraySize(json) - 1; i >= 0; i--) {
+        cJSON *hapItem = cJSON_GetArrayItem(json, i);
+        HNP_ERROR_CHECK(hapItem != NULL && cJSON_IsObject(hapItem), cJSON_Delete(json);
+            return HNP_ERRNO_BASE_PARSE_JSON_FAILED, " invalid json info: hap");
+        cJSON *hnpJson = cJSON_GetObjectItem(hapItem, HAP_PACKAGE_INFO_HNP_PREFIX);
+        HNP_ERROR_CHECK(hnpJson != NULL && cJSON_IsArray(hnpJson), cJSON_Delete(json);
+            return HNP_ERRNO_BASE_PARSE_JSON_FAILED, "invalid json info: hnpList");
+        ret = ProcessHnpArray(hnpJson, uid);
+        HNP_ERROR_CHECK(ret == 0, cJSON_Delete(json);
+            return ret, "process hap item failed");
+        HNP_ONLY_EXPER(cJSON_GetArraySize(hnpJson) == 0, cJSON_DeleteItemFromArray(json, i));
+    }
+    ret = HnpHapJsonWrite(json, uid);
     cJSON_Delete(json);
     return ret;
 }
@@ -656,7 +721,7 @@ static char *HnpNeedUnInstallHnpVersionGet(cJSON *hnpItemArr, const char *name)
     return NULL;
 }
 
-char *HnpCurrentVersionGet(const char *name)
+char *HnpCurrentVersionGet(const char *name, int uid)
 {
     if (name == NULL) {
         return NULL;
@@ -666,7 +731,10 @@ char *HnpCurrentVersionGet(const char *name)
     cJSON *hapItem = NULL;
     char *version = NULL;
 
-    int ret = ReadFileToStream(HNP_PACKAGE_INFO_JSON_FILE_PATH, &infoStream, &size);
+    char cfgPath[PATH_MAX] = {0};
+    int ret = snprintf_s(cfgPath, PATH_MAX, PATH_MAX, HNP_PACKAGE_INFO_JSON_FILE_PATH, uid);
+    HNP_ERROR_CHECK(ret > 0, return NULL, "build hnp info path failed");
+    ret = ReadFileToStream(cfgPath, &infoStream, &size);
     if (ret != 0) {
         return NULL;
     }
@@ -704,7 +772,7 @@ char *HnpCurrentVersionGet(const char *name)
     return NULL;
 }
 
-char *HnpCurrentVersionUninstallCheck(const char *name)
+char *HnpCurrentVersionUninstallCheck(const char *name, int uid)
 {
     if (name == NULL) {
         return NULL;
@@ -713,8 +781,10 @@ char *HnpCurrentVersionUninstallCheck(const char *name)
     int size;
     cJSON *hapItem = NULL;
     char *version = NULL;
-
-    int ret = ReadFileToStream(HNP_PACKAGE_INFO_JSON_FILE_PATH, &infoStream, &size);
+    char cfgPath[PATH_MAX] = {0};
+    int ret = snprintf_s(cfgPath, PATH_MAX, PATH_MAX, HNP_PACKAGE_INFO_JSON_FILE_PATH, uid);
+    HNP_ERROR_CHECK(ret > 0, return NULL, "build hnp info path failed");
+    ret = ReadFileToStream(cfgPath, &infoStream, &size);
     if (ret != 0) {
         return NULL;
     }
