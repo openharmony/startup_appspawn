@@ -72,9 +72,9 @@ APPSPAWN_STATIC void ChildProcessHandler(int pipeFd[2], char *const argv[])
     close(pipeFd[0]);
     
     char fdEnvBuffer[FD_BUFFER_LEN] = {0};
-    size_t bytes = snprintf_s(fdEnvBuffer, FD_BUFFER_LEN, FD_BUFFER_LEN - 1,
+    int bytes = snprintf_s(fdEnvBuffer, FD_BUFFER_LEN, FD_BUFFER_LEN - 1,
         "%s=%d", HNP_INFO_RET_FD_ENV, pipeFd[1]);
-    HNPAPI_ERROR_CHECK(bytes > 0 && bytes < FD_BUFFER_LEN, _exit(-1),
+    HNPAPI_ERROR_CHECK(bytes > 0 && bytes < FD_BUFFER_LEN, close(pipeFd[1]); _exit(-1),
         "\r\n [HNP API] pipe env error\r\n");
 
     char *const apcEnv[] = {
@@ -104,7 +104,7 @@ static int StartHnpProcess(char *const argv[])
         return HNP_API_ERRNO_PIPE_CREATED_FAILED;
     }
 
-    pid = vfork();
+    pid = fork();
     if (pid < 0) {
         HNPAPI_LOG("\r\n [HNP API] fork unsuccess!\r\n");
         return HNP_API_ERRNO_FORK_FAILED;
