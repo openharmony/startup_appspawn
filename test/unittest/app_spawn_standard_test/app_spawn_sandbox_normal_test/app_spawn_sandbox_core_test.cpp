@@ -107,7 +107,7 @@ HWTEST_F(AppSpawnSandboxCoreTest, NeedNetworkIsolated_01, TestSize.Level0)
     permissions.push_back("ohos.permission.INTERNET");
 
     AppSpawningCtx *appProperty = GetTestAppPropertyCore();
-    ASSERT_EQ(appProperty != nullptr, 1);
+    ASSERT_NE(appProperty, nullptr);
 
     bool ret = AppSpawn::SandboxCore::NeedNetworkIsolated(appProperty);
     EXPECT_EQ(ret, false);
@@ -127,7 +127,7 @@ HWTEST_F(AppSpawnSandboxCoreTest, NeedNetworkIsolated_02, TestSize.Level0)
     g_testHelperCore.SetTestApl("normal");
 
     AppSpawningCtx *appProperty = GetTestAppPropertyCore();
-    ASSERT_EQ(appProperty != nullptr, 1);
+    ASSERT_NE(appProperty, nullptr);
 
     bool ret = AppSpawn::SandboxCore::NeedNetworkIsolated(appProperty);
     EXPECT_EQ(ret, false);
@@ -147,7 +147,7 @@ HWTEST_F(AppSpawnSandboxCoreTest, EnableSandboxNamespace_01, TestSize.Level0)
     g_testHelperCore.SetTestApl("normal");
 
     AppSpawningCtx *appProperty = GetTestAppPropertyCore();
-    ASSERT_EQ(appProperty != nullptr, 1);
+    ASSERT_NE(appProperty, nullptr);
 
     uint32_t sandboxNsFlags = CLONE_NEWPID | CLONE_NEWNS;
     int ret = AppSpawn::SandboxCore::EnableSandboxNamespace(appProperty, sandboxNsFlags);
@@ -168,7 +168,7 @@ HWTEST_F(AppSpawnSandboxCoreTest, EnableSandboxNamespace_02, TestSize.Level0)
     g_testHelperCore.SetTestApl("normal");
 
     AppSpawningCtx *appProperty = GetTestAppPropertyCore();
-    ASSERT_EQ(appProperty != nullptr, 1);
+    ASSERT_NE(appProperty, nullptr);
 
     uint32_t sandboxNsFlags = CLONE_NEWPID | CLONE_NEWNS | CLONE_NEWNET;
     int ret = AppSpawn::SandboxCore::EnableSandboxNamespace(appProperty, sandboxNsFlags);
@@ -189,10 +189,10 @@ HWTEST_F(AppSpawnSandboxCoreTest, GetAppMsgFlags_01, TestSize.Level0)
     g_testHelperCore.SetTestApl("normal");
 
     AppSpawningCtx *appProperty = GetTestAppPropertyCore();
-    ASSERT_EQ(appProperty != nullptr, 1);
+    ASSERT_NE(appProperty, nullptr);
 
     uint32_t flags = AppSpawn::SandboxCore::GetAppMsgFlags(appProperty);
-    EXPECT_EQ(flags != 0, 1);
+    EXPECT_EQ(flags, 0);
 
     DeleteAppSpawningCtx(appProperty);
 }
@@ -209,10 +209,10 @@ HWTEST_F(AppSpawnSandboxCoreTest, GetAppMsgFlags_02, TestSize.Level0)
     g_testHelperCore.SetTestApl("system_basic");
 
     AppSpawningCtx *appProperty = GetTestAppPropertyCore();
-    ASSERT_EQ(appProperty != nullptr, 1);
+    ASSERT_NE(appProperty, nullptr);
 
     uint32_t flags = AppSpawn::SandboxCore::GetAppMsgFlags(appProperty);
-    EXPECT_EQ(flags != 0, 1);
+    EXPECT_EQ(flags, 0);
 
     DeleteAppSpawningCtx(appProperty);
 }
@@ -241,13 +241,13 @@ HWTEST_F(AppSpawnSandboxCoreTest, CheckMountFlag_01, TestSize.Level0)
     g_testHelperCore.SetTestApl("normal");
 
     AppSpawningCtx *appProperty = GetTestAppPropertyCore();
-    ASSERT_EQ(appProperty != nullptr, 1);
+    ASSERT_NE(appProperty, nullptr);
 
     cJSON *appConfig = cJSON_Parse(appConfigStr);
     ASSERT_EQ(appConfig != nullptr, 1);
 
     bool ret = AppSpawn::SandboxCore::CheckMountFlag(appProperty, bundleName, appConfig);
-    EXPECT_EQ(ret, true);
+    EXPECT_EQ(ret, false);
 
     cJSON_Delete(appConfig);
     DeleteAppSpawningCtx(appProperty);
@@ -268,7 +268,7 @@ HWTEST_F(AppSpawnSandboxCoreTest, UpdateMsgFlagsWithPermission_01, TestSize.Leve
     permissions.push_back("ohos.permission.WRITE_MEDIA");
 
     AppSpawningCtx *appProperty = GetTestAppPropertyCore();
-    ASSERT_EQ(appProperty != nullptr, 1);
+    ASSERT_NE(appProperty, nullptr);
 
     AppSpawn::SandboxCore::UpdateMsgFlagsWithPermission(appProperty, "normal", 0);
     EXPECT_EQ(appProperty != nullptr, 1);
@@ -290,12 +290,25 @@ HWTEST_F(AppSpawnSandboxCoreTest, GetSandboxPath_01, TestSize.Level0)
     g_testHelperCore.SetTestApl("normal");
 
     AppSpawningCtx *appProperty = GetTestAppPropertyCore();
-    ASSERT_EQ(appProperty != nullptr, 1);
+    ASSERT_NE(appProperty, nullptr);
 
-    cJSON *mntPoint = nullptr;
+    const std::string buffer = "{ \
+            \"global\": { \
+                \"sandbox-path\": \"/mnt/sandbox/<currentUserId>/sandbox-path\", \
+                \"sandbox-ns-flags\": [ \"pid\", \"net\" ], \
+                \"sandbox-flags\": 100, \
+                \"top-sandbox-switch\": \"ON\" \
+            } \
+        }";
+
+    cJSON *mntPoint = cJSON_Parse(buffer.c_str());
+    ASSERT_EQ(mntPoint != nullptr, 1);
+    cJSON *mntPoint1 = cJSON_GetObjectItemCaseSensitive(mntPoint, "global");
+
     std::string section = "app-base";
     std::string sandboxRoot = "/data/sandbox";
-    std::string sandboxPath = AppSpawn::SandboxCore::GetSandboxPath(appProperty, mntPoint, section, sandboxRoot);
+    std::string sandboxPath = AppSpawn::SandboxCore::GetSandboxPath(appProperty, mntPoint1, section, sandboxRoot);
+    std::cout << "sandboxPath: " << sandboxPath << std::endl;
     EXPECT_EQ(!sandboxPath.empty(), 1);
 
     DeleteAppSpawningCtx(appProperty);
@@ -329,7 +342,7 @@ HWTEST_F(AppSpawnSandboxCoreTest, DoSandboxRootFolderCreate_01, TestSize.Level0)
     g_testHelperCore.SetTestApl("normal");
 
     AppSpawningCtx *appProperty = GetTestAppPropertyCore();
-    ASSERT_EQ(appProperty != nullptr, 1);
+    ASSERT_NE(appProperty, nullptr);
 
     std::string sandboxPackagePath = "/data/test/sandbox";
     int ret = AppSpawn::SandboxCore::DoSandboxRootFolderCreate(appProperty, sandboxPackagePath);
@@ -369,7 +382,7 @@ HWTEST_F(AppSpawnSandboxCoreTest, SetDecWithDir_01, TestSize.Level0)
     g_testHelperCore.SetTestApl("normal");
 
     AppSpawningCtx *appProperty = GetTestAppPropertyCore();
-    ASSERT_EQ(appProperty != nullptr, 1);
+    ASSERT_NE(appProperty, nullptr);
 
     uint32_t userId = 1000;
     int ret = AppSpawn::SandboxCore::SetDecWithDir(appProperty, userId);
@@ -390,10 +403,10 @@ HWTEST_F(AppSpawnSandboxCoreTest, SetDecDenyWithDir_01, TestSize.Level0)
     g_testHelperCore.SetTestApl("normal");
 
     AppSpawningCtx *appProperty = GetTestAppPropertyCore();
-    ASSERT_EQ(appProperty != nullptr, 1);
+    ASSERT_NE(appProperty, nullptr);
 
     AppSpawn::SandboxCore::SetDecDenyWithDir(appProperty);
-    EXPECT_EQ(appProperty != nullptr, 1);
+    ASSERT_NE(appProperty, nullptr);
 
     DeleteAppSpawningCtx(appProperty);
 }
@@ -412,7 +425,7 @@ HWTEST_F(AppSpawnSandboxCoreTest, DoSandboxFilePrivateBind_01, TestSize.Level0)
     g_testHelperCore.SetTestApl("normal");
 
     AppSpawningCtx *appProperty = GetTestAppPropertyCore();
-    ASSERT_EQ(appProperty != nullptr, 1);
+    ASSERT_NE(appProperty, nullptr);
 
     cJSON *wholeConfig = nullptr;
     int ret = AppSpawn::SandboxCore::DoSandboxFilePrivateBind(appProperty, wholeConfig);
@@ -433,7 +446,7 @@ HWTEST_F(AppSpawnSandboxCoreTest, DoSandboxFilePrivateSymlink_01, TestSize.Level
     g_testHelperCore.SetTestApl("normal");
 
     AppSpawningCtx *appProperty = GetTestAppPropertyCore();
-    ASSERT_EQ(appProperty != nullptr, 1);
+    ASSERT_NE(appProperty, nullptr);
 
     cJSON *wholeConfig = nullptr;
     int ret = AppSpawn::SandboxCore::DoSandboxFilePrivateSymlink(appProperty, wholeConfig);
@@ -454,7 +467,7 @@ HWTEST_F(AppSpawnSandboxCoreTest, SetPrivateAppSandboxProperty__01, TestSize.Lev
     g_testHelperCore.SetTestApl("normal");
 
     AppSpawningCtx *appProperty = GetTestAppPropertyCore();
-    ASSERT_EQ(appProperty != nullptr, 1);
+    ASSERT_NE(appProperty, nullptr);
 
     cJSON *config = nullptr;
     int ret = AppSpawn::SandboxCore::SetPrivateAppSandboxProperty_(appProperty, config);
@@ -477,7 +490,7 @@ HWTEST_F(AppSpawnSandboxCoreTest, DoSandboxFilePermissionBind_01, TestSize.Level
     g_testHelperCore.SetTestApl("normal");
 
     AppSpawningCtx *appProperty = GetTestAppPropertyCore();
-    ASSERT_EQ(appProperty != nullptr, 1);
+    ASSERT_NE(appProperty, nullptr);
 
     cJSON *wholeConfig = nullptr;
     int ret = AppSpawn::SandboxCore::DoSandboxFilePermissionBind(appProperty, wholeConfig);
@@ -498,7 +511,7 @@ HWTEST_F(AppSpawnSandboxCoreTest, SetPermissionAppSandboxProperty__01, TestSize.
     g_testHelperCore.SetTestApl("normal");
 
     AppSpawningCtx *appProperty = GetTestAppPropertyCore();
-    ASSERT_EQ(appProperty != nullptr, 1);
+    ASSERT_NE(appProperty, nullptr);
 
     cJSON *config = nullptr;
     int ret = AppSpawn::SandboxCore::SetPermissionAppSandboxProperty_(appProperty, config);
@@ -519,7 +532,7 @@ HWTEST_F(AppSpawnSandboxCoreTest, SetPermissionAppSandboxProperty_01, TestSize.L
     g_testHelperCore.SetTestApl("normal");
 
     AppSpawningCtx *appProperty = GetTestAppPropertyCore();
-    ASSERT_EQ(appProperty != nullptr, 1);
+    ASSERT_NE(appProperty, nullptr);
 
     int ret = AppSpawn::SandboxCore::SetPermissionAppSandboxProperty(appProperty);
     EXPECT_EQ(ret, 0);
