@@ -27,6 +27,7 @@ group("unittest") {
     deps = [ "unittest/app_spawn_client_test:AppSpawn_client_ut" ]
     if (!use_libfuzzer) {
       deps += [ "unittest/app_spawn_standard_test:AppSpawn_ut" ]
+      deps += [ "unittest/app_spawn_standard_test/app_spawn_sandbox_normal_test:AppSpawn_Sandbox_Normal_Test" ]
       deps += [ "unittest/app_spawn_standard_test:AppSpawn_common_ut" ]
       deps += [ "unittest/app_spawn_standard_test:AppSpawn_coldrun_ut" ]
       deps += [ "unittest/app_spawn_standard_test:AppSpawnDebugSandbox" ]
