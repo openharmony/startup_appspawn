@@ -29,6 +29,9 @@ extern "C" {
 #ifdef ASAN_DETECTOR
 #define TIMEOUT_DEF 60
 #define ASAN_TIMEOUT 60
+#elif APPSPAWN_TEST
+#define TIMEOUT_DEF 2
+#define ASAN_TIMEOUT 11
 #else
 #define TIMEOUT_DEF 2
 #define ASAN_TIMEOUT 10

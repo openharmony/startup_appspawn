@@ -589,18 +589,14 @@ HWTEST_F(AppSpawnInterfaceTest, App_Spawn_Interface_ClientSocket_001, TestSize.L
 
 HWTEST_F(AppSpawnInterfaceTest, App_Spawn_Interface_GetSpawnTimeout_001, TestSize.Level0)
 {
-    int timeout = GetSpawnTimeout(6);  // 6 test
-    EXPECT_EQ(timeout >= 6, 1);        // 6 test
-    timeout = GetSpawnTimeout(6);      // 6 test
-    EXPECT_EQ(timeout >= 6, 1);        // 6 test
-    timeout = GetSpawnTimeout(6);      // 6 test
-    EXPECT_EQ(timeout >= 6, 1);        // 6 test
-    timeout = GetSpawnTimeout(2);      // 2 test
-    EXPECT_EQ(timeout >= 2, 1);        // 2 test
-    timeout = GetSpawnTimeout(2);      // 2 test
-    EXPECT_EQ(timeout >= 2, 1);        // 2 test
-    timeout = GetSpawnTimeout(2);      // 2 test
-    EXPECT_EQ(timeout >= 2, 1);        // 2 test
+    int timeout = GetSpawnTimeout(6, false);    // 6 test
+    EXPECT_GE(timeout, 6);                      // 6 test
+    timeout = GetSpawnTimeout(6, true);         // 6 test
+    EXPECT_GE(timeout, 2);                      // 6 test
+    timeout = GetSpawnTimeout(2, false);        // 2 test
+    EXPECT_GE(timeout, 2);                      // 2 test
+    timeout = GetSpawnTimeout(2, true);         // 2 test
+    EXPECT_GE(timeout, 2);                      // 2 test
 }
 
 /**

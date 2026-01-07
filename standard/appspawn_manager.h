@@ -228,13 +228,13 @@ APPSPAWN_INLINE int IsNativeSpawnMode(const AppSpawnMgr *content)
 APPSPAWN_INLINE int IsHybridSpawnMode(const AppSpawnMgr *content)
 {
     return (content != NULL) &&
-        (content->content.mode == MODE_FOR_HYBRID_SPAWN);
+        (content->content.mode == MODE_FOR_HYBRID_SPAWN || content->content.mode == MODE_FOR_HYBRID_COLD_RUN);
 }
 
 APPSPAWN_INLINE int IsColdRunMode(const AppSpawnMgr *content)
 {
-    return (content != NULL) &&
-        (content->content.mode == MODE_FOR_APP_COLD_RUN || content->content.mode == MODE_FOR_NWEB_COLD_RUN);
+    return (content != NULL) && (content->content.mode == MODE_FOR_APP_COLD_RUN ||
+        content->content.mode == MODE_FOR_NWEB_COLD_RUN || content->content.mode == MODE_FOR_HYBRID_COLD_RUN);
 }
 
 APPSPAWN_INLINE int IsDeveloperModeOn(const AppSpawningCtx *property)
