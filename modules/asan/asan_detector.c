@@ -141,17 +141,17 @@ static int AsanSpawnGetSpawningFlag(AppSpawnMgr *content, AppSpawningCtx *proper
         if (property->forkCtx.coldRunPath) {
             free(property->forkCtx.coldRunPath);
         }
-#ifdef CJAPP_SPAWN
-        property->forkCtx.coldRunPath = strdup("/system/asan/bin/cjappspawn");
-#elif NATIVE_SPAWN
-        property->forkCtx.coldRunPath = strdup("/system/asan/bin/nativespawn");
-#elif NWEB_SPAWN
-        property->forkCtx.coldRunPath = strdup("/system/asan/bin/nwebspawn");
-#elif HYBRID_SPAWN
-        property->forkCtx.coldRunPath = strdup("/system/asan/bin/hybridspawn");
-#else
-        property->forkCtx.coldRunPath = strdup("/system/asan/bin/appspawn");
-#endif
+        if (IsAppSpawnMode(content)) {
+            property->forkCtx.coldRunPath = strdup("/system/asan/bin/appspawn");
+        } else if (IsNWebSpawnMode(content)) {
+            property->forkCtx.coldRunPath = strdup("/system/asan/bin/nwebspawn");
+        } else if (IsNativeSpawnMode(content)) {
+            property->forkCtx.coldRunPath = strdup("/system/asan/bin/nativespawn");
+        } else if (IsHybridSpawnMode(content)) {
+            property->forkCtx.coldRunPath = strdup("/system/asan/bin/hybridspawn");
+        } else {
+            property->forkCtx.coldRunPath = strdup("/system/asan/bin/cjappspawn");
+        }
         if (property->forkCtx.coldRunPath == NULL) {
             APPSPAWN_LOGE("Failed to set asan exec path %{public}s", GetProcessName(property));
         }

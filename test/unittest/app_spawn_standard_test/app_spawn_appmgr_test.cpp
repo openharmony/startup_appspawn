@@ -63,7 +63,6 @@ public:
  */
 HWTEST_F(AppSpawnAppMgrTest, App_Spawn_AppSpawnMgr_001, TestSize.Level0)
 {
-    int ret = 0;
     for (int i = 0; i < MODE_INVALID; i++) {
         AppSpawnMgr *mgr = CreateAppSpawnMgr(i);
         EXPECT_EQ(mgr != nullptr, 1);
@@ -72,20 +71,34 @@ HWTEST_F(AppSpawnAppMgrTest, App_Spawn_AppSpawnMgr_001, TestSize.Level0)
         EXPECT_EQ(content != nullptr, 1);
         EXPECT_EQ(content->mode == static_cast<RunMode>(i), 1);
 
-        if (i == MODE_FOR_NWEB_SPAWN || i == MODE_FOR_NWEB_COLD_RUN) {
-            ret = IsNWebSpawnMode(mgr);
-            EXPECT_EQ(1, ret);  //  true
+        if (i == MODE_FOR_APP_SPAWN || i == MODE_FOR_APP_COLD_RUN) {
+            EXPECT_EQ(1, IsAppSpawnMode(mgr));  //  true
         } else {
-            ret = IsNWebSpawnMode(mgr);
-            EXPECT_EQ(0, ret);  //  false
+            EXPECT_EQ(0, IsAppSpawnMode(mgr));  //  false
         }
 
-        if (i == MODE_FOR_APP_COLD_RUN || i == MODE_FOR_NWEB_COLD_RUN) {
-            ret = IsColdRunMode(mgr);
-            EXPECT_EQ(1, ret);  //  true
+        if (i == MODE_FOR_NWEB_SPAWN || i == MODE_FOR_NWEB_COLD_RUN) {
+            EXPECT_EQ(1, IsNWebSpawnMode(mgr)); //  true
         } else {
-            ret = IsColdRunMode(mgr);
-            EXPECT_EQ(0, ret);  //  false
+            EXPECT_EQ(0, IsNWebSpawnMode(mgr)); //  false
+        }
+
+        if (i == MODE_FOR_NATIVE_SPAWN) {
+            EXPECT_EQ(1, IsNativeSpawnMode(mgr));   //  true
+        } else {
+            EXPECT_EQ(0, IsNativeSpawnMode(mgr));   //  false
+        }
+
+        if (i == MODE_FOR_HYBRID_SPAWN || i == MODE_FOR_HYBRID_COLD_RUN) {
+            EXPECT_EQ(1, IsHybridSpawnMode(mgr));   //  true
+        } else {
+            EXPECT_EQ(0, IsHybridSpawnMode(mgr));   //  false
+        }
+
+        if (i == MODE_FOR_APP_COLD_RUN || i == MODE_FOR_NWEB_COLD_RUN || i == MODE_FOR_HYBRID_COLD_RUN) {
+            EXPECT_EQ(1, IsColdRunMode(mgr));   //  true
+        } else {
+            EXPECT_EQ(0, IsColdRunMode(mgr));   //  false
         }
 
         // get
@@ -103,10 +116,11 @@ HWTEST_F(AppSpawnAppMgrTest, App_Spawn_AppSpawnMgr_001, TestSize.Level0)
         content = GetAppSpawnContent();
         EXPECT_EQ(content == nullptr, 1);
 
-        ret = IsColdRunMode(mgr);
-        EXPECT_EQ(0, ret);  //  false
-        ret = IsNWebSpawnMode(mgr);
-        EXPECT_EQ(0, ret);  //  false
+        EXPECT_EQ(0, IsColdRunMode(mgr));   //  false
+        EXPECT_EQ(0, IsAppSpawnMode(mgr));  //  false
+        EXPECT_EQ(0, IsNWebSpawnMode(mgr)); //  false
+        EXPECT_EQ(0, IsNativeSpawnMode(mgr));   //  false
+        EXPECT_EQ(0, IsHybridSpawnMode(mgr));   //  false
 
         // delete not exist
         DeleteAppSpawnMgr(mgr);

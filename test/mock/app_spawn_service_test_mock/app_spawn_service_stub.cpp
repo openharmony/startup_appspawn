@@ -171,12 +171,12 @@ void OnReceiveRequest(const TaskHandle taskHandle, const uint8_t *buffer, uint32
     }
 }
 
-char *GetMapMem(uint32_t clientId, const char *processName, uint32_t size, bool readOnly, bool isNweb)
+char *GetMapMem(uint32_t clientId, const char *processName, uint32_t size, bool readOnly, RunMode runMode)
 {
     return nullptr;
 }
 
-int WriteMsgToChild(AppSpawningCtx *property, bool isNweb)
+int WriteMsgToChild(AppSpawningCtx *property, RunMode mode)
 {
     return 0;
 }
