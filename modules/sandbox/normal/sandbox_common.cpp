@@ -917,26 +917,19 @@ std::string SandboxCommon::ParseParamTemplate(const std::string &templateStr)
         return templateStr;
     }
 
-    std::regex pattern("<([^>]+)>");
-    std::smatch matches;
-    std::string result = templateStr;
-
-    // Find all parameters in the <param> format and replace them.
-    while (regex_search(result, matches, pattern)) {
-        if (matches.size() > 1) {
-            std::string paramName = matches[1].str();
-            std::string paramValue = system::GetParameter(paramName, "");
-            if (paramValue.empty()) {
-                return "";
-            }
-
-            // Replace the first matching parameter
-            result = regex_replace(result, std::regex("<" + regex_replace(paramName, std::regex("\\."), "\\.") +
-                                   ">"), paramValue, std::regex_constants::format_first_only);
-        }
+    std::string tmpStr = templateStr;
+    if (templateStr.size() > SandboxCommonDef::MIN_PARAM_SRC_PATH_LEN && templateStr.front() == '<' &&
+        templateStr.back() == '>') {
+        tmpStr = templateStr.substr(1, templateStr.size() - SandboxCommonDef::MIN_PARAM_SRC_PATH_LEN);
     }
 
-    return result;
+    std::string paramValue = system::GetParameter(tmpStr, "");
+    if (paramValue.empty()) {
+        APPSPAWN_LOGE("GetParameter %{public}s failed.", tmpStr.c_str());
+        paramValue = templateStr;
+    }
+
+    return paramValue;
 }
 
 // Path concatenation function (handling path separators)

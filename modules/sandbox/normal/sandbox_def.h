@@ -34,6 +34,8 @@ constexpr int32_t MAX_MOUNT_TIME = 5000;  // 5000us
 constexpr int32_t LOCK_STATUS_SIZE = 16;
 constexpr mode_t ALL_FILE_MODE_BITS = 07777;
 constexpr int32_t MAX_MOUNT_INVALID_COUNT = 8;
+constexpr int32_t MIN_PARAM_SRC_PATH_LEN = 2;
+
 // 沙盒配置文件
 const std::string APP_JSON_CONFIG = "/appdata-sandbox.json";
 const std::string APP_ISOLATED_JSON_CONFIG = "/appdata-sandbox-isolated.json";
