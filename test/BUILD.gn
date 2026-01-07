@@ -34,7 +34,7 @@ group("unittest") {
     }
     deps += [ "unittest/hnp_test:HnpTest" ]
     deps += [ "unittest/hnp_test/private_hnp_test:HnpPrivateTest" ]
-
+    deps += [ "unittest/hnp_test/hnp_rebuild_test:HnpRebuildCfgTest" ]
     deps += [ "unittest/single_test/hnp_installer:hnp_installer_test" ]
     deps += [ "unittest/single_test/appspawn_service:appspawn_service_single_test" ]
     deps += [ "unittest/devicedebug_test:DevicedebugTest" ]

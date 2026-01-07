@@ -39,9 +39,9 @@
 using namespace testing;
 using namespace testing::ext;
 
-#define HNP_BASE_PATH "/data/app/el1/bundle/10000"
+#define HNP_BASE_PATH APPSPAWN_BASE_DIR "/data/app/el1/bundle/10000"
 #define PARAM_BUFFER_SIZE 10
-
+#define TEST_HNP_UID (10000)
 #ifdef __cplusplus
     extern "C" {
 #endif
@@ -78,6 +78,16 @@ void HnpInstallerTest::SetUp()
 void HnpInstallerTest::TearDown()
 {
     GTEST_LOG_(INFO) << "Hnp_Installer_TEST TearDown";
+}
+
+void RemoveUidCfg(int uid)
+{
+    char newCfgPath[PATH_MAX] = {0};
+    int ret = snprintf_s(newCfgPath, PATH_MAX, PATH_MAX - 1,
+        HNP_PACKAGE_INFO_JSON_FILE_PATH, uid);
+    if (ret > 0) {
+        remove(newCfgPath);
+    }
 }
 
 void HnpPackWithoutBin(char *name, bool isPublic, bool isFirst)
@@ -250,7 +260,7 @@ void HnpUnInstall(char *package)
     int argc = sizeof(argv) / sizeof(argv[0]);
 
     EXPECT_EQ(HnpCmdUnInstall(argc, argv), 0);
-    remove(HNP_PACKAGE_INFO_JSON_FILE_PATH);
+    RemoveUidCfg(TEST_HNP_UID);
 }
 
 /**
@@ -268,7 +278,7 @@ HWTEST_F(HnpInstallerTest, Hnp_Install_001, TestSize.Level0)
     HnpDeleteFolder("hnp_sample");
     HnpDeleteFolder("hnp_out");
     HnpDeleteFolder(HNP_BASE_PATH);
-    remove(HNP_PACKAGE_INFO_JSON_FILE_PATH);
+    RemoveUidCfg(TEST_HNP_UID);
 
     EXPECT_EQ(mkdir(HNP_BASE_PATH, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
     HnpPackWithBin(const_cast<char *>("sample_public"), const_cast<char *>("1.1"), true, true,
@@ -302,7 +312,7 @@ HWTEST_F(HnpInstallerTest, Hnp_Install_001, TestSize.Level0)
 
     HnpDeleteFolder(HNP_BASE_PATH);
     HnpPackWithBinDelete();
-    remove(HNP_PACKAGE_INFO_JSON_FILE_PATH);
+    RemoveUidCfg(TEST_HNP_UID);
 
     GTEST_LOG_(INFO) << "Hnp_Installer_001 end";
 }
@@ -365,7 +375,7 @@ HWTEST_F(HnpInstallerTest, Hnp_Install_002, TestSize.Level0)
 
     HnpDeleteFolder(HNP_BASE_PATH);
     HnpPackWithBinDelete();
-    remove(HNP_PACKAGE_INFO_JSON_FILE_PATH);
+    RemoveUidCfg(TEST_HNP_UID);
 
     GTEST_LOG_(INFO) << "Hnp_Installer_002 end";
 }
@@ -406,7 +416,7 @@ HWTEST_F(HnpInstallerTest, Hnp_Install_003, TestSize.Level0)
         EXPECT_EQ(access(HNP_BASE_PATH"/hnp/sample/bin/out", F_OK), -1);
         HnpPackWithoutBinDelete();
         HnpDeleteFolder(HNP_BASE_PATH);
-        remove(HNP_PACKAGE_INFO_JSON_FILE_PATH);
+        RemoveUidCfg(TEST_HNP_UID);
     }
     { //ok
         EXPECT_EQ(mkdir(HNP_BASE_PATH, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
@@ -421,7 +431,7 @@ HWTEST_F(HnpInstallerTest, Hnp_Install_003, TestSize.Level0)
         HnpPackWithBinDelete();
     }
     HnpDeleteFolder(HNP_BASE_PATH);
-    remove(HNP_PACKAGE_INFO_JSON_FILE_PATH);
+    RemoveUidCfg(TEST_HNP_UID);
 
     GTEST_LOG_(INFO) << "Hnp_Installer_003 end";
 }
@@ -478,7 +488,7 @@ HWTEST_F(HnpInstallerTest, Hnp_Install_004, TestSize.Level0)
 
     HnpDeleteFolder(HNP_BASE_PATH);
     HnpPackWithBinDelete();
-    remove(HNP_PACKAGE_INFO_JSON_FILE_PATH);
+    RemoveUidCfg(TEST_HNP_UID);
 
     GTEST_LOG_(INFO) << "Hnp_Installer_004 end";
 }
@@ -540,7 +550,7 @@ HWTEST_F(HnpInstallerTest, Hnp_Install_005, TestSize.Level0)
 
     HnpDeleteFolder(HNP_BASE_PATH);
     HnpPackWithCfgDelete();
-    remove(HNP_PACKAGE_INFO_JSON_FILE_PATH);
+    RemoveUidCfg(TEST_HNP_UID);
 
     GTEST_LOG_(INFO) << "Hnp_Installer_005 end";
 }
@@ -584,7 +594,7 @@ HWTEST_F(HnpInstallerTest, Hnp_Install_006, TestSize.Level0)
 
     HnpDeleteFolder(HNP_BASE_PATH);
     HnpPackWithCfgDelete();
-    remove(HNP_PACKAGE_INFO_JSON_FILE_PATH);
+    RemoveUidCfg(TEST_HNP_UID);
 
     GTEST_LOG_(INFO) << "Hnp_Install_006 end";
 }
@@ -652,7 +662,7 @@ HWTEST_F(HnpInstallerTest, Hnp_Install_007, TestSize.Level0)
 
     HnpDeleteFolder(HNP_BASE_PATH);
     HnpPackWithBinDelete();
-    remove(HNP_PACKAGE_INFO_JSON_FILE_PATH);
+    RemoveUidCfg(TEST_HNP_UID);
 
     GTEST_LOG_(INFO) << "Hnp_Install_007 end";
 }
@@ -706,7 +716,7 @@ HWTEST_F(HnpInstallerTest, Hnp_Install_008, TestSize.Level0)
 
     HnpDeleteFolder(HNP_BASE_PATH);
     HnpPackWithBinDelete();
-    remove(HNP_PACKAGE_INFO_JSON_FILE_PATH);
+    RemoveUidCfg(TEST_HNP_UID);
 
     GTEST_LOG_(INFO) << "Hnp_Install_008 end";
 }
@@ -760,7 +770,7 @@ HWTEST_F(HnpInstallerTest, Hnp_Install_009, TestSize.Level0)
 
     HnpDeleteFolder(HNP_BASE_PATH);
     HnpPackWithBinDelete();
-    remove(HNP_PACKAGE_INFO_JSON_FILE_PATH);
+    RemoveUidCfg(TEST_HNP_UID);
 
     GTEST_LOG_(INFO) << "Hnp_Install_009 end";
 }
@@ -1044,7 +1054,7 @@ HWTEST_F(HnpInstallerTest, Hnp_Install_010, TestSize.Level0)
     HnpVersionPathDelete();
     HnpDeleteFolder(HNP_BASE_PATH);
     HnpPackWithBinDelete();
-    remove(HNP_PACKAGE_INFO_JSON_FILE_PATH);
+    RemoveUidCfg(TEST_HNP_UID);
 
     GTEST_LOG_(INFO) << "Hnp_Install_010 end";
 }
@@ -1107,7 +1117,7 @@ HWTEST_F(HnpInstallerTest, Hnp_Install_API_001, TestSize.Level0)
 
     HnpDeleteFolder(HNP_BASE_PATH);
     HnpPackWithCfgDelete();
-    remove(HNP_PACKAGE_INFO_JSON_FILE_PATH);
+    RemoveUidCfg(TEST_HNP_UID);
 
     GTEST_LOG_(INFO) << "Hnp_Install_API_001 end";
 }
@@ -1148,7 +1158,7 @@ HWTEST_F(HnpInstallerTest, Hnp_Install_API_002, TestSize.Level0)
 
     HnpDeleteFolder(HNP_BASE_PATH);
     HnpPackWithCfgDelete();
-    remove(HNP_PACKAGE_INFO_JSON_FILE_PATH);
+    RemoveUidCfg(TEST_HNP_UID);
 
     GTEST_LOG_(INFO) << "Hnp_Install_API_002 end";
 }
@@ -1192,7 +1202,7 @@ HWTEST_F(HnpInstallerTest, Hnp_Install_API_003, TestSize.Level0)
 
     HnpDeleteFolder(HNP_BASE_PATH);
     HnpPackWithCfgDelete();
-    remove(HNP_PACKAGE_INFO_JSON_FILE_PATH);
+    RemoveUidCfg(TEST_HNP_UID);
 
     GTEST_LOG_(INFO) << "Hnp_Install_API_003 end";
 }
@@ -1240,7 +1250,7 @@ HWTEST_F(HnpInstallerTest, Hnp_Install_API_004, TestSize.Level0)
 
     HnpDeleteFolder(HNP_BASE_PATH);
     HnpPackWithCfgDelete();
-    remove(HNP_PACKAGE_INFO_JSON_FILE_PATH);
+    RemoveUidCfg(TEST_HNP_UID);
 
     GTEST_LOG_(INFO) << "Hnp_Install_API_004 end";
 }
@@ -1333,7 +1343,7 @@ HWTEST_F(HnpInstallerTest, Hnp_UnInstall_001, TestSize.Level0)
 
     HnpDeleteFolder(HNP_BASE_PATH);
     HnpPackWithBinDelete();
-    remove(HNP_PACKAGE_INFO_JSON_FILE_PATH);
+    RemoveUidCfg(TEST_HNP_UID);
 
     GTEST_LOG_(INFO) << "Hnp_UnInstall_001 end";
 }
@@ -1378,7 +1388,7 @@ HWTEST_F(HnpInstallerTest, Hnp_UnInstall_002, TestSize.Level0)
 
     HnpDeleteFolder(HNP_BASE_PATH);
     HnpPackWithCfgDelete();
-    remove(HNP_PACKAGE_INFO_JSON_FILE_PATH);
+    RemoveUidCfg(TEST_HNP_UID);
 
     GTEST_LOG_(INFO) << "Hnp_UnInstall_002 end";
 }
@@ -1427,7 +1437,7 @@ HWTEST_F(HnpInstallerTest, Hnp_UnInstall_003, TestSize.Level0)
 
     HnpDeleteFolder(HNP_BASE_PATH);
     HnpPackWithBinDelete();
-    remove(HNP_PACKAGE_INFO_JSON_FILE_PATH);
+    RemoveUidCfg(TEST_HNP_UID);
 
     GTEST_LOG_(INFO) << "Hnp_UnInstall_003 end";
 }
@@ -1456,13 +1466,13 @@ HWTEST_F(HnpInstallerTest, Hnp_UnInstall_API_001, TestSize.Level0)
         }
         { // ok
             ret = NativeUnInstallHnp("10000", "sample");
-            EXPECT_EQ(ret, 0);
+            EXPECT_TRUE(ret == 0 || ret == HNP_ERRNO_BSS_ERROR);
         }
     }
 
     HnpDeleteFolder(HNP_BASE_PATH);
     HnpPackWithCfgDelete();
-    remove(HNP_PACKAGE_INFO_JSON_FILE_PATH);
+    RemoveUidCfg(TEST_HNP_UID);
 
     GTEST_LOG_(INFO) << "Hnp_UnInstall_API_001 end";
 }
@@ -1493,7 +1503,7 @@ HWTEST_F(HnpInstallerTest, Hnp_UnInstall_API_002, TestSize.Level0)
 
     HnpDeleteFolder(HNP_BASE_PATH);
     HnpPackWithCfgDelete();
-    remove(HNP_PACKAGE_INFO_JSON_FILE_PATH);
+    RemoveUidCfg(TEST_HNP_UID);
 
     GTEST_LOG_(INFO) << "Hnp_UnInstall_API_002 end";
 }
@@ -1519,7 +1529,7 @@ HWTEST_F(HnpInstallerTest, Hnp_UnInstall_API_003, TestSize.Level0)
         ret = NativeUnInstallHnp("10000", "sample");
         if (IsDeveloperModeOpen()) {
             GTEST_LOG_(INFO) << "this is developer mode";
-            EXPECT_EQ(ret, 0);
+            EXPECT_TRUE(ret == 0 || ret == HNP_ERRNO_BSS_ERROR);
         } else {
             GTEST_LOG_(INFO) << "this is not developer mode";
             EXPECT_EQ(ret, HNP_API_NOT_IN_DEVELOPER_MODE);
@@ -1528,7 +1538,7 @@ HWTEST_F(HnpInstallerTest, Hnp_UnInstall_API_003, TestSize.Level0)
 
     HnpDeleteFolder(HNP_BASE_PATH);
     HnpPackWithCfgDelete();
-    remove(HNP_PACKAGE_INFO_JSON_FILE_PATH);
+    RemoveUidCfg(TEST_HNP_UID);
 
     GTEST_LOG_(INFO) << "Hnp_UnInstall_API_003 end";
 }

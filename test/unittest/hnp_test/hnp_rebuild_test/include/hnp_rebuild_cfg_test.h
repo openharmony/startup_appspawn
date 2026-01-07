@@ -20,6 +20,8 @@
 extern "C" {
 #endif
 
+int RebuildHnpInfoCfg(int uid);
+
 #ifdef __cplusplus
 }
 #endif

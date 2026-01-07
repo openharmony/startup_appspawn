@@ -76,7 +76,7 @@ hnp目录准备完成后，参考第4步在hap打包命令中用--hnp-path指定
 
 ## 3 Native软件包的使用方法
 ### 3.1 在hap应用中访问Native二进制
-以c++语言为例，可以在hap应用代码中通过system、execv等函数执行二进制。默认公有hnp包软链接路径为/data/service/hnp/bin，默认私有hnp包软链接路径为/data/app/bin，默认软链接路径已加入环境变量中。
+以c++语言为例，可以在hap应用代码中通过system、execv等函数执行二进制。默认公有hnp包软链接路径为/data/service/hnp/bin，默认软链接路径已加入环境变量中。私有hnp请使用实际路径：/data/app/xxx.org/xxx_yyy/{二进制文件在hnp包中的相对路径如：bin/hnpsample},其中xxx对应hnp.json中“name”，yyy对应hnp.json中“version”。
 ### 3.2 hdc shell执行方法
 
 **操作步骤：**
