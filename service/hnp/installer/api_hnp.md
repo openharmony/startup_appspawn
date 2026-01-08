@@ -44,7 +44,7 @@ int NativeInstallHnp(const char *userId, const char *hnpRootPath, const HapInfo 
   hapInfo：hap应用软件信息，结构如下。
   ```
     #define PACK_NAME_LENTH 256
-    #define HAP_PATH_LENTH 256
+    #define HAP_PATH_LENTH 512
     #define ABI_LENTH 128
 
     typedef struct HapInfo {
