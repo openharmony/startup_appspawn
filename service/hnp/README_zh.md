@@ -60,7 +60,7 @@ hnp目录准备完成后，参考第4步在hap打包命令中用--hnp-path指定
 2. 公有hnp包根路径的环境变量HNP_PUBLIC_HOME=/data/service/hnp，私有hnp包根路径的环境变量HNP_PRIVATE_HOME=/data/app。HNP_PRIVATE_HOME环境变量排序在HNP_PUBLIC_HOME前面，意味着如果存在同名二进制分别在公有hnp路径下和私有hnp路径下，优先执行私有hnp路径下二进制。
 3. 公有hnp包可以被所有应用访问，私有hnp包只允许被安装该hnp包的hap应用访问。
 4. 卸载hap应用会同步卸载该hap应用安装的所有hnp包，如果该hnp包中二进制正在被其他应用使用，则会导致hap应用卸载失败。
-5. Hap应用A和B安装先后安装同名公有hnp包（hnp.json文件中"name"）。后安装的应B用会无法安装，需要卸载hap应用A或者将应用B中的公有hnp修改为私有hnp方可继续安装。
+5. Hap应用A和B安装先后安装同名公有hnp包（hnp.json文件中"name"）。后安装的应用B会无法安装，需要卸载hap应用A或者将应用B中的公有hnp修改为私有hnp方可继续安装。
 
 #### 2.1.3 hap包签名流程
 
@@ -76,7 +76,28 @@ hnp目录准备完成后，参考第4步在hap打包命令中用--hnp-path指定
 
 ## 3 Native软件包的使用方法
 ### 3.1 在hap应用中访问Native二进制
-以c++语言为例，可以在hap应用代码中通过system、execv等函数执行二进制。默认公有hnp包软链接路径为/data/service/hnp/bin，默认软链接路径已加入环境变量中。私有hnp请使用实际路径：/data/app/xxx.org/xxx_yyy/{二进制文件在hnp包中的相对路径如：bin/hnpsample},其中xxx对应hnp.json中“name”，yyy对应hnp.json中“version”。
+以c++语言为例，可以在hap应用代码中通过execv、execve等函数执行二进制。默认公有hnp包软链接路径为/data/service/hnp/bin，默认软链接路径已加入环境变量中。私有hnp请使用实际路径：/data/app/xxx.org/xxx_yyy/{二进制文件在hnp包中的相对路径如：bin/hnpsample}，其中xxx对应hnp.json中“name”，yyy对应hnp.json中“version”。示例代码如下：
+```c
+    pid_t child = fork();
+    if (child < 0) {
+      OH_LOG_ERROR(LOG_APP, "fork for child process failed %d", errno);
+      return;
+    }
+    if (child == 0) {
+        // do execv
+        int ret = execv("/data/app/test.org/test_1.1/bin/testBin", NULL);
+        OH_LOG_ERROR(LOG_APP, "execv failed errno %d", errno);
+        exit(errno);
+    } else {
+        int status;
+        if (waitpid(child, &status, 0) == -1) {
+          OH_LOG_ERROR(LOG_APP, "waitpid failed errno %d", errno);
+          return;
+        }
+        // process child exit
+        ...
+    }
+```
 ### 3.2 hdc shell执行方法
 
 **操作步骤：**
