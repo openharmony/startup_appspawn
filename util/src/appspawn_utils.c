@@ -411,7 +411,7 @@ uint32_t GetSpawnTimeout(uint32_t def, bool isColdRun)
 {
     uint32_t value = def;
     char data[32] = {};  // 32 length
-    char *key = (isColdRun ? "persist.appspawn.reqMgr.asanTimeout" : "persist.appspawn.reqMgr.timeout");
+    char *key = (isColdRun ? "const.appspawn.reqMgr.asanTimeout" : "persist.appspawn.reqMgr.timeout");
     int ret = GetParameter(key, "0", data, sizeof(data));
     if (ret > 0 && strcmp(data, "0") != 0) {
         errno = 0;
