@@ -32,9 +32,11 @@ extern "C" {
 #ifdef APPSPAWN_TEST    //macro for test
 #define LINUX_APPSPAWN_WATCHDOG_FILE    "./TestDataFile.txt"
 #define HM_APPSPAWN_WATCHDOG_FILE    "./TestDataFile.txt"
+#define APPSPAWN_WATCHDOG_KICKTIME    (1 * 1000)  //1s
 #else
 #define LINUX_APPSPAWN_WATCHDOG_FILE    "/sys/kernel/hungtask/userlist"
 #define HM_APPSPAWN_WATCHDOG_FILE    "/proc/sys/hguard/user_list"
+#define APPSPAWN_WATCHDOG_KICKTIME    (10 * 1000)  //10s
 #endif
 
 #define LINUX_APPSPAWN_WATCHDOG_ON    "on,30"
@@ -45,8 +47,6 @@ extern "C" {
 #define HM_NWEBSPAWN_WATCHDOG_KICK    "kick,nwebspawn"
 #define HM_HYBRIDSPAWN_WATCHDOG_ON  "on,10,hybridspawn"
 #define HM_HYBRIDSPAWN_WATCHDOG_KICK    "kick,hybridspawn"
-
-#define APPSPAWN_WATCHDOG_KICKTIME    (10 * 1000)  //10s
 
 #ifdef __cplusplus
 }

@@ -118,7 +118,7 @@ HWTEST_F(AppSpawnKickDogTest, App_Spawn_AppSpawnKickDog_001, TestSize.Level0)
         EXPECT_EQ(CheckFileContent(HM_APPSPAWN_WATCHDOG_FILE, HM_APPSPAWN_WATCHDOG_ON), 0);
         EXPECT_EQ(CheckFileContent(HM_APPSPAWN_WATCHDOG_FILE, HM_APPSPAWN_WATCHDOG_KICK), -1);
     }
-    sleep(12); // wait for kick dog(kick every 10 seconds)
+    usleep(12 * 100 * 1000); // wait for kick dog(kick every 1 seconds)
     if (CheckDeviceInLinux()) {
         EXPECT_EQ(CheckFileContent(HM_APPSPAWN_WATCHDOG_FILE, LINUX_APPSPAWN_WATCHDOG_ON), -1);
         EXPECT_EQ(CheckFileContent(HM_APPSPAWN_WATCHDOG_FILE, LINUX_APPSPAWN_WATCHDOG_KICK), 0);
@@ -126,7 +126,7 @@ HWTEST_F(AppSpawnKickDogTest, App_Spawn_AppSpawnKickDog_001, TestSize.Level0)
         EXPECT_EQ(CheckFileContent(HM_APPSPAWN_WATCHDOG_FILE, HM_APPSPAWN_WATCHDOG_ON), -1);
         EXPECT_EQ(CheckFileContent(HM_APPSPAWN_WATCHDOG_FILE, HM_APPSPAWN_WATCHDOG_KICK), 0);
     }
-    sleep(10);
+    usleep(10 * 100 * 1000);
     if (CheckDeviceInLinux()) {
         EXPECT_EQ(CheckFileContent(HM_APPSPAWN_WATCHDOG_FILE, LINUX_APPSPAWN_WATCHDOG_KICK), 0);
     } else {
@@ -152,7 +152,7 @@ HWTEST_F(AppSpawnKickDogTest, App_Spawn_AppSpawnKickDog_002, TestSize.Level0)
         std::make_unique<OHOS::AppSpawnTestServer>("nwebspawn -mode nwebspawn");
     AddPreloadHook(HOOK_PRIO_COMMON, SpawnKickDogStart);
     testServer->Start(nullptr);
-    sleep(1); // wait 1s for writing kick log before reading
+    usleep(1 * 100 * 1000); // wait 1s for writing kick log before reading
     if (CheckDeviceInLinux()) {
         EXPECT_EQ(CheckFileContent(HM_APPSPAWN_WATCHDOG_FILE, LINUX_APPSPAWN_WATCHDOG_ON), 0);
         EXPECT_EQ(CheckFileContent(HM_APPSPAWN_WATCHDOG_FILE, LINUX_APPSPAWN_WATCHDOG_KICK), -1);
@@ -160,7 +160,7 @@ HWTEST_F(AppSpawnKickDogTest, App_Spawn_AppSpawnKickDog_002, TestSize.Level0)
         EXPECT_EQ(CheckFileContent(HM_APPSPAWN_WATCHDOG_FILE, HM_NWEBSPAWN_WATCHDOG_ON), 0);
         EXPECT_EQ(CheckFileContent(HM_APPSPAWN_WATCHDOG_FILE, HM_NWEBSPAWN_WATCHDOG_KICK), -1);
     }
-    sleep(12); // wait for kick dog(kick every 10 seconds)
+    usleep(12 * 100 * 1000); // wait for kick dog(kick every 1 seconds)
     if (CheckDeviceInLinux()) {
         EXPECT_EQ(CheckFileContent(HM_APPSPAWN_WATCHDOG_FILE, LINUX_APPSPAWN_WATCHDOG_ON), -1);
         EXPECT_EQ(CheckFileContent(HM_APPSPAWN_WATCHDOG_FILE, LINUX_APPSPAWN_WATCHDOG_KICK), 0);
@@ -168,7 +168,7 @@ HWTEST_F(AppSpawnKickDogTest, App_Spawn_AppSpawnKickDog_002, TestSize.Level0)
         EXPECT_EQ(CheckFileContent(HM_APPSPAWN_WATCHDOG_FILE, HM_NWEBSPAWN_WATCHDOG_ON), -1);
         EXPECT_EQ(CheckFileContent(HM_APPSPAWN_WATCHDOG_FILE, HM_NWEBSPAWN_WATCHDOG_KICK), 0);
     }
-    sleep(10);
+    usleep(10 * 100 * 1000);
     if (CheckDeviceInLinux()) {
         EXPECT_EQ(CheckFileContent(HM_APPSPAWN_WATCHDOG_FILE, LINUX_APPSPAWN_WATCHDOG_KICK), 0);
     } else {
