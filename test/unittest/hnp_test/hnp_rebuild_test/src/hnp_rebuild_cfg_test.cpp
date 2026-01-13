@@ -28,16 +28,22 @@
 
 #define TEST_UID_INDEX_1 (10000)
 #define TEST_UID_INDEX_2 (10001)
+
 #define TEST_HNP_NAME1 "testhnp1"
 #define TEST_HNP_NAME2 "testhnp2"
+
 #define TEST_HAP_NAME1 "com.example.testhap1"
 #define TEST_HAP_NAME2 "com.example.testhap2"
+
 #define TEST_HNP_INSTALLVERSION1 "1.1"
 #define TEST_HNP_INSTALLVERSION2 "1.2"
+
 #define TEST_HNP_INDEX_1 (1)
 #define TEST_HNP_INDEX_2 (2)
+
 #ifndef HNP_TEST_DIR_MODE
 #define HNP_TEST_DIR_MODE (0771)
+
 #endif
 using namespace testing;
 using namespace testing::ext;
@@ -45,6 +51,7 @@ using namespace testing::ext;
 #ifdef __cplusplus
     extern "C" {
 #endif
+
 int HnpHapJsonWrite(cJSON *json, const char* fileName)
 {
     if (fileName == nullptr || json == nullptr) {
@@ -56,6 +63,7 @@ int HnpHapJsonWrite(cJSON *json, const char* fileName)
         printf("invalid fileName");
         return -1;
     }
+
     char *jsonStr = cJSON_Print(json);
     if (jsonStr == nullptr) {
         printf("get json str unsuccess!");
@@ -67,6 +75,7 @@ int HnpHapJsonWrite(cJSON *json, const char* fileName)
     size_t writeLen = fwrite(jsonStr, sizeof(char), jsonStrSize, fp);
     (void)fclose(fp);
     free(jsonStr);
+
     if (writeLen != jsonStrSize) {
         printf("package info write file:%s unsuccess!", fileName);
         return -1;
@@ -196,6 +205,7 @@ void RemoveUidCfg(int uid)
         remove(newCfgPath);
     }
 }
+
 static void CreateTestFile(const char *fileName, const char *data)
 {
     FILE *tmpFile = fopen(fileName, "wr");
@@ -228,6 +238,7 @@ static int RemoveTestDir(const char *hnpName, const char *version, const int uid
     if (ret <= 0) {
         return -1;
     }
+
     if (access(hnpVersionPath, F_OK) == 0) {
         remove(hnpVersionPath);
     }
@@ -432,9 +443,9 @@ HWTEST_F(HnpRebuildCfgSingleTest, HnpRebuildCfgTest_006, TestSize.Level0)
     cJSON *hnpArray = cJSON_CreateArray();
     AddHnpToHnpArray(hnpArray, TEST_HNP_INDEX_1 | TEST_HNP_INDEX_2);
     AddHapToRoot(json, TEST_HAP_NAME1, hnpArray);
-    printf("old Json is %s \r\n", cJSON_Print(json));
 
     ret = HnpHapJsonWrite(json, HNP_OLD_CFG_PATH);
+    cJSON_Delete(json);
     EXPECT_EQ(ret, 0);
 
     ret = CreateTestDir(TEST_HNP_NAME1, TEST_HNP_INSTALLVERSION1, TEST_UID_INDEX_1);
@@ -442,7 +453,6 @@ HWTEST_F(HnpRebuildCfgSingleTest, HnpRebuildCfgTest_006, TestSize.Level0)
 
     ret = RebuildHnpInfoCfg(TEST_UID_INDEX_1);
     EXPECT_EQ(ret, 0);
-    cJSON_Delete(json);
 
     ret = access(newCfgPath, F_OK) == 0;
     EXPECT_TRUE(ret);
@@ -454,7 +464,6 @@ HWTEST_F(HnpRebuildCfgSingleTest, HnpRebuildCfgTest_006, TestSize.Level0)
 
     json = cJSON_Parse(infoStream);
     free(infoStream);
-    printf("current Json is %s \r\n", cJSON_Print(json));
     EXPECT_NE(json, nullptr);
     EXPECT_TRUE(cJSON_IsArray(json));
     EXPECT_EQ(cJSON_GetArraySize(json), 1);

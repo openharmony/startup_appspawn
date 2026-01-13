@@ -13,10 +13,14 @@
  * limitations under the License.
  */
 #include "hisysevent_adapter.h"
+#include <fstream>
+
+#include "init_param.h"
+#include "parameter.h"
+#include "appspawn_manager.h"
 #include "securec.h"
 #include "hisysevent.h"
 #include "appspawn_utils.h"
-#include <chrono>
 
 using namespace OHOS::HiviewDFX;
 namespace {
@@ -101,7 +105,7 @@ static void AddStatisticEvent(AppSpawnHisysevent *event, uint32_t duration)
 
 void AddStatisticEventInfo(AppSpawnHisyseventInfo *hisyseventInfo, uint32_t duration, bool stage)
 {
-    APPSPAWN_CHECK(hisyseventInfo != NULL, return, "fail to get AppSpawnHisyseventInfo");
+    APPSPAWN_CHECK(hisyseventInfo != nullptr, return, "fail to get AppSpawnHisyseventInfo");
     if (stage) {
         AddStatisticEvent(&hisyseventInfo->bootEvent, duration);
     } else {
@@ -130,9 +134,9 @@ static void InitStatisticEventInfo(AppSpawnHisyseventInfo *appSpawnHisysInfo)
 static int StartTimer(LE_ProcessTimer processTimer, void *context, uint64_t timeout, uint64_t repeat)
 {
     LoopHandle loop = LE_GetDefaultLoop();
-    APPSPAWN_CHECK(loop != NULL, return -1, "getDeafult loop failed");
+    APPSPAWN_CHECK(loop != nullptr, return -1, "getDeafult loop failed");
 
-    TimerHandle timer = NULL;
+    TimerHandle timer = nullptr;
     int ret = LE_CreateTimer(loop, &timer, processTimer, context);
     APPSPAWN_CHECK(ret == 0, return ret, "LE_CreateTimer failed %{public}d", ret);
     ret = LE_StartTimer(loop, timer, timeout, repeat);
@@ -186,7 +190,7 @@ void ReportSpawnStatisticDuration(const TimerHandle taskHandle, void *content)
 
 APPSPAWN_STATIC int CreateHisysTimerLoop(AppSpawnHisyseventInfo *hisyseventInfo)
 {
-    APPSPAWN_CHECK(hisyseventInfo != NULL, return -1, "invalid hisysevent info");
+    APPSPAWN_CHECK(hisyseventInfo != nullptr, return -1, "invalid hisysevent info");
     int ret = StartTimer(ReportSpawnStatisticDuration, (void *)hisyseventInfo, DURATION_TIMER_TIMEOUT, INT64_MAX);
     APPSPAWN_CHECK(ret == 0, return -1, "fail to start statistic timer");
     ret = StartTimer(UpdateMountCountInfo, (void *)hisyseventInfo, MOUNT_TIMER_TIMEOUT, INT64_MAX);
@@ -198,14 +202,14 @@ AppSpawnHisyseventInfo *GetAppSpawnHisyseventInfo(void)
 {
     AppSpawnHisyseventInfo *hisyseventInfo =
         static_cast<AppSpawnHisyseventInfo *>(calloc(1, sizeof(AppSpawnHisyseventInfo)));
-    APPSPAWN_CHECK(hisyseventInfo != NULL, return NULL, "fail to alloc memory for hisyseventInfo");
+    APPSPAWN_CHECK(hisyseventInfo != nullptr, return nullptr, "fail to alloc memory for hisyseventInfo");
     InitStatisticEventInfo(hisyseventInfo);
     return hisyseventInfo;
 }
 
 void DeleteHisyseventInfo(AppSpawnHisyseventInfo *hisyseventInfo)
 {
-    APPSPAWN_CHECK_ONLY_EXPER(hisyseventInfo != NULL, return);
+    APPSPAWN_CHECK_ONLY_EXPER(hisyseventInfo != nullptr, return);
     free(hisyseventInfo);
     hisyseventInfo = nullptr;
 }
@@ -213,7 +217,7 @@ void DeleteHisyseventInfo(AppSpawnHisyseventInfo *hisyseventInfo)
 AppSpawnHisyseventInfo *InitHisyseventTimer(void)
 {
     AppSpawnHisyseventInfo *hisyseventInfo = GetAppSpawnHisyseventInfo();
-    APPSPAWN_CHECK(hisyseventInfo != NULL, return NULL, "fail to init hisyseventInfo");
+    APPSPAWN_CHECK(hisyseventInfo != nullptr, return nullptr, "fail to init hisyseventInfo");
     int ret = CreateHisysTimerLoop(hisyseventInfo);
     if (ret != 0) {
         DeleteHisyseventInfo(hisyseventInfo);
@@ -292,3 +296,73 @@ void ReportMountFull(int32_t errCode, int32_t nsMountCount, int32_t deviceMountC
     APPSPAWN_CHECK_ONLY_LOG(ret == 0, "ReportMountFull error, ret: %{public}d", ret);
 }
 
+static bool CheckNeedUpdateReport()
+{
+    char buffer[PARAM_BUFFER_LEN] = {0};
+    uint32_t buffSize = sizeof(buffer);
+
+    int ret = SystemGetParameter(PARAM_APPSPAWN_TIME_MOUNTINFO, buffer, &buffSize);
+    APPSPAWN_CHECK(ret == 0, return true, "WriteMountInfo not exist param, should writeMountInfo %{public}d", ret);
+
+    long lastSecs = strtol(buffer, nullptr, NUM_DEC);
+    APPSPAWN_CHECK(lastSecs > 0, return true, "WriteMountInfo last mount secs invalid");
+
+    struct timespec current;
+    clock_gettime(CLOCK_MONOTONIC, &current);
+    long duration = current.tv_sec - lastSecs;
+    // 60 * 60s update mountinfo hisysevent
+    APPSPAWN_CHECK(duration <= MOUNTINFO_UPDATE_TIMEOUT, return true, "WriteMountInfo timeout");
+    return false;
+}
+
+static void UpdateLastReportTime()
+{
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+
+    char buffer[PARAM_BUFFER_LEN] = {0};
+    int ret = snprintf_s(buffer, sizeof(buffer), sizeof(buffer) - 1, "%ld", ts.tv_sec);
+    APPSPAWN_CHECK(ret > 0, return, "build mountTime failed");
+    ret = SetParameter(PARAM_APPSPAWN_TIME_MOUNTINFO, buffer);
+    APPSPAWN_CHECK_ONLY_LOG(ret == 0, "WriteMountInfo set mountinfo param failed %{public}d", ret);
+}
+
+void ReportMountFullHisysevent(int32_t errCode)
+{
+    static bool isReport = false;
+    APPSPAWN_CHECK_DUMPI(!isReport, return, "WriteMountInfo already report");
+
+    bool needReport = CheckNeedUpdateReport();
+    APPSPAWN_CHECK_DUMPI(needReport, return, "WriteMountInfo not need report");
+
+    AppSpawnMgr *mgr = GetAppSpawnMgr();
+    APPSPAWN_CHECK(mgr != nullptr, return, "WriteMountInfo invalid mgr");
+
+    int pid = mgr->servicePid;
+    std::stringstream ss;
+    ss << "/proc/" << pid << "/mountinfo";
+    std::string mountinfoPath = ss.str();
+
+    std::ifstream mountinfoFile(mountinfoPath);
+    APPSPAWN_CHECK(mountinfoFile.is_open(), return, "WriteMountInfo open mountinfo failed %{public}d", errno);
+
+    auto startTime = std::chrono::steady_clock::now();
+    std::ofstream logFile("/data/service/el1/startup/log/mountinfo.log");
+    APPSPAWN_CHECK(logFile.is_open(), mountinfoFile.close();
+        return, "WriteMountInfo open logfile failed %{public}d", errno);
+
+    std::string buffer;
+    while (std::getline(mountinfoFile, buffer)) {
+        logFile << buffer << std::endl;
+        logFile.flush();
+    }
+    auto endTime = std::chrono::steady_clock::now();
+    auto writeDuration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
+
+    ReportMountFull(getpid(), static_cast<int32_t>(writeDuration.count()), OH_ListGetCnt(&mgr->appQueue),
+        errCode);
+    isReport = true;
+    UpdateLastReportTime();
+    mountinfoFile.close();
+    logFile.close();
+}
