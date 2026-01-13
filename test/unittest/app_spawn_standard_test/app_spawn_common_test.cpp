@@ -849,6 +849,10 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_016, TestSize.Level0)
     ReportSpawnStatisticDuration(nullptr, (void *)info);
     ReportMountFull(getpid(), 0, 0, 0);
     free(info);
+    AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+    EXPECT_TRUE(mgr != nullptr);
+    ReportMountFullHisysevent(APPSPAWN_SANDBOX_MOUNT_FULL);
+    DeleteAppSpawnMgr(mgr);
 }
 
 HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_028, TestSize.Level0)

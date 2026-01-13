@@ -29,11 +29,17 @@ ohos_unittest("AppSpawn_HisysEvent_ut") {
   include_dirs = [
     "${appspawn_path}/modules/sysevent",
     "${appspawn_path}/util/include",
+    "${appspawn_path}/standard",
+    "${appspawn_path}/interfaces/innerkits/include",
+    "${appspawn_path}/modules/module_engine/include",
+    "${appspawn_path}/common",
+    "${appspawn_path}/modules/common",
     "${appspawn_path}/test/unittest/app_spawn_hisysevent_test",
   ]
 
   sources = [ 
     "${appspawn_path}/modules/sysevent/hisysevent_adapter.cpp",
+    "${appspawn_path}/standard/appspawn_appmgr.c",
     "${appspawn_path}/test/unittest/app_spawn_hisysevent_test/app_spawn_hisysevent_test.cpp",
     "${appspawn_path}/test/unittest/app_spawn_hisysevent_test/app_spawn_hisysevent_stub.c",
   ]
