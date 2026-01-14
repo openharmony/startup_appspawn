@@ -949,7 +949,7 @@ HWTEST_F(AppSpawnServiceTest, App_Spawn_Msg_012, TestSize.Level0)
         APPSPAWN_CHECK(pipe(pipefd) == 0, break, "Failed to pipe fd errno:%{public}d", errno);
         ret = SpawnListenFdSet(pipefd[1]);
 
-        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+        ret = AppSpawnClientInit(NATIVESPAWN_SERVER_NAME, &clientHandle);
         APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", APPSPAWN_SERVER_NAME);
         AppSpawnReqMsgHandle reqHandle = testServer->CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
 
