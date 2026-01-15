@@ -30,7 +30,10 @@ ohos_shared_library("appspawn_common") {
     sources += [ "appspawn_begetctl.c" ]
   }
   if (appspawn_custom_sandbox == true) {
-    sources += [ "appspawn_isolate.c" ]
+    sources += [
+      "appspawn_isolate.c",
+      "appspawn_env.cpp",
+    ]
   }
 
   include_dirs = [
