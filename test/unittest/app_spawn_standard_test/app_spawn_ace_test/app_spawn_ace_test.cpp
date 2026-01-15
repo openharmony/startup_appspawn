@@ -145,11 +145,34 @@ HWTEST_F(AppSpawnAceTest, App_Spawn_Ace_Preload_005, TestSize.Level0)
 }
 
 /**
- * @brief 未设置preload参数时（使用参数默认值），hybridspawn进行预加载
- * @note 预期结果: appspawn根据参数默认值判断是否执行preload预加载
+ * @brief preload、preloadets和unified参数均设置为true时，测试appspawn进行预加载
+ * @note 预期结果: appspawn执行preload和preloadets预加载
  *
  */
 HWTEST_F(AppSpawnAceTest, App_Spawn_Ace_Preload_006, TestSize.Level0)
+{
+    AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+    ASSERT_NE(mgr, nullptr);
+    mgr->content.longProcName = const_cast<char *>(APPSPAWN_SERVER_NAME);
+    mgr->content.longProcNameLen = APP_LEN_PROC_NAME;
+
+    SetBoolParamResult("persist.appspawn.preload", true);
+    SetBoolParamResult("persist.appspawn.preloadets", true);
+    SetBoolParamResult("persist.appspawn.hybridspawn.unified", true);
+    int ret = PreLoadAppSpawn(mgr);
+    SetBoolParamResult("persist.appspawn.preload", false);
+    SetBoolParamResult("persist.appspawn.preloadets", false);
+    SetBoolParamResult("persist.appspawn.hybridspawn.unified", false);
+    DeleteAppSpawnMgr(mgr);
+    EXPECT_EQ(ret, 0);
+}
+
+/**
+ * @brief 未设置preload参数时（使用参数默认值），hybridspawn进行预加载
+ * @note 预期结果: hybridspawn根据参数默认值判断是否执行preload预加载
+ *
+ */
+HWTEST_F(AppSpawnAceTest, App_Spawn_Ace_Preload_007, TestSize.Level0)
 {
     AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_HYBRID_SPAWN);
     ASSERT_NE(mgr, nullptr);
@@ -163,10 +186,10 @@ HWTEST_F(AppSpawnAceTest, App_Spawn_Ace_Preload_006, TestSize.Level0)
 
 /**
  * @brief preload参数设置为true时，测试hybridspawn进行预加载
- * @note 预期结果: appspawn执行preload预加载
+ * @note 预期结果: hybridspawn执行preload预加载
  *
  */
-HWTEST_F(AppSpawnAceTest, App_Spawn_Ace_Preload_007, TestSize.Level0)
+HWTEST_F(AppSpawnAceTest, App_Spawn_Ace_Preload_008, TestSize.Level0)
 {
     AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_HYBRID_SPAWN);
     ASSERT_NE(mgr, nullptr);
@@ -182,10 +205,10 @@ HWTEST_F(AppSpawnAceTest, App_Spawn_Ace_Preload_007, TestSize.Level0)
 
 /**
  * @brief preload参数和preloadets参数均设置为true时，测试hybridspawn进行预加载
- * @note 预期结果: appspawn执行preload和preloadets预加载
+ * @note 预期结果: hybridspawn执行preload和preloadets预加载
  *
  */
-HWTEST_F(AppSpawnAceTest, App_Spawn_Ace_Preload_008, TestSize.Level0)
+HWTEST_F(AppSpawnAceTest, App_Spawn_Ace_Preload_009, TestSize.Level0)
 {
     AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_HYBRID_SPAWN);
     ASSERT_NE(mgr, nullptr);
