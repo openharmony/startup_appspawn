@@ -677,7 +677,9 @@ int DoRebuildHnpInfoCfg(int uid)
     cJSON *json = cJSON_Parse(infoStream);
     free(infoStream);
     infoStream = NULL;
-    HNP_ERROR_CHECK(json != NULL && cJSON_IsArray(json),
+    HNP_ERROR_CHECK(json != NULL,
+        return HNP_ERRNO_BASE_PARSE_JSON_FAILED, "invalid hnp cfg parse");
+    HNP_ERROR_CHECK(cJSON_IsArray(json), cJSON_Delete(json);
         return HNP_ERRNO_BASE_PARSE_JSON_FAILED, "invalid hnp cfg parse");
     for (int i = cJSON_GetArraySize(json) - 1; i >= 0; i--) {
         cJSON *hapItem = cJSON_GetArrayItem(json, i);
