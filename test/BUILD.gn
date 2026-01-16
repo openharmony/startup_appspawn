@@ -31,6 +31,7 @@ group("unittest") {
       deps += [ "unittest/app_spawn_standard_test:AppSpawn_common_ut" ]
       deps += [ "unittest/app_spawn_standard_test:AppSpawn_coldrun_ut" ]
       deps += [ "unittest/app_spawn_standard_test:AppSpawnDebugSandbox" ]
+      deps += [ "unittest/app_spawn_standard_test/app_spawn_env_test:AppSpawn_Env_Test" ]
     }
     deps += [ "unittest/hnp_test:HnpTest" ]
     deps += [ "unittest/hnp_test/private_hnp_test:HnpPrivateTest" ]
