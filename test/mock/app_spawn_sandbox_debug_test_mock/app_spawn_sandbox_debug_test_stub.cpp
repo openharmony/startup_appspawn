@@ -163,7 +163,7 @@ int UninstallDebugSandbox(AppSpawnMgr *content, AppSpawningCtx *property)
         printf("UninstallDebugSandbox content is null");
     }
 
-    if (property) {
+    if (property == nullptr) {
         printf("UninstallDebugSandbox property is null");
     }
 
