@@ -592,7 +592,7 @@ HWTEST_F(AppSpawnInterfaceTest, App_Spawn_Interface_GetSpawnTimeout_001, TestSiz
     int timeout = GetSpawnTimeout(6, false);    // 6 test
     EXPECT_GE(timeout, 6);                      // 6 test
     timeout = GetSpawnTimeout(6, true);         // 6 test
-    EXPECT_GE(timeout, 2);                      // 6 test
+    EXPECT_GE(timeout, 6);                      // 6 test
     timeout = GetSpawnTimeout(2, false);        // 2 test
     EXPECT_GE(timeout, 2);                      // 2 test
     timeout = GetSpawnTimeout(2, true);         // 2 test

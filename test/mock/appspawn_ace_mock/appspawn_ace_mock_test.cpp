@@ -17,6 +17,7 @@
 
 static uint32_t g_preloadParamResult = 0;
 static uint32_t g_preloadEtsParamResult = 0;
+static uint32_t g_spawnUnifiedParamResult = 0;
 
 void SetBoolParamResult(const char *key, bool flag)
 {
@@ -25,5 +26,8 @@ void SetBoolParamResult(const char *key, bool flag)
     }
     if (strcmp(key, "persist.appspawn.preloadets") == 0) {
         flag ? (g_preloadEtsParamResult = true) : (g_preloadEtsParamResult = false);
+    }
+    if (strcmp(key, "persist.appspawn.hybridspawn.unified") == 0) {
+        flag ? (g_spawnUnifiedParamResult = true) : (g_spawnUnifiedParamResult = false);
     }
 }
