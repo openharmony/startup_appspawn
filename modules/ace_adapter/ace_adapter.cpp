@@ -55,6 +55,7 @@ static const bool DEFAULT_PRELOAD_VALUE = true;
 static const bool DEFAULT_PRELOAD_ETS_VALUE = true;
 static const std::string PRELOAD_JSON_CONFIG("/appspawn_preload.json");
 static const std::string PRELOAD_ETS_JSON_CONFIG("/appspawn_preload_ets.json");
+static const bool DEFAULT_SPAWN_UNIFIED_VALUE = false;
 
 typedef struct TagParseJsonContext {
     std::set<std::string> names;
@@ -86,14 +87,15 @@ static int GetNameSet(const cJSON *root, ParseJsonContext *context)
 static void PreloadModule(bool isHybrid)
 {
     bool preloadEts = OHOS::system::GetBoolParameter("persist.appspawn.preloadets", DEFAULT_PRELOAD_ETS_VALUE);
-    APPSPAWN_LOGI("LoadExtendLib: preloadets param value is %{public}s, isHybrid is %{public}s",
-        preloadEts ? "true" : "false", isHybrid ? "true" : "false");
+    bool unified = OHOS::system::GetBoolParameter("persist.appspawn.hybridspawn.unified", DEFAULT_SPAWN_UNIFIED_VALUE);
+    APPSPAWN_LOGI("LoadExtendLib: preloadets is %{public}s, unified is %{public}s, isHybrid is %{public}s",
+        preloadEts ? "true" : "false", unified ? "true" : "false", isHybrid ? "true" : "false");
 
     OHOS::AbilityRuntime::Runtime::Options options;
     options.loadAce = true;
     options.preload = true;
     options.lang = OHOS::AbilityRuntime::Runtime::Language::JS;
-    if (isHybrid && preloadEts) {
+    if ((isHybrid || unified) && preloadEts) {
         options.lang = OHOS::AbilityRuntime::Runtime::Language::ETS;
     }
     auto runtime = OHOS::AbilityRuntime::Runtime::Create(options);
@@ -119,7 +121,7 @@ static void PreloadModule(bool isHybrid)
     OHOS::AbilityRuntime::Runtime::SavePreloaded(std::move(runtime));
 }
 
-static void LoadExtendLib(bool isHybrid)
+static void LoadExtendLib(AppSpawnMgr *content)
 {
     const char *acelibdir = OHOS::Ace::AceForwardCompatibility::GetAceLibName();
     APPSPAWN_LOGI("LoadExtendLib: Start calling dlopen acelibdir");
@@ -129,14 +131,17 @@ static void LoadExtendLib(bool isHybrid)
 
     OHOS::AppExecFwk::MainThread::PreloadExtensionPlugin();
     bool preload = OHOS::system::GetBoolParameter("persist.appspawn.preload", DEFAULT_PRELOAD_VALUE);
-    if (!preload) {
+    bool isColdRun = IsColdRunMode(content) ? true : false;
+    APPSPAWN_LOGI("LoadExtendLib: preload is %{public}s, isColdRun is %{public}s, mode is %{public}d",
+        preload ? "true" : "false", isColdRun ? "true" : "false", content->content.mode);
+    if ((!preload) || isColdRun) {
         APPSPAWN_LOGI("LoadExtendLib: Do not preload VM");
         return;
     }
 
     APPSPAWN_LOGI("LoadExtendLib: Start preload VM");
     SetTraceDisabled(true);
-    PreloadModule(isHybrid);
+    PreloadModule(IsHybridSpawnMode(content));
     SetTraceDisabled(false);
 
     Resource::ResourceManager *systemResMgr = Resource::GetSystemResourceManagerNoSandBox();
@@ -316,9 +321,7 @@ APPSPAWN_STATIC int PreLoadAppSpawn(AppSpawnMgr *content)
         return 0;
     }
 
-    bool isHybrid = IsHybridSpawnMode(content) ? true : false;
-    APPSPAWN_LOGI("PreLoadAppSpawn: mode %{public}d, isHybrid is %{public}d", content->content.mode, isHybrid);
-    LoadExtendLib(isHybrid);
+    LoadExtendLib(content);
     return 0;
 }
 
