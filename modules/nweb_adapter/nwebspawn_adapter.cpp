@@ -101,6 +101,7 @@ APPSPAWN_STATIC int RunChildProcessor(AppSpawnContent *content, AppSpawnClient *
     }
     std::string renderStr(renderCmd);
     UpdateAppWebEngineVersion(renderStr);
+    OHOS::ArkWeb::UpdateAppInfoFromCmdline(renderStr);
 
     void *webEngineHandle = nullptr;
     void *nwebRenderHandle = nullptr;
