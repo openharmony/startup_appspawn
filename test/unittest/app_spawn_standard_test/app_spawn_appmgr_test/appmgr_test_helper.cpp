@@ -28,12 +28,12 @@ namespace OHOS {
 typedef struct {
     int32_t bundleIndex;
     char bundleName[APP_LEN_BUNDLE_NAME];  // bundle name
-} AppBundleInfo;
+} AppMgrTestAppBundleInfo;
 
 typedef struct {
     uint32_t hapFlags;
     char apl[APP_APL_MAX_LEN];
-} AppDomainInfo;
+} AppMgrTestAppDomainInfo;
 
 static int inline AddOneTlv(uint8_t *buffer, uint32_t bufferLen, const AppSpawnTlv &tlv, const uint8_t *data)
 {
@@ -47,7 +47,7 @@ static int inline AddOneTlv(uint8_t *buffer, uint32_t bufferLen, const AppSpawnT
     return 0;
 }
 
-#define ADD_TLV(type, value, currLen, tlvCount)  \
+#define APP_MGR_ADD_TLV(type, value, currLen, tlvCount)  \
 do {    \
     AppSpawnTlv d_tlv = {}; \
     d_tlv.tlvType = (type);    \
@@ -78,21 +78,21 @@ int AppMgrTestHelper::AppMgrTestAddBaseTlv(uint8_t *buffer, uint32_t bufferLen, 
     currLen += tlv.tlvLen;
     tlvCount++;
 
-    AppDomainInfo domainInfo = {0, "normal"};
-    ADD_TLV(TLV_DOMAIN_INFO, domainInfo, currLen, tlvCount);
+    AppMgrTestAppDomainInfo domainInfo = {0, "normal"};
+    APP_MGR_ADD_TLV(TLV_DOMAIN_INFO, domainInfo, currLen, tlvCount);
 
     AppSpawnMsgAccessToken token = {12345678};  // 12345678
-    ADD_TLV(TLV_ACCESS_TOKEN_INFO, token, currLen, tlvCount);
+    APP_MGR_ADD_TLV(TLV_ACCESS_TOKEN_INFO, token, currLen, tlvCount);
 
     AppSpawnMsgInternetInfo internetInfo = {0, 1};
-    ADD_TLV(TLV_INTERNET_INFO, internetInfo, currLen, tlvCount);
+    APP_MGR_ADD_TLV(TLV_INTERNET_INFO, internetInfo, currLen, tlvCount);
 
     // add bundle info
-    AppBundleInfo info = {};
+    AppMgrTestAppBundleInfo info = {};
     APPSPAWN_CHECK_ONLY_EXPER(strcpy_s(info.bundleName, sizeof(info.bundleName), "test-bundleName") == 0,
         return -1);
     info.bundleIndex = 100;  // 100 test index
-    ADD_TLV(TLV_BUNDLE_INFO, info, currLen, tlvCount);
+    APP_MGR_ADD_TLV(TLV_BUNDLE_INFO, info, currLen, tlvCount);
 
     // add dac
     AppDacInfo  dacInfo = {};
@@ -101,7 +101,7 @@ int AppMgrTestHelper::AppMgrTestAddBaseTlv(uint8_t *buffer, uint32_t bufferLen, 
     dacInfo.gidCount = 2; // 2 count
     dacInfo.gidTable[0] = 20010029; // 20010029 test gid
     dacInfo.gidTable[1] = 20010030; // 20010030 test gid
-    ADD_TLV(TLV_DAC_INFO, dacInfo, currLen, tlvCount);
+    APP_MGR_ADD_TLV(TLV_DAC_INFO, dacInfo, currLen, tlvCount);
     realLen = currLen;
     return 0;
 }

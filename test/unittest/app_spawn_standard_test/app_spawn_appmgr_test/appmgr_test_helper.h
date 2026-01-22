@@ -45,7 +45,7 @@ public:
     int AppMgrTestAddExtTlv(uint8_t *buffer, uint32_t bufferLen, uint32_t &realLen, uint32_t &tlvCount);
     static void SignalHandle(int sig);
 
-public:
+private:
     std::string processName_;
     void AppMgrTestSetDefaultData();
 };
