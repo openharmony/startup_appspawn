@@ -17,6 +17,7 @@
 #include <string>
 #include <fstream>
 #include <climits>
+#include <sys/ioctl.h>
 
 #include "securec.h"
 #include "appspawn_utils.h"
@@ -136,6 +137,87 @@ APPSPAWN_STATIC int SpawnSetCustomSandboxEnv(AppSpawnMgr *content, AppSpawningCt
     }
     return APPSPAWN_OK;
 }
+
+#define HM_ACCESS_TOKEN_ID_IOCTL_BASE 'A'
+enum {
+    HM_GET_TOKEN_ID = 1,
+    HM_SET_TOKEN_ID,
+    HM_GET_FTOKEN_ID,
+    HM_SET_FTOKEN_ID,
+    HM_ADD_PERMISSION,
+    HM_REMOVE_PERMISSION,
+    HM_GET_PERMISSION,
+    HM_SET_PERMISSION,
+    HM_GET_CLOSEST_HAP_TOKENID,
+    HM_GET_FAMILY_TOKENIDS,
+    HM_GET_BINARY_PERMISSIONS,
+    HM_SET_USERID,
+    HM_GET_USERID,
+    HM_ACCESS_TOKENID_MAX_NR
+};
+
+#define ACCESS_TOKENID_SET_USERID _IOW(HM_ACCESS_TOKEN_ID_IOCTL_BASE, HM_SET_USERID, uint32_t)
+#define ACCESS_TOKENID_GET_USERID _IOR(HM_ACCESS_TOKEN_ID_IOCTL_BASE, HM_GET_USERID, uint32_t)
+
+constexpr const char* HDAC_DEV = "/dev/access_token_id";
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+int SetUserId(char *userIdStr)
+{
+    APPSPAWN_CHECK(userIdStr != nullptr, return -1, "userIdStr == nullptr.");
+    APPSPAWN_LOGV("SetUserId called with userId=%{public}s", userIdStr);
+    char *endPtr = nullptr;
+    errno = 0;
+    const int numberBase = 10;
+    long long tmpUserId = strtoll(userIdStr, &endPtr, numberBase);
+    APPSPAWN_CHECK(endPtr != userIdStr, return -1,
+        "Failed to convert userId string '%s': no valid digits", userIdStr);
+    APPSPAWN_CHECK(*endPtr == '\0', return -1,
+        "Failed to convert userId string '%s': extra characters '%s'", userIdStr, endPtr);
+    APPSPAWN_CHECK(errno != ERANGE, return -1,
+        "UserId string '%s' causes long integer overflow/underflow", userIdStr);
+    if (tmpUserId < 0 || tmpUserId > UINT32_MAX) {
+        APPSPAWN_LOGE("UserId value %lld from string '%s' is out of uint32_t range [0, %u]",
+            tmpUserId, userIdStr, UINT32_MAX);
+        return -1;
+    }
+
+    uint32_t userId = static_cast<uint32_t>(tmpUserId);
+    int fdIoctl = open(HDAC_DEV, O_WRONLY);
+    APPSPAWN_CHECK(fdIoctl >= 0, return -1,
+        "Failed to open %{public}s: %{public}s", HDAC_DEV, strerror(errno));
+    int rc = ioctl(fdIoctl, ACCESS_TOKENID_SET_USERID, &userId);
+    if (rc < 0) {
+        APPSPAWN_LOGE("Failed to set userId=%{public}u: %{public}s", userId, strerror(errno));
+    }
+    close(fdIoctl);
+    return rc;
+}
+
+int GetUserId(uint32_t *userId)
+{
+    APPSPAWN_CHECK(userId != nullptr, return -1, "userId == nullptr.");
+    errno = 0;
+    int fdIoctl = open(HDAC_DEV, O_RDONLY);
+    APPSPAWN_CHECK(fdIoctl >= 0, return -1,
+        "Failed to open %{public}s: %{public}s", HDAC_DEV, strerror(errno));
+    uint32_t userIdTmp = 0;
+    int rc = ioctl(fdIoctl, ACCESS_TOKENID_GET_USERID, &userIdTmp);
+    if (rc < 0) {
+        close(fdIoctl);
+        APPSPAWN_LOGE("Failed to get userId: %{public}s", strerror(errno));
+        return -1;
+    }
+    close(fdIoctl);
+    *userId = userIdTmp;
+    return rc;
+}
+
+#ifdef __cplusplus
+}
+#endif
 
 MODULE_CONSTRUCTOR(void)
 {
