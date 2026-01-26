@@ -32,7 +32,7 @@ ohos_shared_library("appspawn_common") {
   if (appspawn_custom_sandbox == true) {
     sources += [
       "appspawn_isolate.c",
-      "appspawn_env.cpp",
+      "appspawn_custom_config.cpp",
     ]
   }
 

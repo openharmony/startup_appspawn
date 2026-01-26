@@ -16,7 +16,7 @@ import("//base/startup/appspawn/modules/sandbox/sandbox.gni")
 import("//build/test.gni")
 
 if (!defined(ohos_lite)) {
-  ohos_unittest("AppSpawn_Env_Test") {
+  ohos_unittest("AppSpawn_Custom_Config_Test") {
     module_out_path = "appspawn/appspawn"
     cflags = [ "-Dprivate=public" ]
     if (appspawn_unittest_coverage) {
@@ -24,7 +24,7 @@ if (!defined(ohos_lite)) {
       ldflags = [ "--coverage" ]
       cflags_cc = [ "--coverage" ]
     }
-    deps = []
+    deps = [ "${appspawn_path}/util:libappspawn_util" ]
     defines = [
       "APPSPAWN_BASE_DIR=\"/data/appspawn_ut\"",
       "APPSPAWN_LABEL=\"APPSPAWN_UT\"",
@@ -109,7 +109,7 @@ if (!defined(ohos_lite)) {
       "${appspawn_path}/modules/common/appspawn_namespace.c",
       "${appspawn_path}/modules/common/appspawn_silk.c",
       "${appspawn_path}/modules/nweb_adapter/nwebspawn_adapter.cpp",
-      "${appspawn_path}/modules/common/appspawn_env.cpp",
+      "${appspawn_path}/modules/common/appspawn_custom_config.cpp",
     ]
     sources += appspawn_sandbox_src
 
@@ -124,7 +124,7 @@ if (!defined(ohos_lite)) {
     # add test
     include_dirs += [ "${appspawn_path}/test/unittest" ]
     sources += [
-      "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_env_test/app_spawn_env_test.cpp",
+      "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_custom_config_test/app_spawn_custom_config_test.cpp",
       "${appspawn_path}/test/unittest/app_spawn_test_helper.cpp",
     ]
 

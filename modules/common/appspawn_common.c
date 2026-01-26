@@ -74,6 +74,12 @@
 #define MIN_VALID_APP_GID 10000
 #define APP_SIGN_TYPE_DEFAULT "none"
 
+int __attribute__((weak)) SetUserId(char *userIdStr)
+{
+    APPSPAWN_LOGV("SetUserId called (weak implementation)");
+    return 0;
+}
+
 static int SetProcessName(const AppSpawnMgr *content, const AppSpawningCtx *property)
 {
     const char *processName = GetProcessName(property);
@@ -315,6 +321,13 @@ APPSPAWN_STATIC int SetUidGid(const AppSpawnMgr *content, const AppSpawningCtx *
      */
     ret = setresuid(dacInfo->uid, dacInfo->uid, dacInfo->uid);
     APPSPAWN_CHECK(ret == 0, return errno, "setuid(%{public}u) failed: %{public}d", dacInfo->uid, errno);
+
+    char *userIdStr = (char *)GetAppSpawnMsgExtInfo(property->message, MSG_EXT_NAME_USERID, NULL);
+    if (userIdStr != NULL) {
+        APPSPAWN_LOGV("Set userId to %{public}s for process %{public}s", userIdStr, GetProcessName(property));
+        ret = SetUserId(userIdStr);
+        APPSPAWN_CHECK_ONLY_LOGW(ret == 0, "SetUserId(%{public}s) failed", userIdStr);
+    }
 
     if ((CheckAppMsgFlagsSet(property, APP_FLAGS_DEBUGGABLE) || property->allowDumpable) &&
          IsDeveloperModeOn(property)) {
