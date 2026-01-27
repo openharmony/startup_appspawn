@@ -117,7 +117,7 @@ void *DlsymStub(void *handle, const char *symbol)
         return ((g_dlsymResultFlags & DLSYM_FAIL_NWEB_MAIN) == 0) ? (void *)(NWebRenderMainStub) : NULL;
     }
     if (strcmp(symbol, "GetPermissionIndex") == 0) {
-        return (void *) (GetPermissionIndex);
+        return (void *)(GetPermissionIndex);
     }
     return NULL;
 }

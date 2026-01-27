@@ -54,7 +54,7 @@ extern "C" {
 #define DEC_MODE_DENY_INHERIT (1 << 9)
 
 #define DEC_POLICY_HEADER_RESERVED 64
-#define DEC_PATH_NUM_LOG_MIN 2
+
 typedef struct PathInfo {
     char *path;
     uint32_t pathLen;

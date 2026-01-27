@@ -439,7 +439,7 @@ APPSPAWN_STATIC int SpawnSetEncapsPermissions(AppSpawnMgr *content, AppSpawningC
     }
 
     if (CheckAppMsgFlagsSet(property, APP_FLAGS_CUSTOM_SANDBOX)) {
-        APPSPAWN_LOGV("set proc flag for custom sanbdox");
+        APPSPAWN_LOGV("set proc flag for custom sandbox");
         int proc_flag = CUSTOM_SANDBOX_PROCESS_TYPE;
         ret = ioctl(encapsFileFd, SET_ENCAPS_PROC_FLAG_CMD, &proc_flag);
         APPSPAWN_CHECK_ONLY_LOG(ret == 0, "ioctl SET_ENCAPS_PROC_FLAG_CMD failed, errno %{public}d", errno);
