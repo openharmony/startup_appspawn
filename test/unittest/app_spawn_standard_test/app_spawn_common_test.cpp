@@ -2103,7 +2103,7 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_SetUidGid_001, TestSize.Level0)
             "Failed to create req %{public}s", NWEBSPAWN_SERVER_NAME);
         property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
         APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
-	
+
         property->allowDumpable = false;
         ret = SetUidGid(mgr, property);
     } while (0);
