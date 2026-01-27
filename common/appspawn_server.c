@@ -50,9 +50,7 @@ void ProcessExit(int code)
     } else {
         APPSPAWN_DUMPI("ExitCode:%{public}d", code);
     }
-#ifdef APPSPAWN_EXIT_TEST
-    return;
-#else
+#ifndef APPSPAWN_EXIT_TEST
 #ifdef OHOS_LITE
     _exit(0x7f); // 0x7f user exit
 #else

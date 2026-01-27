@@ -193,9 +193,9 @@ int32_t SandboxCore::HandleDlpMount(const AppSpawnMsgDacInfo *dacInfo)
 
 bool SandboxCore::CheckDlpMount(const AppSpawningCtx *appProperty)
 {
-    const char* bundleNameChar = GetBundleName(appProperty);
+    const char *bundleNameChar = GetBundleName(appProperty);
     std::string bundleName = (bundleNameChar != nullptr) ? std::string(bundleNameChar) : "";
-    const char* processNameChar = GetProcessName(appProperty);
+    const char *processNameChar = GetProcessName(appProperty);
     std::string processName = (processNameChar != nullptr) ? std::string(processNameChar) : "";
     /* dlp application mount strategy */
     /* dlp is an example, we should change to real bundle name later */
@@ -667,7 +667,7 @@ int32_t SandboxCore::DoAllMntPointsMount(const AppSpawningCtx *appProperty, cJSO
 int32_t SandboxCore::DoAllMntPointsMountNocheck(const AppSpawningCtx *appProperty, cJSON *appConfig,
     const char *typeName, const std::string &section)
 {
-    const char* bundleNameChar = GetBundleName(appProperty);
+    const char *bundleNameChar = GetBundleName(appProperty);
     std::string bundleName = (bundleNameChar != nullptr) ? std::string(bundleNameChar) : "";
     cJSON *mountPoints = cJSON_GetObjectItemCaseSensitive(appConfig, SandboxCommonDef::g_mountPrefix);
     if (mountPoints == nullptr || !cJSON_IsArray(mountPoints)) {
@@ -729,7 +729,7 @@ int32_t SandboxCore::ProcessCreateOnDaemonMount(cJSON *mntPoint, MountPointProce
     struct stat statBuff;
     int ret = stat(srcPath.c_str(), &statBuff);
     if (ret < 0 || statBuff.st_uid != uid || statBuff.st_gid != gid ||
-            (statBuff.st_mode & SandboxCommonDef::ALL_FILE_MODE_BITS) != mode) {
+        (statBuff.st_mode & SandboxCommonDef::ALL_FILE_MODE_BITS) != mode) {
         ret = SandboxCommon::CreateDirRecursive(srcPath, SandboxCommonDef::FILE_MODE);
         APPSPAWN_CHECK(ret == 0, return 0, "mkdir %{private}s failed, errno %{public}d", srcPath.c_str(), errno);
         if (chmod(srcPath.c_str(), mode) < 0 || chown(srcPath.c_str(), uid, gid) < 0) {
@@ -787,6 +787,7 @@ int32_t SandboxCore::DoAddGid(AppSpawningCtx *appProperty, cJSON *appConfig,
     if (mountPoints == nullptr || !cJSON_IsArray(mountPoints)) {
         return 0;
     }
+
     const char* bundleNameChar = GetBundleName(appProperty);
     std::string bundleName = (bundleNameChar != nullptr) ? std::string(bundleNameChar) : "";
     auto processor = [&dacInfo](cJSON *item) {

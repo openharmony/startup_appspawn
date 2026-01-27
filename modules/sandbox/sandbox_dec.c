@@ -192,11 +192,9 @@ void SetDecPolicy(void)
         APPSPAWN_LOGE("set sandbox policy failed.");
     } else {
         APPSPAWN_LOGV("set SET_DEC_POLICY_CMD sandbox policy success. timestamp:%{public}" PRId64 "", timestamp);
-        if (g_decPolicyInfos->pathNum > DEC_PATH_NUM_LOG_MIN) {
-            for (uint32_t i = 0; i < g_decPolicyInfos->pathNum; i++) {
-                APPSPAWN_DUMPI("path %{public}s mode 0x%{public}x",
-                    g_decPolicyInfos->path[i].path, g_decPolicyInfos->path[i].mode);
-            }
+        for (uint32_t i = 0; i < g_decPolicyInfos->pathNum; i++) {
+            APPSPAWN_LOGV("path %{public}s mode 0x%{public}x",
+                g_decPolicyInfos->path[i].path, g_decPolicyInfos->path[i].mode);
         }
     }
     close(fd);

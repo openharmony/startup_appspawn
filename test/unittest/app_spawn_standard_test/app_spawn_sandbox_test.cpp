@@ -1877,7 +1877,7 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_59, TestSize.Level0)
     ret = AppSpawn::SandboxCommon::DoAppSandboxMountOnceNocheck(nullptr, &arg5);
     EXPECT_EQ(ret, 0);
 
-        SharedMountArgs arg6 = {
+    SharedMountArgs arg6 = {
         .srcPath = "system/etc/profile/ABC",
         .destPath = "system/etc/profile/ABC"
     };
@@ -2885,137 +2885,6 @@ HWTEST_F(AppSpawnSandboxTest, Handle_Flag_Point_PreInstall_Shell_Hap_002, TestSi
 }
 
 /**
- * @tc.name: Handle_Dlp_Mount_01
- * @tc.desc: Test mounting the fuse directory in dlpmanager.
- * @tc.type: FUNC
- */
-HWTEST_F(AppSpawnSandboxTest, Handle_Dlp_Mount_01, TestSize.Level0)
-{
-    AppSpawningCtx *spawningCtx = GetTestAppProperty();
-    ASSERT_EQ(spawningCtx != nullptr, 1);
-    AppSpawnMsgDacInfo *dacInfo = reinterpret_cast<AppSpawnMsgDacInfo *>(GetAppProperty(spawningCtx, TLV_DAC_INFO));
-    ASSERT_EQ(dacInfo != nullptr, 1);
-
-    int32_t ret = AppSpawn::SandboxCore::HandleDlpMount(dacInfo);
-
-    DeleteAppSpawningCtx(spawningCtx);
-}
-
-/**
- * @tc.name: Check_Dlp_Mount_01
- * @tc.desc: Verify whether it is necessary to execute the mount of dlpmanager, when is dlpmanager.
- * @tc.type: FUNC
- */
-HWTEST_F(AppSpawnSandboxTest, Check_Dlp_Mount_01, TestSize.Level0)
-{
-    g_testHelper.SetProcessName("com.ohos.dlpmanager");
-    AppSpawningCtx *spawningCtx = GetTestAppProperty();
-    ASSERT_EQ(spawningCtx != nullptr, 1);
-
-    bool ret = AppSpawn::SandboxCore::CheckDlpMount(spawningCtx);
-    EXPECT_EQ(ret, true);
-
-    DeleteAppSpawningCtx(spawningCtx);
-}
-
-/**
- * @tc.name: Check_Dlp_Mount_02
- * @tc.desc: Verify whether it is necessary to execute the mount of dlpmanager, when is not dlpmanager.
- * @tc.type: FUNC
- */
-HWTEST_F(AppSpawnSandboxTest, Check_Dlp_Mount_02, TestSize.Level0)
-{
-    g_testHelper.SetProcessName("com.ohos.notepad");
-    AppSpawningCtx *spawningCtx = GetTestAppProperty();
-    ASSERT_EQ(spawningCtx != nullptr, 1);
-
-    bool ret = AppSpawn::SandboxCore::CheckDlpMount(spawningCtx);
-    EXPECT_EQ(ret, false);
-
-    DeleteAppSpawningCtx(spawningCtx);
-}
-
-/**
- * @tc.name: Set_App_Sandbox_Property_For_Dlp_01
- * @tc.desc: When dlpStatus is true and CheckDlpMount is true.
- * @tc.type: FUNC
- */
-HWTEST_F(AppSpawnSandboxTest, Set_App_Sandbox_Property_For_Dlp_01, TestSize.Level0)
-{
-    g_testHelper.SetTestGid(1000);
-    g_testHelper.SetTestUid(1000);
-    g_testHelper.SetProcessName("com.ohos.dlpmanager");
-    std::vector<const char *> &permissions = g_testHelper.GetPermissions();
-    permissions.push_back("ohos.permission.ACCESS_DLP_FILE");
-
-    AppSpawningCtx *spawningCtx = GetTestAppProperty();
-    ASSERT_EQ(spawningCtx != nullptr, 1);
-    bool ret = AppSpawn::SandboxCore::SetAppSandboxProperty(spawningCtx, CLONE_NEWPID);
-    EXPECT_EQ(ret, false);
-
-    DeleteAppSpawningCtx(spawningCtx);
-}
-
-/**
- * @tc.name: Set_App_Sandbox_Property_For_Dlp_02
- * @tc.desc: When dlpStatus is true and CheckDlpMount is false.
- * @tc.type: FUNC
- */
-HWTEST_F(AppSpawnSandboxTest, Set_App_Sandbox_Property_For_Dlp_02, TestSize.Level0)
-{
-    g_testHelper.SetTestGid(1000);
-    g_testHelper.SetTestUid(1000);
-    g_testHelper.SetProcessName("com.ohos.notepad");
-    std::vector<const char *> &permissions = g_testHelper.GetPermissions();
-    permissions.push_back("ohos.permission.ACCESS_DLP_FILE");
-
-    AppSpawningCtx *spawningCtx = GetTestAppProperty();
-    ASSERT_EQ(spawningCtx != nullptr, 1);
-    bool ret = AppSpawn::SandboxCore::SetAppSandboxProperty(spawningCtx, CLONE_NEWPID);
-    EXPECT_EQ(ret, false);
-
-    DeleteAppSpawningCtx(spawningCtx);
-}
-
-/**
- * @tc.name: Set_App_Sandbox_Property_For_Dlp_03
- * @tc.desc: When dlpStatus is false and CheckDlpMount is true.
- * @tc.type: FUNC
- */
-HWTEST_F(AppSpawnSandboxTest, Set_App_Sandbox_Property_For_Dlp_03, TestSize.Level0)
-{
-    g_testHelper.SetTestGid(1000);
-    g_testHelper.SetTestUid(1000);
-    g_testHelper.SetProcessName("com.ohos.dlpmanager");
-
-    AppSpawningCtx *spawningCtx = GetTestAppProperty();
-    ASSERT_EQ(spawningCtx != nullptr, 1);
-    bool ret = AppSpawn::SandboxCore::SetAppSandboxProperty(spawningCtx, CLONE_NEWPID);
-    EXPECT_EQ(ret, false);
-
-    DeleteAppSpawningCtx(spawningCtx);
-}
-
-/**
- * @tc.name: Set_App_Sandbox_Property_For_Dlp_04
- * @tc.desc: When dlpStatus is false and CheckDlpMount is true.
- * @tc.type: FUNC
- */
-HWTEST_F(AppSpawnSandboxTest, Set_App_Sandbox_Property_For_Dlp_04, TestSize.Level0)
-{
-    g_testHelper.SetTestGid(1000);
-    g_testHelper.SetTestUid(1000);
-    g_testHelper.SetProcessName("com.ohos.notepad");
-
-    AppSpawningCtx *spawningCtx = GetTestAppProperty();
-    ASSERT_EQ(spawningCtx != nullptr, 1);
-    bool ret = AppSpawn::SandboxCore::SetAppSandboxProperty(spawningCtx, CLONE_NEWPID);
-    EXPECT_EQ(ret, false);
-
-    DeleteAppSpawningCtx(spawningCtx);
-}
-
-/**
  * @tc.name: BuildFullParamSrcPathTest_01
  * @tc.desc: Test whether the param-src-path, pre-param-src-path,
  *           and post-param-src-path directories can be concatenated to form a complete src-path
@@ -3454,5 +3323,136 @@ HWTEST_F(AppSpawnSandboxTest, ProcessMountPointTest_05, TestSize.Level0)
     EXPECT_EQ(result, 0);
     DeleteAppSpawningCtx(appProperty);
     cJSON_Delete(j_config);
+}
+
+/**
+ * @tc.name: Handle_Dlp_Mount_01
+ * @tc.desc: Test mounting the fuse directory in dlpmanager.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AppSpawnSandboxTest, Handle_Dlp_Mount_01, TestSize.Level0)
+{
+    AppSpawningCtx *spawningCtx = GetTestAppProperty();
+    ASSERT_EQ(spawningCtx != nullptr, 1);
+    AppSpawnMsgDacInfo *dacInfo = reinterpret_cast<AppSpawnMsgDacInfo *>(GetAppProperty(spawningCtx, TLV_DAC_INFO));
+    ASSERT_EQ(dacInfo != nullptr, 1);
+
+    int32_t ret = AppSpawn::SandboxCore::HandleDlpMount(dacInfo);
+
+    DeleteAppSpawningCtx(spawningCtx);
+}
+
+/**
+ * @tc.name: Check_Dlp_Mount_01
+ * @tc.desc: Verify whether it is necessary to execute the mount of dlpmanager, when is dlpmanager.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AppSpawnSandboxTest, Check_Dlp_Mount_01, TestSize.Level0)
+{
+    g_testHelper.SetProcessName("com.ohos.dlpmanager");
+    AppSpawningCtx *spawningCtx = GetTestAppProperty();
+    ASSERT_EQ(spawningCtx != nullptr, 1);
+
+    bool ret = AppSpawn::SandboxCore::CheckDlpMount(spawningCtx);
+    EXPECT_EQ(ret, true);
+
+    DeleteAppSpawningCtx(spawningCtx);
+}
+
+/**
+ * @tc.name: Check_Dlp_Mount_02
+ * @tc.desc: Verify whether it is necessary to execute the mount of dlpmanager, when is not dlpmanager.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AppSpawnSandboxTest, Check_Dlp_Mount_02, TestSize.Level0)
+{
+    g_testHelper.SetProcessName("com.ohos.notepad");
+    AppSpawningCtx *spawningCtx = GetTestAppProperty();
+    ASSERT_EQ(spawningCtx != nullptr, 1);
+
+    bool ret = AppSpawn::SandboxCore::CheckDlpMount(spawningCtx);
+    EXPECT_EQ(ret, false);
+
+    DeleteAppSpawningCtx(spawningCtx);
+}
+
+/**
+ * @tc.name: Set_App_Sandbox_Property_For_Dlp_01
+ * @tc.desc: When dlpStatus is true and CheckDlpMount is true.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AppSpawnSandboxTest, Set_App_Sandbox_Property_For_Dlp_01, TestSize.Level0)
+{
+    g_testHelper.SetTestGid(1000);
+    g_testHelper.SetTestUid(1000);
+    g_testHelper.SetProcessName("com.ohos.dlpmanager");
+    std::vector<const char *> &permissions = g_testHelper.GetPermissions();
+    permissions.push_back("ohos.permission.ACCESS_DLP_FILE");
+
+    AppSpawningCtx *spawningCtx = GetTestAppProperty();
+    ASSERT_EQ(spawningCtx != nullptr, 1);
+    bool ret = AppSpawn::SandboxCore::SetAppSandboxProperty(spawningCtx, CLONE_NEWPID);
+    EXPECT_EQ(ret, false);
+
+    DeleteAppSpawningCtx(spawningCtx);
+}
+
+/**
+ * @tc.name: Set_App_Sandbox_Property_For_Dlp_02
+ * @tc.desc: When dlpStatus is true and CheckDlpMount is false.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AppSpawnSandboxTest, Set_App_Sandbox_Property_For_Dlp_02, TestSize.Level0)
+{
+    g_testHelper.SetTestGid(1000);
+    g_testHelper.SetTestUid(1000);
+    g_testHelper.SetProcessName("com.ohos.notepad");
+    std::vector<const char *> &permissions = g_testHelper.GetPermissions();
+    permissions.push_back("ohos.permission.ACCESS_DLP_FILE");
+
+    AppSpawningCtx *spawningCtx = GetTestAppProperty();
+    ASSERT_EQ(spawningCtx != nullptr, 1);
+    bool ret = AppSpawn::SandboxCore::SetAppSandboxProperty(spawningCtx, CLONE_NEWPID);
+    EXPECT_EQ(ret, false);
+
+    DeleteAppSpawningCtx(spawningCtx);
+}
+
+/**
+ * @tc.name: Set_App_Sandbox_Property_For_Dlp_03
+ * @tc.desc: When dlpStatus is false and CheckDlpMount is true.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AppSpawnSandboxTest, Set_App_Sandbox_Property_For_Dlp_03, TestSize.Level0)
+{
+    g_testHelper.SetTestGid(1000);
+    g_testHelper.SetTestUid(1000);
+    g_testHelper.SetProcessName("com.ohos.dlpmanager");
+
+    AppSpawningCtx *spawningCtx = GetTestAppProperty();
+    ASSERT_EQ(spawningCtx != nullptr, 1);
+    bool ret = AppSpawn::SandboxCore::SetAppSandboxProperty(spawningCtx, CLONE_NEWPID);
+    EXPECT_EQ(ret, false);
+
+    DeleteAppSpawningCtx(spawningCtx);
+}
+
+/**
+ * @tc.name: Set_App_Sandbox_Property_For_Dlp_04
+ * @tc.desc: When dlpStatus is false and CheckDlpMount is true.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AppSpawnSandboxTest, Set_App_Sandbox_Property_For_Dlp_04, TestSize.Level0)
+{
+    g_testHelper.SetTestGid(1000);
+    g_testHelper.SetTestUid(1000);
+    g_testHelper.SetProcessName("com.ohos.notepad");
+
+    AppSpawningCtx *spawningCtx = GetTestAppProperty();
+    ASSERT_EQ(spawningCtx != nullptr, 1);
+    bool ret = AppSpawn::SandboxCore::SetAppSandboxProperty(spawningCtx, CLONE_NEWPID);
+    EXPECT_EQ(ret, false);
+
+    DeleteAppSpawningCtx(spawningCtx);
 }
 }  // namespace OHOS

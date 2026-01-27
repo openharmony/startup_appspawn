@@ -33,15 +33,12 @@
 #define DIR_MODE 0711
 #define LOCK_STATUS_SIZE 16
 #define LOCK_STATUS_UNLOCK "0"
-#define LOCK_STATUS_UNLOCK_MAX 5
 
 #define DATA_GROUP_SOCKET_TYPE    "DataGroup"
 #define GROUPLIST_KEY_DATAGROUPID "dataGroupId"
 #define GROUPLIST_KEY_GID         "gid"
 #define GROUPLIST_KEY_DIR         "dir"
 #define GROUPLIST_KEY_UUID        "uuid"
-
-static std::map<uint32_t, int> g_lockNum;
 
 static const MountSharedTemplate MOUNT_SHARED_MAP[] = {
     {"/data/storage/el2", nullptr},
@@ -118,15 +115,6 @@ APPSPAWN_STATIC bool IsUnlockStatus(uint32_t uid)
     int ret = GetParameter(lockStatusParam.c_str(), "1", userLockStatus, sizeof(userLockStatus));
     APPSPAWN_CHECK_DUMPI(ret > 0 && strcmp(userLockStatus, LOCK_STATUS_UNLOCK) == 0, return false,
         "lockStatus %{public}u %{public}s", uid, userLockStatus);
-    auto iter = g_lockNum.find(uid);
-    if (iter != g_lockNum.end()) {
-        int lockCount = iter->second;
-        APPSPAWN_CHECK_DUMPI(lockCount >= LOCK_STATUS_UNLOCK_MAX, g_lockNum[uid] = lockCount + 1,
-            "lockStatus %{public}u %{public}s", uid, userLockStatus);
-    } else {
-        APPSPAWN_DUMPI("lockStatus %{public}u %{public}s", uid, userLockStatus);
-        g_lockNum[uid] = 1;
-    }
     return true;
 }
 

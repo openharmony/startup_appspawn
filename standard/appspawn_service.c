@@ -422,8 +422,8 @@ static void OnListenFdClose(const TaskHandle taskHandle)
     APPSPAWN_LOGV("OnListenFdClose listen fd: %{public}d", fd);
     if (fd > 0) {
         close(fd);
+        fd = -1;
     }
-    fd = -1;
 }
 
 APPSPAWN_STATIC bool MsgDevicedebugCheck(TaskHandle stream, AppSpawnMsgNode *message)
@@ -1236,7 +1236,7 @@ APPSPAWN_STATIC int AppSpawnColdStartApp(struct AppSpawnContent *content, AppSpa
     APPSPAWN_CHECK(!IsNativeSpawnMode(mgr), return APPSPAWN_NATIVE_NOT_ALLOW, "nativespawn not support coldrun");
     AppSpawningCtx *property = (AppSpawningCtx *)client;
     const char *processName = GetProcessName(property);
-    APPSPAWN_CHECK(processName != NULL, return APPSPAWN_ARG_INVALID, "Faied to get process name");
+    APPSPAWN_CHECK(processName != NULL, return APPSPAWN_ARG_INVALID, "Failed to get process name");
     // for cold run, use shared memory to exchange message
     APPSPAWN_LOGV("Write msg to child %{public}s", processName);
     int ret = WriteMsgToChild(property, content->mode);
