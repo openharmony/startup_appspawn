@@ -76,7 +76,7 @@ HWTEST_F(HybridSpawnServiceTest, Hybrid_Spawn_SignalFd_01, TestSize.Level0)
         APPSPAWN_CHECK(pipe(pipefd) == 0, break, "Failed to pipe fd errno:%{public}d", errno);
         ret = HybridSpawnListenFdSet(pipefd[0]);
 
-        ret = AppSpawnClientInit(NATIVESPAWN_SERVER_NAME, &clientHandle);
+        ret = AppSpawnClientInit(HYBRIDSPAWN_SERVER_NAME, &clientHandle);
         APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", HYBRIDSPAWN_SERVER_NAME);
         AppSpawnReqMsgHandle reqHandle = testServer->CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
 
@@ -126,7 +126,7 @@ HWTEST_F(HybridSpawnServiceTest, Hybrid_Spawn_SignalFd_02, TestSize.Level0)
         APPSPAWN_CHECK(pipe(pipefd) == 0, break, "Failed to pipe fd errno:%{public}d", errno);
         ret = HybridSpawnListenFdSet(pipefd[1]);
 
-        ret = AppSpawnClientInit(HYBRIDSPAWN_SERVER_NAME, &clientHandle);
+        ret = AppSpawnClientInit(NATIVESPAWN_SERVER_NAME, &clientHandle);
         APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", HYBRIDSPAWN_SERVER_NAME);
         AppSpawnReqMsgHandle reqHandle = testServer->CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
 

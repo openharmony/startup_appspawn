@@ -1140,15 +1140,15 @@ int32_t SandboxCommon::DoAppSandboxMountOnceNocheck(const AppSpawningCtx *appPro
     APPSPAWN_LOGV("Bind mount %{public}s to %{public}s '%{public}s' '%{public}lu' '%{public}s' '%{public}u'",
         arg->srcPath, arg->destPath, arg->fsType, arg->mountFlags, arg->options, arg->mountSharedFlag);
     ret = mount(arg->srcPath, arg->destPath, arg->fsType, arg->mountFlags, arg->options);
-    APPSPAWN_CHECK_LOGV(ret == 0, return ret, "errno is: %{public}d, bind mount %{public}s to %{public}s",
-        errno, arg->srcPath, arg->destPath);
     if (ret != 0) {
         APPSPAWN_LOGV("errno is: %{public}d, bind mount %{public}s to %{public}s", errno, arg->srcPath, arg->destPath);
+        APPSPAWN_ONLY_EXPER(errno == ENOENT && IsNeededCheckPathStatus(appProperty, arg->srcPath),
+            VerifyDirRecursive(arg->srcPath));
         return ret;
     }
     ret = mount(nullptr, arg->destPath, nullptr, arg->mountSharedFlag, nullptr);
     APPSPAWN_CHECK_LOGV(ret == 0, return ret, "errno is:%{public}d,private mount to %{public}s '%{public}u'failed",
-        errno, arg->destPath, arg->mountSharedFlag)
+        errno, arg->destPath, arg->mountSharedFlag);
     return 0;
 }
 
