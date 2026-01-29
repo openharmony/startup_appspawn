@@ -1,0 +1,80 @@
+# Copyright (c) 2026 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//base/startup/appspawn/appspawn.gni")
+import("//build/test.gni")
+
+if (!defined(ohos_lite)) {
+  ohos_unittest("AppSpawn_Silk_Test") {
+    module_out_path = "appspawn/appspawn"
+    cflags = [ "-Dprivate=public" ]
+
+    if (appspawn_unittest_coverage) {
+      cflags += [ "--coverage" ]
+      ldflags = [ "--coverage" ]
+      cflags_cc = [ "--coverage" ]
+    }
+
+    deps = []
+    defines = [
+      "APPSPAWN_TEST",
+      "APPSPAWN_CLIENT",
+      "APPSPAWN_DEBUG",
+      "dlopen=DlopenStub",
+    ]
+
+    # Target code include dir
+    include_dirs = [
+      "${appspawn_path}/common",
+      "${appspawn_path}/modules/common",
+      "${appspawn_path}/test/mock",
+      "${appspawn_path}/util/include",
+      "${appspawn_innerkits_path}/client",
+    ]
+
+    # Target code sources
+    sources = [
+      "${appspawn_path}/util/src/appspawn_utils.c",
+      "${appspawn_path}/modules/common/appspawn_silk.c",
+    ]
+
+    # Test specific sources
+    sources += [
+      "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_silk_test/app_spawn_silk_test.cpp",
+      "${appspawn_path}/test/mock/app_spawn_stub.cpp",
+      "${appspawn_path}/test/mock/app_system_stub.c",
+    ]
+
+    configs = [ "${appspawn_path}:appspawn_config" ]
+    external_deps = [
+    "access_token:libtokenid_sdk",
+    "access_token:libtokensetproc_shared",
+    "cJSON:cjson",
+    "c_utils:utils",
+    "config_policy:configpolicy_util",
+    "ffrt:libffrt",
+    "hilog:libhilog",
+    "hitrace:hitrace_meter",
+    "init:libbegetutil",
+    "init:seccomp",
+  ]
+
+    if (build_selinux) {
+      defines += [ "WITH_SELINUX" ]
+      external_deps += [
+        "selinux:libselinux",
+        "selinux_adapter:libhap_restorecon",
+      ]
+    }
+  }
+}
