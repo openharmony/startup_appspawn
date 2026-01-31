@@ -1217,10 +1217,20 @@ void AppSpawnDestroyContent(AppSpawnContent *content)
         content->parentToChildFd[1] = -1;
     }
     AppSpawnMgr *appSpawnContent = (AppSpawnMgr *)content;
-    if (appSpawnContent->sigHandler != NULL && appSpawnContent->servicePid == getpid()) {
-        LE_CloseSignalTask(LE_GetDefaultLoop(), appSpawnContent->sigHandler);
+    if (appSpawnContent->sigHandler != NULL) {
+        // LE_CloseSignalTask removes signalfd from epoll via epoll_ctl(EPOLL_CTL_DEL).
+        // Only parent process can call this, as child process would affect parent's epoll.
+        // After fork, child has duplicated signalfd and must close it directly.
+        APPSPAWN_ONLY_EXPER(appSpawnContent->servicePid == getpid(),
+            LE_CloseSignalTask(LE_GetDefaultLoop(), appSpawnContent->sigHandler);
+            appSpawnContent->sigHandler = NULL);
+        int fd = LE_GetSocketFd(appSpawnContent->sigHandler);
+        APPSPAWN_ONLY_EXPER(appSpawnContent->servicePid != getpid() && fd > 0, close(fd));
     }
 
+    // Close the observe process signal fd used for writing child process death info.
+    APPSPAWN_ONLY_EXPER(content->signalFd > 0, close(content->signalFd);
+        content->signalFd = -1);
     if (appSpawnContent->server != NULL && appSpawnContent->servicePid == getpid()) { // childProcess can't deal socket
         LE_CloseStreamTask(LE_GetDefaultLoop(), appSpawnContent->server);
         appSpawnContent->server = NULL;
@@ -1690,6 +1700,9 @@ APPSPAWN_STATIC void ProcessObserveProcessSignalMsg(AppSpawnConnection *connecti
 
     AppSpawnContent *content = GetAppSpawnContent();
     APPSPAWN_CHECK(content != NULL, return, "Spawn Listen appspawn content is null");
+    // Prevent duplicate signalFd: close existing fd before assigning new one.
+    // This ensures we don't leak the previous signalFd.
+    APPSPAWN_ONLY_EXPER(content->signalFd > 0, close(content->signalFd));
     content->signalFd = fd;
     connection->receiverCtx.fdCount = 0;
     SendResponse(connection, &message->msgHeader, 0, 0);
