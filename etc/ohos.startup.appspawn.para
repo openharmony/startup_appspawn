@@ -13,4 +13,4 @@
 
 persist.appspawn.hybridspawn.enable = false
 
-persist.appspawn.hybridspawn.unified = false
+persist.appspawn.hybridspawn.unified = true
