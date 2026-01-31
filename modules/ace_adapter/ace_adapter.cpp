@@ -314,6 +314,11 @@ APPSPAWN_STATIC int PreLoadAppSpawn(AppSpawnMgr *content)
     if (IsNWebSpawnMode(content)) {
         return 0;
     }
+#ifdef ARKWEB_UTILS_ENABLE
+    if (IsAppSpawnMode(content)) {
+        OHOS::ArkWeb::CreateArkWebSandboxPathIfNeed();
+    }
+#endif
     // register
     RegChildLooper(&content->content, RunChildProcessor);
     if (strcmp(content->content.longProcName, CJAPPSPAWN_SERVER_NAME) == 0) {
