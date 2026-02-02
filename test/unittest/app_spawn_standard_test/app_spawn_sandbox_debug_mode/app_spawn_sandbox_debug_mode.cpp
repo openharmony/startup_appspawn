@@ -17,8 +17,10 @@
 
 #define private public
 #include "lib_func_mock.h"
+#include "sandbox_core.h"
 
 // mock sandbox_core.cpp func
+#include "lib_func_define.h"
 #include "sandbox_core.cpp"
 #include "lib_func_undef.h"
 
