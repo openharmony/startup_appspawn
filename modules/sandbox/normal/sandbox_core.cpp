@@ -64,13 +64,17 @@ int SandboxCore::EnableSandboxNamespace(AppSpawningCtx *appProperty, uint32_t sa
     clock_gettime(CLOCK_MONOTONIC, &startClock);
 #endif
     int rc = unshare(sandboxNsFlags);
+    int saveErrno = errno;
 #ifdef APPSPAWN_HISYSEVENT
     struct timespec endClock = {0};
     clock_gettime(CLOCK_MONOTONIC, &endClock);
     uint64_t diff = DiffTime(&startClock, &endClock);
     APPSPAWN_CHECK_ONLY_EXPER(diff < FUNC_REPORT_DURATION, ReportAbnormalDuration("unshare", diff));
+    APPSPAWN_CHECK_ONLY_EXPER(!(rc != 0 && saveErrno == EINVAL),
+        ReportMountFullHisysevent(APPSPAWN_SANDBOX_UNSHARE_EINVAL));
 #endif
-    APPSPAWN_CHECK(rc == 0, return rc, "unshare %{public}s failed, err %{public}d", GetBundleName(appProperty), errno);
+    APPSPAWN_CHECK(rc == 0, return rc, "unshare %{public}s failed, err %{public}d", GetBundleName(appProperty),
+        saveErrno);
 
     if ((sandboxNsFlags & CLONE_NEWNET) == CLONE_NEWNET) {
         rc = EnableNewNetNamespace();

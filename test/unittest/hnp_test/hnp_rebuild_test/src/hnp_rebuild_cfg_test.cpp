@@ -43,6 +43,7 @@
 
 #ifndef HNP_TEST_DIR_MODE
 #define HNP_TEST_DIR_MODE (0771)
+
 #endif
 
 using namespace testing;
@@ -443,7 +444,6 @@ HWTEST_F(HnpRebuildCfgSingleTest, HnpRebuildCfgTest_006, TestSize.Level0)
     cJSON *hnpArray = cJSON_CreateArray();
     AddHnpToHnpArray(hnpArray, TEST_HNP_INDEX_1 | TEST_HNP_INDEX_2);
     AddHapToRoot(json, TEST_HAP_NAME1, hnpArray);
-    printf("old Json is %s \r\n", cJSON_Print(json));
 
     ret = HnpHapJsonWrite(json, HNP_OLD_CFG_PATH);
     cJSON_Delete(json);
@@ -465,7 +465,6 @@ HWTEST_F(HnpRebuildCfgSingleTest, HnpRebuildCfgTest_006, TestSize.Level0)
 
     json = cJSON_Parse(infoStream);
     free(infoStream);
-    printf("current Json is %s \r\n", cJSON_Print(json));
     EXPECT_NE(json, nullptr);
     EXPECT_TRUE(cJSON_IsArray(json));
     EXPECT_EQ(cJSON_GetArraySize(json), 1);
