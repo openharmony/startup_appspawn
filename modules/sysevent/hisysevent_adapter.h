@@ -35,7 +35,10 @@ extern "C" {
 #define ERR_MODULE_INIT 0x10
 #define ERR_APPSPAWN_BASE   ((SUBSYS_STARTUP_ID << SUBSYSTEM_BIT_NUM) | (ERR_MODULE_APPSPAWN << MODULE_BIT_NUM))
 #define ERR_INIT_BASE   ((SUBSYS_STARTUP_ID << SUBSYSTEM_BIT_NUM) | (ERR_MODULE_INIT << MODULE_BIT_NUM))
-
+#define PARAM_APPSPAWN_TIME_MOUNTINFO "startup.appspawn.time.mountinfo"
+#define MOUNTINFO_UPDATE_TIMEOUT (60 * 60)
+#define PARAM_BUFFER_LEN (32)
+#define NUM_DEC (10)
 typedef enum {
     // errcode for handle msg, reserved 128, 0x0001-0x0080
     ERR_APPSPAWN_MSG_TOO_LONG = ERR_APPSPAWN_BASE + 0x0001, // 81788929
@@ -105,6 +108,7 @@ typedef struct {
 #define APPSPAWN_MAX_FAILURES_EXCEEDED "APPSPAWN_MAX_FAILURES_EXCEEDED"
 AppSpawnHisyseventInfo *InitHisyseventTimer(void);
 AppSpawnHisyseventInfo *GetAppSpawnHisyseventInfo(void);
+void ReportMountFullHisysevent(int32_t errCode);
 void AddStatisticEventInfo(AppSpawnHisyseventInfo *hisyseventInfo, uint32_t duration, bool stage);
 void DeleteHisyseventInfo(AppSpawnHisyseventInfo *hisyseventInfo);
 
