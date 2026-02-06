@@ -95,7 +95,7 @@ static void AddDecPathsByPermission(std::map<std::string, std::vector<std::strin
             APPSPAWN_CHECK_ONLY_EXPER(strValue != nullptr, continue);
 
             std::string decPath = ConvertDecPath(strValue);
-            APPSPAWN_LOGI("Get decPath %{public}s from %{public}s", decPath.c_str(), permission.c_str());
+            APPSPAWN_LOGV("Get decPath %{public}s from %{public}s", decPath.c_str(), permission.c_str());
             decPaths.push_back(decPath);
         }
     }
