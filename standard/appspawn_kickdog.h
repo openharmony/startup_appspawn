@@ -32,7 +32,7 @@ extern "C" {
 #ifdef APPSPAWN_TEST    //macro for test
 #define LINUX_APPSPAWN_WATCHDOG_FILE    "./TestDataFile.txt"
 #define HM_APPSPAWN_WATCHDOG_FILE    "./TestDataFile.txt"
-#define APPSPAWN_WATCHDOG_KICKTIME    (1 * 1000)  //1s
+#define APPSPAWN_WATCHDOG_KICKTIME    (1 * 500)  //500 ms
 #else
 #define LINUX_APPSPAWN_WATCHDOG_FILE    "/sys/kernel/hungtask/userlist"
 #define HM_APPSPAWN_WATCHDOG_FILE    "/proc/sys/hguard/user_list"
