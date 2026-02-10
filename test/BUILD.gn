@@ -35,6 +35,10 @@ group("unittest") {
       deps += [ "unittest/app_spawn_standard_test/app_spawn_sandbox_debug_mode:AppSpawn_Sandbox_Debug_Mode_Test" ]
       deps += [ "unittest/app_spawn_standard_test/app_spawn_silk_test:AppSpawn_Silk_Test" ]
       deps += [ "unittest/app_spawn_standard_test/app_spawn_module_interface_test:AppSpawn_Module_Interface_Test" ]
+      deps += [ "unittest/app_spawn_standard_test/app_spawn_codesign_test:AppSpawn_CodeSign_Test" ]
+      deps += [ "unittest/app_spawn_standard_test/app_spawn_command_lexer_test:AppSpawn_CommandLexer_Test" ]
+      deps += [ "unittest/app_spawn_standard_test/app_spawn_isolate_test:AppSpawn_Isolate_Test" ]
+      deps += [ "unittest/app_spawn_standard_test/app_spawn_kickdog_test:AppSpawn_KickDog_Test" ]
     }
     deps += [ "unittest/hnp_test:HnpTest" ]
     deps += [ "unittest/hnp_test/private_hnp_test:HnpPrivateTest" ]
