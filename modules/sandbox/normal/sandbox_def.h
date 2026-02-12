@@ -158,6 +158,7 @@ constexpr const char *g_overlayDecollator = "|";
 /* system/etc */
 constexpr const char *g_hostsPrefix = "/system/etc/hosts";
 constexpr const char *g_profilePrefix = "/system/etc/profile";
+constexpr const char *SUDOERS_PREFIX = "/system/etc/sudoers";
 
 /* 权限名 */
 const std::string FILE_CROSS_APP_MODE = "ohos.permission.FILE_CROSS_APP";

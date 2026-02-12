@@ -1048,7 +1048,9 @@ int32_t SandboxCommon::DoAppSandboxMountOnce(const AppSpawningCtx *appProperty, 
     if (!(arg && arg->srcPath && arg->destPath && arg->srcPath[0] != '\0' && arg->destPath[0] != '\0')) {
         return 0;
     }
-    if (strstr(arg->srcPath, "system/etc/hosts") != nullptr || strstr(arg->srcPath, "system/etc/profile") != nullptr) {
+    if (strstr(arg->srcPath, "system/etc/hosts") != nullptr ||
+        strstr(arg->srcPath, "system/etc/profile") != nullptr ||
+        strstr(arg->srcPath, "system/etc/sudoers") != nullptr) {
         CreateFileIfNotExist(arg->destPath);
     } else {
         (void)CreateDirRecursive(arg->destPath, SandboxCommonDef::FILE_MODE);
@@ -1100,7 +1102,8 @@ int32_t SandboxCommon::DoAppSandboxMountOnceNocheck(const AppSpawningCtx *appPro
         return 0;
     }
     if ((strncmp(arg->srcPath, SandboxCommonDef::g_hostsPrefix, strlen(SandboxCommonDef::g_hostsPrefix)) == 0) ||
-        (strncmp(arg->srcPath, SandboxCommonDef::g_profilePrefix, strlen(SandboxCommonDef::g_profilePrefix)) == 0)) {
+        (strncmp(arg->srcPath, SandboxCommonDef::g_profilePrefix, strlen(SandboxCommonDef::g_profilePrefix)) == 0) ||
+        (strncmp(arg->srcPath, SandboxCommonDef::SUDOERS_PREFIX, strlen(SandboxCommonDef::SUDOERS_PREFIX)) == 0)) {
         CreateFileIfNotExist(arg->destPath);
     } else {
         (void)CreateDirRecursive(arg->destPath, SandboxCommonDef::FILE_MODE);
