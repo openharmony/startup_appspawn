@@ -55,6 +55,7 @@ if (!defined(ohos_lite)) {
     # Dependent code sources
     sources += [
       "${appspawn_path}/util/src/appspawn_utils.c",
+      "${appspawn_path}/util/src/appspawndf_utils.cpp",
       "${appspawn_path}/standard/appspawn_msgmgr.c",
       "${appspawn_path}/standard/appspawn_appmgr.c",
     ]

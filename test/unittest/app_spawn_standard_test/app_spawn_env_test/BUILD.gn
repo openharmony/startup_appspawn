@@ -87,6 +87,7 @@ if (!defined(ohos_lite)) {
       "${appspawn_path}/standard/appspawn_msgmgr.c",
       "${appspawn_path}/standard/appspawn_service.c",
       "${appspawn_path}/util/src/appspawn_utils.c",
+      "${appspawn_path}/util/src/appspawndf_utils.cpp",
     ]
 
     # client
