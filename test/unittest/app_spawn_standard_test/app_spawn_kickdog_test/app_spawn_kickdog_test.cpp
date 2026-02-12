@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -22,9 +22,17 @@
 
 #include "appspawn_kickdog.h"
 #include "securec.h"
+#include "server_test_helper.h"
 
-#include "app_spawn_stub.h"
-#include "app_spawn_test_helper.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
+ 	 
+int SpawnKickDogStart(AppSpawnMgr *mgrContent);
+ 	 
+#ifdef __cplusplus
+}
+#endif
 
 using namespace testing;
 using namespace testing::ext;
@@ -107,8 +115,8 @@ HWTEST_F(AppSpawnKickDogTest, App_Spawn_AppSpawnKickDog_001, TestSize.Level0)
     EXPECT_EQ(fileFd != -1, 1);
     close(fileFd);
 
-    std::unique_ptr<OHOS::AppSpawnTestServer> testServer =
-        std::make_unique<OHOS::AppSpawnTestServer>("appspawn -mode appspawn");
+    std::unique_ptr<OHOS::ServerTestHelper> testServer =
+        std::make_unique<OHOS::ServerTestHelper>("appspawn -mode appspawn");
     AddPreloadHook(HOOK_PRIO_COMMON, SpawnKickDogStart);
     testServer->Start(nullptr);
     if (CheckDeviceInLinux()) {
@@ -148,8 +156,8 @@ HWTEST_F(AppSpawnKickDogTest, App_Spawn_AppSpawnKickDog_002, TestSize.Level0)
     EXPECT_EQ(fileFd != -1, 1);
     close(fileFd);
 
-    std::unique_ptr<OHOS::AppSpawnTestServer> testServer =
-        std::make_unique<OHOS::AppSpawnTestServer>("nwebspawn -mode nwebspawn");
+    std::unique_ptr<OHOS::ServerTestHelper> testServer =
+        std::make_unique<OHOS::ServerTestHelper>("nwebspawn -mode nwebspawn");
     AddPreloadHook(HOOK_PRIO_COMMON, SpawnKickDogStart);
     testServer->Start(nullptr);
     usleep(1 * 50 * 1000); // wait 50ms for writing kick log before reading
