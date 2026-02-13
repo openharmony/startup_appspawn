@@ -1997,6 +1997,24 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_62, TestSize.Level0)
     DeleteAppSpawningCtx(appProperty);
 }
 
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_63, TestSize.Level0)
+{
+    int32_t ret = 0;
+    SharedMountArgs arg = {
+        .srcPath = "system/etc/sudoers/ABC",
+        .destPath = "system/etc/sudoers/ABC"
+    };
+    ret = AppSpawn::SandboxCommon::DoAppSandboxMountOnceNocheck(nullptr, &arg);
+    EXPECT_EQ(ret, 0);
+
+    SharedMountArgs arg1 = {
+        .srcPath = "/system/etc/sudoers/ABC",
+        .destPath = "/system/etc/sudoers/ABC"
+    };
+    ret = AppSpawn::SandboxCommon::DoAppSandboxMountOnceNocheck(nullptr, &arg1);
+    EXPECT_EQ(ret, 0);
+}
+
 /**
  * @brief 测试app extension
  *
