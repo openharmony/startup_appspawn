@@ -86,6 +86,7 @@ typedef enum TagAppSpawnHookPrio {
     HOOK_PRIO_HIGHEST = 1000,
     HOOK_PRIO_COMMON = 2000,
     HOOK_PRIO_SANDBOX = 3000,
+    HOOK_PRIO_SANDBOX_MARK_PATH = 3500, // set mark for paths in sandbox
     HOOK_PRIO_PROPERTY = 4000,
     HOOK_PRIO_LOWEST = 5000,
 } AppSpawnHookPrio;
