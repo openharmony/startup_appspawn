@@ -26,7 +26,6 @@
 #include "securec.h"
 
 #define APPSPAWN_PRELOAD "libappspawn_helper.z.so"
-
 #ifndef CJAPP_SPAWN
 static AppSpawnStartArgTemplate g_appSpawnStartArgTemplate[PROCESS_INVALID] = {
     {APPSPAWN_SERVER_NAME, {MODE_FOR_APP_SPAWN, MODULE_APPSPAWN, APPSPAWN_SOCKET_NAME, APPSPAWN_SERVER_NAME, 1}},
@@ -39,6 +38,7 @@ static AppSpawnStartArgTemplate g_appSpawnStartArgTemplate[PROCESS_INVALID] = {
         HYBRIDSPAWN_SERVER_NAME, 1}},
     {"hybrid_cold", {MODE_FOR_HYBRID_COLD_RUN, MODULE_HYBRIDSPAWN, HYBRIDSPAWN_SOCKET_NAME,
         HYBRIDSPAWN_SERVER_NAME, 0}},
+    {APPSPAWNDF_SERVER_NAME, {MODE_FOR_APP_SPAWN, MODULE_APPSPAWN, APPSPAWNDF_SOCKET_NAME, APPSPAWNDF_SERVER_NAME, 1}},
 };
 #else
 static AppSpawnStartArgTemplate g_appCJSpawnStartArgTemplate[CJPROCESS_INVALID] = {

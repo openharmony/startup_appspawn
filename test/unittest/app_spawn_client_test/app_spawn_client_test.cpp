@@ -1196,4 +1196,163 @@ HWTEST_F(AppSpawnClientTest, App_Spawn_interface001, TestSize.Level0)
     EXPECT_EQ(clientInstance->socketId, 1);
     free(clientInstance);
 }
+
+/**
+ * @brief Test AppSpawnClientInit with APPSPAWNDF_SERVER_NAME
+ */
+HWTEST_F(AppSpawnClientTest, App_Spawn_Client_Init_APPSPAWNDF_001, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = nullptr;
+    int ret = AppSpawnClientInit(APPSPAWNDF_SERVER_NAME, &clientHandle);
+    EXPECT_EQ(ret, 0);
+    EXPECT_NE(clientHandle, nullptr);
+    AppSpawnReqMsgMgr *reqMgr = (AppSpawnReqMsgMgr *)clientHandle;
+    EXPECT_EQ(reqMgr->type, CLIENT_FOR_APPSPAWNDF);
+    AppSpawnClientDestroy(clientHandle);
+}
+
+/**
+ * @brief Test GetSocketName function covers CLIENT_FOR_APPSPAWNDF branch
+ */
+HWTEST_F(AppSpawnClientTest, App_Spawn_GetSocketName_APPSPAWNDF_001, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = nullptr;
+    int ret = AppSpawnClientInit(APPSPAWNDF_SERVER_NAME, &clientHandle);
+    EXPECT_EQ(ret, 0);
+    AppSpawnReqMsgMgr *reqMgr = (AppSpawnReqMsgMgr *)clientHandle;
+    EXPECT_EQ(reqMgr->type, CLIENT_FOR_APPSPAWNDF);
+    TryCreateSocket(reqMgr);
+    AppSpawnClientDestroy(clientHandle);
+}
+
+/**
+ * @brief Test SendSpawnListenMsg with CLIENT_FOR_APPSPAWNDF branch
+ */
+HWTEST_F(AppSpawnClientTest, App_Spawn_SendSpawnListenMsg_APPSPAWNDF_001, TestSize.Level0)
+{
+    OHOS::AppSpawnTestServer testServer("appspawn -mode appspawn", false);
+    testServer.Start(
+        [](TestConnection *connection, const uint8_t *buffer, uint32_t buffLen) {
+            connection->SendResponse(
+                reinterpret_cast<AppSpawnMsg *>(const_cast<uint8_t *>(buffer)), 0, TEST_PID);
+        },
+        3000);
+    AppSpawnClientHandle clientHandle = nullptr;
+    int ret = AppSpawnClientInit(APPSPAWNDF_SERVER_NAME, &clientHandle);
+    EXPECT_EQ(ret, 0);
+    AppSpawnReqMsgHandle reqHandle = testServer.CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+    EXPECT_NE(reqHandle, nullptr);
+    AppSpawnResult result = {};
+    ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
+    testServer.Stop();
+    AppSpawnClientDestroy(clientHandle);
+}
+
+/**
+ * @brief Test SendSpawnListenMsg skips MSG_OBSERVE_PROCESS_SIGNAL_STATUS
+ */
+HWTEST_F(AppSpawnClientTest, App_Spawn_SendSpawnListenMsg_APPSPAWNDF_002, TestSize.Level0)
+{
+    OHOS::AppSpawnTestServer testServer("appspawn -mode appspawn", false);
+    testServer.Start(
+        [](TestConnection *connection, const uint8_t *buffer, uint32_t buffLen) {
+            connection->SendResponse(
+                reinterpret_cast<AppSpawnMsg *>(const_cast<uint8_t *>(buffer)), 0, TEST_PID);
+        },
+        3000);
+    AppSpawnClientHandle clientHandle = nullptr;
+    int ret = AppSpawnClientInit(APPSPAWNDF_SERVER_NAME, &clientHandle);
+    EXPECT_EQ(ret, 0);
+    AppSpawnReqMsgHandle reqHandle = testServer.CreateMsg(clientHandle, MSG_OBSERVE_PROCESS_SIGNAL_STATUS, 0);
+    EXPECT_NE(reqHandle, nullptr);
+    AppSpawnResult result = {};
+    ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
+    testServer.Stop();
+    AppSpawnClientDestroy(clientHandle);
+}
+
+/**
+ * @brief Test AppSpawnClientSendMsgDfControl with MSG_APP_SPAWN
+ */
+HWTEST_F(AppSpawnClientTest, App_Spawn_SendMsgDfControl_001, TestSize.Level0)
+{
+    OHOS::AppSpawnTestServer testServer("appspawn -mode appspawn", false);
+    testServer.Start(
+        [](TestConnection *connection, const uint8_t *buffer, uint32_t buffLen) {
+            connection->SendResponse(
+                reinterpret_cast<AppSpawnMsg *>(const_cast<uint8_t *>(buffer)), 0, TEST_PID);
+        },
+        3000);
+    AppSpawnClientHandle clientHandle = nullptr;
+    int ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+    EXPECT_EQ(ret, 0);
+    AppSpawnReqMsgHandle reqHandle = testServer.CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+    EXPECT_NE(reqHandle, nullptr);
+    AppSpawnResult result = {};
+    ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
+    testServer.Stop();
+    AppSpawnClientDestroy(clientHandle);
+}
+
+/**
+ * @brief Test AppSpawnClientSendMsgDfControl with broadcast message
+ */
+HWTEST_F(AppSpawnClientTest, App_Spawn_SendMsgDfControl_002, TestSize.Level0)
+{
+    OHOS::AppSpawnTestServer testServer("appspawn -mode appspawn", false);
+    testServer.Start(
+        [](TestConnection *connection, const uint8_t *buffer, uint32_t buffLen) {
+            connection->SendResponse(
+                reinterpret_cast<AppSpawnMsg *>(const_cast<uint8_t *>(buffer)), 0, TEST_PID);
+        },
+        3000);
+    AppSpawnClientHandle clientHandle = nullptr;
+    int ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+    EXPECT_EQ(ret, 0);
+    AppSpawnReqMsgHandle reqHandle = testServer.CreateMsg(clientHandle, MSG_DUMP, 0);
+    EXPECT_NE(reqHandle, nullptr);
+    AppSpawnResult result = {};
+    ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
+    testServer.Stop();
+    AppSpawnClientDestroy(clientHandle);
+}
+
+/**
+ * @brief Test SleepRetryTime with needSleep=true by simulating connection failure
+ */
+HWTEST_F(AppSpawnClientTest, App_Spawn_SleepRetryTime_001, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = nullptr;
+    int ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+    EXPECT_EQ(ret, 0);
+    AppSpawnReqMsgHandle reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+    EXPECT_NE(reqHandle, nullptr);
+    AppSpawnReqMsgMgr *reqMgr = (AppSpawnReqMsgMgr *)clientHandle;
+    reqMgr->socketId = -1;
+    reqMgr->maxRetryCount = 2;
+    AppSpawnResult result = {};
+    ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
+    EXPECT_NE(ret, 0);
+    AppSpawnClientDestroy(clientHandle);
+}
+
+/**
+ * @brief Test TryCreateSocket retry logic covers SleepRetryTime
+ */
+HWTEST_F(AppSpawnClientTest, App_Spawn_SleepRetryTime_002, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = nullptr;
+    int ret = AppSpawnClientInit(NWEBSPAWN_SERVER_NAME, &clientHandle);
+    EXPECT_EQ(ret, 0);
+    AppSpawnReqMsgHandle reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+    EXPECT_NE(reqHandle, nullptr);
+    AppSpawnReqMsgMgr *reqMgr = (AppSpawnReqMsgMgr *)clientHandle;
+    reqMgr->socketId = -1;
+    reqMgr->maxRetryCount = 3;
+    AppSpawnResult result = {};
+    ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
+    EXPECT_NE(ret, 0);
+    AppSpawnClientDestroy(clientHandle);
+}
 }  // namespace OHOS
+
