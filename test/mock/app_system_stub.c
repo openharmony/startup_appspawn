@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
+#include <sched.h>
 
 #include <sys/socket.h>
 #include <sys/stat.h>
@@ -125,6 +126,14 @@ void *DlsymStub(void *handle, const char *symbol)
 int DlcloseStub(void *handle)
 {
     UNUSED(handle);
+    return 0;
+}
+
+int SchedSetschedulerStub(pid_t pid, int policy, const struct sched_param *param)
+{
+    UNUSED(pid);
+    UNUSED(policy);
+    UNUSED(param);
     return 0;
 }
 
