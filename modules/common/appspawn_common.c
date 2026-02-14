@@ -16,6 +16,7 @@
 #include <grp.h>
 #include <inttypes.h>
 #include <limits.h>
+#include <linux/ioctl.h>
 #include <sys/capability.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -328,6 +329,42 @@ APPSPAWN_STATIC int SetUidGid(const AppSpawnMgr *content, const AppSpawningCtx *
     return 0;
 }
 
+#ifndef APPSPAWN_CHANGE_SCHED_ENABLE
+typedef struct TaskConfig {
+    pid_t pid;
+    int32_t value;
+} TaskConfig;
+
+#define QOS_CTRL_SET_QOS_PROC_THREAD _IOWR('q', 2, struct TaskConfig)
+#define QOS_LEVEL                    7
+
+static void SetProcessQos(void)
+{
+    int fd = open("/dev/qos_sched_ctrl", O_RDWR | O_CLOEXEC);
+    if (fd <= 0) {
+        APPSPAWN_LOGE("Failed to open qos_sched_ctrl file, errno: %{public}d", errno);
+        return;
+    }
+
+    pid_t currPid = getpid();
+    if (currPid <= 0) {
+        APPSPAWN_LOGE("Failed to get current pid, errno: %{public}d", errno);
+        close(fd);
+        return;
+    }
+    TaskConfig config = {
+        .pid = currPid,
+        .value = QOS_LEVEL
+    };
+
+    if (ioctl(fd, QOS_CTRL_SET_QOS_PROC_THREAD, &config) < 0) {
+        APPSPAWN_LOGE("Failed to set qos proc thread, errno: %{public}d", errno);
+    }
+    close(fd);
+}
+
+#endif
+
 APPSPAWN_STATIC int SetSchedPriority(const AppSpawnMgr *content, const AppSpawningCtx *property)
 {
 #ifdef APPSPAWN_CHANGE_SCHED_ENABLE
@@ -336,6 +373,14 @@ APPSPAWN_STATIC int SetSchedPriority(const AppSpawnMgr *content, const AppSpawni
         param.sched_priority = 0;
         int ret = sched_setscheduler(0, SCHED_OTHER, &param);
         APPSPAWN_CHECK_ONLY_LOG(ret == 0, "UpdateSchedPrio failed ret: %{public}d, %{public}d", ret, errno);
+    }
+#else
+    if (IsAppSpawnMode(content) || IsHybridSpawnMode(content)) {
+        struct sched_param param = { 0 };
+        param.sched_priority = 1;
+        int ret = sched_setscheduler(0, SCHED_FIFO | SCHED_RESET_ON_FORK, &param);
+        APPSPAWN_CHECK_ONLY_LOG(ret == 0, "UpdateSchedPrio failed ret: %{public}d, %{public}d", ret, errno);
+        SetProcessQos();
     }
 #endif
     return 0;
