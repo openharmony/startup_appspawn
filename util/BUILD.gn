@@ -15,7 +15,10 @@ import("//base/startup/appspawn/appspawn.gni")
 import("//build/ohos.gni")
 
 ohos_static_library("libappspawn_util") {
-  sources = [ "src/appspawn_utils.c" ]
+  sources = [
+    "src/appspawn_utils.c",
+    "src/appspawndf_utils.cpp",
+  ]
   external_deps = [
     "bounds_checking_function:libsec_shared",
     "cJSON:cjson",

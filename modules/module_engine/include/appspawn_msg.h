@@ -33,6 +33,7 @@ extern "C" {
 #define NATIVESPAWN_SOCKET_NAME "NativeSpawn"
 #define SPAWN_LISTEN_FD_NAME "SpawnListenFd"
 #define HYBRIDSPAWN_SOCKET_NAME "HybridSpawn"
+#define APPSPAWNDF_SOCKET_NAME "AppSpawndf"
 
 #define APPSPAWN_ALIGN(len) (((len) + 0x03) & (~0x03))
 #define APPSPAWN_TLV_NAME_LEN 32

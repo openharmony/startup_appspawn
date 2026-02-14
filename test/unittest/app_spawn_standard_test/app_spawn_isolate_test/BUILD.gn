@@ -66,6 +66,7 @@ if (!defined(ohos_lite)) {
     sources += [
       "${appspawn_path}/modules/modulemgr/appspawn_modulemgr.c",
       "${appspawn_path}/util/src/appspawn_utils.c",
+      "${appspawn_path}/util/src/appspawndf_utils.cpp",
       "${appspawn_path}/standard/appspawn_appmgr.c",
       "${appspawn_path}/standard/appspawn_msgmgr.c",
       "${appspawn_innerkits_path}/client/appspawn_client.c",

@@ -45,6 +45,7 @@ if (!defined(ohos_lite)) {
     # Target code sources
     sources = [
       "${appspawn_path}/util/src/appspawn_utils.c",
+      "${appspawn_path}/util/src/appspawndf_utils.cpp",
       "${appspawn_path}/modules/common/appspawn_silk.c",
     ]
 
