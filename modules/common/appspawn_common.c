@@ -603,15 +603,6 @@ static int SpawnComplete(AppSpawnMgr *content, AppSpawningCtx *property)
     return 0;
 }
 
-static int CheckEnabled(const char *param, const char *value)
-{
-    char tmp[32] = {0};  // 32 max
-    int ret = GetParameter(param, "", tmp, sizeof(tmp));
-    APPSPAWN_LOGV("CheckEnabled key %{public}s ret %{public}d result: %{public}s", param, ret, tmp);
-    int enabled = (ret > 0 && strcmp(tmp, value) == 0);
-    return enabled;
-}
-
 static int SpawnGetSpawningFlag(AppSpawnMgr *content, AppSpawningCtx *property)
 {
     APPSPAWN_LOGV("Spawning: prepare app %{public}s", GetProcessName(property));

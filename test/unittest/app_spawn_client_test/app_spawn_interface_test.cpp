@@ -503,15 +503,14 @@ HWTEST_F(AppSpawnInterfaceTest, App_Spawn_Interface_Add_String_Info_001, TestSiz
 HWTEST_F(AppSpawnInterfaceTest, App_Spawn_Set_Msg_Flags_001, TestSize.Level0)
 {
     AppSpawnReqMsgHandle reqHandle = 0;
-    int ret = AppSpawnReqMsgCreate(MSG_APP_SPAWN, "com.example.myapplication", &reqHandle);
-    EXPECT_EQ(ret, 0);
-
     for (int32_t i = 0; i <= MAX_FLAGS_INDEX; i++) {
+        int ret = AppSpawnReqMsgCreate(MSG_APP_SPAWN, "com.example.myapplication", &reqHandle);
+        ASSERT_EQ(ret, 0);
         ret = AppSpawnReqMsgSetAppFlag(reqHandle, static_cast<AppFlagsIndex>(i));
-        printf(" App_Spawn_Set_Msg_Flags_001 %d %d \n", i, ret);
+        printf("App_Spawn_Set_Msg_Flags_001 %d %d \n", i, ret);
         EXPECT_EQ((i != MAX_FLAGS_INDEX && ret == 0) || (ret != 0), 1);
+        AppSpawnReqMsgFree(reqHandle);
     }
-    AppSpawnReqMsgFree(reqHandle);
 }
 
 HWTEST_F(AppSpawnInterfaceTest, App_Spawn_TerminateMsg_001, TestSize.Level0)

@@ -300,7 +300,7 @@ static AppSpawnReqMsgNode *CreateAppSpawnReqMsg(uint32_t msgType, const char *pr
     reqNode->msgFlags = NULL;
     reqNode->permissionFlags = NULL;
     reqNode->fdCount = 0;
-    reqNode->isAsan = 0;
+    reqNode->isColdRun = 0;
     int ret = CreateBaseMsg(reqNode, msgType, processName);
     APPSPAWN_CHECK(ret == 0, DeleteAppSpawnReqMsg(reqNode);
          return NULL, "Failed to create base msg for %{public}s", processName);
@@ -394,29 +394,39 @@ int AppSpawnReqMsgSetBundleInfo(AppSpawnReqMsgHandle reqHandle, uint32_t bundleI
     return AddAppData(reqNode, TLV_BUNDLE_INFO, data, MAX_DATA_IN_TLV, "TLV_BUNDLE_INFO");
 }
 
-static int CheckEnabled(const char *param, const char *value)
+static bool ShouldEnableColdRun(AppFlagsIndex flagIndex)
 {
-    char tmp[32] = {0}; // 32 max
-    int ret = GetParameter(param, "", tmp, sizeof(tmp));
-    APPSPAWN_LOGV("CheckEnabled key %{public}s ret %{public}d result: %{public}s", param, ret, tmp);
-    int enabled = (ret > 0 && strcmp(tmp, value) == 0);
-    return enabled;
+    if (flagIndex == APP_FLAGS_UBSAN_ENABLED ||
+        flagIndex == APP_FLAGS_ASANENABLED ||
+        flagIndex == APP_FLAGS_TSAN_ENABLED ||
+        flagIndex == APP_FLAGS_HWASAN_ENABLED) {
+        return true;
+    }
+
+    if (flagIndex == APP_FLAGS_COLD_BOOT &&
+        CheckEnabled("startup.appspawn.cold.boot", "true")) {
+        return true;
+    }
+
+    if (flagIndex == APP_FLAGS_DEBUGGABLE &&
+        CheckEnabled("const.security.developermode.state", "true") &&
+        CheckEnabled("hiviewdfx.hiprofiler.preload", "1")) {
+        return true;
+    }
+
+    return false;
 }
 
 int AppSpawnReqMsgSetAppFlag(AppSpawnReqMsgHandle reqHandle, AppFlagsIndex flagIndex)
 {
     AppSpawnReqMsgNode *reqNode = (AppSpawnReqMsgNode *)reqHandle;
     APPSPAWN_CHECK_ONLY_EXPER(reqNode != NULL, return APPSPAWN_ARG_INVALID);
-    APPSPAWN_CHECK(reqNode->msgFlags != NULL, return APPSPAWN_ARG_INVALID, "No msg flags tlv ");
+    APPSPAWN_CHECK(reqNode->msgFlags != NULL, return APPSPAWN_ARG_INVALID, "No msg flags tlv");
     APPSPAWN_CHECK(flagIndex < MAX_FLAGS_INDEX, return APPSPAWN_ARG_INVALID,
         "Invalid msg app flags %{public}d", flagIndex);
-    if (!reqNode->isAsan &&
-        (flagIndex == APP_FLAGS_UBSAN_ENABLED || flagIndex == APP_FLAGS_ASANENABLED ||
-        flagIndex == APP_FLAGS_TSAN_ENABLED || flagIndex == APP_FLAGS_HWASAN_ENABLED ||
-        (flagIndex == APP_FLAGS_COLD_BOOT && CheckEnabled("startup.appspawn.cold.boot", "true")))) {
-        reqNode->isAsan = 1;
+    if (!reqNode->isColdRun && ShouldEnableColdRun(flagIndex)) {
+        reqNode->isColdRun = 1;
     }
-
     return SetAppSpawnMsgFlags(reqNode->msgFlags, flagIndex);
 }
 

@@ -85,7 +85,7 @@ typedef struct TagAppSpawnReqMsgNode {
     uint32_t retryCount;
     int fdCount;
     int fds[APP_MAX_FD_COUNT];
-    int isAsan;
+    int isColdRun;
     AppSpawnMsgFlags *msgFlags;
     AppSpawnMsgFlags *permissionFlags;
     AppSpawnMsg *msg;
