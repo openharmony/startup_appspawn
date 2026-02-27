@@ -390,13 +390,20 @@ void AppSpawnDump(const char *fmt, ...)
     (void)fflush(g_dumpToStream);
 }
 
+#define PARAM_LEN 32
+int CheckEnabled(const char *param, const char *value)
+{
+    APPSPAWN_CHECK_ONLY_EXPER(param != NULL && value != NULL, return 0);
+    char tmp[PARAM_LEN] = {0};  // 32 max
+    int ret = GetParameter(param, "", tmp, sizeof(tmp));
+    APPSPAWN_LOGV("CheckEnabled key %{public}s ret %{public}d result %{public}s", param, ret, tmp);
+    int enabled = (ret > 0 && ret <= sizeof(tmp) - 1 && strcmp(tmp, value) == 0);
+    return enabled;
+}
+
 int IsDeveloperModeOpen()
 {
-    char tmp[32] = {0};  // 32 max
-    int ret = GetParameter("const.security.developermode.state", "", tmp, sizeof(tmp));
-    APPSPAWN_LOGV("IsDeveloperModeOpen ret %{public}d result: %{public}s", ret, tmp);
-    int enabled = (ret > 0 && strcmp(tmp, "true") == 0);
-    return enabled;
+    return CheckEnabled("const.security.developermode.state", "true");
 }
 
 #if defined(__clang__)

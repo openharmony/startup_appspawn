@@ -18,6 +18,7 @@ ohos_shared_library("appspawn_ace") {
   sources = [
     "ace_adapter.cpp",
     "command_lexer.cpp",
+    "dfx_preload.cpp",
   ]
   include_dirs = [
     ".",
@@ -46,6 +47,7 @@ ohos_shared_library("appspawn_ace") {
     "config_policy:configpolicy_util",
     "eventhandler:libeventhandler",
     "hilog:libhilog",
+    "hiprofiler:hiprofiler_preload_client",
     "hitrace:hitrace_meter",
     "init:libbegetutil",
     "ipc:ipc_single",
