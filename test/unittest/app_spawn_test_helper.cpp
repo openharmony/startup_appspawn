@@ -515,12 +515,44 @@ AppSpawnReqMsgHandle AppSpawnTestHelper::CreateMsg(AppSpawnClientHandle handle, 
 
         ret = AppSpawnReqMsgSetAppOwnerId(reqHandle, "ohos.permission.FILE_ACCESS_MANAGER");
         APPSPAWN_CHECK(ret == 0, break, "Failed to ownerid %{public}s", processName_.c_str());
-        const char *renderCmd = "/system/bin/sh ls -l ";
+        const char *renderCmd = "/system/bin/sh ls -l #--ipc-fd=3#--shared-fd=4#--crash-fd=20";
         ret = AppSpawnReqMsgAddExtInfo(reqHandle, MSG_EXT_NAME_RENDER_CMD,
             reinterpret_cast<const uint8_t *>(renderCmd), strlen(renderCmd));
         APPSPAWN_CHECK(ret == 0, break, "Failed to render cmd %{public}s", processName_.c_str());
         ret = AppSpawnReqMsgSetAppDomainInfo(reqHandle, 1, defaultApl_.c_str());
         APPSPAWN_CHECK(ret == 0, break, "Failed to domain info %{public}s", processName_.c_str());
+        return reqHandle;
+    } while (0);
+    AppSpawnReqMsgFree(reqHandle);
+    return INVALID_REQ_HANDLE;
+}
+
+AppSpawnReqMsgHandle AppSpawnTestHelper::CreateNWebMsg(AppSpawnClientHandle handle, uint32_t msgType, int base)
+{
+#define TEST_FILE_PERM 0644 // 0644: Test file R/W permissions
+    if (renderIpcFd < 0) {
+        renderIpcFd = open("render_ipc.txt", O_RDONLY | O_CREAT, TEST_FILE_PERM);
+        APPSPAWN_LOGI("Add ipc fd info %{public}d", renderIpcFd);
+    }
+    if (renderSharedFd < 0) {
+        renderSharedFd = open("render_shared.txt", O_RDONLY | O_CREAT, TEST_FILE_PERM);
+        APPSPAWN_LOGI("Add shared fd info %{public}d", renderIpcFd);
+    }
+    if (renderCrashFd < 0) {
+        renderCrashFd = open("render_crash.txt", O_RDONLY | O_CREAT, TEST_FILE_PERM);
+        APPSPAWN_LOGI("Add crash fd info %{public}d", renderIpcFd);
+    }
+    if (renderIpcFd < 0 || renderSharedFd < 0 || renderCrashFd < 0) {
+        return INVALID_REQ_HANDLE;
+    }
+    auto reqHandle = CreateMsg(handle, msgType, base);
+    do {
+        int ret = AppSpawnReqMsgAddFd(reqHandle, "ipc-fd", renderIpcFd);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to add fd %{public}s", processName_.c_str());
+        ret = AppSpawnReqMsgAddFd(reqHandle, "shared-fd", renderSharedFd);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to add fd %{public}s", processName_.c_str());
+        ret = AppSpawnReqMsgAddFd(reqHandle, "crash-fd", renderCrashFd);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to add fd %{public}s", processName_.c_str());
         return reqHandle;
     } while (0);
     AppSpawnReqMsgFree(reqHandle);

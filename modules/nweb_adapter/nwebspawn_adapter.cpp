@@ -27,6 +27,7 @@
 #include <sys/mman.h>
 #endif
 
+#include "appspawn_service.h"
 #include "appspawn_hook.h"
 #include "appspawn_manager.h"
 
@@ -39,9 +40,19 @@
 #include "arkweb_utils.h"
 #include "arkweb_preload_common.h"
 
+struct RenderIpcFds {
+    int32_t ipcFd;
+    int32_t sharedFd;
+    int32_t crashFd;
+};
+
 namespace {
 const std::string ARK_WEB_ENGINE_LIB_NAME = "libarkweb_engine.so";
 const std::string ARK_WEB_RENDER_LIB_NAME = "libarkweb_render.so";
+const std::string RENDER_IPC_FD_SUFFIX = "#--ipc-fd=";
+const std::string RENDER_SHARED_FD_SUFFIX = "#--shared-fd=";
+const std::string RENDER_CRASH_FD_SUFFIX = "#--crash-fd=";
+static RenderIpcFds g_renderIpcFds = {-1, -1, -1};
 }  // namespace
 
 static bool SetSeccompPolicyForRenderer(void *nwebRenderHandle)
@@ -61,12 +72,12 @@ static bool SetSeccompPolicyForRenderer(void *nwebRenderHandle)
     return true;
 }
 
-static void UpdateAppWebEngineVersion(std::string& renderCmd)
+static OHOS::ArkWeb::ArkWebEngineVersion UpdateAppWebEngineVersion(std::string& renderCmd)
 {
     size_t posLeft = renderCmd.rfind(APP_ENGINE_VERSION_PREFIX);
     if (posLeft == std::string::npos) {
         APPSPAWN_LOGE("not found app engine type arg");
-        return;
+        return OHOS::ArkWeb::ArkWebEngineVersion::SYSTEM_DEFAULT;
     }
     size_t posRight = posLeft + strlen(APP_ENGINE_VERSION_PREFIX);
     size_t posEnd = renderCmd.find('#', posRight);
@@ -78,16 +89,39 @@ static void UpdateAppWebEngineVersion(std::string& renderCmd)
     long v = std::strtol(value.c_str(), &end, 10);
     if (*end != '\0' || v > INT_MAX || v < 0) {
         APPSPAWN_LOGE("invalid value: %{public}s", value.c_str());
-        return;
+        return OHOS::ArkWeb::ArkWebEngineVersion::SYSTEM_DEFAULT;
     }
     auto version = static_cast<OHOS::ArkWeb::ArkWebEngineVersion>(v);
     OHOS::ArkWeb::SetActiveWebEngineVersionInner(version);
+
+    return version;
+}
+
+APPSPAWN_STATIC void EraseAppWebEngineVersionFromCmd(std::string& renderCmd)
+{
+    size_t posLeft = renderCmd.rfind(APP_ENGINE_VERSION_PREFIX);
+    if (posLeft == std::string::npos) {
+        APPSPAWN_LOGE("not found app engine type arg");
+        return;
+    }
+    size_t posRight = posLeft + strlen(APP_ENGINE_VERSION_PREFIX);
+    size_t posEnd = renderCmd.find('#', posRight);
 
     // remove arg APP_ENGINE_VERSION_PREFIX
     size_t eraseLength = (posEnd == std::string::npos) ?
                             renderCmd.length() - posLeft :
                             posEnd - posLeft;
     renderCmd.erase(posLeft, eraseLength);
+}
+
+APPSPAWN_STATIC void AddRenderIpcFdsToCmd(std::string& renderCmd)
+{
+    renderCmd += RENDER_IPC_FD_SUFFIX + std::to_string(g_renderIpcFds.ipcFd);
+    renderCmd += RENDER_SHARED_FD_SUFFIX + std::to_string(g_renderIpcFds.sharedFd);
+    renderCmd += RENDER_CRASH_FD_SUFFIX + std::to_string(g_renderIpcFds.crashFd);
+    g_renderIpcFds.ipcFd = -1;
+    g_renderIpcFds.sharedFd = -1;
+    g_renderIpcFds.crashFd = -1;
 }
 
 APPSPAWN_STATIC int RunChildProcessor(AppSpawnContent *content, AppSpawnClient *client)
@@ -98,9 +132,11 @@ APPSPAWN_STATIC int RunChildProcessor(AppSpawnContent *content, AppSpawnClient *
     if (renderCmd == nullptr) {
         return -1;
     }
+
     std::string renderStr(renderCmd);
-    UpdateAppWebEngineVersion(renderStr);
+    EraseAppWebEngineVersionFromCmd(renderStr);
     OHOS::ArkWeb::UpdateAppInfoFromCmdline(renderStr);
+    AddRenderIpcFdsToCmd(renderStr);
 
     void *webEngineHandle = nullptr;
     void *nwebRenderHandle = nullptr;
@@ -163,6 +199,113 @@ APPSPAWN_STATIC int RunChildProcessor(AppSpawnContent *content, AppSpawnClient *
     return 0;
 }
 
+APPSPAWN_STATIC int ParseRenderIpcFds(const AppSpawnMsgNode *message,
+    const AppSpawnMsgReceiverCtx& recvCtx, RenderIpcFds& origFds)
+{
+    origFds.ipcFd = -1;
+    origFds.sharedFd = -1;
+    origFds.crashFd = -1;
+
+    int findFdIndex = 0;
+    for (uint32_t index = TLV_MAX; index < (TLV_MAX + message->tlvCount); index++) {
+        if (message->tlvOffset[index] == INVALID_OFFSET) {
+            APPSPAWN_LOGE("Parse render ipc fds, invalid tlv offset.");
+            return APPSPAWN_ARG_INVALID;
+        }
+        uint8_t *data = message->buffer + message->tlvOffset[index];
+        if (((AppSpawnTlv *)data)->tlvType != TLV_MAX) {
+            continue;
+        }
+        AppSpawnTlvExt *tlv = (AppSpawnTlvExt *)data;
+        if (strcmp(tlv->tlvName, MSG_EXT_NAME_APP_FD) != 0) {
+            continue;
+        }
+
+        std::string key((char *)data + sizeof(AppSpawnTlvExt));
+        if (findFdIndex >= recvCtx.fdCount || recvCtx.fds[findFdIndex] <= 0) {
+            APPSPAWN_LOGE("Parse render ipc fds, not find fds");
+            return APPSPAWN_ARG_INVALID;
+        }
+
+        if (key == "ipc-fd") {
+            origFds.ipcFd = recvCtx.fds[findFdIndex];
+        } else if (key == "shared-fd") {
+            origFds.sharedFd = recvCtx.fds[findFdIndex];
+        } else if (key == "crash-fd") {
+            origFds.crashFd = recvCtx.fds[findFdIndex];
+        }
+        findFdIndex++;
+
+        if (origFds.ipcFd != -1 && origFds.sharedFd != -1 && origFds.crashFd != -1) {
+            break;
+        }
+    }
+
+    if (origFds.ipcFd <= 0 || origFds.sharedFd <= 0 || origFds.crashFd <= 0) {
+        APPSPAWN_LOGE("Received ipc fds invalid, ipcFd = %{public}d, sharedFd = %{public}d, crashFd = %{public}d",
+                      origFds.ipcFd, origFds.sharedFd, origFds.crashFd);
+        return APPSPAWN_ARG_INVALID;
+    }
+    return APPSPAWN_OK;
+}
+
+APPSPAWN_STATIC int DupRenderIpcFds(const RenderIpcFds &origFds)
+{
+    g_renderIpcFds.ipcFd = dup(origFds.ipcFd);
+    g_renderIpcFds.sharedFd = dup(origFds.sharedFd);
+    g_renderIpcFds.crashFd = dup(origFds.crashFd);
+    if (g_renderIpcFds.ipcFd > 0 && g_renderIpcFds.sharedFd > 0 && g_renderIpcFds.crashFd > 0) {
+        APPSPAWN_LOGV("Dup ipc fds success. ipcFd = %{public}d, sharedFd = %{public}d, crashFd = %{public}d",
+                      g_renderIpcFds.ipcFd, g_renderIpcFds.sharedFd, g_renderIpcFds.crashFd);
+        return APPSPAWN_OK;
+    }
+
+    close(g_renderIpcFds.ipcFd);
+    g_renderIpcFds.ipcFd = -1;
+    close(g_renderIpcFds.sharedFd);
+    g_renderIpcFds.sharedFd = -1;
+    close(g_renderIpcFds.crashFd);
+    g_renderIpcFds.crashFd = -1;
+    APPSPAWN_LOGE("Dup render process ipcFd failed, errno=%{public}d", errno);
+    return APPSPAWN_ARG_INVALID;
+}
+
+APPSPAWN_STATIC int DupNwebRenderFdsBeforeRunHook(AppSpawnMgr *content, AppSpawningCtx *property)
+{
+    if (!IsNWebSpawnMode(content)) {
+        return APPSPAWN_OK;
+    }
+
+    uint32_t len = 0;
+    char *renderCmd = reinterpret_cast<char *>(GetAppPropertyExt(property, MSG_EXT_NAME_RENDER_CMD, &len));
+    if (renderCmd != nullptr && len > 0) {
+        std::string renderStr(renderCmd);
+        auto version = UpdateAppWebEngineVersion(renderStr);
+        if (version == OHOS::ArkWeb::ArkWebEngineVersion::M114) {
+            APPSPAWN_LOGV("M114 version, skip fd processing");
+            return APPSPAWN_OK;
+        }
+    }
+
+    APPSPAWN_CHECK_ONLY_EXPER(property != NULL, return APPSPAWN_ARG_INVALID);
+    AppSpawnMsgNode *message = property->message;
+    APPSPAWN_CHECK_ONLY_EXPER(message != NULL && message->buffer != NULL && message->connection != NULL,
+                              return APPSPAWN_ARG_INVALID);
+    APPSPAWN_CHECK_ONLY_EXPER(message->tlvOffset != NULL, return APPSPAWN_TLV_NONE);
+
+    AppSpawnMsgReceiverCtx recvCtx = message->connection->receiverCtx;
+    APPSPAWN_CHECK_LOGW(recvCtx.fdCount > 0, return 0,
+                        "Not need to set fds. fdCount: %{public}d", recvCtx.fdCount);
+
+    RenderIpcFds origFds {};
+    int ret = ParseRenderIpcFds(message, recvCtx, origFds);
+    if (ret != APPSPAWN_OK) {
+        return ret;
+    }
+
+    return DupRenderIpcFds(origFds);
+}
+
 APPSPAWN_STATIC int PreLoadNwebSpawn(AppSpawnMgr *content)
 {
     APPSPAWN_LOGI("PreLoadNwebSpawn %{public}d", IsNWebSpawnMode(content));
@@ -189,4 +332,7 @@ MODULE_CONSTRUCTOR(void)
 {
     APPSPAWN_LOGI("Load nweb module ...");
     AddPreloadHook(HOOK_PRIO_HIGHEST, PreLoadNwebSpawn);
+    // Execute dup fd in child process (render) before notifying parent
+    // STAGE_CHILD_PRE_RELY runs before NotifyResToParent
+    AddAppSpawnHook(STAGE_CHILD_PRE_RELY, HOOK_PRIO_HIGHEST, DupNwebRenderFdsBeforeRunHook);
 }

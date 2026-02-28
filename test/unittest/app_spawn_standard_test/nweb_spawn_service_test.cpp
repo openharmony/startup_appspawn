@@ -82,7 +82,7 @@ HWTEST_F(NWebSpawnServiceTest, NWeb_Spawn_001, TestSize.Level0)
         APPSPAWN_LOGV("NWeb_Spawn_001 start");
         ret = AppSpawnClientInit(NWEBSPAWN_SERVER_NAME, &clientHandle);
         APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", NWEBSPAWN_SERVER_NAME);
-        AppSpawnReqMsgHandle reqHandle = testServer->CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+        AppSpawnReqMsgHandle reqHandle = testServer->CreateNWebMsg(clientHandle, MSG_APP_SPAWN, 0);
 
         AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_NO_SANDBOX);
         AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_DEBUGGABLE);
@@ -116,7 +116,7 @@ HWTEST_F(NWebSpawnServiceTest, NWeb_Spawn_002, TestSize.Level0)
         APPSPAWN_LOGV("NWeb_Spawn_002 start");
         ret = AppSpawnClientInit(NWEBSPAWN_SERVER_NAME, &clientHandle);
         APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", NWEBSPAWN_SERVER_NAME);
-        AppSpawnReqMsgHandle reqHandle = testServer->CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+        AppSpawnReqMsgHandle reqHandle = testServer->CreateNWebMsg(clientHandle, MSG_APP_SPAWN, 0);
         AppSpawnResult result = {};
         ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
         APPSPAWN_LOGV("NWeb_Spawn_002 recv result %{public}d  %{public}d", result.result, result.pid);
@@ -149,7 +149,7 @@ HWTEST_F(NWebSpawnServiceTest, NWeb_Spawn_003, TestSize.Level0)
     do {
         ret = AppSpawnClientInit(NWEBSPAWN_SERVER_NAME, &clientHandle);
         APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", NWEBSPAWN_SERVER_NAME);
-        AppSpawnReqMsgHandle reqHandle = testServer->CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+        AppSpawnReqMsgHandle reqHandle = testServer->CreateNWebMsg(clientHandle, MSG_APP_SPAWN, 0);
         AppSpawnResult result = {};
         ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
         APPSPAWN_LOGV("NWeb_Spawn_003 recv result %{public}d  %{public}d", result.result, result.pid);
@@ -179,7 +179,7 @@ HWTEST_F(NWebSpawnServiceTest, NWeb_Spawn_004, TestSize.Level0)
     do {
         ret = AppSpawnClientInit(NWEBSPAWN_SERVER_NAME, &clientHandle);
         APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", NWEBSPAWN_SERVER_NAME);
-        AppSpawnReqMsgHandle reqHandle = testServer->CreateMsg(clientHandle, MSG_DUMP, 0);
+        AppSpawnReqMsgHandle reqHandle = testServer->CreateNWebMsg(clientHandle, MSG_DUMP, 0);
         AppSpawnResult result = {};
         ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
         APPSPAWN_CHECK(ret == 0, break, "Failed to send msg %{public}d", ret);
@@ -200,7 +200,7 @@ HWTEST_F(NWebSpawnServiceTest, NWeb_Spawn_005, TestSize.Level0)
     do {
         ret = AppSpawnClientInit(NWEBSPAWN_SERVER_NAME, &clientHandle);
         APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", NWEBSPAWN_SERVER_NAME);
-        AppSpawnReqMsgHandle reqHandle = testServer->CreateMsg(clientHandle, MSG_SPAWN_NATIVE_PROCESS, 0);
+        AppSpawnReqMsgHandle reqHandle = testServer->CreateNWebMsg(clientHandle, MSG_SPAWN_NATIVE_PROCESS, 0);
 
         AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_DEBUGGABLE);
         AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_NATIVEDEBUG);
@@ -584,7 +584,7 @@ HWTEST_F(NWebSpawnServiceTest, NWeb_Spawn_RunChildProcessor, TestSize.Level0)
     GTEST_LOG_(INFO) << "NWebSpawnServiceTest NWeb_Spawn_RunChildProcessor start run";
     AppSpawnClientHandle clientHandle = nullptr;
     AppSpawnClientInit(NWEBSPAWN_SERVER_NAME, &clientHandle);
-    AppSpawnReqMsgHandle reqHandle = testServer->CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+    AppSpawnReqMsgHandle reqHandle = testServer->CreateNWebMsg(clientHandle, MSG_APP_SPAWN, 0);
     AppSpawningCtx *spawningCtx = testServer->GetAppProperty(clientHandle, reqHandle);
     AppSpawnClient *client = reinterpret_cast<AppSpawnClient *>(spawningCtx);
     EXPECT_EQ(RunChildProcessor(nullptr, client), 0);

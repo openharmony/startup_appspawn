@@ -63,6 +63,18 @@ public:
             APPSPAWN_LOGE("destory test helper close fd %d", fdArg);
             close(fdArg);
         }
+        if (renderIpcFd >= 0) {
+            close(renderIpcFd);
+            renderIpcFd = -1;
+        }
+        if (renderSharedFd >= 0) {
+            close(renderSharedFd);
+            renderSharedFd = -1;
+        }
+        if (renderCrashFd >= 0) {
+            close(renderCrashFd);
+            renderCrashFd = -1;
+        }
     }
 
     void SetDefaultTestData();
@@ -109,6 +121,7 @@ public:
     }
 
     AppSpawnReqMsgHandle CreateMsg(AppSpawnClientHandle handle, uint32_t msgType = MSG_APP_SPAWN, int base = 0);
+    AppSpawnReqMsgHandle CreateNWebMsg(AppSpawnClientHandle handle, uint32_t msgType = MSG_APP_SPAWN, int base = 0);
     AppSpawningCtx *GetAppProperty(AppSpawnClientHandle handle, AppSpawnReqMsgHandle reqHandle);
     int AddDacInfo(AppSpawnReqMsgHandle &reqHandle);
     int AddFdInfo(AppSpawnReqMsgHandle &reqHandle);
@@ -147,6 +160,9 @@ private:
     int32_t defaultTestBundleIndex_;
     uint32_t defaultMsgFlags_ = 0;
     int fdArg = -1;
+    int renderIpcFd = -1;
+    int renderSharedFd = -1;
+    int renderCrashFd = -1;
     std::vector<const char *> permissions_ = {
         const_cast<char *>("ohos.permission.MANAGE_PRIVATE_PHOTOS"),
         const_cast<char *>("ohos.permission.ACTIVATE_THEME_PACKAGE"),
