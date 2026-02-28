@@ -104,6 +104,12 @@ void SetDlsymResult(uint32_t flags, bool success)
     }
 }
 
+int g_ioctlResult = 0;
+void SetIoctlResult(int result)
+{
+    g_ioctlResult = result;
+}
+
 void *DlsymStub(void *handle, const char *symbol)
 {
     printf("DlsymStub %s \n", symbol);
@@ -322,7 +328,7 @@ int SetgidStub(gid_t gid)
 
 int IoctlStub(int fd, unsigned long request, ...)
 {
-    return 0;
+    return g_ioctlResult;
 }
 
 int PrctlStub(int option, ...)
