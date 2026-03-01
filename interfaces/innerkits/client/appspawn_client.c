@@ -178,7 +178,7 @@ static int ReadMessage(int socketFd, uint8_t *buf, int len, AppSpawnReqMsgNode *
         struct timespec readEnd = { 0 };
         clock_gettime(CLOCK_MONOTONIC, &readEnd);
         uint64_t diff = DiffTime(&readStart, &readEnd);
-        uint64_t timeout = reqNode->isAsan ? COLDRUN_READ_RETRY_TIME : NORMAL_READ_RETRY_TIME;
+        uint64_t timeout = reqNode->isColdRun ? COLDRUN_READ_RETRY_TIME : NORMAL_READ_RETRY_TIME;
         // If difftime is greater than timeout, it is considered that system hibernation or a time jump has occurred
         if (diff > timeout) {
             APPSPAWN_LOGW("Read message again from fd %{public}d, difftime %{public}" PRId64 " us", socketFd, diff);
@@ -320,7 +320,7 @@ static int ClientSendMsg(AppSpawnReqMsgMgr *reqMgr, AppSpawnReqMsgNode *reqNode,
     bool needSleep)
 {
     uint32_t retryCount = 1;
-    int isColdRun = reqNode->isAsan;
+    int isColdRun = reqNode->isColdRun;
     while (retryCount <= reqMgr->maxRetryCount) {
         if (reqMgr->socketId < 0) { // try create socket
             TryCreateSocket(reqMgr, needSleep);

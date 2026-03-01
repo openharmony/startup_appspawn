@@ -78,7 +78,8 @@
                 "faultloggerd",
                 "dlp_permission_service",
                 "ffrt",
-                "webview"
+                "webview",
+                "hiprofiler"
             ],
             "third_party": [
                 "bounds_checking_function",
