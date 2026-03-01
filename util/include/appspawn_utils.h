@@ -147,6 +147,7 @@ typedef enum {
     APPSPAWN_ENV_FILE_EMPTY,
     APPSPAWN_ENV_FILE_READ_ERROR,
     APPSPAWN_ENV_FILE_FORMAT_ERROR,
+    APPSPAWN_PRELOAD_DFX_NOT_ALLOW,
 } AppSpawnErrorCode;
 
 uint64_t DiffTime(const struct timespec *startTime, const struct timespec *endTime);
@@ -157,6 +158,7 @@ int32_t StringSplit(const char *str, const char *separator, void *context, Split
 char *GetLastStr(const char *str, const char *dst);
 uint32_t GetSpawnTimeout(uint32_t def, bool isColdRun);
 void DumpCurrentDir(char *buffer, uint32_t bufferLen, const char *dirPath);
+int CheckEnabled(const char *param, const char *value);
 int IsDeveloperModeOpen();
 void InitCommonEnv(void);
 int ConvertEnvValue(const char *srcEnv, char *dstEnv, int len);
