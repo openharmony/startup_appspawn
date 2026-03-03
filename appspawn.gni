@@ -42,6 +42,7 @@ declare_args() {
   appspawn_napi_preload_path = "../appspawn_preload.json"
   appspawn_allow_dumpable = false
   appspawn_change_sched = true
+  appspawn_sandbox_root_tmpfs = false
 }
 
 if (!defined(global_parts_info) ||
