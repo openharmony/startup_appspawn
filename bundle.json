@@ -33,7 +33,8 @@
             "appspawn_support_local_debugger",
             "appspawn_napi_preload_path",
             "appspawn_allow_dumpable",
-            "appspawn_change_sched"
+            "appspawn_change_sched",
+            "appspawn_sandbox_root_tmpfs"
         ],
         "rom": "296KB",
         "ram": "13125KB",
