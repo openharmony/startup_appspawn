@@ -3473,4 +3473,38 @@ HWTEST_F(AppSpawnSandboxTest, Set_App_Sandbox_Property_For_Dlp_04, TestSize.Leve
 
     DeleteAppSpawningCtx(spawningCtx);
 }
+
+/**
+ * @tc.name: Sandbox_Root_Path_Folder_Create_Test_01
+ * @tc.desc: When the hatching request carries the APP_FLAGS_UNLOCKED_STATUS.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AppSpawnSandboxTest, Sandbox_Root_Path_Folder_Create_Test_01, TestSize.Level0)
+{
+    AppSpawningCtx *spawningCtx = GetTestAppProperty();
+    ASSERT_EQ(spawningCtx != nullptr, 1);
+    int ret = SetAppSpawnMsgFlag(spawningCtx->message, TLV_MSG_FLAGS, APP_FLAGS_UNLOCKED_STATUS);
+    ASSERT_EQ(ret, 0);
+
+    std::string sandboxRootPath = "/mnt/sandbox/100/com.ohos.sceneboard";
+    ret = AppSpawn::SandboxCore::DoSandboxRootFolderCreate(spawningCtx, sandboxRootPath);
+    EXPECT_EQ(ret, 0);
+    DeleteAppSpawningCtx(spawningCtx);
+}
+
+/**
+ * @tc.name: Sandbox_Root_Path_Folder_Create_Test_02
+ * @tc.desc: When the hatching request does not include APP_FLAGS_UNLOCKED_STATUS.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AppSpawnSandboxTest, Sandbox_Root_Path_Folder_Create_Test_02, TestSize.Level0)
+{
+    AppSpawningCtx *spawningCtx = GetTestAppProperty();
+    ASSERT_EQ(spawningCtx != nullptr, 1);
+
+    std::string sandboxRootPath = "/mnt/sandbox/100/com.ohos.sceneboard";
+    int ret = AppSpawn::SandboxCore::DoSandboxRootFolderCreate(spawningCtx, sandboxRootPath);
+    EXPECT_EQ(ret, 0);
+    DeleteAppSpawningCtx(spawningCtx);
+}
 }  // namespace OHOS
