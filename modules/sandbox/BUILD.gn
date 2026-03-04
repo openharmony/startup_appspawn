@@ -110,6 +110,10 @@ if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
       defines += [ "APPSPAWN_SUPPORT_NOSHAREFS" ]
     }
 
+    if (appspawn_sandbox_root_tmpfs) {
+      defines += [ "APPSPAWN_SANDBOX_ROOT_TMPFS" ]
+    }
+
     subsystem_name = "${subsystem_name}"
     part_name = "${part_name}"
     install_enable = true

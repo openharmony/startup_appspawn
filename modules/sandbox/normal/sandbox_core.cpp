@@ -867,12 +867,23 @@ int32_t SandboxCore::DoSandboxRootFolderCreate(const AppSpawningCtx *appProperty
         return rc;
     }
 #endif
-    SharedMountArgs arg = {
-        .srcPath = sandboxPackagePath.c_str(),
-        .destPath = sandboxPackagePath.c_str()
-    };
-    SandboxCommon::DoAppSandboxMountOnce(appProperty, &arg);
 
+    const char *sandboxRootPath = sandboxPackagePath.c_str();
+    SharedMountArgs arg{};
+    arg.srcPath = sandboxRootPath;
+    arg.destPath = sandboxRootPath;
+
+#ifdef APPSPAWN_SANDBOX_ROOT_TMPFS
+    if (CheckAppMsgFlagsSet(appProperty, APP_FLAGS_UNLOCKED_STATUS)) {
+        arg.srcPath = "tmpfs";
+        arg.destPath = sandboxRootPath;
+        arg.fsType = "tmpfs";
+        arg.mountFlags = MS_NOSUID;
+        arg.options = "mode=0775";
+    }
+#endif
+
+    SandboxCommon::DoAppSandboxMountOnce(appProperty, &arg);
     return 0;
 }
 
