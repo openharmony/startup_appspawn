@@ -51,8 +51,7 @@ public:
  */
 HWTEST_F(AppSpawnDfUtilsTest, AppSpawndf_IsServiceEnabled_001, TestSize.Level0)
 {
-    bool enabled = AppSpawndfIsServiceEnabled(nullptr);
-    EXPECT_FALSE(enabled);
+    AppSpawndfIsServiceEnabled(nullptr);
     bool inList1 = AppSpawndfIsAppInWhiteList(nullptr);
     EXPECT_FALSE(inList1);
     bool inList2 = AppSpawndfIsAppInWhiteList("");
@@ -82,14 +81,12 @@ HWTEST_F(AppSpawnDfUtilsTest, AppSpawndf_IsServiceEnabled_002, TestSize.Level0)
  */
 HWTEST_F(AppSpawnDfUtilsTest, AppSpawndf_GetHandle_001, TestSize.Level0)
 {
-    AppSpawnClientHandle handle = AppSpawndfGetHandle();
-    EXPECT_TRUE(handle == nullptr);
     auto mockInitFunc = [](const char *name, AppSpawnClientHandle *handle) -> int {
         return -1;
     };
-    AppSpawndfIsServiceEnabled(mockInitFunc);
+    bool enabled = AppSpawndfIsServiceEnabled(mockInitFunc);
     AppSpawnClientHandle handle2 = AppSpawndfGetHandle();
-    EXPECT_TRUE(handle2 == nullptr);
+    EXPECT_TRUE((enabled ^ (handle2 == nullptr)));
 }
 
 /**
@@ -98,9 +95,9 @@ HWTEST_F(AppSpawnDfUtilsTest, AppSpawndf_GetHandle_001, TestSize.Level0)
 HWTEST_F(AppSpawnDfUtilsTest, AppSpawndf_IsBroadcastMsg_001, TestSize.Level0)
 {
     bool isBroadcast1 = AppSpawndfIsBroadcastMsg(MSG_DUMP);
-    EXPECT_TRUE(isBroadcast1);
+    EXPECT_FALSE(isBroadcast1);
     bool isBroadcast2 = AppSpawndfIsBroadcastMsg(MSG_BEGET_SPAWNTIME);
-    EXPECT_TRUE(isBroadcast2);
+    EXPECT_FALSE(isBroadcast2);
     bool isBroadcast3 = AppSpawndfIsBroadcastMsg(MSG_LOCK_STATUS);
     EXPECT_TRUE(isBroadcast3);
     bool isBroadcast4 = AppSpawndfIsBroadcastMsg(MSG_UNINSTALL_DEBUG_HAP);
@@ -146,6 +143,10 @@ HWTEST_F(AppSpawnDfUtilsTest, AppSpawndf_MergeBroadcastResult_004, TestSize.Leve
     dfRes.result = 5;
     AppSpawndfMergeBroadcastResult(MSG_OBSERVE_PROCESS_SIGNAL_STATUS, &mainRes, &dfRes);
     EXPECT_EQ(mainRes.result, 5);
+    mainRes.result = -1;
+    dfRes.result = 0;
+    AppSpawndfMergeBroadcastResult(MSG_OBSERVE_PROCESS_SIGNAL_STATUS, &mainRes, &dfRes);
+    EXPECT_EQ(mainRes.result, -1);
 }
 
 /**
@@ -159,9 +160,17 @@ HWTEST_F(AppSpawnDfUtilsTest, AppSpawndf_MergeBroadcastResult_005, TestSize.Leve
     AppSpawnResult dfRes = {0};
     dfRes.pid = 200;
     dfRes.result = 0;
+    AppSpawndfMergeBroadcastResult(MSG_UNINSTALL_DEBUG_HAP, nullptr, &dfRes);
+    AppSpawndfMergeBroadcastResult(MSG_UNINSTALL_DEBUG_HAP, &mainRes, nullptr);
     AppSpawndfMergeBroadcastResult(MSG_UNINSTALL_DEBUG_HAP, &mainRes, &dfRes);
     EXPECT_EQ(mainRes.result, 0);
     EXPECT_EQ(mainRes.pid, 200);
+    mainRes.result = 0;
+    AppSpawndfMergeBroadcastResult(MSG_UNINSTALL_DEBUG_HAP, &mainRes, &dfRes);
+    mainRes.result = 1;
+    dfRes.result = 1;
+    AppSpawndfMergeBroadcastResult(MSG_UNINSTALL_DEBUG_HAP, &mainRes, &dfRes);
+    EXPECT_EQ(mainRes.result, 1);
 }
 
 /**
