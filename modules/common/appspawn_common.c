@@ -248,6 +248,29 @@ static void ClearEnvironment(const AppSpawnMgr *content, const AppSpawningCtx *p
     return;
 }
 
+#ifdef CODE_SIGNATURE_ENABLE
+static char *GetProvisionType(const AppSpawningCtx *property, uint32_t *len)
+{
+    char *provisionType = GetAppPropertyExt(property, MSG_EXT_NAME_PROVISION_TYPE, len);
+    if (provisionType == NULL) {
+        APPSPAWN_LOGE("get provision type failed, defaut is %{public}s", PROVISION_TYPE_DEBUG);
+        return PROVISION_TYPE_DEBUG;
+    }
+    return provisionType;
+}
+
+static char *GetXpmDefaultInfo(const AppSpawningCtx *property, const char *name, uint32_t *len,
+    const char *defaultValue, const char *logName)
+{
+    char *value = GetAppPropertyExt(property, name, len);
+    if (value == NULL) {
+        APPSPAWN_LOGE("get %{public}s failed, default is %{public}s", logName, defaultValue);
+        return (char *)defaultValue;
+    }
+    return value;
+}
+#endif
+
 APPSPAWN_STATIC int SetXpmConfig(const AppSpawnMgr *content, const AppSpawningCtx *property)
 {
 #ifdef CODE_SIGNATURE_ENABLE
@@ -257,24 +280,16 @@ APPSPAWN_STATIC int SetXpmConfig(const AppSpawnMgr *content, const AppSpawningCt
     }
 
     uint32_t len = 0;
-    char *provisionType = GetAppPropertyExt(property, MSG_EXT_NAME_PROVISION_TYPE, &len);
-    if (provisionType == NULL || len == 0) {
-        APPSPAWN_LOGE("get provision type failed, defaut is %{public}s", PROVISION_TYPE_DEBUG);
-        provisionType = PROVISION_TYPE_DEBUG;
-    }
-
-    char *appSignType = GetAppPropertyExt(property, MSG_EXT_NAME_APP_SIGN_TYPE, &len);
-    if (appSignType == NULL) {
-        APPSPAWN_LOGE("get app sign type failed, default is %{public}s", APP_SIGN_TYPE_DEFAULT);
-        appSignType = APP_SIGN_TYPE_DEFAULT;
-    }
-
+    char *provisionType = GetProvisionType(property, &len);
+    char *appSignType = GetXpmDefaultInfo(
+        property, MSG_EXT_NAME_APP_SIGN_TYPE, &len, APP_SIGN_TYPE_DEFAULT, "app sign type");
+    char *appDistributionType = GetXpmDefaultInfo(property, MSG_EXT_NAME_APP_DISTRIBUTION_TYPE,
+        &len, XPM_DISTRIBUTION_STR_NONE, "app distribution type");
     AppSpawnMsgOwnerId *ownerInfo = (AppSpawnMsgOwnerId *)GetAppProperty(property, TLV_OWNER_INFO);
     const char *ownerId = ownerInfo ? ownerInfo->ownerId : NULL;
     char *apiTargetVersionStr = GetAppPropertyExt(property, MSG_EXT_NAME_API_TARGET_VERSION, &len);
-
     int jitfortEnable = IsJitFortModeOn(property) ? 1 : 0;
-    int idType = PROCESS_OWNERID_UNINIT;
+    int idType = PROCESS_OWNERID_APP;
     if (strcmp(provisionType, PROVISION_TYPE_DEBUG) == 0) {
         idType = PROCESS_OWNERID_DEBUG;
     } else if (ownerInfo == NULL) {
@@ -285,11 +300,16 @@ APPSPAWN_STATIC int SetXpmConfig(const AppSpawnMgr *content, const AppSpawningCt
     } else if (GetAppSpawnMsgType(property) == MSG_SPAWN_NATIVE_PROCESS) {
         idType = PROCESS_OWNERID_DEBUG_PLATFORM;
 #endif
-    } else {
-        idType = PROCESS_OWNERID_APP;
     }
+    struct XpmInitParam xpmInitParam = XPM_INIT_PARAM_DEFAULT;
+    xpmInitParam.enableJitFort = jitfortEnable;
+    xpmInitParam.idType = idType;
+    xpmInitParam.ownerId = ownerId;
+    xpmInitParam.apiTargetVersionStr = apiTargetVersionStr;
+    xpmInitParam.appSignType = appSignType;
+    xpmInitParam.appDistributionType = appDistributionType;
 
-    int ret = InitXpm(jitfortEnable, idType, ownerId, apiTargetVersionStr, appSignType);
+    int ret = InitXpmWithParam(&xpmInitParam);
     APPSPAWN_CHECK(ret == 0, return ret, "set xpm region failed: %{public}d", ret);
 #endif
     return 0;
