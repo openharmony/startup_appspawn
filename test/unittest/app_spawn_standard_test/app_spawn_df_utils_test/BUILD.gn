@@ -1,0 +1,91 @@
+# Copyright (c) 2026 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//base/startup/appspawn/appspawn.gni")
+import("//build/test.gni")
+
+if (!defined(ohos_lite)) {
+  ohos_unittest("AppSpawn_DfUtils_Test") {
+    module_out_path = "appspawn/appspawn"
+    cflags = [ "-Dprivate=public" ]
+
+    if (appspawn_unittest_coverage) {
+      cflags += [ "--coverage" ]
+      ldflags = [ "--coverage" ]
+      cflags_cc = [ "--coverage" ]
+    }
+
+    deps = []
+    defines = [
+      "APPSPAWN_TEST",
+      "APPSPAWN_CLIENT",
+      "APPSPAWN_DEBUG",
+      "dlopen=DlopenStub",
+    ]
+
+    # Target code include dir
+    include_dirs = [
+      "${appspawn_path}/common",
+      "${appspawn_path}/modules/common",
+      "${appspawn_path}/modules/module_engine/include",
+      "${appspawn_path}/util/include",
+      "${appspawn_innerkits_path}/client",
+      "${appspawn_innerkits_path}/permission",
+      "${appspawn_path}/standard",
+      "${appspawn_path}/modules/sandbox",
+    ]
+
+    # Target code sources
+    sources = [
+      "${appspawn_path}/util/src/appspawn_utils.c",
+      "${appspawn_path}/util/src/appspawndf_utils.cpp",
+      "${appspawn_innerkits_path}/client/appspawn_client.c",
+      "${appspawn_innerkits_path}/client/appspawn_msg.c",
+      "${appspawn_innerkits_path}/permission/appspawn_mount_permission.c",
+      "${appspawn_path}/modules/common/appspawn_common.c",
+      "${appspawn_path}/modules/sandbox/appspawn_permission.c",
+      "${appspawn_path}/modules/common/appspawn_adapter.cpp",
+      "${appspawn_path}/modules/common/appspawn_silk.c",
+      "${appspawn_path}/standard/appspawn_msgmgr.c",
+      "${appspawn_path}/modules/modulemgr/appspawn_modulemgr.c",
+      "${appspawn_path}/common/appspawn_trace.cpp",
+    ]
+
+    # Test specific sources
+    sources += [
+      "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_df_utils_test/app_spawn_df_utils_test.cpp",
+    ]
+
+    configs = [ "${appspawn_path}:appspawn_config" ]
+    external_deps = [
+      "cJSON:cjson",
+      "c_utils:utils",
+      "config_policy:configpolicy_util",
+      "hilog:libhilog",
+      "init:libbegetutil",
+      "access_token:libaccesstoken_sdk",
+      "access_token:libtokenid_sdk",
+      "access_token:libtokensetproc_shared",
+      "init:seccomp",
+      "hitrace:hitrace_meter",
+    ]
+
+    if (build_selinux) {
+      defines += [ "WITH_SELINUX" ]
+      external_deps += [
+        "selinux:libselinux",
+        "selinux_adapter:libhap_restorecon",
+      ]
+    }
+  }
+}
