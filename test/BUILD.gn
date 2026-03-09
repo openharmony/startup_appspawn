@@ -40,6 +40,7 @@ group("unittest") {
       deps += [ "unittest/app_spawn_standard_test/app_spawn_isolate_test:AppSpawn_Isolate_Test" ]
       deps += [ "unittest/app_spawn_standard_test/app_spawn_kickdog_test:AppSpawn_KickDog_Test" ]
       deps += [ "unittest/app_spawn_standard_test/app_spawn_dfx_preload_test:AppSpawn_Dfx_Preload_Test" ]
+      deps += [ "unittest/app_spawn_standard_test/app_spawn_child_test:AppSpawn_Child_Test" ]
     }
     deps += [ "unittest/hnp_test:HnpTest" ]
     deps += [ "unittest/hnp_test/private_hnp_test:HnpPrivateTest" ]
