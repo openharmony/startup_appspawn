@@ -44,6 +44,12 @@ public:
     {
         spawningTestDefaultTestUid_ = uid;
     }
+
+    const char *GetDefaultTestAppBundleName()
+    {
+        return spawningTestProcessName_.c_str();
+    }
+
 private:
     uint32_t spawningTestDefaultMsgFlags_ = 0;
     uid_t spawningTestDefaultTestUid_ = 0;
