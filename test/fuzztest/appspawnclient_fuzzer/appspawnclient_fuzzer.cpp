@@ -16,6 +16,7 @@
 #include "appspawnclient_fuzzer.h"
 #include <string>
 #include "appspawn.h"
+#include "fuzzer/FuzzedDataProvider.h"
 
 namespace OHOS {
     int FuzzAppSpawnClientInit(const uint8_t *data, size_t size)
@@ -42,7 +43,10 @@ namespace OHOS {
         if (AppSpawnClientInit(name, &handle) != 0) {
             return -1;
         }
-        AppSpawnMsgType msgType = static_cast<AppSpawnMsgType>(size);
+        FuzzedDataProvider provider(data, size);
+        int type = provider.ConsumeIntegralInRange<int>(static_cast<int>(MSG_APP_SPAWN),
+            static_cast<int>(MAX_TYPE_INVALID));
+        AppSpawnMsgType msgType = static_cast<AppSpawnMsgType>(type);
         std::string processName(reinterpret_cast<const char*>(data), size);
         AppSpawnReqMsgHandle reqHandle = nullptr;
         (void)AppSpawnReqMsgCreate(msgType, processName.c_str(), &reqHandle);
@@ -59,7 +63,10 @@ namespace OHOS {
         }
         AppSpawnReqMsgHandle reqHandle = nullptr;
         std::string processName(reinterpret_cast<const char*>(data), size);
-        AppSpawnMsgType msgType = static_cast<AppSpawnMsgType>(size);
+        FuzzedDataProvider provider(data, size);
+        int type = provider.ConsumeIntegralInRange<int>(static_cast<int>(MSG_APP_SPAWN),
+            static_cast<int>(MAX_TYPE_INVALID));
+        AppSpawnMsgType msgType = static_cast<AppSpawnMsgType>(type);
         (void)AppSpawnReqMsgCreate(msgType, processName.c_str(), &reqHandle);
         (void)AppSpawnReqMsgAddStringInfo(reqHandle, processName.c_str(), processName.c_str());
         AppSpawnReqMsgFree(reqHandle);
@@ -73,9 +80,12 @@ namespace OHOS {
         if (AppSpawnClientInit(name, &handle) != 0) {
             return -1;
         }
-        pid_t pid = static_cast<pid_t>(size);
+        FuzzedDataProvider provider(data, size);
+        pid_t pid = provider.ConsumeIntegral<pid_t>();
         AppSpawnReqMsgHandle reqHandle = nullptr;
-        AppSpawnMsgType msgType = static_cast<AppSpawnMsgType>(size);
+        int type = provider.ConsumeIntegralInRange<int>(static_cast<int>(MSG_APP_SPAWN),
+            static_cast<int>(MAX_TYPE_INVALID));
+        AppSpawnMsgType msgType = static_cast<AppSpawnMsgType>(type);
         std::string processName(reinterpret_cast<const char*>(data), size);
         (void)AppSpawnReqMsgCreate(msgType, processName.c_str(), &reqHandle);
         (void)AppSpawnTerminateMsgCreate(pid, &reqHandle);
@@ -92,7 +102,10 @@ namespace OHOS {
         }
         AppSpawnReqMsgHandle reqHandle = nullptr;
         AppSpawnResult appResult = {static_cast<int>(size), 0};
-        AppSpawnMsgType msgType = static_cast<AppSpawnMsgType>(size);
+        FuzzedDataProvider provider(data, size);
+        int type = provider.ConsumeIntegralInRange<int>(static_cast<int>(MSG_APP_SPAWN),
+            static_cast<int>(MAX_TYPE_INVALID));
+        AppSpawnMsgType msgType = static_cast<AppSpawnMsgType>(type);
         std::string processName(reinterpret_cast<const char*>(data), size);
         (void)AppSpawnReqMsgCreate(msgType, processName.c_str(), &reqHandle);
         (void)AppSpawnClientSendMsg(handle, reqHandle, &appResult);
@@ -107,7 +120,10 @@ namespace OHOS {
             return -1;
         }
         AppSpawnReqMsgHandle reqHandle = nullptr;
-        AppSpawnMsgType msgType = static_cast<AppSpawnMsgType>(size);
+        FuzzedDataProvider provider(data, size);
+        int type = provider.ConsumeIntegralInRange<int>(static_cast<int>(MSG_APP_SPAWN),
+            static_cast<int>(MAX_TYPE_INVALID));
+        AppSpawnMsgType msgType = static_cast<AppSpawnMsgType>(type);
         std::string processName(reinterpret_cast<const char*>(data), size);
         (void)AppSpawnReqMsgCreate(msgType, processName.c_str(), &reqHandle);
         AppSpawnReqMsgFree(reqHandle);
@@ -122,7 +138,10 @@ namespace OHOS {
             return -1;
         }
         AppSpawnReqMsgHandle reqHandle = nullptr;
-        AppSpawnMsgType msgType = static_cast<AppSpawnMsgType>(size);
+        FuzzedDataProvider provider(data, size);
+        int type = provider.ConsumeIntegralInRange<int>(static_cast<int>(MSG_APP_SPAWN),
+            static_cast<int>(MAX_TYPE_INVALID));
+        AppSpawnMsgType msgType = static_cast<AppSpawnMsgType>(type);
         std::string processName(reinterpret_cast<const char*>(data), size);
         (void)AppSpawnReqMsgCreate(msgType, processName.c_str(), &reqHandle);
         uint32_t bundleIndex = static_cast<uint32_t>(size);
@@ -140,7 +159,10 @@ namespace OHOS {
             return -1;
         }
         AppSpawnReqMsgHandle reqHandle = nullptr;
-        AppSpawnMsgType msgType = static_cast<AppSpawnMsgType>(size);
+        FuzzedDataProvider provider(data, size);
+        int type = provider.ConsumeIntegralInRange<int>(static_cast<int>(MSG_APP_SPAWN),
+            static_cast<int>(MAX_TYPE_INVALID));
+        AppSpawnMsgType msgType = static_cast<AppSpawnMsgType>(type);
         std::string processName(reinterpret_cast<const char*>(data), size);
         (void)AppSpawnReqMsgCreate(msgType, processName.c_str(), &reqHandle);
         AppFlagsIndex flagIndex = static_cast<AppFlagsIndex>(size);
@@ -157,7 +179,10 @@ namespace OHOS {
             return -1;
         }
         AppSpawnReqMsgHandle reqHandle = nullptr;
-        AppSpawnMsgType msgType = static_cast<AppSpawnMsgType>(size);
+        FuzzedDataProvider provider(data, size);
+        int type = provider.ConsumeIntegralInRange<int>(static_cast<int>(MSG_APP_SPAWN),
+            static_cast<int>(MAX_TYPE_INVALID));
+        AppSpawnMsgType msgType = static_cast<AppSpawnMsgType>(type);
         std::string processName(reinterpret_cast<const char*>(data), size);
         (void)AppSpawnReqMsgCreate(msgType, processName.c_str(), &reqHandle);
         AppDacInfo dacInfo = {};
@@ -174,7 +199,10 @@ namespace OHOS {
             return -1;
         }
         AppSpawnReqMsgHandle reqHandle = nullptr;
-        AppSpawnMsgType msgType = static_cast<AppSpawnMsgType>(size);
+        FuzzedDataProvider provider(data, size);
+        int type = provider.ConsumeIntegralInRange<int>(static_cast<int>(MSG_APP_SPAWN),
+            static_cast<int>(MAX_TYPE_INVALID));
+        AppSpawnMsgType msgType = static_cast<AppSpawnMsgType>(type);
         std::string processName(reinterpret_cast<const char*>(data), size);
         (void)AppSpawnReqMsgCreate(msgType, processName.c_str(), &reqHandle);
         std::string apl(reinterpret_cast<const char*>(data), size);
@@ -192,7 +220,10 @@ namespace OHOS {
             return -1;
         }
         AppSpawnReqMsgHandle reqHandle = nullptr;
-        AppSpawnMsgType msgType = static_cast<AppSpawnMsgType>(size);
+        FuzzedDataProvider provider(data, size);
+        int type = provider.ConsumeIntegralInRange<int>(static_cast<int>(MSG_APP_SPAWN),
+            static_cast<int>(MAX_TYPE_INVALID));
+        AppSpawnMsgType msgType = static_cast<AppSpawnMsgType>(type);
         std::string processName(reinterpret_cast<const char*>(data), size);
         (void)AppSpawnReqMsgCreate(msgType, processName.c_str(), &reqHandle);
         uint8_t allow = static_cast<uint8_t>(size);
@@ -210,7 +241,10 @@ namespace OHOS {
             return -1;
         }
         AppSpawnReqMsgHandle reqHandle = nullptr;
-        AppSpawnMsgType msgType = static_cast<AppSpawnMsgType>(size);
+        FuzzedDataProvider provider(data, size);
+        int type = provider.ConsumeIntegralInRange<int>(static_cast<int>(MSG_APP_SPAWN),
+            static_cast<int>(MAX_TYPE_INVALID));
+        AppSpawnMsgType msgType = static_cast<AppSpawnMsgType>(type);
         std::string processName(reinterpret_cast<const char*>(data), size);
         (void)AppSpawnReqMsgCreate(msgType, processName.c_str(), &reqHandle);
         uint64_t accessTokenIdEx = static_cast<uint64_t>(size);
@@ -227,7 +261,10 @@ namespace OHOS {
             return -1;
         }
         AppSpawnReqMsgHandle reqHandle = nullptr;
-        AppSpawnMsgType msgType = static_cast<AppSpawnMsgType>(size);
+        FuzzedDataProvider provider(data, size);
+        int type = provider.ConsumeIntegralInRange<int>(static_cast<int>(MSG_APP_SPAWN),
+            static_cast<int>(MAX_TYPE_INVALID));
+        AppSpawnMsgType msgType = static_cast<AppSpawnMsgType>(type);
         std::string processName(reinterpret_cast<const char*>(data), size);
         (void)AppSpawnReqMsgCreate(msgType, processName.c_str(), &reqHandle);
         std::string ownerId(reinterpret_cast<const char*>(data), size);
@@ -244,7 +281,10 @@ namespace OHOS {
             return -1;
         }
         AppSpawnReqMsgHandle reqHandle = nullptr;
-        AppSpawnMsgType msgType = static_cast<AppSpawnMsgType>(size);
+        FuzzedDataProvider provider(data, size);
+        int type = provider.ConsumeIntegralInRange<int>(static_cast<int>(MSG_APP_SPAWN),
+            static_cast<int>(MAX_TYPE_INVALID));
+        AppSpawnMsgType msgType = static_cast<AppSpawnMsgType>(type);
         std::string processName(reinterpret_cast<const char*>(data), size);
         (void)AppSpawnReqMsgCreate(msgType, processName.c_str(), &reqHandle);
         std::string permission(reinterpret_cast<const char*>(data), size);
@@ -261,7 +301,10 @@ namespace OHOS {
             return -1;
         }
         AppSpawnReqMsgHandle reqHandle = nullptr;
-        AppSpawnMsgType msgType = static_cast<AppSpawnMsgType>(size);
+        FuzzedDataProvider provider(data, size);
+        int type = provider.ConsumeIntegralInRange<int>(static_cast<int>(MSG_APP_SPAWN),
+            static_cast<int>(MAX_TYPE_INVALID));
+        AppSpawnMsgType msgType = static_cast<AppSpawnMsgType>(type);
         std::string processName(reinterpret_cast<const char*>(data), size);
         (void)AppSpawnReqMsgCreate(msgType, processName.c_str(), &reqHandle);
         (void)AppSpawnReqMsgAddExtInfo(reqHandle, processName.c_str(), data, static_cast<uint32_t>(size));
