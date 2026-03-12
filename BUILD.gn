@@ -34,6 +34,9 @@ config("appspawn_config") {
     if (appspawn_custom_sandbox) {
       cflags += [ "-DCUSTOM_SANDBOX" ]
     }
+    if (appspawn_normal_sandbox) {
+      cflags += [ "-DNORMAL_SANDBOX" ]
+    }
   }
 
   if (appspawn_allow_dumpable) {
