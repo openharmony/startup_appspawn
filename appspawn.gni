@@ -40,6 +40,7 @@ declare_args() {
   appspawn_support_local_debugger = false
   appspawn_hitrace_option = true
   appspawn_napi_preload_path = "../appspawn_preload.json"
+  appspawn_lib_prelink_path = "../appspawn_prelink_dso_list"
   appspawn_allow_dumpable = false
   appspawn_change_sched = true
   appspawn_sandbox_root_tmpfs = false

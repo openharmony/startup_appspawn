@@ -21,6 +21,10 @@
 #include <unistd.h>
 #include <utility>
 #include <vector>
+#include <sys/mman.h>
+#include <sys/wait.h>
+#include <sys/prctl.h>
+#include <fcntl.h>
 
 #include "appspawn_hook.h"
 #include "appspawn_server.h"
@@ -55,6 +59,7 @@ static const bool DEFAULT_PRELOAD_VALUE = true;
 static const bool DEFAULT_PRELOAD_ETS_VALUE = true;
 static const std::string PRELOAD_JSON_CONFIG("/appspawn_preload.json");
 static const std::string PRELOAD_ETS_JSON_CONFIG("/appspawn_preload_ets.json");
+static const std::string PRELINK_DSO_LIST_CONFIG("/system/etc/appspawn/appspawn_prelink_dso_list");
 static const bool DEFAULT_SPAWN_UNIFIED_VALUE = false;
 
 typedef struct TagParseJsonContext {
@@ -119,6 +124,79 @@ static void PreloadModule(bool isHybrid)
     }
 
     OHOS::AbilityRuntime::Runtime::SavePreloaded(std::move(runtime));
+}
+
+#define ENV_PRELINK_FD   "PRELINK_MEMFD"
+
+static void PrelinkLibs(void)
+{
+    int ws = -1;
+
+    /* Prelinker process and children apps will automatically share reserved area from fork() */
+    if (dlprelink_reserve_mem() < 0) {
+        APPSPAWN_LOGE("dlprelink_reserve_mem failed\n");
+        return;
+    }
+
+    int prelink_memfd = memfd_create("relro_cache", MFD_ALLOW_SEALING);
+
+    if (prelink_memfd < 0) {
+        APPSPAWN_LOGE("memfd_create failed, err=%{public}s\n", strerror(errno));
+        return;
+    }
+
+    pid_t prelinker_pid = fork();
+    if (prelinker_pid < 0) {
+        APPSPAWN_LOGE("prelinker fork failed, err=%{public}s\n", strerror(errno));
+        close(prelink_memfd);
+        return;
+    } else if (prelinker_pid == 0) {
+        if (fcntl(prelink_memfd, F_SETFD, 0) < 0) {
+            APPSPAWN_LOGE("prelinker fcntl failed, err=%{public}s\n", strerror(errno));
+            exit(-1);
+        }
+        int rc = dlprelink_record(prelink_memfd, PRELINK_DSO_LIST_CONFIG.c_str());
+        if (rc != 0) {
+            APPSPAWN_LOGE("prelinker record failed, err=%{public}s\n", dlerror());
+        }
+        exit(rc);
+    }
+
+    if (waitpid(prelinker_pid, &ws, 0) < 0) {
+        APPSPAWN_LOGE("prelinker waitpid failed, err=%{public}s\n", strerror(errno));
+        close(prelink_memfd);
+        return;
+    }
+    prelinker_pid = 0;
+    if (ws != 0) {
+        APPSPAWN_LOGE("prelinker execution failed, ws = %{public}d\n", ws);
+        close(prelink_memfd);
+        return;
+    }
+
+    if (fcntl(prelink_memfd, F_ADD_SEALS, F_SEAL_SEAL | F_SEAL_GROW | F_SEAL_SHRINK | F_SEAL_FUTURE_WRITE) < 0) {
+        APPSPAWN_LOGE("prelink_memfd fcntl failed, err=%{public}s\n", strerror(errno));
+        close(prelink_memfd);
+        return;
+    }
+
+    if (dlprelink_register(prelink_memfd) < 0) {
+        APPSPAWN_LOGE("dlprelink_register failed\n");
+        close(prelink_memfd);
+        return;
+    }
+    APPSPAWN_LOGI("PrelinkLibs SUCCESS!\n");
+}
+
+APPSPAWN_STATIC int PreLinkAppSpawn(AppSpawnMgr *content)
+{
+    if (content && IsNWebSpawnMode(content)) {
+        return 0;
+    }
+
+    APPSPAWN_LOGI("PreLinkAppSpawn: Enable Prelink from %{public}s", PRELINK_DSO_LIST_CONFIG.c_str());
+    PrelinkLibs();
+    return 0;
 }
 
 static void LoadExtendLib(AppSpawnMgr *content)
@@ -392,6 +470,7 @@ MODULE_CONSTRUCTOR(void)
     APPSPAWN_LOGV("Load ace module ...");
     AddPreloadHook(HOOK_PRIO_HIGHEST, PreLoadAppSpawn);
     AddPreloadHook(HOOK_PRIO_HIGHEST, DlopenAppSpawn);
+    AddPreloadHook(HOOK_PRIO_HIGHEST, PreLinkAppSpawn);
     AddServerStageHook(STAGE_SERVER_ARKWEB_PRELOAD, HOOK_PRIO_COMMON, ProcessSpawnDlopenMsg);
     AddServerStageHook(STAGE_SERVER_ARKWEB_UNLOAD, HOOK_PRIO_COMMON, ProcessSpawnDlcloseMsg);
 }
