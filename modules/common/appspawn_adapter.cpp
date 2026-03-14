@@ -172,6 +172,11 @@ int SetSeccompFilter(const AppSpawnMgr *content, const AppSpawningCtx *property)
     const char *appName = APP_NAME;
     SeccompFilterType type = APP;
 
+#ifdef NORMAL_SANDBOX
+    // Set seccomp policy for normal process.
+    appName = APP_NORMAL;
+#endif
+
     if (IsNWebSpawnMode(content)) {
         uint32_t len = 0;
         char *processTypeChar =
