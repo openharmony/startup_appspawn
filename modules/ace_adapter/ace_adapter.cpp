@@ -46,6 +46,7 @@
 #include "main_thread.h"
 #include "runtime.h"
 #endif
+#include "parameter.h"
 
 using namespace OHOS::AppSpawn;
 using namespace OHOS::Global;
@@ -59,7 +60,7 @@ static const bool DEFAULT_PRELOAD_VALUE = true;
 static const bool DEFAULT_PRELOAD_ETS_VALUE = true;
 static const std::string PRELOAD_JSON_CONFIG("/appspawn_preload.json");
 static const std::string PRELOAD_ETS_JSON_CONFIG("/appspawn_preload_ets.json");
-static const std::string PRELINK_DSO_LIST_CONFIG("/system/etc/appspawn/appspawn_prelink_dso_list");
+static const std::string PRELINK_DSO_LIST_CONFIG("etc/appspawn/appspawn_prelink_dso_list");
 static const bool DEFAULT_SPAWN_UNIFIED_VALUE = false;
 
 typedef struct TagParseJsonContext {
@@ -126,11 +127,32 @@ static void PreloadModule(bool isHybrid)
     OHOS::AbilityRuntime::Runtime::SavePreloaded(std::move(runtime));
 }
 
-#define ENV_PRELINK_FD   "PRELINK_MEMFD"
+static const int PARAM_BUFFER_SIZE = 256;
+
+static bool IsPrelinkEnable()
+{
+    char buffer[PARAM_BUFFER_SIZE] = {0};
+    int ret = GetParameter("const.startup.prelink.enable", "false", buffer, PARAM_BUFFER_SIZE);
+    if (ret <= 0) {
+        APPSPAWN_LOGW("get prelink enable param unsuccess! ret =%{public}d", ret);
+        return false;
+    }
+
+    if (strcmp(buffer, "true") == 0) {
+        return true;
+    }
+
+    return false;
+}
 
 static void PrelinkLibs(void)
 {
     int ws = -1;
+
+    if (!IsPrelinkEnable()) {
+        APPSPAWN_LOGI("prelink disabled");
+        return;
+    }
 
     /* Prelinker process and children apps will automatically share reserved area from fork() */
     if (dlprelink_reserve_mem() < 0) {
@@ -155,10 +177,32 @@ static void PrelinkLibs(void)
             APPSPAWN_LOGE("prelinker fcntl failed, err=%{public}s\n", strerror(errno));
             exit(-1);
         }
-        int rc = dlprelink_record(prelink_memfd, PRELINK_DSO_LIST_CONFIG.c_str());
+
+        const char *list_file = NULL;
+        CfgFiles *files = GetCfgFiles(PRELINK_DSO_LIST_CONFIG.c_str());
+        if (files == NULL) {
+            APPSPAWN_LOGE("prelink list not found");
+            exit(-1);
+        }
+        for (int i = MAX_CFG_POLICY_DIRS_CNT - 1; i >= 0; --i) {
+            if (files->paths[i] != NULL) {
+                list_file = files->paths[i];
+                break;
+            }
+        }
+        if (list_file == NULL) {
+            APPSPAWN_LOGE("prelink list file not found");
+            FreeCfgFiles(files);
+            exit(-1);
+        }
+        APPSPAWN_LOGI("Enable Prelink from %{public}s", PRELINK_DSO_LIST_CONFIG.c_str());
+
+        int rc = dlprelink_record(prelink_memfd, list_file);
         if (rc != 0) {
             APPSPAWN_LOGE("prelinker record failed, err=%{public}s\n", dlerror());
         }
+
+        FreeCfgFiles(files);
         exit(rc);
     }
 
@@ -168,7 +212,7 @@ static void PrelinkLibs(void)
         return;
     }
     prelinker_pid = 0;
-    if (ws != 0) {
+    if (!WIFEXITED(ws) || WEXITSTATUS(ws) != 0) {
         APPSPAWN_LOGE("prelinker execution failed, ws = %{public}d\n", ws);
         close(prelink_memfd);
         return;
@@ -194,7 +238,6 @@ APPSPAWN_STATIC int PreLinkAppSpawn(AppSpawnMgr *content)
         return 0;
     }
 
-    APPSPAWN_LOGI("PreLinkAppSpawn: Enable Prelink from %{public}s", PRELINK_DSO_LIST_CONFIG.c_str());
     PrelinkLibs();
     return 0;
 }
