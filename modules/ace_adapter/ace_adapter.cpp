@@ -201,22 +201,22 @@ static void PrelinkLibs(void)
         return;
     }
 
-    pid_t prelinker_pid = fork();
-    if (prelinker_pid < 0) {
+    pid_t prelinkerPid = fork();
+    if (prelinkerPid < 0) {
         APPSPAWN_LOGE("prelinker fork failed, err=%{public}s\n", strerror(errno));
         close(prelinkMemfd);
         return;
-    } else if (prelinker_pid == 0) {
+    } else if (prelinkerPid == 0) {
         int rc = PrelinkerMain(prelinkMemfd);
         exit(rc);
     }
 
-    if (waitpid(prelinker_pid, &ws, 0) < 0) {
+    if (waitpid(prelinkerPid, &ws, 0) < 0) {
         APPSPAWN_LOGE("prelinker waitpid failed, err=%{public}s\n", strerror(errno));
         close(prelinkMemfd);
         return;
     }
-    prelinker_pid = 0;
+    prelinkerPid = 0;
     if (!WIFEXITED(ws) || WEXITSTATUS(ws) != 0) {
         APPSPAWN_LOGE("prelinker execution failed, ws = %{public}d\n", ws);
         close(prelinkMemfd);
