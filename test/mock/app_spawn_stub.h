@@ -69,6 +69,14 @@ typedef struct TagAppSpawnNamespace {
 } AppSpawnNamespace;
 typedef struct TagAppSpawnedProcess AppSpawnedProcessInfo;
 
+void SetMockDlprelinkReserveMemFailed(bool v);
+void SetMockDlprelinkRecordFailed(bool v);
+bool GetIsExecutedDlprelinkRegister(void);
+void ClearIsExecutedDlprelinkRegister(void);
+int dlprelink_reserve_mem(void);
+int dlprelink_record(int memfd, const char *list_path);
+int dlprelink_register(int fd);
+int SetParameter(const char *key, const char *value);
 int AppSpawnExtDataCompareDataId(ListNode *node, void *data);
 AppSpawnNamespace *GetAppSpawnNamespace(const AppSpawnMgr *content);
 int SetPidNamespace(int nsPidFd, int nsType);

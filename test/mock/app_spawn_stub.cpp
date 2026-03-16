@@ -145,6 +145,57 @@ void SetDeveloperMode(bool mode)
     g_developerMode = mode;
 }
 
+static bool startupPrelinkExist = false;
+static bool startupPrelinkEnable = true;
+int SetParameter(const char *key, const char *value)
+{
+    if (strcmp(key, "const.startup.prelink.enable") == 0) {
+        startupPrelinkExist = true;
+        startupPrelinkEnable = strcmp(value, "true") == 0 ? true : false;
+    }
+
+    return 0;
+}
+
+static bool mockDlprelinkReserveMemFailed   = false;
+static bool mockDlprelinkRecordFailed       = false;
+static bool isExecutedDlprelinkRegister     = false;
+void SetMockDlprelinkReserveMemFailed(bool v)
+{
+    mockDlprelinkReserveMemFailed = v;
+}
+
+void SetMockDlprelinkRecordFailed(bool v)
+{
+    mockDlprelinkRecordFailed = v;
+}
+
+bool GetIsExecutedDlprelinkRegister(void)
+{
+    return isExecutedDlprelinkRegister;
+}
+
+void ClearIsExecutedDlprelinkRegister(void)
+{
+    isExecutedDlprelinkRegister = false;
+}
+
+int dlprelink_reserve_mem(void)
+{
+    return mockDlprelinkReserveMemFailed ? -1 : 0;
+}
+
+int dlprelink_record(int memfd, const char *list_path)
+{
+    return mockDlprelinkRecordFailed ? -1 : 0;
+}
+
+int dlprelink_register(int fd)
+{
+    isExecutedDlprelinkRegister = true;
+    return 0;
+}
+
 int GetParameter(const char *key, const char *def, char *value, uint32_t len)
 {
     static uint32_t count = 0;
@@ -179,12 +230,11 @@ int GetParameter(const char *key, const char *def, char *value, uint32_t len)
         return strcpy_s(value, len, "/data/app/el1/bundle/public/com.ohos.nweb/ArkWWebCore.hap") == 0 ?
             strlen("/data/app/el1/bundle/public/com.ohos.nweb/ArkWWebCore.hap") : -1;
     }
+    if (strcmp(key, "const.startup.prelink.enable") == 0) {
+        return startupPrelinkExist ? (startupPrelinkEnable ? (strcpy_s(value, len, "true") == 0 ?
+            strlen("true") : -1) : -1) : -1;
+    }
     return -1;
-}
-
-int SetParameter(const char *key, const char *value)
-{
-    return 0;
 }
 
 int InUpdaterMode(void)
