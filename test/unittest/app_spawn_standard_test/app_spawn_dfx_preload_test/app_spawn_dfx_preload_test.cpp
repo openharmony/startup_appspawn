@@ -57,7 +57,7 @@ public:
 };
 
 /**
- * @brief 携带APP_FLAGS_DEBUGGABLE标记的debug应用测试SetDfxPreloadEnableEnv
+ * @brief 携带APP_FLAGS_DEBUG_SIGN标记的debug应用测试SetDfxPreloadEnableEnv
  *
  */
 HWTEST_F(AppSpawnDfxPreloadTest, SetDfxPreloadEnableEnv_01, TestSize.Level0)
@@ -76,11 +76,11 @@ HWTEST_F(AppSpawnDfxPreloadTest, SetDfxPreloadEnableEnv_01, TestSize.Level0)
         DfxPreloadTestHelper dfxPreloadTestHelper;
         AppSpawnReqMsgHandle reqHandle = dfxPreloadTestHelper.DfxPreloadTestCreateMsg(clientHandle, MSG_APP_SPAWN);
         APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break, "Failed to create msg type %{public}d", MSG_APP_SPAWN);
-        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_DEBUGGABLE);
+        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_DEBUG_SIGN);
 
         property = dfxPreloadTestHelper.DfxPreloadTestGetAppProperty(clientHandle, reqHandle);
         APPSPAWN_CHECK(property != nullptr, break, "Failed to get app property");
-        EXPECT_NE(CheckAppMsgFlagsSet(property, APP_FLAGS_DEBUGGABLE), 0);
+        EXPECT_NE(CheckAppMsgFlagsSet(property, APP_FLAGS_DEBUG_SIGN), 0);
 
         ret = SetDfxPreloadEnableEnv(mgr, property);
     } while (0);
@@ -116,6 +116,39 @@ HWTEST_F(AppSpawnDfxPreloadTest, SetDfxPreloadEnableEnv_02, TestSize.Level0)
         APPSPAWN_CHECK(property != nullptr, break, "Failed to get app property");
         EXPECT_NE(CheckAppMsgFlagsSet(property, APP_FLAGS_ASANENABLED), 0);
         property->client.flags |= APP_COLD_START;
+
+        ret = SetDfxPreloadEnableEnv(mgr, property);
+    } while (0);
+    DeleteAppSpawningCtx(property);
+    AppSpawnClientDestroy(clientHandle);
+    DeleteAppSpawnMgr(mgr);
+    ASSERT_EQ(ret, 0);
+}
+
+/**
+ * @brief 未携带APP_FLAGS_DEBUG_SIGN标记的非debug应用测试SetDfxPreloadEnableEnv
+ *
+ */
+HWTEST_F(AppSpawnDfxPreloadTest, SetDfxPreloadEnableEnv_03, TestSize.Level0)
+{
+    int ret = -1;
+    AppSpawnMgr *mgr = nullptr;
+    AppSpawnClientHandle clientHandle = nullptr;
+    AppSpawningCtx *property = nullptr;
+    do {
+        mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+        ASSERT_NE(mgr, nullptr);
+
+        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", APPSPAWN_SERVER_NAME);
+
+        DfxPreloadTestHelper dfxPreloadTestHelper;
+        AppSpawnReqMsgHandle reqHandle = dfxPreloadTestHelper.DfxPreloadTestCreateMsg(clientHandle, MSG_APP_SPAWN);
+        APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break, "Failed to create msg type %{public}d", MSG_APP_SPAWN);
+
+        property = dfxPreloadTestHelper.DfxPreloadTestGetAppProperty(clientHandle, reqHandle);
+        APPSPAWN_CHECK(property != nullptr, break, "Failed to get app property");
+        EXPECT_EQ(CheckAppMsgFlagsSet(property, APP_FLAGS_DEBUG_SIGN), 0);
 
         ret = SetDfxPreloadEnableEnv(mgr, property);
     } while (0);

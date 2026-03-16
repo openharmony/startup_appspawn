@@ -408,7 +408,7 @@ static bool ShouldEnableColdRun(AppFlagsIndex flagIndex)
         return true;
     }
 
-    if (flagIndex == APP_FLAGS_DEBUGGABLE &&
+    if (flagIndex == APP_FLAGS_DEBUG_SIGN &&
         CheckEnabled("const.security.developermode.state", "true") &&
         CheckEnabled("hiviewdfx.hiprofiler.preload", "1")) {
         return true;
