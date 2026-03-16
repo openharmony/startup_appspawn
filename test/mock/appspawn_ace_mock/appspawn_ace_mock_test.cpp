@@ -32,53 +32,53 @@ void SetBoolParamResult(const char *key, bool flag)
     }
 }
 
-static bool startupPrelinkExist = false;
-static bool startupPrelinkEnable = true;
+static bool g_startupPrelinkExist = false;
+static bool g_startupPrelinkEnable = true;
 int SetParameter(const char *key, const char *value)
 {
     if (strcmp(key, "const.startup.prelink.enable") == 0) {
-        startupPrelinkExist = true;
-        startupPrelinkEnable = strcmp(value, "true") == 0 ? true : false;
+        g_startupPrelinkExist = true;
+        g_startupPrelinkEnable = strcmp(value, "true") == 0 ? true : false;
     }
 
     return 0;
 }
 
-static bool mockDlprelinkReserveMemFailed   = false;
-static bool mockDlprelinkRecordFailed       = false;
-static bool isExecutedDlprelinkRegister     = false;
+static bool g_mockDlprelinkReserveMemFailed   = false;
+static bool g_mockDlprelinkRecordFailed       = false;
+static bool g_isExecutedDlprelinkRegister     = false;
 void SetMockDlprelinkReserveMemFailed(bool v)
 {
-    mockDlprelinkReserveMemFailed = v;
+    g_mockDlprelinkReserveMemFailed = v;
 }
 
 void SetMockDlprelinkRecordFailed(bool v)
 {
-    mockDlprelinkRecordFailed = v;
+    g_mockDlprelinkRecordFailed = v;
 }
 
 bool GetIsExecutedDlprelinkRegister(void)
 {
-    return isExecutedDlprelinkRegister;
+    return g_isExecutedDlprelinkRegister;
 }
 
 void ClearIsExecutedDlprelinkRegister(void)
 {
-    isExecutedDlprelinkRegister = false;
+    g_isExecutedDlprelinkRegister = false;
 }
 
 int dlprelink_reserve_mem(void)
 {
-    return mockDlprelinkReserveMemFailed ? -1 : 0;
+    return g_mockDlprelinkReserveMemFailed ? -1 : 0;
 }
 
-int dlprelink_record(int memfd, const char *list_path)
+int dlprelink_record(int memfd, const char *listPath)
 {
-    return mockDlprelinkRecordFailed ? -1 : 0;
+    return g_mockDlprelinkRecordFailed ? -1 : 0;
 }
 
 int dlprelink_register(int fd)
 {
-    if (mockDlprelinkReserveMemFailed || mockMemFdCreateFailed || mockDlprelinkRecordFailed)
-    return isExecutedDlprelinkRegister ? -1 : 0;
+    g_isExecutedDlprelinkRegister = true;
+    return 0;
 }

@@ -145,55 +145,61 @@ void SetDeveloperMode(bool mode)
     g_developerMode = mode;
 }
 
-static bool startupPrelinkExist = false;
-static bool startupPrelinkEnable = true;
+static bool g_startupPrelinkExist  = false;
+static bool g_startupPrelinkEnable = true;
 int SetParameter(const char *key, const char *value)
 {
     if (strcmp(key, "const.startup.prelink.enable") == 0) {
-        startupPrelinkExist = true;
-        startupPrelinkEnable = strcmp(value, "true") == 0 ? true : false;
+        g_startupPrelinkExist = true;
+        g_startupPrelinkEnable = strcmp(value, "true") == 0 ? true : false;
     }
 
     return 0;
 }
 
-static bool mockDlprelinkReserveMemFailed   = false;
-static bool mockDlprelinkRecordFailed       = false;
-static bool isExecutedDlprelinkRegister     = false;
+static bool g_mockDlprelinkReserveMemFailed = false;
+static bool g_mockDlprelinkRecordFailed     = false;
+static bool g_isExecutedDlprelinkRegister   = false;
 void SetMockDlprelinkReserveMemFailed(bool v)
 {
-    mockDlprelinkReserveMemFailed = v;
+    g_mockDlprelinkReserveMemFailed = v;
 }
 
 void SetMockDlprelinkRecordFailed(bool v)
 {
-    mockDlprelinkRecordFailed = v;
+    g_mockDlprelinkRecordFailed = v;
 }
 
 bool GetIsExecutedDlprelinkRegister(void)
 {
-    return isExecutedDlprelinkRegister;
+    return g_isExecutedDlprelinkRegister;
 }
 
 void ClearIsExecutedDlprelinkRegister(void)
 {
-    isExecutedDlprelinkRegister = false;
+    g_isExecutedDlprelinkRegister = false;
 }
 
 int dlprelink_reserve_mem(void)
 {
-    return mockDlprelinkReserveMemFailed ? -1 : 0;
+    return g_mockDlprelinkReserveMemFailed ? -1 : 0;
 }
 
-int dlprelink_record(int memfd, const char *list_path)
+int dlprelink_record(int memfd, const char *listPath)
 {
-    return mockDlprelinkRecordFailed ? -1 : 0;
+    return g_mockDlprelinkRecordFailed ? -1 : 0;
 }
 
 int dlprelink_register(int fd)
 {
-    isExecutedDlprelinkRegister = true;
+    g_isExecutedDlprelinkRegister = true;
     return 0;
+}
+
+static int GetParameterForPrelink(char *value, uint32_t len)
+{
+    return g_startupPrelinkExist ? (g_startupPrelinkEnable ? (strcpy_s(value, len, "true") == 0 ?
+            strlen("true") : -1) : -1) : -1;
 }
 
 int GetParameter(const char *key, const char *def, char *value, uint32_t len)
@@ -231,8 +237,7 @@ int GetParameter(const char *key, const char *def, char *value, uint32_t len)
             strlen("/data/app/el1/bundle/public/com.ohos.nweb/ArkWWebCore.hap") : -1;
     }
     if (strcmp(key, "const.startup.prelink.enable") == 0) {
-        return startupPrelinkExist ? (startupPrelinkEnable ? (strcpy_s(value, len, "true") == 0 ?
-            strlen("true") : -1) : -1) : -1;
+        return GetParameterForPrelink(value, len);
     }
     return -1;
 }

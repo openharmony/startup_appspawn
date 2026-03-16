@@ -74,7 +74,7 @@ void SetMockDlprelinkRecordFailed(bool v);
 bool GetIsExecutedDlprelinkRegister(void);
 void ClearIsExecutedDlprelinkRegister(void);
 int dlprelink_reserve_mem(void);
-int dlprelink_record(int memfd, const char *list_path);
+int dlprelink_record(int memfd, const char *listPath);
 int dlprelink_register(int fd);
 int SetParameter(const char *key, const char *value);
 int AppSpawnExtDataCompareDataId(ListNode *node, void *data);

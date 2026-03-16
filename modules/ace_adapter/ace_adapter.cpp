@@ -145,6 +145,41 @@ static bool IsPrelinkEnable()
     return false;
 }
 
+static int PrelinkerMain(int prelinkMemfd)
+{
+    if (fcntl(prelinkMemfd, F_SETFD, 0) < 0) {
+        APPSPAWN_LOGE("prelinker fcntl failed, err=%{public}s\n", strerror(errno));
+        return -1;
+    }
+
+    const char *listFile = nullptr;
+    CfgFiles *files = GetCfgFiles(PRELINK_DSO_LIST_CONFIG.c_str());
+    if (files == nullptr) {
+        APPSPAWN_LOGE("prelink list not found");
+        return -1;
+    }
+    for (int i = MAX_CFG_POLICY_DIRS_CNT - 1; i >= 0; --i) {
+        if (files->paths[i] != nullptr) {
+            listFile = files->paths[i];
+            break;
+        }
+    }
+    if (listFile == nullptr) {
+        APPSPAWN_LOGE("prelink list file not found");
+        FreeCfgFiles(files);
+        return -1;
+    }
+    APPSPAWN_LOGI("Enable Prelink from %{public}s", PRELINK_DSO_LIST_CONFIG.c_str());
+
+    int rc = dlprelink_record(prelinkMemfd, listFile);
+    if (rc != 0) {
+        APPSPAWN_LOGE("prelinker record failed, err=%{public}s\n", dlerror());
+    }
+
+    FreeCfgFiles(files);
+    return rc;
+}
+
 static void PrelinkLibs(void)
 {
     int ws = -1;
@@ -160,9 +195,8 @@ static void PrelinkLibs(void)
         return;
     }
 
-    int prelink_memfd = memfd_create("relro_cache", MFD_ALLOW_SEALING);
-
-    if (prelink_memfd < 0) {
+    int prelinkMemfd = memfd_create("relro_cache", MFD_ALLOW_SEALING);
+    if (prelinkMemfd < 0) {
         APPSPAWN_LOGE("memfd_create failed, err=%{public}s\n", strerror(errno));
         return;
     }
@@ -170,63 +204,34 @@ static void PrelinkLibs(void)
     pid_t prelinker_pid = fork();
     if (prelinker_pid < 0) {
         APPSPAWN_LOGE("prelinker fork failed, err=%{public}s\n", strerror(errno));
-        close(prelink_memfd);
+        close(prelinkMemfd);
         return;
     } else if (prelinker_pid == 0) {
-        if (fcntl(prelink_memfd, F_SETFD, 0) < 0) {
-            APPSPAWN_LOGE("prelinker fcntl failed, err=%{public}s\n", strerror(errno));
-            exit(-1);
-        }
-
-        const char *list_file = NULL;
-        CfgFiles *files = GetCfgFiles(PRELINK_DSO_LIST_CONFIG.c_str());
-        if (files == NULL) {
-            APPSPAWN_LOGE("prelink list not found");
-            exit(-1);
-        }
-        for (int i = MAX_CFG_POLICY_DIRS_CNT - 1; i >= 0; --i) {
-            if (files->paths[i] != NULL) {
-                list_file = files->paths[i];
-                break;
-            }
-        }
-        if (list_file == NULL) {
-            APPSPAWN_LOGE("prelink list file not found");
-            FreeCfgFiles(files);
-            exit(-1);
-        }
-        APPSPAWN_LOGI("Enable Prelink from %{public}s", PRELINK_DSO_LIST_CONFIG.c_str());
-
-        int rc = dlprelink_record(prelink_memfd, list_file);
-        if (rc != 0) {
-            APPSPAWN_LOGE("prelinker record failed, err=%{public}s\n", dlerror());
-        }
-
-        FreeCfgFiles(files);
+        int rc = PrelinkerMain(prelinkMemfd);
         exit(rc);
     }
 
     if (waitpid(prelinker_pid, &ws, 0) < 0) {
         APPSPAWN_LOGE("prelinker waitpid failed, err=%{public}s\n", strerror(errno));
-        close(prelink_memfd);
+        close(prelinkMemfd);
         return;
     }
     prelinker_pid = 0;
     if (!WIFEXITED(ws) || WEXITSTATUS(ws) != 0) {
         APPSPAWN_LOGE("prelinker execution failed, ws = %{public}d\n", ws);
-        close(prelink_memfd);
+        close(prelinkMemfd);
         return;
     }
 
-    if (fcntl(prelink_memfd, F_ADD_SEALS, F_SEAL_SEAL | F_SEAL_GROW | F_SEAL_SHRINK | F_SEAL_FUTURE_WRITE) < 0) {
-        APPSPAWN_LOGE("prelink_memfd fcntl failed, err=%{public}s\n", strerror(errno));
-        close(prelink_memfd);
+    if (fcntl(prelinkMemfd, F_ADD_SEALS, F_SEAL_SEAL | F_SEAL_GROW | F_SEAL_SHRINK | F_SEAL_FUTURE_WRITE) < 0) {
+        APPSPAWN_LOGE("prelinkMemfd fcntl failed, err=%{public}s\n", strerror(errno));
+        close(prelinkMemfd);
         return;
     }
 
-    if (dlprelink_register(prelink_memfd) < 0) {
+    if (dlprelink_register(prelinkMemfd) < 0) {
         APPSPAWN_LOGE("dlprelink_register failed\n");
-        close(prelink_memfd);
+        close(prelinkMemfd);
         return;
     }
     APPSPAWN_LOGI("PrelinkLibs SUCCESS!\n");
