@@ -174,9 +174,6 @@ static void AppSpawnForkChildProcess(AppSpawnContent *content, AppSpawnClient *c
     StartAppspawnTrace("AppspawnFork");
     *pid = fork();
     if (*pid == 0) {
-#ifndef OHOS_LITE
-        HilogCloseSocketFd();
-#endif
         struct timespec forkEnd = {0};
         clock_gettime(CLOCK_MONOTONIC, &forkEnd);
         uint64_t diff = DiffTime(&forkStart, &forkEnd);

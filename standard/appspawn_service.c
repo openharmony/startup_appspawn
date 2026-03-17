@@ -842,8 +842,10 @@ static void ProcessPreFork(AppSpawnContent *content, AppSpawningCtx *property)
     enum fdsan_error_level errorLevel = fdsan_get_error_level();
     StartAppspawnTrace("AppspawnPreFork");
     content->reservedPid = fork();
+    APPSPAWN_LOGV("prefork fork finish %{public}d,%{public}d,%{public}d,%{public}d,%{public}d",
+        content->reservedPid, content->preforkFd[0], content->preforkFd[1], content->parentToChildFd[0],
+        content->parentToChildFd[1]);
     if (content->reservedPid == 0) {
-        HilogCloseSocketFd();
         ClearPipeFd(property->forkCtx.fd, PIPE_FD_LENGTH);
         int isRet = SetPreforkProcessName(content);
         APPSPAWN_LOGV("prefork process start wait read msg with set processname %{public}d", isRet);
@@ -855,6 +857,7 @@ static void ProcessPreFork(AppSpawnContent *content, AppSpawningCtx *property)
             ProcessExit(0);
             return;
         }
+
         property->client.id = preforkMsg.id;
         property->client.flags = preforkMsg.flags;
         property->isPrefork = true;
