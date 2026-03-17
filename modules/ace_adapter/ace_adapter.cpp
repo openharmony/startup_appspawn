@@ -180,17 +180,12 @@ static int PrelinkerMain(int prelinkMemfd)
     return rc;
 }
 
-static void PrelinkLibs(AppSpawnMgr *content)
+static void PrelinkLibs()
 {
     int ws = -1;
 
     if (!IsPrelinkEnable()) {
         APPSPAWN_LOGI("prelink disabled");
-        return;
-    }
-
-    if (IsColdRunMode(content)) {
-        APPSPAWN_LOGI("prelink skip for cold run mode");
         return;
     }
 
@@ -244,11 +239,11 @@ static void PrelinkLibs(AppSpawnMgr *content)
 
 APPSPAWN_STATIC int PreLinkAppSpawn(AppSpawnMgr *content)
 {
-    if (content && IsNWebSpawnMode(content)) {
+    if (!content || content->content.mode != MODE_FOR_APP_SPAWN) {
         return 0;
     }
 
-    PrelinkLibs(content);
+    PrelinkLibs();
     return 0;
 }
 
