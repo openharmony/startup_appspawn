@@ -30,6 +30,7 @@ using namespace OHOS;
 APPSPAWN_STATIC int RunChildThread(const AppSpawnMgr *content, const AppSpawningCtx *property);
 APPSPAWN_STATIC int RunChildByRenderCmd(const AppSpawnMgr *content, const AppSpawningCtx *property);
 APPSPAWN_STATIC int PreLoadAppSpawn(AppSpawnMgr *content);
+APPSPAWN_STATIC int PreLinkAppSpawn(AppSpawnMgr *content);
 APPSPAWN_STATIC int DlopenAppSpawn(AppSpawnMgr *content);
 APPSPAWN_STATIC int ProcessSpawnDlopenMsg(AppSpawnMgr *content);
 APPSPAWN_STATIC int ProcessSpawnDlcloseMsg(AppSpawnMgr *content);
@@ -52,6 +53,149 @@ public:
         APPSPAWN_LOGI("%{public}s.%{public}s end", info->test_suite_name(), info->name());
     }
 };
+
+/**
+ * @brief Enable prelink
+ * @note 预期结果: 正常 prelink
+ *
+ */
+HWTEST_F(AppSpawnAceTest, App_Spawn_Ace_Prelink_001, TestSize.Level0)
+{
+    AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+    ASSERT_NE(mgr, nullptr);
+    mgr->content.longProcName = const_cast<char *>(APPSPAWN_SERVER_NAME);
+    mgr->content.longProcNameLen = APP_LEN_PROC_NAME;
+
+    SetParameter("const.startup.prelink.enable", "true");
+    int ret = PreLinkAppSpawn(mgr);
+    DeleteAppSpawnMgr(mgr);
+    ClearIsExecutedDlprelinkRegister();
+    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(GetIsExecutedDlprelinkRegister(), true);
+}
+
+/**
+ * @brief run mode: MODE_FOR_NWEB_SPAWN 不支持 prelink
+ * @note 预期结果: 直接返回 0
+ *
+ */
+HWTEST_F(AppSpawnAceTest, App_Spawn_Ace_Prelink_002, TestSize.Level0)
+{
+    AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
+    ASSERT_NE(mgr, nullptr);
+    mgr->content.longProcName = const_cast<char *>(NWEBSPAWN_SERVER_NAME);
+    mgr->content.longProcNameLen = APP_LEN_PROC_NAME;
+
+    SetParameter("const.startup.prelink.enable", "true");
+    int ret = PreLinkAppSpawn(mgr);
+    DeleteAppSpawnMgr(mgr);
+    ClearIsExecutedDlprelinkRegister();
+    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(GetIsExecutedDlprelinkRegister(), false);
+}
+
+/**
+ * @brief run mode: MODE_FOR_NWEB_COLD_RUN 不支持 prelink
+ * @note 预期结果: 直接返回 0
+ *
+ */
+HWTEST_F(AppSpawnAceTest, App_Spawn_Ace_Prelink_003, TestSize.Level0)
+{
+    AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_COLD_RUN);
+    ASSERT_NE(mgr, nullptr);
+    mgr->content.longProcName = const_cast<char *>(NWEBSPAWN_SERVER_NAME);
+    mgr->content.longProcNameLen = APP_LEN_PROC_NAME;
+
+    SetParameter("const.startup.prelink.enable", "true");
+    int ret = PreLinkAppSpawn(mgr);
+    DeleteAppSpawnMgr(mgr);
+    ClearIsExecutedDlprelinkRegister();
+    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(GetIsExecutedDlprelinkRegister(), false);
+}
+
+/**
+ * @brief Disable prelink
+ * @note 预期结果: 在 IsPrelinkEnable 判断失败，直接返回，不会进行 prelink
+ *
+ */
+HWTEST_F(AppSpawnAceTest, App_Spawn_Ace_Prelink_004, TestSize.Level0)
+{
+    AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+    ASSERT_NE(mgr, nullptr);
+    mgr->content.longProcName = const_cast<char *>(APPSPAWN_SERVER_NAME);
+    mgr->content.longProcNameLen = APP_LEN_PROC_NAME;
+
+    SetParameter("const.startup.prelink.enable", "false");
+    int ret = PreLinkAppSpawn(mgr);
+    DeleteAppSpawnMgr(mgr);
+    ClearIsExecutedDlprelinkRegister();
+    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(GetIsExecutedDlprelinkRegister(), false);
+}
+
+/**
+ * @brief const.startup.prelink.enable 参数不存在
+ * @note 预期结果: 在 IsPrelinkEnable 判断失败，直接返回，不会进行 prelink
+ *
+ */
+HWTEST_F(AppSpawnAceTest, App_Spawn_Ace_Prelink_005, TestSize.Level0)
+{
+    AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+    ASSERT_NE(mgr, nullptr);
+    mgr->content.longProcName = const_cast<char *>(APPSPAWN_SERVER_NAME);
+    mgr->content.longProcNameLen = APP_LEN_PROC_NAME;
+
+    int ret = PreLinkAppSpawn(mgr);
+    DeleteAppSpawnMgr(mgr);
+    ClearIsExecutedDlprelinkRegister();
+    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(GetIsExecutedDlprelinkRegister(), false);
+}
+
+/**
+ * @brief 注入 dlprelink_reserve_mem 分配失败，
+ * @note 预期结果: 直接返回，不会进行 prelink
+ *
+ */
+HWTEST_F(AppSpawnAceTest, App_Spawn_Ace_Prelink_006, TestSize.Level0)
+{
+    AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+    ASSERT_NE(mgr, nullptr);
+    mgr->content.longProcName = const_cast<char *>(APPSPAWN_SERVER_NAME);
+    mgr->content.longProcNameLen = APP_LEN_PROC_NAME;
+
+    SetParameter("const.startup.prelink.enable", "true");
+    SetMockDlprelinkReserveMemFailed(true);
+    int ret = PreLinkAppSpawn(mgr);
+    SetMockDlprelinkReserveMemFailed(false);
+    DeleteAppSpawnMgr(mgr);
+    ClearIsExecutedDlprelinkRegister();
+    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(GetIsExecutedDlprelinkRegister(), false);
+}
+
+/**
+ * @brief 注入 dlprelink_record 失败，
+ * @note 预期结果: 直接返回，不会进行 prelink
+ *
+ */
+HWTEST_F(AppSpawnAceTest, App_Spawn_Ace_Prelink_007, TestSize.Level0)
+{
+    AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+    ASSERT_NE(mgr, nullptr);
+    mgr->content.longProcName = const_cast<char *>(APPSPAWN_SERVER_NAME);
+    mgr->content.longProcNameLen = APP_LEN_PROC_NAME;
+
+    SetParameter("const.startup.prelink.enable", "true");
+    SetMockDlprelinkRecordFailed(true);
+    int ret = PreLinkAppSpawn(mgr);
+    SetMockDlprelinkRecordFailed(false);
+    ClearIsExecutedDlprelinkRegister();
+    DeleteAppSpawnMgr(mgr);
+    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(GetIsExecutedDlprelinkRegister(), false);
+}
 
 /**
  * @brief nwebspawn进行预加载

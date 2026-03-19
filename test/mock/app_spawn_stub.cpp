@@ -145,6 +145,63 @@ void SetDeveloperMode(bool mode)
     g_developerMode = mode;
 }
 
+static bool g_startupPrelinkExist  = false;
+static bool g_startupPrelinkEnable = true;
+int SetParameter(const char *key, const char *value)
+{
+    if (strcmp(key, "const.startup.prelink.enable") == 0) {
+        g_startupPrelinkExist = true;
+        g_startupPrelinkEnable = strcmp(value, "true") == 0 ? true : false;
+    }
+
+    return 0;
+}
+
+static bool g_mockDlprelinkReserveMemFailed = false;
+static bool g_mockDlprelinkRecordFailed     = false;
+static bool g_isExecutedDlprelinkRegister   = false;
+void SetMockDlprelinkReserveMemFailed(bool v)
+{
+    g_mockDlprelinkReserveMemFailed = v;
+}
+
+void SetMockDlprelinkRecordFailed(bool v)
+{
+    g_mockDlprelinkRecordFailed = v;
+}
+
+bool GetIsExecutedDlprelinkRegister(void)
+{
+    return g_isExecutedDlprelinkRegister;
+}
+
+void ClearIsExecutedDlprelinkRegister(void)
+{
+    g_isExecutedDlprelinkRegister = false;
+}
+
+int dlprelink_reserve_mem(void)
+{
+    return g_mockDlprelinkReserveMemFailed ? -1 : 0;
+}
+
+int dlprelink_record(int memfd, const char *listPath)
+{
+    return g_mockDlprelinkRecordFailed ? -1 : 0;
+}
+
+int dlprelink_register(int fd)
+{
+    g_isExecutedDlprelinkRegister = true;
+    return 0;
+}
+
+static int GetParameterForPrelink(char *value, uint32_t len)
+{
+    return g_startupPrelinkExist ? (g_startupPrelinkEnable ? (strcpy_s(value, len, "true") == 0 ?
+            strlen("true") : -1) : -1) : -1;
+}
+
 int GetParameter(const char *key, const char *def, char *value, uint32_t len)
 {
     static uint32_t count = 0;
@@ -179,12 +236,10 @@ int GetParameter(const char *key, const char *def, char *value, uint32_t len)
         return strcpy_s(value, len, "/data/app/el1/bundle/public/com.ohos.nweb/ArkWWebCore.hap") == 0 ?
             strlen("/data/app/el1/bundle/public/com.ohos.nweb/ArkWWebCore.hap") : -1;
     }
+    if (strcmp(key, "const.startup.prelink.enable") == 0) {
+        return GetParameterForPrelink(value, len);
+    }
     return -1;
-}
-
-int SetParameter(const char *key, const char *value)
-{
-    return 0;
 }
 
 int InUpdaterMode(void)

@@ -25,6 +25,14 @@ extern "C" {
 #endif
 
 void SetBoolParamResult(const char *key, bool flag);
+void SetMockDlprelinkReserveMemFailed(void);
+void SetMockDlprelinkRecordFailed(void);
+bool GetIsExecutedDlprelinkRegister(void);
+void ClearIsExecutedDlprelinkRegister(void);
+int dlprelink_reserve_mem(void);
+int dlprelink_record(int memfd, const char *listPath);
+int dlprelink_register(int fd);
+int SetParameter(const char *key, const char *value);
 
 #ifdef __cplusplus
 }

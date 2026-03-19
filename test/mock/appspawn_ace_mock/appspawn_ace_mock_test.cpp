@@ -31,3 +31,54 @@ void SetBoolParamResult(const char *key, bool flag)
         flag ? (g_spawnUnifiedParamResult = true) : (g_spawnUnifiedParamResult = false);
     }
 }
+
+static bool g_startupPrelinkExist = false;
+static bool g_startupPrelinkEnable = true;
+int SetParameter(const char *key, const char *value)
+{
+    if (strcmp(key, "const.startup.prelink.enable") == 0) {
+        g_startupPrelinkExist = true;
+        g_startupPrelinkEnable = strcmp(value, "true") == 0 ? true : false;
+    }
+
+    return 0;
+}
+
+static bool g_mockDlprelinkReserveMemFailed   = false;
+static bool g_mockDlprelinkRecordFailed       = false;
+static bool g_isExecutedDlprelinkRegister     = false;
+void SetMockDlprelinkReserveMemFailed(bool v)
+{
+    g_mockDlprelinkReserveMemFailed = v;
+}
+
+void SetMockDlprelinkRecordFailed(bool v)
+{
+    g_mockDlprelinkRecordFailed = v;
+}
+
+bool GetIsExecutedDlprelinkRegister(void)
+{
+    return g_isExecutedDlprelinkRegister;
+}
+
+void ClearIsExecutedDlprelinkRegister(void)
+{
+    g_isExecutedDlprelinkRegister = false;
+}
+
+int dlprelink_reserve_mem(void)
+{
+    return g_mockDlprelinkReserveMemFailed ? -1 : 0;
+}
+
+int dlprelink_record(int memfd, const char *listPath)
+{
+    return g_mockDlprelinkRecordFailed ? -1 : 0;
+}
+
+int dlprelink_register(int fd)
+{
+    g_isExecutedDlprelinkRegister = true;
+    return 0;
+}

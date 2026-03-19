@@ -21,6 +21,10 @@
 #include <unistd.h>
 #include <utility>
 #include <vector>
+#include <sys/mman.h>
+#include <sys/wait.h>
+#include <sys/prctl.h>
+#include <fcntl.h>
 
 #include "appspawn_hook.h"
 #include "appspawn_server.h"
@@ -42,6 +46,7 @@
 #include "main_thread.h"
 #include "runtime.h"
 #endif
+#include "parameter.h"
 
 using namespace OHOS::AppSpawn;
 using namespace OHOS::Global;
@@ -55,6 +60,7 @@ static const bool DEFAULT_PRELOAD_VALUE = true;
 static const bool DEFAULT_PRELOAD_ETS_VALUE = true;
 static const std::string PRELOAD_JSON_CONFIG("/appspawn_preload.json");
 static const std::string PRELOAD_ETS_JSON_CONFIG("/appspawn_preload_ets.json");
+static const std::string PRELINK_DSO_LIST_CONFIG("etc/appspawn/appspawn_prelink_dso_list");
 static const bool DEFAULT_SPAWN_UNIFIED_VALUE = false;
 
 typedef struct TagParseJsonContext {
@@ -119,6 +125,126 @@ static void PreloadModule(bool isHybrid)
     }
 
     OHOS::AbilityRuntime::Runtime::SavePreloaded(std::move(runtime));
+}
+
+static const int PARAM_BUFFER_SIZE = 256;
+
+static bool IsPrelinkEnable()
+{
+    char buffer[PARAM_BUFFER_SIZE] = {0};
+    int ret = GetParameter("const.startup.prelink.enable", "false", buffer, PARAM_BUFFER_SIZE);
+    if (ret <= 0) {
+        APPSPAWN_LOGW("get prelink enable param unsuccess! ret =%{public}d", ret);
+        return false;
+    }
+
+    if (strcmp(buffer, "true") == 0) {
+        return true;
+    }
+
+    return false;
+}
+
+static int PrelinkerMain(int prelinkMemfd)
+{
+    if (fcntl(prelinkMemfd, F_SETFD, 0) < 0) {
+        APPSPAWN_LOGE("prelinker fcntl failed, err=%{public}s", strerror(errno));
+        return -1;
+    }
+
+    const char *listFile = nullptr;
+    CfgFiles *files = GetCfgFiles(PRELINK_DSO_LIST_CONFIG.c_str());
+    if (files == nullptr) {
+        APPSPAWN_LOGE("prelink list not found");
+        return -1;
+    }
+    for (int i = MAX_CFG_POLICY_DIRS_CNT - 1; i >= 0; --i) {
+        if (files->paths[i] != nullptr) {
+            listFile = files->paths[i];
+            break;
+        }
+    }
+    if (listFile == nullptr) {
+        APPSPAWN_LOGE("prelink list file not found");
+        FreeCfgFiles(files);
+        return -1;
+    }
+    APPSPAWN_LOGI("Enable Prelink from %{public}s", PRELINK_DSO_LIST_CONFIG.c_str());
+
+    int rc = dlprelink_record(prelinkMemfd, listFile);
+    if (rc != 0) {
+        APPSPAWN_LOGE("prelinker record failed, err=%{public}s", dlerror());
+    }
+
+    FreeCfgFiles(files);
+    return rc;
+}
+
+static void PrelinkLibs()
+{
+    int ws = -1;
+
+    if (!IsPrelinkEnable()) {
+        APPSPAWN_LOGI("prelink disabled");
+        return;
+    }
+
+    /* Prelinker process and children apps will automatically share reserved area from fork() */
+    if (dlprelink_reserve_mem() < 0) {
+        APPSPAWN_LOGE("dlprelink_reserve_mem failed");
+        return;
+    }
+
+    int prelinkMemfd = memfd_create("relro_cache", MFD_ALLOW_SEALING);
+    if (prelinkMemfd < 0) {
+        APPSPAWN_LOGE("memfd_create failed, err=%{public}s", strerror(errno));
+        return;
+    }
+
+    pid_t prelinkerPid = fork();
+    if (prelinkerPid < 0) {
+        APPSPAWN_LOGE("prelinker fork failed, err=%{public}s", strerror(errno));
+        close(prelinkMemfd);
+        return;
+    } else if (prelinkerPid == 0) {
+        int rc = PrelinkerMain(prelinkMemfd);
+        exit(rc);
+    }
+
+    if (waitpid(prelinkerPid, &ws, 0) < 0) {
+        APPSPAWN_LOGE("prelinker waitpid failed, err=%{public}s", strerror(errno));
+        close(prelinkMemfd);
+        return;
+    }
+    prelinkerPid = 0;
+    if (!WIFEXITED(ws) || WEXITSTATUS(ws) != 0) {
+        APPSPAWN_LOGE("prelinker execution failed, ws = %{public}d", ws);
+        close(prelinkMemfd);
+        return;
+    }
+
+    if (fcntl(prelinkMemfd, F_ADD_SEALS, F_SEAL_SEAL | F_SEAL_GROW | F_SEAL_SHRINK | F_SEAL_FUTURE_WRITE) < 0) {
+        APPSPAWN_LOGE("prelinkMemfd fcntl failed, err=%{public}s", strerror(errno));
+        close(prelinkMemfd);
+        return;
+    }
+
+    if (dlprelink_register(prelinkMemfd) < 0) {
+        APPSPAWN_LOGE("dlprelink_register failed");
+        close(prelinkMemfd);
+        return;
+    }
+    APPSPAWN_LOGI("PrelinkLibs SUCCESS!");
+}
+
+APPSPAWN_STATIC int PreLinkAppSpawn(AppSpawnMgr *content)
+{
+    if (!content || content->content.mode != MODE_FOR_APP_SPAWN) {
+        return 0;
+    }
+
+    PrelinkLibs();
+    return 0;
 }
 
 static void LoadExtendLib(AppSpawnMgr *content)
@@ -392,6 +518,7 @@ MODULE_CONSTRUCTOR(void)
     APPSPAWN_LOGV("Load ace module ...");
     AddPreloadHook(HOOK_PRIO_HIGHEST, PreLoadAppSpawn);
     AddPreloadHook(HOOK_PRIO_HIGHEST, DlopenAppSpawn);
+    AddPreloadHook(HOOK_PRIO_HIGHEST, PreLinkAppSpawn);
     AddServerStageHook(STAGE_SERVER_ARKWEB_PRELOAD, HOOK_PRIO_COMMON, ProcessSpawnDlopenMsg);
     AddServerStageHook(STAGE_SERVER_ARKWEB_UNLOAD, HOOK_PRIO_COMMON, ProcessSpawnDlcloseMsg);
 }
