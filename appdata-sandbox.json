@@ -223,6 +223,11 @@
                     "sandbox-path" : "/data/service/el1/public/for-all-app/fonts",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
+                }, {
+                    "src-path" : "/data/service/el0/public/musl_namespace_config",
+                    "sandbox-path" : "/data/service/el0/public/musl_namespace_config",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
                 }
             ],
             "symbol-links" : [{

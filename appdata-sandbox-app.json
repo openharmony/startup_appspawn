@@ -113,6 +113,9 @@
             },{
                 "src-path" : "/data/service/el1/<currentUserId>/for-all-app/fonts",
                 "sandbox-path" : "/data/service/el1/public/for-all-app/fonts"
+            }, {
+                "src-path" : "/data/service/el0/public/musl_namespace_config",
+                "sandbox-path" : "/data/service/el0/public/musl_namespace_config"
             }],
             "mount-files": [{
                 "src-path" : "/system/etc/hosts",
