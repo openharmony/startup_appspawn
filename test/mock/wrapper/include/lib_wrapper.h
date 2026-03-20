@@ -20,8 +20,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
+#include <sys/mman.h>
 #include <linux/fs.h>
+#include <unistd.h>
 #include <errno.h>
+#include <fcntl.h>
 
 #ifdef __cplusplus
 #if __cplusplus
@@ -123,6 +127,28 @@ void UpdateOpenFunc(OpenFunc func);
 ssize_t __real_write(int fd, const void *buf, size_t count);
 typedef ssize_t (*WriteFunc)(int fd, const void *buf, size_t count);
 void UpdateWriteFunc(WriteFunc func);
+
+// for wrapper fcntl;
+int __real_fcntl(int fd, int flag, unsigned long arg);
+typedef int (*FcntlFunc)(int fd, int flag, unsigned long arg);
+void UpdateFcntlFunc(FcntlFunc func, int flagFilter);
+
+// for wrapper memfd_create;
+int __real_memfd_create(const char *name, unsigned flags);
+typedef int (*MemfdCreateFunc)(const char *name, unsigned flags);
+void UpdateMemfdCreateFunc(MemfdCreateFunc func);
+
+// for wrapper fork;
+pid_t __real_fork(void);
+typedef pid_t (*ForkFunc)(void);
+void UpdateForkFunc(ForkFunc func);
+
+pid_t waitpid(pid_t pid, int *status, int options);
+
+// for wrapper waitpid;
+pid_t __real_waitpid(pid_t pid, int *status, int options);
+typedef pid_t (*WaitpidFunc)(pid_t pid, int *status, int options);
+void UpdateWaitpidFunc(WaitpidFunc func);
 
 #ifdef __cplusplus
 #if __cplusplus

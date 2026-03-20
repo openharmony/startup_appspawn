@@ -326,6 +326,73 @@ ssize_t __wrap_write(int fd, const void *buf, size_t count)
     }
 }
 
+// start wrap fcntl
+static FcntlFunc g_fcntl = NULL;
+static int g_fcntlFlagFilter = -1;
+void UpdateFcntlFunc(FcntlFunc func, int flagFilter)
+{
+    g_fcntl = func;
+    g_fcntlFlagFilter = flagFilter;
+}
+ssize_t __wrap_fcntl(int fd, int flag, unsigned long arg)
+{
+    ssize_t result;
+    if (!g_fcntl || flag == g_fcntlFlagFilter) {
+        result = __real_fcntl(fd, flag, arg);
+    } else {
+        result = g_fcntl(fd, flag, arg);
+    }
+    return result;
+}
+
+// start wrap memfd_create
+static MemfdCreateFunc g_memfd_create = NULL;
+void UpdateMemfdCreateFunc(MemfdCreateFunc func)
+{
+    g_memfd_create = func;
+}
+
+int __wrap_memfd_create(const char *name, unsigned flags)
+{
+    if (g_memfd_create) {
+        return g_memfd_create(name, flags);
+    } else {
+        return __real_memfd_create(name, flags);
+    }
+}
+
+// start wrap fork
+static ForkFunc g_fork = NULL;
+void UpdateForkFunc(ForkFunc func)
+{
+    g_fork = func;
+}
+
+int __wrap_fork(void)
+{
+    if (g_fork) {
+        return g_fork();
+    } else {
+        return __real_fork();
+    }
+}
+
+// start wrap waitpid
+static WaitpidFunc g_waitpid = NULL;
+void UpdateWaitpidFunc(WaitpidFunc func)
+{
+    g_waitpid = func;
+}
+
+int __wrap_waitpid(pid_t pid, int *status, int options)
+{
+    if (g_waitpid) {
+        return g_waitpid(pid, status, options);
+    } else {
+        return __real_waitpid(pid, status, options);
+    }
+}
+
 #ifdef __cplusplus
 #if __cplusplus
 }

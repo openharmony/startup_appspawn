@@ -145,7 +145,7 @@ static bool IsPrelinkEnable()
     return false;
 }
 
-static int PrelinkerMain(int prelinkMemfd)
+APPSPAWN_STATIC int PrelinkerMain(int prelinkMemfd)
 {
     if (fcntl(prelinkMemfd, F_SETFD, 0) < 0) {
         APPSPAWN_LOGE("prelinker fcntl failed, err=%{public}s", strerror(errno));

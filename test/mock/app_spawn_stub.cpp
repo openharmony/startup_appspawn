@@ -156,6 +156,7 @@ int SetParameter(const char *key, const char *value)
 static bool g_mockDlprelinkReserveMemFailed = false;
 static bool g_mockDlprelinkRecordFailed     = false;
 static bool g_isExecutedDlprelinkRegister   = false;
+static bool g_mockDlprelinkRegisterFailed   = false;
 void SetMockDlprelinkReserveMemFailed(bool v)
 {
     g_mockDlprelinkReserveMemFailed = v;
@@ -174,6 +175,12 @@ bool GetIsExecutedDlprelinkRegister(void)
 void ClearIsExecutedDlprelinkRegister(void)
 {
     g_isExecutedDlprelinkRegister = false;
+    g_mockDlprelinkRegisterFailed = false;
+}
+
+void SetMockDlprelinkRegisterFailed(void)
+{
+    g_mockDlprelinkRegisterFailed = true;
 }
 
 int dlprelink_reserve_mem(void)
@@ -188,14 +195,26 @@ int dlprelink_record(int memfd, const char *listPath)
 
 int dlprelink_register(int fd)
 {
+    if (g_mockDlprelinkRegisterFailed) {
+        g_isExecutedDlprelinkRegister = true;
+        return -1;
+    }
+
     g_isExecutedDlprelinkRegister = true;
     return 0;
 }
 
 static int GetParameterForPrelink(char *value, uint32_t len)
 {
-    return g_startupPrelinkExist ? (g_startupPrelinkEnable ? (strcpy_s(value, len, "true") == 0 ?
-            strlen("true") : -1) : -1) : -1;
+    if (!g_startupPrelinkExist) {
+        return -1;
+    }
+
+    if (g_startupPrelinkEnable) {
+        return strcpy_s(value, len, "true") == 0 ? strlen("true") : -1;
+    }
+
+    return strcpy_s(value, len, "false") == 0 ? strlen("false") : -1;
 }
 
 int GetParameter(const char *key, const char *def, char *value, uint32_t len)

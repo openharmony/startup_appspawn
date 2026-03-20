@@ -17,12 +17,14 @@
 #include <cstring>
 #include <gtest/gtest.h>
 #include <cJSON.h>
+#include <unistd.h>
 
 #include "appspawn.h"
 #include "appspawn_hook.h"
 #include "appspawn_manager.h"
 #include "app_spawn_stub.h"
 #include "app_spawn_test_helper.h"
+#include "lib_wrapper.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -35,6 +37,7 @@ APPSPAWN_STATIC int PreLinkAppSpawn(AppSpawnMgr *content);
 APPSPAWN_STATIC int DlopenAppSpawn(AppSpawnMgr *content);
 APPSPAWN_STATIC int ProcessSpawnDlopenMsg(AppSpawnMgr *content);
 APPSPAWN_STATIC int ProcessSpawnDlcloseMsg(AppSpawnMgr *content);
+APPSPAWN_STATIC int PrelinkerMain(int prelinkMemfd);
 
 namespace OHOS {
 static AppSpawnTestHelper g_testHelper;
@@ -197,6 +200,169 @@ HWTEST_F(AppSpawnAceTest, App_Spawn_Ace_Prelink_007, TestSize.Level0)
     EXPECT_EQ(ret, 0);
     EXPECT_EQ(GetIsExecutedDlprelinkRegister(), false);
     ClearIsExecutedDlprelinkRegister();
+}
+
+/**
+ * @brief 注入 fcntl 失败，
+ * @note 预期结果: 不会进行 prelink
+ *
+ */
+HWTEST_F(AppSpawnAceTest, App_Spawn_Ace_Prelink_008, TestSize.Level0)
+{
+    AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+    ASSERT_NE(mgr, nullptr);
+    mgr->content.longProcName = const_cast<char *>(APPSPAWN_SERVER_NAME);
+    mgr->content.longProcNameLen = APP_LEN_PROC_NAME;
+
+    SetParameter("const.startup.prelink.enable", "true");
+    FcntlFunc fcntlFunc = [](int fd, int flag, unsigned long arg) -> int {
+        return -1;
+    };
+    UpdateFcntlFunc(fcntlFunc, -1);
+    int ret = PreLinkAppSpawn(mgr);
+    DeleteAppSpawnMgr(mgr);
+    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(GetIsExecutedDlprelinkRegister(), false);
+    ClearIsExecutedDlprelinkRegister();
+    UpdateFcntlFunc(NULL, -1);
+}
+
+/**
+ * @brief 注入 memfd_create 失败，
+ * @note 预期结果: 不会进行 prelink
+ *
+ */
+HWTEST_F(AppSpawnAceTest, App_Spawn_Ace_Prelink_009, TestSize.Level0)
+{
+    AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+    ASSERT_NE(mgr, nullptr);
+    mgr->content.longProcName = const_cast<char *>(APPSPAWN_SERVER_NAME);
+    mgr->content.longProcNameLen = APP_LEN_PROC_NAME;
+
+    SetParameter("const.startup.prelink.enable", "true");
+    MemfdCreateFunc memfdCreateFunc = [](const char *name, unsigned flags) -> int {
+        return -1;
+    };
+    UpdateMemfdCreateFunc(memfdCreateFunc);
+    int ret = PreLinkAppSpawn(mgr);
+    DeleteAppSpawnMgr(mgr);
+    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(GetIsExecutedDlprelinkRegister(), false);
+    ClearIsExecutedDlprelinkRegister();
+    UpdateMemfdCreateFunc(NULL);
+}
+
+/**
+ * @brief 注入 fork 失败，
+ * @note 预期结果: 不会进行 prelink
+ *
+ */
+HWTEST_F(AppSpawnAceTest, App_Spawn_Ace_Prelink_010, TestSize.Level0)
+{
+    AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+    ASSERT_NE(mgr, nullptr);
+    mgr->content.longProcName = const_cast<char *>(APPSPAWN_SERVER_NAME);
+    mgr->content.longProcNameLen = APP_LEN_PROC_NAME;
+
+    SetParameter("const.startup.prelink.enable", "true");
+    ForkFunc forkFunc = []() -> pid_t {
+        return -1;
+    };
+    UpdateForkFunc(forkFunc);
+    int ret = PreLinkAppSpawn(mgr);
+    DeleteAppSpawnMgr(mgr);
+    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(GetIsExecutedDlprelinkRegister(), false);
+    ClearIsExecutedDlprelinkRegister();
+    UpdateForkFunc(NULL);
+}
+
+/**
+ * @brief 注入 waitpid 失败，
+ * @note 预期结果: 不会进行 prelink
+ *
+ */
+HWTEST_F(AppSpawnAceTest, App_Spawn_Ace_Prelink_011, TestSize.Level0)
+{
+    AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+    ASSERT_NE(mgr, nullptr);
+    mgr->content.longProcName = const_cast<char *>(APPSPAWN_SERVER_NAME);
+    mgr->content.longProcNameLen = APP_LEN_PROC_NAME;
+
+    SetParameter("const.startup.prelink.enable", "true");
+    WaitpidFunc waitpidFunc = [](pid_t pid, int *status, int options) -> pid_t {
+        return -1;
+    };
+    UpdateWaitpidFunc(waitpidFunc);
+    int ret = PreLinkAppSpawn(mgr);
+    DeleteAppSpawnMgr(mgr);
+    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(GetIsExecutedDlprelinkRegister(), false);
+    ClearIsExecutedDlprelinkRegister();
+    UpdateWaitpidFunc(NULL);
+}
+
+/**
+ * @brief 注入 第二次 fcntl 失败，但第一次 fcntl 正常执行
+ * @note 预期结果: 在第二次 fcntl 返回，不会进行 prelink
+ *
+ */
+HWTEST_F(AppSpawnAceTest, App_Spawn_Ace_Prelink_012, TestSize.Level0)
+{
+    AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+    ASSERT_NE(mgr, nullptr);
+    mgr->content.longProcName = const_cast<char *>(APPSPAWN_SERVER_NAME);
+    mgr->content.longProcNameLen = APP_LEN_PROC_NAME;
+
+    SetParameter("const.startup.prelink.enable", "true");
+    FcntlFunc fcntlFunc = [](int fd, int flag, unsigned long arg) -> int {
+        return -1;
+    };
+    UpdateFcntlFunc(fcntlFunc, F_ADD_SEALS);
+    int ret = PreLinkAppSpawn(mgr);
+    DeleteAppSpawnMgr(mgr);
+    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(GetIsExecutedDlprelinkRegister(), false);
+    ClearIsExecutedDlprelinkRegister();
+    UpdateFcntlFunc(NULL, -1);
+}
+
+/**
+ * @brief 注入 dlprelink_register 失败，
+ * @note 预期结果: 故障用例分支覆盖
+ *
+ */
+HWTEST_F(AppSpawnAceTest, App_Spawn_Ace_Prelink_013, TestSize.Level0)
+{
+    AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+    ASSERT_NE(mgr, nullptr);
+    mgr->content.longProcName = const_cast<char *>(APPSPAWN_SERVER_NAME);
+    mgr->content.longProcNameLen = APP_LEN_PROC_NAME;
+
+    SetParameter("const.startup.prelink.enable", "true");
+    SetMockDlprelinkRegisterFailed();
+    int ret = PreLinkAppSpawn(mgr);
+    DeleteAppSpawnMgr(mgr);
+    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(GetIsExecutedDlprelinkRegister(), true);
+    ClearIsExecutedDlprelinkRegister();
+}
+
+/**
+ * @brief 注入 fcntl 失败，
+ * @note 预期结果: 故障用例分支覆盖
+ *
+ */
+HWTEST_F(AppSpawnAceTest, App_Spawn_Ace_PrelinkerMain_001, TestSize.Level0)
+{
+    FcntlFunc fcntlFunc = [](int fd, int flag, unsigned long arg) -> int {
+        return -1;
+    };
+    UpdateFcntlFunc(fcntlFunc, -1);
+    int prelinkMemfd = 0;
+    int ret = PrelinkerMain(prelinkMemfd);
+    EXPECT_EQ(ret, -1);
+    UpdateFcntlFunc(NULL, -1);
 }
 
 /**
