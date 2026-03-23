@@ -50,9 +50,9 @@ namespace OHOS {
         int type = provider.ConsumeIntegralInRange<int>(static_cast<int>(MSG_APP_SPAWN),
             static_cast<int>(MAX_TYPE_INVALID));
         AppSpawnMsgType msgType = static_cast<AppSpawnMsgType>(type);
-        std::string processName(reinterpret_cast<const char*>(data), size);
+        std::string processName = provider.ConsumeRandomLengthString();
         (void)AppSpawnReqMsgCreate(msgType, processName.c_str(), &reqHandle);
-        std::string ownerId(reinterpret_cast<const char*>(data), size);
+        std::string ownerId = provider.ConsumeRandomLengthString();
         (void)AppSpawnReqMsgSetAppOwnerId(reqHandle, ownerId.c_str());
         AppSpawnReqMsgFree(reqHandle);
         return AppSpawnClientDestroy(handle);
@@ -70,9 +70,9 @@ namespace OHOS {
         int type = provider.ConsumeIntegralInRange<int>(static_cast<int>(MSG_APP_SPAWN),
             static_cast<int>(MAX_TYPE_INVALID));
         AppSpawnMsgType msgType = static_cast<AppSpawnMsgType>(type);
-        std::string processName(reinterpret_cast<const char*>(data), size);
+        std::string processName = provider.ConsumeRandomLengthString();
         (void)AppSpawnReqMsgCreate(msgType, processName.c_str(), &reqHandle);
-        std::string permission(reinterpret_cast<const char*>(data), size);
+        std::string permission = provider.ConsumeRandomLengthString();
         (void)AppSpawnReqMsgAddPermission(reqHandle, permission.c_str());
         AppSpawnReqMsgFree(reqHandle);
         return AppSpawnClientDestroy(handle);
