@@ -19,6 +19,7 @@ ohos_shared_library("appspawn_ace") {
     "ace_adapter.cpp",
     "command_lexer.cpp",
     "dfx_preload.cpp",
+    "appspawn_checkpoint.c"
   ]
   include_dirs = [
     ".",

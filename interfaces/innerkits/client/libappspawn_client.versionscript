@@ -43,6 +43,7 @@
     NativeSpawnListenCloseSet;
     SpawnListenFdSet;
     SpawnListenCloseSet;
+    AppSpawnReqMsgSetCheckpointInfo;
   local:
     *;
 };

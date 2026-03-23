@@ -72,6 +72,7 @@ typedef struct {
 typedef struct {
     int result;
     pid_t pid;
+    uint64_t checkPointId;  // checkpoint ID (valid for image process response)
 } AppSpawnResult;
 #pragma pack()
 
@@ -125,6 +126,8 @@ typedef enum {
     MSG_OBSERVE_PROCESS_SIGNAL_STATUS,
     MSG_UNLOAD_WEBLIB_IN_APPSPAWN,
     MSG_LOAD_WEBLIB_IN_APPSPAWN,
+    MSG_SPAWN_IMAGE_PROCESS,      // Request to spawn the image process
+    MSG_SPAWN_WORKER_PROCESS,     // Request to spawn the worker process
     MAX_TYPE_INVALID
 } AppSpawnMsgType;
 
@@ -213,6 +216,7 @@ typedef enum {
     APP_FLAGS_DLP_MANAGER_READ_ONLY = 38,
     APP_FLAGS_CLOUD_FILE_SYNC_ENABLED = 39,
     APP_FLAGS_DEBUG_SIGN = 40,
+    APP_FLAGS_SPAWN_IMAGE_PROCESS = 41,  // Identify the container image process request
     MAX_FLAGS_INDEX = 63,
 } AppFlagsIndex;
 
@@ -405,6 +409,16 @@ int HybridSpawnListenFdSet(int fd);
  * @return if succeed return 0,else return other value
  */
 int HybridSpawnListenCloseSet(void);
+
+/**
+ * @brief set checkpoint info to request message
+ *
+ * @param reqHandle request message handle
+ * @param imagePid image process pid
+ * @param checkPointId checkpoint id
+ * @return if succeed return 0,else return other value
+ */
+int AppSpawnReqMsgSetCheckpointInfo(AppSpawnReqMsgHandle reqHandle, pid_t imagePid, uint64_t checkPointId);
 
 #ifdef __cplusplus
 }

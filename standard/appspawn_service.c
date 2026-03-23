@@ -284,6 +284,35 @@ static int SendResponse(const AppSpawnConnection *connection, const AppSpawnMsg 
         return -1, "Failed to memcpy_s bufferSize");
     buffer->result.result = result;
     buffer->result.pid = pid;
+    buffer->checkPointId = 0;
+    return LE_Send(LE_GetDefaultLoop(), connection->stream, handle, bufferSize);
+}
+
+/**
+ * @brief 发送扩展响应（包含checkpoint信息）
+ *
+ * @param connection 连接对象
+ * @param msg 消息头
+ * @param result 结果码
+ * @param pid 进程PID
+ * @param checkPointId checkpoint ID
+ * @return 成功返回0，失败返回错误码
+ */
+static int SendResponseEx(const AppSpawnConnection *connection, const AppSpawnMsg *msg,
+                          int result, pid_t pid, uint64_t checkPointId)
+{
+    APPSPAWN_LOGI("SendResponseEx connectionId: %{public}u result: 0x%{public}x pid: %{public}d"
+                  "checkPointId: %{public}" PRId64"", connection->connectionId, result, pid, checkPointId);
+    uint32_t bufferSize = sizeof(AppSpawnResponseMsg);
+    BufferHandle handle = LE_CreateBuffer(LE_GetDefaultLoop(), bufferSize);
+    AppSpawnResponseMsg *buffer = (AppSpawnResponseMsg *)LE_GetBufferInfo(handle, NULL, &bufferSize);
+    APPSPAWN_CHECK(buffer != NULL, return APPSPAWN_ERROR_UTILS_MEM_FAIL, "buffer is null");
+    int ret = memcpy_s(buffer, bufferSize, msg, sizeof(AppSpawnMsg));
+    APPSPAWN_CHECK(ret == 0, LE_FreeBuffer(LE_GetDefaultLoop(), NULL, handle);
+        return -1, "Failed to memcpy_s bufferSize");
+    buffer->result.result = result;
+    buffer->result.pid = pid;
+    buffer->checkPointId = checkPointId;
     return LE_Send(LE_GetDefaultLoop(), connection->stream, handle, bufferSize);
 }
 
@@ -1533,6 +1562,59 @@ static void ProcessSpawnRestartMsg(AppSpawnConnection *connection, AppSpawnMsgNo
     SendResponse(connection, &message->msgHeader, 0, 0);
 }
 
+/**
+ * @brief 处理 checkpoint 进程创建请求（镜像进程和工作进程）
+ *
+ * 该函数独立处理 checkpoint 进程的创建，只执行 STAGE_PARENT_BOOT_IMG hook。
+ * 与普通的进程创建（ProcessSpawnReqMsg）分离，避免耦合。
+ *
+ * @param connection 连接对象
+ * @param message 消息节点
+ */
+APPSPAWN_STATIC void ProcessCheckpointReqMsg(AppSpawnConnection *connection, AppSpawnMsgNode *message)
+{
+    APPSPAWN_LOGI("ProcessCheckpointReqMsg: processName=%{public}s, msgType=%{public}u",
+                  message->msgHeader.processName, message->msgHeader.msgType);
+
+    int ret = CheckAppSpawnMsg(message);
+    if (ret != 0) {
+        APPSPAWN_LOGE("Checkpoint msg check failed: %{public}d", ret);
+        SendResponseEx(connection, &message->msgHeader, ret, 0, 0);
+        DeleteAppSpawnMsg(&message);
+        return;
+    }
+
+    AppSpawningCtx *property = CreateAppSpawningCtx();
+    if (property == NULL) {
+        APPSPAWN_LOGE("Failed to create spawning context for checkpoint");
+        SendResponseEx(connection, &message->msgHeader, APPSPAWN_SYSTEM_ERROR, 0, 0);
+        DeleteAppSpawnMsg(&message);
+        return;
+    }
+
+    property->state = APP_STATE_SPAWNING;
+    property->message = message;
+    message->connection = connection;
+
+    // 执行 STAGE_PARENT_BOOT_IMG hook（checkpoint hooks 在此阶段执行）
+    ret = AppSpawnHookExecute(STAGE_PARENT_BOOT_IMG, 0, GetAppSpawnContent(), &property->client);
+    if (ret != 0) {
+        APPSPAWN_LOGE("STAGE_PARENT_BOOT_IMG hook failed: %{public}d", ret);
+        SendResponseEx(connection, &message->msgHeader, ret, 0, 0);
+        DeleteAppSpawningCtx(property);
+        return;
+    }
+
+    // checkpoint 进程创建成功，发送响应
+    // checkPointId 已在 hook 中设置到 property->checkPointId
+    APPSPAWN_LOGI("Checkpoint process created successfully: pid=%{public}d, checkPointId=%{public}" PRId64"",
+                  property->pid, property->checkPointId);
+
+    // 使用 SendResponseEx 直接传递 result、pid 和 checkPointId
+    SendResponseEx(connection, &message->msgHeader, 0, property->pid, property->checkPointId);
+    DeleteAppSpawningCtx(property);
+}
+
 APPSPAWN_STATIC void ProcessUninstallDebugHap(AppSpawnConnection *connection, AppSpawnMsgNode *message)
 {
     APPSPAWN_LOGI("ProcessUninstallDebugHap start");
@@ -1780,6 +1862,11 @@ static void ProcessRecvMsg(AppSpawnConnection *connection, AppSpawnMsgNode *mess
             SendResponse(connection, msg, 0, 0);
             DeleteAppSpawnMsg(&message);
             break;
+        case MSG_SPAWN_IMAGE_PROCESS:
+        case MSG_SPAWN_WORKER_PROCESS: {
+            ProcessCheckpointReqMsg(connection, message);
+            break;
+        }
         default:
             SendResponse(connection, msg, APPSPAWN_MSG_INVALID, 0);
             DeleteAppSpawnMsg(&message);

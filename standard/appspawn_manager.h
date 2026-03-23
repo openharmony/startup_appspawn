@@ -90,6 +90,7 @@ typedef struct TagAppSpawningCtx {
     int state;
     struct timespec spawnStart;
     bool allowDumpable;
+    uint64_t checkPointId;        // Image process index ID
 } AppSpawningCtx;
 
 typedef struct TagAppSpawnedProcess {
@@ -107,6 +108,45 @@ typedef struct TagAppSpawnedProcess {
     uint32_t appIndex;
     char name[0];
 } AppSpawnedProcess;
+
+/**
+ * @brief Appspawn receives the request for starting an application from the client,
+ *        and saves the image process information.
+ * @param node Linked list head node.
+ * @param uid User Id of the application process.
+ * @param exitStatus Image process exit status.
+ * @param appIndex AppIndex information of the application
+ * @param checkPointId Check point id of the application image process.
+ * @param name Hap name
+ */
+typedef struct {
+    struct ListNode node;
+    uid_t uid;
+    int exitStatus;
+    uint32_t appIndex;
+    uint64_t checkPointId;
+    char name[0];
+} AppSpawnedCheckPointProcesses;
+
+typedef enum {
+    TYPE_FOR_DEC,
+    TYPE_FOR_FORK_ALL,
+    TYPE_INVALID
+} SpawningFdType;
+
+/**
+ * @brief Save the fd information during the incubation process
+ * @param node Linked list head node
+ * @param type Fd type
+ * @param count Number of current Fd types
+ * @param fd File handle set
+ */
+typedef struct {
+    struct ListNode node;
+    SpawningFdType type;
+    uint32_t count;
+    int fds[0];
+} AppSpawnFds;
 
 typedef struct SpawnTime {
     int minAppspawnTime;
@@ -128,19 +168,21 @@ typedef struct TagDataGroupCtx {
 
 typedef struct TagAppSpawnMgr {
     AppSpawnContent content;
-    TaskHandle server;
-    SignalHandle sigHandler;
-    pid_t servicePid;
-    struct ListNode appQueue;  // save app pid and name
-    uint32_t diedAppCount;
-    uint32_t flags;
-    struct ListNode diedQueue;      // save app pid and name
-    struct ListNode appSpawnQueue;  // save app pid and name
     struct timespec perLoadStart;
     struct timespec perLoadEnd;
-    struct ListNode extData;
     struct SpawnTime spawnTime;
+    uint32_t diedAppCount;
+    uint32_t flags;
+    pid_t servicePid;
+    TaskHandle server;
+    SignalHandle sigHandler;
+    struct ListNode appQueue;           // save spawned app pid and name
+    struct ListNode diedQueue;          // save died app pid and name
+    struct ListNode appSpawnQueue;      // save spawning app pid and name
+    struct ListNode extData;
     struct ListNode dataGroupCtxQueue;
+    struct ListNode checkPointIdQueue;  // Image boot process queue
+    struct ListNode spawningFdsQueue;
 #ifdef APPSPAWN_HISYSEVENT
     AppSpawnHisyseventInfo *hisyseventInfo;
 #endif
