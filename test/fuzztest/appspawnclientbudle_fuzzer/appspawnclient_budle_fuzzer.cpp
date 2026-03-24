@@ -31,10 +31,10 @@ namespace OHOS {
         int type = provider.ConsumeIntegralInRange<int>(static_cast<int>(MSG_APP_SPAWN),
             static_cast<int>(MAX_TYPE_INVALID));
         AppSpawnMsgType msgType = static_cast<AppSpawnMsgType>(type);
-        std::string processName(reinterpret_cast<const char*>(data), size);
+        std::string processName = provider.ConsumeRandomLengthString();
         (void)AppSpawnReqMsgCreate(msgType, processName.c_str(), &reqHandle);
         uint32_t bundleIndex = provider.ConsumeIntegral<uint32_t>();
-        std::string bundleName(reinterpret_cast<const char*>(data), size);
+        std::string bundleName = provider.ConsumeRandomLengthString();
         (void)AppSpawnReqMsgSetBundleInfo(reqHandle, bundleIndex, bundleName.c_str());
         AppSpawnReqMsgFree(reqHandle);
         return AppSpawnClientDestroy(handle);
@@ -94,9 +94,9 @@ namespace OHOS {
         int type = provider.ConsumeIntegralInRange<int>(static_cast<int>(MSG_APP_SPAWN),
             static_cast<int>(MAX_TYPE_INVALID));
         AppSpawnMsgType msgType = static_cast<AppSpawnMsgType>(type);
-        std::string processName(reinterpret_cast<const char*>(data), size);
+        std::string processName = provider.ConsumeRandomLengthString();
         (void)AppSpawnReqMsgCreate(msgType, processName.c_str(), &reqHandle);
-        std::string apl(reinterpret_cast<const char*>(data), size);
+        std::string apl = provider.ConsumeRandomLengthString();
         uint32_t hapFlags = provider.ConsumeIntegral<uint32_t>();
         (void)AppSpawnReqMsgSetAppDomainInfo(reqHandle, hapFlags, apl.c_str());
         AppSpawnReqMsgFree(reqHandle);
