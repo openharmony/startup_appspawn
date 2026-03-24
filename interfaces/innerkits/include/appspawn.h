@@ -316,6 +316,7 @@ int AppSpawnClientAddPermission(AppSpawnClientHandle handle, AppSpawnReqMsgHandl
 #define MSG_EXT_NAME_API_TARGET_VERSION "APITargetVersion"
 #define MSG_EXT_NAME_PARENT_UID "ParentUid"
 #define MSG_EXT_NAME_APP_SIGN_TYPE "AppSignType"
+#define MSG_EXT_NAME_APP_DISTRIBUTION_TYPE "AppDistributionType"
 
 int AppSpawnReqMsgAddExtInfo(AppSpawnReqMsgHandle reqHandle, const char *name, const uint8_t *value, uint32_t valueLen);
 

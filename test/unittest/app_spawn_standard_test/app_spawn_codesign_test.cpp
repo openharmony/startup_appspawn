@@ -20,18 +20,13 @@
 #include <gtest/gtest.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <cJSON.h>
-
 #include "appspawn_modulemgr.h"
 #include "appspawn_server.h"
 #include "appspawn_manager.h"
-#include "appspawn_adapter.h"
 #include "appspawn.h"
-#include "appspawn_hook.h"
-#include "hisysevent_adapter.h"
 #include "app_spawn_stub.h"
 #include "app_spawn_test_helper.h"
-#include "securec.h"
+#include "code_sign_attr_utils.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -39,6 +34,37 @@ using namespace OHOS;
 
 namespace OHOS {
 static AppSpawnTestHelper g_testHelper;
+static const char *APP_SIGN_TYPE_ENTERPRISE_RESIGN = "enterpriseReSign";
+
+using MsgConfigFunc = int (*)(AppSpawnReqMsgHandle reqHandle, const void *context);
+
+struct StringInfoConfig {
+    const char *name;
+    const char *value;
+};
+
+struct StringInfoConfigList {
+    const StringInfoConfig *configs;
+    size_t count;
+};
+
+template <size_t N>
+static StringInfoConfigList MakeStringInfoConfigList(const StringInfoConfig (&configs)[N])
+{
+    return { configs, N };
+}
+
+static const char *const APP_DISTRIBUTION_TYPES[] = {
+    XPM_DISTRIBUTION_STR_NONE,
+    XPM_DISTRIBUTION_STR_APP_GALLERY,
+    XPM_DISTRIBUTION_STR_ENTERPRISE,
+    XPM_DISTRIBUTION_STR_ENTERPRISE_NORMAL,
+    XPM_DISTRIBUTION_STR_ENTERPRISE_MDM,
+    XPM_DISTRIBUTION_STR_INTERNALTESTING,
+    XPM_DISTRIBUTION_STR_OS_INTEGRATION,
+    XPM_DISTRIBUTION_STR_CROWDTESTING,
+};
+
 class AppSpawnCodeSignTest : public testing::Test {
 public:
     static void SetUpTestCase() {}
@@ -57,7 +83,28 @@ public:
     }
 };
 
-HWTEST_F(AppSpawnCodeSignTest, App_Spawn_SetXpmConfig_001, TestSize.Level0)
+static int AddStringInfoConfigs(AppSpawnReqMsgHandle reqHandle, const void *context)
+{
+    const StringInfoConfigList *stringInfoList = static_cast<const StringInfoConfigList *>(context);
+    APPSPAWN_CHECK_ONLY_EXPER(
+        stringInfoList != nullptr && stringInfoList->configs != nullptr,
+        return APPSPAWN_ARG_INVALID);
+    for (size_t index = 0; index < stringInfoList->count; ++index) {
+        int ret = AppSpawnReqMsgAddStringInfo(reqHandle,
+            stringInfoList->configs[index].name, stringInfoList->configs[index].value);
+        APPSPAWN_CHECK(ret == 0, return ret, "Failed to add string info %{public}zu", index);
+    }
+    return 0;
+}
+
+static int SetAppFlagConfig(AppSpawnReqMsgHandle reqHandle, const void *context)
+{
+    const AppFlagsIndex *appFlag = static_cast<const AppFlagsIndex *>(context);
+    AppSpawnReqMsgSetAppFlag(reqHandle, *appFlag);
+    return 0;
+}
+
+static int RunSetXpmConfigTest(MsgConfigFunc config = nullptr, const void *context = nullptr)
 {
     AppSpawnClientHandle clientHandle = nullptr;
     AppSpawnReqMsgHandle reqHandle = 0;
@@ -66,13 +113,19 @@ HWTEST_F(AppSpawnCodeSignTest, App_Spawn_SetXpmConfig_001, TestSize.Level0)
     int ret = -1;
     do {
         mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
-        EXPECT_EQ(mgr != nullptr, 1);
-        // create msg
+        APPSPAWN_CHECK(mgr != nullptr, break, "Failed to create mgr %{public}s", APPSPAWN_SERVER_NAME);
         ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
         APPSPAWN_CHECK(ret == 0, break, "Failed to create reqMgr %{public}s", APPSPAWN_SERVER_NAME);
+        ret = -1;
         reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
-        APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break, "Failed to create req %{public}s", APPSPAWN_SERVER_NAME);
+        APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break,
+            "Failed to create req %{public}s", APPSPAWN_SERVER_NAME);
+        if (config != nullptr) {
+            ret = config(reqHandle, context);
+            APPSPAWN_CHECK(ret == 0, break, "Failed to configure req %{public}s", APPSPAWN_SERVER_NAME);
+        }
 
+        ret = -1;
         property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
         APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
         ret = SetXpmConfig(mgr, property);
@@ -81,128 +134,70 @@ HWTEST_F(AppSpawnCodeSignTest, App_Spawn_SetXpmConfig_001, TestSize.Level0)
     DeleteAppSpawningCtx(property);
     AppSpawnClientDestroy(clientHandle);
     DeleteAppSpawnMgr(mgr);
-    ASSERT_EQ(ret, 0);
+    return ret;
+}
+
+HWTEST_F(AppSpawnCodeSignTest, App_Spawn_SetXpmConfig_001, TestSize.Level0)
+{
+    ASSERT_EQ(RunSetXpmConfigTest(), 0);
 }
 
 HWTEST_F(AppSpawnCodeSignTest, App_Spawn_SetXpmConfig_002, TestSize.Level0)
 {
-    AppSpawnClientHandle clientHandle = nullptr;
-    AppSpawnReqMsgHandle reqHandle = 0;
-    AppSpawningCtx *property = nullptr;
-    AppSpawnMgr *mgr = nullptr;
-    int ret = -1;
-    do {
-        mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
-        EXPECT_EQ(mgr != nullptr, 1);
-        // create msg
-        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
-        APPSPAWN_CHECK(ret == 0, break, "Failed to create reqMgr %{public}s", APPSPAWN_SERVER_NAME);
-        reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
-        APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break, "Failed to create req %{public}s", APPSPAWN_SERVER_NAME);
-
-        const char *appSignType = "none";
-        ret = AppSpawnReqMsgAddStringInfo(reqHandle, MSG_EXT_NAME_APP_SIGN_TYPE, appSignType);
-        APPSPAWN_CHECK(ret == 0, break, "Failed to add appSignType %{public}s", APPSPAWN_SERVER_NAME);
-
-        property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
-        APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
-        ret = SetXpmConfig(mgr, property);
-        EXPECT_EQ(ret, 0);
-    } while (0);
-    DeleteAppSpawningCtx(property);
-    AppSpawnClientDestroy(clientHandle);
-    DeleteAppSpawnMgr(mgr);
-    ASSERT_EQ(ret, 0);
+    const StringInfoConfig appSignType[] = {
+        { MSG_EXT_NAME_APP_SIGN_TYPE, "none" },
+    };
+    const StringInfoConfigList appSignTypeList = MakeStringInfoConfigList(appSignType);
+    ASSERT_EQ(RunSetXpmConfigTest(AddStringInfoConfigs, &appSignTypeList), 0);
 }
 
 HWTEST_F(AppSpawnCodeSignTest, App_Spawn_SetXpmConfig_003, TestSize.Level0)
 {
-    AppSpawnClientHandle clientHandle = nullptr;
-    AppSpawnReqMsgHandle reqHandle = 0;
-    AppSpawningCtx *property = nullptr;
-    AppSpawnMgr *mgr = nullptr;
-    int ret = -1;
-    do {
-        mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
-        EXPECT_EQ(mgr != nullptr, 1);
-        // create msg
-        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
-        APPSPAWN_CHECK(ret == 0, break, "Failed to create reqMgr %{public}s", APPSPAWN_SERVER_NAME);
-        reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
-        APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break, "Failed to create req %{public}s", APPSPAWN_SERVER_NAME);
-
-        const char *appSignType = "enterpriseResign";
-        ret = AppSpawnReqMsgAddStringInfo(reqHandle, MSG_EXT_NAME_APP_SIGN_TYPE, appSignType);
-        APPSPAWN_CHECK(ret == 0, break, "Failed to add appSignType %{public}s", APPSPAWN_SERVER_NAME);
-
-        property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
-        APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
-        ret = SetXpmConfig(mgr, property);
-        EXPECT_EQ(ret, 0);
-    } while (0);
-    DeleteAppSpawningCtx(property);
-    AppSpawnClientDestroy(clientHandle);
-    DeleteAppSpawnMgr(mgr);
-    ASSERT_EQ(ret, 0);
+    const StringInfoConfig appSignType[] = {
+        { MSG_EXT_NAME_APP_SIGN_TYPE, APP_SIGN_TYPE_ENTERPRISE_RESIGN },
+    };
+    const StringInfoConfigList appSignTypeList = MakeStringInfoConfigList(appSignType);
+    ASSERT_EQ(RunSetXpmConfigTest(AddStringInfoConfigs, &appSignTypeList), 0);
 }
 
 HWTEST_F(AppSpawnCodeSignTest, App_Spawn_SetXpmConfig_004, TestSize.Level0)
 {
-    AppSpawnClientHandle clientHandle = nullptr;
-    AppSpawnReqMsgHandle reqHandle = 0;
-    AppSpawningCtx *property = nullptr;
-    AppSpawnMgr *mgr = nullptr;
-    int ret = -1;
-    do {
-        mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
-        EXPECT_EQ(mgr != nullptr, 1);
-        // create msg
-        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
-        APPSPAWN_CHECK(ret == 0, break, "Failed to create reqMgr %{public}s", APPSPAWN_SERVER_NAME);
-        reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
-        APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break, "Failed to create req %{public}s", APPSPAWN_SERVER_NAME);
-
-        const char *provisionType = "debug";
-        ret = AppSpawnReqMsgAddStringInfo(reqHandle, MSG_EXT_NAME_PROVISION_TYPE, provisionType);
-        APPSPAWN_CHECK(ret == 0, break, "Failed to add provisionType %{public}s", APPSPAWN_SERVER_NAME);
-
-        property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
-        APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
-        ret = SetXpmConfig(mgr, property);
-        EXPECT_EQ(ret, 0);
-    } while (0);
-    DeleteAppSpawningCtx(property);
-    AppSpawnClientDestroy(clientHandle);
-    DeleteAppSpawnMgr(mgr);
-    ASSERT_EQ(ret, 0);
+    const StringInfoConfig provisionType[] = {
+        { MSG_EXT_NAME_PROVISION_TYPE, "debug" },
+    };
+    const StringInfoConfigList provisionTypeList = MakeStringInfoConfigList(provisionType);
+    ASSERT_EQ(RunSetXpmConfigTest(AddStringInfoConfigs, &provisionTypeList), 0);
 }
 
 HWTEST_F(AppSpawnCodeSignTest, App_Spawn_SetXpmConfig_005, TestSize.Level0)
 {
-    AppSpawnClientHandle clientHandle = nullptr;
-    AppSpawnReqMsgHandle reqHandle = 0;
-    AppSpawningCtx *property = nullptr;
-    AppSpawnMgr *mgr = nullptr;
-    int ret = -1;
-    do {
-        mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
-        EXPECT_EQ(mgr != nullptr, 1);
-        // create msg
-        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
-        APPSPAWN_CHECK(ret == 0, break, "Failed to create reqMgr %{public}s", APPSPAWN_SERVER_NAME);
-        reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
-        APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break, "Failed to create req %{public}s", APPSPAWN_SERVER_NAME);
+    const AppFlagsIndex appFlag = APP_FLAGS_TEMP_JIT;
+    ASSERT_EQ(RunSetXpmConfigTest(SetAppFlagConfig, &appFlag), 0);
+}
 
-        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_TEMP_JIT);
+HWTEST_F(AppSpawnCodeSignTest, App_Spawn_SetXpmConfig_006, TestSize.Level0)
+{
+    for (const char *distributionType : APP_DISTRIBUTION_TYPES) {
+        SCOPED_TRACE(distributionType);
+        const StringInfoConfig appDistributionType[] = {
+            { MSG_EXT_NAME_APP_DISTRIBUTION_TYPE, distributionType },
+        };
+        const StringInfoConfigList appDistributionTypeList = MakeStringInfoConfigList(appDistributionType);
+        ASSERT_EQ(RunSetXpmConfigTest(AddStringInfoConfigs, &appDistributionTypeList), 0);
+    }
+}
 
-        property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
-        APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
-        ret = SetXpmConfig(mgr, property);
-        EXPECT_EQ(ret, 0);
-    } while (0);
-    DeleteAppSpawningCtx(property);
-    AppSpawnClientDestroy(clientHandle);
-    DeleteAppSpawnMgr(mgr);
-    ASSERT_EQ(ret, 0);
+HWTEST_F(AppSpawnCodeSignTest, App_Spawn_SetXpmConfig_007, TestSize.Level0)
+{
+    for (const char *distributionType : APP_DISTRIBUTION_TYPES) {
+        SCOPED_TRACE(distributionType);
+        const StringInfoConfig appSignAndDistributionType[] = {
+            { MSG_EXT_NAME_APP_SIGN_TYPE, APP_SIGN_TYPE_ENTERPRISE_RESIGN },
+            { MSG_EXT_NAME_APP_DISTRIBUTION_TYPE, distributionType },
+        };
+        const StringInfoConfigList appSignAndDistributionTypeList =
+            MakeStringInfoConfigList(appSignAndDistributionType);
+        ASSERT_EQ(RunSetXpmConfigTest(AddStringInfoConfigs, &appSignAndDistributionTypeList), 0);
+    }
 }
 }  // namespace OHOS
