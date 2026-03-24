@@ -208,7 +208,7 @@ static void PrelinkLibs()
         return;
     } else if (prelinkerPid == 0) {
         int rc = PrelinkerMain(prelinkMemfd);
-        exit(rc);
+        _exit(rc);
     }
 
     if (waitpid(prelinkerPid, &ws, 0) < 0) {
