@@ -1040,17 +1040,6 @@
                 }
             ]
         }],
-        "ohos.permission.ACCESS_LOCAL_BACKUP":[{
-            "sandbox-switch": "ON",
-            "gids": [1023],
-            "mount-paths": [{
-                    "src-path": "/data/hwbackup",
-                    "sandbox-path": "/data/hwbackup",
-                    "sandbox-flags": [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }
-            ]
-        }],
         "ohos.permission.ACCESS_HIVIEWX":[{
             "sandbox-switch": "ON",
             "mount-paths": [{
