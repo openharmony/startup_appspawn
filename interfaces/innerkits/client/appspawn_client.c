@@ -507,6 +507,7 @@ int AppSpawnClientSendMsg(AppSpawnClientHandle handle, AppSpawnReqMsgHandle reqH
         return APPSPAWN_ARG_INVALID, "Invalid result");
     result->result = APPSPAWN_ARG_INVALID;
     result->pid = 0;
+    result->checkPointId = 0;
     AppSpawnReqMsgMgr *reqMgr = (AppSpawnReqMsgMgr *)handle;
     APPSPAWN_CHECK(reqMgr != NULL, AppSpawnReqMsgFree(reqHandle);
         return APPSPAWN_ARG_INVALID, "Invalid reqMgr");
@@ -515,7 +516,7 @@ int AppSpawnClientSendMsg(AppSpawnClientHandle handle, AppSpawnReqMsgHandle reqH
         return APPSPAWN_ARG_INVALID, "Invalid msgReq");
 
     APPSPAWN_DUMPI("AppSpawnClientSendMsg reqId:%{public}u msgLen:%{public}u fd:%{public}d %{public}s",
-        reqNode->reqId, reqNode->msg->msgLen, reqMgr->socketId, reqNode->msg->processName);
+                   reqNode->reqId, reqNode->msg->msgLen, reqMgr->socketId, reqNode->msg->processName);
 
     int ret;
     if (AppSpawndfIsServiceEnabled(AppSpawnClientInit) && reqMgr->type == CLIENT_FOR_APPSPAWN) {
@@ -527,8 +528,9 @@ int AppSpawnClientSendMsg(AppSpawnClientHandle handle, AppSpawnReqMsgHandle reqH
     if (ret != 0) {
         result->result = ret;
     }
-    APPSPAWN_DUMPI("AppSpawnClientSendMsg reqId:%{public}u fd:%{public}d end result:0x%{public}x pid:%{public}d",
-        reqNode->reqId, reqMgr->socketId, result->result, result->pid);
+    APPSPAWN_DUMPI("AppSpawnClientSendMsg reqId:%{public}u fd:%{public}d end result:0x%{public}x pid:%{public}d"
+                   "checkPointId:%{public}" PRId64"", reqNode->reqId, reqMgr->socketId, result->result,
+                   result->pid, result->checkPointId);
     AppSpawnReqMsgFree(reqHandle);
     return ret;
 }

@@ -266,7 +266,8 @@ static int CreateBaseMsg(AppSpawnReqMsgNode *reqNode, uint32_t msgType, const ch
     block->currentIndex = sizeof(AppSpawnMsg);
     ret = SetFlagsTlv(reqNode, block, &reqNode->msgFlags, TLV_MSG_FLAGS, MAX_FLAGS_INDEX);
     APPSPAWN_CHECK_ONLY_EXPER(ret == 0, return ret);
-    APPSPAWN_CHECK_ONLY_EXPER(msgType == MSG_APP_SPAWN || msgType == MSG_SPAWN_NATIVE_PROCESS, return 0);
+    APPSPAWN_CHECK_ONLY_EXPER(msgType == MSG_APP_SPAWN || msgType == MSG_SPAWN_NATIVE_PROCESS ||
+                              msgType == MSG_SPAWN_IMAGE_PROCESS || msgType == MSG_SPAWN_WORKER_PROCESS, return 0);
     int maxCount = GetPermissionMaxCount();
     APPSPAWN_CHECK(maxCount > 0, return APPSPAWN_SYSTEM_ERROR, "Invalid max for permission %{public}s", processName);
     ret = SetFlagsTlv(reqNode, block, &reqNode->permissionFlags, TLV_PERMISSION, maxCount);
@@ -582,4 +583,20 @@ int AppSpawnClientAddPermission(AppSpawnClientHandle handle, AppSpawnReqMsgHandl
     int ret = SetAppSpawnMsgFlags(reqNode->permissionFlags, index);
     APPSPAWN_CHECK(ret == 0, return ret, "Invalid permission %{public}s", permission);
     return 0;
+}
+
+int AppSpawnReqMsgSetCheckpointInfo(AppSpawnReqMsgHandle reqHandle, pid_t imgPid, uint64_t checkPointId)
+{
+    AppSpawnReqMsgNode *reqNode = (AppSpawnReqMsgNode *)reqHandle;
+    APPSPAWN_CHECK_ONLY_EXPER(reqNode != NULL && imgPid > 0, return APPSPAWN_ARG_INVALID);
+
+    AppSpawnCheckpointInfo checkpointInfo = {
+        .imgPid = imgPid,
+        .checkPointId = checkPointId
+    };
+
+    AppSpawnAppData data[MAX_DATA_IN_TLV] = {};
+    data[0].data = (uint8_t *)&checkpointInfo;
+    data[0].dataLen = sizeof(AppSpawnCheckpointInfo);
+    return AddAppData(reqNode, TLV_CHECK_POINT_INFO, data, 1, "TLV_CHECKPOINT_INFO");
 }
