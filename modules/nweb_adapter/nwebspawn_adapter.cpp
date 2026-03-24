@@ -270,6 +270,36 @@ APPSPAWN_STATIC int DupRenderIpcFds(const RenderIpcFds &origFds)
     return APPSPAWN_ARG_INVALID;
 }
 
+APPSPAWN_STATIC int GetRenderIpcFdsFromEnv(RenderIpcFds &fds)
+{
+    char *ipcFdEnv = getenv(APP_FDENV_PREFIX "ipc-fd");
+    if (ipcFdEnv == nullptr) {
+        APPSPAWN_LOGE("Cold start mode, ipc-fd not found in env");
+        return APPSPAWN_ARG_INVALID;
+    }
+    fds.ipcFd = atoi(ipcFdEnv);
+
+    char *sharedFdEnv = getenv(APP_FDENV_PREFIX "shared-fd");
+    if (sharedFdEnv == nullptr) {
+        APPSPAWN_LOGE("Cold start mode, shared-fd not found in env");
+        return APPSPAWN_ARG_INVALID;
+    }
+    fds.sharedFd = atoi(sharedFdEnv);
+
+    char *crashFdEnv = getenv(APP_FDENV_PREFIX "crash-fd");
+    if (crashFdEnv == nullptr) {
+        APPSPAWN_LOGE("Cold start mode, crash-fd not found in env");
+        return APPSPAWN_ARG_INVALID;
+    }
+    fds.crashFd = atoi(crashFdEnv);
+
+    if (fds.ipcFd <= 0 || fds.sharedFd <= 0 || fds.crashFd <= 0) {
+        APPSPAWN_LOGE("Cold start mode, invalid fd values");
+        return APPSPAWN_ARG_INVALID;
+    }
+    return APPSPAWN_OK;
+}
+
 APPSPAWN_STATIC int DupNwebRenderFdsBeforeRunHook(AppSpawnMgr *content, AppSpawningCtx *property)
 {
     if (!IsNWebSpawnMode(content)) {
@@ -289,9 +319,18 @@ APPSPAWN_STATIC int DupNwebRenderFdsBeforeRunHook(AppSpawnMgr *content, AppSpawn
 
     APPSPAWN_CHECK_ONLY_EXPER(property != NULL, return APPSPAWN_ARG_INVALID);
     AppSpawnMsgNode *message = property->message;
-    APPSPAWN_CHECK_ONLY_EXPER(message != NULL && message->buffer != NULL && message->connection != NULL,
-                              return APPSPAWN_ARG_INVALID);
+    APPSPAWN_CHECK_ONLY_EXPER(message != NULL && message->buffer != NULL, return APPSPAWN_ARG_INVALID);
     APPSPAWN_CHECK_ONLY_EXPER(message->tlvOffset != NULL, return APPSPAWN_TLV_NONE);
+
+    // Cold start mode: connection is NULL, read fd from environment variables
+    if (message->connection == NULL) {
+        RenderIpcFds envFds {};
+        int ret = GetRenderIpcFdsFromEnv(envFds);
+        if (ret != APPSPAWN_OK) {
+            return ret;
+        }
+        return DupRenderIpcFds(envFds);
+    }
 
     AppSpawnMsgReceiverCtx recvCtx = message->connection->receiverCtx;
     APPSPAWN_CHECK_LOGW(recvCtx.fdCount > 0, return 0,
