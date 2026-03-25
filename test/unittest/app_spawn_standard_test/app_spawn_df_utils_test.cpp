@@ -15,6 +15,9 @@
 
 #include <gtest/gtest.h>
 #include <cstring>
+#include <filesystem>
+#include <fstream>
+#include <iostream>
 #include <unistd.h>
 
 #include "appspawndf_utils.h"
@@ -22,10 +25,14 @@
 #include "appspawn_msg.h"
 #include "app_spawn_test_helper.h"
 #include "securec.h"
+#include "util/src/appspawndf_utils.cpp"
 
 using namespace testing;
 using namespace testing::ext;
 using namespace OHOS;
+using namespace OHOS::AppSpawn;
+
+namespace fs = std::filesystem;
 
 namespace OHOS {
 static AppSpawnTestHelper g_testHelper;
@@ -324,5 +331,135 @@ HWTEST_F(AppSpawnDfUtilsTest, AppSpawndf_SetAppSpawnMsgFlags_005, TestSize.Level
     int ret = SetAppSpawnMsgFlags(msgFlags, 0);
     EXPECT_EQ(ret, 0);
     EXPECT_EQ(msgFlags->flags[0], 1U);
+}
+
+HWTEST_F(AppSpawnDfUtilsTest, AppSpawndf_IsNumber_001, TestSize.Level0)
+{
+    AppSpawnDfUtils& instance = OHOS::AppSpawn::AppSpawnDfUtils::GetInstance();
+
+    std::string emptyStr;
+    instance.Trim(emptyStr);
+
+    EXPECT_TRUE(instance.IsNumber("789"));
+
+    EXPECT_FALSE(instance.IsNumber("a78"));
+
+    EXPECT_FALSE(instance.IsNumber("7.8"));
+
+    EXPECT_TRUE(instance.IsNumber("010"));
+}
+
+HWTEST_F(AppSpawnDfUtilsTest, AppSpawndf_CompareVersion_001, TestSize.Level0)
+{
+    AppSpawnDfUtils& instance = OHOS::AppSpawn::AppSpawnDfUtils::GetInstance();
+
+    std::vector<std::string> localVersion1 = {"789"};
+    std::vector<std::string> cloudVersion1 = {"7"};
+    EXPECT_FALSE(instance.CompareVersion(localVersion1, cloudVersion1));
+
+    std::vector<std::string> localVersion2 = {"10", "10", "25", "0"};
+    std::vector<std::string> cloudVersion2 = {"10", "10", "at5", "1"};
+    EXPECT_FALSE(instance.CompareVersion(localVersion2, cloudVersion2));
+
+    std::vector<std::string> localVersion3 = {"10", "10", "25", "0"};
+    std::vector<std::string> cloudVersion3 = {"10", "10", "25", "1"};
+    EXPECT_TRUE(instance.CompareVersion(localVersion3, cloudVersion3));
+
+    std::vector<std::string> localVersion4 = {"10", "10", "25", "0"};
+    std::vector<std::string> cloudVersion4 = {"10", "10", "25", "0"};
+    EXPECT_FALSE(instance.CompareVersion(localVersion4, cloudVersion4));
+}
+
+HWTEST_F(AppSpawnDfUtilsTest, AppSpawndf_CheckCloudFile_001, TestSize.Level0)
+{
+    std::string& modifiableLocalPath = const_cast<std::string&>(LOCAL_PATH);
+    std::string oldLocalPath = modifiableLocalPath;
+    modifiableLocalPath = "/data/tmp/ut/local/";
+
+    std::string& modifiableCloudPath = const_cast<std::string&>(CLOUD_PATH);
+    std::string oldCloudPath = modifiableCloudPath;
+    modifiableCloudPath = "/data/tmp/ut/cloud/";
+
+    fs::remove_all(modifiableLocalPath);
+    fs::remove_all(modifiableCloudPath);
+
+    fs::create_directories(modifiableLocalPath);
+    fs::create_directories(modifiableCloudPath);
+
+    AppSpawnDfUtils& instance = OHOS::AppSpawn::AppSpawnDfUtils::GetInstance();
+    EXPECT_FALSE(instance.IsDisableDfmalloc());
+
+    std::string localVersionFile = LOCAL_PATH + "version.txt"; // local version path
+    std::string cloudVersionFile = CLOUD_PATH + "version.txt"; // cloud version path
+
+    std::ofstream outLocalVersionFile(localVersionFile);
+    outLocalVersionFile << "version=10.10.25.1";
+    outLocalVersionFile.close();
+    std::ofstream outCloudVersionFile(cloudVersionFile);
+    outCloudVersionFile << "version=10.10.25.0";
+    outCloudVersionFile.close();
+
+    std::string localFilePath = LOCAL_PATH + "switch_off_list";
+    std::ofstream outLocalFile(localFilePath);
+    outLocalFile << APPSPAWN_DF_SWITCH_OFF_FLAG;
+    outLocalFile.flush();
+
+    instance.LoadWhiteList();
+    EXPECT_TRUE(instance.IsDisableDfmalloc());
+
+    outLocalFile.seekp(0, std::ios::beg);
+    for (size_t i = 0; i < 1024; ++i) {
+        outLocalFile << "here is test code for unittest";
+    }
+    outLocalFile.close();
+    EXPECT_FALSE(instance.IsDisableDfmalloc());
+
+    fs::remove_all(modifiableLocalPath);
+    fs::remove_all(modifiableCloudPath);
+
+    modifiableLocalPath = oldLocalPath;
+    modifiableCloudPath = oldCloudPath;
+}
+
+HWTEST_F(AppSpawnDfUtilsTest, AppSpawndf_CheckCloudVersion_001, TestSize.Level0)
+{
+    std::string& modifiableLocalPath = const_cast<std::string&>(LOCAL_PATH);
+    std::string oldLocalPath = modifiableLocalPath;
+    modifiableLocalPath = "/data/tmp/ut/local/";
+
+    fs::remove_all(modifiableLocalPath);
+    fs::create_directories(modifiableLocalPath);
+
+    AppSpawnDfUtils& instance = OHOS::AppSpawn::AppSpawnDfUtils::GetInstance();
+
+    std::string localVersionFile = LOCAL_PATH + "version.txt"; // local version path
+    std::string cloudVersionFile = CLOUD_PATH + "version.txt"; // cloud version path
+
+    std::ofstream outLocalVersionFile(localVersionFile);
+    outLocalVersionFile.flush();
+    EXPECT_TRUE(instance.GetVersionNums(localVersionFile).empty());
+
+    outLocalVersionFile.seekp(0, std::ios::beg);
+    outLocalVersionFile << "version=10.=10.25.0";
+    outLocalVersionFile.flush();
+    EXPECT_TRUE(instance.GetVersionNums(localVersionFile).empty());
+
+    outLocalVersionFile.seekp(0, std::ios::beg);
+    outLocalVersionFile << "version=";
+    outLocalVersionFile.flush();
+    EXPECT_TRUE(instance.GetVersionNums(localVersionFile).empty());
+
+    outLocalVersionFile.seekp(0, std::ios::beg);
+    for (size_t i = 0; i < 1024; ++i) {
+        outLocalVersionFile << "version=10.=10.25.0";
+    }
+    outLocalVersionFile.flush();
+    EXPECT_TRUE(instance.GetVersionNums(localVersionFile).empty());
+
+    outLocalVersionFile.close();
+
+    fs::remove_all(modifiableLocalPath);
+
+    modifiableLocalPath = oldLocalPath;
 }
 }  // namespace OHOS
