@@ -66,6 +66,7 @@ typedef enum TagAppSpawnHookStage {
     STAGE_SERVER_EXIT,
     // 应用状态处理
     STAGE_SERVER_APP_ADD,
+    STAGE_SERVER_APP_CLEANUP,  // 应用进程退出后的资源清理，只触发一次
     STAGE_SERVER_APP_DIED,
     // run before fork
     STAGE_PARENT_PRE_FORK = 20,
@@ -74,6 +75,7 @@ typedef enum TagAppSpawnHookStage {
     STAGE_PARENT_POST_RELY = 23,
     STAGE_PARENT_UNINSTALL,
     STAGE_PARENT_BOOT_IMG,
+    STAGE_SERVER_SPAWN_ABORT,  // spawn abort, release resources
     // run in child process
     STAGE_CHILD_PRE_COLDBOOT = 30, // clear env, set token before cold boot
     STAGE_CHILD_EXECUTE,

@@ -162,6 +162,8 @@ AppSpawnedProcess *AddSpawnedProcess(pid_t pid, const char *processName, uint32_
     node->exitStatus = 0;
     node->appIndex = appIndex;
     node->isDebuggable = isDebuggable;
+    node->msgFlags = NULL;
+
     int ret = strcpy_s(node->name, len, processName);
     APPSPAWN_CHECK(ret == 0, free(node);
         return NULL, "Failed to strcpy process name");
@@ -179,6 +181,8 @@ void TerminateSpawnedProcess(AppSpawnedProcess *node)
     OH_ListRemove(&node->node);
     OH_ListInit(&node->node);
     if (!IsNWebSpawnMode(g_appSpawnMgr)) {
+        APPSPAWN_ONLY_EXPER(node->msgFlags != NULL, free(node->msgFlags);
+            node->msgFlags = NULL);
         free(node);
         return;
     }
@@ -186,6 +190,8 @@ void TerminateSpawnedProcess(AppSpawnedProcess *node)
         AppSpawnedProcess *oldApp = ListEntry(g_appSpawnMgr->diedQueue.next, AppSpawnedProcess, node);
         OH_ListRemove(&oldApp->node);
         OH_ListInit(&oldApp->node);
+        APPSPAWN_ONLY_EXPER(oldApp->msgFlags != NULL, free(oldApp->msgFlags);
+            oldApp->msgFlags = NULL);
         free(oldApp);
         g_appSpawnMgr->diedAppCount--;
     }
@@ -307,6 +313,7 @@ AppSpawningCtx *CreateAppSpawningCtx(void)
     property->pid = 0;
     property->state = APP_STATE_IDLE;
     property->allowDumpable = false;
+    property->lockBundleRefAdded = false;  // Initialize flag to false
     OH_ListInit(&property->node);
     if (g_appSpawnMgr) {
         OH_ListAddTail(&g_appSpawnMgr->appSpawnQueue, &property->node);
