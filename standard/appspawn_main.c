@@ -35,6 +35,8 @@ static AppSpawnStartArgTemplate g_appSpawnStartArgTemplate[PROCESS_INVALID] = {
     {"nweb_cold", {MODE_FOR_NWEB_COLD_RUN, MODULE_NWEBSPAWN, APPSPAWN_SOCKET_NAME, NWEBSPAWN_SERVER_NAME, 0}},
     {NATIVESPAWN_SERVER_NAME, {MODE_FOR_NATIVE_SPAWN, MODULE_NATIVESPAWN, NATIVESPAWN_SOCKET_NAME,
         NATIVESPAWN_SERVER_NAME, 1}},
+    {"native_cold", {MODE_FOR_NATIVE_COLD_RUN, MODULE_NATIVESPAWN, NATIVESPAWN_SOCKET_NAME,
+        NATIVESPAWN_SERVER_NAME, 0}},
     {HYBRIDSPAWN_SERVER_NAME, {MODE_FOR_HYBRID_SPAWN, MODULE_HYBRIDSPAWN, HYBRIDSPAWN_SOCKET_NAME,
         HYBRIDSPAWN_SERVER_NAME, 1}},
     {"hybrid_cold", {MODE_FOR_HYBRID_COLD_RUN, MODULE_HYBRIDSPAWN, HYBRIDSPAWN_SOCKET_NAME,
@@ -76,14 +78,10 @@ static void CheckPreload(char *const argv[])
     ssize_t nread = readlink("/proc/self/exe", buf, sizeof(buf) - 1);
     APPSPAWN_CHECK(nread != -1, return, "readlink fail: /proc/self/exe: %{public}d", errno);
     buf[nread] = 0;
-    int result = strcmp(buf, "/system/bin/nativespawn");
-    if (result != 0) {
-        ret = execv(buf, argv);
-        APPSPAWN_LOGE("execv fail: %{public}s: %{public}d: %{public}d", buf, errno, ret);
-    }
+    ret = execv(buf, argv);
+    APPSPAWN_LOGE("execv fail: %{public}s: %{public}d: %{public}d", buf, errno, ret);
 }
 
-#ifndef NATIVE_SPAWN
 static AppSpawnStartArgTemplate *GetAppSpawnStartArg(const char *serverName, AppSpawnStartArgTemplate *argTemplate,
     AppSpawnStartArgTemplate *argTemp, int count)
 {
@@ -98,15 +96,12 @@ static AppSpawnStartArgTemplate *GetAppSpawnStartArg(const char *serverName, App
 
     return argTemp;
 }
-#endif
 
 // appspawn -mode appspawn | cold | nwebspawn -param app_property -fd clientFd
 int main(int argc, char *const argv[])
 {
     APPSPAWN_LOGI("main argc: %{public}d", argc);
-    if (argc <= 0) {
-        return 0;
-    }
+    APPSPAWN_CHECK_ONLY_EXPER(argc > 0, return 0);
     uintptr_t start = (uintptr_t)argv[0];
     uintptr_t end = (uintptr_t)strchr(argv[argc - 1], 0);
     if (end == 0) {
@@ -127,6 +122,10 @@ int main(int argc, char *const argv[])
     }
 #elif NATIVE_SPAWN
     argTemp = &g_appSpawnStartArgTemplate[PROCESS_FOR_NATIVE_SPAWN];
+    if (argc > MODE_VALUE_INDEX) {
+        argTemp = GetAppSpawnStartArg(argv[MODE_VALUE_INDEX], g_appSpawnStartArgTemplate,
+            argTemp, ARRAY_LENGTH(g_appSpawnStartArgTemplate));
+    }
 #elif HYBRID_SPAWN
     argTemp = &g_appSpawnStartArgTemplate[PROCESS_FOR_HYBRID_SPAWN];
     if (argc > MODE_VALUE_INDEX) {

@@ -69,9 +69,9 @@ HWTEST_F(AppSpawnAceTest, App_Spawn_Ace_Prelink_001, TestSize.Level0)
     SetParameter("const.startup.prelink.enable", "true");
     int ret = PreLinkAppSpawn(mgr);
     DeleteAppSpawnMgr(mgr);
-    ClearIsExecutedDlprelinkRegister();
     EXPECT_EQ(ret, 0);
     EXPECT_EQ(GetIsExecutedDlprelinkRegister(), true);
+    ClearIsExecutedDlprelinkRegister();
 }
 
 /**
