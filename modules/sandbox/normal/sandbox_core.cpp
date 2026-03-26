@@ -879,7 +879,7 @@ int32_t SandboxCore::DoSandboxRootFolderCreate(const AppSpawningCtx *appProperty
         arg.destPath = sandboxRootPath;
         arg.fsType = "tmpfs";
         arg.mountFlags = MS_NOSUID;
-        arg.options = "mode=0775";
+        arg.options = "mode=0711";
     }
 #endif
 
