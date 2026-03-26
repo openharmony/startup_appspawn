@@ -82,6 +82,7 @@ static void AppQueueDestroyProc(const AppSpawnMgr *mgr, AppSpawnedProcess *appIn
     APPSPAWN_LOGI("kill %{public}s pid: %{public}d", appInfo->name, appInfo->pid);
     // notify child proess died,clean sandbox info
     ProcessMgrHookExecute(STAGE_SERVER_APP_DIED, GetAppSpawnContent(), appInfo);
+    ProcessMgrHookExecute(STAGE_SERVER_APP_CLEANUP, GetAppSpawnContent(), appInfo);
     OH_ListRemove(&appInfo->node);
     OH_ListInit(&appInfo->node);
     free(appInfo);
@@ -170,6 +171,7 @@ static void HandleDiedPid(pid_t pid, uid_t uid, int status)
     DumpStatus(appInfo->name, pid, status, &signal);
     WriteSignalInfoToFd(appInfo, content, signal);
     ProcessMgrHookExecute(STAGE_SERVER_APP_DIED, GetAppSpawnContent(), appInfo);
+    ProcessMgrHookExecute(STAGE_SERVER_APP_CLEANUP, GetAppSpawnContent(), appInfo);
 
     // move app info to died queue in NWEBSPAWN, or delete appinfo
     TerminateSpawnedProcess(appInfo);
@@ -214,6 +216,7 @@ static void AppSpawningCtxOnClose(const AppSpawnMgr *mgr, AppSpawningCtx *ctx, v
     if (ctx->pid > 0 && kill(ctx->pid, SIGKILL) != 0) {
         APPSPAWN_LOGE("unable to kill process, pid: %{public}d errno: %{public}d", ctx->pid, errno);
     }
+    AppSpawnHookExecute(STAGE_SERVER_SPAWN_ABORT, 0, GetAppSpawnContent(), &ctx->client);
     DeleteAppSpawningCtx(ctx);
 }
 
@@ -1047,12 +1050,14 @@ static void ProcessSpawnReqMsg(AppSpawnConnection *connection, AppSpawnMsgNode *
     ret = RunAppSpawnProcessMsg(GetAppSpawnContent(), &property->client, &property->pid);
     AppSpawnHookExecute(STAGE_PARENT_POST_FORK, 0, GetAppSpawnContent(), &property->client);
     if (ret != 0) { // wait child process result
+        AppSpawnHookExecute(STAGE_SERVER_SPAWN_ABORT, 0, GetAppSpawnContent(), &property->client);
         SendResponse(connection, &message->msgHeader, ret, 0);
         DeleteAppSpawningCtx(property);
         return;
     }
     if (AddChildWatcher(property) != 0) { // wait child process result
         kill(property->pid, SIGKILL);
+        AppSpawnHookExecute(STAGE_SERVER_SPAWN_ABORT, 0, GetAppSpawnContent(), &property->client);
         SendResponse(connection, &message->msgHeader, ret, 0);
         DeleteAppSpawningCtx(property);
         return;
@@ -1080,6 +1085,7 @@ static void WaitChildDied(pid_t pid)
         g_lastDiedAppId = property->client.id;
 
         SendResponse(property->message->connection, &property->message->msgHeader, APPSPAWN_CHILD_CRASH, 0);
+        AppSpawnHookExecute(STAGE_SERVER_SPAWN_ABORT, 0, GetAppSpawnContent(), &property->client);
         DeleteAppSpawningCtx(property);
 
         if (g_crashTimes >= MAX_CRASH_TIME) {
@@ -1107,6 +1113,7 @@ static void WaitChildTimeout(const TimerHandle taskHandle, void *context)
     ReportSpawnChildProcessFail(GetProcessName(property), ERR_APPSPAWN_SPAWN_TIMEOUT, APPSPAWN_SPAWN_TIMEOUT);
 #endif
     SendResponse(property->message->connection, &property->message->msgHeader, APPSPAWN_SPAWN_TIMEOUT, 0);
+    AppSpawnHookExecute(STAGE_SERVER_SPAWN_ABORT, 0, GetAppSpawnContent(), &property->client);
     DeleteAppSpawningCtx(property);
 }
 
@@ -1122,12 +1129,68 @@ static int ProcessChildFdCheck(int fd, AppSpawningCtx *property)
 #ifdef APPSPAWN_HISYSEVENT
         ReportSpawnChildProcessFail(GetProcessName(property), ERR_APPSPAWN_SPAWN_FAIL, result);
 #endif
+        AppSpawnHookExecute(STAGE_SERVER_SPAWN_ABORT, 0, GetAppSpawnContent(), &property->client);
         SendResponse(property->message->connection, &property->message->msgHeader, result, property->pid);
         DeleteAppSpawningCtx(property);
         return -1;
     }
 
     return 0;
+}
+
+static uint32_t GetAppCloneIndex(AppSpawningCtx *property)
+{
+    APPSPAWN_ONLY_EXPER(!CheckAppMsgFlagsSet(property, APP_FLAGS_CLONE_ENABLE), return 0);
+    AppSpawnMsgBundleInfo *bundleInfo = (AppSpawnMsgBundleInfo *)GetAppProperty(property, TLV_BUNDLE_INFO);
+    return (bundleInfo != NULL) ? bundleInfo->bundleIndex : 0;
+}
+
+static void CopyAppMsgFlags(AppSpawnedProcess *appInfo, const AppSpawnMsgFlags *msgFlags)
+{
+    if (msgFlags == NULL || msgFlags->count == 0 || appInfo == NULL) {
+        return;
+    }
+    size_t flagsSize = sizeof(AppSpawnMsgFlags) + msgFlags->count * sizeof(uint32_t);
+    appInfo->msgFlags = (AppSpawnMsgFlags *)calloc(1, flagsSize);
+    APPSPAWN_CHECK(appInfo->msgFlags != NULL, return, "Failed to alloc msgFlags");
+    appInfo->msgFlags->count = msgFlags->count;
+    for (uint32_t i = 0; i < msgFlags->count; i++) {
+        appInfo->msgFlags->flags[i] = msgFlags->flags[i];
+    }
+}
+
+static AppSpawnedProcess *InitSpawnedProcessInfo(AppSpawningCtx *property)
+{
+    bool isDebuggable = CheckAppMsgFlagsSet(property, APP_FLAGS_DEBUGGABLE);
+    uint32_t appIndex = GetAppCloneIndex(property);
+
+    AppSpawnedProcess *appInfo = AddSpawnedProcess(property->pid, GetBundleName(property), appIndex, isDebuggable);
+    APPSPAWN_CHECK(appInfo != NULL, return NULL, "Failed to add spawned process");
+
+    AppSpawnMsgFlags *msgFlags = (AppSpawnMsgFlags *)GetAppSpawnMsgInfo(property->message, TLV_MSG_FLAGS);
+    CopyAppMsgFlags(appInfo, msgFlags);
+
+    AppSpawnMsgDacInfo *dacInfo = GetAppProperty(property, TLV_DAC_INFO);
+    appInfo->uid = (dacInfo != NULL) ? dacInfo->uid : 0;
+    appInfo->spawnStart.tv_sec = property->spawnStart.tv_sec;
+    appInfo->spawnStart.tv_nsec = property->spawnStart.tv_nsec;
+    appInfo->lockBundleRefAdded = property->lockBundleRefAdded;  // Copy flag from AppSpawningCtx
+
+    return appInfo;
+}
+
+static void HandleSpawnProcessInfoFail(AppSpawningCtx *property)
+{
+    APPSPAWN_LOGE("Failed to init spawned process info, killing pid %{public}d", property->pid);
+    kill(property->pid, SIGKILL);
+#ifdef APPSPAWN_HISYSEVENT
+    ReportSpawnChildProcessFail(GetProcessName(property), ERR_APPSPAWN_PROCESS_INFO_INIT_FAIL,
+        ERR_APPSPAWN_PROCESS_INFO_INIT_FAIL);
+#endif
+    AppSpawnHookExecute(STAGE_SERVER_SPAWN_ABORT, 0, GetAppSpawnContent(), &property->client);
+    SendResponse(property->message->connection, &property->message->msgHeader,
+        APPSPAWN_SYSTEM_ERROR, property->pid);
+    DeleteAppSpawningCtx(property);
 }
 
 static void ProcessChildResponse(const WatcherHandle taskHandle, int fd, uint32_t *events, const void *context)
@@ -1141,43 +1204,32 @@ static void ProcessChildResponse(const WatcherHandle taskHandle, int fd, uint32_
     }
 
     // success
-    bool isDebuggable = CheckAppMsgFlagsSet(property, APP_FLAGS_DEBUGGABLE);
-    uint32_t appIndex = 0;
-    if (CheckAppMsgFlagsSet(property, APP_FLAGS_CLONE_ENABLE)) {
-        AppSpawnMsgBundleInfo *bundleInfo = (AppSpawnMsgBundleInfo *)GetAppProperty(property, TLV_BUNDLE_INFO);
-        if (bundleInfo != NULL) {
-            appIndex = bundleInfo->bundleIndex;
-        }
-    }
-    AppSpawnedProcess *appInfo = AddSpawnedProcess(property->pid, GetBundleName(property), appIndex, isDebuggable);
-    if (appInfo) {
-        AppSpawnMsgDacInfo *dacInfo = GetAppProperty(property, TLV_DAC_INFO);
-        appInfo->uid = dacInfo != NULL ? dacInfo->uid : 0;
-        appInfo->spawnStart.tv_sec = property->spawnStart.tv_sec;
-        appInfo->spawnStart.tv_nsec = property->spawnStart.tv_nsec;
+    AppSpawnedProcess *appInfo = InitSpawnedProcessInfo(property);
+    APPSPAWN_ONLY_EXPER(appInfo == NULL, HandleSpawnProcessInfoFail(property);
+        return);
+
 #ifdef DEBUG_BEGETCTL_BOOT
-        if (IsDeveloperModeOpen()) {
-            appInfo->message = property->message;
-        }
+    if (IsDeveloperModeOpen()) {
+        appInfo->message = property->message;
+    }
 #endif
-        clock_gettime(CLOCK_MONOTONIC, &appInfo->spawnEnd);
+    clock_gettime(CLOCK_MONOTONIC, &appInfo->spawnEnd);
 
 #ifdef APPSPAWN_HISYSEVENT
-        //add process spawn duration into hisysevent,(ms)
-        uint32_t spawnProcessDuration = (uint32_t)((appInfo->spawnEnd.tv_sec - appInfo->spawnStart.tv_sec) *
-            (APPSPAWN_USEC_TO_NSEC)) +(uint32_t)((appInfo->spawnEnd.tv_nsec - appInfo->spawnStart.tv_nsec) /
-            (APPSPAWN_MSEC_TO_NSEC));
-        AppSpawnMgr *appspawnMgr = GetAppSpawnMgr();
-        if (appspawnMgr != NULL) {
-            AddStatisticEventInfo(appspawnMgr->hisyseventInfo, spawnProcessDuration, IsBootFinished());
-        }
-#ifndef ASAN_DETECTOR
-        uint64_t diff = DiffTime(&appInfo->spawnStart, &appInfo->spawnEnd);
-        APPSPAWN_CHECK_ONLY_EXPER(diff < (IsChildColdRun(property) ? SPAWN_COLDRUN_DURATION : SPAWN_DURATION),
-            ReportAbnormalDuration("SPAWNCHILD", diff));
-#endif
-#endif
+    //add process spawn duration into hisysevent,(ms)
+    uint32_t spawnProcessDuration = (uint32_t)((appInfo->spawnEnd.tv_sec - appInfo->spawnStart.tv_sec) *
+        (APPSPAWN_USEC_TO_NSEC)) +(uint32_t)((appInfo->spawnEnd.tv_nsec - appInfo->spawnStart.tv_nsec) /
+        (APPSPAWN_MSEC_TO_NSEC));
+    AppSpawnMgr *appspawnMgr = GetAppSpawnMgr();
+    if (appspawnMgr != NULL) {
+        AddStatisticEventInfo(appspawnMgr->hisyseventInfo, spawnProcessDuration, IsBootFinished());
     }
+#ifndef ASAN_DETECTOR
+    uint64_t diff = DiffTime(&appInfo->spawnStart, &appInfo->spawnEnd);
+    APPSPAWN_CHECK_ONLY_EXPER(diff < (IsChildColdRun(property) ? SPAWN_COLDRUN_DURATION : SPAWN_DURATION),
+        ReportAbnormalDuration("SPAWNCHILD", diff));
+#endif
+#endif
 
     WatchChildProcessFd(property);
     ProcessMgrHookExecute(STAGE_SERVER_APP_ADD, GetAppSpawnContent(), appInfo);

@@ -91,6 +91,7 @@ typedef struct TagAppSpawningCtx {
     struct timespec spawnStart;
     bool allowDumpable;
     uint64_t checkPointId;        // Image process index ID
+    bool lockBundleRefAdded;  // Flag: whether AddLockBundleRef has been called for _locked directory
 } AppSpawningCtx;
 
 typedef struct TagAppSpawnedProcess {
@@ -106,6 +107,8 @@ typedef struct TagAppSpawnedProcess {
 #endif
     bool isDebuggable;
     uint32_t appIndex;
+    AppSpawnMsgFlags *msgFlags;  // 保存完整的消息标志（如 APP_FLAGS_ISOLATED_SANDBOX_TYPE 等）
+    bool lockBundleRefAdded;  // Flag: whether AddLockBundleRef has been called for _locked directory
     char name[0];
 } AppSpawnedProcess;
 
@@ -243,6 +246,7 @@ void *GetAppSpawnMsgInfo(const AppSpawnMsgNode *message, int type);
 void *GetAppSpawnMsgExtInfo(const AppSpawnMsgNode *message, const char *name, uint32_t *len);
 int CheckAppSpawnMsgFlag(const AppSpawnMsgNode *message, uint32_t type, uint32_t index);
 int SetAppSpawnMsgFlag(const AppSpawnMsgNode *message, uint32_t type, uint32_t index);
+int CheckAppSpawnMsgFlagsSet(const AppSpawnMsgFlags *msgFlags, uint32_t flagIndex);
 
 APPSPAWN_INLINE int IsSpawnServer(const AppSpawnMgr *content)
 {

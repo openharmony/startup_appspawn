@@ -65,6 +65,12 @@ int CheckAppSpawnMsgFlag(const AppSpawnMsgNode *message, uint32_t type, uint32_t
     APPSPAWN_CHECK(type == TLV_MSG_FLAGS || type == TLV_PERMISSION, return 0, "Invalid tlv %{public}u ", type);
     AppSpawnMsgFlags *msgFlags = (AppSpawnMsgFlags *)GetAppSpawnMsgInfo(message, type);
     APPSPAWN_CHECK(msgFlags != NULL, return 0, "No tlv %{public}u in msg", type);
+    return CheckAppSpawnMsgFlagsSet(msgFlags, index);
+}
+
+int CheckAppSpawnMsgFlagsSet(const AppSpawnMsgFlags *msgFlags, uint32_t index)
+{
+    APPSPAWN_CHECK(msgFlags != NULL && msgFlags->count > 0, return 0, "invalid msg flags");
     uint32_t blockIndex = index / 32;  // 32 max bit in int
     uint32_t bitIndex = index % 32;    // 32 max bit in int
     APPSPAWN_CHECK(blockIndex < msgFlags->count, return 0,

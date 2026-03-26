@@ -26,6 +26,16 @@ int AddServerStageHook(AppSpawnHookStage stage, int prio, ServerStageHook hook)
     return 0;
 }
 
+int AddAppSpawnHook(AppSpawnHookStage stage, int prio, AppSpawnHook hook)
+{
+    return 0;
+}
+
+int AddProcessMgrHook(AppSpawnHookStage stage, int prio, ProcessChangeHook hook)
+{
+    return 0;
+}
+
 int GetParameter(const char *key, const char *def, char *value, uint32_t len)
 {
     if (strcmp(key, "startup.appspawn.lockstatus_100") == 0) {
