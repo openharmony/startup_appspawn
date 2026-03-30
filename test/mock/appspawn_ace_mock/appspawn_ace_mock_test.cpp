@@ -15,20 +15,23 @@
 
 #include "appspawn_ace_mock_test.h"
 
-static uint32_t g_preloadParamResult = 0;
-static uint32_t g_preloadEtsParamResult = 0;
-static uint32_t g_spawnUnifiedParamResult = 0;
+#include <string>
 
+#include "appspawn_utils.h"
+#include "parameter.h"
+#include "securec.h"
+
+static bool g_preloadParamResult = false;
+static bool g_preloadEtsParamResult = false;
+static bool g_spawnUnifiedParamResult = false;
 void SetBoolParamResult(const char *key, bool flag)
 {
     if (strcmp(key, "persist.appspawn.preload") == 0) {
-        flag ? (g_preloadParamResult = true) : (g_preloadParamResult = false);
-    }
-    if (strcmp(key, "persist.appspawn.preloadets") == 0) {
-        flag ? (g_preloadEtsParamResult = true) : (g_preloadEtsParamResult = false);
-    }
-    if (strcmp(key, "persist.appspawn.hybridspawn.unified") == 0) {
-        flag ? (g_spawnUnifiedParamResult = true) : (g_spawnUnifiedParamResult = false);
+        g_preloadParamResult = flag;
+    } else if (strcmp(key, "persist.appspawn.preloadets") == 0) {
+        g_preloadEtsParamResult = flag;
+    } else if (strcmp(key, "persist.appspawn.hybridspawn.unified") == 0) {
+        g_spawnUnifiedParamResult = flag;
     }
 }
 
@@ -42,6 +45,44 @@ int SetParameter(const char *key, const char *value)
     }
 
     return 0;
+}
+
+namespace OHOS {
+namespace system {
+    bool GetBoolParameter(const std::string &key, bool def)
+    {
+        if (strcmp(key.c_str(), "persist.appspawn.preload") == 0) {
+            return g_preloadParamResult;
+        } else if (strcmp(key.c_str(), "persist.appspawn.preloadets") == 0) {
+            return g_preloadEtsParamResult;
+        } else if (strcmp(key.c_str(), "persist.appspawn.hybridspawn.unified") == 0) {
+            return g_spawnUnifiedParamResult;
+        }
+        return def;
+    }
+}  // namespace system
+}  // namespace OHOS
+
+static int GetParameterForPrelink(char *value, uint32_t len)
+{
+    if (!g_startupPrelinkExist) {
+        return -1;
+    }
+
+    if (g_startupPrelinkEnable) {
+        return strcpy_s(value, len, "true") == 0 ? strlen("true") : -1;
+    }
+
+    return strcpy_s(value, len, "false") == 0 ? strlen("false") : -1;
+}
+
+int GetParameter(const char *key, const char *def, char *value, uint32_t len)
+{
+    if (strcmp(key, "const.startup.prelink.enable") == 0) {
+        return GetParameterForPrelink(value, len);
+    }
+
+    return -1;
 }
 
 static bool g_mockDlprelinkReserveMemFailed   = false;

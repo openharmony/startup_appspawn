@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef APPSPAWN_ACE_MOCK_TEST_H
-#define APPSPAWN_ACE_MOCK_TEST_H
+#ifndef NATIVE_ADAPTER_MOCK_TEST_H
+#define NATIVE_ADAPTER_MOCK_TEST_H
 
 #include <cstdio>
 #include <cstdlib>
@@ -25,18 +25,9 @@ extern "C" {
 #endif
 
 void SetBoolParamResult(const char *key, bool flag);
-int SetParameter(const char *key, const char *value);
-
-void SetMockDlprelinkReserveMemFailed(bool v);
-void SetMockDlprelinkRecordFailed(bool v);
-bool GetIsExecutedDlprelinkRegister(void);
-void ClearIsExecutedDlprelinkRegister(void);
-int dlprelink_reserve_mem(void);
-int dlprelink_record(int memfd, const char *listPath);
-int dlprelink_register(int fd);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // APPSPAWN_ACE_MOCK_TEST_H
+#endif // NATIVE_ADAPTER_MOCK_TEST_H

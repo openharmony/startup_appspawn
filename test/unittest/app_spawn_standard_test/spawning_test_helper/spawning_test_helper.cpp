@@ -193,4 +193,5 @@ MODULE_CONSTRUCTOR(void)
     MakeDirRec(APPSPAWN_MSG_DIR "appspawn", 0771, 1);
     MakeDirRec(APPSPAWN_MSG_DIR "hybridspawn", 0771, 1);
     MakeDirRec(APPSPAWN_MSG_DIR "nwebspawn", 0771, 1);
+    MakeDirRec(APPSPAWN_MSG_DIR "nativespawn", 0771, 1);
 }

@@ -1280,7 +1280,7 @@ HWTEST_F(AppSpawnChildTest, App_Spawn_Cold_Run_002, TestSize.Level0)
         property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
         APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
 
-        std::string cmd = GetColdRunArgs(property, MODE_FOR_NWEB_COLD_RUN, "nwebspawn -mode nweb_cold ");
+        std::string cmd = GetColdRunArgs(property, MODE_FOR_NWEB_COLD_RUN, "nwebspawn -mode nweb_cold");
         content = AppSpawnTestHelper::StartSpawnServer(cmd, args);
         APPSPAWN_CHECK_ONLY_EXPER(content != nullptr, break);
         ASSERT_EQ(content->mode, MODE_FOR_NWEB_COLD_RUN);
@@ -1395,6 +1395,42 @@ HWTEST_F(AppSpawnChildTest, App_Spawn_Cold_Run_004, TestSize.Level0)
     }
     DeleteAppSpawningCtx(property);
     DeleteAppSpawnMgr(GetAppSpawnMgr());
+    AppSpawnClientDestroy(clientHandle);
+    ASSERT_EQ(ret, 0);
+}
+
+HWTEST_F(AppSpawnChildTest, Native_Spawn_Cold_Run_001, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = nullptr;
+    AppSpawnReqMsgHandle reqHandle = 0;
+    AppSpawningCtx *property = nullptr;
+    AppSpawnContent *content = nullptr;
+    CmdArgs *args = nullptr;
+    int ret = -1;
+    do {
+        ret = AppSpawnClientInit(NATIVESPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create reqMgr %{public}s", NATIVESPAWN_SERVER_NAME);
+        reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+        APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break, "Failed to create req");
+        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_COLD_BOOT);
+
+        property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
+        APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
+
+        std::string cmd = GetColdRunArgs(property, MODE_FOR_NATIVE_COLD_RUN, "nativespawn -mode native_cold");
+        content = AppSpawnTestHelper::StartSpawnServer(cmd, args);
+        APPSPAWN_CHECK_ONLY_EXPER(content != nullptr, break);
+        ASSERT_EQ(content->mode, MODE_FOR_NATIVE_COLD_RUN);
+
+        AppSpawnHookExecute(STAGE_PARENT_PRE_FORK, 0, content, &property->client);
+        AppSpawnHookExecute(STAGE_CHILD_PRE_COLDBOOT, 0, content, &property->client);
+        RegChildLooper(content, TestRunChildProcessor);
+        content->runAppSpawn(content, args->argc, args->argv);
+    } while (0);
+    if (args) {
+        free(args);
+    }
+    DeleteAppSpawningCtx(property);
     AppSpawnClientDestroy(clientHandle);
     ASSERT_EQ(ret, 0);
 }

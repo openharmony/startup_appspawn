@@ -756,36 +756,40 @@ AppSpawnContent *AppSpawnTestHelper::StartSpawnServer(std::string &cmd, CmdArgs 
     args = AppSpawnTestHelper::ToCmdList(cmd.c_str());
     APPSPAWN_CHECK(args != nullptr, return nullptr, "Failed to alloc args");
 
+    static const std::unordered_map<std::string, AppSpawnStartArg> spawnConfigs = {
+        {"appspawn", {MODE_FOR_APP_SPAWN, MODULE_APPSPAWN, APPSPAWN_SOCKET_NAME, APPSPAWN_SERVER_NAME, 1}},
+        {"nwebspawn", {MODE_FOR_NWEB_SPAWN, MODULE_NWEBSPAWN,  NWEBSPAWN_SOCKET_NAME, NWEBSPAWN_SERVER_NAME, 1}},
+        {"nativespawn", {MODE_FOR_NATIVE_SPAWN, MODULE_NATIVESPAWN, NATIVESPAWN_SOCKET_NAME,
+            NATIVESPAWN_SERVER_NAME, 1}},
+        {"cjappspawn", {MODE_FOR_CJAPP_SPAWN, MODULE_APPSPAWN, CJAPPSPAWN_SOCKET_NAME, CJAPPSPAWN_SERVER_NAME, 1}},
+        {"hybridspawn", {MODE_FOR_HYBRID_SPAWN, MODULE_HYBRIDSPAWN, HYBRIDSPAWN_SOCKET_NAME,
+            HYBRIDSPAWN_SERVER_NAME, 1}},
+        {"app_cold", {MODE_FOR_APP_COLD_RUN, MODULE_APPSPAWN, APPSPAWN_SOCKET_NAME, APPSPAWN_SERVER_NAME, 0}},
+        {"nweb_cold", {MODE_FOR_NWEB_COLD_RUN, MODULE_NWEBSPAWN, NWEBSPAWN_SOCKET_NAME, NWEBSPAWN_SERVER_NAME, 0}},
+        {"native_cold", {MODE_FOR_NATIVE_COLD_RUN, MODULE_NATIVESPAWN, NATIVESPAWN_SOCKET_NAME,
+            NATIVESPAWN_SERVER_NAME, 0}},
+        {"hybrid_cold", {MODE_FOR_HYBRID_COLD_RUN, MODULE_HYBRIDSPAWN, HYBRIDSPAWN_SOCKET_NAME,
+            HYBRIDSPAWN_SERVER_NAME, 0}},
+        {"cj_app_cold", {MODE_FOR_CJAPP_COLD_RUN, MODULE_APPSPAWN, CJAPPSPAWN_SOCKET_NAME, CJAPPSPAWN_SERVER_NAME, 0}}
+    };
+
     AppSpawnStartArg startRrg = {};
-    startRrg.mode = MODE_FOR_APP_SPAWN;
-    startRrg.socketName = APPSPAWN_SOCKET_NAME;
-    startRrg.serviceName = APPSPAWN_SERVER_NAME;
-    startRrg.moduleType = MODULE_APPSPAWN;
-    startRrg.initArg = 1;
-    if (args->argc <= MODE_VALUE_INDEX) {  // appspawn start
-        startRrg.mode = MODE_FOR_APP_SPAWN;
-    } else if (strcmp(args->argv[MODE_VALUE_INDEX], "app_cold") == 0) {  // app cold start
-        APPSPAWN_CHECK(args->argc >= ARG_NULL, free(args);
-            return nullptr, "Invalid arg for cold start %{public}d", args->argc);
-        startRrg.mode = MODE_FOR_APP_COLD_RUN;
-        startRrg.initArg = 0;
-    } else if (strcmp(args->argv[MODE_VALUE_INDEX], "nweb_cold") == 0) {  // nweb cold start
-        APPSPAWN_CHECK(args->argc >= ARG_NULL, free(args);
-            return nullptr, "Invalid arg for cold start %{public}d", args->argc);
-        startRrg.mode = MODE_FOR_NWEB_COLD_RUN;
-        startRrg.serviceName = NWEBSPAWN_SERVER_NAME;
-        startRrg.initArg = 0;
-    } else if (strcmp(args->argv[MODE_VALUE_INDEX], NWEBSPAWN_SERVER_NAME) == 0) {  // nweb spawn start
-        startRrg.mode = MODE_FOR_NWEB_SPAWN;
-        startRrg.moduleType = MODULE_NWEBSPAWN;
-        startRrg.socketName = NWEBSPAWN_SOCKET_NAME;
-        startRrg.serviceName = NWEBSPAWN_SERVER_NAME;
-    } else if (strcmp(args->argv[MODE_VALUE_INDEX], HYBRIDSPAWN_SERVER_NAME) == 0) {  // hybrid spawn start
-        startRrg.mode = MODE_FOR_HYBRID_SPAWN;
-        startRrg.moduleType = MODULE_HYBRIDSPAWN;
-        startRrg.socketName = HYBRIDSPAWN_SOCKET_NAME;
-        startRrg.serviceName = HYBRIDSPAWN_SERVER_NAME;
+    std::string spawnType = (args->argc <= MODE_VALUE_INDEX) ? args->argv[0] : args->argv[MODE_VALUE_INDEX];
+
+    auto it = spawnConfigs.find(spawnType);
+    if (it != spawnConfigs.end()) {
+        const auto &config = it->second;
+        if (spawnType.find("_cold") != std::string::npos) {
+            APPSPAWN_CHECK(args->argc >= ARG_NULL, free(args);
+                return nullptr, "Invalid arg for cold start %{public}d", args->argc);
+        }
+        startRrg.mode = config.mode;
+        startRrg.moduleType = config.moduleType;
+        startRrg.socketName = config.socketName;
+        startRrg.serviceName = config.serviceName;
+        startRrg.initArg = config.initArg;
     }
+
     APPSPAWN_LOGV("Start service %{public}s", startRrg.serviceName);
     AppSpawnContent *content = StartSpawnService(&startRrg, APP_LEN_PROC_NAME, args->argc, args->argv);
     if (content == nullptr) {
@@ -800,4 +804,5 @@ MODULE_CONSTRUCTOR(void)
     MakeDirRec(APPSPAWN_MSG_DIR "appspawn", 0771, 1);
     MakeDirRec(APPSPAWN_MSG_DIR "hybridspawn", 0771, 1);
     MakeDirRec(APPSPAWN_MSG_DIR "nwebspawn", 0771, 1);
+    MakeDirRec(APPSPAWN_MSG_DIR "nativespawn", 0771, 1);
 }

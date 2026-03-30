@@ -16,7 +16,7 @@
 #include <cerrno>
 #include <cstring>
 #include <dlfcn.h>
-#include <set>
+#include <map>
 #include <string>
 #include <unistd.h>
 #include <utility>
@@ -28,9 +28,7 @@
 #include "appspawn_manager.h"
 #include "appspawn_utils.h"
 #include "parameters.h"
-#ifndef APPSPAWN_TEST
 #include "main_thread.h"
-#endif
 
 APPSPAWN_STATIC int BuildFdInfoMap(const AppSpawnMsgNode *message, std::map<std::string, int> &fdMap, int isColdRun)
 {
@@ -98,7 +96,7 @@ static int RunChildThread(const AppSpawnMgr *content, const AppSpawningCtx *prop
     return 0;
 }
 
-static int RunChildProcessor(AppSpawnContent *content, AppSpawnClient *client)
+APPSPAWN_STATIC int RunChildProcessor(AppSpawnContent *content, AppSpawnClient *client)
 {
     APPSPAWN_CHECK(client != NULL && content != NULL, return -1, "Invalid client");
     AppSpawningCtx *property = reinterpret_cast<AppSpawningCtx *>(client);
@@ -108,7 +106,7 @@ static int RunChildProcessor(AppSpawnContent *content, AppSpawnClient *client)
 
 APPSPAWN_STATIC int PreLoadNativeSpawn(AppSpawnMgr *content)
 {
-    content->content.mode = MODE_FOR_NATIVE_SPAWN;
+    APPSPAWN_CHECK(IsNativeSpawnMode(content), return 0, "Invalid mode");
     RegChildLooper(&content->content, RunChildProcessor);
     return 0;
 }

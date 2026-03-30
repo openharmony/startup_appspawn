@@ -1229,7 +1229,7 @@ HWTEST_F(AppSpawnServiceTest, App_Spawn_GetSpawnNameByRunMode_001, TestSize.Leve
             EXPECT_EQ(strcmp(name, NWEBSPAWN_SERVER_NAME), 0);
         } else if (i == MODE_FOR_HYBRID_SPAWN || i == MODE_FOR_HYBRID_COLD_RUN) {
             EXPECT_EQ(strcmp(name, HYBRIDSPAWN_SERVER_NAME), 0);
-        } else if (i == MODE_FOR_NATIVE_SPAWN) {
+        } else if (i == MODE_FOR_NATIVE_SPAWN || i == MODE_FOR_NATIVE_COLD_RUN) {
             EXPECT_EQ(strcmp(name, NATIVESPAWN_SERVER_NAME), 0);
         } else if (i == MODE_FOR_CJAPP_SPAWN || i == MODE_FOR_CJAPP_COLD_RUN) {
             EXPECT_EQ(strcmp(name, CJAPPSPAWN_SERVER_NAME), 0);

@@ -543,7 +543,7 @@ APPSPAWN_STATIC char *GetSpawnNameByRunMode(RunMode mode)
         return NWEBSPAWN_SERVER_NAME;
     } else if (mode == MODE_FOR_HYBRID_SPAWN || mode == MODE_FOR_HYBRID_COLD_RUN) {
         return HYBRIDSPAWN_SERVER_NAME;
-    } else if (mode == MODE_FOR_NATIVE_SPAWN) {
+    } else if (mode == MODE_FOR_NATIVE_SPAWN || mode == MODE_FOR_NATIVE_COLD_RUN) {
         return NATIVESPAWN_SERVER_NAME;
     } else if (mode == MODE_FOR_CJAPP_SPAWN || mode == MODE_FOR_CJAPP_COLD_RUN) {
         return CJAPPSPAWN_SERVER_NAME;
@@ -1324,7 +1324,6 @@ void AppSpawnDestroyContent(AppSpawnContent *content)
 APPSPAWN_STATIC int AppSpawnColdStartApp(struct AppSpawnContent *content, AppSpawnClient *client)
 {
     AppSpawnMgr *mgr = (AppSpawnMgr *)content;
-    APPSPAWN_CHECK(!IsNativeSpawnMode(mgr), return APPSPAWN_NATIVE_NOT_ALLOW, "nativespawn not support coldrun");
     AppSpawningCtx *property = (AppSpawningCtx *)client;
     const char *processName = GetProcessName(property);
     APPSPAWN_CHECK(processName != NULL, return APPSPAWN_ARG_INVALID, "Failed to get process name");
@@ -1354,7 +1353,7 @@ APPSPAWN_STATIC int AppSpawnColdStartApp(struct AppSpawnContent *content, AppSpa
     len = sprintf_s(buffer[3], sizeof(buffer[3]), " %u ", property->client.id); // 3 3 index for client id
     APPSPAWN_CHECK(len > 0, return APPSPAWN_SYSTEM_ERROR, "Invalid to format clientId");
     char *mode = IsAppSpawnMode(mgr) ? "app_cold" : (IsNWebSpawnMode(mgr) ? "nweb_cold" :
-        (IsCJSpawnMode(mgr) ? "cj_app_cold" : "hybrid_cold"));
+        (IsCJSpawnMode(mgr) ? "cj_app_cold" : (IsNativeSpawnMode(mgr) ? "native_cold" : "hybrid_cold")));
     APPSPAWN_LOGI("ColdStartApp::processName:%{public}s path:%{public}s mode:%{public}s", processName, path, mode);
 
 #ifndef APPSPAWN_TEST

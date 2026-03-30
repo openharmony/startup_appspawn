@@ -49,19 +49,17 @@
 #include <sys/prctl.h>
 #endif
 
-static uint32_t g_preloadParamResult = 0;
-static uint32_t g_preloadEtsParamResult = 0;
-static uint32_t g_spawnUnifiedParamResult = 0;
+static bool g_preloadParamResult = false;
+static bool g_preloadEtsParamResult = false;
+static bool g_spawnUnifiedParamResult = false;
 void SetBoolParamResult(const char *key, bool flag)
 {
     if (strcmp(key, "persist.appspawn.preload") == 0) {
-        flag ? (g_preloadParamResult = true) : (g_preloadParamResult = false);
-    }
-    if (strcmp(key, "persist.appspawn.preloadets") == 0) {
-        flag ? (g_preloadEtsParamResult = true) : (g_preloadEtsParamResult = false);
-    }
-    if (strcmp(key, "persist.appspawn.hybridspawn.unified") == 0) {
-        flag ? (g_spawnUnifiedParamResult = true) : (g_spawnUnifiedParamResult = false);
+        g_preloadParamResult = flag;
+    } else if (strcmp(key, "persist.appspawn.preloadets") == 0) {
+        g_preloadEtsParamResult = flag;
+    } else if (strcmp(key, "persist.appspawn.hybridspawn.unified") == 0) {
+        g_spawnUnifiedParamResult = flag;
     }
 }
 
@@ -75,13 +73,11 @@ namespace system {
     bool GetBoolParameter(const std::string &key, bool def)
     {
         if (strcmp(key.c_str(), "persist.appspawn.preload") == 0) {
-            return g_preloadParamResult ? true : false;
-        }
-        if (strcmp(key.c_str(), "persist.appspawn.preloadets") == 0) {
-            return g_preloadEtsParamResult ? true : false;
-        }
-        if (strcmp(key.c_str(), "persist.appspawn.hybridspawn.unified") == 0) {
-            return g_spawnUnifiedParamResult ? true : false;
+            return g_preloadParamResult;
+        } else if (strcmp(key.c_str(), "persist.appspawn.preloadets") == 0) {
+            return g_preloadEtsParamResult;
+        } else if (strcmp(key.c_str(), "persist.appspawn.hybridspawn.unified") == 0) {
+            return g_spawnUnifiedParamResult;
         }
         return def;
     }
