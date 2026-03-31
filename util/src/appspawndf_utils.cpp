@@ -165,7 +165,7 @@ private:
         struct stat fileStat;
         if (stat(filePath.c_str(), &fileStat) != 0 ||
             fileStat.st_size <= 0 || fileStat.st_size > MAX_VERSION_FILE_LEN) {
-            APPSPAWN_LOGE("AppSpawnDfUtils::GetVersionNums: stat failed");
+            APPSPAWN_LOGV("AppSpawnDfUtils::GetVersionNums: stat failed");
             return {};
         }
 
@@ -234,7 +234,7 @@ private:
         struct stat fileStat;
         if (stat(filePath.c_str(), &fileStat) != 0 ||
             fileStat.st_size <= 0 || fileStat.st_size > MAX_SWITCH_OFF_FILE_LEN) {
-            APPSPAWN_LOGE("AppSpawnDfUtils::IsDisableDfmalloc: stat failed");
+            APPSPAWN_LOGV("AppSpawnDfUtils::IsDisableDfmalloc: stat failed");
             return false;
         }
         std::ifstream inputFile(filePath);
