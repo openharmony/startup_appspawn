@@ -62,6 +62,8 @@ AppSpawnMgr *CreateAppSpawnMgr(int mode)
     OH_ListInit(&appMgr->diedQueue);
     OH_ListInit(&appMgr->appSpawnQueue);
     OH_ListInit(&appMgr->dataGroupCtxQueue);
+    OH_ListInit(&appMgr->checkPointIdQueue);
+    OH_ListInit(&appMgr->spawningFdsQueue);
     appMgr->diedAppCount = 0;
     OH_ListInit(&appMgr->extData);
     g_appSpawnMgr = appMgr;
@@ -95,6 +97,18 @@ static void ExtDataDestroy(ListNode *node)
     }
 }
 
+static void SpawningFdsDestroy(ListNode *node)
+{
+    AppSpawnFds *fdSets = ListEntry(node, AppSpawnFds, node);
+    for (int i = 0; i < fdSets->count; i++) {
+        if (fdSets->fds[i] >= 0) {
+            close(fdSets->fds[i]);
+            fdSets->fds[i] = -1;
+        }
+    }
+    free(fdSets);
+}
+
 void DeleteAppSpawnMgr(AppSpawnMgr *mgr)
 {
     APPSPAWN_CHECK_ONLY_EXPER(mgr != NULL, return);
@@ -103,6 +117,8 @@ void DeleteAppSpawnMgr(AppSpawnMgr *mgr)
     OH_ListRemoveAll(&mgr->appSpawnQueue, SpawningQueueDestroy);
     OH_ListRemoveAll(&mgr->extData, ExtDataDestroy);
     OH_ListRemoveAll(&mgr->dataGroupCtxQueue, NULL);
+    OH_ListRemoveAll(&mgr->checkPointIdQueue, NULL);
+    OH_ListRemoveAll(&mgr->spawningFdsQueue, SpawningFdsDestroy);
 #ifdef APPSPAWN_HISYSEVENT
     DeleteHisyseventInfo(mgr->hisyseventInfo);
     mgr->hisyseventInfo = NULL;
