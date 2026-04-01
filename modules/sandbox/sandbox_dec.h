@@ -39,6 +39,7 @@ extern "C" {
 #define HM_CONSTRAINT_POLICY_ID 6
 #define HM_DENY_POLICY_ID 7
 #define HM_SET_PREFIX_ID 8
+#define HM_SET_DEC_IGNORE_CASE_ID 12
 
 #define SET_DEC_POLICY_CMD _IOWR(HM_DEC_IOCTL_BASE, HM_SET_POLICY_ID, DecPolicyInfo)
 #define DEL_DEC_POLICY_CMD _IOWR(HM_DEC_IOCTL_BASE, HM_DEL_POLICY_ID, DecPolicyInfo)  // 忽略flag和mode
@@ -47,8 +48,10 @@ extern "C" {
 #define CONSTRAINT_DEC_POLICY_CMD _IOW(HM_DEC_IOCTL_BASE, HM_CONSTRAINT_POLICY_ID, DecPolicyInfo)
 #define DENY_DEC_POLICY_CMD _IOWR(HM_DEC_IOCTL_BASE, HM_DENY_POLICY_ID, DecPolicyInfo)  // 忽略tokenid/flag/mode
 #define SET_DEC_PREFIX_CMD _IOWR(HM_DEC_IOCTL_BASE, HM_SET_PREFIX_ID, DecPolicyInfo)
+#define SET_DEC_IGNORE_CASE_CMD _IOWR(HM_DEC_IOCTL_BASE, HM_SET_DEC_IGNORE_CASE_ID, DecPolicyInfo)
 
-#define MAX_POLICY_NUM 8
+#define MAX_POLICY_NUM 64
+#define KERNEL_BATCH_SIZE 8
 #define SANDBOX_MODE_READ  0x00000001
 #define SANDBOX_MODE_WRITE (SANDBOX_MODE_READ << 1)
 #define DEC_MODE_DENY_INHERIT (1 << 9)
@@ -65,12 +68,22 @@ typedef struct PathInfo {
 typedef struct DecPolicyInfo {
     uint64_t tokenId;
     uint64_t timestamp;
-    PathInfo path[MAX_POLICY_NUM];
+    PathInfo path[KERNEL_BATCH_SIZE];
     uint32_t pathNum;
     int32_t userId;
     uint64_t reserved[DEC_POLICY_HEADER_RESERVED];
     bool flag;
 } DecPolicyInfo;
+
+typedef struct GlobalDecPolicyInfo {
+    uint64_t tokenId;
+    uint64_t timestamp;
+    PathInfo path[MAX_POLICY_NUM];
+    uint32_t pathNum;
+    int32_t userId;
+    uint64_t reserved[DEC_POLICY_HEADER_RESERVED];
+    bool flag;
+} GlobalDecPolicyInfo;
 
 typedef struct DecDenyPathTemplate {
     const char *permission;
@@ -78,7 +91,7 @@ typedef struct DecDenyPathTemplate {
 } DecDenyPathTemplate;
 
 void SetDecPolicyInfos(DecPolicyInfo *decPolicyInfos);
-void DestroyDecPolicyInfos(DecPolicyInfo *decPolicyInfos);
+void DestroyDecPolicyInfos(GlobalDecPolicyInfo *globalDecPolicyInfos);
 void SetDecPolicy(void);
 
 #ifdef __cplusplus

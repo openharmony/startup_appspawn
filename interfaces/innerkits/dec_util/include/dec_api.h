@@ -30,4 +30,12 @@
  */
 std::map<std::string, std::vector<std::string>> GetDecPathMap(void);
 
+/**
+ * @brief Get ignore case directory configuration list
+ *
+ * @return A vector of pairs where first is path string,
+ *         second is mode (DEC_MODE_IGNORE_CASE or DEC_MODE_NOT_IGNORE_CASE)
+ */
+std::vector<std::pair<std::string, int>> GetIgnoreCaseDirs(void);
+
 #endif

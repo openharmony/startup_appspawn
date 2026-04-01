@@ -323,6 +323,8 @@ int32_t SandboxCore::DoSandboxFilePermissionBind(AppSpawningCtx *appProperty, cJ
             DoAddGid(appProperty, permissionMountPaths, permissionChild->string, SandboxCommonDef::g_permissionPrefix);
             DoAllMntPointsMount(appProperty, permissionMountPaths, permissionChild->string,
                                 SandboxCommonDef::g_permissionPrefix);
+            // Support symbol-links in permission configuration
+            DoAllSymlinkPointslink(appProperty, permissionMountPaths);
 
             permissionChild = permissionChild->next;
         }
@@ -951,6 +953,7 @@ int32_t SandboxCore::HandleFlagsPoint(const AppSpawningCtx *appProperty, cJSON *
         if (CheckAppMsgFlagsSet(appProperty, flag) == 0) {
             return 0;
         }
+        DoAllSymlinkPointslink(appProperty, item);
         return DoAllMntPointsMount(appProperty, item, nullptr, SandboxCommonDef::g_flagsPoint);
     };
     return SandboxCommon::HandleArrayForeach(flagsPoints, processor);
@@ -1347,6 +1350,9 @@ int32_t SandboxCore::SetDecPolicyWithPermission(const AppSpawningCtx *appPropert
 
     DecPolicyInfo decPolicyInfo = {0};
     decPolicyInfo.pathNum = mountConfig.decPaths.size();
+    // Kernel supports at most KERNEL_BATCH_SIZE DEC policies per request
+    APPSPAWN_CHECK(decPolicyInfo.pathNum <= KERNEL_BATCH_SIZE, return APPSPAWN_SANDBOX_DEC_OUT_BOUND,
+        "dec policy out of bound %{public}d", decPolicyInfo.pathNum);
     int ret = 0;
     for (uint32_t i = 0; i < decPolicyInfo.pathNum; i++) {
         PathInfo pathInfo = {0};
@@ -1394,6 +1400,7 @@ void SandboxCore::SetDecDenyWithDir(const AppSpawningCtx *appProperty)
         if (CheckAppPermissionFlagSet(appProperty, static_cast<uint32_t>(index))) {
             continue;
         }
+        APPSPAWN_CHECK(j < KERNEL_BATCH_SIZE, return, "dec policy out of bound currentIndex %{public}d", j);
         PathInfo pathInfo = {0};
         pathInfo.path = const_cast<char *>(DEC_DENY_PATH_MAP[i].decPath);
         pathInfo.pathLen = static_cast<uint32_t>(strlen(pathInfo.path));

@@ -40,7 +40,7 @@ if (!defined(ohos_lite)) {
       "capset=CapsetStub",
       "unshare=UnshareStub",
       "mount=MountStub",
-      "symlink=SymlinkStub",
+      #"symlink=SymlinkStub",
       "chdir=ChdirStub",
       "chroot=ChrootStub",
       "syscall=SyscallStub",
@@ -137,6 +137,7 @@ if (!defined(ohos_lite)) {
       "app_spawn_sandbox_common_test.cpp",
       "app_spawn_sandbox_core_test.cpp",
       "app_spawn_sandbox_manager_test.cpp",
+      "app_spawn_sandbox_permission_symlink_test.cpp",
       "app_spawn_lock_bundle_test.cpp",
       "${appspawn_path}/test/unittest/app_spawn_test_helper.cpp",
     ]

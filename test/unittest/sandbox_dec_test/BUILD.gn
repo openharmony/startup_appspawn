@@ -1,4 +1,4 @@
-# Copyright (c) 2025 Huawei Device Co., Ltd.
+# Copyright (c) 2026 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -10,43 +10,50 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 import("//base/startup/appspawn/appspawn.gni")
 import("//build/test.gni")
 
 if (!defined(ohos_lite)) {
-  ohos_unittest("DecUtilTest") {
+  ohos_unittest("SandboxDecTest") {
     module_out_path = "appspawn/appspawn"
+
     cflags = [
       "-Wno-implicit-fallthrough",
       "-Wno-unused-function",
-      "-Dprivate=public",
-      "-Dprotected=public",
     ]
 
-    cflags_cc = [
-      "-Wno-implicit-fallthrough",
-      "-fexceptions",
+    defines = [
+      "APPSPAWN_TEST",
     ]
 
     include_dirs = [
-      "${appspawn_path}/interfaces/innerkits/dec_util/include",
-      "${appspawn_path}/interfaces/innerkits/include",
+      "${appspawn_path}",
+      "${appspawn_path}/common",
+      "${appspawn_path}/standard",
       "${appspawn_path}/modules/sandbox",
+      "${appspawn_path}/interfaces/innerkits/include",
       "${appspawn_path}/modules/module_engine/include",
+      "${appspawn_path}/util/include",
     ]
 
     sources = [
-      "${appspawn_path}/interfaces/innerkits/dec_util/src/dec_api.cpp",
-      "dec_util_test.cpp",
+      "${appspawn_path}/modules/sandbox/sandbox_dec.c",
+      "sandbox_dec_test.cpp",
     ]
 
-    defines = [ "APPSPAWN_TEST" ]
+    ldflags = [
+      "-Wl,--wrap=ioctl",
+      "-Wl,--wrap=open",
+      "-Wl,--wrap=close",
+      "-Wl,--wrap=clock_gettime",
+      "-Wl,--wrap=AddServerStageHook",
+    ]
 
     deps = [ "${appspawn_path}/util:libappspawn_util" ]
 
     external_deps = [
-      "cJSON:cjson",
-      "config_policy:configpolicy_util",
+      "bounds_checking_function:libsec_shared",
       "hilog:libhilog",
       "init:libbegetutil",
     ]
