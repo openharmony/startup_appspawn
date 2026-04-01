@@ -72,18 +72,12 @@ if (!defined(ohos_lite)) {
 
     configs = [ "${appspawn_path}:appspawn_config" ]
     external_deps = [
-      "ability_runtime:app_manager",
-      "ability_runtime:appkit_native",
-      "ability_runtime:runtime",
+      "ability_runtime:appkit_child_entry",
       "cJSON:cjson",
-      "c_utils:utils",
       "config_policy:configpolicy_util",
-      "eventhandler:libeventhandler",
       "googletest:gmock_main",
       "hilog:libhilog",
       "init:libbegetutil",
-      "napi:ace_napi",
-      "ipc:ipc_single",
     ]
   }
 }

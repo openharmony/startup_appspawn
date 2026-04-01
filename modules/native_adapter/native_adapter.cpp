@@ -28,7 +28,7 @@
 #include "appspawn_manager.h"
 #include "appspawn_utils.h"
 #include "parameters.h"
-#include "main_thread.h"
+#include "child_process_api.h"
 
 APPSPAWN_STATIC int BuildFdInfoMap(const AppSpawnMsgNode *message, std::map<std::string, int> &fdMap, int isColdRun)
 {
@@ -87,10 +87,9 @@ static int RunChildThread(const AppSpawnMgr *content, const AppSpawningCtx *prop
         std::map<std::string, int> fdMap;
         BuildFdInfoMap(property->message, fdMap, IsColdRunMode(content));
         AppSpawnEnvClear((AppSpawnContent *)&content->content, (AppSpawnClient *)&property->client);
-        OHOS::AppExecFwk::MainThread::StartChild(fdMap);
+        OHOS::AppExecFwk::ChildProcessApi::StartChild(fdMap);
     } else {
-        AppSpawnEnvClear((AppSpawnContent *)&content->content, (AppSpawnClient *)&property->client);
-        OHOS::AppExecFwk::MainThread::Start();
+        APPSPAWN_LOGW("RunChildThread: Do not support this start method");
     }
     unsetenv(APPSPAWN_CHECK_EXIT);
     return 0;

@@ -15,30 +15,33 @@
 
 /* Mock OHOS::AppExecFwk namespace */
 
-#ifndef STUB_MAIN_THREAD_H
-#define STUB_MAIN_THREAD_H
+#ifndef STUB_CHILD_PROCESS_API_H
+#define STUB_CHILD_PROCESS_API_H
 
 #include <map>
 #include <string>
 
 namespace OHOS {
 namespace AppExecFwk {
-    class MainThread {
-    public:
-        MainThread() {}
-        ~MainThread() {}
 
-        static void Start()
-        {
-            return;
-        }
+/**
+ * @brief Child Process API
+ */
+class ChildProcessApi {
+public:
+    /**
+     *
+     * @brief Start the main thread of the child process.
+     * @param The file descriptors map for child process communication.
+     *
+     */
+    static void StartChild(const std::map<std::string, int32_t> &fds)
+    {
+        return;
+    }
+};
 
-        static void StartChild(std::map<std::string, int> &map)
-        {
-            return;
-        }
-    };
 }  // namespace AppExecFwk
-
 }  // namespace OHOS
-#endif  // STUB_MAIN_THREAD_H
+
+#endif  // STUB_CHILD_PROCESS_API_H
