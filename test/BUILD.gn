@@ -53,7 +53,9 @@ group("unittest") {
     deps += [ "unittest/devicedebug_test:DevicedebugTest" ]
     deps += [ "unittest/app_spawn_hisysevent_test:AppSpawn_HisysEvent_ut" ]
     deps += [ "unittest/dec_util_test:DecUtilTest" ]
+    deps += [ "unittest/sandbox_dec_test:SandboxDecTest" ]
     deps += [ "unittest/app_spawn_exit_lock_test:AppspawnExitLockTest" ]
+    deps += [ "unittest/dec_api_test:DecApiTest" ]
   } else {
     testonly = true
     deps = [ "unittest/app_spawn_lite_test:unittest" ]

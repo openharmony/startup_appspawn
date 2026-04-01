@@ -405,6 +405,12 @@
                     "sandbox-flags": [ "bind", "rec" ],
                     "check-action-status": "false"
                 }
+            ],
+            "symbol-links" : [{
+                    "target-name" : "/storage/Users",
+                    "link-name" : "/storage/users",
+                    "check-action-status": "false"
+                }
             ]}, {
             "flags": "FILE_ACCESS_COMMON_DIR",
             "mount-paths": [{

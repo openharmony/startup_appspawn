@@ -17,6 +17,7 @@
 #include "cJSON.h"
 #include "config_policy_utils.h"
 #include "dec_api.h"
+#include "dec_config.h"
 #include "hilog/log.h"
 #include "json_utils.h"
 
@@ -146,4 +147,18 @@ std::map<std::string, std::vector<std::string>> GetDecPathMap(void)
 
     DestroyDecConfig(sandboxConfig);
     return decMap;
+}
+
+std::vector<std::pair<std::string, int>> GetIgnoreCaseDirs(void)
+{
+    std::vector<std::pair<std::string, int>> result;
+#ifdef APPSPAWN_SUPPORT_NOSHAREFS
+    static const DecIgnoreCaseInfo list[] = { DEC_IGNORE_CASE_LIST };
+    size_t count = sizeof(list) / sizeof(list[0]);
+    result.reserve(count);
+    for (size_t i = 0; i < count; i++) {
+        result.emplace_back(list[i].path, list[i].mode);
+    }
+#endif
+    return result;
 }

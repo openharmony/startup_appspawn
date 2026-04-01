@@ -22,8 +22,15 @@ if (!defined(ohos_lite)) {
   }
 
   ohos_shared_library("appspawn_dec_util") {
-    include_dirs = [ "${appspawn_path}/interfaces/innerkits/dec_util/include" ]
+    include_dirs = [
+      "${appspawn_path}/interfaces/innerkits/dec_util/include",
+      "${appspawn_path}/interfaces/innerkits/include",
+    ]
     sources = [ "${appspawn_path}/interfaces/innerkits/dec_util/src/dec_api.cpp" ]
+    defines = []
+    if (appspawn_support_nosharefs) {
+      defines += [ "APPSPAWN_SUPPORT_NOSHAREFS" ]
+    }
 
     public_configs = [ ":exported_header_files" ]
     external_deps = [
