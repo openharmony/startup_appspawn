@@ -73,6 +73,7 @@ if (!defined(ohos_lite)) {
     configs = [ "${appspawn_path}:appspawn_config" ]
     external_deps = [
       "ability_runtime:appkit_child_entry",
+      "bounds_checking_function:libsec_shared",
       "cJSON:cjson",
       "config_policy:configpolicy_util",
       "googletest:gmock_main",
