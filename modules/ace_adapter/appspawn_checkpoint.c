@@ -48,7 +48,7 @@ struct IoctlKillCheckPointArgs {
     uint64_t checkPointId;
 };
 
-typedef void (*CheckPointProcessTraversal)(const AppSpawnMgr *mgr,
+typedef void (*CheckPointProcessTraversal)(AppSpawnMgr *mgr,
                                            AppSpawnedCheckPointProcesses *checkPointInfo, void *data);
 
 static int SpawningFdComparePro(ListNode *node, void *data)
@@ -57,6 +57,14 @@ static int SpawningFdComparePro(ListNode *node, void *data)
     SpawningFdType type = *(SpawningFdType *)data;
     APPSPAWN_LOGV("current fd node type %{public}d fd[0]: %{public}d", node1->type, node1->fds[0]);
     return node1->type - type;
+}
+
+static int SpawningFdNodeCompare(ListNode *node, ListNode *newNode)
+{
+    AppSpawnFds *node1 = ListEntry(node, AppSpawnFds, node);
+    AppSpawnFds *node2 = ListEntry(newNode, AppSpawnFds, node);
+    APPSPAWN_LOGV("current fd node type %{public}d fd[0]: %{public}d", node1->type, node1->fds[0]);
+    return node1->type - node2->type;
 }
 
 static int SpawningCheckPointIdComparePro(ListNode *node, ListNode *newNode)
@@ -82,7 +90,7 @@ APPSPAWN_STATIC AppSpawnFds *GetSpawningFd(AppSpawnMgr *content, SpawningFdType 
 
 APPSPAWN_STATIC int32_t AddSpawningFds(AppSpawnMgr *content, SpawningFdType type, uint32_t count, int *fds)
 {
-    APPSPAWN_CHECK((type >= TYPE_FOR_DEC) && (type < TYPE_INVALID) && count > 0 && fds != NULL,
+    APPSPAWN_CHECK(((type >= TYPE_FOR_DEC) && (type < TYPE_INVALID) && count > 0 && fds != NULL && content != NULL),
                     return APPSPAWN_ARG_INVALID, "Invalid fds info");
     AppSpawnFds *node = (AppSpawnFds *)calloc(1, sizeof(AppSpawnFds) + count * sizeof(int));
     APPSPAWN_CHECK(node != NULL, return APPSPAWN_SYSTEM_ERROR, "Failed to malloc for appspawn fd node");
@@ -94,7 +102,7 @@ APPSPAWN_STATIC int32_t AddSpawningFds(AppSpawnMgr *content, SpawningFdType type
     }
 
     OH_ListInit(&node->node);
-    OH_ListAddWithOrder(&content->spawningFdsQueue, &node->node, SpawningFdComparePro);
+    OH_ListAddWithOrder(&content->spawningFdsQueue, &node->node, SpawningFdNodeCompare);
     APPSPAWN_DUMPI("Add checkpoint fd %{public}d success, currentCnt %{public}d",
                    type, OH_ListGetCnt(&content->spawningFdsQueue));
     return 0;
@@ -103,7 +111,8 @@ APPSPAWN_STATIC int32_t AddSpawningFds(AppSpawnMgr *content, SpawningFdType type
 APPSPAWN_STATIC AppSpawnedCheckPointProcesses *AddSpawningCheckPointInfo(
     AppSpawnMgr *content, uint64_t checkPointId, const char *processName, uint32_t appIndex, uint32_t uid)
 {
-    APPSPAWN_CHECK(checkPointId > 0, return NULL, "Invalid check point id for %{public}s", processName);
+    APPSPAWN_CHECK((checkPointId > 0 && content != NULL && processName != NULL), return NULL,
+                   "Invalid check point id for %{public}s", processName);
     size_t len = strlen(processName) + 1;
     APPSPAWN_CHECK(len > 1, return NULL, "Invalid processName for %{public}s", processName);
     AppSpawnedCheckPointProcesses *node = (AppSpawnedCheckPointProcesses *)calloc(
@@ -126,7 +135,7 @@ APPSPAWN_STATIC AppSpawnedCheckPointProcesses *AddSpawningCheckPointInfo(
 
 APPSPAWN_STATIC AppSpawnedCheckPointProcesses *GetSpawningImgInfoByName(AppSpawnMgr *content, const char *name)
 {
-    APPSPAWN_CHECK_ONLY_EXPER(name != NULL, return NULL);
+    APPSPAWN_CHECK_ONLY_EXPER((content != NULL && name != NULL), return NULL);
     ListNode *node = OH_ListFind(&content->checkPointIdQueue, (void *)name, ImgInfoNameComparePro);
     APPSPAWN_CHECK_ONLY_EXPER(node != NULL, return NULL);
     return ListEntry(node, AppSpawnedCheckPointProcesses, node);
@@ -169,12 +178,8 @@ static void SetWorkerProcesssForkDenied(const char *bundleName, AppSpawningCtx *
  * @param needForkDenied 是否需要设置 fork denied (仅工作进程需要)
  * @return 成功返回 0，失败返回错误码
  */
-APPSPAWN_STATIC int32_t DoCheckpointProcess(
-    AppSpawnMgr *content,
-    AppSpawningCtx *property,
-    int fd,
-    unsigned long ioctlCmd,
-    bool needForkDenied)
+APPSPAWN_STATIC int32_t DoCheckpointProcess(AppSpawnMgr *content, AppSpawningCtx *property, int fd,
+                                            unsigned long ioctlCmd, bool needForkDenied)
 {
     if (content == NULL || property == NULL) {
         return APPSPAWN_ARG_INVALID;
@@ -254,7 +259,7 @@ APPSPAWN_STATIC int32_t CreateWorkerProcess(AppSpawnMgr *content, AppSpawningCtx
 /**
  * @brief Hook 1: 准备 checkpoint fd
  */
-APPSPAWN_STATIC int32_t SpawnPrepareCheckpointFd(const AppSpawnMgr *content, AppSpawningCtx *property)
+APPSPAWN_STATIC int32_t SpawnPrepareCheckpointFd(AppSpawnMgr *content, AppSpawningCtx *property)
 {
     if (content == NULL || property == NULL || (content->content.mode != MODE_FOR_APP_SPAWN)) {
         return APPSPAWN_ARG_INVALID;
@@ -290,7 +295,7 @@ APPSPAWN_STATIC int32_t SpawnPrepareCheckpointFd(const AppSpawnMgr *content, App
 /**
  * @brief Hook 2: 创建镜像进程
  */
-APPSPAWN_STATIC int32_t CreateImageProcessHook(const AppSpawnMgr *content, AppSpawningCtx *property)
+APPSPAWN_STATIC int32_t CreateImageProcessHook(AppSpawnMgr *content, AppSpawningCtx *property)
 {
     if (content == NULL || property == NULL || (content->content.mode != MODE_FOR_APP_SPAWN)) {
         return APPSPAWN_ARG_INVALID;
@@ -310,7 +315,7 @@ APPSPAWN_STATIC int32_t CreateImageProcessHook(const AppSpawnMgr *content, AppSp
 /**
  * @brief Hook 3: 创建工作进程
  */
-APPSPAWN_STATIC int32_t CreateWorkerProcessHook(const AppSpawnMgr *content, AppSpawningCtx *property)
+APPSPAWN_STATIC int32_t CreateWorkerProcessHook(AppSpawnMgr *content, AppSpawningCtx *property)
 {
     if (content == NULL || property == NULL || (content->content.mode != MODE_FOR_APP_SPAWN)) {
         return APPSPAWN_ARG_INVALID;
@@ -336,7 +341,7 @@ APPSPAWN_STATIC int32_t CreateWorkerProcessHook(const AppSpawnMgr *content, AppS
 /**
  * @brief 销毁单个 checkpoint 节点的回调函数
  */
-static void ImgQueueDestroyProc(const AppSpawnMgr *mgr, AppSpawnedCheckPointProcesses *checkPointInfo, void *data)
+static void ImgQueueDestroyProc(AppSpawnMgr *mgr, AppSpawnedCheckPointProcesses *checkPointInfo, void *data)
 {
     uint64_t checkPointId = checkPointInfo->checkPointId;
     int checkPointFd = *(int *)data;
@@ -360,7 +365,7 @@ static void ImgQueueDestroyProc(const AppSpawnMgr *mgr, AppSpawnedCheckPointProc
  * @param content appspawn 管理器
  * @param data 传递给回调函数的自定义数据
  */
-APPSPAWN_STATIC void TraversalImgProcess(CheckPointProcessTraversal traversal, const AppSpawnMgr *content, void *data)
+APPSPAWN_STATIC void TraversalImgProcess(CheckPointProcessTraversal traversal, AppSpawnMgr *content, void *data)
 {
     APPSPAWN_CHECK_ONLY_EXPER(content != NULL && traversal != NULL, return);
 
@@ -379,27 +384,28 @@ APPSPAWN_STATIC void TraversalImgProcess(CheckPointProcessTraversal traversal, c
  * 该函数在服务退出时被调用，清理所有 checkpoint 进程
  * 使用 TraversalImgProcess 辅助函数保持代码模块化
  */
-APPSPAWN_STATIC void SpawnDestoryImgQue(const AppSpawnMgr *content)
+APPSPAWN_STATIC int SpawnDestoryImgQue(AppSpawnMgr *content)
 {
     if (content == NULL || (content->content.mode != MODE_FOR_APP_SPAWN)) {
-        return;
+        return 0;
     }
 
     // 获取 checkpoint 设备 fd
     AppSpawnFds *fdNode = GetSpawningFd(content, TYPE_FOR_FORK_ALL);
     if (fdNode == NULL) {
         APPSPAWN_LOGW("SpawnDestoryImgQue: fdNode is NULL, no checkpoint to destroy");
-        return;
+        return 0;
     }
 
     if (fdNode->count <= 0 || fdNode->fds[0] <= 0) {
         APPSPAWN_LOGW("SpawnDestoryImgQue: invalid fd count or value, count=%{public}u, fd=%{public}d",
                       fdNode->count, fdNode->fds[0]);
-        return;
+        return 0;
     }
 
     int forkAllFd = fdNode->fds[0];
     TraversalImgProcess(ImgQueueDestroyProc, content, &forkAllFd);
+    return 0;
 }
 
 MODULE_CONSTRUCTOR(void)

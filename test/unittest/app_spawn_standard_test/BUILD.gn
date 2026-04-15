@@ -688,3 +688,26 @@ if (!defined(ohos_lite)) {
     }
   }
 }
+
+# Group all standard test targets
+group("appspawn_standard_tests") {
+  testonly = true
+  deps = [
+    "app_spawn_custom_config_test:AppSpawn_Custom_Config_Test",
+    "app_spawn_sandbox_debug_mode:AppSpawn_Sandbox_Debug_Mode_Test",
+    "app_spawn_silk_test:AppSpawn_Silk_Test",
+    "app_spawn_module_interface_test:AppSpawn_Module_Interface_Test",
+    "app_spawn_codesign_test:AppSpawn_CodeSign_Test",
+    "app_spawn_command_lexer_test:AppSpawn_CommandLexer_Test",
+    "app_spawn_isolate_test:AppSpawn_Isolate_Test",
+    "app_spawn_kickdog_test:AppSpawn_KickDog_Test",
+    "app_spawn_dfx_preload_test:AppSpawn_Dfx_Preload_Test",
+    "app_spawn_child_test:AppSpawn_Child_Test",
+    "app_spawn_cold_run_test:AppSpawn_ColdRun_Test",
+    "app_spawn_df_utils_test:AppSpawn_DfUtils_Test",
+    "hybrid_spawn_service_test:Hybrid_Spawn_Service_Test",
+    "app_spawn_ace_test:AppSpawn_Ace_Test",
+    "native_spawn_adapter_test:Native_Spawn_Adapter_Test",
+    "app_spawn_checkpoint_test:AppSpawn_CheckPoint_Test",
+  ]
+}

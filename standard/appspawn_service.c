@@ -287,7 +287,7 @@ static int SendResponse(const AppSpawnConnection *connection, const AppSpawnMsg 
         return -1, "Failed to memcpy_s bufferSize");
     buffer->result.result = result;
     buffer->result.pid = pid;
-    buffer->checkPointId = 0;
+    buffer->result.checkPointId = 0;
     return LE_Send(LE_GetDefaultLoop(), connection->stream, handle, bufferSize);
 }
 
@@ -304,7 +304,7 @@ static int SendResponse(const AppSpawnConnection *connection, const AppSpawnMsg 
 static int SendResponseEx(const AppSpawnConnection *connection, const AppSpawnMsg *msg,
                           int result, pid_t pid, uint64_t checkPointId)
 {
-    APPSPAWN_LOGI("SendResponseEx connectionId: %{public}u result: 0x%{public}x pid: %{public}d"
+    APPSPAWN_LOGI("SendResponseEx connectionId: %{public}u result: 0x%{public}x pid: %{public}d "
                   "checkPointId: %{public}" PRId64"", connection->connectionId, result, pid, checkPointId);
     uint32_t bufferSize = sizeof(AppSpawnResponseMsg);
     BufferHandle handle = LE_CreateBuffer(LE_GetDefaultLoop(), bufferSize);
@@ -315,7 +315,7 @@ static int SendResponseEx(const AppSpawnConnection *connection, const AppSpawnMs
         return -1, "Failed to memcpy_s bufferSize");
     buffer->result.result = result;
     buffer->result.pid = pid;
-    buffer->checkPointId = checkPointId;
+    buffer->result.checkPointId = checkPointId;
     return LE_Send(LE_GetDefaultLoop(), connection->stream, handle, bufferSize);
 }
 
@@ -1624,6 +1624,7 @@ static void ProcessSpawnRestartMsg(AppSpawnConnection *connection, AppSpawnMsgNo
  */
 APPSPAWN_STATIC void ProcessCheckpointReqMsg(AppSpawnConnection *connection, AppSpawnMsgNode *message)
 {
+    APPSPAWN_CHECK((connect != NULL && message != NULL), return, "Invalid input param");
     APPSPAWN_LOGI("ProcessCheckpointReqMsg: processName=%{public}s, msgType=%{public}u",
                   message->msgHeader.processName, message->msgHeader.msgType);
 
@@ -1648,9 +1649,10 @@ APPSPAWN_STATIC void ProcessCheckpointReqMsg(AppSpawnConnection *connection, App
     message->connection = connection;
 
     // 执行 STAGE_PARENT_BOOT_IMG hook（checkpoint hooks 在此阶段执行）
-    ret = AppSpawnHookExecute(STAGE_PARENT_BOOT_IMG, 0, GetAppSpawnContent(), &property->client);
+    ret = AppSpawnHookExecute(STAGE_PARENT_BOOT_IMG, HOOK_STOP_WHEN_ERROR, GetAppSpawnContent(), &property->client);
     if (ret != 0) {
         APPSPAWN_LOGE("STAGE_PARENT_BOOT_IMG hook failed: %{public}d", ret);
+        ret = ret >= APPSPAWN_SYSTEM_ERROR ? FORK_ALL_INVALID : ret;
         SendResponseEx(connection, &message->msgHeader, ret, 0, 0);
         DeleteAppSpawningCtx(property);
         return;

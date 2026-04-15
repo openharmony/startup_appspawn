@@ -1,0 +1,102 @@
+# Copyright (c) 2025 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//base/startup/appspawn/appspawn.gni")
+import("//build/test.gni")
+
+if (!defined(ohos_lite)) {
+  ohos_unittest("AppSpawn_CheckPoint_Test") {
+    module_out_path = "appspawn/appspawn"
+    cflags = [ "-Dprivate=public" ]
+
+    ldflags = [
+      "-Wl,--wrap=ioctl",
+      "-Wl,--wrap=malloc",
+      "-Wl,--wrap=open",
+      "-Wl,--wrap=write",
+    ]
+
+    if (appspawn_unittest_coverage) {
+      cflags += [ "--coverage" ]
+      ldflags += [ "--coverage" ]
+      cflags_cc = [ "--coverage" ]
+    }
+
+    deps = []
+    defines = [
+      "APPSPAWN_BASE_DIR=\"/data/appspawn_ut\"",
+      "APPSPAWN_LABEL=\"APPSPAWN_UT\"",
+      "APPSPAWN_TEST",
+      "APPSPAWN_CLIENT",
+      "APPSPAWN_DEBUG",
+      "DEBUG_BEGETCTL_BOOT",  # message in the TagAppSpawnedProcess is qualified using
+    ]
+
+    # Target code include dir
+    include_dirs = [
+      "${appspawn_path}/common",
+      "${appspawn_path}/modules/common",
+      "${appspawn_path}/modules/modulemgr",
+      "${appspawn_path}/modules/module_engine/include",
+      "${appspawn_path}/standard",
+      "${appspawn_innerkits_path}/client",
+      "${appspawn_innerkits_path}/permission",
+    ]
+
+    # Test specific include dir
+    include_dirs += [
+      "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_checkpoint_test",
+      "${appspawn_path}/test/mock/wrapper/include"
+    ]
+
+    # Target code sources
+    sources = [
+      "${appspawn_path}/modules/ace_adapter/appspawn_checkpoint.c",
+      "${appspawn_path}/interfaces/innerkits/client/appspawn_msg.c",
+      "${appspawn_path}/interfaces/innerkits/client/appspawn_client.c",
+      "${appspawn_path}/standard/appspawn_service.c"
+    ]
+
+    # Dependent code sources
+    sources += [
+      "${appspawn_path}/modules/modulemgr/appspawn_modulemgr.c",
+      "${appspawn_path}/standard/appspawn_msgmgr.c",
+      "${appspawn_path}/standard/appspawn_appmgr.c",
+      "${appspawn_path}/util/src/appspawn_utils.c",
+      "${appspawn_path}/util/src/appspawndf_utils.cpp",
+    ]
+
+    # Test specific sources
+    sources += [
+      "app_spawn_checkpoint_req_test.cpp",
+      "app_spawn_checkpoint_process_test.cpp",
+      "app_spawn_img_info_client_test.cpp",
+      "app_spawn_img_info_test.cpp",
+      "app_spawn_img_loader_test.cpp",
+      "app_spawn_msg_type_test.cpp",
+      "checkpoint_test_helper.cpp",
+      "${appspawn_path}/test/mock/wrapper/src/lib_wrapper.c",
+      "permission_stub.c"
+    ]
+
+    configs = [ "${appspawn_path}:appspawn_config" ]
+    external_deps = [
+      "cJSON:cjson",
+      "c_utils:utils",
+      "config_policy:configpolicy_util",
+      "googletest:gmock_main",
+      "hilog:libhilog",
+      "init:libbegetutil",
+    ]
+  }
+}
