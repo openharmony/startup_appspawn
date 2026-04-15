@@ -528,7 +528,7 @@ int AppSpawnClientSendMsg(AppSpawnClientHandle handle, AppSpawnReqMsgHandle reqH
     if (ret != 0) {
         result->result = ret;
     }
-    APPSPAWN_DUMPI("AppSpawnClientSendMsg reqId:%{public}u fd:%{public}d end result:0x%{public}x pid:%{public}d"
+    APPSPAWN_DUMPI("AppSpawnClientSendMsg reqId:%{public}u fd:%{public}d end result:0x%{public}x pid:%{public}d "
                    "checkPointId:%{public}" PRId64"", reqNode->reqId, reqMgr->socketId, result->result,
                    result->pid, result->checkPointId);
     AppSpawnReqMsgFree(reqHandle);

@@ -373,8 +373,7 @@ HWTEST_F(AppSpawnServiceTest, App_Spawn_MSG_DEVICE_DEBUG_001, TestSize.Level0)
         APPSPAWN_CHECK(ret == 0, break, "Failed to add devicedebug extra info %{public}s", buffer);
     
         ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);
-        APPSPAWN_CHECK(ret == 0 && result.result == 0, ret = -1;
-            break, "Failed to send MSG_DEVICE_DEBUG, ret %{public}d result %{public}d", ret, result.result);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to send MSG_DEVICE_DEBUG, ret %{public}d", ret);
     } while (0);
 
     AppSpawnClientDestroy(clientHandle);

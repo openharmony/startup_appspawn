@@ -142,7 +142,6 @@ typedef struct TagAppSpawnMsg {
 typedef struct {
     AppSpawnMsg msgHdr;
     AppSpawnResult result;
-    uint64_t checkPointId;  // checkpoint ID (valid for image process response)
 } AppSpawnResponseMsg;
 #pragma pack()
 

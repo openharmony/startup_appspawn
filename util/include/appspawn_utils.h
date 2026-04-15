@@ -82,6 +82,7 @@ extern "C" {
 #endif
 
 #define INVALID_PERMISSION_INDEX (-1)
+#define FORK_ALL_INVALID         (-1)
 
 typedef struct {
     int flag;
