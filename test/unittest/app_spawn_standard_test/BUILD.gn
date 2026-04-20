@@ -491,9 +491,15 @@ if (!defined(ohos_lite)) {
   ohos_unittest("AppSpawn_common_ut") {
     module_out_path = "appspawn/appspawn"
     cflags = [ "-Dprivate=public" ]
+    ldflags = [
+      "-Wl,--wrap=fcntl",
+      "-Wl,--wrap=memfd_create",
+      "-Wl,--wrap=fork",
+      "-Wl,--wrap=waitpid",
+    ]
     if (appspawn_unittest_coverage) {
       cflags += [ "--coverage" ]
-      ldflags = [ "--coverage" ]
+      ldflags += [ "--coverage" ]
       cflags_cc = [ "--coverage" ]
     }
     deps = []
@@ -589,10 +595,14 @@ if (!defined(ohos_lite)) {
     }
 
     # add stub
-    include_dirs += [ "${appspawn_path}/test/mock" ]
+    include_dirs += [
+      "${appspawn_path}/test/mock",
+      "${appspawn_path}/test/mock/wrapper/include"
+    ]
     sources += [
       "${appspawn_path}/test/mock/app_spawn_stub.cpp",
       "${appspawn_path}/test/mock/app_system_stub.c",
+      "${appspawn_path}/test/mock/wrapper/src/lib_wrapper.c"
     ]
 
     # add test
