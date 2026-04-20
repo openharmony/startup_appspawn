@@ -73,6 +73,7 @@ void SetMockDlprelinkReserveMemFailed(bool v);
 void SetMockDlprelinkRecordFailed(bool v);
 bool GetIsExecutedDlprelinkRegister(void);
 void ClearIsExecutedDlprelinkRegister(void);
+void SetMockDlprelinkRegisterFailed(void);
 int dlprelink_reserve_mem(void);
 int dlprelink_record(int memfd, const char *listPath);
 int dlprelink_register(int fd);
