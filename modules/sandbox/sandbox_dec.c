@@ -51,7 +51,7 @@ APPSPAWN_STATIC int SetIgnoreCaseDirs(AppSpawnMgr *content)
         "not support ignore case dir");
     const char *decFilename = "/dev/dec";
     int fd = open(decFilename, O_RDWR);
-    APPSPAWN_CHECK(fd >= 0, return 0, "open dec fd failed");
+    APPSPAWN_CHECK(fd >= 0, return 0, "Open dec file failed errno %{public}d", errno);
 
     DecPolicyInfo decPolicyInfos = {0};
     decPolicyInfos.tokenId = 0;
@@ -65,11 +65,11 @@ APPSPAWN_STATIC int SetIgnoreCaseDirs(AppSpawnMgr *content)
             .mode = (uint32_t)g_setInfo[i].mode,
             .flag = false
         };
-        APPSPAWN_LOGV("set decpolicy %{public}s %{public}d", g_setInfo[i].path, g_setInfo[i].mode);
+        APPSPAWN_LOGV("set ignore case dec policy %{public}s %{public}d", g_setInfo[i].path, g_setInfo[i].mode);
         decPolicyInfos.path[i] = pathInfo;
     }
     int ret = ioctl(fd, SET_DEC_IGNORE_CASE_CMD, &decPolicyInfos);
-    APPSPAWN_CHECK_ONLY_LOG(ret >= 0, "set dec ignore failed %{public}d", errno);
+    APPSPAWN_CHECK_ONLY_LOG(ret >= 0, "set dec ignore failed errno %{public}d", errno);
     close(fd);
 #else
     UNUSED(content);
@@ -143,14 +143,10 @@ void SetDecPolicyInfos(DecPolicyInfo *decPolicyInfos)
 
 static int SetDenyConstraintDirs(AppSpawnMgr *content)
 {
-    APPSPAWN_LOGI("enter SetDenyConstraintDirs sandbox policy success.");
     UNUSED(content);
     const char *decFilename = "/dev/dec";
     int fd = open(decFilename, O_RDWR);
-    if (fd < 0) {
-        APPSPAWN_CHECK_ONLY_LOG(IsNativeSpawnMode(content) != 0, "open dec file fail.");
-        return 0;
-    }
+    APPSPAWN_CHECK(fd >= 0, return 0, "Open dec file failed errno %{public}d", errno);
 
     uint32_t decDirsSize = ARRAY_LENGTH(g_decConstraintDir);
     DecPolicyInfo decPolicyInfos = {0};
@@ -164,9 +160,9 @@ static int SetDenyConstraintDirs(AppSpawnMgr *content)
     }
 
     if (ioctl(fd, CONSTRAINT_DEC_POLICY_CMD, &decPolicyInfos) < 0) {
-        APPSPAWN_LOGE("set sandbox policy failed.");
+        APPSPAWN_LOGE("set deny constraint sandbox policy failed errno %{public}d", errno);
     } else {
-        APPSPAWN_LOGI("set CONSTRAINT_DEC_POLICY_CMD sandbox policy success.");
+        APPSPAWN_LOGI("set CONSTRAINT_DEC_POLICY_CMD sandbox policy success");
         for (uint32_t i = 0; i < decPolicyInfos.pathNum; i++) {
             APPSPAWN_DUMPI("%{public}s", decPolicyInfos.path[i].path);
         }
@@ -177,14 +173,10 @@ static int SetDenyConstraintDirs(AppSpawnMgr *content)
 
 static int SetForcedPrefixDirs(AppSpawnMgr *content)
 {
-    APPSPAWN_LOGI("enter SetForcedPrefixDirs sandbox policy success.");
     UNUSED(content);
     const char *decFilename = "/dev/dec";
     int fd = open(decFilename, O_RDWR);
-    if (fd < 0) {
-        APPSPAWN_CHECK_ONLY_LOG(IsNativeSpawnMode(content) != 0, "open dec file fail.");
-        return 0;
-    }
+    APPSPAWN_CHECK(fd >= 0, return 0, "Open dec file failed errno %{public}d", errno);
 
     uint32_t decDirsSize = ARRAY_LENGTH(g_decForcedPrefix);
     DecPolicyInfo decPolicyInfos = {0};
@@ -198,9 +190,9 @@ static int SetForcedPrefixDirs(AppSpawnMgr *content)
     }
 
     if (ioctl(fd, SET_DEC_PREFIX_CMD, &decPolicyInfos) < 0) {
-        APPSPAWN_LOGE("set sandbox forced prefix failed.");
+        APPSPAWN_LOGE("set forced prefix sandbox policy failed errno %{public}d", errno);
     } else {
-        APPSPAWN_LOGV("set SET_DEC_PREFIX_CMD sandbox policy success.");
+        APPSPAWN_LOGI("set SET_DEC_PREFIX_CMD sandbox policy success");
         for (uint32_t i = 0; i < decPolicyInfos.pathNum; i++) {
             APPSPAWN_DUMPI("%{public}s", decPolicyInfos.path[i].path);
         }
@@ -257,7 +249,7 @@ void SetDecPolicy(void)
     const char *decFilename = "/dev/dec";
     int fd = open(decFilename, O_RDWR);
     if (fd < 0) {
-        APPSPAWN_LOGE("open dec file fail.");
+        APPSPAWN_LOGE("Open dec file failed errno %{public}d", errno);
         DestroyDecPolicyInfos(g_decPolicyInfos);
         g_decPolicyInfos = NULL;
         return;

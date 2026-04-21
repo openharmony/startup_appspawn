@@ -167,7 +167,7 @@ APPSPAWN_STATIC int SetIsolateDir(const AppSpawningCtx *property)
         return APPSPAWN_SYSTEM_ERROR;
     }
 
-    APPSPAWN_LOGI("ioctl ADD_ISOLATE_DIR_CMD success");
+    APPSPAWN_LOGV("ioctl ADD_ISOLATE_DIR_CMD success");
     close(fd);
 
     FreeIsolatePath(&isolateDirInfo);
@@ -202,21 +202,18 @@ static int MarkSandboxMounts(AppSpawnMgr *content, AppSpawningCtx *property)
     if (IsNWebSpawnMode(content)) {
         return 0;
     }
-    APPSPAWN_LOGI("Enter MarkSandboxMounts");
+
     const char *decFilename = "/dev/dec";
     int fd = open(decFilename, O_RDWR);
-    if (fd < 0) {
-        APPSPAWN_CHECK_ONLY_LOG(IsNativeSpawnMode(content) != 0, "open dec file fail.");
-        return 0;
-    }
+    APPSPAWN_CHECK(fd >= 0, return 0, "Open dec file failed errno %{public}d", errno);
 
     MarkPathInfo pathInfo = { "/", SEC_SANDBOX_PATH_TYPE, MARK_ENABLE_RECURSIVE };
     if (ioctl(fd, ADD_PATH_MARK_CMD, &pathInfo) < 0) {
-        APPSPAWN_LOGE("Set path=%{public}s flags=0x%{public}x mark failed.",
-            pathInfo.path, pathInfo.flags);
+        APPSPAWN_LOGE("Set %{public}s 0x%{public}x mark failed errno %{public}d", pathInfo.path, pathInfo.flags, errno);
+    } else {
+        APPSPAWN_LOGV("Set %{public}s 0x%{public}x mark success", pathInfo.path, pathInfo.flags);
     }
     close(fd);
-    APPSPAWN_LOGI("Finish MarkSandboxMounts");
     return 0;
 }
 
