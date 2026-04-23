@@ -975,6 +975,15 @@
                 }
             ]
         }],
+        "ohos.permission.MANAGE_SKILL_PRIVILEGE":[{
+            "sandbox-switch": "ON",
+            "mount-paths": [{
+                    "src-path": "/data/app/el1/skills/public",
+                    "sandbox-path": "/data/skills/",
+                    "sandbox-flags": [ "bind", "rec" ]
+                }
+            ]
+        }],
         "ohos.permission.ACCESS_APP_INSTALL_DIR":[{
             "sandbox-switch": "ON",
             "gids": [2002],
