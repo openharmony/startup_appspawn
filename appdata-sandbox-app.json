@@ -366,14 +366,6 @@
                 "sandbox-path": "/storage/ContentShare"
             }]
         }, {
-            "name": "ohos.permission.ACCESS_LOCAL_BACKUP",
-            "sandbox-switch": "ON",
-            "gids": ["media_rw"],
-            "mount-paths": [{
-                "src-path": "/data/hwbackup",
-                "sandbox-path": "/data/hwbackup"
-            }]
-        }, {
             "name": "ohos.permission.ACCESS_RINGTONE_RESOURCE",
             "sandbox-switch": "ON",
             "gids": ["user_data_rw"],
