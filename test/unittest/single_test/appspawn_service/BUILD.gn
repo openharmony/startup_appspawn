@@ -41,6 +41,7 @@ if (!defined(ohos_lite)) {
       "src/appspawn_service_single_test.cpp",
       "${appspawn_path}/standard/appspawn_service.c",
       "${appspawn_path}/standard/appspawn_appmgr.c",
+      "${appspawn_path}/standard/appspawn_fd_manager.c",
       "${appspawn_path}/standard/appspawn_msgmgr.c"
     ]
 

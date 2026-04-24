@@ -63,6 +63,7 @@ if (!defined(ohos_lite)) {
       "${appspawn_path}/util/src/appspawn_utils.c",
       "${appspawn_path}/util/src/appspawndf_utils.cpp",
       "${appspawn_path}/standard/appspawn_appmgr.c",
+      "${appspawn_path}/standard/appspawn_fd_manager.c",
       "${appspawn_path}/standard/appspawn_msgmgr.c",
       "${appspawn_innerkits_path}/client/appspawn_client.c",
       "${appspawn_innerkits_path}/client/appspawn_msg.c",

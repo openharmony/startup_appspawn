@@ -48,7 +48,10 @@ if (!defined(ohos_lite)) {
     include_dirs += [ "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_appmgr_test" ]
 
     # Target code sources
-    sources = [ "${appspawn_path}/standard/appspawn_appmgr.c" ]
+    sources = [
+      "${appspawn_path}/standard/appspawn_appmgr.c",
+      "${appspawn_path}/standard/appspawn_fd_manager.c",
+    ]
 
     # Dependent code sources
     sources += [

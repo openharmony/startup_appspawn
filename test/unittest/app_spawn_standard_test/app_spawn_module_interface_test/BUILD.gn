@@ -58,6 +58,7 @@ if (!defined(ohos_lite)) {
       "${appspawn_path}/util/src/appspawndf_utils.cpp",
       "${appspawn_path}/standard/appspawn_msgmgr.c",
       "${appspawn_path}/standard/appspawn_appmgr.c",
+      "${appspawn_path}/standard/appspawn_fd_manager.c",
     ]
 
     # Test specific sources

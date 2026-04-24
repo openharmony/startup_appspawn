@@ -97,18 +97,6 @@ static void ExtDataDestroy(ListNode *node)
     }
 }
 
-static void SpawningFdsDestroy(ListNode *node)
-{
-    AppSpawnFds *fdSets = ListEntry(node, AppSpawnFds, node);
-    for (int i = 0; i < fdSets->count; i++) {
-        if (fdSets->fds[i] >= 0) {
-            close(fdSets->fds[i]);
-            fdSets->fds[i] = -1;
-        }
-    }
-    free(fdSets);
-}
-
 void DeleteAppSpawnMgr(AppSpawnMgr *mgr)
 {
     APPSPAWN_CHECK_ONLY_EXPER(mgr != NULL, return);

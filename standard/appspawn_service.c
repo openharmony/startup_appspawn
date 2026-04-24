@@ -95,10 +95,17 @@ static void StopAppSpawn(void)
 {
     AppSpawnContent *content = GetAppSpawnContent();
     if (content != NULL && content->reservedPid > 0) {
-        int ret = kill(content->reservedPid, SIGKILL);
+        // Snapshot reservedPid before clearing, needed for CleanupSpawningFdsByPid.
+        // Avoid accessing content->reservedPid after kill since the signal handler
+        // (HandleDiedPid) may zero it concurrently.
+        pid_t reservedPid = content->reservedPid;
+        int ret = kill(reservedPid, SIGKILL);
         APPSPAWN_CHECK_ONLY_LOG(ret == 0, "kill reserved pid %{public}d failed %{public}d %{public}d",
-            content->reservedPid, ret, errno);
+            reservedPid, ret, errno);
         content->reservedPid = 0;
+        // Cleanup spawning fds (prefork pipe + parent-child pipe) for the killed child.
+        // This frees both TYPE_CHILD_PARENT and TYPE_PARENT_CHILD nodes from the queue.
+        CleanupSpawningFdsByPid((AppSpawnMgr *)content, reservedPid);
     }
     TraversalSpawnedProcess(AppQueueDestroyProc, NULL);
     APPSPAWN_LOGI("StopAppSpawn ");
@@ -156,6 +163,9 @@ static void HandleDiedPid(pid_t pid, uid_t uid, int status)
 
     if (pid == content->reservedPid) {
         APPSPAWN_LOGW("HandleDiedPid with reservedPid %{public}d", pid);
+        // Prefork child died unexpectedly (crash, signal, etc.).
+        // Cleanup spawning fds so the parent doesn't hold stale pipe fds.
+        CleanupSpawningFdsByPid((AppSpawnMgr *)content, pid);
         content->reservedPid = 0;
     }
     int signal = 0;
@@ -551,7 +561,8 @@ APPSPAWN_STATIC char *GetSpawnNameByRunMode(RunMode mode)
     return "";
 }
 
-static char *GetMapMem(uint32_t clientId, const char *processName, uint32_t size, bool readOnly, RunMode runMode)
+APPSPAWN_STATIC char *GetMapMem(uint32_t clientId, const char *processName,
+    uint32_t size, bool readOnly, RunMode runMode)
 {
     char path[PATH_MAX] = {};
     int len = sprintf_s(path, sizeof(path), APPSPAWN_MSG_DIR "%s/%s_%u",
@@ -602,15 +613,26 @@ APPSPAWN_STATIC int WriteMsgToChild(AppSpawningCtx *property, RunMode mode)
     return 0;
 }
 
+/**
+ * @brief Initialize fork context by creating a non-blocking pipe.
+ *
+ * Creates a pipe for fork result notification (child writes, parent reads).
+ * The read end is set to O_NONBLOCK so the parent can poll without blocking.
+ *
+ * @param property  Spawning context to initialize
+ * @return 0 on success, errno on pipe creation failure
+ */
 static int InitForkContext(AppSpawningCtx *property)
 {
     if (pipe(property->forkCtx.fd) == -1) {
         APPSPAWN_LOGE("create pipe fail, errno: %{public}d", errno);
         return errno;
     }
-    int option = fcntl(property->forkCtx.fd[0], F_GETFD);
-    if (option > 0) {
-        (void)fcntl(property->forkCtx.fd[0], F_SETFD, (unsigned int)option | O_NONBLOCK);
+    // Set read end to non-blocking: use F_GETFL/F_SETFL for file status flags (O_NONBLOCK),
+    // not F_GETFD/F_SETFD which operate on fd flags (only FD_CLOEXEC).
+    int flags = fcntl(property->forkCtx.fd[0], F_GETFL);
+    if (flags >= 0) {
+        (void)fcntl(property->forkCtx.fd[0], F_SETFL, (unsigned int)flags | O_NONBLOCK);
     }
     return 0;
 }
@@ -781,7 +803,7 @@ APPSPAWN_STATIC void ClearPreforkInfo(AppSpawningCtx *property)
     }
 }
 
-static int WritePreforkMsg(AppSpawningCtx *property, uint32_t memSize)
+APPSPAWN_STATIC int WritePreforkMsg(AppSpawningCtx *property, uint32_t memSize)
 {
     AppSpawnContent *content = GetAppSpawnContent();
     if (content == NULL || content->propertyBuffer == NULL) {
@@ -809,7 +831,7 @@ static int WritePreforkMsg(AppSpawningCtx *property, uint32_t memSize)
     return ret;
 }
 
-static int GetAppSpawnMsg(AppSpawningCtx *property, uint32_t memSize, RunMode mode)
+APPSPAWN_STATIC int GetAppSpawnMsg(AppSpawningCtx *property, uint32_t memSize, RunMode mode)
 {
     uint8_t *buffer = (uint8_t *)GetMapMem(property->client.id, "prefork", memSize, true, mode);
     APPSPAWN_CHECK(buffer != NULL, return -1, "prefork buffer is null can not write propery");
@@ -831,7 +853,7 @@ static int GetAppSpawnMsg(AppSpawningCtx *property, uint32_t memSize, RunMode mo
     return -1;
 }
 
-static int SetPreforkProcessName(AppSpawnContent *content)
+APPSPAWN_STATIC int SetPreforkProcessName(AppSpawnContent *content)
 {
     int ret = prctl(PR_SET_NAME, PREFORK_PROCESS);
     if (ret == -1) {
@@ -853,7 +875,7 @@ static int SetPreforkProcessName(AppSpawnContent *content)
     return 0;
 }
 
-static void ClearPipeFd(int pipe[], int length)
+APPSPAWN_STATIC void ClearPipeFd(int pipe[], int length)
 {
     for (int i = 0; i < length; i++) {
         if (pipe[i] > 0) {
@@ -863,58 +885,209 @@ static void ClearPipeFd(int pipe[], int length)
     }
 }
 
+/**
+ * @brief Handle FORK message in prefork child process.
+ *
+ * Called by PreforkChildLoop when a MSG_APP_SPAWN pipe message is received.
+ * This function runs in the prefork child process context:
+ * 1. Validates msgLen from the parent
+ * 2. Sets up client identity (id, flags)
+ * 3. Retrieves childToParentFd from spawningFdsQueue (registered by ForkAndRegisterFds)
+ * 4. Reads app spawn message from shared memory (mmap)
+ * 5. Calls AppSpawnChild to complete the actual app spawning
+ *
+ * @note This function never returns normally - always calls ProcessExit().
+ */
+APPSPAWN_STATIC void HandlePreforkForkMsg(AppSpawnContent *content, AppSpawningCtx *property,
+    const AppSpawnPreforkMsg *preforkMsg)
+{
+    APPSPAWN_CHECK(preforkMsg != NULL && content != NULL && property != NULL, ProcessExit(0),
+        "preforkMsg is NULL");
+    // Validate message length: must fit in shared memory and contain at least AppSpawnMsg header
+    if (preforkMsg->msgLen > MAX_MSG_TOTAL_LENGTH || preforkMsg->msgLen < sizeof(AppSpawnMsg)) {
+        APPSPAWN_LOGE("prefork process invalid msgLen %{public}u", preforkMsg->msgLen);
+        ProcessExit(0);
+    }
+
+    // Restore client identity from the pipe message
+    property->client.id = preforkMsg->id;
+    property->client.flags = preforkMsg->flags;
+    property->isPrefork = true;
+
+    // Retrieve prefork pipe fds from spawningFdsQueue (registered after fork in ForkAndRegisterFds)
+    AppSpawnMgr *mgr = (AppSpawnMgr *)content;
+    AppSpawnFds *pfFds = FindSpawningFdsByPid(mgr, getpid(), TYPE_CHILD_PARENT);
+    APPSPAWN_CHECK(pfFds != NULL, ProcessExit(0), "prefork fds not found in queue");
+
+    // Transfer fd ownership from spawningFdsQueue to forkCtx for subsequent spawning
+    property->forkCtx.fd[0] = pfFds->fds[0];
+    property->forkCtx.fd[1] = pfFds->fds[1];
+
+    // Remove from queue without closing fd (ownership transferred to forkCtx)
+    RemoveSpawningFdsByPid(mgr, getpid(), TYPE_CHILD_PARENT);
+
+    // Read app spawn message from shared memory mmap
+    property->state = APP_STATE_SPAWNING;
+    const uint32_t memSize = (preforkMsg->msgLen / MAX_MSG_BLOCK_LEN + 1) * MAX_MSG_BLOCK_LEN;
+    if (GetAppSpawnMsg(property, memSize, content->mode) == -1) {
+        APPSPAWN_LOGE("prefork child read GetAppSpawnMsg failed");
+        ClearPreforkInfo(property);
+        content->notifyResToParent(content, &property->client, APPSPAWN_MSG_INVALID);
+        ProcessExit(0);
+    }
+    // Spawn the actual app process. ProcessExit ensures the prefork child exits
+    // with the return code from AppSpawnChild.
+    ClearPreforkInfo(property);
+    ProcessExit(AppSpawnChild(content, &property->client));
+}
+
+/**
+ * @brief Creates two pipes before fork:
+ * - childToParentFd: used for subsequent fork result notification (child -> parent)
+ * - parentToChildFd: used for sending fork requests (parent -> prefork child)
+ * Registers pipe fds to spawningFdsQueue BEFORE fork (with pid=-1 as placeholder),
+ * then updates the pid after fork. This simplifies error handling since pre-fork
+ * failures don't require killing a child process.
+ *
+ * @param mgr             AppSpawn manager instance
+ * @param property        Current spawning context
+ * @param childToParentFd       [out] Created prefork pipe (fd[0]=read, fd[1]=write)
+ * @param parentToChildFd [out] Created parent-to-child pipe
+ * @return fork result: >0 parent (child pid), 0 child, <0 fork failed
+ */
+APPSPAWN_STATIC pid_t ForkAndRegisterFds(AppSpawnMgr *mgr, AppSpawningCtx *property,
+    int childToParentFd[PIPE_FD_LENGTH], int parentToChildFd[PIPE_FD_LENGTH])
+{
+    // 1. Create prefork pipe (child -> parent, for fork result notification)
+    APPSPAWN_CHECK(pipe(childToParentFd) == 0, return -1,
+        "prefork with prefork pipe failed %{public}d", errno);
+
+    // 2. Create parent-to-child pipe (parent -> child, for sending fork requests)
+    APPSPAWN_CHECK(pipe(parentToChildFd) == 0, ClearPipeFd(childToParentFd, PIPE_FD_LENGTH);
+        return -1, "prefork with parent-child pipe failed %{public}d", errno);
+
+    // 3. Register fds BEFORE fork (pid = -1 as placeholder)
+    SpawningFdRegInfo pfRegInfo = { TYPE_CHILD_PARENT, PIPE_FD_LENGTH, childToParentFd, -1 };
+    AppSpawnFds *pfFds = RegisterSpawningFds(mgr, &pfRegInfo);
+    APPSPAWN_CHECK(pfFds != NULL, ClearPipeFd(childToParentFd, PIPE_FD_LENGTH);
+        ClearPipeFd(parentToChildFd, PIPE_FD_LENGTH);
+        return -1, "regist pfFds failed");
+
+    SpawningFdRegInfo pcRegInfo = { TYPE_PARENT_CHILD, PIPE_FD_LENGTH, parentToChildFd, -1 };
+    AppSpawnFds *pcFds = RegisterSpawningFds(mgr, &pcRegInfo);
+    APPSPAWN_CHECK(pcFds != NULL, DeleteSpawningFds(&pfFds);
+        ClearPipeFd(childToParentFd, PIPE_FD_LENGTH);
+        ClearPipeFd(parentToChildFd, PIPE_FD_LENGTH);
+        return -1, "regist pcFds failed");
+
+    // 4. Fork prefork child process
+    StartAppspawnTrace("AppspawnPreFork");
+    pid_t pid = fork();
+    if (pid > 0) {
+        // Parent: update pid to child pid
+        pfFds->pid = pid;
+        pcFds->pid = pid;
+        APPSPAWN_LOGV("create pipefd %{public}d %{public}d,%{public}d %{public}d,%{public}d",
+            pid, childToParentFd[0], childToParentFd[1], parentToChildFd[0], parentToChildFd[1]);
+        FinishAppspawnTrace();
+    } else if (pid == 0) {
+        // Child: update pid to own pid
+        pfFds->pid = getpid();
+        pcFds->pid = getpid();
+    } else {
+        // Fork failed: delete nodes (fd not closed) + close pipes
+        DeleteSpawningFds(&pfFds);
+        DeleteSpawningFds(&pcFds);
+        ClearPipeFd(childToParentFd, PIPE_FD_LENGTH);
+        ClearPipeFd(parentToChildFd, PIPE_FD_LENGTH);
+        APPSPAWN_LOGE("prefork fork failed err %{public}d", errno);
+        FinishAppspawnTrace();
+    }
+    return pid;
+}
+
+/**
+ * @brief Prefork child process main loop: wait for pipe message and dispatch.
+ *
+ * This function runs in the prefork child after fork(). It:
+ * 1. Clears the inherited forkCtx fds (not needed in prefork child)
+ * 2. Sets process name to "PreforkProcess" for debugging
+ * 3. Blocks on reading parentToChildFd[0] for a pipe message from parent
+ * 4. Dispatches to the appropriate handler based on message type
+ *
+ * The prefork child is a long-lived process: it blocks on read() and handles
+ * one fork request at a time. After handling, it calls ProcessExit() because
+ * AppSpawnChild reuses the prefork child's pid for the actual app process.
+ *
+ * @param content     AppSpawn content
+ * @param property    Spawning context
+ * @param mgr         AppSpawn manager
+ * @param errorLevel  fdsan error level saved before fork (to inherit in child)
+ */
+APPSPAWN_STATIC void PreforkChildLoop(AppSpawnContent *content, AppSpawningCtx *property,
+    AppSpawnMgr *mgr, enum fdsan_error_level errorLevel)
+{
+    // Clear inherited forkCtx fds - they belong to the parent process
+    ClearPipeFd(property->forkCtx.fd, PIPE_FD_LENGTH);
+
+    // Set process name for debugging (visible in ps/top)
+    int isRet = SetPreforkProcessName(content);
+    APPSPAWN_LOGV("prefork process start wait read msg with set processname %{public}d", isRet);
+
+    // Get parent-to-child pipe fd from spawningFdsQueue
+    AppSpawnFds *pcFds = FindSpawningFdsByPid(mgr, getpid(), TYPE_PARENT_CHILD);
+    APPSPAWN_CHECK(pcFds != NULL, ProcessExit(0), "parent child fds not found");
+
+    // Block until parent sends a message (or pipe is closed)
+    AppSpawnPipeMsg pipeMsg = {0};
+    int infoSize = read(pcFds->fds[0], &pipeMsg, sizeof(AppSpawnPipeMsg));
+    if (infoSize != sizeof(AppSpawnPipeMsg)) {
+        APPSPAWN_LOGE("prefork process read msg failed %{public}d,%{public}d", infoSize, errno);
+        ProcessExit(0);
+    }
+
+    // Inherit the fdsan error level of the parent process before doing any fd operations
+    (void)fdsan_set_error_level(errorLevel);
+
+    // Dispatch based on message type. Currently only MSG_APP_SPAWN is supported.
+    // AppSpawnPipeMsg uses a type+union design for future extensibility.
+    switch (pipeMsg.type) {
+        case MSG_APP_SPAWN:
+            HandlePreforkForkMsg(content, property, &pipeMsg.msg.preforkMsg);
+            break;
+        default:
+            APPSPAWN_LOGE("prefork process received unknown msg type %{public}d", pipeMsg.type);
+            ProcessExit(0);
+    }
+}
+
+/**
+ * @brief Fork a prefork child process and dispatch based on fork result.
+ *
+ * Called by AppSpawnProcessMsgForPrefork to maintain the prefork pool.
+ * - On first call (reservedPid <= 0): creates the prefork child
+ * - On subsequent calls: the prefork child already exists, this is a no-op
+ *   (ForkAndRegisterFds will return -1 and be ignored)
+ *
+ * Pipe fd lifecycle:
+ * - ForkAndRegisterFds creates pipes and registers them to spawningFdsQueue
+ * - Parent side: holds fds in spawningFdsQueue, transfers to forkCtx in
+ *   TransferPreforkFdToForkCtx when sending a fork request
+ * - Child side: PreforkChildLoop reads from parentToChildFd, then
+ *   HandlePreforkForkMsg takes over childToParentFd for app spawning
+ */
 static void ProcessPreFork(AppSpawnContent *content, AppSpawningCtx *property)
 {
-    APPSPAWN_CHECK(pipe(content->preforkFd) == 0, return, "prefork with prefork pipe failed %{public}d", errno);
-    ClearPipeFd(content->parentToChildFd, PIPE_FD_LENGTH);
-    APPSPAWN_LOGV("clear pipe fd finish %{public}d %{public}d",
-        content->parentToChildFd[0], content->parentToChildFd[1]);
-    APPSPAWN_CHECK(pipe(content->parentToChildFd) == 0, ClearPipeFd(content->preforkFd, PIPE_FD_LENGTH);
-        return, "prefork with prefork pipe failed %{public}d", errno);
-    enum fdsan_error_level errorLevel = fdsan_get_error_level();
-    StartAppspawnTrace("AppspawnPreFork");
-    content->reservedPid = fork();
-    APPSPAWN_LOGV("prefork fork finish %{public}d,%{public}d,%{public}d,%{public}d,%{public}d",
-        content->reservedPid, content->preforkFd[0], content->preforkFd[1], content->parentToChildFd[0],
-        content->parentToChildFd[1]);
-    if (content->reservedPid == 0) {
-        ClearPipeFd(property->forkCtx.fd, PIPE_FD_LENGTH);
-        int isRet = SetPreforkProcessName(content);
-        APPSPAWN_LOGV("prefork process start wait read msg with set processname %{public}d", isRet);
-        AppSpawnPreforkMsg preforkMsg = {0};
-        int infoSize = read(content->parentToChildFd[0], &preforkMsg, sizeof(AppSpawnPreforkMsg));
-        if (infoSize != sizeof(AppSpawnPreforkMsg) || preforkMsg.msgLen > MAX_MSG_TOTAL_LENGTH ||
-            preforkMsg.msgLen < sizeof(AppSpawnMsg)) {
-            APPSPAWN_LOGE("prefork process read msg failed %{public}d,%{public}d", infoSize, errno);
-            ProcessExit(0);
-            return;
-        }
+    AppSpawnMgr *mgr = (AppSpawnMgr *)content;
 
-        property->client.id = preforkMsg.id;
-        property->client.flags = preforkMsg.flags;
-        property->isPrefork = true;
-        property->forkCtx.fd[0] = content->preforkFd[0];
-        property->forkCtx.fd[1] = content->preforkFd[1];
-        property->state = APP_STATE_SPAWNING;
-        const uint32_t memSize = (preforkMsg.msgLen / MAX_MSG_BLOCK_LEN + 1) * MAX_MSG_BLOCK_LEN;
-        if (GetAppSpawnMsg(property, memSize, content->mode) == -1) {
-            APPSPAWN_LOGE("prefork child read GetAppSpawnMsg failed");
-            ClearPreforkInfo(property);
-            content->notifyResToParent(content, &property->client, APPSPAWN_MSG_INVALID);
-            ProcessExit(0);
-            return;
-        }
-        ClearPreforkInfo(property);
-        // Inherit the error level of the original process
-        (void)fdsan_set_error_level(errorLevel);
-        ProcessExit(AppSpawnChild(content, &property->client));
-    } else {
-        FinishAppspawnTrace();
-        if (content->reservedPid < 0) {
-            ClearPipeFd(content->preforkFd, PIPE_FD_LENGTH);
-            APPSPAWN_LOGE("prefork fork child process failed %{public}d, err %{public}d", content->reservedPid, errno);
-        }
-    }
+    content->reservedPid = -1;
+    int childToParentFd[PIPE_FD_LENGTH] = {-1, -1};
+    int parentToChildFd[PIPE_FD_LENGTH] = {-1, -1};
+    enum fdsan_error_level errorLevel = fdsan_get_error_level();
+
+    content->reservedPid = ForkAndRegisterFds(mgr, property, childToParentFd, parentToChildFd);
+    // Child process: enter the prefork wait loop (never returns)
+    APPSPAWN_ONLY_EXPER(content->reservedPid == 0, PreforkChildLoop(content, property, mgr, errorLevel));
 }
 
 static int NormalSpawnChild(AppSpawnContent *content, AppSpawnClient *client, pid_t *childPid)
@@ -925,50 +1098,185 @@ static int NormalSpawnChild(AppSpawnContent *content, AppSpawnClient *client, pi
     return AppSpawnProcessMsg(content, client, childPid);
 }
 
+/**
+ * @brief Prepare prefork message: allocate mmap, write msg via shared memory, build pipe message.
+ *
+ * Three-step preparation:
+ * 1. Allocate shared memory (mmap) for the app spawn message
+ * 2. Write the message to shared memory via WritePreforkMsg
+ * 3. Build a lightweight AppSpawnPipeMsg containing only client id, flags, and msgLen
+ *    (the prefork child will read the full message from mmap using these hints)
+ *
+ * @param content     AppSpawn content
+ * @param property    Spawning context containing the full message
+ * @param client      Client info (id, flags)
+ * @param memSize     Shared memory size (already aligned to MAX_MSG_BLOCK_LEN)
+ * @param outPipeMsg  [out] Allocated pipe message (caller must free)
+ * @return APPSPAWN_OK on success, APPSPAWN_SYSTEM_ERROR on failure
+ */
+APPSPAWN_STATIC int PreparePreforkMsg(AppSpawnContent *content, AppSpawningCtx *property,
+    const AppSpawnClient *client, uint32_t memSize, AppSpawnPipeMsg **outPipeMsg)
+{
+    // Step 1: Allocate shared memory for the app spawn message.
+    // The prefork child will read from this mmap instead of receiving via socket.
+    content->propertyBuffer = GetMapMem(property->client.id, "prefork", memSize, false, content->mode);
+    APPSPAWN_ONLY_EXPER(content->propertyBuffer == NULL, ClearMMAP(property->client.id, memSize);
+        return APPSPAWN_SYSTEM_ERROR);
+    // Step 2: Copy the message from property->message to the shared memory
+    int ret = WritePreforkMsg(property, memSize);
+    APPSPAWN_ONLY_EXPER(ret != 0, ClearMMAP(property->client.id, memSize);
+        return APPSPAWN_SYSTEM_ERROR);
+    // Step 3: Build a lightweight pipe message to signal the prefork child.
+    // Only sends metadata (id, flags, msgLen); the child reads full data from mmap.
+    AppSpawnPipeMsg *pipeMsg = (AppSpawnPipeMsg *)calloc(1, sizeof(AppSpawnPipeMsg));
+    APPSPAWN_ONLY_EXPER(pipeMsg == NULL, APPSPAWN_LOGE("calloc failed");
+        ClearMMAP(property->client.id, memSize);
+        return APPSPAWN_SYSTEM_ERROR);
+
+    pipeMsg->type = MSG_APP_SPAWN;
+    pipeMsg->msg.preforkMsg.id = client->id;
+    pipeMsg->msg.preforkMsg.flags = client->flags;
+    pipeMsg->msg.preforkMsg.msgLen = property->message->msgHeader.msgLen;
+    *outPipeMsg = pipeMsg;
+    return APPSPAWN_OK;
+}
+
+/**
+ * @brief Send pipe message to prefork child process.
+ *
+ * Writes the AppSpawnPipeMsg to parentToChildFd[1] (write end of the pipe).
+ * On success, immediately closes and unregisters the parent-child pipe fds
+ * since they are no longer needed after the message is sent.
+ *
+ * @param mgr       AppSpawn manager instance
+ * @param childPid  Prefork child process ID
+ * @param pipeMsg   Pipe message to send
+ * @return APPSPAWN_OK on success, APPSPAWN_ARG_INVALID if fd not found, APPSPAWN_SYSTEM_ERROR on write failure
+ */
+APPSPAWN_STATIC int SendPipeMsgToChild(AppSpawnMgr *mgr, pid_t childPid, AppSpawnPipeMsg *pipeMsg)
+{
+    // Look up parent-to-child pipe from spawningFdsQueue
+    AppSpawnFds *pcFds = FindSpawningFdsByPid(mgr, childPid, TYPE_PARENT_CHILD);
+    if (pcFds == NULL) {
+        APPSPAWN_LOGE("parent child fds not found for pid %{public}d", childPid);
+        return APPSPAWN_ARG_INVALID;
+    }
+
+    // Write the pipe message (blocks if pipe buffer is full, which should not happen
+    // since sizeof(AppSpawnPipeMsg) is small and child is blocking on read)
+    ssize_t writesize = write(pcFds->fds[1], pipeMsg, sizeof(AppSpawnPipeMsg));
+    if (writesize < 0 || (size_t)writesize != sizeof(AppSpawnPipeMsg)) {
+        APPSPAWN_LOGE("write msg to child failed %{public}d", errno);
+        return APPSPAWN_SYSTEM_ERROR;
+    }
+
+    // Close parent's pipe fds immediately after write succeeds.
+    // The child has already read the data, so parent no longer needs these fds.
+    UnregisterSpawningFdsByPid(mgr, childPid, TYPE_PARENT_CHILD);
+    return APPSPAWN_OK;
+}
+
+/**
+ * @brief Cleanup prefork child on failure: kill child, cleanup spawning fds.
+ *
+ * Called when sending a fork request to the prefork child fails.
+ * Kills the prefork child and removes all its fds from spawningFdsQueue.
+ * The next spawn request will create a new prefork child via ProcessPreFork.
+ */
+APPSPAWN_STATIC void CleanupPreforkChild(AppSpawnMgr *mgr, pid_t childPid)
+{
+    (void)kill(childPid, SIGKILL);
+    // Remove all fds (TYPE_CHILD_PARENT + TYPE_PARENT_CHILD) for this child
+    CleanupSpawningFdsByPid(mgr, childPid);
+}
+
+/**
+ * @brief Transfer childToParentFd from spawningFdsQueue to forkCtx.
+ *
+ * After the prefork child has been notified via pipe, the parent needs to
+ * take over the prefork pipe for result notification. This function:
+ * 1. Looks up TYPE_CHILD_PARENT fds from the queue
+ * 2. Copies fd values to property->forkCtx.fd
+ * 3. Removes the node from queue WITHOUT closing fds (ownership transfer)
+ * 4. Sets the read end to non-blocking mode
+ *
+ * @return APPSPAWN_OK on success, APPSPAWN_ARG_INVALID if prefork fds not found
+ */
+APPSPAWN_STATIC int TransferPreforkFdToForkCtx(AppSpawnMgr *mgr, pid_t childPid, AppSpawningCtx *property)
+{
+    AppSpawnFds *pfFds = FindSpawningFdsByPid(mgr, childPid, TYPE_CHILD_PARENT);
+    if (pfFds == NULL) {
+        APPSPAWN_LOGE("prefork fds not found for pid %{public}d", childPid);
+        return APPSPAWN_ARG_INVALID;
+    }
+
+    // Copy fd values to forkCtx (fd ownership transfers, do not close)
+    property->forkCtx.fd[0] = pfFds->fds[0];
+    property->forkCtx.fd[1] = pfFds->fds[1];
+    // Remove from queue without closing fd (ownership transferred to forkCtx)
+    RemoveSpawningFdsByPid(mgr, childPid, TYPE_CHILD_PARENT);
+
+    // Set read end to non-blocking (F_GETFL/F_SETFL for file status flags)
+    int flags = fcntl(property->forkCtx.fd[0], F_GETFL);
+    if (flags >= 0) {
+        int ret = fcntl(property->forkCtx.fd[0], F_SETFL, (unsigned int)flags | O_NONBLOCK);
+        APPSPAWN_CHECK_ONLY_LOG(ret == 0, "fcntl failed %{public}d,%{public}d", ret, errno);
+    }
+    return APPSPAWN_OK;
+}
+
+/**
+ * @brief Process app spawn message using prefork optimization.
+ *
+ * Prefork flow:
+ * 1. If no prefork child exists (reservedPid <= 0):
+ *    - Fall back to normal fork for this request
+ *    - Fork a new prefork child for future requests (ProcessPreFork)
+ *
+ * 2. If prefork child exists (reservedPid > 0):
+ *    - Prepare message in shared memory (PreparePreforkMsg)
+ *    - Send pipe message to prefork child (SendPipeMsgToChild)
+ *    - Take over prefork pipe for result notification (TransferPreforkFdToForkCtx)
+ *    - On failure: kill prefork child, cleanup fds, fork a new one (ProcessPreFork)
+ *    - On success: fork a new prefork child for next request (ProcessPreFork)
+ *
+ * @return APPSPAWN_OK on success, APPSPAWN_SYSTEM_ERROR on failure
+ */
 static int AppSpawnProcessMsgForPrefork(AppSpawnContent *content, AppSpawnClient *client, pid_t *childPid)
 {
-    int ret = 0;
+    int ret = APPSPAWN_OK;
     AppSpawningCtx *property = (AppSpawningCtx *)client;
-    if (content->reservedPid <= 0) {
-        ret = NormalSpawnChild(content, client, childPid);
-    } else {
-        const uint32_t memSize = (property->message->msgHeader.msgLen / MAX_MSG_BLOCK_LEN + 1) *
-            MAX_MSG_BLOCK_LEN;
-        content->propertyBuffer = GetMapMem(property->client.id, "prefork", memSize, false, content->mode);
-        if (content->propertyBuffer == NULL) {
-            ClearMMAP(property->client.id, memSize);
-            return NormalSpawnChild(content, client, childPid);
-        }
-        ret = WritePreforkMsg(property, memSize);
-        if (ret != 0) {
-            ClearMMAP(property->client.id, memSize);
-            return NormalSpawnChild(content, client, childPid);
-        }
-        *childPid = content->reservedPid;
-        property->forkCtx.fd[0] = content->preforkFd[0];
-        property->forkCtx.fd[1] = content->preforkFd[1];
-        int option = fcntl(property->forkCtx.fd[0], F_GETFD);
-        if (option > 0) {
-            ret = fcntl(property->forkCtx.fd[0], F_SETFD, (unsigned int)option | O_NONBLOCK);
-            APPSPAWN_CHECK_ONLY_LOG(ret == 0, "fcntl failed %{public}d,%{public}d", ret, errno);
-        }
-        AppSpawnPreforkMsg *preforkMsg = (AppSpawnPreforkMsg *)calloc(1, sizeof(AppSpawnPreforkMsg));
-        if (preforkMsg == NULL) {
-            APPSPAWN_LOGE("calloc failed");
-            ClearMMAP(property->client.id, memSize);
-            return NormalSpawnChild(content, client, childPid);
-        }
+    AppSpawnMgr *mgr = (AppSpawnMgr *)content;
 
-        preforkMsg->id = client->id;
-        preforkMsg->flags = client->flags;
-        preforkMsg->msgLen = property->message->msgHeader.msgLen;
-        ssize_t writesize = write(content->parentToChildFd[1], preforkMsg, sizeof(AppSpawnPreforkMsg)) ;
-        APPSPAWN_CHECK(writesize == sizeof(AppSpawnPreforkMsg), kill(*childPid, SIGKILL);
-            *childPid = 0;
-            ret = -1,
-            "write msg to child failed %{public}d", errno);
-        free(preforkMsg);
+    if (content->reservedPid <= 0) {
+        // No prefork child available: use normal fork for this request,
+        // then create a new prefork child for future requests
+        ret = NormalSpawnChild(content, client, childPid);
+        ProcessPreFork(content, property);
+        return ret;
     }
+
+    // Prefork child exists: prepare to send fork request
+    const uint32_t memSize = (property->message->msgHeader.msgLen / MAX_MSG_BLOCK_LEN + 1) *
+        MAX_MSG_BLOCK_LEN;
+    AppSpawnPipeMsg *pipeMsg = NULL;
+    // Failed to prepare shared memory: fallback to normal fork
+    APPSPAWN_ONLY_EXPER(PreparePreforkMsg(content, property, client, memSize, &pipeMsg) != APPSPAWN_OK,
+        return NormalSpawnChild(content, client, childPid));
+    *childPid = content->reservedPid;
+
+    // Send pipe message and transfer prefork fd. If either fails,
+    // kill the prefork child and cleanup its fds.
+    if (SendPipeMsgToChild(mgr, *childPid, pipeMsg) != APPSPAWN_OK ||
+        TransferPreforkFdToForkCtx(mgr, *childPid, property) != APPSPAWN_OK) {
+        CleanupPreforkChild(mgr, *childPid);
+        *childPid = 0;
+        ret = APPSPAWN_SYSTEM_ERROR;
+    }
+
+    free(pipeMsg);
+    // Always try to create a new prefork child for the next request,
+    // regardless of whether this request succeeded or failed
     ProcessPreFork(content, property);
     return ret;
 }
@@ -1288,14 +1596,6 @@ void AppSpawnDestroyContent(AppSpawnContent *content)
 {
     if (content == NULL) {
         return;
-    }
-    if (content->parentToChildFd[0] > 0) {
-        close(content->parentToChildFd[0]);
-        content->parentToChildFd[0] = -1;
-    }
-    if (content->parentToChildFd[1] > 0) {
-        close(content->parentToChildFd[1]);
-        content->parentToChildFd[1] = -1;
     }
     AppSpawnMgr *appSpawnContent = (AppSpawnMgr *)content;
     if (appSpawnContent->sigHandler != NULL) {
@@ -1779,7 +2079,7 @@ static void ProcessAppSpawnLockStatusMsg(AppSpawnMsgNode *message)
     ReportKeyEvent(strcmp(userLockStatus, "0") == 0 ? UNLOCK_SUCCESS : LOCK_SUCCESS);
 #endif
     if (strcmp(userLockStatus, "0") == 0) {
-        ServerStageHookExecute(STAGE_SERVER_LOCK, GetAppSpawnContent());
+        (void)ServerStageHookExecute(STAGE_SERVER_LOCK, GetAppSpawnContent());
     }
 }
 
