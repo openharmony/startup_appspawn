@@ -407,7 +407,8 @@ uint32_t SandboxCommon::ConvertFlagStr(const std::string &flagStr)
                                                  {"CUSTOM_SANDBOX_HAP", APP_FLAGS_CUSTOM_SANDBOX},
                                                  {"FILE_CROSS_APP", APP_FLAGS_FILE_CROSS_APP},
                                                  {"FILE_ACCESS_COMMON_DIR", APP_FLAGS_FILE_ACCESS_COMMON_DIR},
-                                                 {"CLOUD_FILE_SYNC_ENABLED", APP_FLAGS_CLOUD_FILE_SYNC_ENABLED}};
+                                                 {"CLOUD_FILE_SYNC_ENABLED", APP_FLAGS_CLOUD_FILE_SYNC_ENABLED},
+                                                 {"APP_SKILLS_ENABLED", APP_FLAGS_SKILLS}};
 
     if (flagsMap.count(flagStr)) {
         return flagsMap.at(flagStr);
