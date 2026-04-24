@@ -21,6 +21,7 @@
 #include <unistd.h>
 
 #include "appspawn_utils.h"
+#include "appspawn.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -63,11 +64,27 @@ typedef struct AppSpawnClient {
     uint32_t flags;  // Save negotiated flags
 } AppSpawnClient;
 
+/**
+ * @brief Prefork message sent from parent to prefork child via pipe.
+ * Contains client identification and shared memory message length.
+ */
 typedef struct AppSpawnPreforkMsg {
     uint32_t id;
     uint32_t flags;  // Save negotiated flags
     uint32_t msgLen;
 } AppSpawnPreforkMsg;
+
+/**
+ * @brief Pipe message wrapper with type discriminator.
+ * Extensible message format for parent-to-prefork-child communication.
+ * Currently only MSG_APP_SPAWN is supported.
+ */
+typedef struct AppSpawnPipeMsg {
+    AppSpawnMsgType type;   /**< Message type */
+    union {
+        AppSpawnPreforkMsg preforkMsg;   /**< FORK message body */
+    } msg;
+} AppSpawnPipeMsg;
 
 typedef struct AppSpawnContent {
     char *longProcName;
@@ -79,8 +96,6 @@ typedef struct AppSpawnContent {
     RunMode mode;
     int signalFd;
 #ifndef OHOS_LITE
-    int32_t preforkFd[2];
-    int32_t parentToChildFd[2];
     char *propertyBuffer;
     pid_t reservedPid;
     int enablePerfork;
