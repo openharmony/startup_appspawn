@@ -737,10 +737,10 @@ int32_t SandboxCore::ProcessCreateOnDaemonMount(cJSON *mntPoint, MountPointProce
     if (ret < 0 || statBuff.st_uid != uid || statBuff.st_gid != gid ||
         (statBuff.st_mode & SandboxCommonDef::ALL_FILE_MODE_BITS) != mode) {
         ret = SandboxCommon::CreateDirRecursive(srcPath, SandboxCommonDef::FILE_MODE);
-        APPSPAWN_CHECK(ret == 0, return 0, "mkdir %{private}s failed, errno %{public}d", srcPath.c_str(), errno);
+        APPSPAWN_CHECK(ret == 0, return 0, "mkdir %{public}s failed, errno %{public}d", srcPath.c_str(), errno);
         if (chmod(srcPath.c_str(), mode) < 0 || chown(srcPath.c_str(), uid, gid) < 0) {
             if (stat(srcPath.c_str(), &statBuff) < 0) {
-                APPSPAWN_LOGI("stat srcPath failed, path: %{private}s", srcPath.c_str());
+                APPSPAWN_LOGI("stat srcPath failed, path: %{public}s", srcPath.c_str());
             } else if (statBuff.st_uid != uid || statBuff.st_gid != gid ||
                 (statBuff.st_mode & SandboxCommonDef::ALL_FILE_MODE_BITS) != mode) {
                 APPSPAWN_LOGI("chmod or chown failed. statBuff.st_uid = %{public}d, statBuff.st_gid = %{public}d, \
