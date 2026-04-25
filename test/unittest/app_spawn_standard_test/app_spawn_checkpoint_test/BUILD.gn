@@ -72,6 +72,7 @@ if (!defined(ohos_lite)) {
       "${appspawn_path}/modules/modulemgr/appspawn_modulemgr.c",
       "${appspawn_path}/standard/appspawn_msgmgr.c",
       "${appspawn_path}/standard/appspawn_appmgr.c",
+      "${appspawn_path}/standard/appspawn_fd_manager.c",
       "${appspawn_path}/util/src/appspawn_utils.c",
       "${appspawn_path}/util/src/appspawndf_utils.cpp",
     ]

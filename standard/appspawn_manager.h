@@ -25,6 +25,7 @@
 #include "appspawn_msg.h"
 #include "appspawn_server.h"
 #include "appspawn_utils.h"
+#include "appspawn_fd_manager.h"  // Spawning FD type definitions and management APIs
 #include "list.h"
 #include "loop_event.h"
 #ifdef APPSPAWN_HISYSEVENT
@@ -130,26 +131,6 @@ typedef struct {
     uint64_t checkPointId;
     char name[0];
 } AppSpawnedCheckPointProcesses;
-
-typedef enum {
-    TYPE_FOR_DEC,
-    TYPE_FOR_FORK_ALL,
-    TYPE_INVALID
-} SpawningFdType;
-
-/**
- * @brief Save the fd information during the incubation process
- * @param node Linked list head node
- * @param type Fd type
- * @param count Number of current Fd types
- * @param fd File handle set
- */
-typedef struct {
-    struct ListNode node;
-    SpawningFdType type;
-    uint32_t count;
-    int fds[0];
-} AppSpawnFds;
 
 typedef struct SpawnTime {
     int minAppspawnTime;

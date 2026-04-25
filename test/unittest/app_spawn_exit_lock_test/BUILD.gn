@@ -41,6 +41,7 @@ if (!defined(ohos_lite)) {
       "${appspawn_path}/common/appspawn_server.c",
       "${appspawn_path}/standard/appspawn_msgmgr.c",
       "${appspawn_path}/standard/appspawn_appmgr.c",
+      "${appspawn_path}/standard/appspawn_fd_manager.c",
       "${appspawn_path}/modules/sandbox/normal/sandbox_shared_mount.cpp",
       "appspawn_exit_lock_test.cpp",
       "${appspawn_path}/modules/ace_adapter/command_lexer.cpp",
