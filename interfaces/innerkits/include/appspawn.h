@@ -217,6 +217,7 @@ typedef enum {
     APP_FLAGS_CLOUD_FILE_SYNC_ENABLED = 39,
     APP_FLAGS_DEBUG_SIGN = 40,
     APP_FLAGS_SPAWN_IMAGE_PROCESS = 41,  // Identify the container image process request
+    APP_FLAGS_SKILLS = 42,
     MAX_FLAGS_INDEX = 63,
 } AppFlagsIndex;
 

@@ -420,6 +420,14 @@
                     "sandbox-path" : "/data/storage/el2/cloud",
                     "sandbox-flags": [ "bind", "rec" ]
                 }
+            ]}, {
+            "flags": "APP_SKILLS_ENABLED",
+            "mount-paths": [{
+                    "src-path" : "/data/app/el1/skills/public/<PackageName>",
+                    "sandbox-path" : "/data/storage/el1/skills",
+                    "sandbox-flags": [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }
             ]}],
             "symbol-links" : []
         }],
