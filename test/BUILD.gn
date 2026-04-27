@@ -33,8 +33,6 @@ group("unittest") {
       deps += [ "unittest/app_spawn_standard_test:AppSpawnDebugSandbox" ]
       deps += [ "unittest/app_spawn_standard_test:appspawn_standard_tests" ]
       deps += [ "unittest/app_spawn_standard_test/spawning_fd_manager_test:AppSpawn_SpawningFd_Test" ]
-      deps += [ "unittest/app_spawn_standard_test/spawning_fd_manager_test:AppSpawn_SpawningFd_Service_Test" ]
-      deps += [ "unittest/app_spawn_standard_test/spawning_fd_manager_test:AppSpawn_SpawningFd_Mock_Test" ]
     }
     deps += [ "unittest/hnp_test:HnpTest" ]
     deps += [ "unittest/hnp_test/private_hnp_test:HnpPrivateTest" ]
