@@ -1,0 +1,57 @@
+# Copyright (c) 2026 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//base/startup/appspawn/appspawn.gni")
+import("//base/startup/appspawn/modules/sandbox/sandbox.gni")
+import("//build/test.gni")
+
+if (!defined(ohos_lite)) {
+  # Hisysevent tests for unlock mount (ReportUnlockMountResult, ReportUnlockMountAppFail)
+  # Uses mock_hisysevent to intercept HiSysEventWrite macro calls without
+  # depending on the HiSysEvent daemon. The mock hisysevent.h is placed
+  # first in include_dirs to shadow the real header from libhisysevent.
+  ohos_unittest("AppSpawn_Unlock_Mount_Hisysevent_Test") {
+    module_out_path = "appspawn/appspawn"
+    if (appspawn_unittest_coverage) {
+      cflags = [ "--coverage" ]
+      ldflags = [ "--coverage" ]
+      cflags_cc = [ "--coverage" ]
+    }
+    defines = [
+      "APPSPAWN_TEST",
+    ]
+
+    include_dirs = [
+      # Mock hisysevent.h must come first to shadow the real header
+      "${appspawn_path}/test/mock/include/hisysevent_mock",
+      "${appspawn_path}",
+      "${appspawn_path}/common",
+      "${appspawn_path}/standard",
+      "${appspawn_path}/modules/sysevent",
+      "${appspawn_path}/util/include",
+    ]
+
+    sources = [
+      "${appspawn_path}/modules/sysevent/hisysevent_adapter.cpp",
+      "app_spawn_unlock_mount_hisysevent_test.cpp",
+    ]
+
+    configs = [ "${appspawn_path}:appspawn_config" ]
+    external_deps = [
+      "cJSON:cjson",
+      "c_utils:utils",
+      "hilog:libhilog",
+      "init:libbegetutil",
+    ]
+  }
+}
