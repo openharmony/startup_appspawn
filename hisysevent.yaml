@@ -51,3 +51,19 @@ SPAWN_MOUNT_COUNT:
   MAX_DEVICE_MOUNT_COUNT: {type: INT32, desc: Max Device Mount Count}
   AVG_NAMESPACE_MOUNT_COUNT: {type: INT32, desc: Average Main Namespace Mount Count}
   AVG_DEVICE_MOUNT_COUNT: {type: INT32, desc: Average Device Mount Count}
+
+UNLOCK_MOUNT_ALL_DONE:
+  __BASE: {type: BEHAVIOR, level: MINOR, desc: Unlock mount all apps done}
+  UID: {type: INT32, desc: User ID}
+  APP_COUNT: {type: INT32, desc: Total App Count}
+  SUCCESS_COUNT: {type: INT32, desc: Mount Success Count}
+  FAIL_COUNT: {type: INT32, desc: Mount Fail Count}
+  DURATION: {type: INT64, desc: Mount Duration in ms}
+
+UNLOCK_MOUNT_APP_FAIL:
+  __BASE: {type: FAULT, level: CRITICAL, desc: Unlock mount single app fail}
+  UID: {type: INT32, desc: User ID}
+  BUNDLE_NAME: {type: STRING, desc: Bundle Name}
+  SRC_PATH: {type: STRING, desc: Source Path}
+  TARGET_PATH: {type: STRING, desc: Target Path}
+  ERROR_CODE: {type: INT32, desc: Error Code}
