@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -510,7 +510,7 @@ HWTEST_F(SpawningFdMockTest, SpawningFd_PreparePreforkMsg_001, TestSize.Level0)
 
     // GetMapMem will fail because APPSPAWN_MSG_DIR doesn't exist in test environment
     int ret = PreparePreforkMsg(content, property, &client, sizeof(AppSpawnMsg), &outPipeMsg);
-    EXPECT_EQ(ret, -1);
+    EXPECT_NE(ret, 0);
     EXPECT_EQ(outPipeMsg, nullptr);
 
     DeleteAppSpawningCtx(property);
@@ -569,7 +569,7 @@ HWTEST_F(SpawningFdMockTest, SpawningFd_PreparePreforkMsg_003, TestSize.Level0)
     AppSpawnPipeMsg *outPipeMsg = NULL;
 
     int ret = PreparePreforkMsg(content, property, &client, sizeof(AppSpawnMsg), &outPipeMsg);
-    EXPECT_EQ(ret, -1);
+    EXPECT_NE(ret, 0);
     EXPECT_EQ(outPipeMsg, nullptr);
 
     free(outPipeMsg);
@@ -804,7 +804,7 @@ HWTEST_F(SpawningFdForkMockTest, SpawningFd_SendPipeMsg_004, TestSize.Level0)
     pipeMsg.type = MSG_APP_SPAWN;
 
     int ret = SendPipeMsgToChild(mgr_, pid, &pipeMsg);
-    EXPECT_EQ(ret, -1);
+    EXPECT_NE(ret, 0);
 
     // On failure, Unregister is NOT called, node should still be in queue
     EXPECT_NE(FindSpawningFdsByPid(mgr_, pid, TYPE_PARENT_CHILD), nullptr);

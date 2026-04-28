@@ -107,6 +107,17 @@ typedef struct {
 #define UNLOCK_SUCCESS "UNLOCK_SUCCESS"
 #define LOCK_SUCCESS "LOCK_SUCCESS"
 #define APPSPAWN_MAX_FAILURES_EXCEEDED "APPSPAWN_MAX_FAILURES_EXCEEDED"
+
+// Unlock mount event names
+#define UNLOCK_MOUNT_L1_SUCCESS "UNLOCK_MOUNT_L1_SUCCESS"
+#define UNLOCK_MOUNT_L1_FAIL "UNLOCK_MOUNT_L1_FAIL"
+#define UNLOCK_MOUNT_L2_SUCCESS "UNLOCK_MOUNT_L2_SUCCESS"
+#define UNLOCK_MOUNT_L2_FAIL "UNLOCK_MOUNT_L2_FAIL"
+#define UNLOCK_MOUNT_L3_DONE "UNLOCK_MOUNT_L3_DONE"
+#define UNLOCK_MOUNT_SCAN_DONE "UNLOCK_MOUNT_SCAN_DONE"
+#define UNLOCK_MOUNT_REFORK "UNLOCK_MOUNT_REFORK"
+#define UNLOCK_MOUNT_NO_APPS "UNLOCK_MOUNT_NO_APPS"
+
 AppSpawnHisyseventInfo *InitHisyseventTimer(void);
 AppSpawnHisyseventInfo *GetAppSpawnHisyseventInfo(void);
 void ReportMountFullHisysevent(int32_t errCode);
@@ -123,6 +134,12 @@ void ReportSpawnStatisticDuration(const TimerHandle taskHandle, void* content);
 void AppSpawnHiSysEventWrite();
 
 void ReportMountFull(int32_t errCode, int32_t nsMountCount, int32_t deviceMountCount, int32_t spawnResult);
+
+// Unlock mount event report functions (structured events with queryable params)
+void ReportUnlockMountResult(int32_t uid, int32_t totalCount,
+    int32_t successCount, int32_t failCount, int64_t duration);
+void ReportUnlockMountAppFail(int32_t uid, const char *bundleName,
+    const char *srcPath, const char *destPath, int32_t errorCode);
 #ifdef __cplusplus
 }
 #endif

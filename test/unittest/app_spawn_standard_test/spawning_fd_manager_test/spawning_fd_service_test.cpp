@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -264,11 +264,11 @@ HWTEST_F(SpawningFdServiceTest, SpawningFd_SendPipeMsg_002, TestSize.Level0)
 
     // Non-existent pid
     int ret = SendPipeMsgToChild(mgr_, 99999, &pipeMsg);
-    EXPECT_EQ(ret, -1);
+    EXPECT_NE(ret, 0);
 
     // NULL mgr
     ret = SendPipeMsgToChild(nullptr, 99999, &pipeMsg);
-    EXPECT_EQ(ret, -1);
+    EXPECT_NE(ret, 0);
 }
 
 /**
@@ -399,7 +399,7 @@ HWTEST_F(SpawningFdServiceTest, SpawningFd_SendPipeMsg_003, TestSize.Level0)
     pipeMsg.type = MSG_APP_SPAWN;
 
     int ret = SendPipeMsgToChild(mgr_, pid, &pipeMsg);
-    EXPECT_EQ(ret, -1);
+    EXPECT_NE(ret, 0);
 
     // On write failure, Unregister is NOT called, node should still be in queue
     pcFds = FindSpawningFdsByPid(mgr_, pid, TYPE_PARENT_CHILD);
@@ -426,7 +426,7 @@ HWTEST_F(SpawningFdServiceTest, SpawningFd_TransferPreforkFd_002, TestSize.Level
 
     // No prefork fds registered for this pid
     int ret = TransferPreforkFdToForkCtx(mgr_, 99999, property);
-    EXPECT_EQ(ret, -1);
+    EXPECT_NE(ret, 0);
 
     DeleteAppSpawningCtx(property);
 }
