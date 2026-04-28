@@ -14,6 +14,7 @@
  */
 #include "hisysevent_adapter.h"
 #include <fstream>
+#include <sstream>
 
 #include "init_param.h"
 #include "parameter.h"
@@ -45,6 +46,15 @@ constexpr const char* EVENT_NAME = "EVENT_NAME";
 
 constexpr const char* SCENE_NAME = "SCENE_NAME";
 constexpr const char* DURATION = "DURATION";
+
+// unlock mount param
+constexpr const char* UID = "UID";
+constexpr const char* APP_COUNT = "APP_COUNT";
+constexpr const char* SUCCESS_COUNT = "SUCCESS_COUNT";
+constexpr const char* FAIL_COUNT = "FAIL_COUNT";
+constexpr const char* BUNDLE_NAME = "BUNDLE_NAME";
+constexpr const char* UNLOCK_MOUNT_ALL_DONE = "UNLOCK_MOUNT_ALL_DONE";
+constexpr const char* UNLOCK_MOUNT_APP_FAIL = "UNLOCK_MOUNT_APP_FAIL";
 
 constexpr const char* MAXDURATION = "MAXDURATION";
 constexpr const char* MINDURATION = "MINDURATION";
@@ -294,6 +304,36 @@ void ReportMountFull(int32_t errCode, int32_t nsMountCount, int32_t deviceMountC
         SPAWN_RESULT, spawnResult);
 
     APPSPAWN_CHECK_ONLY_LOG(ret == 0, "ReportMountFull error, ret: %{public}d", ret);
+}
+
+void ReportUnlockMountResult(int32_t uid, int32_t totalCount,
+    int32_t successCount, int32_t failCount, int64_t duration)
+{
+    int ret = HiSysEventWrite(HiSysEvent::Domain::APPSPAWN, UNLOCK_MOUNT_ALL_DONE,
+        HiSysEvent::EventType::BEHAVIOR,
+        UID, uid,
+        APP_COUNT, totalCount,
+        SUCCESS_COUNT, successCount,
+        FAIL_COUNT, failCount,
+        DURATION, duration);
+    if (ret != 0) {
+        APPSPAWN_LOGE("ReportUnlockMountResult error, ret: %{public}d", ret);
+    }
+}
+
+void ReportUnlockMountAppFail(int32_t uid, const char *bundleName,
+    const char *srcPath, const char *destPath, int32_t errorCode)
+{
+    int ret = HiSysEventWrite(HiSysEvent::Domain::APPSPAWN, UNLOCK_MOUNT_APP_FAIL,
+        HiSysEvent::EventType::FAULT,
+        UID, uid,
+        BUNDLE_NAME, bundleName,
+        SRC_PATH, srcPath,
+        TARGET_PATH, destPath,
+        ERROR_CODE, errorCode);
+    if (ret != 0) {
+        APPSPAWN_LOGE("ReportUnlockMountAppFail error, ret: %{public}d", ret);
+    }
 }
 
 static bool CheckNeedUpdateReport()
