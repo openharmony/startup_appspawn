@@ -16,6 +16,10 @@
 #ifndef SANDBOX_SHARED_MOUNT_H
 #define SANDBOX_SHARED_MOUNT_H
 
+#include <sys/mount.h>
+#include <string>
+#include <vector>
+
 #include "appspawn.h"
 #include "appspawn_hook.h"
 #include "appspawn_manager.h"
@@ -56,12 +60,40 @@ struct SharedMountArgs {
     mode_t mountSharedFlag = MS_SLAVE;
 };
 
+// Lock bundle info structure for _preunlock directory management
+struct LockBundleInfo {
+    uint32_t refCount;
+    uint32_t uid;
+    std::string lockPath;
+    std::string bundleName;
+};
+
 bool IsValidDataGroupItem(cJSON *item);
 int GetElxInfoFromDir(const char *path);
 const DataGroupSandboxPathTemplate *GetDataGroupArgTemplate(uint32_t category);
 int MountToShared(AppSpawnMgr *content, const AppSpawningCtx *property);
+int DoSharedMount(const SharedMountArgs *arg);
 
 #ifdef __cplusplus
 }
+#endif
+
+// C++ only interfaces (using STL types)
+#ifdef __cplusplus
+
+// Unlock mount entry for static configuration table
+struct UnlockMountEntry {
+    const char *srcPath;
+    const char *destPath;
+};
+
+// Shared mount operations
+bool SetSandboxPathShared(const std::string &sandboxPath);
+std::vector<LockBundleInfo> GetAllLockBundles(void);
+size_t GetLockBundleMapSize(void);
+void UnmountLockedBundleMounts(const std::string &appSandboxPath);
+
+const UnlockMountEntry* GetUnlockMountEntry(size_t* outSize);
+
 #endif
 #endif  // SANDBOX_SHARED_MOUNT_H

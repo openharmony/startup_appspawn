@@ -43,6 +43,7 @@ if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
 
     appspawn_sandbox_src += [
         "//base/startup/appspawn/modules/sandbox/normal/sandbox_shared_mount.cpp",
+        "//base/startup/appspawn/modules/sandbox/normal/sandbox_unlock_mount.cpp",
         "//base/startup/appspawn/modules/sandbox/normal/appspawn_sandbox_manager.cpp",
         "//base/startup/appspawn/modules/sandbox/normal/sandbox_common.cpp",
         "//base/startup/appspawn/modules/sandbox/normal/sandbox_core.cpp"

@@ -106,7 +106,7 @@ void AppSpawnLockBundleTest::TearDown()
  */
 HWTEST_F(AppSpawnLockBundleTest, AddLockBundleRef_001, TestSize.Level1)
 {
-    int ret = AddLockBundleRef(testLockPath1);
+    int ret = AddLockBundleRef(1000, testBundle1, testLockPath1);
     EXPECT_EQ(ret, 0);
     EXPECT_EQ(g_lockBundleMap.size(), 1u);
 
@@ -124,8 +124,8 @@ HWTEST_F(AppSpawnLockBundleTest, AddLockBundleRef_001, TestSize.Level1)
  */
 HWTEST_F(AppSpawnLockBundleTest, AddLockBundleRef_002, TestSize.Level1)
 {
-    AddLockBundleRef(testLockPath1);
-    int ret = AddLockBundleRef(testLockPath1);
+    AddLockBundleRef(1000, testBundle1, testLockPath1);
+    int ret = AddLockBundleRef(1000, testBundle1, testLockPath1);
 
     EXPECT_EQ(ret, 0);
     EXPECT_EQ(g_lockBundleMap.size(), 1u);
@@ -140,8 +140,8 @@ HWTEST_F(AppSpawnLockBundleTest, AddLockBundleRef_002, TestSize.Level1)
  */
 HWTEST_F(AppSpawnLockBundleTest, AddLockBundleRef_003, TestSize.Level1)
 {
-    AddLockBundleRef(testLockPath1);
-    AddLockBundleRef(testLockPathClone);
+    AddLockBundleRef(1000, testBundle1, testLockPath1);
+    AddLockBundleRef(1000, testBundle1, testLockPathClone);
 
     // Different lockPaths should have separate entries
     EXPECT_EQ(g_lockBundleMap.size(), 2u);
@@ -157,7 +157,7 @@ HWTEST_F(AppSpawnLockBundleTest, AddLockBundleRef_003, TestSize.Level1)
  */
 HWTEST_F(AppSpawnLockBundleTest, AddLockBundleRef_004, TestSize.Level1)
 {
-    int ret = AddLockBundleRef("");
+    int ret = AddLockBundleRef(0, "", "");
     // Should return error for empty lockPath
     EXPECT_EQ(ret, -1);
     EXPECT_EQ(g_lockBundleMap.size(), 0u);
@@ -173,8 +173,8 @@ HWTEST_F(AppSpawnLockBundleTest, AddLockBundleRef_004, TestSize.Level1)
  */
 HWTEST_F(AppSpawnLockBundleTest, ReleaseLockBundleRef_001, TestSize.Level1)
 {
-    AddLockBundleRef(testLockPath1);
-    AddLockBundleRef(testLockPath1);
+    AddLockBundleRef(1000, testBundle1, testLockPath1);
+    AddLockBundleRef(1000, testBundle1, testLockPath1);
 
     ReleaseLockBundleRef(testLockPath1);
 
@@ -192,7 +192,7 @@ HWTEST_F(AppSpawnLockBundleTest, ReleaseLockBundleRef_001, TestSize.Level1)
  */
 HWTEST_F(AppSpawnLockBundleTest, ReleaseLockBundleRef_002, TestSize.Level1)
 {
-    AddLockBundleRef(testLockPath1);
+    AddLockBundleRef(1000, testBundle1, testLockPath1);
 
     ReleaseLockBundleRef(testLockPath1);
 
@@ -222,7 +222,7 @@ HWTEST_F(AppSpawnLockBundleTest, ReleaseLockBundleRef_003, TestSize.Level1)
  */
 HWTEST_F(AppSpawnLockBundleTest, ReleaseLockBundleRef_004, TestSize.Level1)
 {
-    AddLockBundleRef(testLockPath1);
+    AddLockBundleRef(1000, testBundle1, testLockPath1);
     // Should handle gracefully
     ReleaseLockBundleRef("");
     // Map should be unchanged
@@ -240,9 +240,9 @@ HWTEST_F(AppSpawnLockBundleTest, ReleaseLockBundleRef_004, TestSize.Level1)
 HWTEST_F(AppSpawnLockBundleTest, FineGrainedManagement_001, TestSize.Level1)
 {
     // Non-clone process starts
-    AddLockBundleRef(testLockPath1);
+    AddLockBundleRef(1000, testBundle1, testLockPath1);
     // Clone process starts (different lockPath)
-    AddLockBundleRef(testLockPathClone);
+    AddLockBundleRef(1000, testBundle1, testLockPathClone);
 
     // Should have two separate entries
     EXPECT_EQ(g_lockBundleMap.size(), 2u);
@@ -271,9 +271,9 @@ HWTEST_F(AppSpawnLockBundleTest, FineGrainedManagement_001, TestSize.Level1)
 HWTEST_F(AppSpawnLockBundleTest, FineGrainedManagement_002, TestSize.Level1)
 {
     // Non-isolated process starts
-    AddLockBundleRef(testLockPath1);
+    AddLockBundleRef(1000, testBundle1, testLockPath1);
     // Isolated process starts (different lockPath)
-    AddLockBundleRef(testLockPathIsolated);
+    AddLockBundleRef(1000, testBundle1, testLockPathIsolated);
 
     // Should have two separate entries
     EXPECT_EQ(g_lockBundleMap.size(), 2u);
@@ -294,9 +294,9 @@ HWTEST_F(AppSpawnLockBundleTest, FineGrainedManagement_002, TestSize.Level1)
 HWTEST_F(AppSpawnLockBundleTest, FineGrainedManagement_003, TestSize.Level1)
 {
     // Same lockPath with multiple references
-    AddLockBundleRef(testLockPath1);
-    AddLockBundleRef(testLockPath1);
-    AddLockBundleRef(testLockPath1);
+    AddLockBundleRef(1000, testBundle1, testLockPath1);
+    AddLockBundleRef(1000, testBundle1, testLockPath1);
+    AddLockBundleRef(1000, testBundle1, testLockPath1);
 
     EXPECT_EQ(g_lockBundleMap.size(), 1u);
     EXPECT_EQ(g_lockBundleMap[testLockPath1].refCount, 3u);
@@ -322,11 +322,11 @@ HWTEST_F(AppSpawnLockBundleTest, FineGrainedManagement_003, TestSize.Level1)
 HWTEST_F(AppSpawnLockBundleTest, MixedBundlesScenario_001, TestSize.Level1)
 {
     // Bundle 1 with 2 processes (same lockPath)
-    AddLockBundleRef(testLockPath1);
-    AddLockBundleRef(testLockPath1);
+    AddLockBundleRef(1000, testBundle1, testLockPath1);
+    AddLockBundleRef(1000, testBundle1, testLockPath1);
 
     // Bundle 2 with 1 process
-    AddLockBundleRef(testLockPath2);
+    AddLockBundleRef(2000, testBundle2, testLockPath2);
 
     EXPECT_EQ(g_lockBundleMap.size(), 2u);
 
@@ -356,9 +356,9 @@ HWTEST_F(AppSpawnLockBundleTest, MixedBundlesScenario_001, TestSize.Level1)
 HWTEST_F(AppSpawnLockBundleTest, LockBundleKeyFormat_001, TestSize.Level1)
 {
     // Different lockPaths have separate entries
-    AddLockBundleRef(testLockPath1);
-    AddLockBundleRef(testLockPathClone);
-    AddLockBundleRef(testLockPathIsolated);
+    AddLockBundleRef(1000, testBundle1, testLockPath1);
+    AddLockBundleRef(1000, testBundle1, testLockPathClone);
+    AddLockBundleRef(1000, testBundle1, testLockPathIsolated);
 
     // Should have three entries with lockPath as key
     EXPECT_EQ(g_lockBundleMap.size(), 3u);
@@ -382,7 +382,7 @@ HWTEST_F(AppSpawnLockBundleTest, LockBundleKeyFormat_001, TestSize.Level1)
  */
 HWTEST_F(AppSpawnLockBundleTest, EdgeCase_001, TestSize.Level1)
 {
-    int ret = AddLockBundleRef("");
+    int ret = AddLockBundleRef(0, "", "");
     // Should return error for empty lockPath
     EXPECT_EQ(ret, -1);
 }
@@ -395,7 +395,7 @@ HWTEST_F(AppSpawnLockBundleTest, EdgeCase_001, TestSize.Level1)
  */
 HWTEST_F(AppSpawnLockBundleTest, EdgeCase_002, TestSize.Level1)
 {
-    AddLockBundleRef(testLockPath1);
+    AddLockBundleRef(1000, testBundle1, testLockPath1);
     ReleaseLockBundleRef(testLockPath1);
     // Should not crash when releasing non-existent entry
     ReleaseLockBundleRef(testLockPath1);

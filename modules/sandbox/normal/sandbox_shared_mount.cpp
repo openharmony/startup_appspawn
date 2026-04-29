@@ -44,6 +44,39 @@
 #define GROUPLIST_KEY_GID         "gid"
 #define GROUPLIST_KEY_DIR         "dir"
 #define GROUPLIST_KEY_UUID        "uuid"
+ /**
+* @brief Sandbox mount configuration - Direct mapping from JSON config
+* @description Each entry maps to a pair of JSON entries (bind mount + shared)
+*
+* Reference: storage_mount_info.json "sandbox-mount"
+*
+* Total: 12 mount points (6 EL2 + 2 EL3 + 2 EL4 + 2 EL5)
+*/
+static const UnlockMountEntry SANDBOX_MOUNT_CONFIG[] = {
+    // EL2 (6 entries)
+    {"/data/app/el2/<userId>/base/<bundleName>/", "/data/storage/el2/base/"},
+    {"/data/app/el2/<userId>/database/<bundleName>/", "/data/storage/el2/database/"},
+    {"/mnt/share/<userId>/<bundleName>/", "/data/storage/el2/share/"},
+    {"/data/app/el2/<userId>/log/<bundleName>/", "/data/storage/el2/log/"},
+    {"/mnt/hmdfs/<userId>/account/merge_view/data/<bundleName>/", "/data/storage/el2/distributedfiles/"},
+    {"/mnt/hmdfs/<userId>/cloud/data/<bundleName>/", "/data/storage/el2/cloud/"},
+    // EL3 (2 entries)
+    {"/data/app/el3/<userId>/base/<bundleName>/", "/data/storage/el3/base/"},
+    {"/data/app/el3/<userId>/database/<bundleName>/", "/data/storage/el3/database/"},
+    // EL4 (2 entries)
+    {"/data/app/el4/<userId>/base/<bundleName>/", "/data/storage/el4/base/"},
+    {"/data/app/el4/<userId>/database/<bundleName>/", "/data/storage/el4/database/"},
+    // EL5 (2 entries) - unlock mount skips permission check
+    {"/data/app/el5/<userId>/base/<bundleName>/", "/data/storage/el5/base/"},
+    {"/data/app/el5/<userId>/database/<bundleName>/", "/data/storage/el5/database/"},
+};
+
+const UnlockMountEntry* GetUnlockMountEntry(size_t* outSize)
+{
+    APPSPAWN_ONLY_EXPER(outSize != nullptr,
+        *outSize = sizeof(SANDBOX_MOUNT_CONFIG) / sizeof(SANDBOX_MOUNT_CONFIG[0]));
+    return SANDBOX_MOUNT_CONFIG;
+}
 
 static const MountSharedTemplate MOUNT_SHARED_MAP[] = {
     {"/data/storage/el2", nullptr},
@@ -108,12 +141,6 @@ bool IsValidDataGroupItem(cJSON *item)
 }
 
 #ifndef APPSPAWN_SANDBOX_NEW
-// Lock bundle info structure for _locked directory management
-// Key is the complete _locked directory path (lockPath)
-struct LockBundleInfo {
-    uint32_t refCount;        // reference count
-    std::string lockPath;     // _locked directory complete path (same as map key)
-};
 
 // Global map for managing lock bundle info, key is lockPath (complete _locked directory path)
 APPSPAWN_STATIC std::map<std::string, LockBundleInfo> g_lockBundleMap;
@@ -157,7 +184,7 @@ static std::string BuildLockPath(uint32_t uid, const std::string &bundleName,
     return BuildLockPath(uid, varBundleName, msgFlags);
 }
 
-APPSPAWN_STATIC int AddLockBundleRef(const std::string &lockPath)
+APPSPAWN_STATIC int AddLockBundleRef(uint32_t uid, const std::string &bundleName, const std::string &lockPath)
 {
     APPSPAWN_ONLY_EXPER(lockPath.empty(), return -1);
     auto it = g_lockBundleMap.find(lockPath);
@@ -165,6 +192,8 @@ APPSPAWN_STATIC int AddLockBundleRef(const std::string &lockPath)
         // First time, initialize structure
         LockBundleInfo info;
         info.refCount = 1;
+        info.uid = uid;
+        info.bundleName = bundleName;
         info.lockPath = lockPath;
         g_lockBundleMap[lockPath] = info;
         APPSPAWN_LOGI("AddLockBundleRef: new lockPath %{public}s, refCount=1", lockPath.c_str());
@@ -175,6 +204,20 @@ APPSPAWN_STATIC int AddLockBundleRef(const std::string &lockPath)
                       lockPath.c_str(), it->second.refCount);
     }
     return 0;
+}
+
+void UnmountLockedBundleMounts(const std::string &appSandboxPath)
+{
+    size_t configCount = sizeof(SANDBOX_MOUNT_CONFIG) / sizeof(SANDBOX_MOUNT_CONFIG[0]);
+    for (size_t i = 0; i < configCount; i++) {
+        std::string fullDestPath = appSandboxPath + SANDBOX_MOUNT_CONFIG[i].destPath;
+        APPSPAWN_ONLY_EXPER(!fullDestPath.empty() && fullDestPath.back() == '/',
+            fullDestPath.pop_back());
+        int ret = umount2(fullDestPath.c_str(), MNT_DETACH);
+        APPSPAWN_CHECK_ONLY_LOG(ret == 0,
+            "Unmount locked bundle mount %{public}s failed, errno %{public}d",
+            fullDestPath.c_str(), errno);
+    }
 }
 
 APPSPAWN_STATIC void ReleaseLockBundleRef(const std::string &lockPath)
@@ -194,12 +237,22 @@ APPSPAWN_STATIC void ReleaseLockBundleRef(const std::string &lockPath)
     APPSPAWN_LOGI("ReleaseLockBundleRef: lockPath %{public}s refCount=%{public}u",
                   lockPath.c_str(), it->second.refCount);
     APPSPAWN_ONLY_EXPER(it->second.refCount != 0, return);
-    // Count is 0, delete the _locked directory
-    int ret = rmdir(lockPath.c_str());
-    APPSPAWN_CHECK_ONLY_LOG(ret == 0, "Remove _locked dir %{public}s failed, errno %{public}d",
-        lockPath.c_str(), errno);
     // Remove from map
     g_lockBundleMap.erase(it);
+}
+
+size_t GetLockBundleMapSize(void)
+{
+    return g_lockBundleMap.size();
+}
+
+std::vector<LockBundleInfo> GetAllLockBundles(void)
+{
+    std::vector<LockBundleInfo> bundles;
+    for (const auto &[lockPath, info] : g_lockBundleMap) {
+        bundles.push_back(info);
+    }
+    return bundles;
 }
 
 APPSPAWN_STATIC bool IsUnlockStatus(uint32_t uid)
@@ -217,7 +270,7 @@ APPSPAWN_STATIC bool IsUnlockStatus(uint32_t uid)
     return true;
 }
 
-static int DoSharedMount(const SharedMountArgs *arg)
+int DoSharedMount(const SharedMountArgs *arg)
 {
     if (arg == nullptr || arg->srcPath == nullptr || arg->destPath == nullptr) {
         APPSPAWN_LOGE("Invalid arg");
@@ -243,7 +296,7 @@ static int DoSharedMount(const SharedMountArgs *arg)
     return 0;
 }
 
-static bool SetSandboxPathShared(const std::string &sandboxPath)
+bool SetSandboxPathShared(const std::string &sandboxPath)
 {
     int ret = mount(nullptr, sandboxPath.c_str(), nullptr, MS_SHARED, nullptr);
     if (ret != 0) {
@@ -499,7 +552,7 @@ static std::string ReplaceVarBundleName(const AppSpawningCtx *property)
     return tmpBundlePath;
 }
 
-static void MountDirToShared(AppSpawnMgr *content, const AppSpawningCtx *property)
+APPSPAWN_STATIC void MountDirToShared(AppSpawnMgr *content, const AppSpawningCtx *property)
 {
     if (property == nullptr) {
         return;
@@ -528,7 +581,7 @@ static void MountDirToShared(AppSpawnMgr *content, const AppSpawningCtx *propert
         APPSPAWN_LOGE("mkdir %{public}s failed, errno %{public}d", lockSbxPathStamp.c_str(), errno);
     }
     // Add reference count for _locked directory, use lockPath as key
-    AddLockBundleRef(lockSbxPathStamp);
+    AddLockBundleRef(info->uid, bundleName, lockSbxPathStamp);
     // Set flag to indicate that AddLockBundleRef has been called (use const_cast to modify)
     const_cast<AppSpawningCtx *>(property)->lockBundleRefAdded = true;
 }
@@ -544,7 +597,7 @@ int MountToShared(AppSpawnMgr *content, const AppSpawningCtx *property)
 }
 
 #ifndef APPSPAWN_SANDBOX_NEW
-static int AppCleanupHook(const AppSpawnMgr *content, const AppSpawnedProcessInfo *appInfo)
+APPSPAWN_STATIC int AppCleanupHook(const AppSpawnMgr *content, const AppSpawnedProcessInfo *appInfo)
 {
     APPSPAWN_ONLY_EXPER(appInfo == nullptr || IsNWebSpawnMode(content),
         return 0);
@@ -561,7 +614,7 @@ static int AppCleanupHook(const AppSpawnMgr *content, const AppSpawnedProcessInf
     return 0;
 }
 
-static int SpawnFailedHook(AppSpawnMgr *content, AppSpawningCtx *property)
+APPSPAWN_STATIC int SpawnFailedHook(AppSpawnMgr *content, AppSpawningCtx *property)
 {
     APPSPAWN_ONLY_EXPER(property == nullptr || IsNWebSpawnMode(content),
         return 0);
