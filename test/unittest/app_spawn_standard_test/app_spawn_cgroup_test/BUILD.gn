@@ -59,7 +59,22 @@ if (!defined(ohos_lite)) {
     ]
 
     # Test specific sources
-    sources += [ "app_spawn_cgroup_test.cpp" ]
+    sources += [
+      "app_spawn_cgroup_test.cpp",
+      "app_spawn_cgroup_orphan_test.cpp",
+      "app_spawn_cgroup_orphan_mock.cpp",
+    ]
+
+    ldflags = [
+      "-Wl,--wrap=GetParameter",
+      "-Wl,--wrap=SetParameter",
+      "-Wl,--wrap=opendir",
+      "-Wl,--wrap=open",
+      "-Wl,--wrap=write",
+      "-Wl,--wrap=kill",
+      "-Wl,--wrap=rmdir",
+      "-Wl,--wrap=fopen",
+    ]
 
     configs = [ "${appspawn_path}:appspawn_config" ]
     external_deps = [
@@ -68,6 +83,7 @@ if (!defined(ohos_lite)) {
       "config_policy:configpolicy_util",
       "faultloggerd:libdfx_dumpcatcher",
       "ffrt:libffrt",
+      "bounds_checking_function:libsec_shared",
       "googletest:gmock_main",
       "hilog:libhilog",
       "hitrace:hitrace_meter",
