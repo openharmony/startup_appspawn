@@ -336,6 +336,13 @@ int PrctlStub(int option, ...)
     return -1;
 }
 
+int KillStub(pid_t pid, int sig)
+{
+    UNUSED(pid);
+    UNUSED(sig);
+    return 0;
+}
+
 #ifdef __cplusplus
 }
 #endif
