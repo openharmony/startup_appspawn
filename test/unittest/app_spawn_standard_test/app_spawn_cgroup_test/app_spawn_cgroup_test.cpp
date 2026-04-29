@@ -52,6 +52,7 @@ public:
     static void TearDownTestCase() {}
     void SetUp()
     {
+        CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
         const TestInfo *info = UnitTest::GetInstance()->current_test_info();
         GTEST_LOG_(INFO) << info->test_suite_name() << "." << info->name() << " start";
         APPSPAWN_LOGI("%{public}s.%{public}s start", info->test_suite_name(), info->name());
@@ -61,6 +62,7 @@ public:
         const TestInfo *info = UnitTest::GetInstance()->current_test_info();
         GTEST_LOG_(INFO) << info->test_suite_name() << "." << info->name() << " end";
         APPSPAWN_LOGI("%{public}s.%{public}s end", info->test_suite_name(), info->name());
+        DeleteAppSpawnMgr(GetAppSpawnMgr());
     }
 };
 

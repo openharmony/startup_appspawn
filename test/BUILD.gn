@@ -26,6 +26,7 @@ group("unittest") {
     testonly = true
     deps = [ "unittest/app_spawn_client_test:AppSpawn_client_ut" ]
     if (!use_libfuzzer) {
+      deps += [ "unittest/app_spawn_standard_test/app_spawn_cgroup_test:AppSpawn_CGroup_Test" ]
       deps += [ "unittest/app_spawn_standard_test:AppSpawn_ut" ]
       deps += [ "unittest/app_spawn_standard_test/app_spawn_sandbox_normal_test:AppSpawn_Sandbox_Normal_Test" ]
       deps += [ "unittest/app_spawn_standard_test:AppSpawn_common_ut" ]
@@ -36,7 +37,6 @@ group("unittest") {
       deps += [ "unittest/app_spawn_standard_test/spawning_fd_manager_test:AppSpawn_SpawningFd_Service_Test" ]
       deps += [ "unittest/app_spawn_standard_test/spawning_fd_manager_test:AppSpawn_SpawningFd_Mock_Test" ]
       deps += [ "unittest/app_spawn_standard_test/app_spawn_unlock_mount_test:AppSpawn_Unlock_Mount_Hisysevent_Test" ]
-
     }
     deps += [ "unittest/hnp_test:HnpTest" ]
     deps += [ "unittest/hnp_test/private_hnp_test:HnpPrivateTest" ]
