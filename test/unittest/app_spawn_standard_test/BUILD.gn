@@ -539,6 +539,7 @@ if (!defined(ohos_lite)) {
       "execve=ExecveStub",
       "setcon=SetconStub",
       "prctl=PrctlStub",
+      "APPSPAWN_SUPPORT_NOSHAREFS",
     ]
 
     include_dirs = [

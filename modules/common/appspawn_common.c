@@ -156,6 +156,20 @@ static int SetAmbientCapabilities(const AppSpawningCtx *property)
     }
     return 0;
 }
+
+APPSPAWN_STATIC int SetAmbientCapabilitiesDebugServer(const AppSpawnMgr *content, const AppSpawningCtx *property)
+{
+    if (CheckAppMsgFlagsSet(property, APP_FLAGS_DEBUGSERVER) &&
+        (IsAppSpawnMode(content) || IsNativeSpawnMode(content))) {
+        APPSPAWN_CHECK(SetAmbientCapability(CAP_KILL) == 0, return -1,
+            "set ambient failed:%{public}d", CAP_KILL);
+        APPSPAWN_CHECK(SetAmbientCapability(CAP_SYS_PTRACE) == 0, return -1,
+            "set ambient failed:%{public}d", CAP_SYS_PTRACE);
+        APPSPAWN_LOGV("APP_FLAGS_DEBUGSERVER SetAmbientCapability Success");
+    }
+
+    return 0;
+}
 #endif
 
 APPSPAWN_STATIC int SetCapabilities(const AppSpawnMgr *content, const AppSpawningCtx *property)
@@ -181,6 +195,11 @@ APPSPAWN_STATIC int SetCapabilities(const AppSpawnMgr *content, const AppSpawnin
         baseCaps |= CheckAppMsgFlagsSet(property, APP_FLAGS_CUSTOM_SANDBOX) ? CAP_TO_MASK(CAP_KILL) : 0;
         baseCaps |= CheckAppMsgFlagsSet(property, APP_FLAGS_SET_CAPS_FOWNER) ? CAP_TO_MASK(CAP_FOWNER) : 0;
     }
+    if (CheckAppMsgFlagsSet(property, APP_FLAGS_DEBUGSERVER) &&
+        (IsAppSpawnMode(content) || IsNativeSpawnMode(content))) {
+        baseCaps |= CAP_TO_MASK(CAP_KILL) | CAP_TO_MASK(CAP_SYS_PTRACE);
+        APPSPAWN_LOGV("APP_FLAGS_DEBUGSERVER baseCaps %{public}"PRIu64"", baseCaps);
+    }
 #endif
     const uint64_t inheriTable = baseCaps;
     const uint64_t permitted = baseCaps;
@@ -202,9 +221,9 @@ APPSPAWN_STATIC int SetCapabilities(const AppSpawnMgr *content, const AppSpawnin
 #ifdef APPSPAWN_SUPPORT_NOSHAREFS
     if (!CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX_TYPE) &&
         (IsAppSpawnMode(content) || IsNativeSpawnMode(content))) {
-        isRet = SetAmbientCapabilities(property);
-        APPSPAWN_CHECK(!isRet, return -1, "Failed to set ambient");
+        APPSPAWN_CHECK(SetAmbientCapabilities(property) == 0, return -1, "Failed to set ambient");
     }
+    APPSPAWN_CHECK(SetAmbientCapabilitiesDebugServer(content, property) == 0, return -1, "Failed to set ambient");
 #endif
     return 0;
 }

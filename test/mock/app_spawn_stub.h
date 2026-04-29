@@ -162,7 +162,7 @@ int SetUidGid(const AppSpawnMgr *content, const AppSpawningCtx *property);
 int PrctlStub(int option, ...);
 int SetXpmConfig(AppSpawnMgr *content, AppSpawningCtx *property);
 void SetIoctlResult(int result);
-
+int SetAmbientCapabilitiesDebugServer(const AppSpawnMgr *content, const AppSpawningCtx *property);
 #ifdef APPSPAWN_HITRACE_OPTION
 int FilterAppSpawnTrace(AppSpawnMgr *content, AppSpawningCtx *property);
 #endif
