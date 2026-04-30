@@ -125,6 +125,12 @@ const std::string g_groupList_key_gid = "gid";
 const std::string g_groupList_key_dir = "dir";
 const std::string g_groupList_key_uuid = "uuid";
 
+/* SHM Group paths for DataGroup shared memory mount */
+#ifdef APPSPAWN_SUPPORT_NOSHAREFS
+const std::string g_shmGroupSrcPathTemplate = "/mnt/sandbox/shm/<currentUserId>/group/";
+const std::string g_shmGroupDestPath = "/dev/shm/";
+#endif
+
 /* Overlay */
 const std::string OVERLAY_SOCKET_TYPE = "Overlay";
 const std::string g_overlayPath = "/data/storage/overlay/";

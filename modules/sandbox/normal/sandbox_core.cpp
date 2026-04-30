@@ -523,6 +523,17 @@ int32_t SandboxCore::MountAllHsp(const AppSpawningCtx *appProperty, std::string 
     return 0;
 }
 
+/**
+ * @brief Mount all data group directories for the application.
+ *
+ * Iterates through each DataGroup item from app property, mounts the data storage directory
+ * to the sandbox path based on ELx level (el2/el3/el4/el5), and creates SHM shared memory
+ * directory for inter-process communication within the same DataGroup.
+ *
+ * @param appProperty         App spawning context containing DataGroup configuration
+ * @param sandboxPackagePath  Application sandbox root path (e.g., /mnt/sandbox/<userId>/<packageName>)
+ * @return 0 on success, -1 on validation error
+ */
 int32_t SandboxCore::MountAllGroup(const AppSpawningCtx *appProperty, std::string &sandboxPackagePath)
 {
     if (appProperty == nullptr || sandboxPackagePath == "") {
@@ -575,11 +586,58 @@ int32_t SandboxCore::MountAllGroup(const AppSpawningCtx *appProperty, std::strin
         if (result != 0) {
             APPSPAWN_LOGE("mount el%{public}d datagroup failed", elxValue);
         }
+
+        // Create and mount SHM shared memory directory for this DataGroup
+        MountDataGroupShm(appProperty, item, sandboxPackagePath, mountSharedFlag);
         return 0;
     };
     int ret = SandboxCommon::HandleArrayForeach(dataGroupRoot, processor);
     cJSON_Delete(dataGroupRoot);
     return ret;
+}
+
+// Create SHM shared memory directory for a DataGroup item and mount it into the application sandbox.
+// Source path: /mnt/sandbox/shm/<currentUserId>/group/<dataGroupId>
+// Sandbox path: <sandboxPackagePath>/dev/shm/<dataGroupId>
+// This function is non-fatal: failures are logged but do not block the application startup.
+// Only effective when APPSPAWN_SUPPORT_NOSHAREFS macro is defined.
+void SandboxCore::MountDataGroupShm(const AppSpawningCtx *appProperty, cJSON *item,
+    const std::string &sandboxPackagePath, mode_t mountSharedFlag)
+{
+#ifdef APPSPAWN_SUPPORT_NOSHAREFS
+    const char *dataGroupIdChr = GetStringFromJsonObj(item,
+        SandboxCommonDef::g_groupList_key_dataGroupId.c_str());
+    if (dataGroupIdChr == nullptr) {
+        return;
+    }
+    std::string dataGroupIdStr(dataGroupIdChr);
+    AppSpawnMsgDacInfo *dacInfo = reinterpret_cast<AppSpawnMsgDacInfo *>(
+        GetAppProperty(appProperty, TLV_DAC_INFO));
+    if (dacInfo == nullptr) {
+        return;
+    }
+    std::string shmSrcPath = "/mnt/sandbox/shm/" +
+        std::to_string(dacInfo->uid / UID_BASE) + "/group/" + dataGroupIdStr;
+    struct stat shmStatBuff;
+    if (stat(shmSrcPath.c_str(), &shmStatBuff) < 0) {
+        int shmRet = SandboxCommon::CreateDirRecursive(shmSrcPath, SandboxCommonDef::FILE_MODE);
+        APPSPAWN_CHECK(shmRet == 0, return,
+            "Create shm group dir failed: %{public}s, errno %{public}d",
+            shmSrcPath.c_str(), errno);
+    }
+    std::string shmDestPath = sandboxPackagePath +
+        SandboxCommonDef::g_shmGroupDestPath + dataGroupIdStr;
+    SharedMountArgs shmArg = {
+        .srcPath = shmSrcPath.c_str(),
+        .destPath = shmDestPath.c_str(),
+        .mountSharedFlag = mountSharedFlag
+    };
+    int shmResult = SandboxCommon::DoAppSandboxMountOnce(appProperty, &shmArg);
+    if (shmResult != 0) {
+        APPSPAWN_LOGE("Mount shm group dir failed: %{public}s -> %{public}s",
+            shmSrcPath.c_str(), shmDestPath.c_str());
+    }
+#endif
 }
 
 int32_t SandboxCore::ProcessMountPointCommmon(cJSON *mntPoint, MountPointProcessParams &params, bool enableLogging)
