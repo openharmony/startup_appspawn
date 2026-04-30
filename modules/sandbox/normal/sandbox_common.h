@@ -87,7 +87,7 @@ public:
     static bool IsPrivateSharedStatus(const std::string &bundleName,
                                       AppSpawningCtx *appProperty); // GetSandboxPrivateSharedStatus
     static int32_t CheckAppFullMountEnable();
-
+    static bool VerifyDirRecursive(const std::string &path); // CheckDirRecursive
     // 路径处理
     static std::vector<std::string> SplitString(std::string &str, const std::string &delimiter); // split
     static std::string ReplaceAllVariables(std::string str, const std::string& from,
@@ -108,7 +108,6 @@ private:
     static void StoreCJsonConfig(cJSON *root, SandboxCommonDef::SandboxConfigType type);
 
     // 文件操作
-    static bool VerifyDirRecursive(const std::string &path); // CheckDirRecursive
     static void CreateFileIfNotExist(const char *file); // CheckAndCreatFile
 
     // 获取挂载配置参数信息
