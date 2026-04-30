@@ -113,7 +113,31 @@ private:
 
     // 处理可变参数的挂载
     static int32_t MountAllHsp(const AppSpawningCtx *appProperty, std::string &sandboxPackagePath, cJSON *hspRoot);
+
+    /**
+     * @brief Mount all data group directories for the application.
+     *
+     * @param appProperty         App spawning context containing DataGroup configuration
+     * @param sandboxPackagePath  Application sandbox root path
+     * @return 0 on success, -1 on validation error
+     */
     static int32_t MountAllGroup(const AppSpawningCtx *appProperty, std::string &sandboxPackagePath);
+
+    /**
+     * @brief Create SHM shared memory directory for a DataGroup item and mount it into the sandbox.
+     *
+     * Source: /mnt/sandbox/shm/<currentUserId>/group/<dataGroupId>
+     * Target: <sandboxPackagePath>/dev/shm/<dataGroupId>
+     * Non-fatal: failures are logged but do not block application startup.
+     * Only effective when APPSPAWN_SUPPORT_NOSHAREFS is defined.
+     *
+     * @param appProperty         App spawning context containing DAC info
+     * @param item                cJSON DataGroup item containing dataGroupId field
+     * @param sandboxPackagePath  Application sandbox root path
+     * @param mountSharedFlag     Mount propagation flag
+     */
+    static void MountDataGroupShm(const AppSpawningCtx *appProperty, cJSON *item,
+        const std::string &sandboxPackagePath, mode_t mountSharedFlag);
 
     // 沙箱回调函数
     static int32_t ProcessMountPoint(cJSON *mntPoint, MountPointProcessParams &params);
