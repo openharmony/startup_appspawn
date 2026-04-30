@@ -33,6 +33,7 @@ extern FILE *__real_fopen(const char *path, const char *mode);
 extern int __real_open(const char *path, int flags, ...);
 extern ssize_t __real_write(int fd, const void *buf, size_t count);
 extern int __real_rmdir(const char *path);
+extern int __real_kill(pid_t pid, int sig);
 extern int __real_GetParameter(const char *key, const char *def, char *value, uint32_t len);
 extern int __real_SetParameter(const char *key, const char *value);
 
@@ -137,14 +138,20 @@ ssize_t __wrap_write(int fd, const void *buf, size_t count)
 
 int __wrap_kill(pid_t pid, int sig)
 {
-    if (static_cast<size_t>(g_mockKilledCount) < MOCK_KILLED_PIDS_MAX) {
-        g_mockKilledPids[g_mockKilledCount++] = pid;
+    // Only record and mock when in test mode (g_mockTestRoot is set)
+    if (g_mockTestRoot[0] != '\0') {
+        if (static_cast<size_t>(g_mockKilledCount) < MOCK_KILLED_PIDS_MAX) {
+            g_mockKilledPids[g_mockKilledCount++] = pid;
+        }
+        if (g_mockKillFailPid == pid) {
+            errno = ESRCH;
+            return -1;
+        }
+        return 0;
     }
-    if (g_mockKillFailPid == pid) {
-        errno = ESRCH;
-        return -1;
-    }
-    return 0;
+    // Call real kill when not in test mode
+    extern int __real_kill(pid_t pid, int sig);
+    return __real_kill(pid, sig);
 }
 
 int __wrap_rmdir(const char *path)
