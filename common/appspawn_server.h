@@ -99,6 +99,7 @@ typedef struct AppSpawnContent {
     char *propertyBuffer;
     pid_t reservedPid;
     int enablePerfork;
+    int currentUnlockUid;       /**< Current unlock operation UID */
 #endif
     // system
     void (*runAppSpawn)(struct AppSpawnContent *content, int argc, char *const argv[]);
