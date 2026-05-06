@@ -113,6 +113,8 @@ HWTEST_F(AppSpawnLockBundleTest, AddLockBundleRef_001, TestSize.Level1)
     auto it = g_lockBundleMap.find(testLockPath1);
     EXPECT_NE(it, g_lockBundleMap.end());
     EXPECT_EQ(it->second.refCount, 1u);
+    EXPECT_EQ(it->second.uid, 1000u);
+    EXPECT_EQ(it->second.bundleName, testBundle1);
     EXPECT_EQ(it->second.lockPath, testLockPath1);
 }
 
@@ -182,6 +184,8 @@ HWTEST_F(AppSpawnLockBundleTest, ReleaseLockBundleRef_001, TestSize.Level1)
     auto it = g_lockBundleMap.find(testLockPath1);
     EXPECT_NE(it, g_lockBundleMap.end());
     EXPECT_EQ(it->second.refCount, 1u);
+    EXPECT_EQ(it->second.uid, 1000u);
+    EXPECT_EQ(it->second.bundleName, testBundle1);
 }
 
 /**

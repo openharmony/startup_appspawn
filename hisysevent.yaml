@@ -53,7 +53,7 @@ SPAWN_MOUNT_COUNT:
   AVG_DEVICE_MOUNT_COUNT: {type: INT32, desc: Average Device Mount Count}
 
 UNLOCK_MOUNT_ALL_DONE:
-  __BASE: {type: BEHAVIOR, level: MINOR, desc: Unlock mount all apps done}
+  __BASE: {type: STATISTIC, level: MINOR, desc: Unlock mount all apps done}
   UID: {type: INT32, desc: User ID}
   APP_COUNT: {type: INT32, desc: Total App Count}
   SUCCESS_COUNT: {type: INT32, desc: Mount Success Count}

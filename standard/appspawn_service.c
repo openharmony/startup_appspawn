@@ -91,7 +91,7 @@ static void AppQueueDestroyProc(const AppSpawnMgr *mgr, AppSpawnedProcess *appIn
     }
 }
 
-static void StopAppSpawn(void)
+APPSPAWN_STATIC void StopAppSpawn(void)
 {
     AppSpawnContent *content = GetAppSpawnContent();
     if (content != NULL && content->reservedPid > 0) {
@@ -156,7 +156,7 @@ APPSPAWN_STATIC void WriteSignalInfoToFd(AppSpawnedProcess *appInfo, AppSpawnCon
     free(jsonString);
 }
 
-static void HandleDiedPid(pid_t pid, uid_t uid, int status)
+APPSPAWN_STATIC void HandleDiedPid(pid_t pid, uid_t uid, int status)
 {
     AppSpawnContent *content = GetAppSpawnContent();
     APPSPAWN_CHECK(content != NULL, return, "Invalid content");
@@ -886,6 +886,44 @@ APPSPAWN_STATIC void ClearPipeFd(int pipe[], int length)
 }
 
 /**
+ * @brief Set unlock mount result to system parameter
+ * @param uid User ID
+ * @param result Mount result (0 = success, non-zero = failure)
+ */
+APPSPAWN_STATIC void SetUnlockMountResult(int uid, int result)
+{
+    char unlockMountParam[LOCK_STATUS_PARAM_SIZE] = {0};
+    int ret = snprintf_s(unlockMountParam, sizeof(unlockMountParam), sizeof(unlockMountParam) - 1,
+        "startup.appspawn.unlock_mount.%d", uid);
+    APPSPAWN_ONLY_EXPER(ret <= 0,
+#ifdef APPSPAWN_HISYSEVENT
+        ReportKeyEvent("UNLOCK_MOUNT_PARAM_FAIL");
+#endif
+        APPSPAWN_LOGE("snprintf_s failed for uid=%{public}d, ret=%{public}d", uid, ret);
+        return);
+    
+    int setRet = SetParameter(unlockMountParam, result == 0 ? "0" : "1");
+    APPSPAWN_ONLY_EXPER(setRet != 0,
+#ifdef APPSPAWN_HISYSEVENT
+        ReportKeyEvent("UNLOCK_MOUNT_PARAM_FAIL");
+#endif
+        APPSPAWN_LOGE("SetParameter failed for uid=%{public}d, ret=%{public}d", uid, setRet));
+}
+
+APPSPAWN_STATIC void HandlePreforkUnlockMsg(AppSpawnContent *content, const AppSpawnUnlockMsg *unlockMsg)
+{
+    APPSPAWN_LOGI("prefork process received UNLOCK msg, uid=%{public}d", unlockMsg->uid);
+    int result = ProcessUnlockMessage(unlockMsg->uid);
+
+    // Write result via param and report KEY_EVENT
+    SetUnlockMountResult(unlockMsg->uid, result);
+#ifdef APPSPAWN_HISYSEVENT
+    ReportKeyEvent(result == 0 ? UNLOCK_SUCCESS : "UNLOCK_MOUNT_FAIL");
+#endif
+    ProcessExit(0);
+}
+
+/**
  * @brief Handle FORK message in prefork child process.
  *
  * Called by PreforkChildLoop when a MSG_APP_SPAWN pipe message is received.
@@ -1052,6 +1090,9 @@ APPSPAWN_STATIC void PreforkChildLoop(AppSpawnContent *content, AppSpawningCtx *
     // Dispatch based on message type. Currently only MSG_APP_SPAWN is supported.
     // AppSpawnPipeMsg uses a type+union design for future extensibility.
     switch (pipeMsg.type) {
+        case MSG_LOCK_STATUS:
+            HandlePreforkUnlockMsg(content, &pipeMsg.msg.unlockMsg);
+            break;
         case MSG_APP_SPAWN:
             HandlePreforkForkMsg(content, property, &pipeMsg.msg.preforkMsg);
             break;
@@ -1453,20 +1494,6 @@ static uint32_t GetAppCloneIndex(AppSpawningCtx *property)
     return (bundleInfo != NULL) ? bundleInfo->bundleIndex : 0;
 }
 
-static void CopyAppMsgFlags(AppSpawnedProcess *appInfo, const AppSpawnMsgFlags *msgFlags)
-{
-    if (msgFlags == NULL || msgFlags->count == 0 || appInfo == NULL) {
-        return;
-    }
-    size_t flagsSize = sizeof(AppSpawnMsgFlags) + msgFlags->count * sizeof(uint32_t);
-    appInfo->msgFlags = (AppSpawnMsgFlags *)calloc(1, flagsSize);
-    APPSPAWN_CHECK(appInfo->msgFlags != NULL, return, "Failed to alloc msgFlags");
-    appInfo->msgFlags->count = msgFlags->count;
-    for (uint32_t i = 0; i < msgFlags->count; i++) {
-        appInfo->msgFlags->flags[i] = msgFlags->flags[i];
-    }
-}
-
 static AppSpawnedProcess *InitSpawnedProcessInfo(AppSpawningCtx *property)
 {
     bool isDebuggable = CheckAppMsgFlagsSet(property, APP_FLAGS_DEBUGGABLE);
@@ -1475,14 +1502,13 @@ static AppSpawnedProcess *InitSpawnedProcessInfo(AppSpawningCtx *property)
     AppSpawnedProcess *appInfo = AddSpawnedProcess(property->pid, GetBundleName(property), appIndex, isDebuggable);
     APPSPAWN_CHECK(appInfo != NULL, return NULL, "Failed to add spawned process");
 
-    AppSpawnMsgFlags *msgFlags = (AppSpawnMsgFlags *)GetAppSpawnMsgInfo(property->message, TLV_MSG_FLAGS);
-    CopyAppMsgFlags(appInfo, msgFlags);
-
     AppSpawnMsgDacInfo *dacInfo = GetAppProperty(property, TLV_DAC_INFO);
     appInfo->uid = (dacInfo != NULL) ? dacInfo->uid : 0;
     appInfo->spawnStart.tv_sec = property->spawnStart.tv_sec;
     appInfo->spawnStart.tv_nsec = property->spawnStart.tv_nsec;
     appInfo->lockBundleRefAdded = property->lockBundleRefAdded;  // Copy flag from AppSpawningCtx
+    appInfo->lockPath = property->lockPath;  // Transfer lockPath ownership to AppSpawnedProcess
+    property->lockPath = NULL;  // Prevent double free
 
     return appInfo;
 }
@@ -2048,7 +2074,7 @@ APPSPAWN_STATIC int ProcessAppSpawnDeviceDebugMsg(AppSpawnMsgNode *message)
     return result;
 }
 
-static void ProcessAppSpawnLockStatusMsg(AppSpawnMsgNode *message)
+APPSPAWN_STATIC void ProcessAppSpawnLockStatusMsg(AppSpawnMsgNode *message)
 {
     APPSPAWN_CHECK_ONLY_EXPER(message != NULL, return);
     uint32_t len = 0;
@@ -2079,7 +2105,7 @@ static void ProcessAppSpawnLockStatusMsg(AppSpawnMsgNode *message)
     ReportKeyEvent(strcmp(userLockStatus, "0") == 0 ? UNLOCK_SUCCESS : LOCK_SUCCESS);
 #endif
     if (strcmp(userLockStatus, "0") == 0) {
-        (void)ServerStageHookExecute(STAGE_SERVER_LOCK, GetAppSpawnContent());
+        HandleUnlockEvent(GetAppSpawnContent(), userId);
     }
 }
 
@@ -2225,4 +2251,184 @@ static void ProcessRecvMsg(AppSpawnConnection *connection, AppSpawnMsgNode *mess
             DeleteAppSpawnMsg(&message);
             break;
     }
+}
+
+static void ReforkPreforkIfNeeded(AppSpawnContent *content)
+{
+    if (!content->enablePerfork) {
+        return;
+    }
+    AppSpawningCtx *newProperty = CreateAppSpawningCtx();
+    if (newProperty != NULL) {
+        ProcessPreFork(content, newProperty);
+        DeleteAppSpawningCtx(newProperty);
+    }
+}
+
+// Try Level 1 prefork unlock. Returns: APPSPAWN_OK = L1 succeeded, error code = L1 failed (caller should try L2)
+static int TryLevel1PreforkUnlock(AppSpawnContent *content, int uid)
+{
+    APPSPAWN_ONLY_EXPER(content->reservedPid <= 0, return APPSPAWN_SYSTEM_ERROR);
+    AppSpawnMgr *mgr = (AppSpawnMgr *)content;
+    AppSpawnFds *pcFds = FindSpawningFdsByPid(mgr, content->reservedPid, TYPE_PARENT_CHILD);
+    if (pcFds != NULL && pcFds->fds[1] >= 0 && SendUnlockMsgToPrefork(content, uid) == 0) {
+        APPSPAWN_LOGI("Unlock msg sent to prefork child successfully");
+#ifdef APPSPAWN_HISYSEVENT
+        ReportKeyEvent(UNLOCK_MOUNT_L1_SUCCESS);
+#endif
+        UnregisterSpawningFdsByPid(mgr, content->reservedPid, TYPE_PARENT_CHILD);
+        UnregisterSpawningFdsByPid(mgr, content->reservedPid, TYPE_CHILD_PARENT);
+        content->reservedPid = 0;
+        return APPSPAWN_OK;
+    }
+
+    // fds not found or write failed: kill prefork and cleanup
+    APPSPAWN_LOGW("Level 1 failed, cleanup prefork pid=%{public}d", content->reservedPid);
+#ifdef APPSPAWN_HISYSEVENT
+    ReportKeyEvent(UNLOCK_MOUNT_L1_FAIL);
+#endif
+    UnregisterSpawningFdsByPid(mgr, content->reservedPid, TYPE_PARENT_CHILD);
+    UnregisterSpawningFdsByPid(mgr, content->reservedPid, TYPE_CHILD_PARENT);
+    pid_t oldPid = content->reservedPid;
+    content->reservedPid = 0;
+    kill(oldPid, SIGKILL);
+    return APPSPAWN_SYSTEM_ERROR;
+}
+
+void HandleUnlockEvent(AppSpawnContent *content, int uid)
+{
+    APPSPAWN_CHECK(content != NULL, return, "HandleUnlockEvent: Invalid content");
+    APPSPAWN_CHECK(uid > 0, return, "HandleUnlockEvent: Invalid uid");
+
+    APPSPAWN_LOGI("HandleUnlockEvent start, uid=%{public}d, reservedPid=%{public}d",
+                  uid, content->reservedPid);
+
+    bool needRefork = (content->reservedPid > 0);
+
+    do {
+        // Level 1: Reuse prefork child process (zero fork overhead)
+        APPSPAWN_ONLY_EXPER(TryLevel1PreforkUnlock(content, uid) == APPSPAWN_OK, break);
+
+        // Level 2: Fork new child process
+        pid_t pid = ForkAndDoUnlockMount(content, uid);
+        if (pid > 0) {
+            APPSPAWN_LOGI("Forked child %{public}d for unlock mount", pid);
+#ifdef APPSPAWN_HISYSEVENT
+            ReportKeyEvent(UNLOCK_MOUNT_L2_SUCCESS);
+#endif
+            break;
+        }
+        APPSPAWN_LOGW("Level 2 fork failed, fallback to serial mount, uid=%{public}d", uid);
+#ifdef APPSPAWN_HISYSEVENT
+        ReportKeyEvent(UNLOCK_MOUNT_L2_FAIL);
+#endif
+
+        // Level 3 (final fallback): Serial mount in main process
+        DoUnlockMountSerial(content, uid);
+    } while (0);
+
+    if (needRefork) {
+#ifdef APPSPAWN_HISYSEVENT
+        ReportKeyEvent(UNLOCK_MOUNT_REFORK);
+#endif
+        ReforkPreforkIfNeeded(content);
+    }
+}
+
+int SendUnlockMsgToPrefork(AppSpawnContent *content, int uid)
+{
+    APPSPAWN_CHECK(content != NULL, return APPSPAWN_ARG_INVALID,
+                  "SendUnlockMsgToPrefork: Invalid content");
+
+    // Get parentToChildFd from spawningFdsQueue
+    AppSpawnMgr *mgr = (AppSpawnMgr *)content;
+    AppSpawnFds *pcFds = FindSpawningFdsByPid(mgr, content->reservedPid, TYPE_PARENT_CHILD);
+    APPSPAWN_CHECK(pcFds != NULL, return APPSPAWN_ARG_INVALID,
+                  "parent child fds not found");
+
+    AppSpawnPipeMsg msg = {0};
+    msg.type = MSG_LOCK_STATUS;
+    msg.msg.unlockMsg.uid = uid;
+
+    ssize_t writeSize = write(pcFds->fds[1], &msg, sizeof(msg));
+    if (writeSize != sizeof(msg)) {
+        APPSPAWN_LOGE("Write unlock msg failed, writeSize=%{public}zd, errno=%{public}d",
+                      writeSize, errno);
+        return APPSPAWN_PIPE_ERROR;
+    }
+
+    APPSPAWN_LOGI("SendUnlockMsgToPrefork success, uid=%{public}d", uid);
+    return 0;
+}
+
+pid_t ForkAndDoUnlockMount(AppSpawnContent *content, int uid)
+{
+    pid_t pid = fork();
+    if (pid < 0) {
+        APPSPAWN_LOGE("Fork for unlock failed, errno=%{public}d", errno);
+        return -1;
+    }
+    if (pid == 0) {
+        // Child process: execute mount, write param, report event, then exit
+        int result = ProcessUnlockMessage(uid);
+        SetUnlockMountResult(uid, result);
+#ifdef APPSPAWN_HISYSEVENT
+        ReportKeyEvent(result == 0 ? UNLOCK_SUCCESS : "UNLOCK_MOUNT_FAIL");
+#endif
+        ProcessExit(0);
+    }
+    // Parent process: child runs independently, no waiting
+    APPSPAWN_LOGI("Forked child %{public}d for unlock mount", pid);
+    return pid;
+}
+
+void DoUnlockMountSerial(AppSpawnContent *content, int uid)
+{
+    APPSPAWN_LOGI("Do unlock mount serially in main process, uid=%{public}d", uid);
+
+    // Execute shared mount (sched priority is handled inside ProcessUnlockMessage)
+    int result = ProcessUnlockMessage(uid);
+
+    // Set parameter to indicate mount result
+    SetUnlockMountResult(uid, result);
+
+    APPSPAWN_LOGI("Serial mount done, uid=%{public}d, result=%{public}d", uid, result);
+#ifdef APPSPAWN_HISYSEVENT
+    ReportKeyEvent(UNLOCK_MOUNT_L3_DONE);
+#endif
+}
+
+int ProcessUnlockMessage(int uid)
+{
+    APPSPAWN_LOGI("ProcessUnlockMessage start, uid=%{public}d", uid);
+
+    // Set UID in content for hook function to retrieve
+    AppSpawnContent *content = GetAppSpawnContent();
+    if (content != NULL) {
+        content->currentUnlockUid = uid;
+    }
+
+    // Save original scheduling policy and priority
+    struct sched_param oldParam = { 0 };
+    int oldSchedPolicy = sched_getscheduler(0);
+    int ret = sched_getparam(0, &oldParam);
+    APPSPAWN_CHECK_ONLY_LOG(ret == 0, "sched_getparam failed ret=%{public}d", ret);
+
+    // Raise priority using SCHED_FIFO for mount operation
+    struct sched_param param = { 0 };
+    param.sched_priority = 1;
+    ret = sched_setscheduler(0, SCHED_FIFO, &param);
+    APPSPAWN_CHECK_ONLY_LOG(ret == 0, "sched_setscheduler failed ret=%{public}d", ret);
+
+    // Execute shared mount via hook mechanism with trace
+    StartAppspawnTrace("ProcessUnlockHook");
+    int result = ServerStageHookExecute(STAGE_SERVER_LOCK, GetAppSpawnContent());
+    FinishAppspawnTrace();
+
+    // Restore original scheduling policy and priority
+    ret = sched_setscheduler(0, oldSchedPolicy, &oldParam);
+    APPSPAWN_CHECK_ONLY_LOG(ret == 0, "restore scheduler failed ret=%{public}d", ret);
+
+    APPSPAWN_LOGI("ProcessUnlockMessage done, uid=%{public}d, result=%{public}d", uid, result);
+    return result;
 }

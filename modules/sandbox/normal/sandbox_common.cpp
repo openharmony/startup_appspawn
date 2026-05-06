@@ -227,19 +227,11 @@ std::string SandboxCommon::GetSandboxRootPath(const AppSpawningCtx *appProperty,
 
     std::string sandboxRoot = "";
     std::string isolatedFlagText = CheckAppMsgFlagsSet(appProperty, APP_FLAGS_ISOLATED_SANDBOX_TYPE) ? "isolated/" : "";
-    AppSpawnMsgBundleInfo *bundleInfo =
-        reinterpret_cast<AppSpawnMsgBundleInfo *>(GetAppProperty(appProperty, TLV_BUNDLE_INFO));
-    if (bundleInfo == nullptr) {
-        return "";
-    }
-    std::string tmpBundlePath = bundleInfo->bundleName;
-    std::ostringstream variablePackageName;
-    if (CheckAppSpawnMsgFlag(appProperty->message, TLV_MSG_FLAGS, APP_FLAGS_CLONE_ENABLE)) {
-        variablePackageName << "+clone-" << bundleInfo->bundleIndex << "+" << bundleInfo->bundleName;
-        tmpBundlePath = variablePackageName.str();
-    }
-    const std::string variableSandboxRoot = SandboxCommonDef::g_sandBoxRootDir +
-        std::to_string(dacInfo->uid / UID_BASE) + "/" + isolatedFlagText.c_str() + tmpBundlePath;
+    std::string lockSuffix = CheckAppMsgFlagsSet(appProperty, APP_FLAGS_UNLOCKED_STATUS) ? "" : "_preunlock";
+    std::string sandboxRootTemplate = SandboxCommonDef::g_sandBoxRootDir +
+        std::to_string(dacInfo->uid / UID_BASE) + "/" + isolatedFlagText.c_str() +
+        SandboxCommonDef::g_variablePackageName + lockSuffix;
+    const std::string variableSandboxRoot = ReplaceVariablePackageName(appProperty, sandboxRootTemplate);
 
     APPSPAWN_CHECK_ONLY_EXPER(config != nullptr, sandboxRoot = variableSandboxRoot;
         return sandboxRoot);
