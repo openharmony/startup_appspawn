@@ -20,6 +20,7 @@
 #include <stdbool.h>
 #include <unistd.h>
 
+#include "appspawn.h"
 #include "appspawn_utils.h"
 #include "appspawn.h"
 #ifdef __cplusplus
@@ -74,15 +75,20 @@ typedef struct AppSpawnPreforkMsg {
     uint32_t msgLen;
 } AppSpawnPreforkMsg;
 
+
+typedef struct AppSpawnUnlockMsg {
+    int uid;                /**< User ID */
+    int reserved[2];        /**< Reserved field, aligned with AppSpawnPreforkMsg */
+} AppSpawnUnlockMsg;
 /**
  * @brief Pipe message wrapper with type discriminator.
  * Extensible message format for parent-to-prefork-child communication.
- * Currently only MSG_APP_SPAWN is supported.
  */
 typedef struct AppSpawnPipeMsg {
     AppSpawnMsgType type;   /**< Message type */
     union {
         AppSpawnPreforkMsg preforkMsg;   /**< FORK message body */
+        AppSpawnUnlockMsg unlockMsg;     /**< UNLOCK message body */
     } msg;
 } AppSpawnPipeMsg;
 
@@ -123,6 +129,12 @@ void AppSpawnEnvClear(AppSpawnContent *content, AppSpawnClient *client);
 int AppSpawnProcessMsg(AppSpawnContent *content, AppSpawnClient *client, pid_t *childPid);
 void ProcessExit(int code);
 int AppSpawnChild(AppSpawnContent *content, AppSpawnClient *client);
+
+void HandleUnlockEvent(AppSpawnContent *content, int uid);
+int SendUnlockMsgToPrefork(AppSpawnContent *content, int uid);
+void DoUnlockMountSerial(AppSpawnContent *content, int uid);
+int ProcessUnlockMessage(int uid);
+pid_t ForkAndDoUnlockMount(AppSpawnContent *content, int uid);
 #ifdef __cplusplus
 }
 #endif

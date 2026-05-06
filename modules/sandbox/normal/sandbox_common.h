@@ -101,6 +101,9 @@ public:
     // 拼接系统参数路径
     static std::string BuildFullParamSrcPath(cJSON *mntPoint);
 
+    // 路径处理
+    static std::string ReplaceVariablePackageName(const AppSpawningCtx *appProperty, const std::string &path);
+
 private:
     // 加载配置文件
     static uint32_t GetSandboxNsFlags(bool isNweb);
@@ -123,7 +126,6 @@ private:
     static void CheckMountStatus(const std::string &path);
 
     // 路径处理
-    static std::string ReplaceVariablePackageName(const AppSpawningCtx *appProperty, const std::string &path);
     static void MakeAtomicServiceDir(const AppSpawningCtx *appProperty, std::string path,
                                      std::string variablePackageName);
     static std::string ReplaceHostUserId(const AppSpawningCtx *appProperty, const std::string &path);

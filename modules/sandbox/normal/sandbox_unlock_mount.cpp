@@ -26,6 +26,9 @@
 #include <atomic>
 #include <chrono>
 #include <algorithm>
+#include <queue>
+#include <mutex>
+#include <functional>
 
 #include "sandbox_unlock_mount.h"
 #include "sandbox_shared_mount.h"
@@ -74,12 +77,22 @@ APPSPAWN_STATIC std::string ReplacePlaceholders(const std::string &templateStr, 
     return result;
 }
 
-// 工作线程上下文，传递任务列表和计数器
-struct MountWorkerContext {
-    std::vector<LockBundleInfo> *bundles;
-    std::atomic<int> *successCount;
-    std::atomic<int> *failCount;
-    std::atomic<int> *skipCount;
+// 单个挂载任务
+struct MountTask {
+    size_t configIndex;    // 挂载点配置索引
+    size_t bundleIndex;    // 应用索引
+};
+
+// 任务队列上下文
+struct MountQueueContext {
+    std::queue<MountTask> taskQueue;         // 任务队列
+    std::mutex queueMutex;                    // 互斥锁
+    const UnlockMountEntry *mountConfig;    // 配置指针
+    std::vector<LockBundleInfo> bundles;    // 应用列表（直接存储，不是指针）
+    std::atomic<int> successCount{0};       // 成功计数
+    std::atomic<int> failCount{0};          // 失败计数
+    std::atomic<int> skipCount{0};           // 跳过计数
+    unsigned int threadCount;                 // 线程数
 };
 
 // Returns mount result for one config entry: {success, fail, skip}
@@ -132,25 +145,89 @@ APPSPAWN_STATIC MountEntryResult MountSingleConfigEntry(const UnlockMountEntry &
     return result;
 }
 
-// 无锁工作线程函数：每个线程处理 index, index+mod, index+2*mod, ... 的挂载点配置
-// 对每个挂载点，处理所有包（保证耗时挂载点在最后）
-APPSPAWN_STATIC void MountWorkerThread(unsigned int index, unsigned int mod, const MountWorkerContext &ctx)
+// 工作队列核心逻辑：从共享队列中获取任务并执行
+APPSPAWN_STATIC void MountQueueWorkerThread(MountQueueContext &ctx, unsigned int workerId)
 {
+    size_t processedTasks = 0;
+    MountTask task;
+
+    while (true) {
+        // 从队列中获取任务（加锁保护）
+        {
+            std::lock_guard<std::mutex> lock(ctx.queueMutex);
+            if (ctx.taskQueue.empty()) {
+                // 队列为空，退出
+                break;
+            }
+            task = ctx.taskQueue.front();
+            ctx.taskQueue.pop();
+        }
+
+        // 执行挂载任务（无需锁，避免阻塞其他线程）
+        const LockBundleInfo &bundle = ctx.bundles[task.bundleIndex];
+        auto r = MountSingleConfigEntry(ctx.mountConfig[task.configIndex], bundle);
+        ctx.successCount.fetch_add(r.success, std::memory_order_relaxed);
+        ctx.failCount.fetch_add(r.fail, std::memory_order_relaxed);
+        ctx.skipCount.fetch_add(r.skip, std::memory_order_relaxed);
+
+        processedTasks++;
+    }
+
+    APPSPAWN_LOGV("MountQueueWorkerThread[%{public}u]: processed %{public}zu tasks",
+                  workerId, processedTasks);
+}
+
+/**
+ * @brief Create and initialize mount queue context with all resources
+ * @return nullptr if no apps to mount, otherwise the context
+ */
+APPSPAWN_STATIC std::unique_ptr<MountQueueContext> CreateMountContext(int uid)
+{
+    // Get mount bundle list
+    std::vector<LockBundleInfo> bundles = GetAllLockBundles();
+
+    // Filter bundles by userId
+    std::vector<LockBundleInfo> filteredBundles;
+    for (const auto &bundle : bundles) {
+        APPSPAWN_ONLY_EXPER(bundle.uid / UID_BASE != static_cast<uint32_t>(uid), continue);
+        filteredBundles.push_back(bundle);
+    }
+
+    if (filteredBundles.empty()) {
+        APPSPAWN_LOGI("CreateMountContext: no apps to mount, uid=%{public}d", uid);
+        return nullptr;
+    }
+
+#ifdef APPSPAWN_HISYSEVENT
+    ReportKeyEvent(UNLOCK_MOUNT_SCAN_DONE);
+#endif
+
+    // Calculate thread count
+    unsigned int threadCount = std::min(
+        static_cast<unsigned int>(filteredBundles.size()),
+        std::thread::hardware_concurrency() > 0 ? std::thread::hardware_concurrency() : 4
+    );
+
+    // Get mount configuration
     size_t configSize = 0;
     const UnlockMountEntry* mountConfig = GetUnlockMountEntry(&configSize);
 
-    // Process mount point configs in parallel (index, index+mod, index+2*mod, ...)
-    for (size_t i = index; i < configSize; i += mod) {
-        // For this mount point, process all bundles
-        for (const auto &bundle : *ctx.bundles) {
-            auto r = MountSingleConfigEntry(mountConfig[i], bundle);
-            *ctx.successCount += r.success;
-            *ctx.failCount += r.fail;
-            *ctx.skipCount += r.skip;
+    // Build task queue: all (configIndex, bundleIndex) combinations
+    std::queue<MountTask> taskQueue;
+    for (size_t i = 0; i < configSize; i++) {
+        for (size_t j = 0; j < filteredBundles.size(); j++) {
+            taskQueue.push({i, j});
         }
-        APPSPAWN_LOGV("MountWorkerThread[%{public}u]: mount point %{public}zu done",
-                      index, i);
     }
+
+    // Create context
+    auto ctx = std::make_unique<MountQueueContext>();
+    ctx->taskQueue = std::move(taskQueue);
+    ctx->bundles = std::move(filteredBundles);
+    ctx->mountConfig = mountConfig;
+    ctx->threadCount = threadCount;
+
+    return ctx;
 }
 
 int DoSharedMountForUser(int uid)
@@ -158,52 +235,24 @@ int DoSharedMountForUser(int uid)
     APPSPAWN_LOGI("DoSharedMountForUser start, uid=%{public}d, g_lockBundleMap.size=%{public}zu",
                   uid, GetLockBundleMapSize());
 
-    // Get mount bundle list from g_lockBundleMap (replaces opendir + _preunlock suffix scan)
-    std::vector<LockBundleInfo> bundles = GetAllLockBundles();
+    auto mountStart = std::chrono::steady_clock::now();
 
-    // Filter bundles by userId and other conditions
-    std::vector<LockBundleInfo> filteredBundles;
-    for (const auto &bundle : bundles) {
-        // Filter by userId
-        APPSPAWN_ONLY_EXPER(bundle.uid / UID_BASE != static_cast<uint32_t>(uid), continue);
-        filteredBundles.push_back(bundle);
-    }
-
-    if (filteredBundles.empty()) {
-        APPSPAWN_LOGI("DoSharedMountForUser: no apps to mount, uid=%{public}d", uid);
+    // Create mount context (includes getting bundles, filtering, building task queue)
+    auto ctx = CreateMountContext(uid);
+    if (ctx == nullptr) {
 #ifdef APPSPAWN_HISYSEVENT
         ReportKeyEvent(UNLOCK_MOUNT_NO_APPS);
 #endif
         return 0;
     }
 
-#ifdef APPSPAWN_HISYSEVENT
-    ReportKeyEvent(UNLOCK_MOUNT_SCAN_DONE);
-#endif
-
-    // 第二阶段：多线程并行挂载（无锁分片模式）
-    auto mountStart = std::chrono::steady_clock::now();
-    const unsigned int threadCount = std::min(
-        static_cast<unsigned int>(filteredBundles.size()),
-        std::thread::hardware_concurrency() > 0 ? std::thread::hardware_concurrency() : 4
-    );
-
-    APPSPAWN_LOGI("DoSharedMountForUser: mounting %{public}zu apps with %{public}u threads (lock-free)",
-                  filteredBundles.size(), threadCount);
-
-    // 使用局部变量，避免全局状态重入风险
-    std::atomic<int> mountSuccessCount{0};
-    std::atomic<int> mountFailCount{0};
-    std::atomic<int> mountSkipCount{0};
-    MountWorkerContext ctx = { &filteredBundles, &mountSuccessCount, &mountFailCount, &mountSkipCount };
-
-    // 创建工作线程，每个线程传入 (index, mod, ctx) 进行分片处理
+    // Create worker threads
     std::vector<std::thread> workers;
-    for (unsigned int i = 0; i < threadCount; i++) {
-        workers.emplace_back(MountWorkerThread, i, threadCount, std::cref(ctx));
+    for (unsigned int i = 0; i < ctx->threadCount; i++) {
+        workers.emplace_back(MountQueueWorkerThread, std::ref(*ctx), i);
     }
 
-    // 等待所有线程结束
+    // Wait for all threads to complete
     for (auto &worker : workers) {
         APPSPAWN_ONLY_EXPER(worker.joinable(), worker.join());
     }
@@ -212,10 +261,11 @@ int DoSharedMountForUser(int uid)
     int64_t duration = std::chrono::duration_cast<std::chrono::milliseconds>(mountEnd - mountStart).count();
 
     APPSPAWN_LOGI("DoSharedMountForUser done, %{public}d, %{public}d, %{public}d, %{public}d, %{public}" PRId64 " ms",
-                  uid, mountSuccessCount.load(), mountFailCount.load(), mountSkipCount.load(), duration);
+                  uid, ctx->successCount.load(), ctx->failCount.load(),
+                  ctx->skipCount.load(), duration);
 #ifdef APPSPAWN_HISYSEVENT
-    ReportUnlockMountResult(uid, static_cast<int32_t>(filteredBundles.size()),
-        mountSuccessCount.load(), mountFailCount.load(), duration);
+    ReportUnlockMountResult(uid, static_cast<int32_t>(ctx->bundles.size()),
+        ctx->successCount.load(), ctx->failCount.load(), duration);
 #endif
     return 0;
 }
@@ -241,6 +291,12 @@ int HandleUnlockMountForUser(AppSpawnMgr *mgr)
     }
 
     return DoSharedMountForUser(uid);
+}
+
+MODULE_CONSTRUCTOR(void)
+{
+    (void)AddServerStageHook(STAGE_SERVER_LOCK, HOOK_PRIO_COMMON, HandleUnlockMountForUser);
+    APPSPAWN_LOGI("RegisterUnlockMountHook: unlock mount hook registered");
 }
 
 #endif // APPSPAWN_SANDBOX_NEW

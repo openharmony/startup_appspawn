@@ -14,21 +14,22 @@
  */
 
 #include <cerrno>
+#include <cinttypes>
 #include <sys/mount.h>
 #include <sys/stat.h>
+#include <dirent.h>
 #include <vector>
 #include <cstring>
-#include <fstream>
-#include <sstream>
-#include <algorithm>
-#include <regex>
 #include <map>
 #include <string>
+
 #include "securec.h"
 
 #include "sandbox_shared_mount.h"
+#include "sandbox_common.h"
 #include "appspawn_mount_permission.h"
 #include "appspawn_utils.h"
+#include "appspawn_server.h"
 #include "appspawn.h"
 #include "appspawn_manager.h"
 #include "appspawn_msg.h"
@@ -53,13 +54,11 @@
 * Total: 12 mount points (6 EL2 + 2 EL3 + 2 EL4 + 2 EL5)
 */
 static const UnlockMountEntry SANDBOX_MOUNT_CONFIG[] = {
-    // EL2 (6 entries)
+    // EL2 (3 entries)
     {"/data/app/el2/<userId>/base/<bundleName>/", "/data/storage/el2/base/"},
     {"/data/app/el2/<userId>/database/<bundleName>/", "/data/storage/el2/database/"},
-    {"/mnt/share/<userId>/<bundleName>/", "/data/storage/el2/share/"},
     {"/data/app/el2/<userId>/log/<bundleName>/", "/data/storage/el2/log/"},
-    {"/mnt/hmdfs/<userId>/account/merge_view/data/<bundleName>/", "/data/storage/el2/distributedfiles/"},
-    {"/mnt/hmdfs/<userId>/cloud/data/<bundleName>/", "/data/storage/el2/cloud/"},
+
     // EL3 (2 entries)
     {"/data/app/el3/<userId>/base/<bundleName>/", "/data/storage/el3/base/"},
     {"/data/app/el3/<userId>/database/<bundleName>/", "/data/storage/el3/database/"},
@@ -69,6 +68,10 @@ static const UnlockMountEntry SANDBOX_MOUNT_CONFIG[] = {
     // EL5 (2 entries) - unlock mount skips permission check
     {"/data/app/el5/<userId>/base/<bundleName>/", "/data/storage/el5/base/"},
     {"/data/app/el5/<userId>/database/<bundleName>/", "/data/storage/el5/database/"},
+    // Special fs type
+    {"/mnt/share/<userId>/<bundleName>/", "/data/storage/el2/share/"},
+    {"/mnt/hmdfs/<userId>/cloud/data/<bundleName>/", "/data/storage/el2/cloud/"},
+    {"/mnt/hmdfs/<userId>/account/merge_view/data/<bundleName>/", "/data/storage/el2/distributedfiles/"},
 };
 
 const UnlockMountEntry* GetUnlockMountEntry(size_t* outSize)
@@ -142,47 +145,8 @@ bool IsValidDataGroupItem(cJSON *item)
 
 #ifndef APPSPAWN_SANDBOX_NEW
 
-// Global map for managing lock bundle info, key is lockPath (complete _locked directory path)
+// Global map for managing lock bundle info, key is lockPath (complete _preunlock directory path)
 APPSPAWN_STATIC std::map<std::string, LockBundleInfo> g_lockBundleMap;
-
-/**
- * @brief Build lockPath from pre-built varBundleName (simpler version)
- * @param uid User ID
- * @param varBundleName Pre-built variable bundle name
- * @param msgFlags Message flags (contains APP_FLAGS_ISOLATED_SANDBOX_TYPE etc.)
- * @return Complete _locked directory path
- */
-static std::string BuildLockPath(uint32_t uid, const std::string &varBundleName,
-    const AppSpawnMsgFlags *msgFlags)
-{
-    std::string lockSbxPathStamp = "/mnt/sandbox/" + std::to_string(uid / UID_BASE) + "/";
-    lockSbxPathStamp += CheckAppSpawnMsgFlagsSet(msgFlags, APP_FLAGS_ISOLATED_SANDBOX_TYPE) ?
-        "isolated/" : "";
-    lockSbxPathStamp += varBundleName;
-    lockSbxPathStamp += "_locked";
-    return lockSbxPathStamp;
-}
-
-/**
- * @brief Build lockPath from app information (full version for cases without pre-built varBundleName)
- * @param uid User ID
- * @param bundleName Bundle name (original bundle name without clone suffix)
- * @param appIndex Bundle index (0 for non-clone, >0 for clone)
- * @param msgFlags Message flags (contains APP_FLAGS_ISOLATED_SANDBOX_TYPE etc.)
- * @return Complete _locked directory path
- */
-static std::string BuildLockPath(uint32_t uid, const std::string &bundleName,
-    uint32_t appIndex, const AppSpawnMsgFlags *msgFlags)
-{
-    // Build varBundleName from bundleName and appIndex
-    std::string varBundleName = bundleName;
-    APPSPAWN_ONLY_EXPER(CheckAppSpawnMsgFlagsSet(msgFlags, APP_FLAGS_CLONE_ENABLE) && appIndex > 0,
-        std::ostringstream oss;
-        oss << "+clone-" << appIndex << "+" << bundleName;
-        varBundleName = oss.str());
-
-    return BuildLockPath(uid, varBundleName, msgFlags);
-}
 
 APPSPAWN_STATIC int AddLockBundleRef(uint32_t uid, const std::string &bundleName, const std::string &lockPath)
 {
@@ -193,10 +157,11 @@ APPSPAWN_STATIC int AddLockBundleRef(uint32_t uid, const std::string &bundleName
         LockBundleInfo info;
         info.refCount = 1;
         info.uid = uid;
-        info.bundleName = bundleName;
         info.lockPath = lockPath;
+        info.bundleName = bundleName;
         g_lockBundleMap[lockPath] = info;
-        APPSPAWN_LOGI("AddLockBundleRef: new lockPath %{public}s, refCount=1", lockPath.c_str());
+        APPSPAWN_LOGI("AddLockBundleRef: new lockPath %{public}s, uid=%{public}u, bundleName=%{public}s, "
+                      "refCount=1", lockPath.c_str(), uid, bundleName.c_str());
     } else {
         // Already exists, increase count
         it->second.refCount++;
@@ -237,6 +202,8 @@ APPSPAWN_STATIC void ReleaseLockBundleRef(const std::string &lockPath)
     APPSPAWN_LOGI("ReleaseLockBundleRef: lockPath %{public}s refCount=%{public}u",
                   lockPath.c_str(), it->second.refCount);
     APPSPAWN_ONLY_EXPER(it->second.refCount != 0, return);
+    // Count is 0, unmount secondary mount points created by DoSharedMountForApp
+    UnmountLockedBundleMounts(it->second.lockPath);
     // Remove from map
     g_lockBundleMap.erase(it);
 }
@@ -311,7 +278,7 @@ static int MountSharedMapItem(const AppSpawningCtx *property, const AppDacInfo *
 {
     /* /mnt/sandbox/<currentUserId>/<varBundleName>/data/storage/el<x> */
     char sandboxPath[PATH_MAX_LEN] = {0};
-    int ret = snprintf_s(sandboxPath, PATH_MAX_LEN, PATH_MAX_LEN - 1, "/mnt/sandbox/%u/%s%s",
+    int ret = snprintf_s(sandboxPath, PATH_MAX_LEN, PATH_MAX_LEN - 1, "/mnt/sandbox/%u/%s_preunlock%s",
                          info->uid / UID_BASE, varBundleName, sandboxPathItem);
     if (ret <= 0) {
         APPSPAWN_LOGE("snprintf sandboxPath failed, errno %{public}d", errno);
@@ -482,8 +449,8 @@ static int ParseDataGroupList(AppSpawnMgr *content, const AppSpawningCtx *proper
             }
         }
         // sandboxPath: /mnt/sandbox/<currentUserId>/<varBundleName>/data/storage/el<x>/group
-        std::string sandboxPath = "/mnt/sandbox/" + std::to_string(info->uid / UID_BASE) + "/" + varBundleName
-                                 + templateItem->sandboxPath;
+        std::string sandboxPath = "/mnt/sandbox/" + std::to_string(info->uid / UID_BASE) +
+                                  "/" + varBundleName + "_preunlock" + templateItem->sandboxPath;
 
         ret = AddDataGroupItemToQueue(content, srcPath, sandboxPath, uuidItem->valuestring);
         if (ret != 0) {
@@ -535,23 +502,6 @@ int UpdateDataGroupDirs(AppSpawnMgr *content)
     return 0;
 }
 
-static std::string ReplaceVarBundleName(const AppSpawningCtx *property)
-{
-    AppSpawnMsgBundleInfo *bundleInfo =
-        reinterpret_cast<AppSpawnMsgBundleInfo *>(GetAppProperty(property, TLV_BUNDLE_INFO));
-    if (bundleInfo == nullptr) {
-        return "";
-    }
-
-    std::string tmpBundlePath = bundleInfo->bundleName;
-    std::ostringstream variablePackageName;
-    if (CheckAppSpawnMsgFlag(property->message, TLV_MSG_FLAGS, APP_FLAGS_CLONE_ENABLE)) {
-        variablePackageName << "+clone-" << bundleInfo->bundleIndex << "+" << bundleInfo->bundleName;
-        tmpBundlePath = variablePackageName.str();
-    }
-    return tmpBundlePath;
-}
-
 APPSPAWN_STATIC void MountDirToShared(AppSpawnMgr *content, const AppSpawningCtx *property)
 {
     if (property == nullptr) {
@@ -559,9 +509,12 @@ APPSPAWN_STATIC void MountDirToShared(AppSpawnMgr *content, const AppSpawningCtx
     }
 
     AppDacInfo *info = reinterpret_cast<AppDacInfo *>(GetAppProperty(property, TLV_DAC_INFO));
-    std::string varBundleName = ReplaceVarBundleName(property);
+    std::string isolatedPrefix = CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX_TYPE) ? "isolated/" : "";
+    std::string varBundleName = isolatedPrefix + OHOS::AppSpawn::SandboxCommon::ReplaceVariablePackageName(property,
+        OHOS::AppSpawn::SandboxCommonDef::g_variablePackageName);
     const char *bundleName = GetBundleName(property);
-    APPSPAWN_ONLY_EXPER(info == nullptr || varBundleName == "" || bundleName == nullptr,
+
+    APPSPAWN_ONLY_EXPER(info == nullptr || varBundleName.empty() || bundleName == nullptr,
         APPSPAWN_LOGE("Invalid app dac info or varBundleName");
         return);
 
@@ -573,16 +526,12 @@ APPSPAWN_STATIC void MountDirToShared(AppSpawnMgr *content, const AppSpawningCtx
     MountSharedMap(property, info, varBundleName.c_str());
     ParseDataGroupList(content, property, info, varBundleName.c_str());
 
-    AppSpawnMsgFlags *msgFlags = reinterpret_cast<AppSpawnMsgFlags *>(
-        GetAppSpawnMsgInfo(property->message, TLV_MSG_FLAGS));
-    std::string lockSbxPathStamp = BuildLockPath(info->uid, varBundleName, msgFlags);
-    int ret = MakeDirRec(lockSbxPathStamp.c_str(), DIR_MODE, 1);
-    if (ret != 0) {
-        APPSPAWN_LOGE("mkdir %{public}s failed, errno %{public}d", lockSbxPathStamp.c_str(), errno);
-    }
-    // Add reference count for _locked directory, use lockPath as key
-    AddLockBundleRef(info->uid, bundleName, lockSbxPathStamp);
-    // Set flag to indicate that AddLockBundleRef has been called (use const_cast to modify)
+    std::string lockPath = "/mnt/sandbox/" + std::to_string(info->uid / UID_BASE) + "/" + varBundleName + "_preunlock";
+    // Add reference count for _preunlock directory, use lockPath as key
+    AddLockBundleRef(info->uid, bundleName, lockPath);
+
+    // Save lockPath and set flag (use const_cast to modify)
+    const_cast<AppSpawningCtx *>(property)->lockPath = strdup(lockPath.c_str());
     const_cast<AppSpawningCtx *>(property)->lockBundleRefAdded = true;
 }
 #endif
@@ -601,14 +550,13 @@ APPSPAWN_STATIC int AppCleanupHook(const AppSpawnMgr *content, const AppSpawnedP
 {
     APPSPAWN_ONLY_EXPER(appInfo == nullptr || IsNWebSpawnMode(content),
         return 0);
-    // Only process when uid > 0 and device is locked
-    APPSPAWN_ONLY_EXPER(IsUnlockStatus(appInfo->uid) || !appInfo->lockBundleRefAdded, return 0);
 
-    // Build lockPath from appInfo
-    std::string lockPath = BuildLockPath(appInfo->uid, std::string(appInfo->name),
-        appInfo->appIndex, appInfo->msgFlags);
-    APPSPAWN_LOGI("AppCleanupHook: cleanup lockPath=%{public}s", lockPath.c_str());
-    ReleaseLockBundleRef(lockPath);
+    // Only process when uid > 0 and device is locked
+    APPSPAWN_CHECK(appInfo->lockBundleRefAdded, return 0, "invalid ref in AppCleanupHook");
+    APPSPAWN_CHECK(appInfo->lockPath != nullptr, return 0, "invalid lockPath in AppCleanupHook");
+    APPSPAWN_LOGI("AppCleanupHook: cleanup lockPath=%{public}s", appInfo->lockPath);
+
+    ReleaseLockBundleRef(appInfo->lockPath);
     // Clear flag to prevent double release (redundant but safe)
     const_cast<AppSpawnedProcessInfo *>(appInfo)->lockBundleRefAdded = false;
     return 0;
@@ -619,35 +567,16 @@ APPSPAWN_STATIC int SpawnFailedHook(AppSpawnMgr *content, AppSpawningCtx *proper
     APPSPAWN_ONLY_EXPER(property == nullptr || IsNWebSpawnMode(content),
         return 0);
 
-    // Get uid, appIndex and msgFlags from property
-    AppDacInfo *dacInfo = reinterpret_cast<AppDacInfo *>(GetAppProperty(property, TLV_DAC_INFO));
-    uint32_t uid = dacInfo != nullptr ? dacInfo->uid : 0;
+    APPSPAWN_CHECK(property->lockBundleRefAdded, return 0, "invalid ref in SpawnFailedHook");
+    APPSPAWN_CHECK(property->lockPath != nullptr, return 0, "invalid lockPath in SpawnFailedHook");
+    APPSPAWN_LOGV("SpawnFailedHook: fork failed, release lock ref for lockPath=%{public}s",
+        property->lockPath);
 
-    // Only process when uid > 0 and device is locked
-    APPSPAWN_ONLY_EXPER(IsUnlockStatus(uid) || !property->lockBundleRefAdded, return 0);
-
-    // Only process when uid > 0 and device is locked
-    const char *bundleName = GetBundleName(property);
-    APPSPAWN_CHECK(bundleName != nullptr, return 0,
-        "SpawnFailedHook: failed to get bundle name");
-
-    uint32_t appIndex = 0;
-    AppSpawnMsgBundleInfo *bundleInfo = reinterpret_cast<AppSpawnMsgBundleInfo *>(
-        GetAppProperty(property, TLV_BUNDLE_INFO));
-    APPSPAWN_ONLY_EXPER(bundleInfo != nullptr, appIndex = bundleInfo->bundleIndex);
-
-    // Get complete msgFlags
-    AppSpawnMsgFlags *msgFlags = reinterpret_cast<AppSpawnMsgFlags *>(
-        GetAppSpawnMsgInfo(property->message, TLV_MSG_FLAGS));
-
-    std::string lockPath = BuildLockPath(uid, std::string(bundleName), appIndex, msgFlags);
-    APPSPAWN_LOGV("SpawnFailedHook: fork failed, release lock ref for lockPath=%{public}s", lockPath.c_str());
-    ReleaseLockBundleRef(lockPath);
+    ReleaseLockBundleRef(property->lockPath);
     // Clear flag to prevent double release
     property->lockBundleRefAdded = false;
     return 0;
 }
-
 #endif
 
 MODULE_CONSTRUCTOR(void)
@@ -659,4 +588,3 @@ MODULE_CONSTRUCTOR(void)
     APPSPAWN_LOGI("RegisterLockBundleHooks: hooks registered");
 #endif
 }
-
