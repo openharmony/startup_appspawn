@@ -37,6 +37,7 @@ struct CheckpointMsgParams {
     const char *processName;
     pid_t imagePid;
     uint64_t checkPointId;
+    const char *checkPointImgName;  // checkpoint镜像进程名，NULL则使用bundleName
 };
 
 /**
@@ -89,6 +90,30 @@ public:
      */
     int CheckpointTestAddCheckpointTlv(uint8_t *buffer, uint32_t bufferLen, uint32_t &realLen, uint32_t &tlvCount,
         const CheckpointMsgParams &params);
+
+    /**
+     * @brief 添加Checkpoint信息TLV
+     * @param buffer TLV缓冲区
+     * @param bufferLen 缓冲区长度
+     * @param realLen 实际写入长度
+     * @param tlvCount TLV计数
+     * @param params Checkpoint参数结构体
+     * @return 0成功，其他失败
+     */
+    int CheckpointTestAddBundleTlv(uint8_t *buffer, uint32_t bufferLen, uint32_t &realLen, uint32_t &tlvCount,
+        const CheckpointMsgParams &params);
+
+    /**
+     * @brief 添加自定义长度的bundle info TLV（支持超长名称）
+     * @param buffer TLV缓冲区
+     * @param bufferLen 缓冲区长度
+     * @param realLen 实际写入长度
+     * @param tlvCount TLV计数
+     * @param bundleName bundle名称字符串
+     * @return 0成功，其他失败
+     */
+    int CheckpointTestAddLongBundleTlv(uint8_t *buffer, uint32_t bufferLen, uint32_t &realLen, uint32_t &tlvCount,
+        const char *bundleName);
 
 private:
     std::string processName_;

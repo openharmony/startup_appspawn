@@ -99,7 +99,7 @@ HWTEST_F(AppSpawnCheckpointReqTest, Process_Checkpoint_Req_Msg_001, TestSize.Lev
     CheckpointTestHelper testHelper;
     std::vector<uint8_t> buffer(1024 * 2);  // 参考App_Spawn_AppSpawnMsg_002使用的buffer大小
     uint32_t msgLen = 0;
-    CheckpointMsgParams params = {MSG_SPAWN_IMAGE_PROCESS, "com.test.image", 12345, 1001};
+    CheckpointMsgParams params = {MSG_SPAWN_IMAGE_PROCESS, "com.test.image", 12345, 1001, nullptr};
     int ret = testHelper.CreateCheckpointMsg(buffer, msgLen, params);
     ASSERT_EQ(ret, 0);
 
@@ -163,7 +163,7 @@ HWTEST_F(AppSpawnCheckpointReqTest, Process_Checkpoint_Req_Msg_002, TestSize.Lev
     CheckpointTestHelper testHelper;
     std::vector<uint8_t> buffer(1024 * 2);
     uint32_t msgLen = 0;
-    CheckpointMsgParams params = {MSG_SPAWN_WORKER_PROCESS, "com.test.worker", 12345, 1001};
+    CheckpointMsgParams params = {MSG_SPAWN_WORKER_PROCESS, "com.test.worker", 12345, 1001, nullptr};
     int ret = testHelper.CreateCheckpointMsg(buffer, msgLen, params);
     ASSERT_EQ(ret, 0);
 
@@ -329,7 +329,7 @@ HWTEST_F(AppSpawnCheckpointReqTest, Process_Checkpoint_Req_Msg_006, TestSize.Lev
     CheckpointTestHelper testHelper;
     std::vector<uint8_t> buffer(1024 * 2);
     uint32_t msgLen = 0;
-    CheckpointMsgParams params = {MSG_SPAWN_IMAGE_PROCESS, "com.test.ioerror", 12345, 1001};
+    CheckpointMsgParams params = {MSG_SPAWN_IMAGE_PROCESS, "com.test.ioerror", 12345, 1001, nullptr};
     int ret = testHelper.CreateCheckpointMsg(buffer, msgLen, params);
     ASSERT_EQ(ret, 0);
 
@@ -380,7 +380,7 @@ HWTEST_F(AppSpawnCheckpointReqTest, Process_Checkpoint_Req_Msg_007, TestSize.Lev
     CheckpointTestHelper testHelper;
     std::vector<uint8_t> buffer(1024 * 2);
     uint32_t msgLen = 0;
-    CheckpointMsgParams params = {MSG_SPAWN_IMAGE_PROCESS, "com.test.nullconn", 12345, 1001};
+    CheckpointMsgParams params = {MSG_SPAWN_IMAGE_PROCESS, "com.test.nullconn", 12345, 1001, nullptr};
     int ret = testHelper.CreateCheckpointMsg(buffer, msgLen, params);
     ASSERT_EQ(ret, 0);
 
@@ -441,7 +441,7 @@ HWTEST_F(AppSpawnCheckpointReqTest, Process_Checkpoint_Req_Msg_009, TestSize.Lev
     std::vector<uint8_t> buffer(1024 * 2);
     uint32_t msgLen = 0;
     uint64_t expectedCheckPointId = 12345678;
-    CheckpointMsgParams params = {MSG_SPAWN_IMAGE_PROCESS, "com.test.response", 12345, expectedCheckPointId};
+    CheckpointMsgParams params = {MSG_SPAWN_IMAGE_PROCESS, "com.test.response", 12345, expectedCheckPointId, nullptr};
     int ret = testHelper.CreateCheckpointMsg(buffer, msgLen, params);
     ASSERT_EQ(ret, 0);
 
@@ -491,7 +491,7 @@ HWTEST_F(AppSpawnCheckpointReqTest, Process_Checkpoint_Req_Msg_010, TestSize.Lev
     CheckpointTestHelper testHelper;
     std::vector<uint8_t> buffer(1024 * 2);
     uint32_t msgLen = 0;
-    CheckpointMsgParams params = {MSG_SPAWN_IMAGE_PROCESS, "com.test.enomem", 12345, 1001};
+    CheckpointMsgParams params = {MSG_SPAWN_IMAGE_PROCESS, "com.test.enomem", 12345, 1001, nullptr};
     int ret = testHelper.CreateCheckpointMsg(buffer, msgLen, params);
     ASSERT_EQ(ret, 0);
 
@@ -538,7 +538,7 @@ HWTEST_F(AppSpawnCheckpointReqTest, Process_Checkpoint_Req_Msg_011, TestSize.Lev
     CheckpointTestHelper testHelper;
     std::vector<uint8_t> buffer(1024 * 2);
     uint32_t msgLen = 0;
-    CheckpointMsgParams params = {MSG_SPAWN_IMAGE_PROCESS, "com.test.eperm", 12345, 1001};
+    CheckpointMsgParams params = {MSG_SPAWN_IMAGE_PROCESS, "com.test.eperm", 12345, 1001, nullptr};
     int ret = testHelper.CreateCheckpointMsg(buffer, msgLen, params);
     ASSERT_EQ(ret, 0);
 
@@ -585,7 +585,7 @@ HWTEST_F(AppSpawnCheckpointReqTest, Process_Checkpoint_Req_Msg_012, TestSize.Lev
     CheckpointTestHelper testHelper;
     std::vector<uint8_t> buffer(1024 * 2);
     uint32_t msgLen = 0;
-    CheckpointMsgParams params = {MSG_SPAWN_IMAGE_PROCESS, "com.test.eperm", 12345, 1001};
+    CheckpointMsgParams params = {MSG_SPAWN_IMAGE_PROCESS, "com.test.eperm", 12345, 1001, nullptr};
     int ret = testHelper.CreateCheckpointMsg(buffer, msgLen, params);
     ASSERT_EQ(ret, 0);
 
@@ -654,7 +654,7 @@ HWTEST_F(AppSpawnCheckpointReqTest, Process_Checkpoint_Req_Msg_Stress_001, TestS
         // 使用CheckpointTestHelper创建消息
         std::vector<uint8_t> buffer(1024 * 2);
         uint32_t msgLen = 0;
-        CheckpointMsgParams params = {MSG_SPAWN_IMAGE_PROCESS, processName, 12345, 1000 + i};
+        CheckpointMsgParams params = {MSG_SPAWN_IMAGE_PROCESS, processName, 12345, 1000 + i, nullptr};
         int ret = testHelper.CreateCheckpointMsg(buffer, msgLen, params);
         ASSERT_EQ(ret, 0);
 

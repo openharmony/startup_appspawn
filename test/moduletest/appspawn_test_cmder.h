@@ -88,6 +88,7 @@ private:
     int AddInternetPermissionInfoFromJson(const cJSON *appInfoConfig, AppSpawnReqMsgHandle reqHandle);
     int AddAccessTokenFromJson(const cJSON *appInfoConfig, AppSpawnReqMsgHandle reqHandle);
     int AddDomainInfoFromJson(const cJSON *appInfoConfig, AppSpawnReqMsgHandle reqHandle);
+    int AddCheckPointInfoFromJson(const cJSON *appInfoConfig, AppSpawnReqMsgHandle reqHandle);
     uint32_t GetUint32ArrayFromJson(const cJSON *json, const char *name, uint32_t dataArray[], uint32_t maxCount);
     static AppSpawnTestCommander *ConvertTo(const ThreadContext *context)
     {
