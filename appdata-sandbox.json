@@ -426,7 +426,7 @@
                     "src-path" : "/data/app/el1/skills/public/<PackageName>",
                     "sandbox-path" : "/data/storage/el1/skills",
                     "sandbox-flags": [ "bind", "rec" ],
-                    "check-action-status": "false"
+                    "check-action-status": "true"
                 }
             ]}],
             "symbol-links" : []
