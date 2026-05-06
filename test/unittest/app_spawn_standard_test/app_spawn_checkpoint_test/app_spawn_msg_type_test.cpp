@@ -15,6 +15,7 @@
 
 #include <cerrno>
 #include <cstring>
+#include <string>
 #include <gtest/gtest.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -119,7 +120,7 @@ HWTEST_F(AppSpawnMsgTypeTest, App_Spawn_Msg_Set_Img_Info_Valid_001, TestSize.Lev
     pid_t imgPid = 12345;
     uint64_t checkPointId = 9876543210ULL;
 
-    ret = AppSpawnReqMsgSetCheckpointInfo(reqHandle, imgPid, checkPointId);
+    ret = AppSpawnReqMsgSetCheckpointInfo(reqHandle, imgPid, checkPointId, nullptr);
     EXPECT_EQ(ret, 0);
 
     AppSpawnReqMsgFree(reqHandle);
@@ -135,7 +136,7 @@ HWTEST_F(AppSpawnMsgTypeTest, App_Spawn_Msg_Set_Img_Info_Null_Handle_001, TestSi
     pid_t imgPid = 12345;
     uint64_t checkPointId = 9876543210ULL;
 
-    int ret = AppSpawnReqMsgSetCheckpointInfo(reqHandle, imgPid, checkPointId);
+    int ret = AppSpawnReqMsgSetCheckpointInfo(reqHandle, imgPid, checkPointId, nullptr);
     EXPECT_NE(ret, 0);
 }
 
@@ -151,7 +152,7 @@ HWTEST_F(AppSpawnMsgTypeTest, App_Spawn_Msg_Set_Img_Info_Zero_Pid_001, TestSize.
     int ret = AppSpawnReqMsgCreate(MSG_SPAWN_IMAGE_PROCESS, processName, &reqHandle);
     EXPECT_EQ(ret, 0);
 
-    ret = AppSpawnReqMsgSetCheckpointInfo(reqHandle, 0, 1000);
+    ret = AppSpawnReqMsgSetCheckpointInfo(reqHandle, 0, 1000, nullptr);
     EXPECT_NE(ret, 0);
 
     AppSpawnReqMsgFree(reqHandle);
@@ -169,7 +170,7 @@ HWTEST_F(AppSpawnMsgTypeTest, App_Spawn_Msg_Set_Img_Info_Zero_Checkpoint_001, Te
     int ret = AppSpawnReqMsgCreate(MSG_SPAWN_IMAGE_PROCESS, processName, &reqHandle);
     EXPECT_EQ(ret, 0);
 
-    ret = AppSpawnReqMsgSetCheckpointInfo(reqHandle, 12345, 0);
+    ret = AppSpawnReqMsgSetCheckpointInfo(reqHandle, 12345, 0, nullptr);
     EXPECT_EQ(ret, 0);
 
     AppSpawnReqMsgFree(reqHandle);
@@ -211,7 +212,7 @@ HWTEST_F(AppSpawnMsgTypeTest, App_Spawn_Msg_Worker_With_Img_Info_001, TestSize.L
     EXPECT_EQ(ret, 0);
 
     // Set img info
-    ret = AppSpawnReqMsgSetCheckpointInfo(reqHandle, 54321, 12345678);
+    ret = AppSpawnReqMsgSetCheckpointInfo(reqHandle, 54321, 12345678, nullptr);
     EXPECT_EQ(ret, 0);
 
     AppSpawnReqMsgFree(reqHandle);
@@ -230,11 +231,11 @@ HWTEST_F(AppSpawnMsgTypeTest, App_Spawn_Msg_Multi_Set_Img_Info_001, TestSize.Lev
     EXPECT_EQ(ret, 0);
 
     // First set
-    ret = AppSpawnReqMsgSetCheckpointInfo(reqHandle, 11111, 1000);
+    ret = AppSpawnReqMsgSetCheckpointInfo(reqHandle, 11111, 1000, nullptr);
     EXPECT_EQ(ret, 0);
 
     // Second set - should update previous values
-    ret = AppSpawnReqMsgSetCheckpointInfo(reqHandle, 22222, 2000);
+    ret = AppSpawnReqMsgSetCheckpointInfo(reqHandle, 22222, 2000, nullptr);
     EXPECT_EQ(ret, 0);
 
     AppSpawnReqMsgFree(reqHandle);
@@ -257,7 +258,7 @@ HWTEST_F(AppSpawnMsgTypeTest, App_Spawn_Msg_Worker_Bundle_Info_001, TestSize.Lev
     EXPECT_EQ(ret, 0);
 
     // Set img info
-    ret = AppSpawnReqMsgSetCheckpointInfo(reqHandle, 33333, 3000);
+    ret = AppSpawnReqMsgSetCheckpointInfo(reqHandle, 33333, 3000, nullptr);
     EXPECT_EQ(ret, 0);
 
     AppSpawnReqMsgFree(reqHandle);
@@ -356,7 +357,7 @@ HWTEST_F(AppSpawnMsgTypeTest, App_Spawn_Msg_Worker_With_Cold_Boot_001, TestSize.
     EXPECT_EQ(ret, 0);
 
     // Set img info
-    ret = AppSpawnReqMsgSetCheckpointInfo(reqHandle, 99999, 88888);
+    ret = AppSpawnReqMsgSetCheckpointInfo(reqHandle, 99999, 88888, nullptr);
     EXPECT_EQ(ret, 0);
 
     AppSpawnReqMsgFree(reqHandle);
@@ -392,6 +393,90 @@ HWTEST_F(AppSpawnMsgTypeTest, App_Spawn_Msg_Type_Routing_Diff_001, TestSize.Leve
     AppSpawnReqMsgFree(reqHandleImage);
     AppSpawnReqMsgFree(reqHandleWorker);
     AppSpawnReqMsgFree(reqHandleSpawn);
+}
+
+// ============================================================================
+// imgName 参数测试（新增功能）
+// ============================================================================
+
+/**
+ * @brief Test AppSpawnReqMsgSetCheckpointInfo with custom imgName
+ * @note 验证设置自定义镜像进程名成功
+ */
+HWTEST_F(AppSpawnMsgTypeTest, App_Spawn_Msg_Set_CheckPoint_With_ProcessName_001, TestSize.Level0)
+{
+    const char *processName = "com.test.app";
+    AppSpawnReqMsgHandle reqHandle = nullptr;
+
+    int ret = AppSpawnReqMsgCreate(MSG_SPAWN_IMAGE_PROCESS, processName, &reqHandle);
+    EXPECT_EQ(ret, 0);
+    EXPECT_NE(reqHandle, nullptr);
+
+    // Set checkpoint info with custom imgName
+    ret = AppSpawnReqMsgSetCheckpointInfo(reqHandle, 12345, 1001, "CustomImageProcess");
+    EXPECT_EQ(ret, 0);
+
+    AppSpawnReqMsgFree(reqHandle);
+}
+
+/**
+ * @brief Test AppSpawnReqMsgSetCheckpointInfo with NULL imgName (fallback to bundleName)
+ * @note 验证imgName为NULL时使用bundleName
+ */
+HWTEST_F(AppSpawnMsgTypeTest, App_Spawn_Msg_Set_CheckPoint_Null_ProcessName_001, TestSize.Level0)
+{
+    const char *processName = "com.test.app";
+    AppSpawnReqMsgHandle reqHandle = nullptr;
+
+    int ret = AppSpawnReqMsgCreate(MSG_SPAWN_IMAGE_PROCESS, processName, &reqHandle);
+    EXPECT_EQ(ret, 0);
+
+    // NULL imgName - should use bundleName as fallback
+    ret = AppSpawnReqMsgSetCheckpointInfo(reqHandle, 12345, 1001, nullptr);
+    EXPECT_EQ(ret, 0);
+
+    AppSpawnReqMsgFree(reqHandle);
+}
+
+/**
+ * @brief Test AppSpawnReqMsgSetCheckpointInfo with long imgName that exceeds limit
+ * @note 验证超长imgName时返回错误
+ */
+HWTEST_F(AppSpawnMsgTypeTest, App_Spawn_Msg_Set_CheckPoint_Long_ProcessName_001, TestSize.Level0)
+{
+    const char *processName = "com.test.app";
+    AppSpawnReqMsgHandle reqHandle = nullptr;
+
+    int ret = AppSpawnReqMsgCreate(MSG_SPAWN_IMAGE_PROCESS, processName, &reqHandle);
+    EXPECT_EQ(ret, 0);
+
+    // Create an imgName longer than APP_CHECKPOINT_NAME_LEN (256)
+    std::string longName(300, 'A');
+    ret = AppSpawnReqMsgSetCheckpointInfo(reqHandle, 12345, 1001, longName.c_str());
+    // strcpy_s should fail when source exceeds destination size
+    EXPECT_NE(ret, 0);
+
+    AppSpawnReqMsgFree(reqHandle);
+}
+
+/**
+ * @brief Test AppSpawnReqMsgSetCheckpointInfo with imgName at max length
+ * @note 验证imgName恰好为最大长度时设置成功
+ */
+HWTEST_F(AppSpawnMsgTypeTest, App_Spawn_Msg_Set_CheckPoint_MaxLen_ProcessName_001, TestSize.Level0)
+{
+    const char *processName = "com.test.app";
+    AppSpawnReqMsgHandle reqHandle = nullptr;
+
+    int ret = AppSpawnReqMsgCreate(MSG_SPAWN_IMAGE_PROCESS, processName, &reqHandle);
+    EXPECT_EQ(ret, 0);
+
+    // imgName with exactly APP_CHECKPOINT_NAME_LEN - 1 characters (must fit with null terminator)
+    std::string maxName(APP_CHECKPOINT_NAME_LEN - 1, 'B');
+    ret = AppSpawnReqMsgSetCheckpointInfo(reqHandle, 12345, 1001, maxName.c_str());
+    EXPECT_EQ(ret, 0);
+
+    AppSpawnReqMsgFree(reqHandle);
 }
 
 }   // namespace OHOS

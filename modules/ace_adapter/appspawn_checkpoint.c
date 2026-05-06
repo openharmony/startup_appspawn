@@ -29,7 +29,7 @@
 #define CHECKPOINT_IOCTL_CHECKPOINT_ALL    _IOR(0xE0, 0x0, int)  // Create image process
 #define CHECKPOINT_IOCTL_RESTORE_ALL       _IOR(0XE0, 0x1, int)  // Create worker process
 #define CHECKPOINT_IOCTL_KILL_ALL          _IOR(0xE0, 0x4, int)  // Kill image process
-#define CHECKPOINT_NAME_LEN    64
+#define CHECKPOINT_NAME_LEN    APP_CHECKPOINT_NAME_LEN
 
 /**
  * @brief checkpoint ioctl params struct
@@ -195,9 +195,12 @@ APPSPAWN_STATIC int32_t DoCheckpointProcess(AppSpawnMgr *content, AppSpawningCtx
     args.inputPid = info->imgPid;
     args.checkPointId = info->checkPointId;
 
-    const char *bundleName = GetBundleName(property);
-    if (bundleName == NULL || strcpy_s(args.name, CHECKPOINT_NAME_LEN, bundleName) != 0) {
-        APPSPAWN_LOGE("Failed to copy bundle name");
+    const char *name = info->imgName;
+    if (name == NULL || name[0] == '\0') {
+        name = GetBundleName(property);
+    }
+    if (name == NULL || strcpy_s(args.name, CHECKPOINT_NAME_LEN, name) != 0) {
+        APPSPAWN_LOGE("Failed to copy checkpoint name");
         return APPSPAWN_SYSTEM_ERROR;
     }
     args.name[CHECKPOINT_NAME_LEN - 1] = '\0';

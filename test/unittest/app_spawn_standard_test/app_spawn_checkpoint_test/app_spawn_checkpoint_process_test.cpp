@@ -31,6 +31,7 @@
 #include <cstring>
 #include <gtest/gtest.h>
 #include <fcntl.h>
+#include <string>
 #include <unistd.h>
 #include <sys/ioctl.h>
 #include <vector>
@@ -48,7 +49,7 @@
 // IoctlCheckPointArgs struct definition (defined in appspawn_checkpoint.c, duplicated for testing)
 struct IoctlCheckPointArgs {
     pid_t inputPid;
-    char name[64];
+    char name[APP_CHECKPOINT_NAME_LEN];
     uint64_t checkPointId;
     pid_t resultPid;
 };
@@ -105,7 +106,7 @@ public:
         CheckpointTestHelper testHelper;
         std::vector<uint8_t> buffer(1024 * 2);
         uint32_t msgLen = 0;
-        CheckpointMsgParams params = {msgType, processName, imagePid, checkPointId};
+        CheckpointMsgParams params = {msgType, processName, imagePid, checkPointId, nullptr};
         int ret = testHelper.CreateCheckpointMsg(buffer, msgLen, params);
         if (ret != 0) {
             return nullptr;
@@ -477,6 +478,135 @@ HWTEST_F(AppSpawnCheckpointProcessTest, DoCheckpointProcess_011, TestSize.Level0
     EXPECT_EQ(ret, ENOMEM);
 
     UpdateIoctlFunc(nullptr);
+    CleanupProperty(property);
+    DeleteAppSpawnMgr(mgr);
+}
+
+/**
+ * @tc.name: DoCheckpointProcess_012
+ * @tc.desc: Test DoCheckpointProcess with non-empty imgName (use imgName directly, not fallback)
+ * @tc.type: FUNC
+ */
+HWTEST_F(AppSpawnCheckpointProcessTest, DoCheckpointProcess_012, TestSize.Level0)
+{
+    AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+    ASSERT_NE(mgr, nullptr);
+
+    CheckpointTestHelper testHelper;
+    std::vector<uint8_t> buffer(1024 * 2);
+    uint32_t msgLen = 0;
+    CheckpointMsgParams params = {MSG_SPAWN_IMAGE_PROCESS, "com.test.customimgname", 12345, 1001,
+                                  "CustomCheckpointImgName"};
+    int ret = testHelper.CreateCheckpointMsg(buffer, msgLen, params);
+    ASSERT_EQ(ret, 0);
+
+    AppSpawnMsgNode *msgNode = nullptr;
+    uint32_t msgRecvLen = 0;
+    uint32_t reminder = 0;
+    ret = GetAppSpawnMsgFromBuffer(buffer.data(), msgLen, &msgNode, &msgRecvLen, &reminder);
+    ASSERT_EQ(ret, 0);
+    ret = DecodeAppSpawnMsg(msgNode);
+    ASSERT_EQ(ret, 0);
+
+    AppSpawningCtx *property = CreateAppSpawningCtx();
+    ASSERT_NE(property, nullptr);
+    property->message = msgNode;
+
+    IoctlFunc ioctlFunc = [](int fd, int req, va_list args) -> int {
+        struct IoctlCheckPointArgs *argsPtr = va_arg(args, struct IoctlCheckPointArgs *);
+        if (argsPtr != nullptr) {
+            EXPECT_STREQ(argsPtr->name, "CustomCheckpointImgName");
+            argsPtr->resultPid = 54330;
+        }
+        return 0;
+    };
+    UpdateIoctlFunc(ioctlFunc);
+
+    int32_t result = DoCheckpointProcess(mgr, property, 10, CHECKPOINT_IOCTL_CHECKPOINT_ALL, false);
+    EXPECT_EQ(result, 0);
+    EXPECT_EQ(property->pid, 54330);
+
+    UpdateIoctlFunc(nullptr);
+    CleanupProperty(property);
+    DeleteAppSpawnMgr(mgr);
+}
+
+/**
+ * @tc.name: DoCheckpointProcess_013
+ * @tc.desc: Test DoCheckpointProcess with empty imgName and no bundle info (GetBundleName returns NULL)
+ * @tc.type: FUNC
+ */
+HWTEST_F(AppSpawnCheckpointProcessTest, DoCheckpointProcess_013, TestSize.Level0)
+{
+    AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+    ASSERT_NE(mgr, nullptr);
+
+    // Create message with only checkpoint TLV (no bundle info)
+    CheckpointTestHelper testHelper;
+    std::vector<uint8_t> buffer(1024 * 2);
+    uint32_t msgLen = 0;
+
+    auto addCheckpointOnly = [&testHelper](uint8_t *buf, uint32_t bufLen,
+        uint32_t &realLen, uint32_t &count) -> int {
+        CheckpointMsgParams cp = {MSG_SPAWN_IMAGE_PROCESS, "com.test.nobundle", 12345, 1001, nullptr};
+        return testHelper.CheckpointTestAddCheckpointTlv(buf, bufLen, realLen, count, cp);
+    };
+
+    int ret = testHelper.CheckpointTestCreateSendMsg(
+        buffer, MSG_SPAWN_IMAGE_PROCESS, msgLen, {addCheckpointOnly});
+    ASSERT_EQ(ret, 0);
+
+    AppSpawnMsgNode *msgNode = nullptr;
+    uint32_t msgRecvLen = 0;
+    uint32_t reminder = 0;
+    ret = GetAppSpawnMsgFromBuffer(buffer.data(), msgLen, &msgNode, &msgRecvLen, &reminder);
+    ASSERT_EQ(ret, 0);
+    ret = DecodeAppSpawnMsg(msgNode);
+    ASSERT_EQ(ret, 0);
+
+    AppSpawningCtx *property = CreateAppSpawningCtx();
+    ASSERT_NE(property, nullptr);
+    property->message = msgNode;
+
+    // Verify no bundle info present
+    AppSpawnMsgBundleInfo *bundleInfo = (AppSpawnMsgBundleInfo *)GetAppSpawnMsgInfo(
+        property->message, TLV_BUNDLE_INFO);
+    EXPECT_EQ(bundleInfo, nullptr);
+
+    int32_t result = DoCheckpointProcess(mgr, property, 10, CHECKPOINT_IOCTL_CHECKPOINT_ALL, false);
+    // imgName empty + GetBundleName returns NULL → name == NULL → APPSPAWN_SYSTEM_ERROR
+    EXPECT_EQ(result, APPSPAWN_SYSTEM_ERROR);
+
+    CleanupProperty(property);
+    DeleteAppSpawnMgr(mgr);
+}
+
+/**
+ * @tc.name: DoCheckpointProcess_014
+ * @tc.desc: Test DoCheckpointProcess with imgName having no null terminator (strcpy_s fails)
+ * @tc.type: FUNC
+ */
+HWTEST_F(AppSpawnCheckpointProcessTest, DoCheckpointProcess_014, TestSize.Level0)
+{
+    AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+    ASSERT_NE(mgr, nullptr);
+
+    // Create a normal checkpoint message that passes decode validation
+    AppSpawningCtx *property = CreateCheckpointProperty(
+        MSG_SPAWN_IMAGE_PROCESS, "com.test.strcpyfail", 12345, 1001);
+    ASSERT_NE(property, nullptr);
+
+    // Tamper with decoded checkpoint info: fill imgName with non-null bytes (no null terminator)
+    // This makes strcpy_s unable to find null within CHECKPOINT_NAME_LEN bytes → returns error
+    AppSpawnCheckpointInfo *cpInfo = (AppSpawnCheckpointInfo *)GetAppSpawnMsgInfo(
+        property->message, TLV_CHECK_POINT_INFO);
+    ASSERT_NE(cpInfo, nullptr);
+    memset_s(cpInfo->imgName, APP_CHECKPOINT_NAME_LEN, 'B', APP_CHECKPOINT_NAME_LEN);
+
+    int32_t result = DoCheckpointProcess(mgr, property, 10, CHECKPOINT_IOCTL_CHECKPOINT_ALL, false);
+    // imgName has no null terminator → name[0] != '\0' → use imgName → strcpy_s fails
+    EXPECT_EQ(result, APPSPAWN_SYSTEM_ERROR);
+
     CleanupProperty(property);
     DeleteAppSpawnMgr(mgr);
 }
@@ -886,6 +1016,7 @@ HWTEST_F(AppSpawnCheckpointProcessTest, CreateImageProcessHook_004, TestSize.Lev
     // Create property without APP_FLAGS_SPAWN_IMAGE_PROCESS flag
     AppSpawningCtx *property = CreatePropertyWithoutCheckpoint(MSG_SPAWN_IMAGE_PROCESS, "com.test.imghooknoflag");
     ASSERT_NE(property, nullptr);
+    SetAppSpawnMsgFlag(property->message, TLV_MSG_FLAGS, APP_FLAGS_SPAWN_IMAGE_PROCESS);
 
     int32_t ret = CreateImageProcessHook(mgr, property);
     EXPECT_EQ(ret, 0);
@@ -909,7 +1040,7 @@ HWTEST_F(AppSpawnCheckpointProcessTest, CreateImageProcessHook_005, TestSize.Lev
     CheckpointTestHelper testHelper;
     std::vector<uint8_t> buffer(1024 * 2);
     uint32_t msgLen = 0;
-    CheckpointMsgParams params = {MSG_SPAWN_IMAGE_PROCESS, "com.test.imghooknofd", 12345, 1001};
+    CheckpointMsgParams params = {MSG_SPAWN_IMAGE_PROCESS, "com.test.imghooknofd", 12345, 1001, nullptr};
     int ret = testHelper.CreateCheckpointMsg(buffer, msgLen, params);
     ASSERT_EQ(ret, 0);
 
@@ -924,6 +1055,7 @@ HWTEST_F(AppSpawnCheckpointProcessTest, CreateImageProcessHook_005, TestSize.Lev
     AppSpawningCtx *property = CreateAppSpawningCtx();
     ASSERT_NE(property, nullptr);
     property->message = msgNode;
+    SetAppSpawnMsgFlag(property->message, TLV_MSG_FLAGS, APP_FLAGS_SPAWN_IMAGE_PROCESS);
 
     // Do NOT add fd to spawningFdsQueue - should return APPSPAWN_SYSTEM_ERROR
     int32_t hookRet = CreateImageProcessHook(mgr, property);
@@ -947,7 +1079,7 @@ HWTEST_F(AppSpawnCheckpointProcessTest, CreateImageProcessHook_006, TestSize.Lev
     CheckpointTestHelper testHelper;
     std::vector<uint8_t> buffer(1024 * 2);
     uint32_t msgLen = 0;
-    CheckpointMsgParams params = {MSG_SPAWN_IMAGE_PROCESS, "com.test.imghooksuccess", 12345, 1001};
+    CheckpointMsgParams params = {MSG_SPAWN_IMAGE_PROCESS, "com.test.imghooksuccess", 12345, 1001, nullptr};
     int ret = testHelper.CreateCheckpointMsg(buffer, msgLen, params);
     ASSERT_EQ(ret, 0);
 
@@ -962,6 +1094,7 @@ HWTEST_F(AppSpawnCheckpointProcessTest, CreateImageProcessHook_006, TestSize.Lev
     AppSpawningCtx *property = CreateAppSpawningCtx();
     ASSERT_NE(property, nullptr);
     property->message = msgNode;
+    SetAppSpawnMsgFlag(property->message, TLV_MSG_FLAGS, APP_FLAGS_SPAWN_IMAGE_PROCESS);
 
     // Add checkpoint fd
     int fd = 42;
@@ -1059,7 +1192,7 @@ HWTEST_F(AppSpawnCheckpointProcessTest, CreateWorkerProcessHook_004, TestSize.Le
     CheckpointTestHelper testHelper;
     std::vector<uint8_t> buffer(1024 * 2);
     uint32_t msgLen = 0;
-    CheckpointMsgParams params = {MSG_SPAWN_IMAGE_PROCESS, "com.test.workerhookimg", 12345, 1001};
+    CheckpointMsgParams params = {MSG_SPAWN_IMAGE_PROCESS, "com.test.workerhookimg", 12345, 1001, nullptr};
     int ret = testHelper.CreateCheckpointMsg(buffer, msgLen, params);
     ASSERT_EQ(ret, 0);
 
@@ -1074,6 +1207,7 @@ HWTEST_F(AppSpawnCheckpointProcessTest, CreateWorkerProcessHook_004, TestSize.Le
     AppSpawningCtx *property = CreateAppSpawningCtx();
     ASSERT_NE(property, nullptr);
     property->message = msgNode;
+    SetAppSpawnMsgFlag(property->message, TLV_MSG_FLAGS, APP_FLAGS_SPAWN_IMAGE_PROCESS);
 
     // Since APP_FLAGS_SPAWN_IMAGE_PROCESS is set, CreateWorkerProcessHook should return 0 and skip
     int32_t hookRet = CreateWorkerProcessHook(mgr, property);
@@ -1120,7 +1254,7 @@ HWTEST_F(AppSpawnCheckpointProcessTest, CreateWorkerProcessHook_006, TestSize.Le
     std::vector<uint8_t> buffer(1024 * 2);
     uint32_t msgLen = 0;
     // Use MSG_SPAWN_WORKER_PROCESS to create a message, but we'll manually adjust flags
-    CheckpointMsgParams params = {MSG_SPAWN_WORKER_PROCESS, "com.test.workerhooknofd", 12345, 1001};
+    CheckpointMsgParams params = {MSG_SPAWN_WORKER_PROCESS, "com.test.workerhooknofd", 12345, 1001, nullptr};
     int ret = testHelper.CreateCheckpointMsg(buffer, msgLen, params);
     ASSERT_EQ(ret, 0);
 
@@ -1158,7 +1292,7 @@ HWTEST_F(AppSpawnCheckpointProcessTest, CreateWorkerProcessHook_007, TestSize.Le
     CheckpointTestHelper testHelper;
     std::vector<uint8_t> buffer(1024 * 2);
     uint32_t msgLen = 0;
-    CheckpointMsgParams params = {MSG_SPAWN_WORKER_PROCESS, "com.test.workerhooksuccess", 12345, 1001};
+    CheckpointMsgParams params = {MSG_SPAWN_WORKER_PROCESS, "com.test.workerhooksuccess", 12345, 1001, nullptr};
     int ret = testHelper.CreateCheckpointMsg(buffer, msgLen, params);
     ASSERT_EQ(ret, 0);
 
@@ -1215,7 +1349,7 @@ HWTEST_F(AppSpawnCheckpointProcessTest, CheckpointProcess_E2E_001, TestSize.Leve
     CheckpointTestHelper testHelper;
     std::vector<uint8_t> buffer(1024 * 2);
     uint32_t msgLen = 0;
-    CheckpointMsgParams params = {MSG_SPAWN_IMAGE_PROCESS, "com.test.e2eimage", 12345, 1001};
+    CheckpointMsgParams params = {MSG_SPAWN_IMAGE_PROCESS, "com.test.e2eimage", 12345, 1001, nullptr};
     int ret = testHelper.CreateCheckpointMsg(buffer, msgLen, params);
     ASSERT_EQ(ret, 0);
 
@@ -1230,6 +1364,7 @@ HWTEST_F(AppSpawnCheckpointProcessTest, CheckpointProcess_E2E_001, TestSize.Leve
     AppSpawningCtx *property = CreateAppSpawningCtx();
     ASSERT_NE(property, nullptr);
     property->message = msgNode;
+    SetAppSpawnMsgFlag(property->message, TLV_MSG_FLAGS, APP_FLAGS_SPAWN_IMAGE_PROCESS);
 
     // Step 1: Mock open and prepare checkpoint fd
     OpenFunc openFunc = [](const char *pathname, int flags, mode_t mode) -> int {
@@ -1278,7 +1413,7 @@ HWTEST_F(AppSpawnCheckpointProcessTest, CheckpointProcess_E2E_002, TestSize.Leve
     CheckpointTestHelper testHelper;
     std::vector<uint8_t> buffer(1024 * 2);
     uint32_t msgLen = 0;
-    CheckpointMsgParams params = {MSG_SPAWN_WORKER_PROCESS, "com.test.e2eworker", 12345, 2001};
+    CheckpointMsgParams params = {MSG_SPAWN_WORKER_PROCESS, "com.test.e2eworker", 12345, 2001, nullptr};
     int ret = testHelper.CreateCheckpointMsg(buffer, msgLen, params);
     ASSERT_EQ(ret, 0);
 
@@ -1344,12 +1479,18 @@ HWTEST_F(AppSpawnCheckpointProcessTest, ForkDenied_NoDacInfo_001, TestSize.Level
 
     auto addCheckpointOnly = [&testHelper](uint8_t *buf, uint32_t bufLen,
         uint32_t &realLen, uint32_t &count) -> int {
-        CheckpointMsgParams cp = {MSG_SPAWN_WORKER_PROCESS, "com.test.forkdenied_nodac", 12345, 7001};
+        CheckpointMsgParams cp = {MSG_SPAWN_WORKER_PROCESS, "com.test.forkdenied_nodac", 12345, 7001, nullptr};
         return testHelper.CheckpointTestAddCheckpointTlv(buf, bufLen, realLen, count, cp);
     };
 
+    auto addBundleNameOnly = [&testHelper](uint8_t *buf, uint32_t bufLen,
+        uint32_t &realLen, uint32_t &count) -> int {
+        CheckpointMsgParams cp = {MSG_SPAWN_WORKER_PROCESS, "com.test.forkdenied_nodac", 12345, 7001, nullptr};
+        return testHelper.CheckpointTestAddBundleTlv(buf, bufLen, realLen, count, cp);
+    };
+
     int ret = testHelper.CheckpointTestCreateSendMsg(
-        buffer, MSG_SPAWN_WORKER_PROCESS, msgLen, {addCheckpointOnly});
+        buffer, MSG_SPAWN_WORKER_PROCESS, msgLen, {addCheckpointOnly, addBundleNameOnly});
     ASSERT_EQ(ret, 0);
 
     AppSpawnMsgNode *msgNode = nullptr;

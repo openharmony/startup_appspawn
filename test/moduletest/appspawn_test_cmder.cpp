@@ -226,6 +226,19 @@ int AppSpawnTestCommander::AddDomainInfoFromJson(const cJSON *appInfoConfig, App
     return 0;
 }
 
+int AppSpawnTestCommander::AddCheckPointInfoFromJson(const cJSON *appInfoConfig, AppSpawnReqMsgHandle reqHandle)
+{
+    cJSON *config = cJSON_GetObjectItemCaseSensitive(appInfoConfig, "checkpoint-info");
+    APPSPAWN_CHECK_ONLY_EXPER(config, return 0);
+
+    pid_t imgPid = static_cast<pid_t>(GetIntValueFromJsonObj(config, "img-pid", 0));
+    uint64_t checkPointId = static_cast<uint64_t>(GetIntValueFromJsonObj(config, "checkpoint-id", 0));
+    char *imgName = GetStringFromJsonObj(config, "img-name");
+    int ret = AppSpawnReqMsgSetCheckpointInfo(reqHandle, imgPid, checkPointId, imgName);
+    APPSPAWN_CHECK(ret == 0, return ret, "Failed to set checkpoint info");
+    return 0;
+}
+
 int AppSpawnTestCommander::AddExtTlv(const cJSON *appInfoConfig, AppSpawnReqMsgHandle reqHandle)
 {
     cJSON *configs = cJSON_GetObjectItemCaseSensitive(appInfoConfig, "ext-info");
@@ -284,6 +297,9 @@ int AppSpawnTestCommander::BuildMsgFromJson(const cJSON *appInfoConfig, AppSpawn
     ret = AddInternetPermissionInfoFromJson(appInfoConfig, reqHandle);
     APPSPAWN_CHECK(ret == 0, return ret, "Failed to internet info %{public}s", processName_.c_str());
 
+    ret = AddCheckPointInfoFromJson(appInfoConfig, reqHandle);
+    APPSPAWN_CHECK(ret == 0, return ret, "Failed to checkpoint info %{public}s", processName_.c_str());
+
     std::string ownerId = GetStringFromJsonObj(appInfoConfig, "owner-id");
     if (!ownerId.empty()) {
         ret = AppSpawnReqMsgSetAppOwnerId(reqHandle, ownerId.c_str());
@@ -321,6 +337,12 @@ static uint32_t GetMsgTypeFromJson(const cJSON *json)
     }
     if (strcmp(msgType, "MSG_SPAWN_NATIVE_PROCESS") == 0) {
         return MSG_SPAWN_NATIVE_PROCESS;
+    }
+    if (strcmp(msgType, "MSG_SPAWN_IMAGE_PROCESS") == 0) {
+        return MSG_SPAWN_IMAGE_PROCESS;
+    }
+    if (strcmp(msgType, "MSG_SPAWN_WORKER_PROCESS") == 0) {
+        return MSG_SPAWN_WORKER_PROCESS;
     }
     if (strcmp(msgType, "MSG_GET_RENDER_TERMINATION_STATUS") == 0) {
         return MSG_GET_RENDER_TERMINATION_STATUS;
@@ -384,6 +406,37 @@ int AppSpawnTestCommander::CreateMsg(AppSpawnReqMsgHandle &reqHandle,
     return ret;
 }
 
+static void PrintSpawnResult(uint32_t msgType, const std::string &processName,
+    const char *server, int ret, const AppSpawnResult &result)
+{
+    struct SpawnLabel {
+        uint32_t msgType;
+        const char *label;
+    };
+    static const SpawnLabel labels[] = {
+        {MSG_APP_SPAWN,             "app"},
+        {MSG_SPAWN_NATIVE_PROCESS,  "native app"},
+        {MSG_SPAWN_IMAGE_PROCESS,   "image process"},
+        {MSG_SPAWN_WORKER_PROCESS,  "worker process"},
+    };
+    for (const auto &item : labels) {
+        if (msgType == item.msgType) {
+            if (result.result == 0) {
+                printf("Spawn %s %s success, pid %d \n", item.label, processName.c_str(), result.pid);
+            } else {
+                printf("Spawn %s %s fail, result 0x%x \n", item.label, processName.c_str(), result.result);
+            }
+            return;
+        }
+    }
+    if (msgType == MSG_GET_RENDER_TERMINATION_STATUS) {
+        printf("Terminate app %s success, pid %d status 0x%x \n",
+            processName.c_str(), result.pid, result.result);
+    } else {
+        printf("Dump server %s result %d \n", server, ret);
+    }
+}
+
 int AppSpawnTestCommander::SendMsg()
 {
     const char *server = appSpawn_ == 1 ? APPSPAWN_SERVER_NAME : (appSpawn_ == 2 ? NATIVESPAWN_SERVER_NAME :
@@ -405,29 +458,7 @@ int AppSpawnTestCommander::SendMsg()
     if (ret == 0) {
         ret = AppSpawnClientSendMsg(clientHandle_, reqHandle, &result);
     }
-    switch (msgType_) {
-        case MSG_APP_SPAWN:
-            if (result.result == 0) {
-                printf("Spawn app %s success, pid %d \n", processName_.c_str(), result.pid);
-            } else {
-                printf("Spawn app %s fail, result 0x%x \n", processName_.c_str(), result.result);
-            }
-            break;
-        case MSG_SPAWN_NATIVE_PROCESS:
-            if (result.result == 0) {
-                printf("Spawn native app %s success, pid %d \n", processName_.c_str(), result.pid);
-            } else {
-                printf("Spawn native app %s fail, result 0x%x \n", processName_.c_str(), result.result);
-            }
-            break;
-        case MSG_GET_RENDER_TERMINATION_STATUS:
-            printf("Terminate app %s success, pid %d status 0x%x \n",
-                processName_.c_str(), result.pid, result.result);
-            break;
-        default:
-            printf("Dump server %s result %d \n", server, ret);
-            break;
-    }
+    PrintSpawnResult(msgType_, processName_, server, ret, result);
     msgType_ = MAX_TYPE_INVALID;
     terminatePid_ = 0;
     printf("Please input cmd: \n");

@@ -418,9 +418,11 @@ int HybridSpawnListenCloseSet(void);
  * @param reqHandle request message handle
  * @param imagePid image process pid
  * @param checkPointId checkpoint id
+ * @param imgName image process name for checkpoint, use bundleName if NULL
  * @return if succeed return 0,else return other value
  */
-int AppSpawnReqMsgSetCheckpointInfo(AppSpawnReqMsgHandle reqHandle, pid_t imagePid, uint64_t checkPointId);
+int AppSpawnReqMsgSetCheckpointInfo(AppSpawnReqMsgHandle reqHandle, pid_t imagePid,
+    uint64_t checkPointId, const char *imgName);
 
 #ifdef __cplusplus
 }
