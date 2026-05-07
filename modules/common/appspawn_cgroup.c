@@ -48,7 +48,9 @@
 #define APPSPAWN_GRACEFUL_STOP_PARAM_LEN 64
 #define CLEANUP_FLAG_NEED "1"
 #define CLEANUP_FLAG_NONE "0"
-
+#define PARAM_VALUE_MAX_LEN 96
+#define DEVICE_CTL_PARAM "startup.device.ctl"
+#define DEVICE_CMD_STOP "stop"
 typedef struct {
     RunMode mode;
     const char *tagSuffix;
@@ -368,6 +370,11 @@ APPSPAWN_STATIC int CgroupPreloadHook(AppSpawnMgr *content)
 // STAGE_SERVER_EXIT hook: clear graceful stop flag to indicate normal exit
 APPSPAWN_STATIC int CgroupExitHook(AppSpawnMgr *content)
 {
+    char deviceValue[PARAM_VALUE_MAX_LEN] = {};
+    int deviceRet = GetParameter(DEVICE_CTL_PARAM, "false", deviceValue, sizeof(deviceValue));
+    APPSPAWN_ONLY_EXPER(deviceRet > 0 && strcmp(DEVICE_CMD_STOP, deviceValue) == 0,
+        APPSPAWN_LOGI("current status is %{public}s", deviceValue);
+        return 0);
     const SpawnModeInfo *modeInfo = GetSpawnModeInfo(content);
     APPSPAWN_CHECK(modeInfo != NULL, return -1, "Failed to get spawn mode info");
     char paramName[APPSPAWN_GRACEFUL_STOP_PARAM_LEN] = {};
