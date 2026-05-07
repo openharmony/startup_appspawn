@@ -132,10 +132,10 @@ static const int PARAM_BUFFER_SIZE = 256;
 static bool IsPrelinkEnable()
 {
     char buffer[PARAM_BUFFER_SIZE] = {0};
-    int ret = GetParameter("const.startup.prelink.enable", "false", buffer, PARAM_BUFFER_SIZE);
+    int ret = GetParameter("const.startup.prelink.enable", "true", buffer, PARAM_BUFFER_SIZE);
     if (ret <= 0) {
         APPSPAWN_LOGW("get prelink enable param unsuccess! ret =%{public}d", ret);
-        return false;
+        return true;
     }
 
     if (strcmp(buffer, "true") == 0) {
