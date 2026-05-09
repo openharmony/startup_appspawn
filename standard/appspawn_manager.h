@@ -92,7 +92,8 @@ typedef struct TagAppSpawningCtx {
     struct timespec spawnStart;
     bool allowDumpable;
     uint64_t checkPointId;        // Image process index ID
-    bool lockBundleRefAdded;  // Flag: whether AddLockBundleRef has been called for _locked directory
+    bool lockBundleRefAdded;  // Flag: whether AddLockBundleRef has been called for _preunlock directory
+    char *lockPath;           // Sandbox root path for _preunlock directory (set by MountDirToShared)
 } AppSpawningCtx;
 
 typedef struct TagAppSpawnedProcess {
@@ -108,8 +109,8 @@ typedef struct TagAppSpawnedProcess {
 #endif
     bool isDebuggable;
     uint32_t appIndex;
-    AppSpawnMsgFlags *msgFlags;  // 保存完整的消息标志（如 APP_FLAGS_ISOLATED_SANDBOX_TYPE 等）
-    bool lockBundleRefAdded;  // Flag: whether AddLockBundleRef has been called for _locked directory
+    bool lockBundleRefAdded;  // Flag: whether AddLockBundleRef has been called for _preunlock directory
+    char *lockPath;  // Sandbox root path for _preunlock directory management
     char name[0];
 } AppSpawnedProcess;
 

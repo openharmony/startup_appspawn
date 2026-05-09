@@ -69,6 +69,26 @@ static const char *CONFIG_MULTI_PERMISSION = R"({
     }]
 })";
 
+// 单权限双链接配置（FILE_ACCESS_MANAGER with two symbol-links）
+static const char *CONFIG_SINGLE_PERMISSION_TWO_LINKS = R"({
+    "permission": [{
+        "ohos.permission.FILE_ACCESS_MANAGER": [{
+            "sandbox-switch": "ON",
+            "gids": [1006, 1008],
+            "mount-paths": [],
+            "symbol-links": [{
+                "target-name": "/system/bin",
+                "link-name": "/bin",
+                "check-action-status": "false"
+            }, {
+                "target-name": "/system/lib",
+                "link-name": "/lib",
+                "check-action-status": "false"
+            }]
+        }]
+    }]
+})";
+
 // 多权限配置（FILE_ACCESS_MANAGER + MANAGE_PRIVATE_PHOTOS）
 static const char *CONFIG_MULTI_PERMISSION2 = R"({
     "permission": [{
@@ -167,16 +187,16 @@ HWTEST_F(AppSpawnSandboxPermissionSymlinkTest, DoSandboxFilePermissionSymlink_01
 {
     g_testHelperPermSymlink.SetProcessName("com.ohos.symlink.test");
     g_testHelperPermSymlink.SetTestApl("normal");
-
     AppSpawningCtx *appProperty = GetTestAppPropertyPermSymlink();
     ASSERT_NE(appProperty, nullptr);
-
+    // 设置 APP_FLAGS_UNLOCKED_STATUS 标志，使沙箱路径不包含 _preunlock 后缀
+    int ret = SetAppSpawnMsgFlag(appProperty->message, TLV_MSG_FLAGS, APP_FLAGS_UNLOCKED_STATUS);
+    EXPECT_EQ(ret, 0);
     // 设置权限
     int index = GetPermissionIndex(nullptr, "ohos.permission.FILE_ACCESS_MANAGER");
     ASSERT_GE(index, 0);
-    int ret = SetAppPermissionFlags(appProperty, static_cast<uint32_t>(index));
+    ret = SetAppPermissionFlags(appProperty, static_cast<uint32_t>(index));
     EXPECT_EQ(ret, 0);
-
     // 计算沙箱根路径
     AppSpawnMsgDacInfo *dacInfo = reinterpret_cast<AppSpawnMsgDacInfo *>(
         GetAppProperty(appProperty, TLV_DAC_INFO));
@@ -191,26 +211,8 @@ HWTEST_F(AppSpawnSandboxPermissionSymlinkTest, DoSandboxFilePermissionSymlink_01
     unlink((sandboxRoot + "/bin").c_str());
     unlink((sandboxRoot + "/lib").c_str());
 
-    const char *configStr = R"({
-        "permission": [{
-            "ohos.permission.FILE_ACCESS_MANAGER": [{
-                "sandbox-switch": "ON",
-                "gids": [1006, 1008],
-                "mount-paths": [],
-                "symbol-links": [{
-                    "target-name": "/system/bin",
-                    "link-name": "/bin",
-                    "check-action-status": "false"
-                }, {
-                    "target-name": "/system/lib",
-                    "link-name": "/lib",
-                    "check-action-status": "false"
-                }]
-            }]
-        }]
-    })";
-
-    cJSON *wholeConfig = cJSON_Parse(configStr);
+    // 使用配置常量
+    cJSON *wholeConfig = cJSON_Parse(CONFIG_SINGLE_PERMISSION_TWO_LINKS);
     ASSERT_NE(wholeConfig, nullptr);
 
     // 执行测试
@@ -246,10 +248,14 @@ HWTEST_F(AppSpawnSandboxPermissionSymlinkTest, DoSandboxFilePermissionSymlink_02
     AppSpawningCtx *appProperty = GetTestAppPropertyPermSymlink();
     ASSERT_NE(appProperty, nullptr);
 
+    // 设置 APP_FLAGS_UNLOCKED_STATUS 标志，使沙箱路径不包含 _preunlock 后缀
+    int ret = SetAppSpawnMsgFlag(appProperty->message, TLV_MSG_FLAGS, APP_FLAGS_UNLOCKED_STATUS);
+    EXPECT_EQ(ret, 0);
+
     // 只设置一个权限：FILE_ACCESS_MANAGER
     int index1 = GetPermissionIndex(nullptr, "ohos.permission.FILE_ACCESS_MANAGER");
     ASSERT_GE(index1, 0);
-    int ret = SetAppPermissionFlags(appProperty, static_cast<uint32_t>(index1));
+    ret = SetAppPermissionFlags(appProperty, static_cast<uint32_t>(index1));
     EXPECT_EQ(ret, 0);
 
     // 计算沙箱根路径
@@ -432,10 +438,14 @@ HWTEST_F(AppSpawnSandboxPermissionSymlinkTest, DoSandboxFilePermissionSymlink_05
     AppSpawningCtx *appProperty = GetTestAppPropertyPermSymlink();
     ASSERT_NE(appProperty, nullptr);
 
+    // 设置 APP_FLAGS_UNLOCKED_STATUS 标志，使沙箱路径不包含 _preunlock 后缀
+    int ret = SetAppSpawnMsgFlag(appProperty->message, TLV_MSG_FLAGS, APP_FLAGS_UNLOCKED_STATUS);
+    EXPECT_EQ(ret, 0);
+
     // 设置两个权限
     int index1 = GetPermissionIndex(nullptr, "ohos.permission.FILE_ACCESS_MANAGER");
     ASSERT_GE(index1, 0);
-    int ret = SetAppPermissionFlags(appProperty, static_cast<uint32_t>(index1));
+    ret = SetAppPermissionFlags(appProperty, static_cast<uint32_t>(index1));
     EXPECT_EQ(ret, 0);
 
     int index2 = GetPermissionIndex(nullptr, "ohos.permission.MANAGE_PRIVATE_PHOTOS");
