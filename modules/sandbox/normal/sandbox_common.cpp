@@ -400,15 +400,16 @@ bool SandboxCommon::GetSwitchStatus(cJSON *config) // GetSbxSwitchStatusByConfig
 uint32_t SandboxCommon::ConvertFlagStr(const std::string &flagStr)
 {
     const std::map<std::string, int> flagsMap = {{"START_FLAGS_BACKUP", APP_FLAGS_BACKUP_EXTENSION},
-                                                 {"DLP_MANAGER_FULL_CONTROL", APP_FLAGS_DLP_MANAGER_FULL_CONTROL},
-                                                 {"DLP_MANAGER_READ_ONLY", APP_FLAGS_DLP_MANAGER_READ_ONLY},
-                                                 {"DEVELOPER_MODE", APP_FLAGS_DEVELOPER_MODE},
-                                                 {"PREINSTALLED_HAP", APP_FLAGS_PRE_INSTALLED_HAP},
-                                                 {"CUSTOM_SANDBOX_HAP", APP_FLAGS_CUSTOM_SANDBOX},
-                                                 {"FILE_CROSS_APP", APP_FLAGS_FILE_CROSS_APP},
-                                                 {"FILE_ACCESS_COMMON_DIR", APP_FLAGS_FILE_ACCESS_COMMON_DIR},
-                                                 {"CLOUD_FILE_SYNC_ENABLED", APP_FLAGS_CLOUD_FILE_SYNC_ENABLED},
-                                                 {"APP_SKILLS_ENABLED", APP_FLAGS_SKILLS}};
+        {"DLP_MANAGER_FULL_CONTROL", APP_FLAGS_DLP_MANAGER_FULL_CONTROL},
+        {"DLP_MANAGER_READ_ONLY", APP_FLAGS_DLP_MANAGER_READ_ONLY},
+        {"DEVELOPER_MODE", APP_FLAGS_DEVELOPER_MODE},
+        {"PREINSTALLED_HAP", APP_FLAGS_PRE_INSTALLED_HAP},
+        {"CUSTOM_SANDBOX_HAP", APP_FLAGS_CUSTOM_SANDBOX},
+        {"FILE_CROSS_APP", APP_FLAGS_FILE_CROSS_APP},
+        {"FILE_ACCESS_COMMON_DIR", APP_FLAGS_FILE_ACCESS_COMMON_DIR},
+        {"CLOUD_FILE_SYNC_ENABLED", APP_FLAGS_CLOUD_FILE_SYNC_ENABLED},
+        {"APP_SKILLS_ENABLED", APP_FLAGS_SKILLS},
+        {"DEBUGSERVER", APP_FLAGS_DEBUGSERVER}};
 
     if (flagsMap.count(flagStr)) {
         return flagsMap.at(flagStr);
