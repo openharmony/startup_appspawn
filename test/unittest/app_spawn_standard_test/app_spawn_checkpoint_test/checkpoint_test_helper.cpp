@@ -124,6 +124,10 @@ int CheckpointTestHelper::CheckpointTestAddCheckpointTlv(uint8_t *buffer, uint32
     AppSpawnCheckpointInfo checkpointInfo = {};
     checkpointInfo.imgPid = params.imagePid;
     checkpointInfo.checkPointId = params.checkPointId;
+    if (params.checkPointImgName != nullptr) {
+        int ret = strcpy_s(checkpointInfo.imgName, APP_CHECKPOINT_NAME_LEN, params.checkPointImgName);
+        APPSPAWN_CHECK(ret == 0, return -1, "Failed to copy checkpoint imgName");
+    }
 
     int ret = CheckpointAddOneTlv(buffer + currLen, bufferLen - currLen, tlv, (uint8_t *)&checkpointInfo);
     APPSPAWN_CHECK(ret == 0, return -1, "Failed add tlv %{public}u", tlv.tlvType);
@@ -131,6 +135,63 @@ int CheckpointTestHelper::CheckpointTestAddCheckpointTlv(uint8_t *buffer, uint32
     tlvCount++;
 
     realLen = currLen;
+    return 0;
+}
+
+int CheckpointTestHelper::CheckpointTestAddBundleTlv(uint8_t *buffer, uint32_t bufferLen,
+    uint32_t &realLen, uint32_t &tlvCount, const CheckpointMsgParams &params)
+{
+    uint32_t currLen = 0;
+    // add bundle info
+    typedef struct {
+        int32_t bundleIndex;
+        char bundleName[256];
+    } CheckpointTestAppBundleInfo;
+    CheckpointTestAppBundleInfo info = {};
+    APPSPAWN_CHECK_ONLY_EXPER(strcpy_s(info.bundleName, sizeof(info.bundleName), params.processName) == 0,
+        return -1);
+    info.bundleIndex = 0;
+
+    AppSpawnTlv tlv = {};
+    tlv.tlvType = TLV_BUNDLE_INFO;
+    tlv.tlvLen = sizeof(AppSpawnTlv) + sizeof(CheckpointTestAppBundleInfo);
+
+    int ret = CheckpointAddOneTlv(buffer + currLen, bufferLen - currLen, tlv, (uint8_t *)&info);
+    APPSPAWN_CHECK(ret == 0, return -1, "Failed add tlv %{public}u", tlv.tlvType);
+    currLen += tlv.tlvLen;
+    tlvCount++;
+
+    realLen = currLen;
+    return 0;
+}
+
+int CheckpointTestHelper::CheckpointTestAddLongBundleTlv(uint8_t *buffer, uint32_t bufferLen,
+    uint32_t &realLen, uint32_t &tlvCount, const char *bundleName)
+{
+    APPSPAWN_CHECK(bundleName != nullptr, return -1, "Invalid bundleName");
+    uint32_t nameLen = strlen(bundleName) + 1;
+    uint32_t dataLen = sizeof(int32_t) + nameLen;
+
+    AppSpawnTlv tlv = {};
+    tlv.tlvType = TLV_BUNDLE_INFO;
+    tlv.tlvLen = sizeof(AppSpawnTlv) + dataLen;
+    APPSPAWN_CHECK(tlv.tlvLen <= bufferLen, return -1, "Buffer too small for long bundle TLV");
+
+    int ret = memcpy_s(buffer, bufferLen, &tlv, sizeof(tlv));
+    APPSPAWN_CHECK(ret == 0, return -1, "Failed to memcpy_s tlv header");
+    uint32_t offset = sizeof(tlv);
+
+    int32_t bundleIndex = 0;
+    ret = memcpy_s(buffer + offset, bufferLen - offset, &bundleIndex, sizeof(bundleIndex));
+    APPSPAWN_CHECK(ret == 0, return -1, "Failed to memcpy_s bundleIndex");
+    offset += sizeof(bundleIndex);
+
+    ret = memcpy_s(buffer + offset, bufferLen - offset, bundleName, nameLen);
+    APPSPAWN_CHECK(ret == 0, return -1, "Failed to memcpy_s bundleName");
+    offset += nameLen;
+
+    realLen = offset;
+    tlvCount = 1;
     return 0;
 }
 

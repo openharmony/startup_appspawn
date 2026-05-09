@@ -585,15 +585,20 @@ int AppSpawnClientAddPermission(AppSpawnClientHandle handle, AppSpawnReqMsgHandl
     return 0;
 }
 
-int AppSpawnReqMsgSetCheckpointInfo(AppSpawnReqMsgHandle reqHandle, pid_t imgPid, uint64_t checkPointId)
+int AppSpawnReqMsgSetCheckpointInfo(AppSpawnReqMsgHandle reqHandle, pid_t imgPid,
+    uint64_t checkPointId, const char *imgName)
 {
     AppSpawnReqMsgNode *reqNode = (AppSpawnReqMsgNode *)reqHandle;
     APPSPAWN_CHECK_ONLY_EXPER(reqNode != NULL && imgPid > 0, return APPSPAWN_ARG_INVALID);
 
-    AppSpawnCheckpointInfo checkpointInfo = {
-        .imgPid = imgPid,
-        .checkPointId = checkPointId
-    };
+    AppSpawnCheckpointInfo checkpointInfo = {};
+    checkpointInfo.imgPid = imgPid;
+    checkpointInfo.checkPointId = checkPointId;
+    if (imgName != NULL) {
+        int ret = strcpy_s(checkpointInfo.imgName, APP_CHECKPOINT_NAME_LEN, imgName);
+        APPSPAWN_CHECK(ret == 0, return APPSPAWN_ARG_INVALID,
+            "Failed to copy imgName: %{public}s", imgName);
+    }
 
     AppSpawnAppData data[MAX_DATA_IN_TLV] = {};
     data[0].data = (uint8_t *)&checkpointInfo;
