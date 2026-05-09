@@ -86,7 +86,14 @@ static void RedirectPath(const char *src, char *dst, size_t dstLen)
 
 DIR *__wrap_opendir(const char *name)
 {
-    if (IsCgroupPath(name)) {
+    // Check if this is a cgroup path (starts with CGROUP_ROOT)
+    if (name != nullptr && strncmp(name, CGROUP_ROOT, CGROUP_ROOT_LEN) == 0) {
+        // If mock root not set, simulate directory not existing
+        if (g_mockTestRoot[0] == '\0') {
+            errno = ENOENT;
+            return nullptr;
+        }
+        // Redirect to mock directory
         char buf[PATH_MAX] = {};
         RedirectPath(name, buf, sizeof(buf));
         return __real_opendir(buf);

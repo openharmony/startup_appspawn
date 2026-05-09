@@ -50,7 +50,6 @@ extern void MockCgroupReset(void);
 
 // Source functions (APPSPAWN_STATIC -> visible in test)
 int IsUidDir(const char *name);
-int IsTagDir(const char *name);
 int IsAppDir(const char *name);
 void SetForkDeniedByPath(const char *appDirPath);
 void CleanupOrphanedTagDir(const char *uidPath, const char *dirName);
@@ -62,8 +61,6 @@ int CgroupExitHook(AppSpawnMgr *content);
 static constexpr int DIR_MODE = 0755;
 
 // ===== Helpers =====
-
-static const char *CGTAG_SUFFIX = "_apptag";
 
 static std::string CreateTempDir()
 {
@@ -282,61 +279,7 @@ HWTEST_F(AppSpawnCGroupOrphanTest, TestIsUidDir_WithDot, TestSize.Level1)
 }
 
 // ===================================================================
-// 4.2 IsTagDir
-// ===================================================================
-
-/**
- * @tc.name: TestIsTagDir_ValidTag
- * @tc.desc: Verify IsTagDir returns 1 for valid tag directory name
- * @tc.type: FUNC
- */
-HWTEST_F(AppSpawnCGroupOrphanTest, TestIsTagDir_ValidTag, TestSize.Level0)
-{
-    EXPECT_EQ(IsTagDir("com.example_apptag"), 1);
-}
-
-/**
- * @tc.name: TestIsTagDir_ExactSuffix
- * @tc.desc: Verify IsTagDir returns 0 for suffix only (no prefix)
- * @tc.type: FUNC
- */
-HWTEST_F(AppSpawnCGroupOrphanTest, TestIsTagDir_ExactSuffix, TestSize.Level1)
-{
-    EXPECT_EQ(IsTagDir("_apptag"), 0);
-}
-
-/**
- * @tc.name: TestIsTagDir_NoSuffix
- * @tc.desc: Verify IsTagDir returns 0 for name without suffix
- * @tc.type: FUNC
- */
-HWTEST_F(AppSpawnCGroupOrphanTest, TestIsTagDir_NoSuffix, TestSize.Level0)
-{
-    EXPECT_EQ(IsTagDir("com.example"), 0);
-}
-
-/**
- * @tc.name: TestIsTagDir_PartialSuffix
- * @tc.desc: Verify IsTagDir returns 0 for partial suffix match
- * @tc.type: FUNC
- */
-HWTEST_F(AppSpawnCGroupOrphanTest, TestIsTagDir_PartialSuffix, TestSize.Level1)
-{
-    EXPECT_EQ(IsTagDir("com.example_appta"), 0);
-}
-
-/**
- * @tc.name: TestIsTagDir_Empty
- * @tc.desc: Verify IsTagDir returns 0 for empty string
- * @tc.type: FUNC
- */
-HWTEST_F(AppSpawnCGroupOrphanTest, TestIsTagDir_Empty, TestSize.Level1)
-{
-    EXPECT_EQ(IsTagDir(""), 0);
-}
-
-// ===================================================================
-// 4.3 IsAppDir
+// 4.2 IsAppDir
 // ===================================================================
 
 /**
@@ -390,7 +333,7 @@ HWTEST_F(AppSpawnCGroupOrphanTest, TestIsAppDir_Empty, TestSize.Level1)
 }
 
 // ===================================================================
-// 4.4 SetForkDeniedByPath
+// 4.3 SetForkDeniedByPath
 // ===================================================================
 
 /**
@@ -403,14 +346,14 @@ HWTEST_F(AppSpawnCGroupOrphanTest, TestSetForkDeniedByPath_Success, TestSize.Lev
     SetMockRoot();
     // Create the app dir and fork_denied file
     mkdir((tempDir_ + "/100").c_str(), DIR_MODE);
-    mkdir((tempDir_ + "/100/com.app_apptag").c_str(), DIR_MODE);
-    mkdir((tempDir_ + "/100/com.app_apptag/app_123").c_str(), DIR_MODE);
-    FILE *f = fopen((tempDir_ + "/100/com.app_apptag/app_123/pids.fork_denied").c_str(), "w");
+    mkdir((tempDir_ + "/100/com.app").c_str(), DIR_MODE);
+    mkdir((tempDir_ + "/100/com.app/app_123").c_str(), DIR_MODE);
+    FILE *f = fopen((tempDir_ + "/100/com.app/app_123/pids.fork_denied").c_str(), "w");
     ASSERT_NE(f, nullptr);
     fclose(f);
 
-    SetForkDeniedByPath("/dev/pids/100/com.app_apptag/app_123");
-    f = fopen((tempDir_ + "/100/com.app_apptag/app_123/pids.fork_denied").c_str(), "r");
+    SetForkDeniedByPath("/dev/pids/100/com.app/app_123");
+    f = fopen((tempDir_ + "/100/com.app/app_123/pids.fork_denied").c_str(), "r");
     ASSERT_NE(f, nullptr);
     char buf[8] = {};
     fgets(buf, sizeof(buf), f);
@@ -426,7 +369,7 @@ HWTEST_F(AppSpawnCGroupOrphanTest, TestSetForkDeniedByPath_Success, TestSize.Lev
 HWTEST_F(AppSpawnCGroupOrphanTest, TestSetForkDeniedByPath_OpenFail, TestSize.Level0)
 {
     g_mockOpenForceFail = 1;
-    SetForkDeniedByPath("/dev/pids/100/com.app_apptag/app_123");
+    SetForkDeniedByPath("/dev/pids/100/com.app/app_123");
     // No crash = pass
 }
 
@@ -439,14 +382,14 @@ HWTEST_F(AppSpawnCGroupOrphanTest, TestSetForkDeniedByPath_WriteFail, TestSize.L
 {
     SetMockRoot();
     mkdir((tempDir_ + "/100").c_str(), DIR_MODE);
-    mkdir((tempDir_ + "/100/com.app_apptag").c_str(), DIR_MODE);
-    mkdir((tempDir_ + "/100/com.app_apptag/app_123").c_str(), DIR_MODE);
-    FILE *f = fopen((tempDir_ + "/100/com.app_apptag/app_123/pids.fork_denied").c_str(), "w");
+    mkdir((tempDir_ + "/100/com.app").c_str(), DIR_MODE);
+    mkdir((tempDir_ + "/100/com.app/app_123").c_str(), DIR_MODE);
+    FILE *f = fopen((tempDir_ + "/100/com.app/app_123/pids.fork_denied").c_str(), "w");
     ASSERT_NE(f, nullptr);
     fclose(f);
 
     g_mockWriteForceFail = 1;
-    SetForkDeniedByPath("/dev/pids/100/com.app_apptag/app_123");
+    SetForkDeniedByPath("/dev/pids/100/com.app/app_123");
     // No crash = pass
 }
 
@@ -474,7 +417,7 @@ HWTEST_F(AppSpawnCGroupOrphanTest, TestSetForkDeniedByPath_NonExistentDir, TestS
 }
 
 // ===================================================================
-// 4.5 CleanupOrphanedTagDir
+// 4.4 CleanupOrphanedTagDir
 // ===================================================================
 
 /**
@@ -485,14 +428,14 @@ HWTEST_F(AppSpawnCGroupOrphanTest, TestSetForkDeniedByPath_NonExistentDir, TestS
 HWTEST_F(AppSpawnCGroupOrphanTest, TestCleanupOrphanedTagDir_ValidTag, TestSize.Level0)
 {
     SetMockRoot();
-    CreateOrphanDir(tempDir_, "100", "com.app_apptag", "app_500", {500, 501});
+    CreateOrphanDir(tempDir_, "100", "com.app", "app_500", {500, 501});
 
-    CleanupOrphanedTagDir("/dev/pids/100", "com.app_apptag");
+    CleanupOrphanedTagDir("/dev/pids/100", "com.app");
 
     EXPECT_TRUE(WasPidKilled(500));
     EXPECT_TRUE(WasPidKilled(501));
-    EXPECT_TRUE(WasPathRmDir("/dev/pids/100/com.app_apptag/app_500"));
-    EXPECT_TRUE(WasPathRmDir("/dev/pids/100/com.app_apptag"));
+    EXPECT_TRUE(WasPathRmDir("/dev/pids/100/com.app/app_500"));
+    EXPECT_TRUE(WasPathRmDir("/dev/pids/100/com.app"));
 }
 
 /**
@@ -503,32 +446,33 @@ HWTEST_F(AppSpawnCGroupOrphanTest, TestCleanupOrphanedTagDir_ValidTag, TestSize.
 HWTEST_F(AppSpawnCGroupOrphanTest, TestCleanupOrphanedTagDir_MultipleApps, TestSize.Level0)
 {
     SetMockRoot();
-    CreateOrphanDir(tempDir_, "100", "com.app_apptag", "app_500", {500});
-    CreateOrphanDir(tempDir_, "100", "com.app_apptag", "app_600", {600, 601});
+    CreateOrphanDir(tempDir_, "100", "com.app", "app_500", {500});
+    CreateOrphanDir(tempDir_, "100", "com.app", "app_600", {600, 601});
 
-    CleanupOrphanedTagDir("/dev/pids/100", "com.app_apptag");
+    CleanupOrphanedTagDir("/dev/pids/100", "com.app");
 
     EXPECT_TRUE(WasPidKilled(500));
     EXPECT_TRUE(WasPidKilled(600));
     EXPECT_TRUE(WasPidKilled(601));
-    EXPECT_TRUE(WasPathRmDir("/dev/pids/100/com.app_apptag/app_500"));
-    EXPECT_TRUE(WasPathRmDir("/dev/pids/100/com.app_apptag/app_600"));
-    EXPECT_TRUE(WasPathRmDir("/dev/pids/100/com.app_apptag"));
+    EXPECT_TRUE(WasPathRmDir("/dev/pids/100/com.app/app_500"));
+    EXPECT_TRUE(WasPathRmDir("/dev/pids/100/com.app/app_600"));
+    EXPECT_TRUE(WasPathRmDir("/dev/pids/100/com.app"));
 }
 
 /**
- * @tc.name: TestCleanupOrphanedTagDir_NotTagDir
- * @tc.desc: Verify non-tag directory names are skipped
+ * @tc.name: TestCleanupOrphanedTagDir_TagDirWithoutApps
+ * @tc.desc: Verify tag directory with no app subdirectories is still removed
  * @tc.type: FUNC
  */
-HWTEST_F(AppSpawnCGroupOrphanTest, TestCleanupOrphanedTagDir_NotTagDir, TestSize.Level0)
+HWTEST_F(AppSpawnCGroupOrphanTest, TestCleanupOrphanedTagDir_TagDirWithoutApps, TestSize.Level0)
 {
     SetMockRoot();
-    CreateOrphanDir(tempDir_, "100", "com.app_apptag", "app_500", {500});
+    CreateOrphanDir(tempDir_, "100", "com.app", "app_500", {500});
 
-    CleanupOrphanedTagDir("/dev/pids/100", "not_a_tag_dir");
+    CleanupOrphanedTagDir("/dev/pids/100", "com.other");
 
     EXPECT_FALSE(WasPidKilled(500));
+    // com.other dir doesn't exist locally so opendir fails, nothing happens
     EXPECT_EQ(g_mockRmdirCount, 0);
 }
 
@@ -541,12 +485,12 @@ HWTEST_F(AppSpawnCGroupOrphanTest, TestCleanupOrphanedTagDir_EmptyTagDir, TestSi
 {
     SetMockRoot();
     mkdir((tempDir_ + "/100").c_str(), DIR_MODE);
-    mkdir((tempDir_ + "/100/com.app_apptag").c_str(), DIR_MODE);
+    mkdir((tempDir_ + "/100/com.app").c_str(), DIR_MODE);
 
-    CleanupOrphanedTagDir("/dev/pids/100", "com.app_apptag");
+    CleanupOrphanedTagDir("/dev/pids/100", "com.app");
 
     EXPECT_EQ(g_mockKilledCount, 0);
-    EXPECT_TRUE(WasPathRmDir("/dev/pids/100/com.app_apptag"));
+    EXPECT_TRUE(WasPathRmDir("/dev/pids/100/com.app"));
 }
 
 /**
@@ -557,17 +501,17 @@ HWTEST_F(AppSpawnCGroupOrphanTest, TestCleanupOrphanedTagDir_EmptyTagDir, TestSi
 HWTEST_F(AppSpawnCGroupOrphanTest, TestCleanupOrphanedTagDir_ForkDeniedBeforeKill, TestSize.Level0)
 {
     SetMockRoot();
-    CreateOrphanDir(tempDir_, "100", "com.app_apptag", "app_500", {500});
+    CreateOrphanDir(tempDir_, "100", "com.app", "app_500", {500});
 
-    CleanupOrphanedTagDir("/dev/pids/100", "com.app_apptag");
+    CleanupOrphanedTagDir("/dev/pids/100", "com.app");
 
     // Verify fork_denied was written (file should contain "1")
     // The file was created by helper, overwritten by SetForkDeniedByPath
-    FILE *f = fopen((tempDir_ + "/100/com.app_apptag/app_500/pids.fork_denied").c_str(), "r");
+    FILE *f = fopen((tempDir_ + "/100/com.app/app_500/pids.fork_denied").c_str(), "r");
     // File may already be rmdir'd, so just verify kill happened after fork_denied was set
     // Since we can't check ordering directly, verify both operations occurred
     EXPECT_TRUE(WasPidKilled(500));
-    EXPECT_TRUE(WasPathRmDir("/dev/pids/100/com.app_apptag/app_500"));
+    EXPECT_TRUE(WasPathRmDir("/dev/pids/100/com.app/app_500"));
     if (f) {
         fclose(f);
     }
@@ -581,15 +525,15 @@ HWTEST_F(AppSpawnCGroupOrphanTest, TestCleanupOrphanedTagDir_ForkDeniedBeforeKil
 HWTEST_F(AppSpawnCGroupOrphanTest, TestCleanupOrphanedTagDir_KillFail, TestSize.Level1)
 {
     SetMockRoot();
-    CreateOrphanDir(tempDir_, "100", "com.app_apptag", "app_500", {500, 99999});
+    CreateOrphanDir(tempDir_, "100", "com.app", "app_500", {500, 99999});
     g_mockKillFailPid = 99999;
 
-    CleanupOrphanedTagDir("/dev/pids/100", "com.app_apptag");
+    CleanupOrphanedTagDir("/dev/pids/100", "com.app");
 
     EXPECT_TRUE(WasPidKilled(500));
     EXPECT_TRUE(WasPidKilled(99999));
-    EXPECT_TRUE(WasPathRmDir("/dev/pids/100/com.app_apptag/app_500"));
-    EXPECT_TRUE(WasPathRmDir("/dev/pids/100/com.app_apptag"));
+    EXPECT_TRUE(WasPathRmDir("/dev/pids/100/com.app/app_500"));
+    EXPECT_TRUE(WasPathRmDir("/dev/pids/100/com.app"));
 }
 
 /**
@@ -600,15 +544,15 @@ HWTEST_F(AppSpawnCGroupOrphanTest, TestCleanupOrphanedTagDir_KillFail, TestSize.
 HWTEST_F(AppSpawnCGroupOrphanTest, TestCleanupOrphanedTagDir_RmdirAppFail, TestSize.Level1)
 {
     SetMockRoot();
-    CreateOrphanDir(tempDir_, "100", "com.app_apptag", "app_500", {500});
+    CreateOrphanDir(tempDir_, "100", "com.app", "app_500", {500});
     // rmdir index 0 = app dir rmdir (first rmdir call)
     g_mockRmdirFailIndex = 0;
 
-    CleanupOrphanedTagDir("/dev/pids/100", "com.app_apptag");
+    CleanupOrphanedTagDir("/dev/pids/100", "com.app");
 
     EXPECT_TRUE(WasPidKilled(500));
     // app dir rmdir failed, but tag dir rmdir should still be attempted
-    EXPECT_TRUE(WasPathRmDir("/dev/pids/100/com.app_apptag"));
+    EXPECT_TRUE(WasPathRmDir("/dev/pids/100/com.app"));
 }
 
 /**
@@ -619,15 +563,15 @@ HWTEST_F(AppSpawnCGroupOrphanTest, TestCleanupOrphanedTagDir_RmdirAppFail, TestS
 HWTEST_F(AppSpawnCGroupOrphanTest, TestCleanupOrphanedTagDir_RmdirTagFail, TestSize.Level1)
 {
     SetMockRoot();
-    CreateOrphanDir(tempDir_, "100", "com.app_apptag", "app_500", {500});
+    CreateOrphanDir(tempDir_, "100", "com.app", "app_500", {500});
     // app dir rmdir succeeds (index 0), tag dir rmdir fails (index 1)
     g_mockRmdirFailIndex = 1;
 
-    CleanupOrphanedTagDir("/dev/pids/100", "com.app_apptag");
+    CleanupOrphanedTagDir("/dev/pids/100", "com.app");
 
     EXPECT_TRUE(WasPidKilled(500));
-    EXPECT_TRUE(WasPathRmDir("/dev/pids/100/com.app_apptag/app_500"));
-    EXPECT_TRUE(WasPathRmDir("/dev/pids/100/com.app_apptag"));
+    EXPECT_TRUE(WasPathRmDir("/dev/pids/100/com.app/app_500"));
+    EXPECT_TRUE(WasPathRmDir("/dev/pids/100/com.app"));
 }
 
 /**
@@ -640,17 +584,17 @@ HWTEST_F(AppSpawnCGroupOrphanTest, TestCleanupOrphanedTagDir_ProcsFileOpenFail, 
     SetMockRoot();
     // Create dir structure but no cgroup.procs file
     mkdir((tempDir_ + "/100").c_str(), DIR_MODE);
-    mkdir((tempDir_ + "/100/com.app_apptag").c_str(), DIR_MODE);
-    mkdir((tempDir_ + "/100/com.app_apptag/app_500").c_str(), DIR_MODE);
+    mkdir((tempDir_ + "/100/com.app").c_str(), DIR_MODE);
+    mkdir((tempDir_ + "/100/com.app/app_500").c_str(), DIR_MODE);
     // No cgroup.procs -> fopen returns NULL -> continue to next app dir
 
-    CleanupOrphanedTagDir("/dev/pids/100", "com.app_apptag");
+    CleanupOrphanedTagDir("/dev/pids/100", "com.app");
 
     EXPECT_EQ(g_mockKilledCount, 0);
     // fopen fails on cgroup.procs, but CleanupOrphanedAppDir still removes the app dir
-    EXPECT_TRUE(WasPathRmDir("/dev/pids/100/com.app_apptag/app_500"));
+    EXPECT_TRUE(WasPathRmDir("/dev/pids/100/com.app/app_500"));
     // Tag dir is still removed
-    EXPECT_TRUE(WasPathRmDir("/dev/pids/100/com.app_apptag"));
+    EXPECT_TRUE(WasPathRmDir("/dev/pids/100/com.app"));
 }
 
 /**
@@ -662,18 +606,18 @@ HWTEST_F(AppSpawnCGroupOrphanTest, TestCleanupOrphanedTagDir_NonAppSubDir, TestS
 {
     SetMockRoot();
     mkdir((tempDir_ + "/100").c_str(), DIR_MODE);
-    mkdir((tempDir_ + "/100/com.app_apptag").c_str(), DIR_MODE);
-    mkdir((tempDir_ + "/100/com.app_apptag/some_other_dir").c_str(), DIR_MODE);
+    mkdir((tempDir_ + "/100/com.app").c_str(), DIR_MODE);
+    mkdir((tempDir_ + "/100/com.app/some_other_dir").c_str(), DIR_MODE);
 
-    CleanupOrphanedTagDir("/dev/pids/100", "com.app_apptag");
+    CleanupOrphanedTagDir("/dev/pids/100", "com.app");
 
     EXPECT_EQ(g_mockKilledCount, 0);
     EXPECT_EQ(g_mockRmdirCount, 1); // only tag dir rmdir
-    EXPECT_TRUE(WasPathRmDir("/dev/pids/100/com.app_apptag"));
+    EXPECT_TRUE(WasPathRmDir("/dev/pids/100/com.app"));
 }
 
 // ===================================================================
-// 4.6 CleanupOrphanedCgroupProcesses
+// 4.5 CleanupOrphanedCgroupProcesses
 // ===================================================================
 
 /**
@@ -684,13 +628,13 @@ HWTEST_F(AppSpawnCGroupOrphanTest, TestCleanupOrphanedTagDir_NonAppSubDir, TestS
 HWTEST_F(AppSpawnCGroupOrphanTest, TestCleanupOrphanedCgroup_SingleUid, TestSize.Level0)
 {
     SetMockRoot();
-    CreateOrphanDir(tempDir_, "100", "com.app_apptag", "app_500", {500});
+    CreateOrphanDir(tempDir_, "100", "com.app", "app_500", {500});
 
     CleanupOrphanedCgroupProcesses();
 
     EXPECT_TRUE(WasPidKilled(500));
-    EXPECT_TRUE(WasPathRmDir("/dev/pids/100/com.app_apptag/app_500"));
-    EXPECT_TRUE(WasPathRmDir("/dev/pids/100/com.app_apptag"));
+    EXPECT_TRUE(WasPathRmDir("/dev/pids/100/com.app/app_500"));
+    EXPECT_TRUE(WasPathRmDir("/dev/pids/100/com.app"));
 }
 
 /**
@@ -701,17 +645,17 @@ HWTEST_F(AppSpawnCGroupOrphanTest, TestCleanupOrphanedCgroup_SingleUid, TestSize
 HWTEST_F(AppSpawnCGroupOrphanTest, TestCleanupOrphanedCgroup_MultipleUids, TestSize.Level0)
 {
     SetMockRoot();
-    CreateOrphanDir(tempDir_, "100", "com.app_apptag", "app_500", {500});
-    CreateOrphanDir(tempDir_, "200", "com.other_apptag", "app_600", {600});
+    CreateOrphanDir(tempDir_, "100", "com.app", "app_500", {500});
+    CreateOrphanDir(tempDir_, "200", "com.other", "app_600", {600});
 
     CleanupOrphanedCgroupProcesses();
 
     EXPECT_TRUE(WasPidKilled(500));
     EXPECT_TRUE(WasPidKilled(600));
-    EXPECT_TRUE(WasPathRmDir("/dev/pids/100/com.app_apptag/app_500"));
-    EXPECT_TRUE(WasPathRmDir("/dev/pids/100/com.app_apptag"));
-    EXPECT_TRUE(WasPathRmDir("/dev/pids/200/com.other_apptag/app_600"));
-    EXPECT_TRUE(WasPathRmDir("/dev/pids/200/com.other_apptag"));
+    EXPECT_TRUE(WasPathRmDir("/dev/pids/100/com.app/app_500"));
+    EXPECT_TRUE(WasPathRmDir("/dev/pids/100/com.app"));
+    EXPECT_TRUE(WasPathRmDir("/dev/pids/200/com.other/app_600"));
+    EXPECT_TRUE(WasPathRmDir("/dev/pids/200/com.other"));
 }
 
 /**
@@ -787,18 +731,18 @@ HWTEST_F(AppSpawnCGroupOrphanTest, TestCleanupOrphanedCgroup_UidDirOpenFail, Tes
 HWTEST_F(AppSpawnCGroupOrphanTest, TestCleanupOrphanedCgroup_SkipDotDirs, TestSize.Level1)
 {
     SetMockRoot();
-    CreateOrphanDir(tempDir_, "100", "com.app_apptag", "app_500", {500});
+    CreateOrphanDir(tempDir_, "100", "com.app", "app_500", {500});
 
     CleanupOrphanedCgroupProcesses();
 
     EXPECT_TRUE(WasPidKilled(500));
     // Only expected rmdir calls, no extras from . or ..
-    EXPECT_TRUE(WasPathRmDir("/dev/pids/100/com.app_apptag/app_500"));
-    EXPECT_TRUE(WasPathRmDir("/dev/pids/100/com.app_apptag"));
+    EXPECT_TRUE(WasPathRmDir("/dev/pids/100/com.app/app_500"));
+    EXPECT_TRUE(WasPathRmDir("/dev/pids/100/com.app"));
 }
 
 // ===================================================================
-// 4.7 CgroupPreloadHook
+// 4.6 CgroupPreloadHook
 // ===================================================================
 
 /**
@@ -809,7 +753,7 @@ HWTEST_F(AppSpawnCGroupOrphanTest, TestCleanupOrphanedCgroup_SkipDotDirs, TestSi
 HWTEST_F(AppSpawnCGroupOrphanTest, TestCgroupPreload_AbnormalStop, TestSize.Level0)
 {
     SetMockRoot();
-    CreateOrphanDir(tempDir_, "100", "com.app_apptag", "app_500", {500});
+    CreateOrphanDir(tempDir_, "100", "com.app", "app_500", {500});
     (void)strcpy_s(g_mockGracefulStopValue, sizeof(g_mockGracefulStopValue), "1");
 
     int ret = CgroupPreloadHook(nullptr);
@@ -824,7 +768,7 @@ HWTEST_F(AppSpawnCGroupOrphanTest, TestCgroupPreload_AbnormalStop, TestSize.Leve
 HWTEST_F(AppSpawnCGroupOrphanTest, TestCgroupPreload_GracefulStop, TestSize.Level0)
 {
     SetMockRoot();
-    CreateOrphanDir(tempDir_, "100", "com.app_apptag", "app_500", {500});
+    CreateOrphanDir(tempDir_, "100", "com.app", "app_500", {500});
     (void)strcpy_s(g_mockGracefulStopValue, sizeof(g_mockGracefulStopValue), "0");
 
     CgroupPreloadHook(nullptr);
@@ -840,7 +784,7 @@ HWTEST_F(AppSpawnCGroupOrphanTest, TestCgroupPreload_GracefulStop, TestSize.Leve
 HWTEST_F(AppSpawnCGroupOrphanTest, TestCgroupPreload_ParamReadFail, TestSize.Level0)
 {
     SetMockRoot();
-    CreateOrphanDir(tempDir_, "100", "com.app_apptag", "app_500", {500});
+    CreateOrphanDir(tempDir_, "100", "com.app", "app_500", {500});
     g_mockGetParamFail = 1;
 
     CgroupPreloadHook(nullptr);
@@ -863,7 +807,7 @@ HWTEST_F(AppSpawnCGroupOrphanTest, TestCgroupPreload_SetParam, TestSize.Level0)
 }
 
 // ===================================================================
-// 4.8 CgroupExitHook
+// 4.7 CgroupExitHook
 // ===================================================================
 
 /**
