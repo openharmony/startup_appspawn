@@ -149,6 +149,7 @@ typedef enum {
     APPSPAWN_ENV_FILE_READ_ERROR,
     APPSPAWN_ENV_FILE_FORMAT_ERROR,
     APPSPAWN_PRELOAD_DFX_NOT_ALLOW,
+    APPSPAWN_PIPE_ERROR,
 } AppSpawnErrorCode;
 
 uint64_t DiffTime(const struct timespec *startTime, const struct timespec *endTime);

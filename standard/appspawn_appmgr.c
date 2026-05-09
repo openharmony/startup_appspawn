@@ -166,7 +166,6 @@ AppSpawnedProcess *AddSpawnedProcess(pid_t pid, const char *processName, uint32_
     node->exitStatus = 0;
     node->appIndex = appIndex;
     node->isDebuggable = isDebuggable;
-    node->msgFlags = NULL;
 
     int ret = strcpy_s(node->name, len, processName);
     APPSPAWN_CHECK(ret == 0, free(node);
@@ -185,8 +184,8 @@ void TerminateSpawnedProcess(AppSpawnedProcess *node)
     OH_ListRemove(&node->node);
     OH_ListInit(&node->node);
     if (!IsNWebSpawnMode(g_appSpawnMgr)) {
-        APPSPAWN_ONLY_EXPER(node->msgFlags != NULL, free(node->msgFlags);
-            node->msgFlags = NULL);
+        APPSPAWN_ONLY_EXPER(node->lockPath != NULL, free(node->lockPath);
+            node->lockPath = NULL);
         free(node);
         return;
     }
@@ -194,8 +193,8 @@ void TerminateSpawnedProcess(AppSpawnedProcess *node)
         AppSpawnedProcess *oldApp = ListEntry(g_appSpawnMgr->diedQueue.next, AppSpawnedProcess, node);
         OH_ListRemove(&oldApp->node);
         OH_ListInit(&oldApp->node);
-        APPSPAWN_ONLY_EXPER(oldApp->msgFlags != NULL, free(oldApp->msgFlags);
-            oldApp->msgFlags = NULL);
+        APPSPAWN_ONLY_EXPER(oldApp->lockPath != NULL, free(oldApp->lockPath);
+            oldApp->lockPath = NULL);
         free(oldApp);
         g_appSpawnMgr->diedAppCount--;
     }
@@ -318,6 +317,7 @@ AppSpawningCtx *CreateAppSpawningCtx(void)
     property->state = APP_STATE_IDLE;
     property->allowDumpable = false;
     property->lockBundleRefAdded = false;  // Initialize flag to false
+    property->lockPath = NULL;
     OH_ListInit(&property->node);
     if (g_appSpawnMgr) {
         OH_ListAddTail(&g_appSpawnMgr->appSpawnQueue, &property->node);
@@ -346,6 +346,10 @@ void DeleteAppSpawningCtx(AppSpawningCtx *property)
     if (property->forkCtx.coldRunPath) {
         free(property->forkCtx.coldRunPath);
         property->forkCtx.coldRunPath = NULL;
+    }
+    if (property->lockPath) {
+        free(property->lockPath);
+        property->lockPath = NULL;
     }
     if (property->forkCtx.fd[0] >= 0) {
         close(property->forkCtx.fd[0]);

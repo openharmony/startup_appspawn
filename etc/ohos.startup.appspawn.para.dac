@@ -16,3 +16,4 @@ persist.appspawn.hybridspawn.enable = foundation:foundation:0755
 
 # support appspawn and hybridspawn unified
 persist.appspawn.hybridspawn.unified = root:root:0755
+startup.appspawn.unlock_mount. = root:root:0755
