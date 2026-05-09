@@ -125,9 +125,11 @@ typedef struct {
  /**
  * @brief checkpoint信息结构体
  */
+#define APP_CHECKPOINT_NAME_LEN 256
 typedef struct {
-    pid_t imgPid;           // 镜像进程PID
-    uint64_t checkPointId;  // checkpoint ID
+    pid_t imgPid;                           // 镜像进程PID
+    uint64_t checkPointId;                  // checkpoint ID
+    char imgName[APP_CHECKPOINT_NAME_LEN];  // 镜像进程名
 } AppSpawnCheckpointInfo;
 
 typedef struct TagAppSpawnMsg {
