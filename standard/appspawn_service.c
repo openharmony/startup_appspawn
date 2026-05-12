@@ -704,6 +704,8 @@ static void WatchChildProcessFd(AppSpawningCtx *property)
     if (status != LE_SUCCESS) {
 #ifndef APPSPAWN_TEST
         close(fd);
+        free(appPid);
+        appPid = NULL;
 #endif
         APPSPAWN_LOGW("Failed to watch child pid fd, pid is %{public}d", property->pid);
     }
@@ -1950,7 +1952,7 @@ static void ProcessSpawnRestartMsg(AppSpawnConnection *connection, AppSpawnMsgNo
  */
 APPSPAWN_STATIC void ProcessCheckpointReqMsg(AppSpawnConnection *connection, AppSpawnMsgNode *message)
 {
-    APPSPAWN_CHECK((connect != NULL && message != NULL), return, "Invalid input param");
+    APPSPAWN_CHECK((connection != NULL && message != NULL), return, "Invalid input param");
     APPSPAWN_LOGI("ProcessCheckpointReqMsg: processName=%{public}s, msgType=%{public}u",
                   message->msgHeader.processName, message->msgHeader.msgType);
 
@@ -1984,13 +1986,26 @@ APPSPAWN_STATIC void ProcessCheckpointReqMsg(AppSpawnConnection *connection, App
         return;
     }
 
+    if (!CheckAppMsgFlagsSet(property, APP_FLAGS_SPAWN_IMAGE_PROCESS)) {
+        AppSpawnedProcess *appInfo = AddSpawnedProcess(property->pid, GetBundleName(property), 0, 0);
+        APPSPAWN_CHECK(appInfo != NULL,
+            SendResponseEx(connection, &message->msgHeader, APPSPAWN_SYSTEM_ERROR, 0, 0);
+            DeleteAppSpawningCtx(property); return,
+            "Failed to add spawned process for worker pid=%{public}d", property->pid);
+
+        AppSpawnMsgDacInfo *dacInfo = GetAppProperty(property, TLV_DAC_INFO);
+        appInfo->uid = dacInfo != NULL ? dacInfo->uid : 0;
+        WatchChildProcessFd(property);
+        ProcessMgrHookExecute(STAGE_SERVER_APP_ADD, GetAppSpawnContent(), appInfo);
+    }
+
     // checkpoint 进程创建成功，发送响应
     // checkPointId 已在 hook 中设置到 property->checkPointId
     APPSPAWN_LOGI("Checkpoint process created successfully: pid=%{public}d, checkPointId=%{public}" PRId64"",
                   property->pid, property->checkPointId);
 
     // 使用 SendResponseEx 直接传递 result、pid 和 checkPointId
-    SendResponseEx(connection, &message->msgHeader, 0, property->pid, property->checkPointId);
+    SendResponseEx(connection, &message->msgHeader, ret, property->pid, property->checkPointId);
     DeleteAppSpawningCtx(property);
 }
 
