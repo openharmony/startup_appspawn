@@ -273,6 +273,9 @@ int DecodeAppSpawnMsg(AppSpawnMsgNode *message)
         if (tlv == NULL) {
             return APPSPAWN_MSG_INVALID;
         }
+        
+        APPSPAWN_CHECK(tlv->tlvLen != 0, return APPSPAWN_MSG_INVALID;,
+            "Invalid tlvLen is 0");
         APPSPAWN_CHECK(tlv->tlvLen <= (bufferLen - currLen), break,
             "Invalid tlv [%{public}d %{public}d] curr: %{public}zu",
             tlv->tlvType, tlv->tlvLen, currLen + sizeof(AppSpawnMsg));

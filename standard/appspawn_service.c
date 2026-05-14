@@ -1950,7 +1950,7 @@ static void ProcessSpawnRestartMsg(AppSpawnConnection *connection, AppSpawnMsgNo
  */
 APPSPAWN_STATIC void ProcessCheckpointReqMsg(AppSpawnConnection *connection, AppSpawnMsgNode *message)
 {
-    APPSPAWN_CHECK((connect != NULL && message != NULL), return, "Invalid input param");
+    APPSPAWN_CHECK((connection != NULL && message != NULL), return, "Invalid input param");
     APPSPAWN_LOGI("ProcessCheckpointReqMsg: processName=%{public}s, msgType=%{public}u",
                   message->msgHeader.processName, message->msgHeader.msgType);
 
