@@ -277,26 +277,33 @@ APPSPAWN_STATIC int GetRenderIpcFdsFromEnv(RenderIpcFds &fds)
         APPSPAWN_LOGE("Cold start mode, ipc-fd not found in env");
         return APPSPAWN_ARG_INVALID;
     }
-    fds.ipcFd = atoi(ipcFdEnv);
+    char *endptr = nullptr;
+    int numberBase = 10;
+    fds.ipcFd = static_cast<int32_t>(strtol(ipcFdEnv, &endptr, numberBase));
+    APPSPAWN_CHECK(endptr != ipcFdEnv && *endptr == '\0' && fds.ipcFd > 0,
+        return APPSPAWN_ARG_INVALID, "Cold start mode, invalid ipcFd values");
 
     char *sharedFdEnv = getenv(APP_FDENV_PREFIX "shared-fd");
     if (sharedFdEnv == nullptr) {
         APPSPAWN_LOGE("Cold start mode, shared-fd not found in env");
         return APPSPAWN_ARG_INVALID;
     }
-    fds.sharedFd = atoi(sharedFdEnv);
+
+    endptr = nullptr;
+    fds.sharedFd = static_cast<int32_t>(strtol(sharedFdEnv, &endptr, numberBase));
+    APPSPAWN_CHECK(endptr != sharedFdEnv && *endptr == '\0' && fds.sharedFd > 0,
+        return APPSPAWN_ARG_INVALID, "Cold start mode, invalid sharedFdEnv values");
 
     char *crashFdEnv = getenv(APP_FDENV_PREFIX "crash-fd");
     if (crashFdEnv == nullptr) {
         APPSPAWN_LOGE("Cold start mode, crash-fd not found in env");
         return APPSPAWN_ARG_INVALID;
     }
-    fds.crashFd = atoi(crashFdEnv);
+    endptr = nullptr;
+    fds.crashFd = static_cast<int32_t>(strtol(crashFdEnv, &endptr, numberBase));
+    APPSPAWN_CHECK(endptr != crashFdEnv && *endptr == '\0' && fds.crashFd > 0,
+        return APPSPAWN_ARG_INVALID, "Cold start mode, invalid crashFdEnv values");
 
-    if (fds.ipcFd <= 0 || fds.sharedFd <= 0 || fds.crashFd <= 0) {
-        APPSPAWN_LOGE("Cold start mode, invalid fd values");
-        return APPSPAWN_ARG_INVALID;
-    }
     return APPSPAWN_OK;
 }
 
