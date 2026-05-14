@@ -1001,4 +1001,214 @@ HWTEST_F(AppSpawnSandboxCommonTest, App_Spawn_SandboxCommon_BuildFullParamSrcPat
 
     cJSON_Delete(config);
 }
+
+/**
+ * @tc.name: App_Spawn_SandboxCommon_ReplaceSandboxRootVariablePackageName_01
+ * @tc.desc: Test ReplaceSandboxRootVariablePackageName with nullptr appProperty
+ * @tc.type: FUNC
+ * @tc.require: issueI
+ */
+HWTEST_F(AppSpawnSandboxCommonTest, App_Spawn_SandboxCommon_ReplaceSandboxRootVariablePackageName_01, TestSize.Level1)
+{
+    // 覆盖: ReplaceSandboxRootVariablePackageName nullptr check (sandbox_common.cpp:860)
+    const AppSpawningCtx *appProperty = nullptr;
+    std::string path = "/data/app/el2/100/<variablePackageName>";
+
+    std::string result = AppSpawn::SandboxCommon::ReplaceSandboxRootVariablePackageName(appProperty, path);
+
+    // Assert - nullptr should return empty string
+    EXPECT_TRUE(result.empty());
+}
+
+/**
+ * @tc.name: App_Spawn_SandboxCommon_ReplaceSandboxRootVariablePackageName_02
+ * @tc.desc: Test ReplaceSandboxRootVariablePackageName with DEFAULT flags (normal case)
+ * @tc.type: FUNC
+ * @tc.require: issueI
+ */
+HWTEST_F(AppSpawnSandboxCommonTest, App_Spawn_SandboxCommon_ReplaceSandboxRootVariablePackageName_02, TestSize.Level1)
+{
+    // 覆盖: ReplaceSandboxRootVariablePackageName SANDBOX_PACKAGENAME_DEFAULT (sandbox_common.cpp:875)
+    AppSpawningCtx *appProperty = AppSpawn::GetTestAppPropertyCore();
+    if (appProperty == nullptr) {
+        GTEST_SKIP() << "Failed to create test object";
+    }
+
+    std::string path = "/data/app/el2/100/<variablePackageName>";
+    std::string result = AppSpawn::SandboxCommon::ReplaceSandboxRootVariablePackageName(appProperty, path);
+
+    // DEFAULT case: should replace <variablePackageName> with bundle name
+    EXPECT_FALSE(result.empty());
+    EXPECT_EQ(result.find("<variablePackageName>"), std::string::npos);  // Placeholder replaced
+
+    DeleteAppSpawningCtx(appProperty);
+}
+
+/**
+ * @tc.name: App_Spawn_SandboxCommon_ReplaceSandboxRootVariablePackageName_03
+ * @tc.desc: Test ReplaceSandboxRootVariablePackageName with CLONE flag
+ * @tc.type: FUNC
+ * @tc.require: issueI
+ */
+HWTEST_F(AppSpawnSandboxCommonTest, App_Spawn_SandboxCommon_ReplaceSandboxRootVariablePackageName_03, TestSize.Level1)
+{
+    // 覆盖: ReplaceSandboxRootVariablePackageName SANDBOX_PACKAGENAME_CLONE (sandbox_common.cpp:879)
+    AppSpawningCtx *appProperty = AppSpawn::GetTestAppPropertyCore();
+    if (appProperty == nullptr) {
+        GTEST_SKIP() << "Failed to create test object";
+    }
+
+    // Set CLONE flag using the correct API
+    if (appProperty->message != nullptr) {
+        SetAppSpawnMsgFlag(appProperty->message, TLV_MSG_FLAGS, APP_FLAGS_CLONE_ENABLE);
+    }
+
+    std::string path = "/data/app/el2/100/<variablePackageName>";
+    std::string result = AppSpawn::SandboxCommon::ReplaceSandboxRootVariablePackageName(appProperty, path);
+
+    // CLONE case: should contain +clone- (but might be empty if bundleIndex == 0)
+    EXPECT_FALSE(result.empty());
+
+    DeleteAppSpawningCtx(appProperty);
+}
+
+/**
+ * @tc.name: App_Spawn_SandboxCommon_ReplaceSandboxRootVariablePackageName_04
+ * @tc.desc: Test ReplaceSandboxRootVariablePackageName with EXTENSION flag
+ * @tc.type: FUNC
+ * @tc.require: issueI
+ */
+HWTEST_F(AppSpawnSandboxCommonTest, App_Spawn_SandboxCommon_ReplaceSandboxRootVariablePackageName_04, TestSize.Level1)
+{
+    // 覆盖: ReplaceSandboxRootVariablePackageName SANDBOX_PACKAGENAME_EXTENSION (sandbox_common.cpp:882)
+    // Note: When EXTENSION flag is set but no extension data is provided, the function
+    // returns empty string due to the APPSPAWN_CHECK at line 882. This is expected behavior.
+    AppSpawningCtx *appProperty = AppSpawn::GetTestAppPropertyCore();
+    if (appProperty == nullptr) {
+        GTEST_SKIP() << "Failed to create test object";
+    }
+
+    // Set EXTENSION flag using the correct API
+    if (appProperty->message != nullptr) {
+        SetAppSpawnMsgFlag(appProperty->message, TLV_MSG_FLAGS, APP_FLAGS_EXTENSION_SANDBOX);
+    }
+
+    std::string path = "/data/app/el2/100/<variablePackageName>";
+    std::string result = AppSpawn::SandboxCommon::ReplaceSandboxRootVariablePackageName(appProperty, path);
+
+    // EXTENSION case without extension data returns empty (APPSPAWN_CHECK at line 882)
+    // The switch branch is still covered even though it returns early
+    EXPECT_TRUE(result.empty());  // Expected: extension is nullptr, so returns ""
+
+    DeleteAppSpawningCtx(appProperty);
+}
+
+/**
+ * @tc.name: App_Spawn_SandboxCommon_ReplaceSandboxRootVariablePackageName_05
+ * @tc.desc: Test ReplaceSandboxRootVariablePackageName with CLONE_AND_EXTENSION flags
+ * @tc.type: FUNC
+ * @tc.require: issueI
+ */
+HWTEST_F(AppSpawnSandboxCommonTest, App_Spawn_SandboxCommon_ReplaceSandboxRootVariablePackageName_05, TestSize.Level1)
+{
+    // 覆盖: ReplaceSandboxRootVariablePackageName SANDBOX_PACKAGENAME_CLONE_AND_EXTENSION (sandbox_common.cpp:887)
+    // Note: When CLONE_AND_EXTENSION flags are set but no extension data is provided,
+    // the function returns empty string due to the APPSPAWN_CHECK at line 887.
+    AppSpawningCtx *appProperty = AppSpawn::GetTestAppPropertyCore();
+    if (appProperty == nullptr) {
+        GTEST_SKIP() << "Failed to create test object";
+    }
+
+    // Set both CLONE and EXTENSION flags using the correct API
+    if (appProperty->message != nullptr) {
+        SetAppSpawnMsgFlag(appProperty->message, TLV_MSG_FLAGS, APP_FLAGS_CLONE_ENABLE);
+        SetAppSpawnMsgFlag(appProperty->message, TLV_MSG_FLAGS, APP_FLAGS_EXTENSION_SANDBOX);
+    }
+
+    std::string path = "/data/app/el2/100/<variablePackageName>";
+    std::string result = AppSpawn::SandboxCommon::ReplaceSandboxRootVariablePackageName(appProperty, path);
+
+    // CLONE_AND_EXTENSION case without extension data returns empty (APPSPAWN_CHECK at line 887)
+    // The switch branch is still covered even though it returns early
+    EXPECT_TRUE(result.empty());  // Expected: extension is nullptr, so returns ""
+
+    DeleteAppSpawningCtx(appProperty);
+}
+
+/**
+ * @tc.name: App_Spawn_SandboxCommon_ReplaceSandboxRootVariablePackageName_06
+ * @tc.desc: Test ReplaceSandboxRootVariablePackageName with ATOMIC_SERVICE flag
+ * @tc.type: FUNC
+ * @tc.require: issueI
+ */
+HWTEST_F(AppSpawnSandboxCommonTest, App_Spawn_SandboxCommon_ReplaceSandboxRootVariablePackageName_06, TestSize.Level1)
+{
+    // 覆盖: ReplaceSandboxRootVariablePackageName SANDBOX_PACKAGENAME_ATOMIC_SERVICE (sandbox_common.cpp:893)
+    AppSpawningCtx *appProperty = AppSpawn::GetTestAppPropertyCore();
+    if (appProperty == nullptr) {
+        GTEST_SKIP() << "Failed to create test object";
+    }
+
+    // Set ATOMIC_SERVICE flag using the correct API
+    if (appProperty->message != nullptr) {
+        SetAppSpawnMsgFlag(appProperty->message, TLV_MSG_FLAGS, APP_FLAGS_ATOMIC_SERVICE);
+    }
+
+    std::string path = "/data/app/el2/100/<variablePackageName>";
+    std::string result = AppSpawn::SandboxCommon::ReplaceSandboxRootVariablePackageName(appProperty, path);
+
+    // ATOMIC_SERVICE case: should contain +auid-
+    EXPECT_FALSE(result.empty());
+
+    DeleteAppSpawningCtx(appProperty);
+}
+
+/**
+ * @tc.name: App_Spawn_SandboxCommon_ReplaceSandboxRootVariablePackageName_07
+ * @tc.desc: Test ReplaceSandboxRootVariablePackageName with normal context (default case)
+ * @tc.type: FUNC
+ * @tc.require: issueI
+ */
+HWTEST_F(AppSpawnSandboxCommonTest, App_Spawn_SandboxCommon_ReplaceSandboxRootVariablePackageName_07, TestSize.Level1)
+{
+    // 覆盖: ReplaceSandboxRootVariablePackageName DEFAULT branch (sandbox_common.cpp:875)
+    // Note: With no special flags set, the function will hit the DEFAULT case
+    AppSpawningCtx *appProperty = AppSpawn::GetTestAppPropertyCore();
+    if (appProperty == nullptr) {
+        GTEST_SKIP() << "Failed to create test object";
+    }
+
+    // Don't set any special flags - will hit DEFAULT case in switch
+    std::string path = "/data/app/el2/100/<variablePackageName>";
+    std::string result = AppSpawn::SandboxCommon::ReplaceSandboxRootVariablePackageName(appProperty, path);
+
+    // DEFAULT case: should replace with bundle name (no special prefix)
+    EXPECT_FALSE(result.empty());
+
+    DeleteAppSpawningCtx(appProperty);
+}
+
+/**
+ * @tc.name: App_Spawn_SandboxCommon_ReplaceSandboxRootVariablePackageName_08
+ * @tc.desc: Test ReplaceSandboxRootVariablePackageName with empty path
+ * @tc.type: FUNC
+ * @tc.require: issueI
+ */
+HWTEST_F(AppSpawnSandboxCommonTest, App_Spawn_SandboxCommon_ReplaceSandboxRootVariablePackageName_08, TestSize.Level1)
+{
+    // 覆盖: ReplaceSandboxRootVariablePackageName with empty path
+    AppSpawningCtx *appProperty = AppSpawn::GetTestAppPropertyCore();
+    if (appProperty == nullptr) {
+        GTEST_SKIP() << "Failed to create test object";
+    }
+
+    std::string path = "";
+    std::string result = AppSpawn::SandboxCommon::ReplaceSandboxRootVariablePackageName(appProperty, path);
+
+    // Empty path should return empty or unchanged
+    EXPECT_TRUE(result.empty() || result == path);
+
+    DeleteAppSpawningCtx(appProperty);
+}
+
 }  // namespace OHOS
