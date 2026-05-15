@@ -148,12 +148,12 @@ static void SetWorkerProcesssForkDenied(const char *bundleName, AppSpawningCtx *
 
     const int userId = appInfo->uid / UID_BASE;
     char pathForkDenied[PATH_MAX] = {};
-    int ret = snprintf_s(pathForkDenied, PATH_MAX, PATH_MAX - 1, "/dev/pids/%d/%s/app_%d",
+    int ret = snprintf_s(pathForkDenied, PATH_MAX, PATH_MAX - 1, "/dev/pids/%d/%s/app_%d/",
                          userId, bundleName, property->pid);
     APPSPAWN_CHECK(ret > 0, return, "Failed to snprintf_s errno: %{public}d", errno);
 
-    ret = strcat_s(pathForkDenied, sizeof(pathForkDenied), "pid.fork_denied");
-    APPSPAWN_CHECK(ret > 0, return, "Failed to strcat_s path");
+    ret = strcat_s(pathForkDenied, sizeof(pathForkDenied), "pids.fork_denied");
+    APPSPAWN_CHECK(ret == 0, return, "Failed to strcat_s path");
 
     int fd = open(pathForkDenied, O_RDWR);
     if (fd < 0) {
@@ -161,7 +161,7 @@ static void SetWorkerProcesssForkDenied(const char *bundleName, AppSpawningCtx *
         return;
     }
 
-    ret = write(fd, "1", 1);
+    ret = write(fd, "0", 1);
     if (ret >= 0) {
         fsync(fd);
         APPSPAWN_LOGI("SetForkDenied success, cgroup's owner:%{public}d", appInfo->uid);
