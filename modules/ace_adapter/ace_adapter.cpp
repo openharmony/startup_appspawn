@@ -306,12 +306,12 @@ static void LoadExtendCJLib(void)
 
 static int BuildFdInfoMap(const AppSpawnMsgNode *message, std::map<std::string, int> &fdMap, int isColdRun)
 {
-    APPSPAWN_CHECK_ONLY_EXPER(message != NULL && message->buffer != NULL, return -1);
-    APPSPAWN_CHECK_ONLY_EXPER(message->tlvOffset != NULL, return -1);
+    APPSPAWN_CHECK_ONLY_EXPER(message != nullptr && message->buffer != nullptr, return -1);
+    APPSPAWN_CHECK_ONLY_EXPER(message->tlvOffset != nullptr, return -1);
     int findFdIndex = 0;
     AppSpawnMsgReceiverCtx recvCtx;
     if (!isColdRun) {
-        APPSPAWN_CHECK_ONLY_EXPER(message->connection != NULL, return -1);
+        APPSPAWN_CHECK_ONLY_EXPER(message->connection != nullptr, return -1);
         recvCtx = message->connection->receiverCtx;
         if (recvCtx.fdCount <= 0) {
             APPSPAWN_LOGI("no need to build fd info %{public}d, %{public}d", recvCtx.fds != NULL, recvCtx.fdCount);
@@ -334,7 +334,7 @@ static int BuildFdInfoMap(const AppSpawnMsgNode *message, std::map<std::string, 
         if (isColdRun) {
             std::string envKey = std::string(APP_FDENV_PREFIX) + key;
             char *fdChar = getenv(envKey.c_str());
-            APPSPAWN_CHECK(fdChar != NULL, continue, "getfd from env failed %{public}s", envKey.c_str());
+            APPSPAWN_CHECK(fdChar != nullptr, continue, "getfd from env failed %{public}s", envKey.c_str());
             int fd = atoi(fdChar);
             APPSPAWN_CHECK(fd > 0, continue, "getfd from env atoi errno %{public}s,%{public}d", envKey.c_str(), fd);
             fdMap[key] = fd;
@@ -353,7 +353,7 @@ static int BuildFdInfoMap(const AppSpawnMsgNode *message, std::map<std::string, 
 APPSPAWN_STATIC void ClearEnvAndReturnSuccess(AppSpawnContent *content, AppSpawnClient *client)
 {
     AppSpawningCtx *property = (AppSpawningCtx *)client;
-    APPSPAWN_CHECK(content != NULL && property != NULL, return, "invalid param in clearEnv");
+    APPSPAWN_CHECK(content != nullptr && property != nullptr, return, "invalid param in clearEnv");
     int fd = property->forkCtx.fd[1];
     property->forkCtx.fd[1] = -1;
     AppSpawnEnvClear(content, client);
@@ -372,7 +372,7 @@ APPSPAWN_STATIC int RunChildThread(const AppSpawnMgr *content, const AppSpawning
     }
 #ifdef ARKWEB_UTILS_ENABLE
     const char* bundleName = GetBundleName(property);
-    std::string bundleNameStr = (bundleName != NULL) ? std::string(bundleName) : "";
+    std::string bundleNameStr = (bundleName != nullptr) ? std::string(bundleName) : "";
     OHOS::ArkWeb::SelectWebcoreBeforeProcessRun(bundleNameStr);
 #endif
     setenv(APPSPAWN_CHECK_EXIT, checkExit.c_str(), true);
@@ -393,7 +393,7 @@ APPSPAWN_STATIC int RunChildByRenderCmd(const AppSpawnMgr *content, const AppSpa
 {
     uint32_t len = 0;
     char *renderCmd = reinterpret_cast<char *>(GetAppPropertyExt(property, MSG_EXT_NAME_RENDER_CMD, &len));
-    if (renderCmd == NULL || !IsDeveloperModeOn(property)) {
+    if (renderCmd == nullptr || !IsDeveloperModeOn(property)) {
         APPSPAWN_LOGE("Denied launching a native process: not in developer mode");
         return -1;
     }
@@ -424,7 +424,7 @@ APPSPAWN_STATIC int RunChildByRenderCmd(const AppSpawnMgr *content, const AppSpa
 
 static int RunChildProcessor(AppSpawnContent *content, AppSpawnClient *client)
 {
-    APPSPAWN_CHECK(client != NULL && content != NULL, return -1, "Invalid client");
+    APPSPAWN_CHECK(client != nullptr && content != nullptr, return -1, "Invalid client");
     AppSpawningCtx *property = reinterpret_cast<AppSpawningCtx *>(client);
     int ret = 0;
     if (GetAppSpawnMsgType(property) == MSG_SPAWN_NATIVE_PROCESS) {
