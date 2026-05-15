@@ -510,7 +510,8 @@ APPSPAWN_STATIC void MountDirToShared(AppSpawnMgr *content, const AppSpawningCtx
 
     AppDacInfo *info = reinterpret_cast<AppDacInfo *>(GetAppProperty(property, TLV_DAC_INFO));
     std::string isolatedPrefix = CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX_TYPE) ? "isolated/" : "";
-    std::string varBundleName = isolatedPrefix + OHOS::AppSpawn::SandboxCommon::ReplaceVariablePackageName(property,
+    std::string varBundleName = isolatedPrefix +
+        OHOS::AppSpawn::SandboxCommon::ReplaceSandboxRootVariablePackageName(property,
         OHOS::AppSpawn::SandboxCommonDef::g_variablePackageName);
     const char *bundleName = GetBundleName(property);
 

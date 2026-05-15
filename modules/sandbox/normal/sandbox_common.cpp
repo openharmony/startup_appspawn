@@ -231,7 +231,7 @@ std::string SandboxCommon::GetSandboxRootPath(const AppSpawningCtx *appProperty,
     std::string sandboxRootTemplate = SandboxCommonDef::g_sandBoxRootDir +
         std::to_string(dacInfo->uid / UID_BASE) + "/" + isolatedFlagText.c_str() +
         SandboxCommonDef::g_variablePackageName + lockSuffix;
-    const std::string variableSandboxRoot = ReplaceVariablePackageName(appProperty, sandboxRootTemplate);
+    const std::string variableSandboxRoot = ReplaceSandboxRootVariablePackageName(appProperty, sandboxRootTemplate);
 
     APPSPAWN_CHECK_ONLY_EXPER(config != nullptr, sandboxRoot = variableSandboxRoot;
         return sandboxRoot);
@@ -842,6 +842,59 @@ std::string SandboxCommon::ReplaceVariablePackageName(const AppSpawningCtx *appP
             atomicServicePath = ReplaceAllVariables(atomicServicePath, SandboxCommonDef::g_variablePackageName,
                                                     variablePackageName.str());
             MakeAtomicServiceDir(appProperty, atomicServicePath, variablePackageName.str());
+            break;
+        }
+        default:
+            variablePackageName << bundleInfo->bundleName;
+            break;
+    }
+    tmpSandboxPath = ReplaceAllVariables(tmpSandboxPath, SandboxCommonDef::g_variablePackageName,
+                                         variablePackageName.str());
+    return tmpSandboxPath;
+}
+
+std::string SandboxCommon::ReplaceSandboxRootVariablePackageName(const AppSpawningCtx *appProperty,
+    const std::string &path)
+{
+    std::string tmpSandboxPath = path;
+    AppSpawnMsgBundleInfo *bundleInfo =
+        reinterpret_cast<AppSpawnMsgBundleInfo *>(GetAppProperty(appProperty, TLV_BUNDLE_INFO));
+    APPSPAWN_CHECK(bundleInfo != nullptr, return "", "No bundle info in msg %{public}s", GetBundleName(appProperty));
+
+    char *extension;
+    uint32_t flags = CheckAppSpawnMsgFlag(appProperty->message, TLV_MSG_FLAGS, APP_FLAGS_ATOMIC_SERVICE) ? 0x4 : 0;
+    if (flags == 0) {
+        flags = (CheckAppSpawnMsgFlag(appProperty->message, TLV_MSG_FLAGS, APP_FLAGS_CLONE_ENABLE) &&
+            bundleInfo->bundleIndex > 0) ? 0x1 : 0;
+        flags |= CheckAppSpawnMsgFlag(appProperty->message, TLV_MSG_FLAGS, APP_FLAGS_EXTENSION_SANDBOX) ? 0x2 : 0;
+        extension = reinterpret_cast<char *>(
+            GetAppSpawnMsgExtInfo(appProperty->message, MSG_EXT_NAME_APP_EXTENSION, nullptr));
+    }
+    std::ostringstream variablePackageName;
+    switch (flags) {
+        case SANDBOX_PACKAGENAME_DEFAULT:    // 0 default
+            variablePackageName << bundleInfo->bundleName;
+            break;
+        case SANDBOX_PACKAGENAME_CLONE:    // 1 +clone-bundleIndex+packageName
+            variablePackageName << "+clone-" << bundleInfo->bundleIndex << "+" << bundleInfo->bundleName;
+            break;
+        case SANDBOX_PACKAGENAME_EXTENSION: {  // 2 +extension-<extensionType>+packageName
+            APPSPAWN_CHECK(extension != nullptr, return "", "Invalid extension data ");
+            variablePackageName << "+extension-" << extension << "+" << bundleInfo->bundleName;
+            break;
+        }
+        case SANDBOX_PACKAGENAME_CLONE_AND_EXTENSION: {  // 3 +clone-bundleIndex+extension-<extensionType>+packageName
+            APPSPAWN_CHECK(extension != nullptr, return "", "Invalid extension data ");
+            variablePackageName << "+clone-" << bundleInfo->bundleIndex << "+extension" << "-" <<
+                extension << "+" << bundleInfo->bundleName;
+            break;
+        }
+        case SANDBOX_PACKAGENAME_ATOMIC_SERVICE: {  // 4 +auid-<accountId>+packageName
+            std::string accountId = GetExtraInfoByType(appProperty, MSG_EXT_NAME_ACCOUNT_ID);
+            variablePackageName << "+auid-" << accountId << "+" << bundleInfo->bundleName;
+            std::string atomicServicePath = path;
+            atomicServicePath = ReplaceAllVariables(atomicServicePath, SandboxCommonDef::g_variablePackageName,
+                                                    variablePackageName.str());
             break;
         }
         default:
