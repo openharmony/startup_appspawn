@@ -61,8 +61,11 @@ APPSPAWN_STATIC int BuildFdInfoMap(const AppSpawnMsgNode *message, std::map<std:
             std::string envKey = std::string(APP_FDENV_PREFIX) + key;
             char *fdChar = getenv(envKey.c_str());
             APPSPAWN_CHECK(fdChar != NULL, continue, "getfd from env failed %{public}s", envKey.c_str());
-            int fd = atoi(fdChar);
-            APPSPAWN_CHECK(fd > 0, continue, "getfd from env atoi errno %{public}s,%{public}d", envKey.c_str(), fd);
+            char *endptr = nullptr;
+            int numberBase = 10;
+            int fd = static_cast<int>(strtol(fdChar, &endptr, numberBase));
+            APPSPAWN_CHECK(endptr != fdChar && *endptr == '\0' && fd > 0,
+                continue, "getfd from env strol errno %{public}s,%{public}d", envKey.c_str(), fd);
             fdMap[key] = fd;
         } else {
             APPSPAWN_CHECK(findFdIndex < recvCtx.fdCount && recvCtx.fds[findFdIndex] > 0,
