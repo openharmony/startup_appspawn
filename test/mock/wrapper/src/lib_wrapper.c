@@ -393,6 +393,22 @@ int __wrap_waitpid(pid_t pid, int *status, int options)
     }
 }
 
+// start wrap strcpy_s
+static StrcpySFunc g_strcpy_s = NULL;
+void UpdateStrcpySFunc(StrcpySFunc func)
+{
+    g_strcpy_s = func;
+}
+
+int __wrap_strcpy_s(char *strDest, size_t destMax, const char *strSrc)
+{
+    if (g_strcpy_s) {
+        return g_strcpy_s(strDest, destMax, strSrc);
+    } else {
+        return __real_strcpy_s(strDest, destMax, strSrc);
+    }
+}
+
 #ifdef __cplusplus
 #if __cplusplus
 }

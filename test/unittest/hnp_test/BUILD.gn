@@ -27,13 +27,16 @@ if (!defined(ohos_lite)) {
       "-Wno-implicit-fallthrough",
       "-fexceptions",
     ]
-
+    ldflags = [
+      "-Wl,--wrap=strcpy_s",
+    ]
     include_dirs = [
       "${appspawn_path}/service/hnp/base",
       "${appspawn_path}/service/hnp/pack/include",
       "${appspawn_path}/service/hnp/installer/include",
       "${appspawn_path}/interfaces/innerkits/hnp/include",
       "${appspawn_path}/util/include",
+      "${appspawn_path}/test/mock/wrapper/include",
     ]
 
     sources = [
@@ -45,6 +48,7 @@ if (!defined(ohos_lite)) {
       "${appspawn_path}/service/hnp/base/hnp_zip.c",
       "${appspawn_path}/service/hnp/installer/src/hnp_installer.c",
       "${appspawn_path}/service/hnp/pack/src/hnp_pack.c",
+      "${appspawn_path}/test/mock/wrapper/src/lib_wrapper.c",
       "hnp_installer_test.cpp",
       "hnp_pack_test.cpp",
     ]

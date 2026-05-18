@@ -150,6 +150,11 @@ pid_t __real_waitpid(pid_t pid, int *status, int options);
 typedef pid_t (*WaitpidFunc)(pid_t pid, int *status, int options);
 void UpdateWaitpidFunc(WaitpidFunc func);
 
+// for wrapper strcpy_s;
+int __real_strcpy_s(char *strDest, size_t destMax, const char *strSrc);
+typedef int (*StrcpySFunc)(char *strDest, size_t destMax, const char *strSrc);
+void UpdateStrcpySFunc(StrcpySFunc func);
+
 #ifdef __cplusplus
 #if __cplusplus
 }

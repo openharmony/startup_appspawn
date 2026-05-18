@@ -29,8 +29,11 @@ extern "C" {
 const char *g_logLevelName[HNP_LOG_BUTT] = {"INFO", "WARN", "ERROR", "DEBUG"};
 
 // 辅助函数，用于替换字符串中的指定子串
-static char* ReplaceSubstring(const char* str, const char* from, const char* to)
+APPSPAWN_STATIC char* ReplaceSubstring(const char* str, const char* from, const char* to)
 {
+    if (str == NULL) {
+        return NULL;
+    }
     char* result;
     int lenStr = strlen(str);
     int lenFrom = strlen(from);
@@ -47,7 +50,8 @@ static char* ReplaceSubstring(const char* str, const char* from, const char* to)
     }
 
     // 分配新字符串的内存
-    result = (char*)malloc(lenStr + (lenTo - lenFrom) * count + 1);
+    int resultLen = lenStr + (lenTo - lenFrom) * count + 1;
+    result = (char*)malloc(resultLen);
     if (result == NULL) {
         return NULL;
     }
@@ -57,7 +61,7 @@ static char* ReplaceSubstring(const char* str, const char* from, const char* to)
     j = 0;
     while (str[i] != '\0') {
         if (strncmp(&str[i], from, lenFrom) == 0) {
-            if (strcpy_s(&result[j], lenStr + 1 - j, to) != EOK) {
+            if (strcpy_s(&result[j], resultLen - j, to) != EOK) {
                 free(result);
                 return NULL;
             }

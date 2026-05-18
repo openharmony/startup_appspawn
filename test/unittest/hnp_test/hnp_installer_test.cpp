@@ -35,6 +35,7 @@
 #include "hnp_api.h"
 #include "securec.h"
 #include "hnp_stub.h"
+#include "lib_wrapper.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -1541,6 +1542,35 @@ HWTEST_F(HnpInstallerTest, Hnp_UnInstall_API_003, TestSize.Level0)
     RemoveUidCfg(TEST_HNP_UID);
 
     GTEST_LOG_(INFO) << "Hnp_UnInstall_API_003 end";
+}
+
+HWTEST_F(HnpInstallerTest, Hnp_ReplaceSubstring_001, TestSize.Level0)
+{
+    GTEST_LOG_(INFO) << "Hnp_ReplaceSubstring_001 start";
+    char* ret = ReplaceSubstring("ReplaceSubstring %{public}d %{public}s", "%{public}", "%");
+    EXPECT_EQ(ret == nullptr, 0);
+    GTEST_LOG_(INFO) << "Hnp_ReplaceSubstring_001 end";
+}
+
+HWTEST_F(HnpInstallerTest, Hnp_ReplaceSubstring_002, TestSize.Level0)
+{
+    GTEST_LOG_(INFO) << "Hnp_ReplaceSubstring_002 start";
+    StrcpySFunc func = [](char *strDest, size_t destMax, const char *strSrc) -> int {
+        return EINVAL;
+    };
+    UpdateStrcpySFunc(func);
+    char* ret = ReplaceSubstring("ReplaceSubstring %{public}d %{public}s", "%{public}", "%");
+    EXPECT_EQ(ret != nullptr, 0);
+    UpdateStrcpySFunc(nullptr);
+    GTEST_LOG_(INFO) << "Hnp_ReplaceSubstring_002 end";
+}
+
+HWTEST_F(HnpInstallerTest, Hnp_ReplaceSubstring_003, TestSize.Level0)
+{
+    GTEST_LOG_(INFO) << "Hnp_ReplaceSubstring_003 start";
+    char* ret = ReplaceSubstring(nullptr, "%{public}", "%");
+    EXPECT_EQ(ret != NULL, 0);
+    GTEST_LOG_(INFO) << "Hnp_ReplaceSubstring_003 end";
 }
 
 }
