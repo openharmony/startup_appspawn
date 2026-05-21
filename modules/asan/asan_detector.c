@@ -131,11 +131,59 @@ static int CheckSupportColdStart(const char *bundleName)
     return 0;
 }
 
+#ifdef HWASAN_TW
+static int GetRingBufferConfig(const char *bundleName, int *heapHistoryBlockMaxNumMainThread,
+    int *heapHistoryBlockMaxNum)
+{
+    char key[WRAP_VALUE_MAX_LENGTH] = {0};
+    char value[WRAP_VALUE_MAX_LENGTH] = {0};
+ 
+    int len = sprintf_s(key, WRAP_VALUE_MAX_LENGTH, "wrap.%s.ringbuffer", bundleName);
+    APPSPAWN_CHECK(len > 0 && (len < WRAP_VALUE_MAX_LENGTH), return -1, "Invalid to format ringbuffer key");
+ 
+    int ret = GetParameter(key, "", value, WRAP_VALUE_MAX_LENGTH);
+    APPSPAWN_CHECK_LOGV(ret > 0, return -1, "Not found ringbuffer config for %{public}s", bundleName);
+ 
+    ret = sscanf_s(value, "%d:%d", heapHistoryBlockMaxNumMainThread, heapHistoryBlockMaxNum);
+    APPSPAWN_CHECK(ret == 2, return -1, "Invalid ringbuffer format %{public}s", value);
+ 
+    APPSPAWN_LOGI("Get ringbuffer config %{public}s: heap_history_block_max_num_main_thread=%{public}d, "
+        "heap_history_block_max_num=%{public}d", bundleName, *heapHistoryBlockMaxNumMainThread,
+        *heapHistoryBlockMaxNum);
+    return 0;
+}
+ 
+#define HWASAN_OPTIONS_MAX_LENGTH 256
+static void SetHWAsanOptions(const AppSpawningCtx *property)
+{
+    setenv("LD_PRELOAD", "/system/asan/lib64/libclang_rt.hwasan.so", 1);
+    unsetenv("UBSAN_OPTIONS");
+ 
+    char hwasanOptions[HWASAN_OPTIONS_MAX_LENGTH] = "include=/system/etc/asan.options";
+    int mainThreadBlocks = 1;
+    int subThreadBlocks = 1;
+ 
+    if (GetRingBufferConfig(GetBundleName(property),
+        &mainThreadBlocks, &subThreadBlocks) == 0) {
+        int len = snprintf_s(hwasanOptions + strlen(hwasanOptions),
+            HWASAN_OPTIONS_MAX_LENGTH - strlen(hwasanOptions),
+            HWASAN_OPTIONS_MAX_LENGTH - strlen(hwasanOptions) - 1,
+            ":heap_history_block_max_num_main_thread=%d:heap_history_block_max_num=%d",
+            mainThreadBlocks, subThreadBlocks);
+        APPSPAWN_CHECK(len > 0, return, "Invalid snprintf_s HWAsanOptions");
+    }
+ 
+    APPSPAWN_LOGI("Set HWAsanOptions %{public}s", hwasanOptions);
+    setenv("HWASAN_OPTIONS", hwasanOptions, 1);
+}
+#endif
+
 static int AsanSpawnGetSpawningFlag(AppSpawnMgr *content, AppSpawningCtx *property)
 {
     APPSPAWN_LOGV("Prepare spawn app %{public}s", GetProcessName(property));
 #ifdef ASAN_DETECTOR
-    if (CheckSupportColdStart(GetBundleName(property)) == 0) {
+    if (CheckSupportColdStart(GetBundleName(property)) == 0 ||
+        CheckAppMsgFlagsSet(property, APP_FLAGS_HWASAN_ENABLED)) {
         property->client.flags |= APP_COLD_START;
         property->client.flags |= APP_ASAN_DETECTOR;
         if (property->forkCtx.coldRunPath) {
@@ -155,6 +203,9 @@ static int AsanSpawnGetSpawningFlag(AppSpawnMgr *content, AppSpawningCtx *proper
         if (property->forkCtx.coldRunPath == NULL) {
             APPSPAWN_LOGE("Failed to set asan exec path %{public}s", GetProcessName(property));
         }
+#ifdef HWASAN_TW
+        SetHWAsanOptions(property);
+#endif
     }
 #endif
     return 0;
