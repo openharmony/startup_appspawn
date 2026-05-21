@@ -21,6 +21,7 @@ extern "C" {
 #endif
 
 void HnpRelPath(const char *fromPath, const char *toPath, char *relPath);
+char* ReplaceSubstring(const char* str, const char* from, const char* to);
 
 #ifdef __cplusplus
 }
