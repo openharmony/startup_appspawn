@@ -976,6 +976,10 @@
                     "src-path": "/data/app/el1/skills/public",
                     "sandbox-path": "/data/skills/",
                     "sandbox-flags": [ "bind", "rec" ]
+                }, {
+                    "src-path": "/system/app/skills",
+                    "sandbox-path": "/system/app/skills",
+                    "sandbox-flags": [ "bind", "rec" ]
                 }
             ]
         }],

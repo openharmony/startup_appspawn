@@ -314,6 +314,9 @@
             "mount-paths": [{
                 "src-path": "/data/app/el1/skills/public",
                 "sandbox-path": "/data/skills/"
+            }, {
+                "src-path": "/system/app/skills",
+                "sandbox-path": "/system/app/skills"
             }]
         }, {
             "name": "ohos.permission.ACCESS_BBOX_DIR",
