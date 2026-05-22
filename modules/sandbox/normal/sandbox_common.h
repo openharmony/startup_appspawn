@@ -103,7 +103,8 @@ public:
 
     // 路径处理
     static std::string ReplaceVariablePackageName(const AppSpawningCtx *appProperty, const std::string &path);
-
+    static std::string ReplaceSandboxRootVariablePackageName(const AppSpawningCtx *appProperty,
+        const std::string &path);
 private:
     // 加载配置文件
     static uint32_t GetSandboxNsFlags(bool isNweb);

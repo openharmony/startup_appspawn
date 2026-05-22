@@ -310,7 +310,7 @@ void ReportUnlockMountResult(int32_t uid, int32_t totalCount,
     int32_t successCount, int32_t failCount, int64_t duration)
 {
     int ret = HiSysEventWrite(HiSysEvent::Domain::APPSPAWN, UNLOCK_MOUNT_ALL_DONE,
-        HiSysEvent::EventType::BEHAVIOR,
+        HiSysEvent::EventType::STATISTIC,
         UID, uid,
         APP_COUNT, totalCount,
         SUCCESS_COUNT, successCount,

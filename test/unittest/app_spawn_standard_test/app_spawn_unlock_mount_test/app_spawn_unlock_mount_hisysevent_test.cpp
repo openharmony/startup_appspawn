@@ -66,7 +66,7 @@ HWTEST_F(AppSpawnUnlockMountHisyseventTest, UnlockMount_Hisysevent_ReportUnlockM
     // Verify the event name matches the UNLOCK_MOUNT_ALL_DONE constant
     EXPECT_EQ(state.lastEventName, "UNLOCK_MOUNT_ALL_DONE");
     // Verify the event type is BEHAVIOR (4)
-    EXPECT_EQ(state.lastEventType, OHOS::HiviewDFX::HiSysEvent::EventType::BEHAVIOR);
+    EXPECT_EQ(state.lastEventType, OHOS::HiviewDFX::HiSysEvent::EventType::STATISTIC);
     // Verify the domain is APPSPAWN
     EXPECT_EQ(state.lastDomain, OHOS::HiviewDFX::HiSysEvent::Domain::APPSPAWN);
 }
