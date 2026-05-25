@@ -66,6 +66,8 @@ public:
     // 设置DEC规则
     static int32_t SetDecWithDir(const AppSpawningCtx *appProperty, uint32_t userId);
     static int32_t SetDecPolicyWithPermission(const AppSpawningCtx *appProperty, SandboxMountConfig &mountConfig);
+    static int32_t SetDecReadOnlyPolicyWithPermission(const AppSpawningCtx *appProperty,
+        SandboxMountConfig &mountConfig);
     static void SetDecDenyWithDir(const AppSpawningCtx *appProperty);
 
     // debug hap

@@ -1211,4 +1211,22 @@ HWTEST_F(AppSpawnSandboxCommonTest, App_Spawn_SandboxCommon_ReplaceSandboxRootVa
     DeleteAppSpawningCtx(appProperty);
 }
 
+/**
+ * @tc.name: App_Spawn_SandboxCommon_GetDecReadOnlyPath_01
+ * @tc.desc: Test GetDecReadOnlyPath with valid bundle name
+ * @tc.type: FUNC
+ */
+HWTEST_F(AppSpawnSandboxCommonTest, App_Spawn_SandboxCommon_GetDecReadOnlyPath_01, TestSize.Level0)
+{
+    AppSpawningCtx *appProperty = AppSpawn::GetTestAppPropertyCore();
+    ASSERT_NE(appProperty, nullptr);
+
+    cJSON *config = cJSON_CreateObject();
+    std::vector<std::string> result = AppSpawn::SandboxCommon::GetDecReadOnlyPath(appProperty, config);
+    cJSON_Delete(config);
+
+    DeleteAppSpawningCtx(appProperty);
+    EXPECT_EQ(result.size(), 0);
+}
+
 }  // namespace OHOS
