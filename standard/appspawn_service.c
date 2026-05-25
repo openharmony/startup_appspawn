@@ -1031,6 +1031,7 @@ APPSPAWN_STATIC pid_t ForkAndRegisterFds(AppSpawnMgr *mgr, AppSpawningCtx *prope
             pid, childToParentFd[0], childToParentFd[1], parentToChildFd[0], parentToChildFd[1]);
         FinishAppspawnTrace();
     } else if (pid == 0) {
+        HilogCloseSocketFd();
         // Child: update pid to own pid
         pfFds->pid = getpid();
         pcFds->pid = getpid();
@@ -2384,6 +2385,7 @@ pid_t ForkAndDoUnlockMount(AppSpawnContent *content, int uid)
         return -1;
     }
     if (pid == 0) {
+        HilogCloseSocketFd();
         // Child process: execute mount, write param, report event, then exit
         int result = ProcessUnlockMessage(uid);
         SetUnlockMountResult(uid, result);
