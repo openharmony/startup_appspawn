@@ -394,6 +394,11 @@
                     "sandbox-path": "/storage/userExternal",
                     "sandbox-flags": [ "bind", "rec" ],
                     "check-action-status": "false"
+                }, {
+                    "src-path": "/mnt/data/voldata/",
+                    "sandbox-path": "/storage/voldata",
+                    "sandbox-flags": [ "bind", "rec" ],
+                    "check-action-status": "false"
                 }
             ],
             "symbol-links" : [{
