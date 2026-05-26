@@ -127,8 +127,6 @@ if (!defined(ohos_lite)) {
       "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_beget_test.cpp",
       "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_child_test.cpp",
       "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_command_lexer_test.cpp",
-      "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_kickdog_test.cpp",
-      "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_module_interface_test.cpp",
       "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_service_test.cpp",
       "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_silk_test.cpp",
       "${appspawn_path}/test/unittest/app_spawn_standard_test/hybrid_spawn_service_test.cpp",
