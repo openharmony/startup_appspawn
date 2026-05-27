@@ -106,6 +106,7 @@ const std::string g_permissionUser = "<permissionUser>";
 const std::string g_packageName = "<PackageName>";
 const std::string g_packageNameIndex = "<PackageName_index>";
 const std::string g_variablePackageName = "<variablePackageName>";
+const std::string g_preunlock = "<preunlock>";
 const std::string g_clonePackageName = "<clonePackageName>";
 const std::string g_arkWebPackageName = "<arkWebPackageName>";
 const std::string g_hostUserId = "<hostUserId>";
