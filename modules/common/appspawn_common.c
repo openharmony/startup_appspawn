@@ -142,7 +142,7 @@ static int SetAmbientCapabilities(const AppSpawningCtx *property)
 {
     if (!IsNoShareFsEnable()) {
     return 0;
- 	}
+ 	  }
     if (SetAmbientCapability(CAP_DAC_OVERRIDE) != 0) {
         APPSPAWN_LOGE("set ambient failed:%{public}d", CAP_DAC_OVERRIDE);
         return -1;
@@ -192,7 +192,7 @@ APPSPAWN_STATIC int SetCapabilities(const AppSpawnMgr *content, const AppSpawnin
     u_int64_t baseCaps = 0;
     if (IsNoShareFsEnable() &&
  	    !CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX_TYPE) &&
-    (IsAppSpawnMode(content) || IsNativeSpawnMode(content))) {
+        (IsAppSpawnMode(content) || IsNativeSpawnMode(content))) {
         baseCaps = CAP_TO_MASK(CAP_DAC_OVERRIDE);
         baseCaps |= CheckAppMsgFlagsSet(property, APP_FLAGS_CUSTOM_SANDBOX) ? CAP_TO_MASK(CAP_KILL) : 0;
         baseCaps |= CheckAppMsgFlagsSet(property, APP_FLAGS_SET_CAPS_FOWNER) ? CAP_TO_MASK(CAP_FOWNER) : 0;
