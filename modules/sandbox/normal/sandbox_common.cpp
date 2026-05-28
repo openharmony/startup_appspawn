@@ -603,7 +603,9 @@ void SandboxCommon::GetSandboxMountConfig(const AppSpawningCtx *appProperty, con
         mountConfig.fsType = GetFsType(mntPoint);
         mountConfig.optionsPoint = "";
         mountConfig.decPaths = IsNoShareFsEnable() ? GetDecPath(appProperty, mntPoint) : std::vector<std::string>{};
- 	    mountConfig.decReadOnlyPaths = IsNoShareFsEnable() ? GetDecReadOnlyPath(appProperty, mntPoint) : std::vector<std::string>{};
+        mountConfig.decReadOnlyPaths = IsNoShareFsEnable()
+            ? GetDecReadOnlyPath(appProperty, mntPoint)
+            : std::vector<std::string>{};
     }
     return;
 }
