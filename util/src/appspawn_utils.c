@@ -443,3 +443,8 @@ int EnableNewNetNamespace(void)
     close(fd);
     return (ret >= 0) ? 0 : APPSPAWN_SYSTEM_ERROR;
 }
+
+bool IsNoShareFsEnable(void)
+{
+    return CheckEnabled("const.startup.appspawn_support_nosharefs.enable", "true");
+}

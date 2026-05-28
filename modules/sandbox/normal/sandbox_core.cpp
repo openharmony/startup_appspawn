@@ -126,12 +126,7 @@ void SandboxCore::UpdateMsgFlagsWithPermission(AppSpawningCtx *appProperty, cons
 
 int32_t SandboxCore::UpdatePointFlags(AppSpawningCtx *appProperty)
 {
-    uint32_t index = 0;
-#ifdef APPSPAWN_SUPPORT_NOSHAREFS
-    index = APP_FLAGS_FILE_CROSS_APP;
-#else
-    index = APP_FLAGS_FILE_ACCESS_COMMON_DIR;
-#endif
+    uint32_t index = IsNoShareFsEnable() ? APP_FLAGS_FILE_CROSS_APP : APP_FLAGS_FILE_ACCESS_COMMON_DIR;
     int32_t fileMgrIndex = GetPermissionIndex(nullptr, SandboxCommonDef::FILE_ACCESS_MANAGER_MODE.c_str());
     if ((CheckAppPermissionFlagSet(appProperty, static_cast<uint32_t>(fileMgrIndex)) == 0)) {
         return SetAppSpawnMsgFlag(appProperty->message, TLV_MSG_FLAGS, index);

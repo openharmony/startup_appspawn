@@ -20,6 +20,8 @@
 #include "dec_api.h"
 #include "dec_config.h"
 #include "sandbox_dec.h"
+#include "init_param.h"
+#include "parameter.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -34,12 +36,14 @@ public:
         const TestInfo *info = UnitTest::GetInstance()->current_test_info();
         GTEST_LOG_(INFO) << info->test_suite_name() << "." << info->name() << " start";
         APPSPAWN_LOGI("%{public}s.%{public}s start", info->test_suite_name(), info->name());
+        SetParameter("const.startup.appspawn_support_nosharefs.enable", "true");
     }
     void TearDown()
     {
         const TestInfo *info = UnitTest::GetInstance()->current_test_info();
         GTEST_LOG_(INFO) << info->test_suite_name() << "." << info->name() << " end";
         APPSPAWN_LOGI("%{public}s.%{public}s end", info->test_suite_name(), info->name());
+        SetParameter("const.startup.appspawn_support_nosharefs.enable", "false");
     }
 };
 

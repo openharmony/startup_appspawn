@@ -29,13 +29,9 @@ typedef struct DecIgnoreCaseInfo {
 } DecIgnoreCaseInfo;
 
 // Ignore case directory configuration
-#ifdef APPSPAWN_SUPPORT_NOSHAREFS
 #define DEC_IGNORE_CASE_LIST \
     {"/storage/Users/currentUser", DEC_MODE_IGNORE_CASE}, \
     {"/storage/Users/currentUser/appdata", DEC_MODE_NOT_IGNORE_CASE}
-#else
-#define DEC_IGNORE_CASE_LIST
-#endif
 #ifdef __cplusplus
 }
 #endif

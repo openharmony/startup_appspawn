@@ -40,13 +40,16 @@ static const char *g_decForcedPrefix[] = {
     "/storage/Users/currentUser/appdata",
 };
 
-#ifdef APPSPAWN_SUPPORT_NOSHAREFS
+
 static const DecIgnoreCaseInfo g_setInfo[] = { DEC_IGNORE_CASE_LIST };
-#endif
+
 
 APPSPAWN_STATIC int SetIgnoreCaseDirs(AppSpawnMgr *content)
 {
-#ifdef APPSPAWN_SUPPORT_NOSHAREFS
+    if (!IsNoShareFsEnable()) {
+ 	         APPSPAWN_LOGV("ignore case dec not enable");
+ 	    return 0;
+ 	}
     APPSPAWN_CHECK(IsNativeSpawnMode(content) || IsAppSpawnMode(content), return 0,
         "not support ignore case dir");
     const char *decFilename = "/dev/dec";
@@ -71,10 +74,6 @@ APPSPAWN_STATIC int SetIgnoreCaseDirs(AppSpawnMgr *content)
     int ret = ioctl(fd, SET_DEC_IGNORE_CASE_CMD, &decPolicyInfos);
     APPSPAWN_CHECK_ONLY_LOG(ret >= 0, "set dec ignore failed errno %{public}d", errno);
     close(fd);
-#else
-    UNUSED(content);
-    APPSPAWN_LOGV("ignore case dec not enable");
-#endif
     return 0;
 }
 

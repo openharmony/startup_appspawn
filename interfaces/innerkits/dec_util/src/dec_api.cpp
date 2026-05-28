@@ -152,13 +152,14 @@ std::map<std::string, std::vector<std::string>> GetDecPathMap(void)
 std::vector<std::pair<std::string, int>> GetIgnoreCaseDirs(void)
 {
     std::vector<std::pair<std::string, int>> result;
-#ifdef APPSPAWN_SUPPORT_NOSHAREFS
+    if (!IsNoShareFsEnable()) {
+ 	    return result;
+ 	}
     static const DecIgnoreCaseInfo list[] = { DEC_IGNORE_CASE_LIST };
     size_t count = sizeof(list) / sizeof(list[0]);
     result.reserve(count);
     for (size_t i = 0; i < count; i++) {
         result.emplace_back(list[i].path, list[i].mode);
     }
-#endif
     return result;
 }
