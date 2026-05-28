@@ -47,7 +47,7 @@ static const DecIgnoreCaseInfo g_setInfo[] = { DEC_IGNORE_CASE_LIST };
 APPSPAWN_STATIC int SetIgnoreCaseDirs(AppSpawnMgr *content)
 {
     if (!IsNoShareFsEnable()) {
- 	         APPSPAWN_LOGV("ignore case dec not enable");
+ 	    APPSPAWN_LOGV("ignore case dec not enable");
  	    return 0;
  	}
     APPSPAWN_CHECK(IsNativeSpawnMode(content) || IsAppSpawnMode(content), return 0,
