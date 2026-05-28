@@ -141,8 +141,8 @@ static int SetAmbientCapability(int cap)
 static int SetAmbientCapabilities(const AppSpawningCtx *property)
 {
     if (!IsNoShareFsEnable()) {
-    return 0;
- 	  }
+        return 0;
+    }
     if (SetAmbientCapability(CAP_DAC_OVERRIDE) != 0) {
         APPSPAWN_LOGE("set ambient failed:%{public}d", CAP_DAC_OVERRIDE);
         return -1;
