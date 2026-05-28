@@ -89,6 +89,7 @@ constexpr const char *g_dacOverrideSensitive = "dac-override-sensitive";
 constexpr const char *g_sandBoxFlagsCustomized = "sandbox-flags-customized";
 constexpr const char *g_appAplName = "app-apl-name";
 constexpr const char *g_sandBoxDecPath = "dec-paths";
+constexpr const char *g_sandBoxDecReadOnlyPath = "dec-readonly-paths";
 constexpr const char *CREATE_SANDBOX_PATH = "create-sandbox-path";
 constexpr const char *APP_IDENTIFIER = "appIdentifier";
 

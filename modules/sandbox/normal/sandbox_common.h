@@ -37,6 +37,7 @@ typedef struct SandboxMountConfig {
     std::string fsType;
     std::string sandboxPath;
     std::vector<std::string> decPaths;
+    std::vector<std::string> decReadOnlyPaths;
 } SandboxMountConfig;
 
 typedef struct MountPointProcessParams {
@@ -122,6 +123,7 @@ private:
     static std::string GetFsType(cJSON *config); // GetSandboxFsType
     static std::string GetOptions(const AppSpawningCtx *appProperty, cJSON *config); // GetSandboxOptions
     static std::vector<std::string> GetDecPath(const AppSpawningCtx *appProperty, cJSON *config); // GetSandboxDecPath
+    static std::vector<std::string> GetDecReadOnlyPath(const AppSpawningCtx *appProperty, cJSON *config);
 
     // 校验操作
     static bool IsNeededCheckPathStatus(const AppSpawningCtx *appProperty, const char *path);

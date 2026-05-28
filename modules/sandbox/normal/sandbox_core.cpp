@@ -627,6 +627,7 @@ int32_t SandboxCore::ProcessMountPointCommmon(cJSON *mntPoint, MountPointProcess
         "DoAppSandboxMountOnceNocheck section %{public}s failed, %{public}s", params.section.c_str(), arg.destPath);
     }
     SetDecPolicyWithPermission(params.appProperty, mountConfig);
+    SetDecReadOnlyPolicyWithPermission(params.appProperty, mountConfig);
     SandboxCommon::SetSandboxPathChmod(mntPoint, params.sandboxRoot);
     return 0;
 }
@@ -1364,6 +1365,44 @@ int32_t SandboxCore::SetDecPolicyWithPermission(const AppSpawningCtx *appPropert
         }
         pathInfo.pathLen = static_cast<uint32_t>(strlen(pathInfo.path));
         pathInfo.mode = SANDBOX_MODE_WRITE | SANDBOX_MODE_READ;
+        decPolicyInfo.path[i] = pathInfo;
+    }
+    decPolicyInfo.tokenId = tokenInfo->accessTokenIdEx;
+    SetDecPolicyInfos(&decPolicyInfo);
+EXIT:
+    for (uint32_t i = 0; i < decPolicyInfo.pathNum; i++) {
+        if (decPolicyInfo.path[i].path) {
+            free(decPolicyInfo.path[i].path);
+            decPolicyInfo.path[i].path = nullptr;
+        }
+    }
+    return ret;
+}
+
+int32_t SandboxCore::SetDecReadOnlyPolicyWithPermission(
+    const AppSpawningCtx *appProperty, SandboxMountConfig &mountConfig)
+{
+    if (mountConfig.decReadOnlyPaths.size() == 0) {
+        return 0;
+    }
+    AppSpawnMsgAccessToken *tokenInfo =
+        reinterpret_cast<AppSpawnMsgAccessToken *>(GetAppProperty(appProperty, TLV_ACCESS_TOKEN_INFO));
+    APPSPAWN_CHECK(tokenInfo != nullptr, return APPSPAWN_MSG_INVALID, "Get token id failed.");
+    DecPolicyInfo decPolicyInfo = {0};
+    decPolicyInfo.pathNum = mountConfig.decReadOnlyPaths.size();
+    APPSPAWN_CHECK(decPolicyInfo.pathNum <= KERNEL_BATCH_SIZE, return APPSPAWN_SANDBOX_DEC_OUT_BOUND,
+        "dec read-only policy out of bound %{public}d", decPolicyInfo.pathNum);
+    int ret = 0;
+    for (uint32_t i = 0; i < decPolicyInfo.pathNum; i++) {
+        PathInfo pathInfo = {0};
+        pathInfo.path = strdup(mountConfig.decReadOnlyPaths[i].c_str());
+        if (pathInfo.path == nullptr) {
+            APPSPAWN_LOGE("strdup %{public}s failed, err %{public}d", mountConfig.decReadOnlyPaths[i].c_str(), errno);
+            ret = APPSPAWN_ERROR_UTILS_MEM_FAIL;
+            goto EXIT;
+        }
+        pathInfo.pathLen = static_cast<uint32_t>(strlen(pathInfo.path));
+        pathInfo.mode = SANDBOX_MODE_READ;
         decPolicyInfo.path[i] = pathInfo;
     }
     decPolicyInfo.tokenId = tokenInfo->accessTokenIdEx;

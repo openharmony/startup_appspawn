@@ -495,6 +495,34 @@ std::vector<std::string> SandboxCommon::GetDecPath(const AppSpawningCtx *appProp
     return decPaths;
 }
 
+std::vector<std::string> SandboxCommon::GetDecReadOnlyPath(const AppSpawningCtx *appProperty, cJSON *config)
+{
+    AppSpawnMsgDacInfo *dacInfo = reinterpret_cast<AppSpawnMsgDacInfo *>(GetAppProperty(appProperty, TLV_DAC_INFO));
+    if (dacInfo == nullptr) {
+        return {};
+    }
+
+    std::vector<std::string> decReadOnlyPaths = {};
+    cJSON *decReadOnlyPathJson = cJSON_GetObjectItemCaseSensitive(config, SandboxCommonDef::g_sandBoxDecReadOnlyPath);
+    if (decReadOnlyPathJson == nullptr || !cJSON_IsArray(decReadOnlyPathJson)) {
+        return {};
+    }
+
+    auto processor = [&appProperty, &decReadOnlyPaths](cJSON *item) {
+        const char *strItem = cJSON_GetStringValue(item);
+        if (strItem == nullptr) {
+            return -1;
+        }
+        std::string decReadOnlyPath = ConvertToRealPathWithPermission(appProperty, strItem);
+        decReadOnlyPaths.emplace_back(std::move(decReadOnlyPath));
+        return 0;
+    };
+    if (HandleArrayForeach(decReadOnlyPathJson, processor) != 0) {
+        return {};
+    }
+    return decReadOnlyPaths;
+}
+
 bool SandboxCommon::IsCreateSandboxPathEnabled(cJSON *json, std::string srcPath) // GetCreateSandboxPath
 {
     bool isRet = GetBoolValueFromJsonObj(json, SandboxCommonDef::CREATE_SANDBOX_PATH, false);
@@ -570,13 +598,16 @@ void SandboxCommon::GetSandboxMountConfig(const AppSpawningCtx *appProperty, con
         mountConfig.optionsPoint = GetOptions(appProperty, mntPoint);
         mountConfig.fsType = GetFsType(mntPoint);
         mountConfig.decPaths = GetDecPath(appProperty, mntPoint);
+        mountConfig.decReadOnlyPaths = GetDecReadOnlyPath(appProperty, mntPoint);
     } else {
         mountConfig.fsType = GetFsType(mntPoint);
         mountConfig.optionsPoint = "";
 #ifdef APPSPAWN_SUPPORT_NOSHAREFS
         mountConfig.decPaths = GetDecPath(appProperty, mntPoint);
+        mountConfig.decReadOnlyPaths = GetDecReadOnlyPath(appProperty, mntPoint);
 #else
         mountConfig.decPaths = {};
+        mountConfig.decReadOnlyPaths = {};
 #endif
     }
     return;

@@ -2350,6 +2350,49 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_dec_05, TestSize.Level0)
 }
 
 /**
+ * @tc.name: App_Spawn_Sandbox_dec_06
+ * @tc.desc: parse config file for set policy.
+ * @tc.type: FUNC
+ * @tc.author:
+ */
+HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_dec_06, TestSize.Level0)
+{
+    std::string mJsconfig = "{ \
+        \"mount-paths\": [{ \
+            \"src-path\": \"\", \
+            \"sandbox-path\": \"\", \
+            \"sandbox-flags-customized\": [ \"MS_NODEV\", \"MS_RDONLY\" ], \
+            \"dec-paths\": [ \"/storage/Users\", \"/storage/External\", \"/storage/test\" ] \
+        }] \
+    }";
+    cJSON *j_config = cJSON_Parse(mJsconfig.c_str());
+    ASSERT_NE(j_config, nullptr);
+    AppSpawn::SandboxCommon::StoreCJsonConfig(j_config, SandboxCommonDef::SANDBOX_APP_JSON_CONFIG);
+
+    int ret = 0;
+    AppSpawningCtx *appProperty = GetTestAppProperty();
+    do {
+        cJSON *mountPoints = cJSON_GetObjectItemCaseSensitive(j_config, "mount-paths");
+        APPSPAWN_CHECK(mountPoints != nullptr || cJSON_IsArray(mountPoints), ret = -1;
+            break, "Invalid mountPaths config");
+
+        for (int i = 0; i < cJSON_GetArraySize(mountPoints); ++i) {
+            cJSON *mntPoint = cJSON_GetArrayItem(mountPoints, i);
+            APPSPAWN_CHECK(mntPoint != nullptr, ret = -2; break, "Invalid mntPoint config");
+            SandboxMountConfig mountConfig = {0};
+            AppSpawn::SandboxCommon::GetSandboxMountConfig(appProperty, "permission", mntPoint, mountConfig);
+
+            int decPathSize = mountConfig.decPaths.size();
+            EXPECT_EQ(decPathSize, DEC_PATH_SIZE);
+            ret = AppSpawn::SandboxCore::SetDecReadOnlyPolicyWithPermission(appProperty, mountConfig);
+        }
+        EXPECT_EQ(ret, 0);
+    } while (0);
+    cJSON_Delete(j_config);
+    DeleteAppSpawningCtx(appProperty);
+}
+
+/**
  * @tc.name: App_Spawn_Sandbox_Shared_Mount_01
  * @tc.desc: [IsValidDataGroupItem] input valid param
  * @tc.type: FUNC
