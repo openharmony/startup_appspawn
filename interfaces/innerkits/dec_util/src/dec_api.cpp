@@ -154,7 +154,7 @@ std::vector<std::pair<std::string, int>> GetIgnoreCaseDirs(void)
     std::vector<std::pair<std::string, int>> result;
     if (!IsNoShareFsEnable()) {
  	        return result;
- 	}
+    }
     static const DecIgnoreCaseInfo list[] = { DEC_IGNORE_CASE_LIST };
     size_t count = sizeof(list) / sizeof(list[0]);
     result.reserve(count);
