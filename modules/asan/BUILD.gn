@@ -29,6 +29,12 @@ ohos_shared_library("appspawn_asan") {
   if (asan_detector || is_asan) {
     defines += [ "ASAN_DETECTOR" ]
   }
+  # HWASan uses dual-library compilation, this feature needs to take effect in both builds
+  # First build args: is_asan=true, asan_detector=true, use_hwasan=true
+  # Second build args: is_asan=false, asan_detector=true
+  if ((!is_asan && asan_detector) || use_hwasan) {
+      defines += [ "HWASAN_TW" ]
+  }
   external_deps = [
     "c_utils:utils",
     "hilog:libhilog",
