@@ -197,7 +197,8 @@ APPSPAWN_STATIC int SetCapabilities(const AppSpawnMgr *content, const AppSpawnin
         baseCaps |= CheckAppMsgFlagsSet(property, APP_FLAGS_CUSTOM_SANDBOX) ? CAP_TO_MASK(CAP_KILL) : 0;
         baseCaps |= CheckAppMsgFlagsSet(property, APP_FLAGS_SET_CAPS_FOWNER) ? CAP_TO_MASK(CAP_FOWNER) : 0;
     }
-    if (CheckAppMsgFlagsSet(property, APP_FLAGS_DEBUGSERVER) &&
+    if (IsNoShareFsEnable() &&
+ 	    CheckAppMsgFlagsSet(property, APP_FLAGS_DEBUGSERVER) &&
         (IsAppSpawnMode(content) || IsNativeSpawnMode(content))) {
         baseCaps |= CAP_TO_MASK(CAP_KILL) | CAP_TO_MASK(CAP_SYS_PTRACE);
         APPSPAWN_LOGV("APP_FLAGS_DEBUGSERVER baseCaps %{public}"PRIu64"", baseCaps);
