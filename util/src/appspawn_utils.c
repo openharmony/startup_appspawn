@@ -444,7 +444,19 @@ int EnableNewNetNamespace(void)
     return (ret >= 0) ? 0 : APPSPAWN_SYSTEM_ERROR;
 }
 
+static bool g_noShareFsEnabled = false;
+static bool g_noShareFsInited = false;
+
+void SetNoShareFsEnable(bool enable)
+{
+    g_noShareFsEnabled = enable;
+    g_noShareFsInited = true;
+}
+
 bool IsNoShareFsEnable(void)
 {
-    return CheckEnabled("const.startup.appspawn_support_nosharefs.enable", "true");
+    if (!g_noShareFsInited) {
+        return CheckEnabled("const.startup.appspawn_support_nosharefs.enable", "true");
+    }
+    return g_noShareFsEnabled;
 }
