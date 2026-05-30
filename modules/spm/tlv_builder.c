@@ -50,7 +50,8 @@ void AddTlvEntryToList(ListNode *head, RebuildTlvEntry *entry)
 int AddStandardTlv(ListNode *head, uint16_t tlvType, uint8_t *data, uint32_t dataLen)
 {
     APPSPAWN_CHECK(head != NULL, return -1, "Invalid parameter: head is NULL");
-    APPSPAWN_CHECK(data != NULL, return -1, "Invalid parameter: data is NULL");
+    // Allow data==NULL when dataLen==0 (TLV with no data payload)
+    APPSPAWN_CHECK(data != NULL || dataLen == 0, return -1, "Invalid parameter: data is NULL but dataLen is non-zero");
 
     RebuildTlvEntry *entry = CreateTlvEntry();
     APPSPAWN_CHECK(entry != NULL, return -1, "Failed to allocate TLV entry");

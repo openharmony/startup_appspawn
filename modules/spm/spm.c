@@ -272,9 +272,8 @@ static int ComputePermissionFlags(const AppSpawnMgr *mgr,
         "0x%{public}x 0x%{public}x 0x%{public}x",
         tokenid, perms[0], perms[1], perms[2], perms[3]);
 
-    // Get permission queue directly from AppSpawnContent
-    AppSpawnContent content = mgr->content;
-    const SandboxQueue *permQueue = content.permissionQueue;
+    // Get permission queue directly from AppSpawnContent (avoid struct copy)
+    const SandboxQueue *permQueue = mgr->content.permissionQueue;
     APPSPAWN_CHECK(permQueue != NULL, return -1,
         "Failed to get permission queue from AppSpawnContent");
 
@@ -713,8 +712,17 @@ static int CollectJitPermissionsFromSPM(const SpmData *spmData, ListNode *head)
 
     APPSPAWN_LOGI("CollectJitPermissionsFromSPM: JSON len=%{public}u", jsonLen);
     APPSPAWN_LOGI("CollectJitPermissionsFromSPM: JSON content=%{public}s", json);
-    int result = AddExtTlv(head, MSG_EXT_NAME_JIT_PERMISSIONS, DATA_TYPE_STRING, (uint8_t *)json, jsonLen);
-    APPSPAWN_CHECK(result == 0, cJSON_free(json); return -1, "Failed to add JIT_PERMISSIONS TLV");
+
+    // Copy JSON string to calloc-allocated memory to match free() in DestroyTlvEntry
+    uint8_t *jsonData = (uint8_t *)calloc(1, jsonLen + 1);
+    APPSPAWN_CHECK(jsonData != NULL, cJSON_free(json); return -1, "Failed to allocate JSON data");
+
+    int cpRet = memcpy_s(jsonData, jsonLen + 1, json, jsonLen);
+    cJSON_free(json);  // Free cJSON-allocated memory immediately
+    APPSPAWN_CHECK(cpRet == 0, free(jsonData); return -1, "Failed to copy JSON string");
+
+    int result = AddExtTlv(head, MSG_EXT_NAME_JIT_PERMISSIONS, DATA_TYPE_STRING, jsonData, jsonLen);
+    APPSPAWN_CHECK(result == 0, free(jsonData); return -1, "Failed to add JIT_PERMISSIONS TLV");
 
     return 0;
 }
