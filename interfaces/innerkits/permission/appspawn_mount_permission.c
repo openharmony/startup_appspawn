@@ -25,6 +25,10 @@
 #include "appspawn_utils.h"
 #include "json_utils.h"
 #include "securec.h"
+#ifdef APPSPAWN_ENABLE_SPM
+#include "appspawn_hook.h"
+#include "appspawn_manager.h"
+#endif
 
 typedef struct TagParseJsonContext {
     SandboxQueue permissionQueue;
@@ -228,10 +232,31 @@ const char *GetPermissionByIndex(AppSpawnClientHandle handle, int32_t index)
     return PMGetPermissionByIndex(reqMgr->type, index);
 }
 
+#ifdef APPSPAWN_ENABLE_SPM
+static int InitPermissionQueueForSPM(AppSpawnMgr *mgr)
+{
+    APPSPAWN_CHECK_ONLY_EXPER(mgr != NULL, return -1);
+
+    // Get permission manager for appspawn
+    PermissionManager *permMgr = GetPermissionMgrByType(CLIENT_FOR_APPSPAWN);
+    APPSPAWN_CHECK_ONLY_EXPER(permMgr != NULL, return -1);
+    APPSPAWN_CHECK_ONLY_EXPER(CheckPermissionManager(permMgr), return -1);
+
+    // Expose permission queue to AppSpawnContent for SPM
+    mgr->content.permissionQueue = &permMgr->permissionQueue;
+    APPSPAWN_LOGI("InitPermissionQueueForSPM: Set permissionQueue %{public}p",
+                  mgr->content.permissionQueue);
+    return 0;
+}
+#endif
+
 __attribute__((constructor)) static void LoadPermissionModule(void)
 {
     (void)LoadPermission(CLIENT_FOR_APPSPAWN);
     (void)LoadPermission(CLIENT_FOR_NWEBSPAWN);
+#ifdef APPSPAWN_ENABLE_SPM
+    (void)AddServerStageHook(STAGE_SERVER_PRELOAD, HOOK_PRIO_COMMON, InitPermissionQueueForSPM);
+#endif
 }
 
 __attribute__((destructor)) static void DeletePermissionModule(void)

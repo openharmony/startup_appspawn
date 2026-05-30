@@ -73,6 +73,7 @@ typedef enum TagAppSpawnHookStage {
     STAGE_PARENT_POST_FORK = 21,
     STAGE_PARENT_PRE_RELY = 22,
     STAGE_PARENT_POST_RELY = 23,
+    STAGE_PARENT_MSG_DECODE,  // after message decode, for message rebuild/validation
     STAGE_PARENT_UNINSTALL,
     STAGE_PARENT_BOOT_IMG,
     STAGE_SERVER_SPAWN_ABORT,  // spawn abort, release resources

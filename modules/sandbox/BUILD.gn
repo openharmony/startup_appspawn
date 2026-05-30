@@ -60,6 +60,7 @@ if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
       cflags = [ "-DWITH_DLP" ]
       external_deps += [ "dlp_permission_service:libdlp_fuse" ]
     }
+
   }
 } else {
   ohos_shared_library("appspawn_sandbox") {
@@ -128,6 +129,14 @@ if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
     if (dlp_permission_enable) {
       cflags_cc = [ "-DWITH_DLP" ]
       external_deps += [ "dlp_permission_service:libdlp_fuse" ]
+    }
+
+    # SPM module integration
+    if (appspawn_enable_spm) {
+      defines += [ "APPSPAWN_ENABLE_SPM" ]
+      external_deps += [
+        "access_token:libpermsetproc_shared",
+      ]
     }
   }
 }

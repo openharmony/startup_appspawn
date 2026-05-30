@@ -92,6 +92,9 @@ typedef struct TagAppSpawningCtx {
     struct timespec spawnStart;
     bool allowDumpable;
     uint64_t checkPointId;        // Image process index ID
+    uint8_t spmRefAdded;          // Bitmap: which SPM refcounts have been incremented
+                                  //   bit0 (0x01): tokenid refcount
+                                  //   bit1 (0x02): uid refcount
     bool lockBundleRefAdded;  // Flag: whether AddLockBundleRef has been called for _preunlock directory
     char *lockPath;           // Sandbox root path for _preunlock directory (set by MountDirToShared)
 } AppSpawningCtx;
@@ -111,6 +114,10 @@ typedef struct TagAppSpawnedProcess {
     uint32_t appIndex;
     bool lockBundleRefAdded;  // Flag: whether AddLockBundleRef has been called for _preunlock directory
     char *lockPath;  // Sandbox root path for _preunlock directory management
+    uint64_t tokenid;  // Token ID from message (for SPM refcount management)
+    uint8_t spmRefAdded;  // Bitmap: which SPM refcounts have been incremented
+                          //   bit0 (0x01): tokenid refcount
+                          //   bit1 (0x02): uid refcount
     char name[0];
 } AppSpawnedProcess;
 
@@ -188,7 +195,8 @@ AppSpawnContent *GetAppSpawnContent(void);
  */
 typedef void (*AppTraversal)(const AppSpawnMgr *mgr, AppSpawnedProcess *appInfo, void *data);
 void TraversalSpawnedProcess(AppTraversal traversal, void *data);
-AppSpawnedProcess *AddSpawnedProcess(pid_t pid, const char *processName, uint32_t appIndex, bool isDebuggable);
+AppSpawnedProcess *AddSpawnedProcess(pid_t pid, const char *processName, uint32_t appIndex,
+    bool isDebuggable, uint64_t tokenid);
 AppSpawnedProcess *GetSpawnedProcess(pid_t pid);
 AppSpawnedProcess *GetSpawnedProcessByName(const char *name);
 void TerminateSpawnedProcess(AppSpawnedProcess *node);

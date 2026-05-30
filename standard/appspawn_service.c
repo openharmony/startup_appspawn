@@ -1392,6 +1392,16 @@ static void ProcessSpawnReqMsg(AppSpawnConnection *connection, AppSpawnMsgNode *
     property->state = APP_STATE_SPAWNING;
     property->message = message;
     message->connection = connection;
+
+    StartAppspawnTrace("STAGE_PARENT_MSG_DECODE");
+    ret = AppSpawnHookExecute(STAGE_PARENT_MSG_DECODE, HOOK_STOP_WHEN_ERROR, GetAppSpawnContent(), &property->client);
+    FinishAppspawnTrace();
+    // Check if SPM message rebuild hook failed
+    APPSPAWN_ONLY_EXPER(ret != 0, APPSPAWN_LOGE("rebuild hook failed: %{public}d, aborting spawn", ret);
+        SendResponse(connection, &message->msgHeader, ret, 0);
+        DeleteAppSpawningCtx(property);
+        return);
+
     // mount el2 dir
     // getWrapBundleNameValue
     AppSpawnHookExecute(STAGE_PARENT_PRE_FORK, 0, GetAppSpawnContent(), &property->client);
@@ -1501,7 +1511,13 @@ static AppSpawnedProcess *InitSpawnedProcessInfo(AppSpawningCtx *property)
     bool isDebuggable = CheckAppMsgFlagsSet(property, APP_FLAGS_DEBUGGABLE);
     uint32_t appIndex = GetAppCloneIndex(property);
 
-    AppSpawnedProcess *appInfo = AddSpawnedProcess(property->pid, GetBundleName(property), appIndex, isDebuggable);
+    // Get tokenid from ACCESS_TOKEN_INFO TLV
+    const AppSpawnMsgAccessToken *tokenInfo = (const AppSpawnMsgAccessToken *)
+        GetAppSpawnMsgInfo(property->message, TLV_ACCESS_TOKEN_INFO);
+    uint64_t tokenid = (tokenInfo != NULL) ? tokenInfo->accessTokenIdEx : 0;
+
+    AppSpawnedProcess *appInfo = AddSpawnedProcess(property->pid, GetBundleName(property),
+        appIndex, isDebuggable, tokenid);
     APPSPAWN_CHECK(appInfo != NULL, return NULL, "Failed to add spawned process");
 
     AppSpawnMsgDacInfo *dacInfo = GetAppProperty(property, TLV_DAC_INFO);
@@ -1509,6 +1525,7 @@ static AppSpawnedProcess *InitSpawnedProcessInfo(AppSpawningCtx *property)
     appInfo->spawnStart.tv_sec = property->spawnStart.tv_sec;
     appInfo->spawnStart.tv_nsec = property->spawnStart.tv_nsec;
     appInfo->lockBundleRefAdded = property->lockBundleRefAdded;  // Copy flag from AppSpawningCtx
+    appInfo->spmRefAdded = property->spmRefAdded;  // Copy SPM refcount flag
     appInfo->lockPath = property->lockPath;  // Transfer lockPath ownership to AppSpawnedProcess
     property->lockPath = NULL;  // Prevent double free
 
@@ -1942,6 +1959,35 @@ static void ProcessSpawnRestartMsg(AppSpawnConnection *connection, AppSpawnMsgNo
 }
 
 /**
+ * @brief 添加已生成的进程信息到进程管理器
+ *
+ * @param property 孵化上下文
+ * @param connection 连接对象
+ * @param message 消息节点
+ * @return 0 on success, error code on failure
+ */
+static int AddSpawnedProcessInfo(AppSpawningCtx *property, AppSpawnConnection *connection,
+    AppSpawnMsgNode *message)
+{
+    if (!CheckAppMsgFlagsSet(property, APP_FLAGS_SPAWN_IMAGE_PROCESS)) {
+        const AppSpawnMsgAccessToken *tokenInfo = (const AppSpawnMsgAccessToken *)
+            GetAppSpawnMsgInfo(property->message, TLV_ACCESS_TOKEN_INFO);
+        uint64_t tokenid = (tokenInfo != NULL) ? tokenInfo->accessTokenIdEx : 0;
+        AppSpawnedProcess *appInfo = AddSpawnedProcess(property->pid, GetBundleName(property),
+            0, false, tokenid);
+        APPSPAWN_CHECK(appInfo != NULL, return APPSPAWN_SYSTEM_ERROR,
+            "Failed to add spawned process for worker pid=%{public}d", property->pid);
+
+        AppSpawnMsgDacInfo *dacInfo = GetAppProperty(property, TLV_DAC_INFO);
+        appInfo->uid = dacInfo != NULL ? dacInfo->uid : 0;
+        appInfo->spmRefAdded = property->spmRefAdded;  // Copy SPM refcount flag
+        WatchChildProcessFd(property);
+        ProcessMgrHookExecute(STAGE_SERVER_APP_ADD, GetAppSpawnContent(), appInfo);
+    }
+    return 0;
+}
+
+/**
  * @brief 处理 checkpoint 进程创建请求（镜像进程和工作进程）
  *
  * 该函数独立处理 checkpoint 进程的创建，只执行 STAGE_PARENT_BOOT_IMG hook。
@@ -1975,8 +2021,11 @@ APPSPAWN_STATIC void ProcessCheckpointReqMsg(AppSpawnConnection *connection, App
     property->state = APP_STATE_SPAWNING;
     property->message = message;
     message->connection = connection;
-
-    // 执行 STAGE_PARENT_BOOT_IMG hook（checkpoint hooks 在此阶段执行）
+    ret = AppSpawnHookExecute(STAGE_PARENT_MSG_DECODE, HOOK_STOP_WHEN_ERROR, GetAppSpawnContent(), &property->client);
+    APPSPAWN_ONLY_EXPER(ret != 0, APPSPAWN_LOGE("rebuild hook failed: %{public}d, aborting spawn", ret);
+        SendResponse(connection, &message->msgHeader, ret, 0);
+        DeleteAppSpawningCtx(property);
+        return);
     ret = AppSpawnHookExecute(STAGE_PARENT_BOOT_IMG, HOOK_STOP_WHEN_ERROR, GetAppSpawnContent(), &property->client);
     if (ret != 0) {
         APPSPAWN_LOGE("STAGE_PARENT_BOOT_IMG hook failed: %{public}d", ret);
@@ -1985,26 +2034,15 @@ APPSPAWN_STATIC void ProcessCheckpointReqMsg(AppSpawnConnection *connection, App
         DeleteAppSpawningCtx(property);
         return;
     }
+    ret = AddSpawnedProcessInfo(property, connection, message);
+    APPSPAWN_CHECK(ret == 0,
+        SendResponseEx(connection, &message->msgHeader, ret, 0, 0);
+        DeleteAppSpawningCtx(property); return,
+        "AddSpawnedProcessInfo failed %{public}d", ret);
 
-    if (!CheckAppMsgFlagsSet(property, APP_FLAGS_SPAWN_IMAGE_PROCESS)) {
-        AppSpawnedProcess *appInfo = AddSpawnedProcess(property->pid, GetBundleName(property), 0, 0);
-        APPSPAWN_CHECK(appInfo != NULL,
-            SendResponseEx(connection, &message->msgHeader, APPSPAWN_SYSTEM_ERROR, 0, 0);
-            DeleteAppSpawningCtx(property); return,
-            "Failed to add spawned process for worker pid=%{public}d", property->pid);
-
-        AppSpawnMsgDacInfo *dacInfo = GetAppProperty(property, TLV_DAC_INFO);
-        appInfo->uid = dacInfo != NULL ? dacInfo->uid : 0;
-        WatchChildProcessFd(property);
-        ProcessMgrHookExecute(STAGE_SERVER_APP_ADD, GetAppSpawnContent(), appInfo);
-    }
-
-    // checkpoint 进程创建成功，发送响应
-    // checkPointId 已在 hook 中设置到 property->checkPointId
     APPSPAWN_LOGI("Checkpoint process created successfully: pid=%{public}d, checkPointId=%{public}" PRId64"",
                   property->pid, property->checkPointId);
 
-    // 使用 SendResponseEx 直接传递 result、pid 和 checkPointId
     SendResponseEx(connection, &message->msgHeader, ret, property->pid, property->checkPointId);
     DeleteAppSpawningCtx(property);
 }
