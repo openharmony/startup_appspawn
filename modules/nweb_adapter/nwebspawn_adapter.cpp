@@ -34,9 +34,7 @@
 #ifdef WITH_SECCOMP
 #include "seccomp_policy.h"
 #endif
-#ifndef OHOS_LITE
-#include "ace_forward_compatibility.h"
-#endif
+
 #include "arkweb_utils.h"
 #include "arkweb_preload_common.h"
 
@@ -368,9 +366,6 @@ APPSPAWN_STATIC int PreLoadNwebSpawn(AppSpawnMgr *content)
 
     OHOS::ArkWeb::PreloadArkWebLibForRender();
 
-#ifndef OHOS_LITE
-    OHOS::Ace::AceForwardCompatibility::ReclaimFileCache(getpid());
-#endif
     return 0;
 }
 

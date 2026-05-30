@@ -491,7 +491,7 @@ AppSpawnReqMsgHandle AppSpawnTestHelper::CreateMsg(AppSpawnClientHandle handle, 
         APPSPAWN_CHECK(ret == 0, break, "Failed to add bundle info req %{public}s", processName_.c_str());
         ret = AddDacInfo(reqHandle);
         APPSPAWN_CHECK(ret == 0, break, "Failed to add dac %{public}s", processName_.c_str());
-        ret = AppSpawnReqMsgSetAppAccessToken(reqHandle, 12345678);  // 12345678
+        ret = AppSpawnReqMsgSetAppAccessToken(reqHandle, accessTokenIdEx_);
         APPSPAWN_CHECK(ret == 0, break, "Failed to add access token %{public}s", processName_.c_str());
 
         if (defaultMsgFlags_ != 0) {
@@ -513,7 +513,7 @@ AppSpawnReqMsgHandle AppSpawnTestHelper::CreateMsg(AppSpawnClientHandle handle, 
         ret = AppSpawnReqMsgSetAppInternetPermissionInfo(reqHandle, 1, 0);
         APPSPAWN_CHECK(ret == 0, break, "Failed to internet info %{public}s", processName_.c_str());
 
-        ret = AppSpawnReqMsgSetAppOwnerId(reqHandle, "ohos.permission.FILE_ACCESS_MANAGER");
+        ret = AppSpawnReqMsgSetAppOwnerId(reqHandle, ownerId_.c_str());
         APPSPAWN_CHECK(ret == 0, break, "Failed to ownerid %{public}s", processName_.c_str());
         const char *renderCmd = "/system/bin/sh ls -l #--ipc-fd=3#--shared-fd=4#--crash-fd=20";
         ret = AppSpawnReqMsgAddExtInfo(reqHandle, MSG_EXT_NAME_RENDER_CMD,
@@ -631,6 +631,8 @@ void AppSpawnTestHelper::SetDefaultTestData()
     defaultTestBundleIndex_ = 100;    // 100 test
     defaultApl_ = std::string("system_core");
     defaultMsgFlags_ = 0;
+    accessTokenIdEx_ = 4832386455;
+    ownerId_ = "5765880207854616753";
 }
 
 int AppSpawnTestHelper::CreateSocket(int type)

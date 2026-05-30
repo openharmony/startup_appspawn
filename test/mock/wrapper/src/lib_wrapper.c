@@ -293,39 +293,6 @@ int __wrap_memcpy_s(void *dest, size_t destMax, const void *src, size_t count)
     }
 }
 
-// start wrap open
-static OpenFunc g_open = NULL;
-void UpdateOpenFunc(OpenFunc func)
-{
-    g_open = func;
-}
-
-int __wrap_open(const char *pathname, int flags, ...)
-{
-    mode_t mode = 0;
-    if (g_open) {
-        return g_open(pathname, flags, mode);
-    } else {
-        return __real_open(pathname, flags, mode);
-    }
-}
-
-// start wrap write
-static WriteFunc g_write = NULL;
-void UpdateWriteFunc(WriteFunc func)
-{
-    g_write = func;
-}
-
-ssize_t __wrap_write(int fd, const void *buf, size_t count)
-{
-    if (g_write) {
-        return g_write(fd, buf, count);
-    } else {
-        return __real_write(fd, buf, count);
-    }
-}
-
 // start wrap fcntl
 static FcntlFunc g_fcntl = NULL;
 static int g_fcntlFlagFilter = -1;
@@ -390,6 +357,39 @@ int __wrap_waitpid(pid_t pid, int *status, int options)
         return g_waitpid(pid, status, options);
     } else {
         return __real_waitpid(pid, status, options);
+    }
+}
+
+// start wrap open
+static OpenFunc g_open = NULL;
+void UpdateOpenFunc(OpenFunc func)
+{
+    g_open = func;
+}
+
+int __wrap_open(const char *pathname, int flags, ...)
+{
+    mode_t mode = 0;
+    if (g_open) {
+        return g_open(pathname, flags, mode);
+    } else {
+        return __real_open(pathname, flags, mode);
+    }
+}
+
+// start wrap write
+static WriteFunc g_write = NULL;
+void UpdateWriteFunc(WriteFunc func)
+{
+    g_write = func;
+}
+
+ssize_t __wrap_write(int fd, const void *buf, size_t count)
+{
+    if (g_write) {
+        return g_write(fd, buf, count);
+    } else {
+        return __real_write(fd, buf, count);
     }
 }
 

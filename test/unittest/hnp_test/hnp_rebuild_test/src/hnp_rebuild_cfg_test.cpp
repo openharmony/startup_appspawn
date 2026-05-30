@@ -45,7 +45,6 @@
 #define HNP_TEST_DIR_MODE (0771)
 
 #endif
-
 using namespace testing;
 using namespace testing::ext;
 
@@ -661,7 +660,6 @@ HWTEST_F(HnpRebuildCfgSingleTest, HnpRebuildCfgTest_010, TestSize.Level0)
     free(infoStream);
     EXPECT_NE(json, nullptr);
     EXPECT_TRUE(cJSON_IsArray(json));
-    printf("currentJson is %s \r\n", cJSON_Print(json));
     EXPECT_EQ(cJSON_GetArraySize(json), 1);
     cJSON_Delete(json);
     remove(newCfgPath);

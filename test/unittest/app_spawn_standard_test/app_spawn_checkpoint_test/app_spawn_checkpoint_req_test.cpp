@@ -574,7 +574,7 @@ HWTEST_F(AppSpawnCheckpointReqTest, Process_Checkpoint_Req_Msg_011, TestSize.Lev
  * @tc.name: Process_Checkpoint_Req_Msg_012
  * @tc.desc: Test ProcessCheckpointReqMsg with malloc failed
  * @tc.type: FUNC
- * @tc.cover: branch 5 (ioctl returns EPERM - permission denied)
+ * @tc.cover: boundary condition
  */
 HWTEST_F(AppSpawnCheckpointReqTest, Process_Checkpoint_Req_Msg_012, TestSize.Level0)
 {
@@ -603,7 +603,7 @@ HWTEST_F(AppSpawnCheckpointReqTest, Process_Checkpoint_Req_Msg_012, TestSize.Lev
         .receiverCtx = {0}
     };
 
-    // Mock malloc to return EPERM nullptr
+    // Mock malloc to return nullptr
     MallocFunc func = [](size_t size) -> void* {
         return nullptr;
     };

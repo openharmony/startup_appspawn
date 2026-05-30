@@ -187,6 +187,7 @@ HWTEST_F(AppSpawnSandboxPermissionSymlinkTest, DoSandboxFilePermissionSymlink_01
 {
     g_testHelperPermSymlink.SetProcessName("com.ohos.symlink.test");
     g_testHelperPermSymlink.SetTestApl("normal");
+
     AppSpawningCtx *appProperty = GetTestAppPropertyPermSymlink();
     ASSERT_NE(appProperty, nullptr);
     // 设置 APP_FLAGS_UNLOCKED_STATUS 标志，使沙箱路径不包含 _preunlock 后缀

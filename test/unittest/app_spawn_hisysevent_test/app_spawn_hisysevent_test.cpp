@@ -13,7 +13,11 @@
  * limitations under the License.
  */
 
+#include <cerrno>
+
 #include <gtest/gtest.h>
+#include "securec.h"
+
 #include "app_spawn_hisysevent_stub.h"
 
 using namespace testing;
@@ -22,127 +26,92 @@ using namespace testing::ext;
 namespace OHOS {
 class AppSpawnHisysEventTest : public testing::Test {
 public:
-    static void SetUpTestCase();
-    static void TearDownTestCase();
-    void SetUp();
-    void TearDown();
+    static void SetUpTestCase() {}
+    static void TearDownTestCase() {}
+    void SetUp()
+    {
+        const TestInfo *info = UnitTest::GetInstance()->current_test_info();
+        GTEST_LOG_(INFO) << info->test_suite_name() << "." << info->name() << " start";
+        APPSPAWN_LOGI("%{public}s.%{public}s start", info->test_suite_name(), info->name());
+    }
+    void TearDown()
+    {
+        const TestInfo *info = UnitTest::GetInstance()->current_test_info();
+        GTEST_LOG_(INFO) << info->test_suite_name() << "." << info->name() << " end";
+        APPSPAWN_LOGI("%{public}s.%{public}s end", info->test_suite_name(), info->name());
+    }
 };
 
-void AppSpawnHisysEventTest::SetUpTestCase()
-{
-    GTEST_LOG_(INFO) << "AppSpawn_HisysEvent_TEST SetUpTestCase";
-}
-
-void AppSpawnHisysEventTest::TearDownTestCase()
-{
-    GTEST_LOG_(INFO) << "AppSpawn_HisysEvent_TEST TearDownTestCase";
-}
-
-void AppSpawnHisysEventTest::SetUp()
-{
-    GTEST_LOG_(INFO) << "AppSpawn_HisysEvent_TEST SetUp";
-}
-
-void AppSpawnHisysEventTest::TearDown()
-{
-    GTEST_LOG_(INFO) << "AppSpawn_HisysEvent_TEST TearDown";
-}
-
 /**
-* @tc.name: AppSpawnHisysEvent_001
-* @tc.desc:  Verify InitHisyseventTimer success.
+* @tc.name: AppSpawnHisysEvent_InitHisyseventTimer_01
+* @tc.desc: Verify InitHisyseventTimer success.
 * @tc.type: FUNC
 */
-HWTEST_F(AppSpawnHisysEventTest, AppSpawnHisysEvent_001, TestSize.Level0)
+HWTEST_F(AppSpawnHisysEventTest, AppSpawnHisysEvent_InitHisyseventTimer_01, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "AppSpawnHisysEvent_001 test....";
-    SetCreateTimerStatus(true);
     AppSpawnHisyseventInfo * hisyseventInfo = InitHisyseventTimer();
-    EXPECT_NE(hisyseventInfo, NULL);
+    EXPECT_NE(hisyseventInfo, nullptr);
     DeleteHisyseventInfo(hisyseventInfo);
-    hisyseventInfo = NULL;
+    hisyseventInfo = nullptr;
 }
 
 /**
-* @tc.name: AppSpawnHisysEvent_002
-* @tc.desc:  Verify InitHisyseventTimer fail.
+* @tc.name: AppSpawnHisysEvent_AddStatisticEventInfo_01
+* @tc.desc: Verify Add bootevent count success.
 * @tc.type: FUNC
 */
-HWTEST_F(AppSpawnHisysEventTest, AppSpawnHisysEvent_002, TestSize.Level0)
+HWTEST_F(AppSpawnHisysEventTest, AppSpawnHisysEvent_AddStatisticEventInfo_01, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "AppSpawnHisysEvent_002 test....";
-    SetCreateTimerStatus(false);
     AppSpawnHisyseventInfo * hisyseventInfo = InitHisyseventTimer();
-    EXPECT_NE(hisyseventInfo, NULL);
-    DeleteHisyseventInfo(hisyseventInfo);
-    hisyseventInfo = NULL;
-}
-
-/**
-* @tc.name: AppSpawnHisysEvent_003
-* @tc.desc:  Verify Add bootevent count success.
-* @tc.type: FUNC
-*/
-HWTEST_F(AppSpawnHisysEventTest, AppSpawnHisysEvent_003, TestSize.Level0)
-{
-    GTEST_LOG_(INFO) << "AppSpawnHisysEvent_003 test....";
-    SetCreateTimerStatus(true);
-    AppSpawnHisyseventInfo * hisyseventInfo = InitHisyseventTimer();
-    EXPECT_NE(hisyseventInfo, NULL);
+    EXPECT_NE(hisyseventInfo, nullptr);
     AddStatisticEventInfo(hisyseventInfo, 20, true);
     int count = hisyseventInfo->bootEvent.eventCount;
     EXPECT_EQ(count, 1);
     DeleteHisyseventInfo(hisyseventInfo);
-    hisyseventInfo = NULL;
+    hisyseventInfo = nullptr;
 }
 
 /**
-* @tc.name: AppSpawnHisysEvent_004
-* @tc.desc:  Verify Add bootevent duration success.
+* @tc.name: AppSpawnHisysEvent_AddStatisticEventInfo_02
+* @tc.desc: Verify Add bootevent duration success.
 * @tc.type: FUNC
 */
-HWTEST_F(AppSpawnHisysEventTest, AppSpawnHisysEvent_004, TestSize.Level0)
+HWTEST_F(AppSpawnHisysEventTest, AppSpawnHisysEvent_AddStatisticEventInfo_02, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "AppSpawnHisysEvent_004 test....";
-    SetCreateTimerStatus(true);
     AppSpawnHisyseventInfo * hisyseventInfo = InitHisyseventTimer();
-    EXPECT_NE(hisyseventInfo, NULL);
+    EXPECT_NE(hisyseventInfo, nullptr);
     AddStatisticEventInfo(hisyseventInfo, 20, true);
     int duration = hisyseventInfo->bootEvent.totalDuration;
     EXPECT_EQ(duration, 20);
     DeleteHisyseventInfo(hisyseventInfo);
-    hisyseventInfo = NULL;
+    hisyseventInfo = nullptr;
 }
 
 /**
-* @tc.name: AppSpawnHisysEvent_005
-* @tc.desc:  Verify Add manualevent duration success.
+* @tc.name: AppSpawnHisysEvent_AddStatisticEventInfo_03
+* @tc.desc: Verify Add manualevent duration success.
 * @tc.type: FUNC
 */
-HWTEST_F(AppSpawnHisysEventTest, AppSpawnHisysEvent_005, TestSize.Level0)
+HWTEST_F(AppSpawnHisysEventTest, AppSpawnHisysEvent_AddStatisticEventInfo_03, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "AppSpawnHisysEvent_005 test....";
-    SetCreateTimerStatus(true);
     AppSpawnHisyseventInfo * hisyseventInfo = InitHisyseventTimer();
-    EXPECT_NE(hisyseventInfo, NULL);
+    EXPECT_NE(hisyseventInfo, nullptr);
     AddStatisticEventInfo(hisyseventInfo, 20, false);
     int duration = hisyseventInfo->manualEvent.totalDuration;
     EXPECT_EQ(duration, 20);
     DeleteHisyseventInfo(hisyseventInfo);
-    hisyseventInfo = NULL;
+    hisyseventInfo = nullptr;
 }
 
 /**
-* @tc.name: AppSpawnHisysEvent_006
-* @tc.desc:  Verify manualevent maxduration and minduration success.
+* @tc.name: AppSpawnHisysEvent_AddStatisticEventInfo_04
+* @tc.desc: Verify manualevent maxduration and minduration success.
 * @tc.type: FUNC
 */
-HWTEST_F(AppSpawnHisysEventTest, AppSpawnHisysEvent_006, TestSize.Level0)
+HWTEST_F(AppSpawnHisysEventTest, AppSpawnHisysEvent_AddStatisticEventInfo_04, TestSize.Level0)
 {
-    GTEST_LOG_(INFO) << "AppSpawnHisysEvent_006 test....";
-    SetCreateTimerStatus(true);
     AppSpawnHisyseventInfo * hisyseventInfo = InitHisyseventTimer();
-    EXPECT_NE(hisyseventInfo, NULL);
+    EXPECT_NE(hisyseventInfo, nullptr);
     AddStatisticEventInfo(hisyseventInfo, 10, true);
     AddStatisticEventInfo(hisyseventInfo, 20, true);
     AddStatisticEventInfo(hisyseventInfo, 30, true);
@@ -151,6 +120,7 @@ HWTEST_F(AppSpawnHisysEventTest, AppSpawnHisysEvent_006, TestSize.Level0)
     EXPECT_EQ(maxduration, 30);
     EXPECT_EQ(minduration, 10);
     DeleteHisyseventInfo(hisyseventInfo);
-    hisyseventInfo = NULL;
+    hisyseventInfo = nullptr;
 }
+
 } // namespace OHOS

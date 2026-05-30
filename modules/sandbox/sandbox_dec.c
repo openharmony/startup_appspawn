@@ -281,5 +281,5 @@ MODULE_CONSTRUCTOR(void)
     APPSPAWN_LOGI("Load sandbox dec module ...");
     AddPreloadHook(HOOK_PRIO_COMMON, SetDenyConstraintDirs);
     AddPreloadHook(HOOK_PRIO_COMMON, SetForcedPrefixDirs);
-    AddPreloadHook(HOOK_PRIO_COMMON, SetIgnoreCaseDirs);
+    AddPreloadHook(HOOK_PRIO_HIGHEST, SetIgnoreCaseDirs);
 }

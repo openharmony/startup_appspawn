@@ -61,7 +61,7 @@
 
 static void WaitChildTimeout(const TimerHandle taskHandle, void *context);
 static void ProcessChildResponse(const WatcherHandle taskHandle, int fd, uint32_t *events, const void *context);
-static void WaitChildDied(pid_t pid);
+static void WaitChildDied(pid_t pid, int status);
 static void OnReceiveRequest(const TaskHandle taskHandle, const uint8_t *buffer, uint32_t buffLen);
 static void ProcessRecvMsg(AppSpawnConnection *connection, AppSpawnMsgNode *message);
 
@@ -171,7 +171,7 @@ APPSPAWN_STATIC void HandleDiedPid(pid_t pid, uid_t uid, int status)
     int signal = 0;
     AppSpawnedProcess *appInfo = GetSpawnedProcess(pid);
     if (appInfo == NULL) { // If an exception occurs during app spawning, kill pid, return failed
-        WaitChildDied(pid);
+        WaitChildDied(pid, status);
         DumpStatus("unknown", pid, status, &signal);
         return;
     }
@@ -183,7 +183,7 @@ APPSPAWN_STATIC void HandleDiedPid(pid_t pid, uid_t uid, int status)
     ProcessMgrHookExecute(STAGE_SERVER_APP_DIED, GetAppSpawnContent(), appInfo);
     ProcessMgrHookExecute(STAGE_SERVER_APP_CLEANUP, GetAppSpawnContent(), appInfo);
 
-    // move app info to died queue in NWEBSPAWN, or delete appinfo
+    // delete appinfo form appQueue, and move appinfo to diedQueue for nwebspawn
     TerminateSpawnedProcess(appInfo);
 }
 
@@ -1418,7 +1418,7 @@ static void ProcessSpawnReqMsg(AppSpawnConnection *connection, AppSpawnMsgNode *
 static uint32_t g_lastDiedAppId = 0;
 static uint32_t g_crashTimes = 0;
 #define MAX_CRASH_TIME 5
-static void WaitChildDied(pid_t pid)
+static void WaitChildDied(pid_t pid, int status)
 {
     AppSpawningCtx *property = GetAppSpawningCtxByPid(pid);
     if (property != NULL && property->message != NULL && property->state == APP_STATE_SPAWNING) {
@@ -1428,7 +1428,7 @@ static void WaitChildDied(pid_t pid)
 #ifdef APPSPAWN_HISYSEVENT
         ReportSpawnChildProcessFail(processName, ERR_APPSPAWN_CHILD_CRASH, APPSPAWN_CHILD_CRASH);
 #endif
-        if (property->client.id == g_lastDiedAppId + 1) {
+        if ((property->client.id == g_lastDiedAppId + 1) && WIFSIGNALED(status)) {
             g_crashTimes++;
         } else {
             g_crashTimes = 1;

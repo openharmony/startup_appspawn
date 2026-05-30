@@ -118,16 +118,6 @@ int __real_memcpy_s(void *dest, size_t destMax, const void *src, size_t count);
 typedef int (*MemcpySFunc)(void *dest, size_t destMax, const void *src, size_t count);
 void UpdateMemcpySFunc(MemcpySFunc func);
 
-// for wrapper open;
-int __real_open(const char *pathname, int flags, ...);
-typedef int (*OpenFunc)(const char *pathname, int flags, mode_t mode);
-void UpdateOpenFunc(OpenFunc func);
-
-// for wrapper write;
-ssize_t __real_write(int fd, const void *buf, size_t count);
-typedef ssize_t (*WriteFunc)(int fd, const void *buf, size_t count);
-void UpdateWriteFunc(WriteFunc func);
-
 // for wrapper fcntl;
 int __real_fcntl(int fd, int flag, unsigned long arg);
 typedef int (*FcntlFunc)(int fd, int flag, unsigned long arg);
@@ -150,10 +140,21 @@ pid_t __real_waitpid(pid_t pid, int *status, int options);
 typedef pid_t (*WaitpidFunc)(pid_t pid, int *status, int options);
 void UpdateWaitpidFunc(WaitpidFunc func);
 
+// for wrapper open;
+int __real_open(const char *pathname, int flags, ...);
+typedef int (*OpenFunc)(const char *pathname, int flags, mode_t mode);
+void UpdateOpenFunc(OpenFunc func);
+
+// for wrapper write;
+ssize_t __real_write(int fd, const void *buf, size_t count);
+typedef ssize_t (*WriteFunc)(int fd, const void *buf, size_t count);
+void UpdateWriteFunc(WriteFunc func);
+
 // for wrapper strcpy_s;
 int __real_strcpy_s(char *strDest, size_t destMax, const char *strSrc);
 typedef int (*StrcpySFunc)(char *strDest, size_t destMax, const char *strSrc);
 void UpdateStrcpySFunc(StrcpySFunc func);
+
 
 #ifdef __cplusplus
 #if __cplusplus

@@ -23,7 +23,6 @@
 extern "C" {
 #endif
 
-void SetCreateTimerStatus(bool status);
 int CreateHisysTimerLoop(AppSpawnHisyseventInfo *hisyseventInfo);
 
 #ifdef __cplusplus

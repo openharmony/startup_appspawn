@@ -23,11 +23,7 @@
 extern "C" {
 #endif
 
-
-// 错误码定义规范：子系统ID（28-21位）| 模块ID（20-16位）| 具体错误ID（15-0位）
 #define DURATION_TIMER_TIMEOUT (24 * 60 * 60 * 1000)   // 24h
-#define MOUNT_TIMER_TIMEOUT (2 * 60 * 60 * 1000)   // 2h
-
 #define SUBSYS_STARTUP_ID   39
 #define SUBSYSTEM_BIT_NUM   21
 #define MODULE_BIT_NUM  16
@@ -39,6 +35,8 @@ extern "C" {
 #define MOUNTINFO_UPDATE_TIMEOUT (60 * 60)
 #define PARAM_BUFFER_LEN (32)
 #define NUM_DEC (10)
+
+// 错误码定义规范：子系统ID（28-21位）| 模块ID（20-16位）| 具体错误ID（15-0位）
 typedef enum {
     // errcode for handle msg, reserved 128, 0x0001-0x0080
     ERR_APPSPAWN_MSG_TOO_LONG = ERR_APPSPAWN_BASE + 0x0001, // 81788929
@@ -88,11 +86,6 @@ typedef struct {
     uint32_t maxDuration;
     uint32_t minDuration;
     uint32_t totalDuration;
-
-    uint32_t maxNsMountCount;
-    uint32_t maxDeviceMountCount;
-    uint32_t avgNsMountCount;
-    uint32_t avgDeviceMountCount;
 } AppSpawnHisysevent;
 
 typedef struct {
@@ -118,6 +111,8 @@ typedef struct {
 #define UNLOCK_MOUNT_REFORK "UNLOCK_MOUNT_REFORK"
 #define UNLOCK_MOUNT_NO_APPS "UNLOCK_MOUNT_NO_APPS"
 
+void AppSpawnHiSysEventWrite();
+
 AppSpawnHisyseventInfo *InitHisyseventTimer(void);
 AppSpawnHisyseventInfo *GetAppSpawnHisyseventInfo(void);
 void ReportMountFullHisysevent(int32_t errCode);
@@ -131,8 +126,6 @@ void ReportKeyEvent(const char *eventName);
 void ReportAbnormalDuration(const char* funcName, uint64_t duration);
 void ReportSpawnStatisticDuration(const TimerHandle taskHandle, void* content);
 
-void AppSpawnHiSysEventWrite();
-
 void ReportMountFull(int32_t errCode, int32_t nsMountCount, int32_t deviceMountCount, int32_t spawnResult);
 
 // Unlock mount event report functions (structured events with queryable params)
@@ -140,6 +133,7 @@ void ReportUnlockMountResult(int32_t uid, int32_t totalCount,
     int32_t successCount, int32_t failCount, int64_t duration);
 void ReportUnlockMountAppFail(int32_t uid, const char *bundleName,
     const char *srcPath, const char *destPath, int32_t errorCode);
+
 #ifdef __cplusplus
 }
 #endif
