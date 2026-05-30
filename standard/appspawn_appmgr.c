@@ -151,7 +151,8 @@ static int AppInfoCompareProc(ListNode *node, ListNode *newNode)
     return node1->pid - node2->pid;
 }
 
-AppSpawnedProcess *AddSpawnedProcess(pid_t pid, const char *processName, uint32_t appIndex, bool isDebuggable)
+AppSpawnedProcess *AddSpawnedProcess(pid_t pid, const char *processName, uint32_t appIndex, bool isDebuggable,
+    uint64_t tokenid)
 {
     APPSPAWN_CHECK(g_appSpawnMgr != NULL && processName != NULL, return NULL, "Invalid mgr or process name");
     APPSPAWN_CHECK(pid > 0, return NULL, "Invalid pid for %{public}s", processName);
@@ -166,6 +167,7 @@ AppSpawnedProcess *AddSpawnedProcess(pid_t pid, const char *processName, uint32_
     node->exitStatus = 0;
     node->appIndex = appIndex;
     node->isDebuggable = isDebuggable;
+    node->tokenid = tokenid;
 
     int ret = strcpy_s(node->name, len, processName);
     APPSPAWN_CHECK(ret == 0, free(node);
@@ -316,6 +318,7 @@ AppSpawningCtx *CreateAppSpawningCtx(void)
     property->pid = 0;
     property->state = APP_STATE_IDLE;
     property->allowDumpable = false;
+    property->spmRefAdded = 0;
     property->lockBundleRefAdded = false;  // Initialize flag to false
     property->lockPath = NULL;
     OH_ListInit(&property->node);

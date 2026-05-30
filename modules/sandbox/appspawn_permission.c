@@ -14,10 +14,14 @@
  */
 #include "appspawn_permission.h"
 #ifdef APPSPAWN_CLIENT
+#ifdef APPSPAWN_ENABLE_SPM
+#include "perm_setproc_c.h"
+#endif  //APPSPAWN_ENABLE_SPM
 #include "appspawn_mount_permission.h"
 #else
 #include "appspawn_sandbox.h"
-#endif
+#endif // APPSPAWN_CLIENT
+
 #include "appspawn_msg.h"
 #include "appspawn_utils.h"
 #include "securec.h"
@@ -73,6 +77,18 @@ int AddSandboxPermissionNode(const char *name, SandboxQueue *queue)
     int ret = strcpy_s(node->name, len, name);
     APPSPAWN_CHECK(ret == 0, free(node);
         return APPSPAWN_SYSTEM_ERROR, "Failed to copy name");
+#ifdef APPSPAWN_ENABLE_SPM
+    // Server 端（Modern/Normal sandbox 都有 opcode 字段）
+    uint32_t opcode = 0;
+    bool hasOpcode = TransferPermissionToOpcode(name, &opcode);
+    if (hasOpcode) {
+        node->opcode = opcode;
+        APPSPAWN_LOGV("Permission name %{public}s -> opcode %{public}u", name, opcode);
+    } else {
+        node->opcode = 0;
+        APPSPAWN_LOGW("Permission %{public}s has no opcode mapping", name);
+    }
+#endif  // APPSPAWN_ENABLE_SPM
     OH_ListAddWithOrder(&queue->front, &node->sandboxNode.node, PermissionNodeCompareProc);
 #endif
     return 0;

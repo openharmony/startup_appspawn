@@ -309,17 +309,24 @@ APPSPAWN_STATIC int SetXpmConfig(const AppSpawnMgr *content, const AppSpawningCt
     char *apiTargetVersionStr = GetAppPropertyExt(property, MSG_EXT_NAME_API_TARGET_VERSION, &len);
     int jitfortEnable = IsJitFortModeOn(property) ? 1 : 0;
     int idType = PROCESS_OWNERID_APP;
-    if (strcmp(provisionType, PROVISION_TYPE_DEBUG) == 0) {
+    uint32_t *xpmIdType = (uint32_t *)GetAppPropertyExt(property, MSG_EXT_NAME_XPM_ID_TYPE, &len);
+    if (xpmIdType != NULL && len == sizeof(uint32_t)) {
+        // Use idType from MSG_EXT_NAME_XPM_ID_TYPE ext TLV (set by SPM)
+        idType = (int)*xpmIdType;
+        APPSPAWN_LOGV("SetXpmConfig: Using idType=%{public}d from XPM_ID_TYPE ext TLV", idType);
+    } else if (strcmp(provisionType, PROVISION_TYPE_DEBUG) == 0) {
         idType = PROCESS_OWNERID_DEBUG;
     } else if (ownerInfo == NULL) {
         idType = PROCESS_OWNERID_COMPAT;
     } else if (CheckAppMsgFlagsSet(property, APP_FLAGS_TEMP_JIT)) {
         idType = PROCESS_OWNERID_APP_TEMP_ALLOW;
-#ifdef ALLOW_DEBUG_PLATFORM
-    } else if (GetAppSpawnMsgType(property) == MSG_SPAWN_NATIVE_PROCESS) {
-        idType = PROCESS_OWNERID_DEBUG_PLATFORM;
-#endif
     }
+#ifdef ALLOW_DEBUG_PLATFORM
+    bool enableNativeDebug = (strcmp(provisionType, PROVISION_TYPE_DEBUG) != 0) && (ownerInfo != NULL) &&
+        !CheckAppMsgFlagsSet(property, APP_FLAGS_TEMP_JIT) &&
+        (GetAppSpawnMsgType(property) == MSG_SPAWN_NATIVE_PROCESS);
+    APPSPAWN_ONLY_EXPER(enableNativeDebug, idType = PROCESS_OWNERID_DEBUG_PLATFORM);
+#endif
     struct XpmInitParam xpmInitParam = XPM_INIT_PARAM_DEFAULT;
     xpmInitParam.enableJitFort = jitfortEnable;
     xpmInitParam.idType = (uint32_t)idType;

@@ -45,6 +45,7 @@ declare_args() {
   appspawn_allow_dumpable = false
   appspawn_change_sched = true
   appspawn_sandbox_root_tmpfs = false
+  appspawn_enable_spm = true
 }
 
 if (!defined(global_parts_info) ||

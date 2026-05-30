@@ -22,7 +22,10 @@
 
 #include "appspawn.h"
 #include "appspawn_utils.h"
-#include "appspawn.h"
+
+// Forward declaration for permission queue pointer
+struct TagSandboxQueue;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -107,6 +110,7 @@ typedef struct AppSpawnContent {
     int enablePerfork;
     int currentUnlockUid;       /**< Current unlock operation UID */
 #endif
+    struct TagSandboxQueue *permissionQueue;  /**< Permission queue for SPM module */
     // system
     void (*runAppSpawn)(struct AppSpawnContent *content, int argc, char *const argv[]);
     void (*notifyResToParent)(struct AppSpawnContent *content, AppSpawnClient *client, int result);

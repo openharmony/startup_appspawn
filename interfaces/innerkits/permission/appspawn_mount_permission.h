@@ -38,6 +38,7 @@ typedef struct {
 typedef struct TagPermissionNode {
     SandboxMountNode sandboxNode;
     uint32_t permissionIndex;
+    uint32_t opcode;  // Permission opcode from access_token module
     char name[0];
 } SandboxPermissionNode;
 #endif

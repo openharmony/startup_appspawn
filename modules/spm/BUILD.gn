@@ -1,0 +1,77 @@
+# Copyright (c) 2026 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//base/startup/appspawn/appspawn.gni")
+import("//build/ohos.gni")
+
+# SPM module requires access_token external dependencies
+# Only compile when SPM is enabled AND NOT in independent compilation mode
+if (appspawn_enable_spm) {
+ohos_shared_library("libappspawn_spm") {
+  sources = [
+    "spm.c",
+    "spm_permission.c",
+    "tlv_builder.c",
+  ]
+
+  include_dirs = [
+    "${appspawn_path}/modules/spm",
+    "${appspawn_path}/common",
+    "${appspawn_path}/standard",
+    "${appspawn_path}/interfaces/innerkits/permission",
+    "${appspawn_path}/modules/module_engine/include",
+  ]
+  configs = [ "${appspawn_path}:appspawn_config" ]
+
+  defines = [
+    "APPSPAWN_ENABLE_SPM",
+    "APPSPAWN_CLIENT",  # Enable client-side structure definitions
+  ]
+
+  deps = [
+    "${appspawn_path}/modules/module_engine:libappspawn_module_engine",
+    "${appspawn_path}/util:libappspawn_util",
+  ]
+
+  external_deps = [
+    "bounds_checking_function:libsec_shared",
+    "access_token:libtoken_setproc",
+    "access_token:libpermsetproc_shared",
+    "hilog:libhilog",
+    "c_utils:utils",
+    "init:libbegetutil",
+    "cJSON:cjson",
+  ]
+  if (appspawn_report_event) {
+    include_dirs += [
+      "${appspawn_path}/modules/sysevent",
+    ]
+    defines += [ "APPSPAWN_HISYSEVENT" ]
+    external_deps += [ "hisysevent:libhisysevent" ]
+    sources += [
+      "${appspawn_path}/modules/sysevent/hisysevent_adapter.cpp",
+    ]
+  }
+
+  subsystem_name = "${subsystem_name}"
+  part_name = "${part_name}"
+  install_enable = true
+
+  if (target_cpu == "arm64" || target_cpu == "x86_64" ||
+      target_cpu == "riscv64") {
+    module_install_dir = "lib64/appspawn/common"
+  } else {
+    module_install_dir = "lib/appspawn/common"
+  }
+}
+}
