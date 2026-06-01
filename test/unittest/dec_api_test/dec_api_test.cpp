@@ -25,7 +25,10 @@
 #include <string>
 #include <vector>
 
+#include "appspawn_utils.h"
 #include "dec_api.h"
+#include "init_param.h"
+#include "parameter.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -39,11 +42,13 @@ public:
     {
         const TestInfo *info = UnitTest::GetInstance()->current_test_info();
         GTEST_LOG_(INFO) << info->test_suite_name() << "." << info->name() << " start";
+        SetParameter("const.startup.appspawn_support_nosharefs.enable", "true");
     }
     void TearDown()
     {
         const TestInfo *info = UnitTest::GetInstance()->current_test_info();
         GTEST_LOG_(INFO) << info->test_suite_name() << "." << info->name() << " end";
+        SetParameter("const.startup.appspawn_support_nosharefs.enable", "false");
     }
 };
 

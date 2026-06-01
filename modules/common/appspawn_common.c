@@ -46,6 +46,7 @@
 #include "appspawn_manager.h"
 #include "appspawn_silk.h"
 #include "appspawn_trace.h"
+#include "appspawn_utils.h"
 #include "init_param.h"
 #include "parameter.h"
 #include "securec.h"
@@ -128,7 +129,6 @@ static int SetKeepCapabilities(const AppSpawnMgr *content, const AppSpawningCtx 
     return 0;
 }
 
-#ifdef APPSPAWN_SUPPORT_NOSHAREFS
 static int SetAmbientCapability(int cap)
 {
     if (prctl(PR_CAP_AMBIENT, PR_CAP_AMBIENT_RAISE, cap, 0, 0)) {
@@ -140,6 +140,9 @@ static int SetAmbientCapability(int cap)
 
 static int SetAmbientCapabilities(const AppSpawningCtx *property)
 {
+    if (!IsNoShareFsEnable()) {
+        return 0;
+    }
     if (SetAmbientCapability(CAP_DAC_OVERRIDE) != 0) {
         APPSPAWN_LOGE("set ambient failed:%{public}d", CAP_DAC_OVERRIDE);
         return -1;
@@ -170,7 +173,6 @@ APPSPAWN_STATIC int SetAmbientCapabilitiesDebugServer(const AppSpawnMgr *content
 
     return 0;
 }
-#endif
 
 APPSPAWN_STATIC int SetCapabilities(const AppSpawnMgr *content, const AppSpawningCtx *property)
 {
@@ -188,19 +190,19 @@ APPSPAWN_STATIC int SetCapabilities(const AppSpawnMgr *content, const AppSpawnin
     // init inheritable permitted effective zero
 #ifdef GRAPHIC_PERMISSION_CHECK
     u_int64_t baseCaps = 0;
-#ifdef APPSPAWN_SUPPORT_NOSHAREFS
-    if (!CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX_TYPE) &&
+    if (IsNoShareFsEnable() &&
+ 	    !CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX_TYPE) &&
         (IsAppSpawnMode(content) || IsNativeSpawnMode(content))) {
         baseCaps = CAP_TO_MASK(CAP_DAC_OVERRIDE);
         baseCaps |= CheckAppMsgFlagsSet(property, APP_FLAGS_CUSTOM_SANDBOX) ? CAP_TO_MASK(CAP_KILL) : 0;
         baseCaps |= CheckAppMsgFlagsSet(property, APP_FLAGS_SET_CAPS_FOWNER) ? CAP_TO_MASK(CAP_FOWNER) : 0;
     }
-    if (CheckAppMsgFlagsSet(property, APP_FLAGS_DEBUGSERVER) &&
+    if (IsNoShareFsEnable() &&
+ 	    CheckAppMsgFlagsSet(property, APP_FLAGS_DEBUGSERVER) &&
         (IsAppSpawnMode(content) || IsNativeSpawnMode(content))) {
         baseCaps |= CAP_TO_MASK(CAP_KILL) | CAP_TO_MASK(CAP_SYS_PTRACE);
         APPSPAWN_LOGV("APP_FLAGS_DEBUGSERVER baseCaps %{public}"PRIu64"", baseCaps);
     }
-#endif
     const uint64_t inheriTable = baseCaps;
     const uint64_t permitted = baseCaps;
     const uint64_t effective = baseCaps;
@@ -218,13 +220,12 @@ APPSPAWN_STATIC int SetCapabilities(const AppSpawnMgr *content, const AppSpawnin
     isRet = capset(&capHeader, &capData[0]) != 0;
     APPSPAWN_CHECK(!isRet, return -errno, "Failed to capset errno: %{public}d", errno);
 
-#ifdef APPSPAWN_SUPPORT_NOSHAREFS
-    if (!CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX_TYPE) &&
+    if (IsNoShareFsEnable() &&
+ 	    !CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX_TYPE) &&
         (IsAppSpawnMode(content) || IsNativeSpawnMode(content))) {
         APPSPAWN_CHECK(SetAmbientCapabilities(property) == 0, return -1, "Failed to set ambient");
     }
     APPSPAWN_CHECK(SetAmbientCapabilitiesDebugServer(content, property) == 0, return -1, "Failed to set ambient");
-#endif
     return 0;
 }
 
@@ -684,6 +685,8 @@ static int SpawnLoadConfig(AppSpawnMgr *content)
     // init flags that will not change until next reboot
     content->flags |= CheckEnabled("const.security.developermode.state", "true") ? APP_DEVELOPER_MODE : 0;
     content->flags |= CheckEnabled("persist.security.jitfort.disabled", "true") ? 0 : APP_JITFORT_MODE;
+    bool noShareFs = CheckEnabled("const.startup.appspawn_support_nosharefs.enable", "true");
+    SetNoShareFsEnable(noShareFs);
     return 0;
 }
 

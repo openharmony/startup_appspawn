@@ -107,10 +107,6 @@ if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
       sources += [ "${appspawn_path}/modules/sysevent/hisysevent_adapter.cpp" ]
     }
 
-    if (appspawn_support_nosharefs) {
-      defines += [ "APPSPAWN_SUPPORT_NOSHAREFS" ]
-    }
-
     if (appspawn_sandbox_root_tmpfs) {
       defines += [ "APPSPAWN_SANDBOX_ROOT_TMPFS" ]
     }

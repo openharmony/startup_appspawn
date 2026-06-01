@@ -28,9 +28,6 @@ if (!defined(ohos_lite)) {
     ]
     sources = [ "${appspawn_path}/interfaces/innerkits/dec_util/src/dec_api.cpp" ]
     defines = []
-    if (appspawn_support_nosharefs) {
-      defines += [ "APPSPAWN_SUPPORT_NOSHAREFS" ]
-    }
 
     public_configs = [ ":exported_header_files" ]
     external_deps = [

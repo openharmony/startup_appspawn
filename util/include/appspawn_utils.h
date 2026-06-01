@@ -164,6 +164,8 @@ int CheckEnabled(const char *param, const char *value);
 int IsDeveloperModeOpen();
 void InitCommonEnv(void);
 int ConvertEnvValue(const char *srcEnv, char *dstEnv, int len);
+void SetNoShareFsEnable(bool enable);
+bool IsNoShareFsEnable(void);
 
 int EnableNewNetNamespace(void);
 
