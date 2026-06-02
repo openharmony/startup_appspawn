@@ -196,9 +196,8 @@ APPSPAWN_STATIC int32_t DoCheckpointProcess(AppSpawnMgr *content, AppSpawningCtx
     args.checkPointId = info->checkPointId;
 
     const char *name = info->imgName;
-    if (name == NULL || name[0] == '\0') {
-        name = GetBundleName(property);
-    }
+    APPSPAWN_ONLY_EXPER((name == NULL || name[0] == '\0'), name = GetBundleName(property));
+
     if (name == NULL || strcpy_s(args.name, CHECKPOINT_NAME_LEN, name) != 0) {
         APPSPAWN_LOGE("Failed to copy checkpoint name");
         return APPSPAWN_SYSTEM_ERROR;

@@ -377,6 +377,9 @@ APPSPAWN_STATIC int SetUidGid(const AppSpawnMgr *content, const AppSpawningCtx *
         APPSPAWN_CHECK_ONLY_LOGW(ret == 0, "SetUserId(%{public}s) failed", userIdStr);
     }
 
+    /* The setenv operation needs to be performed after the final setProceessName, This is because the Hilog module
+     * uses the HAP_DEBUGGABLE env as the basis for determining whether the application process name has been set.
+     */
     if ((CheckAppMsgFlagsSet(property, APP_FLAGS_DEBUGGABLE) || property->allowDumpable) &&
          IsDeveloperModeOn(property)) {
         setenv("HAP_DEBUGGABLE", "true", 1);
@@ -401,28 +404,22 @@ typedef struct TaskConfig {
 static void SetProcessQos(void)
 {
     int fd = open("/dev/qos_sched_ctrl", O_RDWR | O_CLOEXEC);
-    if (fd <= 0) {
-        APPSPAWN_LOGE("Failed to open qos_sched_ctrl file, errno: %{public}d", errno);
-        return;
-    }
+    APPSPAWN_CHECK(fd >= 0, return, "Failed to open qos_sched_ctrl file, errno: %{public}d", errno);
 
     pid_t currPid = getpid();
-    if (currPid <= 0) {
-        APPSPAWN_LOGE("Failed to get current pid, errno: %{public}d", errno);
-        close(fd);
-        return;
-    }
+    APPSPAWN_CHECK(currPid > 0, close(fd);
+        return, "Failed to get current pid, errno: %{public}d", errno);
+
     TaskConfig config = {
         .pid = currPid,
         .value = QOS_LEVEL
     };
 
-    if (ioctl(fd, QOS_CTRL_SET_QOS_PROC_THREAD, &config) < 0) {
-        APPSPAWN_LOGE("Failed to set qos proc thread, errno: %{public}d", errno);
-    }
+    APPSPAWN_CHECK(ioctl(fd, QOS_CTRL_SET_QOS_PROC_THREAD, &config) >= 0, close(fd);
+        return, "Failed to set qos proc thread, errno: %{public}d", errno);
+
     close(fd);
 }
-
 #endif
 
 APPSPAWN_STATIC int SetSchedPriority(const AppSpawnMgr *content, const AppSpawningCtx *property)

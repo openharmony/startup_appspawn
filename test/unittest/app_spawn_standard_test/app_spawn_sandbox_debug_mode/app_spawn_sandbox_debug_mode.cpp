@@ -109,6 +109,8 @@ HWTEST_F(DebugSandboxTest, ATC_DoUninstallDebugSandbox_ShouldNotRemoveSandbox_Wh
     cJSON *config = nullptr;
 
     SandboxCore::DoUninstallDebugSandbox(bundleList, config);
+    cJSON *mountPoints = cJSON_GetObjectItemCaseSensitive(config, SandboxCommonDef::g_mountPrefix);
+    EXPECT_EQ(mountPoints, nullptr);
 }
 
 /**

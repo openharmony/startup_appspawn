@@ -20,17 +20,6 @@
 extern "C" {
 #endif
 
-bool g_CreateTimerStatus = true;
-
-void SetCreateTimerStatus(bool status)
-{
-    if (status) {
-        g_CreateTimerStatus = true;
-    } else {
-        g_CreateTimerStatus = false;
-    }
-}
-
 int CreateHisysTimerLoop(AppSpawnHisyseventInfo *hisyseventInfo)
 {
     return 0;

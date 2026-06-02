@@ -120,6 +120,16 @@ public:
         processName_ = std::string(name);
     }
 
+    void SetAccessTokenId(uint64_t accessTokenIdEx)
+    {
+        accessTokenIdEx_ = accessTokenIdEx;
+    }
+
+    void SetAppOwnerId(const char *ownerId)
+    {
+        ownerId_ = std::string(ownerId);
+    }
+
     AppSpawnReqMsgHandle CreateMsg(AppSpawnClientHandle handle, uint32_t msgType = MSG_APP_SPAWN, int base = 0);
     AppSpawnReqMsgHandle CreateNWebMsg(AppSpawnClientHandle handle, uint32_t msgType = MSG_APP_SPAWN, int base = 0);
     AppSpawningCtx *GetAppProperty(AppSpawnClientHandle handle, AppSpawnReqMsgHandle reqHandle);
@@ -160,6 +170,8 @@ private:
     int32_t defaultTestBundleIndex_;
     uint32_t defaultMsgFlags_ = 0;
     int fdArg = -1;
+    uint64_t accessTokenIdEx_;
+    std::string ownerId_ = "";
     int renderIpcFd = -1;
     int renderSharedFd = -1;
     int renderCrashFd = -1;

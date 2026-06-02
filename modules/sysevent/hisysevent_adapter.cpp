@@ -77,26 +77,19 @@ constexpr const char* SPAWN_MOUNT_FULL = "SPAWN_MOUNT_FULL";
 constexpr const char* NAMESPACE_MOUNT_COUNT = "NAMESPACE_MOUNT_COUNT";
 constexpr const char* DEVICE_MOUNT_COUNT = "DEVICE_MOUNT_COUNT";
 
-// for Mount count
-constexpr const char* SPAWN_MOUNT_COUNT = "SPAWN_MOUNT_COUNT";
-constexpr const char* MAX_NAMESPACE_MOUNT_COUNT = "MAX_NAMESPACE_MOUNT_COUNT";
-constexpr const char* MAX_DEVICE_MOUNT_COUNT = "MAX_DEVICE_MOUNT_COUNT";
-constexpr const char* AVG_NAMESPACE_MOUNT_COUNT = "AVG_NAMESPACE_MOUNT_COUNT";
-constexpr const char* AVG_DEVICE_MOUNT_COUNT = "AVG_DEVICE_MOUNT_COUNT";
 }
 
 void AppSpawnHiSysEventWrite()
 {
     auto now = std::chrono::system_clock::now();
     int64_t timeStamp = std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch()).count();
-    int32_t sceneld = 0;
     int ret = HiSysEventWrite(PERFORMANCE_DOMAIN, CPU_SCENE_ENTRY,
         OHOS::HiviewDFX::HiSysEvent::EventType::BEHAVIOR,
         PACKAGE_NAME, APPSPAWN,
-        SCENE_ID, std::to_string(sceneld).c_str(),
+        SCENE_ID, "0",
         HAPPEN_TIME, timeStamp);
 
-    APPSPAWN_CHECK_ONLY_LOG(ret == 0, "HiSysEventWrite error,ret = %{public}d", ret);
+    APPSPAWN_CHECK_ONLY_LOG(ret == 0, "HiSysEventWrite error, ret: %{public}d", ret);
 }
 
 static void AddStatisticEvent(AppSpawnHisysevent *event, uint32_t duration)
@@ -115,7 +108,7 @@ static void AddStatisticEvent(AppSpawnHisysevent *event, uint32_t duration)
 
 void AddStatisticEventInfo(AppSpawnHisyseventInfo *hisyseventInfo, uint32_t duration, bool stage)
 {
-    APPSPAWN_CHECK(hisyseventInfo != nullptr, return, "fail to get AppSpawnHisyseventInfo");
+    APPSPAWN_CHECK(hisyseventInfo != nullptr, return, "Invalid hisysevent info");
     if (stage) {
         AddStatisticEvent(&hisyseventInfo->bootEvent, duration);
     } else {
@@ -129,10 +122,6 @@ static void InitStatisticEvent(AppSpawnHisysevent *event)
     event->maxDuration = 0;
     event->minDuration = UINT32_MAX;
     event->totalDuration = 0;
-    event->avgDeviceMountCount = 0;
-    event->avgNsMountCount = 0;
-    event->maxDeviceMountCount = 0;
-    event->maxNsMountCount = 0;
 }
 
 static void InitStatisticEventInfo(AppSpawnHisyseventInfo *appSpawnHisysInfo)
@@ -141,41 +130,54 @@ static void InitStatisticEventInfo(AppSpawnHisyseventInfo *appSpawnHisysInfo)
     InitStatisticEvent(&appSpawnHisysInfo->manualEvent);
 }
 
-static int StartTimer(LE_ProcessTimer processTimer, void *context, uint64_t timeout, uint64_t repeat)
+static int CreateHisysTimerLoop(AppSpawnHisyseventInfo *hisyseventInfo)
 {
+    APPSPAWN_CHECK(hisyseventInfo != nullptr, return -1, "Invalid hisysevent info");
     LoopHandle loop = LE_GetDefaultLoop();
-    APPSPAWN_CHECK(loop != nullptr, return -1, "getDeafult loop failed");
-
+    APPSPAWN_CHECK(loop != nullptr, return -1, "LE_GetDefaultLoop failed");
+ 
     TimerHandle timer = nullptr;
-    int ret = LE_CreateTimer(loop, &timer, processTimer, context);
-    APPSPAWN_CHECK(ret == 0, return ret, "LE_CreateTimer failed %{public}d", ret);
-    ret = LE_StartTimer(loop, timer, timeout, repeat);
-    APPSPAWN_CHECK(ret == 0, LE_StopTimer(LE_GetDefaultLoop(), timer);
-        return ret, "LE_StartTimer failed %{public}d", ret);
+    int ret = LE_CreateTimer(loop, &timer, ReportSpawnStatisticDuration, (void *)hisyseventInfo);
+    APPSPAWN_CHECK(ret == 0, return ret, "Failed to create hisys timer %{public}d", ret);
+
+    // start a timer to report event every 24h
+    ret = LE_StartTimer(loop, timer, DURATION_TIMER_TIMEOUT, INT64_MAX);
+    APPSPAWN_CHECK(ret == 0, LE_StopTimer(LE_GetDefaultLoop(), timer), "Failed to start hisys timer %{public}d", ret);
     return ret;
 }
 
-void ReportMountCount(AppSpawnHisyseventInfo *hisysEvent)
+AppSpawnHisyseventInfo *GetAppSpawnHisyseventInfo(void)
 {
-    int ret = HiSysEventWrite(HiSysEvent::Domain::APPSPAWN, SPAWN_MOUNT_COUNT,
-        HiSysEvent::EventType::STATISTIC,
-        MAX_NAMESPACE_MOUNT_COUNT, hisysEvent->manualEvent.maxNsMountCount,
-        MAX_DEVICE_MOUNT_COUNT, hisysEvent->manualEvent.maxDeviceMountCount,
-        AVG_NAMESPACE_MOUNT_COUNT, hisysEvent->manualEvent.avgNsMountCount,
-        AVG_DEVICE_MOUNT_COUNT, hisysEvent->manualEvent.avgDeviceMountCount);
+    AppSpawnHisyseventInfo *hisyseventInfo =
+        static_cast<AppSpawnHisyseventInfo *>(calloc(1, sizeof(AppSpawnHisyseventInfo)));
+    APPSPAWN_CHECK(hisyseventInfo != nullptr, return nullptr, "Failed to calloc for hisyseventInfo %{public}d", errno);
 
-    APPSPAWN_CHECK_ONLY_LOG(ret == 0, "ReportMountCount error, ret: %{public}d", ret);
+    InitStatisticEventInfo(hisyseventInfo);
+    return hisyseventInfo;
 }
 
-static void UpdateMountCountInfo(const TimerHandle taskHandle, void *content)
+void DeleteHisyseventInfo(AppSpawnHisyseventInfo *hisyseventInfo)
 {
-    APPSPAWN_LOGI("Start Update Mount Behavior info");
-    AppSpawnHisyseventInfo *hisysEvent = static_cast<AppSpawnHisyseventInfo *>(content);
-    APPSPAWN_CHECK(hisysEvent != nullptr, return, "invalid hisys info");
-    // get mountinfo from proc
-    // update mount info
-    ReportMountCount(hisysEvent);
+    APPSPAWN_CHECK_ONLY_EXPER(hisyseventInfo != nullptr, return);
+    free(hisyseventInfo);
+    hisyseventInfo = nullptr;
 }
+
+AppSpawnHisyseventInfo *InitHisyseventTimer(void)
+{
+    AppSpawnHisyseventInfo *hisyseventInfo = GetAppSpawnHisyseventInfo();
+    APPSPAWN_CHECK(hisyseventInfo != nullptr, return nullptr, "Failed to get hisysevent info");
+
+    int ret = CreateHisysTimerLoop(hisyseventInfo);
+    if (ret != 0) {
+        DeleteHisyseventInfo(hisyseventInfo);
+        hisyseventInfo = nullptr;
+        APPSPAWN_LOGE("Failed to create hisys timer loop, ret: %{public}d", ret);
+    }
+
+    return hisyseventInfo;
+}
+
 void ReportSpawnProcessDuration(AppSpawnHisysevent *hisysevent, const char* stage)
 {
     int ret = HiSysEventWrite(HiSysEvent::Domain::APPSPAWN, SPAWN_PROCESS_DURATION,
@@ -198,45 +200,6 @@ void ReportSpawnStatisticDuration(const TimerHandle taskHandle, void *content)
     InitStatisticEventInfo(hisyseventInfo);
 }
 
-APPSPAWN_STATIC int CreateHisysTimerLoop(AppSpawnHisyseventInfo *hisyseventInfo)
-{
-    APPSPAWN_CHECK(hisyseventInfo != nullptr, return -1, "invalid hisysevent info");
-    int ret = StartTimer(ReportSpawnStatisticDuration, (void *)hisyseventInfo, DURATION_TIMER_TIMEOUT, INT64_MAX);
-    APPSPAWN_CHECK(ret == 0, return -1, "fail to start statistic timer");
-    ret = StartTimer(UpdateMountCountInfo, (void *)hisyseventInfo, MOUNT_TIMER_TIMEOUT, INT64_MAX);
-    APPSPAWN_CHECK(ret == 0, return -1, "fail to start mount timer");
-    return 0;
-}
-
-AppSpawnHisyseventInfo *GetAppSpawnHisyseventInfo(void)
-{
-    AppSpawnHisyseventInfo *hisyseventInfo =
-        static_cast<AppSpawnHisyseventInfo *>(calloc(1, sizeof(AppSpawnHisyseventInfo)));
-    APPSPAWN_CHECK(hisyseventInfo != nullptr, return nullptr, "fail to alloc memory for hisyseventInfo");
-    InitStatisticEventInfo(hisyseventInfo);
-    return hisyseventInfo;
-}
-
-void DeleteHisyseventInfo(AppSpawnHisyseventInfo *hisyseventInfo)
-{
-    APPSPAWN_CHECK_ONLY_EXPER(hisyseventInfo != nullptr, return);
-    free(hisyseventInfo);
-    hisyseventInfo = nullptr;
-}
-
-AppSpawnHisyseventInfo *InitHisyseventTimer(void)
-{
-    AppSpawnHisyseventInfo *hisyseventInfo = GetAppSpawnHisyseventInfo();
-    APPSPAWN_CHECK(hisyseventInfo != nullptr, return nullptr, "fail to init hisyseventInfo");
-    int ret = CreateHisysTimerLoop(hisyseventInfo);
-    if (ret != 0) {
-        DeleteHisyseventInfo(hisyseventInfo);
-        hisyseventInfo = nullptr;
-        APPSPAWN_LOGE("fail to create hisys timer loop, ret: %{public}d", ret);
-    }
-    return hisyseventInfo;
-}
-
 void ReportSpawnChildProcessFail(const char* processName, int32_t errorCode, int32_t spawnResult)
 {
     if (spawnResult == APPSPAWN_SANDBOX_MOUNT_FAIL) {
@@ -247,9 +210,8 @@ void ReportSpawnChildProcessFail(const char* processName, int32_t errorCode, int
         PROCESS_NAME, processName,
         ERROR_CODE, errorCode,
         SPAWN_RESULT, spawnResult);
-    if (ret != 0) {
-        APPSPAWN_LOGE("ReportSpawnChildProcessFail error, ret: %{public}d", ret);
-    }
+
+    APPSPAWN_CHECK_ONLY_LOG(ret == 0, "ReportSpawnChildProcessFail error, ret: %{public}d", ret);
 }
 
 void ReportMountFail(const char* bundleName, const char* srcPath, const char* targetPath,
@@ -266,9 +228,8 @@ void ReportMountFail(const char* bundleName, const char* srcPath, const char* ta
         SRC_PATH, srcPath,
         TARGET_PATH, targetPath,
         SPAWN_RESULT, spawnResult);
-    if (ret != 0) {
-        APPSPAWN_LOGE("ReportMountFail error, ret: %{public}d", ret);
-    }
+
+    APPSPAWN_CHECK_ONLY_LOG(ret == 0, "ReportMountFail error, ret: %{public}d", ret);
 }
 
 void ReportKeyEvent(const char *eventName)
@@ -276,26 +237,26 @@ void ReportKeyEvent(const char *eventName)
     int ret = HiSysEventWrite(HiSysEvent::Domain::APPSPAWN, SPAWN_KEY_EVENT,
         HiSysEvent::EventType::BEHAVIOR,
         EVENT_NAME, eventName);
-    if (ret != 0) {
-        APPSPAWN_LOGE("ReportKeyEvent error, ret: %{public}d", ret);
-    }
+
+    APPSPAWN_CHECK_ONLY_LOG(ret == 0, "ReportKeyEvent error, ret: %{public}d", ret);
 }
 
 void ReportAbnormalDuration(const char* scene, uint64_t duration)
 {
-    APPSPAWN_LOGI("ReportAbnormalDuration %{public}d with %{public}s  %{public}" PRId64 " us",
+    APPSPAWN_LOGI("ReportAbnormalDuration %{public}d with %{public}s %{public}" PRId64 " us",
         getpid(), scene, duration);
     int ret = HiSysEventWrite(HiSysEvent::Domain::APPSPAWN, SPAWN_ABNORMAL_DURATION,
         HiSysEvent::EventType::BEHAVIOR,
         SCENE_NAME, scene,
         DURATION, duration);
-    if (ret != 0) {
-        APPSPAWN_LOGE("ReportAbnormalDuration error, ret: %{public}d", ret);
-    }
+
+    APPSPAWN_CHECK_ONLY_LOG(ret == 0, "ReportAbnormalDuration error, ret: %{public}d", ret);
 }
 
 void ReportMountFull(int32_t errCode, int32_t nsMountCount, int32_t deviceMountCount, int32_t spawnResult)
 {
+    APPSPAWN_LOGI("ReportMountFull %{public}d %{public}d %{public}d %{public}d", errCode, nsMountCount,
+        deviceMountCount, spawnResult);
     int ret = HiSysEventWrite(HiSysEvent::Domain::APPSPAWN, SPAWN_MOUNT_FULL,
         HiSysEvent::EventType::FAULT,
         ERROR_CODE, errCode,
@@ -306,8 +267,7 @@ void ReportMountFull(int32_t errCode, int32_t nsMountCount, int32_t deviceMountC
     APPSPAWN_CHECK_ONLY_LOG(ret == 0, "ReportMountFull error, ret: %{public}d", ret);
 }
 
-void ReportUnlockMountResult(int32_t uid, int32_t totalCount,
-    int32_t successCount, int32_t failCount, int64_t duration)
+void ReportUnlockMountResult(int32_t uid, int32_t totalCount, int32_t successCount, int32_t failCount, int64_t duration)
 {
     int ret = HiSysEventWrite(HiSysEvent::Domain::APPSPAWN, UNLOCK_MOUNT_ALL_DONE,
         HiSysEvent::EventType::STATISTIC,
@@ -316,9 +276,8 @@ void ReportUnlockMountResult(int32_t uid, int32_t totalCount,
         SUCCESS_COUNT, successCount,
         FAIL_COUNT, failCount,
         DURATION, duration);
-    if (ret != 0) {
-        APPSPAWN_LOGE("ReportUnlockMountResult error, ret: %{public}d", ret);
-    }
+
+    APPSPAWN_CHECK_ONLY_LOG(ret == 0, "ReportUnlockMountResult error, ret: %{public}d", ret);
 }
 
 void ReportUnlockMountAppFail(int32_t uid, const char *bundleName,
@@ -331,9 +290,8 @@ void ReportUnlockMountAppFail(int32_t uid, const char *bundleName,
         SRC_PATH, srcPath,
         TARGET_PATH, destPath,
         ERROR_CODE, errorCode);
-    if (ret != 0) {
-        APPSPAWN_LOGE("ReportUnlockMountAppFail error, ret: %{public}d", ret);
-    }
+
+    APPSPAWN_CHECK_ONLY_LOG(ret == 0, "ReportUnlockMountAppFail error, ret: %{public}d", ret);
 }
 
 static bool CheckNeedUpdateReport()
@@ -367,42 +325,79 @@ static void UpdateLastReportTime()
     APPSPAWN_CHECK_ONLY_LOG(ret == 0, "WriteMountInfo set mountinfo param failed %{public}d", ret);
 }
 
+APPSPAWN_STATIC uint32_t GetMountCountForPid(pid_t pid)
+{
+    std::string path = "/proc/" + std::to_string(pid) + "/mountcount";
+    FILE *fp = fopen(path.c_str(), "r");
+    APPSPAWN_CHECK(fp != nullptr, return 0, "Failed to fopen %{public}s errno %{public}d", path.c_str(), errno);
+
+    uint32_t count = 0;
+    APPSPAWN_ONLY_EXPER(fscanf_s(fp, "%u", &count) != 1, count = 0);
+
+    (void)fclose(fp);
+    return count;
+}
+
+APPSPAWN_STATIC uint32_t GetAllMountCount(void)
+{
+    FILE *fp = fopen("/proc/sys/fs/mount-nr", "r");
+    APPSPAWN_CHECK(fp != nullptr, return 0, "Failed to fopen /proc/sys/fs/mount-nr errno %{public}d", errno);
+
+    uint32_t count = 0;
+    APPSPAWN_ONLY_EXPER(fscanf_s(fp, "%u", &count) != 1, count = 0);
+
+    (void)fclose(fp);
+    return count;
+}
+
+APPSPAWN_STATIC void WriteMountInfoToFile(pid_t pid, int appCount, uint32_t mainNsMountCount, uint32_t allMountCount)
+{
+    auto startTime = std::chrono::steady_clock::now();
+    std::ofstream logFile("/data/service/el1/startup/log/mountinfo.log");
+    APPSPAWN_CHECK(logFile.is_open(), return, "WriteMountInfo open mountinfo.log failed %{public}d", errno);
+
+    logFile << "==================== Mount Point Full Report ====================\n";
+    logFile << "All App Count: " << appCount << '\n';
+    logFile << "MainNs Mount Count: " << mainNsMountCount << '\n';
+    logFile << "All Mount Count: " << allMountCount << '\n';
+    logFile << '\n';
+
+    std::ifstream mountinfoFile("/proc/" + std::to_string(pid) + "/mountinfo");
+    APPSPAWN_CHECK(mountinfoFile.is_open(), logFile.close();
+        return, "WriteMountInfo open mountinfo failed %{public}d", errno);
+    std::string line;
+    while (std::getline(mountinfoFile, line)) {
+        logFile << line << '\n';
+    }
+    mountinfoFile.close();
+
+    auto endTime = std::chrono::steady_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count();
+    APPSPAWN_LOGI("WriteMountInfo completed time use %{public}lld ms", duration);
+
+    logFile << "==================== End of Report time use " << duration << " ms ====================\n";
+    logFile.close();
+}
+
 void ReportMountFullHisysevent(int32_t errCode)
 {
     static bool isReport = false;
     APPSPAWN_CHECK_DUMPI(!isReport, return, "WriteMountInfo already report");
 
+    AppSpawnMgr *mgr = GetAppSpawnMgr();
+    APPSPAWN_CHECK(mgr != nullptr, return, "WriteMountInfo invalid mgr");
+    APPSPAWN_CHECK_DUMPI(IsAppSpawnMode(mgr), return, "WriteMountInfo not appspawn mode");
+
     bool needReport = CheckNeedUpdateReport();
     APPSPAWN_CHECK_DUMPI(needReport, return, "WriteMountInfo not need report");
 
-    AppSpawnMgr *mgr = GetAppSpawnMgr();
-    APPSPAWN_CHECK(mgr != nullptr, return, "WriteMountInfo invalid mgr");
+    int appCount = OH_ListGetCnt(&mgr->appQueue);
+    uint32_t mainNsMountCount = GetMountCountForPid(mgr->servicePid);
+    uint32_t allMountCount = GetAllMountCount();
 
-    int pid = mgr->servicePid;
-    std::stringstream ss;
-    ss << "/proc/" << pid << "/mountinfo";
-    std::string mountinfoPath = ss.str();
+    WriteMountInfoToFile(mgr->servicePid, appCount, mainNsMountCount, allMountCount);
+    ReportMountFull(errCode, mainNsMountCount, allMountCount, appCount);
 
-    std::ifstream mountinfoFile(mountinfoPath);
-    APPSPAWN_CHECK(mountinfoFile.is_open(), return, "WriteMountInfo open mountinfo failed %{public}d", errno);
-
-    auto startTime = std::chrono::steady_clock::now();
-    std::ofstream logFile("/data/service/el1/startup/log/mountinfo.log");
-    APPSPAWN_CHECK(logFile.is_open(), mountinfoFile.close();
-        return, "WriteMountInfo open logfile failed %{public}d", errno);
-
-    std::string buffer;
-    while (std::getline(mountinfoFile, buffer)) {
-        logFile << buffer << std::endl;
-        logFile.flush();
-    }
-    auto endTime = std::chrono::steady_clock::now();
-    auto writeDuration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
-
-    ReportMountFull(getpid(), static_cast<int32_t>(writeDuration.count()), OH_ListGetCnt(&mgr->appQueue),
-        errCode);
     isReport = true;
     UpdateLastReportTime();
-    mountinfoFile.close();
-    logFile.close();
 }
