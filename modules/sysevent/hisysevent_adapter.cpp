@@ -135,7 +135,7 @@ static int CreateHisysTimerLoop(AppSpawnHisyseventInfo *hisyseventInfo)
     APPSPAWN_CHECK(hisyseventInfo != nullptr, return -1, "Invalid hisysevent info");
     LoopHandle loop = LE_GetDefaultLoop();
     APPSPAWN_CHECK(loop != nullptr, return -1, "LE_GetDefaultLoop failed");
- 
+
     TimerHandle timer = nullptr;
     int ret = LE_CreateTimer(loop, &timer, ReportSpawnStatisticDuration, (void *)hisyseventInfo);
     APPSPAWN_CHECK(ret == 0, return ret, "Failed to create hisys timer %{public}d", ret);
@@ -214,8 +214,7 @@ void ReportSpawnChildProcessFail(const char* processName, int32_t errorCode, int
     APPSPAWN_CHECK_ONLY_LOG(ret == 0, "ReportSpawnChildProcessFail error, ret: %{public}d", ret);
 }
 
-void ReportMountFail(const char* bundleName, const char* srcPath, const char* targetPath,
-    int32_t spawnResult)
+void ReportMountFail(const char* bundleName, const char* srcPath, const char* targetPath, int32_t spawnResult)
 {
     if (srcPath == nullptr || (strstr(srcPath, "data/app/el1/") == nullptr &&
         strstr(srcPath, "data/app/el2/") == nullptr)) {
@@ -297,10 +296,8 @@ void ReportUnlockMountAppFail(int32_t uid, const char *bundleName,
 static bool CheckNeedUpdateReport()
 {
     char buffer[PARAM_BUFFER_LEN] = {0};
-    uint32_t buffSize = sizeof(buffer);
-
-    int ret = SystemGetParameter(PARAM_APPSPAWN_TIME_MOUNTINFO, buffer, &buffSize);
-    APPSPAWN_CHECK(ret == 0, return true, "WriteMountInfo not exist param, should writeMountInfo %{public}d", ret);
+    int ret = GetParameter(PARAM_APPSPAWN_TIME_MOUNTINFO, "0", buffer, PARAM_BUFFER_LEN);
+    APPSPAWN_CHECK_LOGW(ret == 0, return true, "WriteMountInfo not exist param, should report %{public}d", ret);
 
     long lastSecs = strtol(buffer, nullptr, NUM_DEC);
     APPSPAWN_CHECK(lastSecs > 0, return true, "WriteMountInfo last mount secs invalid");
@@ -320,7 +317,7 @@ static void UpdateLastReportTime()
 
     char buffer[PARAM_BUFFER_LEN] = {0};
     int ret = snprintf_s(buffer, sizeof(buffer), sizeof(buffer) - 1, "%ld", ts.tv_sec);
-    APPSPAWN_CHECK(ret > 0, return, "build mountTime failed");
+    APPSPAWN_CHECK(ret > 0, return, "Failed to build mountTime errno %{public}d", errno);
     ret = SetParameter(PARAM_APPSPAWN_TIME_MOUNTINFO, buffer);
     APPSPAWN_CHECK_ONLY_LOG(ret == 0, "WriteMountInfo set mountinfo param failed %{public}d", ret);
 }

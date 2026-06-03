@@ -122,7 +122,7 @@ typedef struct {
     char bundleName[0];  // process name
 } AppSpawnMsgBundleInfo;
 
- /**
+/**
  * @brief checkpoint信息结构体
  */
 #define APP_CHECKPOINT_NAME_LEN 256

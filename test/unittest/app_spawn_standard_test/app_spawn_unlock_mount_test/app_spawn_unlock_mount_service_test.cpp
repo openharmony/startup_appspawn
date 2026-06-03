@@ -28,6 +28,7 @@
  *   - HandlePreforkUnlockMsg (TC-104 ~ TC-105)
  *   - PreforkChildLoop (TC-106)
  *   - StopAppSpawn / HandleDiedPid / ProcessAppSpawnLockStatusMsg (TC-107~TC-113: not covered, static functions)
+ *
  * Mock Strategy:
  *   - --wrap=ProcessExit: Intercept ProcessExit() calls via ldflags
  *   - --wrap=fork: Control fork() return value for testing parent/child paths

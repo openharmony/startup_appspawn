@@ -357,7 +357,7 @@ APPSPAWN_STATIC int SetUidGid(const AppSpawnMgr *content, const AppSpawningCtx *
         APPSPAWN_CHECK_ONLY_LOGW(ret == 0, "SetUserId(%{public}s) failed", userIdStr);
     }
 
-    /* The setenv operation needs to be performed after the final setProceessName, This is because the Hilog module
+    /* The setenv operation needs to be performed after the final SetProcessName. This is because the HiLog module
      * uses the HAP_DEBUGGABLE env as the basis for determining whether the application process name has been set.
      */
     if ((CheckAppMsgFlagsSet(property, APP_FLAGS_DEBUGGABLE) || property->allowDumpable) &&
