@@ -618,10 +618,6 @@ if (!defined(ohos_lite)) {
       defines += [ "APPSPAWN_SANDBOX_NEW" ]
     }
 
-    if (appspawn_custom_sandbox == true) {
-      sources += [ "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_isolate_test.cpp" ]
-    }
-
     configs = [ "${appspawn_path}:appspawn_config" ]
     external_deps = [
       "ability_base:want",
