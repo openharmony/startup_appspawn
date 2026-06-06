@@ -146,7 +146,8 @@ static bool IsHnpInstallEnable()
     return false;
 }
 
-int NativeInstallHnp(const char *userId, const char *hnpRootPath,  const HapInfo *hapInfo, int installOptions)
+int NativeInstallHnp(const char *userId, const char *hnpRootPath, const HapInfo *hapInfo,
+    int installOptions, int32_t sessionId)
 {
     char *argv[MAX_ARGV_NUM] = {0};
     int index = 0;
@@ -160,8 +161,8 @@ int NativeInstallHnp(const char *userId, const char *hnpRootPath,  const HapInfo
     }
 
     HNPAPI_LOG("\r\n [HNP API] native package install! userId=%{public}s, hap path=%{public}s, sys abi=%{public}s, "
-        "hnp root path=%{public}s, package name=%{public}s install options=%{public}d\r\n", userId, hapInfo->hapPath,
-        hapInfo->abi, hnpRootPath, hapInfo->packageName, installOptions);
+        "hnp root path=%{public}s, package name=%{public}s, sessionId=%{public}d, install options=%{public}d\r\n",
+        userId, hapInfo->hapPath, hapInfo->abi, hnpRootPath, hapInfo->packageName, sessionId, installOptions);
 
     argv[index++] = "hnp";
     argv[index++] = "install";
@@ -175,9 +176,19 @@ int NativeInstallHnp(const char *userId, const char *hnpRootPath,  const HapInfo
     argv[index++] = (char *)hapInfo->hapPath;
     argv[index++] = "-a";
     argv[index++] = (char *)hapInfo->abi;
-
     argv[index++] = "-I";
     argv[index++] = (char *)hapInfo->appIdentifier;
+
+    if (sessionId > 0) {
+        HNPAPI_ERROR_CHECK(index < MAX_ARGV_NUM, return HNP_API_ERRNO_TOO_MANY_PARAM,
+            "\r\n [HNP API] param count outof bound!\r\n");
+        char sessionIdStr[SESSIONID_BUFFER_LEN] = {0};
+        if (snprintf_s(sessionIdStr, SESSIONID_BUFFER_LEN, SESSIONID_BUFFER_LEN - 1, "%d", sessionId) < 0) {
+            return HNP_API_ERRNO_PARAM_INVALID;
+        }
+        argv[index++] = "-x";
+        argv[index++] = sessionIdStr;
+    }
 
     // 传递需要独立签名的hnp信息 相对路径 private/xx.hnp  public/xx.hnp
     if (hapInfo->independentSignHnpPaths != NULL && hapInfo->count > 0) {
