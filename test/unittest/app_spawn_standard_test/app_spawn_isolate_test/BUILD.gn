@@ -65,6 +65,7 @@ if (!defined(ohos_lite)) {
     # Dependent code sources
     sources += [
       "${appspawn_path}/modules/modulemgr/appspawn_modulemgr.c",
+      "${appspawn_path}/modules/sandbox/appspawn_permission.c",
       "${appspawn_path}/util/src/appspawn_utils.c",
       "${appspawn_path}/util/src/appspawndf_utils.cpp",
       "${appspawn_path}/standard/appspawn_appmgr.c",
@@ -73,7 +74,6 @@ if (!defined(ohos_lite)) {
       "${appspawn_innerkits_path}/client/appspawn_client.c",
       "${appspawn_innerkits_path}/client/appspawn_msg.c",
       "${appspawn_innerkits_path}/permission/appspawn_mount_permission.c",
-      "${appspawn_path}/modules/sandbox/appspawn_permission.c",
     ]
 
     # Test specific sources

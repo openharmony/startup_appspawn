@@ -2234,22 +2234,22 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_SetCapabilities_06, TestSize.Level0)
 HWTEST_F(AppSpawnCommonTest, App_Spawn_SetSchedPriority_01, TestSize.Level0)
 {
     AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
-    EXPECT_NE(mgr, nullptr);
+    ASSERT_NE(mgr, nullptr);
     int ret = SetSchedPriority(mgr, nullptr);
     DeleteAppSpawnMgr(mgr);
-    ASSERT_EQ(ret, 0);
+    EXPECT_EQ(ret, 0);
 
     mgr = CreateAppSpawnMgr(MODE_FOR_HYBRID_SPAWN);
-    EXPECT_NE(mgr, nullptr);
+    ASSERT_NE(mgr, nullptr);
     ret = SetSchedPriority(mgr, nullptr);
     DeleteAppSpawnMgr(mgr);
-    ASSERT_EQ(ret, 0);
+    EXPECT_EQ(ret, 0);
 
     mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
-    EXPECT_NE(mgr, nullptr);
+    ASSERT_NE(mgr, nullptr);
     ret = SetSchedPriority(mgr, nullptr);
     DeleteAppSpawnMgr(mgr);
-    ASSERT_EQ(ret, 0);
+    EXPECT_EQ(ret, 0);
 }
 
 HWTEST_F(AppSpawnCommonTest, App_Spawn_SetUidGid_001, TestSize.Level0)

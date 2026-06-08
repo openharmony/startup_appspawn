@@ -28,8 +28,15 @@
 #define ISOLATE_PATH_NUM 3
 #define ISOLATE_PATH_CAPACITY 16
 #define HM_DEC_IOCTL_BASE 's'
+#define HM_ADD_PATH_MARK 11
 #define HM_ADD_ISOLATE_DIR 16
 #define ADD_ISOLATE_DIR_CMD _IOWR(HM_DEC_IOCTL_BASE, HM_ADD_ISOLATE_DIR, IsolateDirInfo)
+#define ADD_PATH_MARK_CMD _IOWR(HM_DEC_IOCTL_BASE, HM_ADD_PATH_MARK, MarkPathInfo)
+
+#define SEC_SANDBOX_PATH_TYPE (1 << 3)
+
+#define MARK_PATH_INFO_RESERVED_SIZE 7
+#define MARK_ENABLE_RECURSIVE 1
 
 typedef struct {
     char *path;
@@ -46,15 +53,6 @@ typedef struct {
     const char *suffix;
 } IsolateDirAffix;
 
-static const IsolateDirAffix g_dirAffix[ISOLATE_PATH_NUM] = {{"/data/app/el2", "base"},
-                                                             {"/storage/media", "local/files/Docs"},
-                                                             {"/data/app/el1", "base"}};
-
-#define HM_ADD_PATH_MARK 11
-#define MARK_PATH_INFO_RESERVED_SIZE 7
-#define SEC_SANDBOX_PATH_TYPE (1 << 3)
-#define MARK_ENABLE_RECURSIVE 1
-#define ADD_PATH_MARK_CMD _IOWR(HM_DEC_IOCTL_BASE, HM_ADD_PATH_MARK, MarkPathInfo)
 typedef struct MarkPathInfo {
     char *path;
     uint32_t flags;
@@ -62,6 +60,9 @@ typedef struct MarkPathInfo {
     uint32_t reserved[MARK_PATH_INFO_RESERVED_SIZE]; // 28-bytes reserved field
 } MarkPathInfo;
 
+static const IsolateDirAffix g_dirAffix[ISOLATE_PATH_NUM] = {{"/data/app/el2", "base"},
+                                                             {"/storage/media", "local/files/Docs"},
+                                                             {"/data/app/el1", "base"}};
 static void FreeIsolatePath(IsolateDirInfo *isolateDirInfo)
 {
     for (int i = 0; i < isolateDirInfo->dirNum; ++i) {
