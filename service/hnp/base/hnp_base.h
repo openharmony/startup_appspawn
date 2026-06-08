@@ -370,7 +370,8 @@ int HnpPathFileCount(const char *path);
 char *HnpCurrentVersionGet(const char *name, int uid);
 
 int DoRebuildHnpInfoCfg(int uid);
-typedef int32_t (*ProcessHnpInstall)(BssString bundleName, BssString appIdentifier, int32_t userId, HnpFiles hnpFiles);
+typedef int32_t (*ProcessHnpInstall)(BssString bundleName, BssString appIdentifier, int32_t userId,
+    int32_t sessionId, HnpFiles hnpFiles);
 
 typedef int32_t (*ProcessHnpUninstall)(BssString bundleName, int32_t userId);
 

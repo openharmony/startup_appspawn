@@ -56,6 +56,25 @@ static int HnpInstallerUidGet(const char *uidIn, int *uidOut)
     return 0;
 }
 
+static int HnpInstallerSessionIdGet(const char *sessionIdIn, int32_t *sessionIdOut)
+{
+    HNP_ERROR_CHECK(sessionIdIn != NULL && sessionIdOut != NULL, return HNP_ERRNO_PARAM_INVALID, "invalid param");
+
+    for (int index = 0; sessionIdIn[index] != '\0'; index++) {
+        if (!isdigit(sessionIdIn[index])) {
+            return HNP_ERRNO_INSTALLER_ARGV_SESSIONID_INVALID;
+        }
+    }
+
+    errno = 0;
+    long temp = strtol(sessionIdIn, NULL, HNP_BASE_DEC);
+    HNP_ERROR_CHECK(!(errno == ERANGE || temp < INT32_MIN || temp > INT32_MAX),
+        return HNP_ERRNO_PARAM_INVALID, "invalid sessionId");
+
+    *sessionIdOut = temp;
+    return 0;
+}
+
 static int HnpGenerateSoftLinkAllByJson(const char *installPath, const char *dstPath, HnpCfgInfo *hnpCfg,
     bool canRecovery, bool isPublic)
 {
@@ -897,7 +916,7 @@ static int BssInstall(HnpSignMapInfo *hnpSignMapInfos, int count, HapInstallInfo
     void *handle = dlopen(BIN_SEC_PATH, RTLD_NOW | RTLD_LOCAL);
     HNP_ERROR_CHECK(handle != NULL, return HNP_ERRNO_DL_FAILED,
         "Failed to dlopen errno:%{public}s", dlerror());
-    
+
     ProcessHnpInstall bssInstall = (ProcessHnpInstall)dlsym(handle, "ProcessHnpInstall");
     HNP_ERROR_CHECK(bssInstall != NULL, dlclose(handle);
         return HNP_ERRNO_BSS_ERROR, "ProcessHnpInstall not found errno:%{public}s", dlerror());
@@ -935,7 +954,7 @@ static int BssInstall(HnpSignMapInfo *hnpSignMapInfos, int count, HapInstallInfo
             .len= strlen(installInfo->appIdentifier)
         };
         //调用bss接口
-        ret = bssInstall(bundleName, appIdentifier, installInfo->uid, files);
+        ret = bssInstall(bundleName, appIdentifier, installInfo->uid, installInfo->sessionId, files);
         HNP_LOGI("bss intall finish %{public}d", ret);
     } while (0);
     dlclose(handle);
@@ -1043,16 +1062,13 @@ static int ParseInstallArgs(int argc, char *argv[], HapInstallInfo *installInfo)
     int ch;
 
     optind = 1; // 从头开始遍历参数
-    while ((ch = getopt_long(argc, argv, "hu:p:i:s:a:S:I:f", NULL, NULL)) != -1) {
+    while ((ch = getopt_long(argc, argv, "hu:p:i:s:a:S:I:x:f", NULL, NULL)) != -1) {
         switch (ch) {
             case 'h' :
                 return HNP_ERRNO_OPERATOR_ARGV_MISS;
             case 'u': // 用户id
                 ret = HnpInstallerUidGet(optarg, &installInfo->uid);
-                if (ret != 0) {
-                    HNP_LOGE("hnp install argv uid[%{public}s] invalid", optarg);
-                    return ret;
-                }
+                HNP_ERROR_CHECK(ret == 0, return ret, "hnp install argv uid[%{public}s] invalid", optarg);
                 break;
             case 'p': // app名称
                 installInfo->hapPackageName = (char *)optarg;
@@ -1075,6 +1091,10 @@ static int ParseInstallArgs(int argc, char *argv[], HapInstallInfo *installInfo)
                 break;
             case 'I':
                 installInfo->appIdentifier = (char*)optarg;
+                break;
+            case 'x':
+                ret = HnpInstallerSessionIdGet(optarg, &installInfo->sessionId);
+                HNP_ERROR_CHECK(ret == 0, return ret, "hnp install argv sessionId[%{public}s] invalid", optarg);
                 break;
             default:
                 break;
@@ -1116,6 +1136,7 @@ int HnpCmdInstall(int argc, char *argv[])
     installInfo->uid = -1;
     installInfo->signHnpPaths = NULL;
     installInfo->signHnpSize = 0;
+    installInfo->sessionId = -1;
     // 解析参数并生成安装信息
     int ret = ParseInstallArgs(argc, argv, installInfo);
     if (ret != 0) {

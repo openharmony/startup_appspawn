@@ -39,6 +39,7 @@ typedef enum {
 #define HNP_API_ERRNO_BASE 0x2000
 #define FD_BUFFER_LEN (64)
 #define HNP_INFO_RET_FD_ENV "HNP_INFO_RET_FD_ENV"
+#define SESSIONID_BUFFER_LEN (32)
 
 
 // 0x2001 参数非法
@@ -98,7 +99,8 @@ typedef struct HnpResult {
  *
  * @return 0:success;other means failure.
  */
-int NativeInstallHnp(const char *userId, const char *hnpRootPath, const HapInfo *hapInfo, int installOptions);
+int NativeInstallHnp(const char *userId, const char *hnpRootPath, const HapInfo *hapInfo,
+    int installOptions, int32_t sessionId);
 
 /**
  * Uninstall native software package.
