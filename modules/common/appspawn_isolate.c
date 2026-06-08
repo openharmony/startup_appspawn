@@ -63,6 +63,7 @@ typedef struct MarkPathInfo {
 static const IsolateDirAffix g_dirAffix[ISOLATE_PATH_NUM] = {{"/data/app/el2", "base"},
                                                              {"/storage/media", "local/files/Docs"},
                                                              {"/data/app/el1", "base"}};
+
 static void FreeIsolatePath(IsolateDirInfo *isolateDirInfo)
 {
     for (int i = 0; i < isolateDirInfo->dirNum; ++i) {
