@@ -1439,12 +1439,16 @@ static void WaitChildDied(pid_t pid, int status)
 #ifdef APPSPAWN_HISYSEVENT
         ReportSpawnChildProcessFail(processName, ERR_APPSPAWN_CHILD_CRASH, APPSPAWN_CHILD_CRASH);
 #endif
-        if ((property->client.id == g_lastDiedAppId + 1) && WIFSIGNALED(status)) {
-            g_crashTimes++;
-        } else {
-            g_crashTimes = 1;
+        if (WIFSIGNALED(status)) {
+            if (property->client.id == g_lastDiedAppId + 1) {
+                g_crashTimes++;
+            } else {
+                g_crashTimes = 1;
+            }
+            g_lastDiedAppId = property->client.id;
+        }  else {
+            g_crashTimes = 0;
         }
-        g_lastDiedAppId = property->client.id;
 
         SendResponse(property->message->connection, &property->message->msgHeader, APPSPAWN_CHILD_CRASH, 0);
         AppSpawnHookExecute(STAGE_SERVER_SPAWN_ABORT, 0, GetAppSpawnContent(), &property->client);
