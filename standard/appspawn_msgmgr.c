@@ -355,36 +355,16 @@ int GetAppSpawnMsgFromBuffer(const uint8_t *buffer, uint32_t bufferLen,
     return 0;
 }
 
-APPSPAWN_STATIC void DumpMsgFlags(const AppSpawnMsgNode *message)
+APPSPAWN_STATIC void DumpMsgFlags(const char *processName, const char *info, const AppSpawnMsgFlags *msgFlags)
 {
     char logBuffer[DUMP_MAX_LOG_BUFF_LEN];
     int ret = 0;
-    int offset = sprintf_s(logBuffer, sizeof(logBuffer), "%s", message->msgHeader.processName);
-    APPSPAWN_ONLY_EXPER(offset < 0 || offset >= DUMP_MAX_LOG_BUFF_LEN, return);
-    AppSpawnMsgFlags *msgFlags = (AppSpawnMsgFlags *)GetAppSpawnMsgInfo(message, TLV_MSG_FLAGS);
-    if (msgFlags != NULL) {
-        ret = sprintf_s(logBuffer + offset, DUMP_MAX_LOG_BUFF_LEN - offset, " %s", "App flags");
-        APPSPAWN_ONLY_EXPER(ret < 0, return);
+    int offset = sprintf_s(logBuffer, DUMP_MAX_LOG_BUFF_LEN - 1, "%s %s flags", processName, info);
+    APPSPAWN_ONLY_EXPER(offset < 0 || offset > DUMP_MAX_LOG_BUFF_LEN - 1, return);
+    for (uint32_t i = 0; i < msgFlags->count; i++) {
+        ret = sprintf_s(logBuffer + offset, DUMP_MAX_LOG_BUFF_LEN - offset - 1, " 0x%x", msgFlags->flags[i]);
+        APPSPAWN_ONLY_EXPER(ret < 0 || offset + ret > DUMP_MAX_LOG_BUFF_LEN - 1, return);
         offset = offset + ret;
-        for (uint32_t i = 0; i < msgFlags->count; i++) {
-            APPSPAWN_ONLY_EXPER(offset >= DUMP_MAX_LOG_BUFF_LEN, return);
-            ret = sprintf_s(logBuffer + offset, DUMP_MAX_LOG_BUFF_LEN - offset, " 0x%x", msgFlags->flags[i]);
-            APPSPAWN_ONLY_EXPER(ret < 0, return);
-            offset = offset + ret;
-        }
-    }
-    msgFlags = (AppSpawnMsgFlags *)GetAppSpawnMsgInfo(message, TLV_PERMISSION);
-    if (msgFlags != NULL) {
-        APPSPAWN_ONLY_EXPER(offset >= DUMP_MAX_LOG_BUFF_LEN, return);
-        ret = sprintf_s(logBuffer + offset, DUMP_MAX_LOG_BUFF_LEN - offset, " %s", "App permission bits flags");
-        APPSPAWN_ONLY_EXPER(ret < 0, return);
-        offset = offset + ret;
-        for (uint32_t i = 0; i < msgFlags->count; i++) {
-            APPSPAWN_ONLY_EXPER(offset >= DUMP_MAX_LOG_BUFF_LEN, return);
-            ret = sprintf_s(logBuffer + offset, DUMP_MAX_LOG_BUFF_LEN - offset, " 0x%x", msgFlags->flags[i]);
-            APPSPAWN_ONLY_EXPER(ret < 0, return);
-            offset = offset + ret;
-        }
     }
     APPSPAWN_DUMP("%{public}s", logBuffer);
 }
@@ -409,8 +389,14 @@ void DumpAppSpawnMsg(const AppSpawnMsgNode *message)
     APPSPAWN_CHECK_ONLY_EXPER(message != NULL, return);
     APPSPAWN_DUMP("AppSpawn msgId:%{public}u msgLen:%{public}u tlvCount:%{public}u processName:%{public}s",
         message->msgHeader.msgId, message->msgHeader.msgLen, message->tlvCount, message->msgHeader.processName);
-    DumpMsgFlags(message);
+
+    AppSpawnMsgFlags *msgFlags = (AppSpawnMsgFlags *)GetAppSpawnMsgInfo(message, TLV_MSG_FLAGS);
+    APPSPAWN_ONLY_EXPER(msgFlags != NULL, DumpMsgFlags(message->msgHeader.processName, "App", msgFlags));
+    msgFlags = (AppSpawnMsgFlags *)GetAppSpawnMsgInfo(message, TLV_PERMISSION);
+    APPSPAWN_ONLY_EXPER(msgFlags != NULL,
+        DumpMsgFlags(message->msgHeader.processName, "App permission bits", msgFlags));
     AppSpawnMsgDacInfo *dacInfo = (AppSpawnMsgDacInfo *)GetAppSpawnMsgInfo(message, TLV_DAC_INFO);
+
     if (dacInfo != NULL) {
         APPSPAWN_DUMP("uid:%{public}d gid:%{public}d count:%{public}d",
             dacInfo->uid, dacInfo->gid, dacInfo->gidCount);
