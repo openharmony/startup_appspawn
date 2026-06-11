@@ -113,30 +113,33 @@ static int SetAsanEnabledEnv(const AppSpawnMgr *content, const AppSpawningCtx *p
 typedef bool (*FfrtCoroutineStackFn)(void **stackAddr, size_t *size);
 typedef void (*RegisterFfrtStackFuncFn)(FfrtCoroutineStackFn fn);
 
-static void RegisterFfrtStackFunc()
+APPSPAWN_STATIC bool RegisterFfrtStackFunc()
 {
     RegisterFfrtStackFuncFn registerFunc =
         (RegisterFfrtStackFuncFn)dlsym(RTLD_DEFAULT, "libc_gwp_asan_register_ffrt_stack_func");
     if (registerFunc == NULL) {
         APPSPAWN_LOGW("Failed to get libc_gwp_asan_register_ffrt_stack_func");
-        return;
+        return false;
     }
 
     FfrtCoroutineStackFn ffrtFunc =
         (FfrtCoroutineStackFn)dlsym(RTLD_DEFAULT, "ffrt_get_current_coroutine_stack");
     if (ffrtFunc == NULL) {
         APPSPAWN_LOGW("Failed to get ffrt_get_current_coroutine_stack");
-        return;
+        return false;
     }
 
     registerFunc(ffrtFunc);
+    return true;
 }
 
 static void SetGwpAsanEnabled(const AppSpawnMgr *content, const AppSpawningCtx *property)
 {
     int enforce = CheckAppMsgFlagsSet(property, APP_FLAGS_GWP_ENABLED_FORCE);
     APPSPAWN_LOGV("SetGwpAsanEnabled with flags: %{public}d", enforce);
-    RegisterFfrtStackFunc();
+    if (!RegisterFfrtStackFunc()) {
+        APPSPAWN_LOGW("RegisterFfrtStackFunc failed");
+    }
     may_init_gwp_asan(enforce);
 }
 

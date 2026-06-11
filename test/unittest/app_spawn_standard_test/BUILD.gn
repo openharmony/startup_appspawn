@@ -421,6 +421,7 @@ if (!defined(ohos_lite)) {
 group("appspawn_standard_tests") {
   testonly = true
   deps = [
+    "app_spawn_asan_detector_test:AppSpawn_Asan_Detector_Test",
     "app_spawn_custom_config_test:AppSpawn_Custom_Config_Test",
     "app_spawn_sandbox_debug_mode:AppSpawn_Sandbox_Debug_Mode_Test",
     "app_spawn_silk_test:AppSpawn_Silk_Test",
