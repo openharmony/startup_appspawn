@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -201,7 +201,7 @@ static int SpawnSetIsolateDir(AppSpawnMgr *content, AppSpawningCtx *property)
 
 static int MarkSandboxMounts(AppSpawnMgr *content, AppSpawningCtx *property)
 {
-    if (IsNWebSpawnMode(content)) {
+    if (IsNWebSpawnMode(content) || GetAppSpawnMsgType(property) == MSG_SPAWN_NATIVE_PROCESS) {
         return 0;
     }
 
