@@ -1446,7 +1446,7 @@ static void WaitChildDied(pid_t pid, int status)
                 g_crashTimes = 1;
             }
             g_lastDiedAppId = property->client.id;
-        } else {
+        }  else {
             g_crashTimes = 0;
         }
 

@@ -31,8 +31,7 @@ typedef struct DecIgnoreCaseInfo {
 // Ignore case directory configuration
 #define DEC_IGNORE_CASE_LIST \
     {"/storage/Users/currentUser", DEC_MODE_IGNORE_CASE}, \
-    {"/storage/Users/currentUser/appdata", DEC_MODE_NOT_IGNORE_CASE}, \
-    {"/storage/External", DEC_MODE_IGNORE_CASE}
+    {"/storage/Users/currentUser/appdata", DEC_MODE_NOT_IGNORE_CASE}
 #ifdef __cplusplus
 }
 #endif

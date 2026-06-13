@@ -27,7 +27,6 @@
 #include "appspawn_utils.h"
 #include "sandbox_dec.h"
 #include "sandbox_def.h"
-#include "tokenid_kit.h"
 #ifdef APPSPAWN_HISYSEVENT
 #include "hisysevent_adapter.h"
 #endif
@@ -38,8 +37,9 @@
 
 namespace OHOS {
 namespace AppSpawn {
-using namespace OHOS::Security::AccessToken;
-
+namespace {
+static const uint64_t SYSTEM_APP_MASK = (static_cast<uint64_t>(1) << 32);
+}
 bool SandboxCore::NeedNetworkIsolated(AppSpawningCtx *property)
 {
     int developerMode = IsDeveloperModeOpen();
@@ -162,7 +162,7 @@ int32_t SandboxCore::HandleDlpMount(const AppSpawnMsgDacInfo *dacInfo)
                     "Create sandbox path failed, errno is %{public}d", errno);
 
     int fd = open("/dev/fuse", O_RDWR);
-    APPSPAWN_CHECK(fd >= 0, return -EINVAL, "Open /dev/fuse failed, errno is %{public}d", errno);
+    APPSPAWN_CHECK(fd > 0, return -EINVAL, "Open /dev/fuse failed, errno is %{public}d", errno);
 
     char options[SandboxCommonDef::OPTIONS_MAX_LEN];
     ret = sprintf_s(options, sizeof(options), "fd=%d,"
@@ -198,7 +198,8 @@ bool SandboxCore::CheckDlpMount(const AppSpawningCtx *appProperty)
     std::string processName = (processNameChar != nullptr) ? std::string(processNameChar) : "";
     /* dlp application mount strategy */
     /* dlp is an example, we should change to real bundle name later */
-    if (!(bundleName == SandboxCommonDef::g_dlpBundleName && processName == SandboxCommonDef::g_dlpBundleName)) {
+    if (!(bundleName.find(SandboxCommonDef::g_dlpBundleName) != std::string::npos &&
+        processName.compare(SandboxCommonDef::g_dlpBundleName) == 0)) {
         return false;
     }
     return true;
@@ -222,9 +223,8 @@ bool SandboxCore::CheckSystemAppByTokenId(const AppSpawningCtx *appProperty)
     }
     AppSpawnMsgAccessToken *tokenInfo =
         reinterpret_cast<AppSpawnMsgAccessToken *>(GetAppProperty(appProperty, TLV_ACCESS_TOKEN_INFO));
-    APPSPAWN_CHECK(tokenInfo != nullptr, return false,
-        "No access token in msg %{public}s", GetProcessName(appProperty));
-    return TokenIdKit::IsSystemAppByFullTokenID(tokenInfo->accessTokenIdEx);
+    APPSPAWN_CHECK(tokenInfo != nullptr, return false, "No access token");
+    return (tokenInfo->accessTokenIdEx & SYSTEM_APP_MASK) == SYSTEM_APP_MASK;
 }
 
 bool SandboxCore::CheckPrivateOwnerId(const AppSpawningCtx *appProperty, cJSON *appConfig)
@@ -828,7 +828,6 @@ int32_t SandboxCore::DoAllSymlinkPointslink(const AppSpawningCtx *appProperty, c
         std::string linkName(linkNameChr);
         targetName = SandboxCommon::ConvertToRealPath(appProperty, targetName);
         linkName = sandboxRoot + SandboxCommon::ConvertToRealPath(appProperty, linkName);
-        MakeDirRec(linkName.c_str(), SandboxCommonDef::DIR_MODE, 0);
         int ret = symlink(targetName.c_str(), linkName.c_str());
         if (ret && errno != EEXIST && SandboxCommon::IsMountSuccessful(item)) {
             APPSPAWN_LOGE("errno is %{public}d, symlink failed, %{public}s", errno, linkName.c_str());
@@ -1108,11 +1107,11 @@ int32_t SandboxCore::SetSandboxProperty(AppSpawningCtx *appProperty, std::string
 
 int32_t SandboxCore::SetAppSandboxProperty(AppSpawningCtx *appProperty, uint32_t sandboxNsFlags)
 {
-    APPSPAWN_CHECK(appProperty != nullptr, return -1, "Invalid appspawn client");
+    APPSPAWN_CHECK(appProperty != nullptr, return APPSPAWN_SANDBOX_INVALID, "Invalid appspawn client");
     const char* bundleNameChar = GetBundleName(appProperty);
     const std::string bundleName = (bundleNameChar != nullptr) ? std::string(bundleNameChar) : "";
     if (SandboxCommon::CheckBundleName(bundleName) != 0) {
-        return -1;
+        return APPSPAWN_SANDBOX_INVALID;
     }
     AppSpawnMsgDacInfo *dacInfo = reinterpret_cast<AppSpawnMsgDacInfo *>(GetAppProperty(appProperty, TLV_DAC_INFO));
     APPSPAWN_CHECK(dacInfo != nullptr, return APPSPAWN_SANDBOX_INVALID, "No dac info in msg app property");
