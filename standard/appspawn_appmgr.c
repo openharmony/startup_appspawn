@@ -343,7 +343,8 @@ void DeleteAppSpawningCtx(AppSpawningCtx *property)
     }
     if (property->forkCtx.watcherHandle) {
         APPSPAWN_LOGI("start clear watcher handle");
-        LE_RemoveWatcher(LE_GetDefaultLoop(), property->forkCtx.watcherHandle);
+        APPSPAWN_ONLY_EXPER(g_appSpawnMgr != NULL && g_appSpawnMgr->servicePid == getpid(),
+            LE_RemoveWatcher(LE_GetDefaultLoop(), property->forkCtx.watcherHandle));
         property->forkCtx.watcherHandle = NULL;
     }
     if (property->forkCtx.coldRunPath) {

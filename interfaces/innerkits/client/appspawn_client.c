@@ -456,6 +456,22 @@ int AppSpawnClientDestroy(AppSpawnClientHandle handle)
     return 0;
 }
 
+int AppSpawnClientSetTimeout(AppSpawnClientHandle handle, uint32_t timeoutSec)
+{
+    AppSpawnReqMsgMgr *reqMgr = (AppSpawnReqMsgMgr *)handle;
+    APPSPAWN_CHECK(reqMgr != NULL, return APPSPAWN_ARG_INVALID, "Invalid handle");
+    APPSPAWN_CHECK(timeoutSec >= APPSPAWN_CLIENT_TIMEOUT_MIN,
+        return APPSPAWN_ARG_INVALID,
+        "Timeout %{public}u is less than min %{public}u", timeoutSec, APPSPAWN_CLIENT_TIMEOUT_MIN);
+    APPSPAWN_CHECK(timeoutSec <= APPSPAWN_CLIENT_TIMEOUT_MAX,
+        return APPSPAWN_ARG_INVALID,
+        "Timeout %{public}u exceeds max %{public}u", timeoutSec, APPSPAWN_CLIENT_TIMEOUT_MAX);
+    reqMgr->timeout = timeoutSec;
+    APPSPAWN_ONLY_EXPER(reqMgr->socketId >= 0,
+        UpdateSocketTimeout(reqMgr->timeout, reqMgr->socketId));
+    return 0;
+}
+
 int ClientSendMsgLocked(AppSpawnReqMsgMgr *reqMgr, AppSpawnReqMsgNode *reqNode, AppSpawnResult *result,
     bool needSleep)
 {
@@ -535,7 +551,7 @@ int AppSpawnClientSendMsg(AppSpawnClientHandle handle, AppSpawnReqMsgHandle reqH
     return ret;
 }
 
-int AppSpawnClientSendUserLockStatus(uint32_t userId, bool isLocked)
+int AppSpawnClientSendUserLockStatus(uint32_t userId, bool isLocked, uint32_t timeoutSec)
 {
     char lockstatus[USER_LOCK_STATUS_SIZE] = {0};
     int ret = snprintf_s(lockstatus, USER_LOCK_STATUS_SIZE, USER_LOCK_STATUS_SIZE - 1, "%u:%d", userId, isLocked);
@@ -554,6 +570,9 @@ int AppSpawnClientSendUserLockStatus(uint32_t userId, bool isLocked)
     ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
     APPSPAWN_CHECK(ret == 0, AppSpawnReqMsgFree(reqHandle);
         return ret, "Appspawn client failed to init, ret=%{public}d", ret);
+
+    // Unlock mount involves fork + mount operations, needs longer timeout
+    AppSpawnClientSetTimeout(clientHandle, timeoutSec);
 
     AppSpawnResult result = {0};
     ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);

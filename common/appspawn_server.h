@@ -133,12 +133,6 @@ void AppSpawnEnvClear(AppSpawnContent *content, AppSpawnClient *client);
 int AppSpawnProcessMsg(AppSpawnContent *content, AppSpawnClient *client, pid_t *childPid);
 void ProcessExit(int code);
 int AppSpawnChild(AppSpawnContent *content, AppSpawnClient *client);
-
-void HandleUnlockEvent(AppSpawnContent *content, int uid);
-int SendUnlockMsgToPrefork(AppSpawnContent *content, int uid);
-void DoUnlockMountSerial(AppSpawnContent *content, int uid);
-int ProcessUnlockMessage(int uid);
-pid_t ForkAndDoUnlockMount(AppSpawnContent *content, int uid);
 #ifdef __cplusplus
 }
 #endif
