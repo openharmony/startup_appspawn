@@ -65,6 +65,7 @@ if (!defined(ohos_lite)) {
       "hitrace:hitrace_meter",
       "init:libbegetutil",
       "googletest:gmock_main",
+      "access_token:libtokenid_sdk",
     ]
 
     if (build_selinux) {
