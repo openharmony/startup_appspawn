@@ -145,8 +145,7 @@ APPSPAWN_STATIC int RunChildProcessor(AppSpawnContent *content, AppSpawnClient *
     const std::string renderLibName = ARK_WEB_RENDER_LIB_NAME;
 
 #ifdef __MUSL__
-    Dl_namespace dlns;
-    Dl_namespace ndkns;
+    Dl_namespace dlns, ndkns;
     dlns_init(&dlns, libNsName.c_str());
     dlns_create(&dlns, libPath.c_str());
     dlns_get("ndk", &ndkns);

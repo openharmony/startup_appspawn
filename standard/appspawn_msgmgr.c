@@ -395,8 +395,8 @@ void DumpAppSpawnMsg(const AppSpawnMsgNode *message)
     msgFlags = (AppSpawnMsgFlags *)GetAppSpawnMsgInfo(message, TLV_PERMISSION);
     APPSPAWN_ONLY_EXPER(msgFlags != NULL,
         DumpMsgFlags(message->msgHeader.processName, "App permission bits", msgFlags));
-    AppSpawnMsgDacInfo *dacInfo = (AppSpawnMsgDacInfo *)GetAppSpawnMsgInfo(message, TLV_DAC_INFO);
 
+    AppSpawnMsgDacInfo *dacInfo = (AppSpawnMsgDacInfo *)GetAppSpawnMsgInfo(message, TLV_DAC_INFO);
     if (dacInfo != NULL) {
         APPSPAWN_DUMP("uid:%{public}d gid:%{public}d count:%{public}d",
             dacInfo->uid, dacInfo->gid, dacInfo->gidCount);

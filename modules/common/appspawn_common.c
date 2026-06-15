@@ -160,7 +160,6 @@ static int SetAmbientCapabilities(const AppSpawningCtx *property)
     return 0;
 }
 
-
 APPSPAWN_STATIC int SetCapabilities(const AppSpawnMgr *content, const AppSpawningCtx *property)
 {
     // init cap
@@ -178,7 +177,7 @@ APPSPAWN_STATIC int SetCapabilities(const AppSpawnMgr *content, const AppSpawnin
 #ifdef GRAPHIC_PERMISSION_CHECK
     u_int64_t baseCaps = 0;
     if (IsNoShareFsEnable() &&
- 	    !CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX_TYPE) &&
+        !CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX_TYPE) &&
         (IsAppSpawnMode(content) || IsNativeSpawnMode(content))) {
         baseCaps = CAP_TO_MASK(CAP_DAC_OVERRIDE);
         baseCaps |= CheckAppMsgFlagsSet(property, APP_FLAGS_CUSTOM_SANDBOX) ? CAP_TO_MASK(CAP_KILL) : 0;
@@ -202,7 +201,7 @@ APPSPAWN_STATIC int SetCapabilities(const AppSpawnMgr *content, const AppSpawnin
     APPSPAWN_CHECK(!isRet, return -errno, "Failed to capset errno: %{public}d", errno);
 
     if (IsNoShareFsEnable() &&
- 	    !CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX_TYPE) &&
+        !CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX_TYPE) &&
         (IsAppSpawnMode(content) || IsNativeSpawnMode(content))) {
         APPSPAWN_CHECK(SetAmbientCapabilities(property) == 0, return -1, "Failed to set ambient");
     }
@@ -357,7 +356,7 @@ APPSPAWN_STATIC int SetUidGid(const AppSpawnMgr *content, const AppSpawningCtx *
         APPSPAWN_CHECK_ONLY_LOGW(ret == 0, "SetUserId(%{public}s) failed", userIdStr);
     }
 
-    /* The setenv operation needs to be performed after the final SetProcessName. This is because the HiLog module
+    /* The setenv operation should be performed after the final SetProcessName. This is because the HiLog module
      * uses the HAP_DEBUGGABLE env as the basis for determining whether the application process name has been set.
      */
     if ((CheckAppMsgFlagsSet(property, APP_FLAGS_DEBUGGABLE) || property->allowDumpable) &&
