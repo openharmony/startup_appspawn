@@ -700,4 +700,33 @@ HWTEST_F(AppSpawnInterfaceTest, AppSpawnClientSendUserLockStatus_001, TestSize.L
     ret = AppSpawnClientSendUserLockStatus(100, false);
     EXPECT_NE(ret, 0);
 }
+
+HWTEST_F(AppSpawnInterfaceTest, GetSpecialGid_001, TestSize.Level0)
+{
+    gid_t gidTable[APP_MAX_GIDS] = {0};
+    uint32_t gidCount = 0;
+    const char *bundleName = "com.ohos.medialibrary.medialibrarydata";
+    GetSpecialGid(bundleName, gidTable, &gidCount);
+    EXPECT_EQ(gidTable[0], GID_USER_DATA_RW);
+    EXPECT_EQ(gidTable[1], GID_FILE_ACCESS);
+}
+
+HWTEST_F(AppSpawnInterfaceTest, GetSpecialGid_002, TestSize.Level0)
+{
+    gid_t gidTable[APP_MAX_GIDS] = {0};
+    uint32_t gidCount = APP_MAX_GIDS;
+    const char *bundleName = "com.ohos.medialibrary.medialibrarydata";
+    GetSpecialGid(bundleName, gidTable, &gidCount);
+    EXPECT_EQ(gidTable[APP_MAX_GIDS - 1], 0);
+}
+
+HWTEST_F(AppSpawnInterfaceTest, GetSpecialGid_003, TestSize.Level0)
+{
+    gid_t gidTable[APP_MAX_GIDS] = {0};
+    uint32_t gidCount = APP_MAX_GIDS;
+    const char *bundleName = "com.ohos.medialibrary";
+    GetSpecialGid(bundleName, gidTable, &gidCount);
+    EXPECT_EQ(gidTable[APP_MAX_GIDS - 1], 0);
+}
+
 }  // namespace OHOS
