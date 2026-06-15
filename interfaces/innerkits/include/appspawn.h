@@ -107,7 +107,7 @@ int AppSpawnClientSendMsg(AppSpawnClientHandle handle, AppSpawnReqMsgHandle reqH
  *
  * @param userId user id
  * @param isLocked lock status
- * @param timeoutSec timeout in seconds, use 0 for default (10s)
+ * @param timeoutSec timeout in seconds, default 2s
  * @return if succeed return 0,else return other value
  */
 int AppSpawnClientSendUserLockStatus(uint32_t userId, bool isLocked, uint32_t timeoutSec);

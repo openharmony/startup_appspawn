@@ -572,7 +572,8 @@ int AppSpawnClientSendUserLockStatus(uint32_t userId, bool isLocked, uint32_t ti
         return ret, "Appspawn client failed to init, ret=%{public}d", ret);
 
     // Unlock mount involves fork + mount operations, needs longer timeout
-    AppSpawnClientSetTimeout(clientHandle, timeoutSec);
+    ret = AppSpawnClientSetTimeout(clientHandle, timeoutSec);
+    APPSPAWN_CHECK_ONLY_LOG(ret == 0, "Set timeout failed, ret=%{public}d", ret);
 
     AppSpawnResult result = {0};
     ret = AppSpawnClientSendMsg(clientHandle, reqHandle, &result);

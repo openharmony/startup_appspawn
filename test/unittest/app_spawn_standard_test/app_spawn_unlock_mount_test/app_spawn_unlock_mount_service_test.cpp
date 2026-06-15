@@ -61,7 +61,7 @@
 extern "C" {
 void StopAppSpawn(void);
 void HandleDiedPid(pid_t pid, uid_t uid, int status);
-int ProcessAppSpawnLockStatusMsg(AppSpawnConnection *connection, AppSpawnMsgNode *message);
+bool ProcessAppSpawnLockStatusMsg(AppSpawnConnection *connection, AppSpawnMsgNode *message, int *result);
 bool HandleUnlockEvent(AppSpawnContent *content, int uid, AppSpawnMsgNode *message, AppSpawnConnection *connection);
 int SendUnlockMsgToPrefork(AppSpawnContent *content, int uid);
 int DoUnlockMountSerial(AppSpawnContent *content, int uid);
@@ -1375,9 +1375,10 @@ HWTEST_F(AppSpawnUnlockMountServiceTest, UnlockMount_ProcessAppSpawnLockStatusMs
     AppSpawnContent *content = &mgr_->content;
     int originalHookCalled = 0;
     int originalUnlockUid = content->currentUnlockUid;
+    int result = 0;
 
     // Act
-    ProcessAppSpawnLockStatusMsg(nullptr, nullptr);
+    ProcessAppSpawnLockStatusMsg(nullptr, nullptr, &result);
 
     // Assert - nullptr should be caught by APPSPAWN_CHECK_ONLY_EXPER, no state change
     EXPECT_EQ(g_hookCalled, originalHookCalled);

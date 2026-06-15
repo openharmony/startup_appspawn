@@ -959,6 +959,16 @@ static int AddUnlockChildWatcher(AppSpawningCtx *property, uint64_t timeoutMs)
     return APPSPAWN_SYSTEM_ERROR;
 }
 
+/**
+ * @brief Watcher callback for processing unlock mount result from child process
+ * @param taskHandle Watcher handle (unused)
+ * @param fd Pipe read end file descriptor
+ * @param events Event flags (unused)
+ * @param context AppSpawningCtx pointer
+ *
+ * Called when child process writes result to pipe. Reads result from pipe,
+ * sends response to client, and cleans up resources.
+ */
 static void ProcessUnlockChildResponse(const WatcherHandle taskHandle, int fd,
     uint32_t *events, const void *context)
 {
@@ -1011,13 +1021,19 @@ APPSPAWN_STATIC void HandlePreforkUnlockMsg(AppSpawnContent *content, const AppS
     APPSPAWN_ONLY_EXPER(childToParentFd == NULL || childToParentFd->fds[1] < 0,
         APPSPAWN_LOGE("L1 prefork childToParentFd not found, uid=%{public}d result=%{public}d dropped",
             unlockMsg->uid, result);
+#ifdef APPSPAWN_HISYSEVENT
+        ReportKeyEvent("UNLOCK_MOUNT_L1_RESULT_DROPPED");
+#endif
         ProcessExit(0));
 
     APPSPAWN_LOGI("L1 prefork write result: uid=%{public}d result=%{public}d fd=%{public}d",
         unlockMsg->uid, result, childToParentFd->fds[1]);
     ssize_t writeSize = write(childToParentFd->fds[1], &result, sizeof(result));
-    APPSPAWN_CHECK_ONLY_LOG(writeSize == sizeof(result),
-        "prefork write result failed %{public}zd %{public}d", writeSize, errno);
+    APPSPAWN_ONLY_EXPER(writeSize != sizeof(result),
+#ifdef APPSPAWN_HISYSEVENT
+        ReportKeyEvent("UNLOCK_MOUNT_L1_WRITE_FAIL");
+#endif
+        APPSPAWN_LOGE("prefork write result failed %{public}zd %{public}d", writeSize, errno));
     ProcessExit(0);
 }
 
@@ -2233,6 +2249,8 @@ APPSPAWN_STATIC int ProcessAppSpawnDeviceDebugMsg(AppSpawnMsgNode *message)
 APPSPAWN_STATIC bool ProcessAppSpawnLockStatusMsg(AppSpawnConnection *connection,
     AppSpawnMsgNode *message, int *result)
 {
+    APPSPAWN_LOGI("ProcessAppSpawnLockStatusMsg: connId=%{public}u msg=%{public}p",
+        connection ? connection->connectionId : 0, message);
     APPSPAWN_CHECK_ONLY_EXPER(message != NULL, return false);
     uint32_t len = 0;
     char *lockstatus = (char *)GetAppSpawnMsgExtInfo(message, "lockstatus", &len);
@@ -2498,6 +2516,11 @@ APPSPAWN_STATIC bool HandleUnlockEvent(AppSpawnContent *content, int uid, AppSpa
     APPSPAWN_LOGI("HandleUnlockEvent start: uid=%{public}d reservedPid=%{public}d",
         uid, content->reservedPid);
 
+    // Create property context for L1/L2 async operations
+    // NOTE: property->message and message->connection are used by L1/L2:
+    // - L1/L2 watcher callbacks use them to SendResponse
+    // - Watcher callbacks call DeleteAppSpawningCtx to free message
+    // - DO NOT free message before watcher/timer callbacks complete
     AppSpawningCtx *property = CreateAppSpawningCtx();
     APPSPAWN_CHECK(property != NULL, return false, "Failed to create AppSpawningCtx");
     property->message = message;
