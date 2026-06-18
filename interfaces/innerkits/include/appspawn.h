@@ -107,9 +107,10 @@ int AppSpawnClientSendMsg(AppSpawnClientHandle handle, AppSpawnReqMsgHandle reqH
  *
  * @param userId user id
  * @param isLocked lock status
+ * @param timeoutSec timeout in seconds, default 2s
  * @return if succeed return 0,else return other value
  */
-int AppSpawnClientSendUserLockStatus(uint32_t userId, bool isLocked);
+int AppSpawnClientSendUserLockStatus(uint32_t userId, bool isLocked, uint32_t timeoutSec);
 
 typedef enum {
     MSG_APP_SPAWN = 0,

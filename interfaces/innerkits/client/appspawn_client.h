@@ -26,6 +26,8 @@
 extern "C" {
 #endif
 
+#define APPSPAWN_CLIENT_TIMEOUT_MIN 2       // Min timeout for AppSpawnClientSetTimeout (seconds)
+#define APPSPAWN_CLIENT_TIMEOUT_MAX 120     // Max timeout for AppSpawnClientSetTimeout (seconds)
 #ifdef ASAN_DETECTOR
 #define TIMEOUT_DEF 60
 #define ASAN_TIMEOUT 60

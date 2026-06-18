@@ -691,13 +691,13 @@ HWTEST_F(AppSpawnInterfaceTest, Hybrid_SpawnListenCloseSet_001, TestSize.Level0)
  */
 HWTEST_F(AppSpawnInterfaceTest, AppSpawnClientSendUserLockStatus_001, TestSize.Level0)
 {
-    int ret = AppSpawnClientSendUserLockStatus(0, true);
+    int ret = AppSpawnClientSendUserLockStatus(0, true, 0);
     EXPECT_NE(ret, 0);
-    ret = AppSpawnClientSendUserLockStatus(0, false);
+    ret = AppSpawnClientSendUserLockStatus(0, false, 0);
     EXPECT_NE(ret, 0);
-    ret = AppSpawnClientSendUserLockStatus(100, true);
+    ret = AppSpawnClientSendUserLockStatus(100, true, 0);
     EXPECT_NE(ret, 0);
-    ret = AppSpawnClientSendUserLockStatus(100, false);
+    ret = AppSpawnClientSendUserLockStatus(100, false, 0);
     EXPECT_NE(ret, 0);
 }
 }  // namespace OHOS
