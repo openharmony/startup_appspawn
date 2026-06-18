@@ -103,6 +103,7 @@ public:
     static std::string BuildFullParamSrcPath(cJSON *mntPoint);
 
     // 路径处理
+    static int GetVarPackageNameType(const AppSpawningCtx *appProperty, uint32_t appIndex);
     static std::string ReplaceVariablePackageName(const AppSpawningCtx *appProperty, const std::string &path);
     static std::string ReplaceSandboxRootVariablePackageName(const AppSpawningCtx *appProperty,
         const std::string &path);
@@ -150,6 +151,7 @@ private:
         SANDBOX_PACKAGENAME_EXTENSION,
         SANDBOX_PACKAGENAME_CLONE_AND_EXTENSION,
         SANDBOX_PACKAGENAME_ATOMIC_SERVICE,
+        SANDBOX_PACKAGENAME_BROWSER_TWIN,
     } SandboxVarPackageNameType;
 };
 
