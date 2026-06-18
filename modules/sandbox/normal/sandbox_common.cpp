@@ -827,29 +827,43 @@ void SandboxCommon::MakeAtomicServiceDir(const AppSpawningCtx *appProperty, std:
     return;
 }
 
+int SandboxCommon::GetVarPackageNameType(const AppSpawningCtx *appProperty, uint32_t appIndex)
+{
+    int type = SANDBOX_PACKAGENAME_DEFAULT;
+    if (CheckAppSpawnMsgFlag(appProperty->message, TLV_MSG_FLAGS, APP_FLAGS_ATOMIC_SERVICE)) {
+        type = SANDBOX_PACKAGENAME_ATOMIC_SERVICE;
+    } else if (CheckAppSpawnMsgFlag(appProperty->message, TLV_MSG_FLAGS, APP_FLAGS_BROWSER_TWIN) && appIndex > 0 &&
+        IsNoShareFsEnable()) {
+        type = SANDBOX_PACKAGENAME_BROWSER_TWIN;
+    } else if (CheckAppSpawnMsgFlag(appProperty->message, TLV_MSG_FLAGS, APP_FLAGS_CLONE_ENABLE) && appIndex > 0) {
+        type = SANDBOX_PACKAGENAME_CLONE;
+        if (CheckAppSpawnMsgFlag(appProperty->message, TLV_MSG_FLAGS, APP_FLAGS_EXTENSION_SANDBOX)) {
+            type = SANDBOX_PACKAGENAME_CLONE_AND_EXTENSION;
+        }
+    } else if (CheckAppSpawnMsgFlag(appProperty->message, TLV_MSG_FLAGS, APP_FLAGS_EXTENSION_SANDBOX)) {
+        type = SANDBOX_PACKAGENAME_EXTENSION;
+    }
+    return type;
+}
+
 std::string SandboxCommon::ReplaceVariablePackageName(const AppSpawningCtx *appProperty, const std::string &path)
 {
     std::string tmpSandboxPath = path;
     AppSpawnMsgBundleInfo *bundleInfo =
         reinterpret_cast<AppSpawnMsgBundleInfo *>(GetAppProperty(appProperty, TLV_BUNDLE_INFO));
     APPSPAWN_CHECK(bundleInfo != nullptr, return "", "No bundle info in msg %{public}s", GetBundleName(appProperty));
+    uint32_t appIndex = bundleInfo->bundleIndex;
+    int type = GetVarPackageNameType(appProperty, appIndex);
+    char *extension = reinterpret_cast<char *>(GetAppSpawnMsgExtInfo(appProperty->message,
+        MSG_EXT_NAME_APP_EXTENSION, nullptr));
 
-    char *extension;
-    uint32_t flags = CheckAppSpawnMsgFlag(appProperty->message, TLV_MSG_FLAGS, APP_FLAGS_ATOMIC_SERVICE) ? 0x4 : 0;
-    if (flags == 0) {
-        flags = (CheckAppSpawnMsgFlag(appProperty->message, TLV_MSG_FLAGS, APP_FLAGS_CLONE_ENABLE) &&
-            bundleInfo->bundleIndex > 0) ? 0x1 : 0;
-        flags |= CheckAppSpawnMsgFlag(appProperty->message, TLV_MSG_FLAGS, APP_FLAGS_EXTENSION_SANDBOX) ? 0x2 : 0;
-        extension = reinterpret_cast<char *>(
-            GetAppSpawnMsgExtInfo(appProperty->message, MSG_EXT_NAME_APP_EXTENSION, nullptr));
-    }
     std::ostringstream variablePackageName;
-    switch (flags) {
+    switch (type) {
         case SANDBOX_PACKAGENAME_DEFAULT:    // 0 default
             variablePackageName << bundleInfo->bundleName;
             break;
         case SANDBOX_PACKAGENAME_CLONE:    // 1 +clone-bundleIndex+packageName
-            variablePackageName << "+clone-" << bundleInfo->bundleIndex << "+" << bundleInfo->bundleName;
+            variablePackageName << "+clone-" << appIndex << "+" << bundleInfo->bundleName;
             break;
         case SANDBOX_PACKAGENAME_EXTENSION: {  // 2 +extension-<extensionType>+packageName
             APPSPAWN_CHECK(extension != nullptr, return "", "Invalid extension data ");
@@ -858,7 +872,7 @@ std::string SandboxCommon::ReplaceVariablePackageName(const AppSpawningCtx *appP
         }
         case SANDBOX_PACKAGENAME_CLONE_AND_EXTENSION: {  // 3 +clone-bundleIndex+extension-<extensionType>+packageName
             APPSPAWN_CHECK(extension != nullptr, return "", "Invalid extension data ");
-            variablePackageName << "+clone-" << bundleInfo->bundleIndex << "+extension" << "-" <<
+            variablePackageName << "+clone-" << appIndex << "+extension" << "-" <<
                 extension << "+" << bundleInfo->bundleName;
             break;
         }
@@ -869,6 +883,10 @@ std::string SandboxCommon::ReplaceVariablePackageName(const AppSpawningCtx *appP
             atomicServicePath = ReplaceAllVariables(atomicServicePath, SandboxCommonDef::g_variablePackageName,
                                                     variablePackageName.str());
             MakeAtomicServiceDir(appProperty, atomicServicePath, variablePackageName.str());
+            break;
+        }
+        case SANDBOX_PACKAGENAME_BROWSER_TWIN: {  // 5 +aisandbox-bundleIndex+packageName
+            variablePackageName << "+aisandbox-" << appIndex << "+" << bundleInfo->bundleName;
             break;
         }
         default:
@@ -887,23 +905,18 @@ std::string SandboxCommon::ReplaceSandboxRootVariablePackageName(const AppSpawni
     AppSpawnMsgBundleInfo *bundleInfo =
         reinterpret_cast<AppSpawnMsgBundleInfo *>(GetAppProperty(appProperty, TLV_BUNDLE_INFO));
     APPSPAWN_CHECK(bundleInfo != nullptr, return "", "No bundle info in msg %{public}s", GetBundleName(appProperty));
+    uint32_t appIndex = bundleInfo->bundleIndex;
+    int type = GetVarPackageNameType(appProperty, appIndex);
+    char *extension = reinterpret_cast<char *>(GetAppSpawnMsgExtInfo(appProperty->message,
+        MSG_EXT_NAME_APP_EXTENSION, nullptr));
 
-    char *extension;
-    uint32_t flags = CheckAppSpawnMsgFlag(appProperty->message, TLV_MSG_FLAGS, APP_FLAGS_ATOMIC_SERVICE) ? 0x4 : 0;
-    if (flags == 0) {
-        flags = (CheckAppSpawnMsgFlag(appProperty->message, TLV_MSG_FLAGS, APP_FLAGS_CLONE_ENABLE) &&
-            bundleInfo->bundleIndex > 0) ? 0x1 : 0;
-        flags |= CheckAppSpawnMsgFlag(appProperty->message, TLV_MSG_FLAGS, APP_FLAGS_EXTENSION_SANDBOX) ? 0x2 : 0;
-        extension = reinterpret_cast<char *>(
-            GetAppSpawnMsgExtInfo(appProperty->message, MSG_EXT_NAME_APP_EXTENSION, nullptr));
-    }
     std::ostringstream variablePackageName;
-    switch (flags) {
+    switch (type) {
         case SANDBOX_PACKAGENAME_DEFAULT:    // 0 default
             variablePackageName << bundleInfo->bundleName;
             break;
         case SANDBOX_PACKAGENAME_CLONE:    // 1 +clone-bundleIndex+packageName
-            variablePackageName << "+clone-" << bundleInfo->bundleIndex << "+" << bundleInfo->bundleName;
+            variablePackageName << "+clone-" << appIndex << "+" << bundleInfo->bundleName;
             break;
         case SANDBOX_PACKAGENAME_EXTENSION: {  // 2 +extension-<extensionType>+packageName
             APPSPAWN_CHECK(extension != nullptr, return "", "Invalid extension data ");
@@ -912,7 +925,7 @@ std::string SandboxCommon::ReplaceSandboxRootVariablePackageName(const AppSpawni
         }
         case SANDBOX_PACKAGENAME_CLONE_AND_EXTENSION: {  // 3 +clone-bundleIndex+extension-<extensionType>+packageName
             APPSPAWN_CHECK(extension != nullptr, return "", "Invalid extension data ");
-            variablePackageName << "+clone-" << bundleInfo->bundleIndex << "+extension" << "-" <<
+            variablePackageName << "+clone-" << appIndex << "+extension" << "-" <<
                 extension << "+" << bundleInfo->bundleName;
             break;
         }
@@ -922,6 +935,10 @@ std::string SandboxCommon::ReplaceSandboxRootVariablePackageName(const AppSpawni
             std::string atomicServicePath = path;
             atomicServicePath = ReplaceAllVariables(atomicServicePath, SandboxCommonDef::g_variablePackageName,
                                                     variablePackageName.str());
+            break;
+        }
+        case SANDBOX_PACKAGENAME_BROWSER_TWIN: {  // 5 +aisandbox-bundleIndex+packageName
+            variablePackageName << "+aisandbox-" << appIndex << "+" << bundleInfo->bundleName;
             break;
         }
         default:
