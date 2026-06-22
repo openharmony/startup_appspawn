@@ -118,6 +118,7 @@ int WriteTlvEntriesToBuffer(AppSpawnMsgNode *newMsg, ListNode *head, uint32_t *c
         if (entry->entryType == TLV_ENTRY_STANDARD) {
             // Standard TLV: [AppSpawnTlv] [data] [padding]
             AppSpawnTlv *tlv = (AppSpawnTlv *)(newMsg->buffer + *currentOffset);
+            APPSPAWN_CHECK(tlv != NULL, return -1, "tlv is null");
             tlv->tlvType = entry->tlvType;
             // tlvLen: aligned size (header + data + padding) for traversal
             tlv->tlvLen = (uint16_t)entry->totalLen;

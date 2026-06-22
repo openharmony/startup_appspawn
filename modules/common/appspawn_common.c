@@ -328,7 +328,7 @@ APPSPAWN_STATIC int SetUidGid(const AppSpawnMgr *content, const AppSpawningCtx *
     APPSPAWN_CHECK(dacInfo != NULL, return APPSPAWN_TLV_NONE,
         "No tlv %{public}d in msg %{public}s", TLV_DAC_INFO, GetProcessName(property));
     APPSPAWN_CHECK(dacInfo->uid >= MIN_VALID_APP_UID && dacInfo->gid >= MIN_VALID_APP_GID &&
-        dacInfo->gidCount < APP_MAX_GIDS, return APPSPAWN_MSG_INVALID,
+        dacInfo->gidCount <= APP_MAX_GIDS, return APPSPAWN_MSG_INVALID,
         "uid %{public}u or gid %{public}u gidCount %{public}u is invalid ",
         dacInfo->uid, dacInfo->gid, dacInfo->gidCount);
 
