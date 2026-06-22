@@ -163,7 +163,7 @@ static void SetWorkerProcesssForkDenied(const char *bundleName, AppSpawningCtx *
 
     ret = write(fd, "0", 1);
     if (ret >= 0) {
-        fsync(fd);
+        APPSPAWN_CHECK_ONLY_LOG(fsync(fd) != -1, "Failed to fsync for target: %{public}d", errno);
         APPSPAWN_LOGI("SetForkDenied success, cgroup's owner:%{public}d", appInfo->uid);
     }
     close(fd);

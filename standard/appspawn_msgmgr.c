@@ -355,7 +355,7 @@ int GetAppSpawnMsgFromBuffer(const uint8_t *buffer, uint32_t bufferLen,
     return 0;
 }
 
-APPSPAWN_STATIC void DumpMsgFlags(const char *processName, const char *info, const AppSpawnMsgFlags *msgFlags)
+static inline void DumpMsgFlags(const char *processName, const char *info, const AppSpawnMsgFlags *msgFlags)
 {
     char logBuffer[DUMP_MAX_LOG_BUFF_LEN];
     int ret = 0;

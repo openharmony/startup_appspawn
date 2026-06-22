@@ -322,7 +322,7 @@ int AppSpawnReqMsgAddFd(AppSpawnReqMsgHandle reqHandle, const char* fdName, int 
     return AppSpawnReqMsgAddStringInfo(reqHandle, MSG_EXT_NAME_APP_FD, (void *)fdName);
 }
 
-static void GetSpecialGid(const char *bundleName, gid_t gidTable[], uint32_t *gidCount)
+APPSPAWN_STATIC void GetSpecialGid(const char *bundleName, gid_t gidTable[], uint32_t *gidCount)
 {
     // special handle bundle name medialibrary and scanner
     const char *specialBundleNames[] = {
@@ -331,7 +331,7 @@ static void GetSpecialGid(const char *bundleName, gid_t gidTable[], uint32_t *gi
 
     for (size_t i = 0; i < sizeof(specialBundleNames) / sizeof(specialBundleNames[0]); i++) {
         if (strcmp(bundleName, specialBundleNames[i]) == 0) {
-            if (*gidCount < APP_MAX_GIDS) {
+            if (*gidCount + 1 < APP_MAX_GIDS) {
                 gidTable[(*gidCount)++] = GID_USER_DATA_RW;
                 gidTable[(*gidCount)++] = GID_FILE_ACCESS;
             }

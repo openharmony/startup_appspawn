@@ -532,7 +532,9 @@ APPSPAWN_STATIC void MountDirToShared(AppSpawnMgr *content, const AppSpawningCtx
     AddLockBundleRef(info->uid, bundleName, lockPath);
 
     // Save lockPath and set flag (use const_cast to modify)
-    const_cast<AppSpawningCtx *>(property)->lockPath = strdup(lockPath.c_str());
+    char *lock = strdup(lockPath.c_str());
+    APPSPAWN_CHECK(lock != nullptr, return, "dup lockpath failed");
+    const_cast<AppSpawningCtx *>(property)->lockPath = lock;
     const_cast<AppSpawningCtx *>(property)->lockBundleRefAdded = true;
 }
 #endif
