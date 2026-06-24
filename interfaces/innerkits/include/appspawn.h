@@ -220,7 +220,6 @@ typedef enum {
     APP_FLAGS_SPAWN_IMAGE_PROCESS = 41,  // Identify the container image process request
     APP_FLAGS_SKILLS = 42,
     APP_FLAGS_DEBUGSERVER,
-    APP_FLAGS_BROWSER_TWIN,
     MAX_FLAGS_INDEX = 63,
 } AppFlagsIndex;
 

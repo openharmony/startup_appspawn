@@ -517,27 +517,6 @@ HWTEST_F(AppSpawnSandboxCommonTest, App_Spawn_SandboxCommon_ReplaceVariablePacka
     std::string result = AppSpawn::SandboxCommon::ReplaceVariablePackageName(appProperty, path);
     EXPECT_EQ(result, "/data/test/+auid-+com.example.myapplication");
 }
- 
-/**
- * @tc.name: App_Spawn_SandboxCommon_ReplaceVariablePackageName_06
- * @tc.desc: Test ReplaceVariablePackageName with browser-twin app
- * @tc.type: FUNC
- */
-HWTEST_F(AppSpawnSandboxCommonTest, App_Spawn_SandboxCommon_ReplaceVariablePackageName_06, TestSize.Level0)
-{
-    AppSpawningCtx *appProperty = AppSpawn::GetTestAppPropertyCore();
-    ASSERT_NE(appProperty, nullptr);
-    int ret = SetAppSpawnMsgFlag(appProperty->message, TLV_MSG_FLAGS, APP_FLAGS_BROWSER_TWIN);
-    ASSERT_EQ(ret, 0);
-    std::string path = "/data/test/<variablePackageName>";
- 
-    SetNoShareFsEnable(true);
-    std::string result = AppSpawn::SandboxCommon::ReplaceVariablePackageName(appProperty, path);
-    EXPECT_EQ(result, "/data/test/+aisandbox-100+com.example.myapplication");
-    SetNoShareFsEnable(false);
-    result = AppSpawn::SandboxCommon::ReplaceVariablePackageName(appProperty, path);
-    EXPECT_EQ(result, "/data/test/com.example.myapplication");
-}
 
 /**
  * @tc.name: App_Spawn_SandboxCommon_JoinParamPaths_01
