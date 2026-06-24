@@ -56,7 +56,8 @@ APP_SANDBOX_DEFAULT = '''
         }]
     }],
     "individual" : [{}],
-    "permission" :[{}]
+    "permission" :[{}],
+    "debug" : [{}]
 }
 '''
 # only string in list
@@ -270,6 +271,10 @@ def fix_sandbox_config_file(options):
         permission = data.get("permission")
         if permission is not None and len(permission) > 0:
             _merge_scope_permission(origin_json.get("permission")[0], permission[0])
+
+        debug = data.get("debug")
+        if debug is not None and len(debug) > 0:
+            _merge_scope_permission(origin_json.get("debug")[0], debug[0])
 
     # dump json to output
     flags = os.O_WRONLY | os.O_CREAT | os.O_TRUNC
