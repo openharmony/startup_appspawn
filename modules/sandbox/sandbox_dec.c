@@ -40,35 +40,31 @@ static const char *g_decForcedPrefix[] = {
     "/storage/Users/currentUser/appdata",
 };
 
-
-static const DecIgnoreCaseInfo g_setInfo[] = { DEC_IGNORE_CASE_LIST };
-
-
 APPSPAWN_STATIC int SetIgnoreCaseDirs(AppSpawnMgr *content)
 {
-    if (!IsNoShareFsEnable()) {
-        APPSPAWN_LOGV("ignore case dec not enable");
-        return 0;
-    }
     APPSPAWN_CHECK(IsNativeSpawnMode(content) || IsAppSpawnMode(content), return 0,
         "not support ignore case dir");
+
+    uint32_t pathNum = 0;
+    const DecIgnoreCaseInfo *setInfo = GetDecIgnoreCaseList(IsNoShareFsEnable(), &pathNum);
+    APPSPAWN_CHECK(setInfo != NULL && pathNum > 0, return 0, "invalid dec ignore case list");
     const char *decFilename = "/dev/dec";
     int fd = open(decFilename, O_RDWR);
     APPSPAWN_CHECK(fd >= 0, return 0, "Open dec file failed errno %{public}d", errno);
 
     DecPolicyInfo decPolicyInfos = {0};
     decPolicyInfos.tokenId = 0;
-    decPolicyInfos.pathNum = ARRAY_LENGTH(g_setInfo);
+    decPolicyInfos.pathNum = pathNum;
     decPolicyInfos.flag = 0;
-    
-    for (uint32_t i = 0; i < decPolicyInfos.pathNum; i++) {
+
+    for (uint32_t i = 0; i < pathNum; i++) {
         PathInfo pathInfo = {
-            .path = (char *)g_setInfo[i].path,
-            .pathLen = (uint32_t)strlen(g_setInfo[i].path),
-            .mode = (uint32_t)g_setInfo[i].mode,
+            .path = (char *)setInfo[i].path,
+            .pathLen = (uint32_t)strlen(setInfo[i].path),
+            .mode = (uint32_t)setInfo[i].mode,
             .flag = false
         };
-        APPSPAWN_LOGV("set ignore case dec policy %{public}s %{public}d", g_setInfo[i].path, g_setInfo[i].mode);
+        APPSPAWN_LOGV("set ignore case dec policy %{public}s %{public}d", setInfo[i].path, setInfo[i].mode);
         decPolicyInfos.path[i] = pathInfo;
     }
     int ret = ioctl(fd, SET_DEC_IGNORE_CASE_CMD, &decPolicyInfos);
