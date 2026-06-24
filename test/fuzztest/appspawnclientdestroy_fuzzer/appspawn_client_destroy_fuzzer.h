@@ -15,5 +15,5 @@
 
 #ifndef APPSPAWNCLIENT_FUZZER
 #define APPSPAWNCLIENT_FUZZER
-#define FUZZ_PROJECT_NAME "appspawnclient_string_fuzzer"
+#define FUZZ_PROJECT_NAME "appspawn_client_destroy_fuzzer"
 #endif // APPSPAWNCLIENT_FUZZER

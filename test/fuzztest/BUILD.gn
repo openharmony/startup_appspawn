@@ -17,28 +17,6 @@ import("//build/config/features.gni")
 import("//build/ohos.gni")
 import("//build/test.gni")
 ##############################fuzztest##########################################
-ohos_fuzztest("AppSpawnClientInitFuzzTest") {
-  module_out_path = module_output_path
-  fuzz_config_file = "${appspawn_path}/test/fuzztest/appspawnclientinit_fuzzer"
-
-  include_dirs = [ "${appspawn_path}/interfaces/innerkits/include" ]
-
-  deps = [ "${appspawn_path}/interfaces/innerkits/client:appspawn_client" ]
-  external_deps = [ "bounds_checking_function:libsec_static" ]
-
-  defines = []
-  if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
-    defines += [ "APPSPAWN_SANDBOX_NEW" ]
-  }
-
-  cflags = [
-    "-g",
-    "-O0",
-    "-Wno-unused-variable",
-    "-fno-omit-frame-pointer",
-  ]
-  sources = [ "appspawnclientinit_fuzzer/appspawnclient_init_fuzzer.cpp" ]
-}
 
 ohos_fuzztest("AppSpawnClientBudleFuzzTest") {
   module_out_path = module_output_path
@@ -63,9 +41,9 @@ ohos_fuzztest("AppSpawnClientBudleFuzzTest") {
   sources = [ "appspawnclientbudle_fuzzer/appspawnclient_budle_fuzzer.cpp" ]
 }
 
-ohos_fuzztest("AppSpawnClientStringFuzzTest") {
+ohos_fuzztest("AppSpawnClientClientInitFuzzTest") {
   module_out_path = module_output_path
-  fuzz_config_file = "${appspawn_path}/test/fuzztest/appspawnclientstring_fuzzer"
+  fuzz_config_file = "${appspawn_path}/test/fuzztest/appspawnclientclientinit_fuzzer"
 
   include_dirs = [ "${appspawn_path}/interfaces/innerkits/include" ]
 
@@ -83,14 +61,301 @@ ohos_fuzztest("AppSpawnClientStringFuzzTest") {
     "-Wno-unused-variable",
     "-fno-omit-frame-pointer",
   ]
-  sources = [ "appspawnclientstring_fuzzer/appspawnclient_string_fuzzer.cpp" ]
+  sources = [ "appspawnclientclientinit_fuzzer/appspawnclient_clientinit_fuzzer.cpp" ]
+}
+
+ohos_fuzztest("AppSpawnClientReqMsgCreateFuzzTest") {
+  module_out_path = module_output_path
+  fuzz_config_file = "${appspawn_path}/test/fuzztest/appspawnclientreqmsgcreate_fuzzer"
+
+  include_dirs = [ "${appspawn_path}/interfaces/innerkits/include" ]
+
+  deps = [ "${appspawn_path}/interfaces/innerkits/client:appspawn_client" ]
+  external_deps = [ "bounds_checking_function:libsec_static" ]
+
+  defines = []
+  if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
+    defines += [ "APPSPAWN_SANDBOX_NEW" ]
+  }
+
+  cflags = [
+    "-g",
+    "-O0",
+    "-Wno-unused-variable",
+    "-fno-omit-frame-pointer",
+  ]
+  sources = [ "appspawnclientreqmsgcreate_fuzzer/appspawnclient_reqmsgcreate_fuzzer.cpp" ]
+}
+
+ohos_fuzztest("AppSpawnClientTerminateMsgCreateFuzzTest") {
+  module_out_path = module_output_path
+  fuzz_config_file = "${appspawn_path}/test/fuzztest/appspawnclientterminatemsgcreate_fuzzer"
+
+  include_dirs = [ "${appspawn_path}/interfaces/innerkits/include" ]
+
+  deps = [ "${appspawn_path}/interfaces/innerkits/client:appspawn_client" ]
+  external_deps = [ "bounds_checking_function:libsec_static" ]
+
+  defines = []
+  if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
+    defines += [ "APPSPAWN_SANDBOX_NEW" ]
+  }
+
+  cflags = [
+    "-g",
+    "-O0",
+    "-Wno-unused-variable",
+    "-fno-omit-frame-pointer",
+  ]
+  sources = [ "appspawnclientterminatemsgcreate_fuzzer/appspawnclient_terminatemsgcreate_fuzzer.cpp" ]
+}
+
+ohos_fuzztest("AppSpawnClientSendMsgFuzzTest") {
+  module_out_path = module_output_path
+  fuzz_config_file = "${appspawn_path}/test/fuzztest/appspawnclientsendmsg_fuzzer"
+
+  include_dirs = [ "${appspawn_path}/interfaces/innerkits/include" ]
+
+  deps = [ "${appspawn_path}/interfaces/innerkits/client:appspawn_client" ]
+  external_deps = [ "bounds_checking_function:libsec_static" ]
+
+  defines = []
+  if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
+    defines += [ "APPSPAWN_SANDBOX_NEW" ]
+  }
+
+  cflags = [
+    "-g",
+    "-O0",
+    "-Wno-unused-variable",
+    "-fno-omit-frame-pointer",
+  ]
+  sources = [ "appspawnclientsendmsg_fuzzer/appspawnclient_sendmsg_fuzzer.cpp" ]
+}
+
+ohos_fuzztest("AppSpawnClientReqMsgFreeFuzzTest") {
+  module_out_path = module_output_path
+  fuzz_config_file = "${appspawn_path}/test/fuzztest/appspawnclientreqmsgfree_fuzzer"
+
+  include_dirs = [ "${appspawn_path}/interfaces/innerkits/include" ]
+
+  deps = [ "${appspawn_path}/interfaces/innerkits/client:appspawn_client" ]
+  external_deps = [ "bounds_checking_function:libsec_static" ]
+
+  defines = []
+  if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
+    defines += [ "APPSPAWN_SANDBOX_NEW" ]
+  }
+
+  cflags = [
+    "-g",
+    "-O0",
+    "-Wno-unused-variable",
+    "-fno-omit-frame-pointer",
+  ]
+  sources = [ "appspawnclientreqmsgfree_fuzzer/appspawnclient_reqmsgfree_fuzzer.cpp" ]
+}
+
+ohos_fuzztest("AppSpawnClientAddStringInfoFuzzTest") {
+  module_out_path = module_output_path
+  fuzz_config_file = "${appspawn_path}/test/fuzztest/appspawnclientaddstringinfo_fuzzer"
+
+  include_dirs = [ "${appspawn_path}/interfaces/innerkits/include" ]
+
+  deps = [ "${appspawn_path}/interfaces/innerkits/client:appspawn_client" ]
+  external_deps = [ "bounds_checking_function:libsec_static" ]
+
+  defines = []
+  if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
+    defines += [ "APPSPAWN_SANDBOX_NEW" ]
+  }
+
+  cflags = [
+    "-g",
+    "-O0",
+    "-Wno-unused-variable",
+    "-fno-omit-frame-pointer",
+  ]
+  sources = [ "appspawnclientaddstringinfo_fuzzer/appspawnclient_addstringinfo_fuzzer.cpp" ]
+}
+
+ohos_fuzztest("AppSpawnClientSetAppOwnerIdFuzzTest") {
+  module_out_path = module_output_path
+  fuzz_config_file = "${appspawn_path}/test/fuzztest/appspawnclientsetappownerid_fuzzer"
+
+  include_dirs = [ "${appspawn_path}/interfaces/innerkits/include" ]
+
+  deps = [ "${appspawn_path}/interfaces/innerkits/client:appspawn_client" ]
+  external_deps = [ "bounds_checking_function:libsec_static" ]
+
+  defines = []
+  if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
+    defines += [ "APPSPAWN_SANDBOX_NEW" ]
+  }
+
+  cflags = [
+    "-g",
+    "-O0",
+    "-Wno-unused-variable",
+    "-fno-omit-frame-pointer",
+  ]
+  sources = [ "appspawnclientsetappownerid_fuzzer/appspawnclient_setappownerid_fuzzer.cpp" ]
+}
+
+ohos_fuzztest("AppSpawnClientAddPermissionFuzzTest") {
+  module_out_path = module_output_path
+  fuzz_config_file = "${appspawn_path}/test/fuzztest/appspawnclientaddpermission_fuzzer"
+
+  include_dirs = [ "${appspawn_path}/interfaces/innerkits/include" ]
+
+  deps = [ "${appspawn_path}/interfaces/innerkits/client:appspawn_client" ]
+  external_deps = [ "bounds_checking_function:libsec_static" ]
+
+  defines = []
+  if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
+    defines += [ "APPSPAWN_SANDBOX_NEW" ]
+  }
+
+  cflags = [
+    "-g",
+    "-O0",
+    "-Wno-unused-variable",
+    "-fno-omit-frame-pointer",
+  ]
+  sources = [ "appspawnclientaddpermission_fuzzer/appspawnclient_addpermission_fuzzer.cpp" ]
+}
+
+ohos_fuzztest("AppSpawnClientAddExtInfoFuzzTest") {
+  module_out_path = module_output_path
+  fuzz_config_file = "${appspawn_path}/test/fuzztest/appspawnclientaddextinfo_fuzzer"
+
+  include_dirs = [ "${appspawn_path}/interfaces/innerkits/include" ]
+
+  deps = [ "${appspawn_path}/interfaces/innerkits/client:appspawn_client" ]
+  external_deps = [ "bounds_checking_function:libsec_static" ]
+
+  defines = []
+  if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
+    defines += [ "APPSPAWN_SANDBOX_NEW" ]
+  }
+
+  cflags = [
+    "-g",
+    "-O0",
+    "-Wno-unused-variable",
+    "-fno-omit-frame-pointer",
+  ]
+  sources = [ "appspawnclientaddextinfo_fuzzer/appspawnclient_addextinfo_fuzzer.cpp" ]
+}
+
+ohos_fuzztest("AppSpawnClientPermissionIndexFuzzTest") {
+  module_out_path = module_output_path
+  fuzz_config_file = "${appspawn_path}/test/fuzztest/appspawnclientpermissionindex_fuzzer"
+
+  include_dirs = [ "${appspawn_path}/interfaces/innerkits/include" ]
+
+  deps = [ "${appspawn_path}/interfaces/innerkits/client:appspawn_client" ]
+  external_deps = [ "bounds_checking_function:libsec_static" ]
+
+  defines = []
+  if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
+    defines += [ "APPSPAWN_SANDBOX_NEW" ]
+  }
+
+  cflags = [
+    "-g",
+    "-O0",
+    "-Wno-unused-variable",
+    "-fno-omit-frame-pointer",
+  ]
+  sources = [ "appspawnclientpermissionindex_fuzzer/appspawnclient_permissionindex_fuzzer.cpp" ]
+}
+
+ohos_fuzztest("AppSpawnClientMaxPermissionIndexFuzzTest") {
+  module_out_path = module_output_path
+  fuzz_config_file = "${appspawn_path}/test/fuzztest/appspawnclientmaxpermissionindex_fuzzer"
+
+  include_dirs = [ "${appspawn_path}/interfaces/innerkits/include" ]
+
+  deps = [ "${appspawn_path}/interfaces/innerkits/client:appspawn_client" ]
+  external_deps = [ "bounds_checking_function:libsec_static" ]
+
+  defines = []
+  if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
+    defines += [ "APPSPAWN_SANDBOX_NEW" ]
+  }
+
+  cflags = [
+    "-g",
+    "-O0",
+    "-Wno-unused-variable",
+    "-fno-omit-frame-pointer",
+  ]
+  sources = [ "appspawnclientmaxpermissionindex_fuzzer/appspawnclient_maxpermissionindex_fuzzer.cpp" ]
+}
+
+ohos_fuzztest("AppSpawnClientPermissionByIndexFuzzTest") {
+  module_out_path = module_output_path
+  fuzz_config_file = "${appspawn_path}/test/fuzztest/appspawnclientpermissionbyindex_fuzzer"
+
+  include_dirs = [ "${appspawn_path}/interfaces/innerkits/include" ]
+
+  deps = [ "${appspawn_path}/interfaces/innerkits/client:appspawn_client" ]
+  external_deps = [ "bounds_checking_function:libsec_static" ]
+
+  defines = []
+  if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
+    defines += [ "APPSPAWN_SANDBOX_NEW" ]
+  }
+
+  cflags = [
+    "-g",
+    "-O0",
+    "-Wno-unused-variable",
+    "-fno-omit-frame-pointer",
+  ]
+  sources = [ "appspawnclientpermissionbyindex_fuzzer/appspawnclient_permissionbyindex_fuzzer.cpp" ]
+}
+
+ohos_fuzztest("AppspawnClientDestroyFuzzTest") {
+  module_out_path = module_output_path
+  fuzz_config_file = "${appspawn_path}/test/fuzztest/appspawnclientdestroy_fuzzer"
+
+  include_dirs = [ "${appspawn_path}/interfaces/innerkits/include" ]
+
+  deps = [ "${appspawn_path}/interfaces/innerkits/client:appspawn_client" ]
+  external_deps = [ "bounds_checking_function:libsec_static" ]
+
+  defines = []
+  if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
+    defines += [ "APPSPAWN_SANDBOX_NEW" ]
+  }
+
+  cflags = [
+    "-g",
+    "-O0",
+    "-Wno-unused-variable",
+    "-fno-omit-frame-pointer",
+  ]
+  sources = [ "appspawnclientdestroy_fuzzer/appspawn_client_destroy_fuzzer.cpp" ]
 }
 
 group("app_spawn_fuzztest") {
   testonly = true
   deps = []
-  deps += [ ":AppSpawnClientInitFuzzTest" ]
   deps += [ ":AppSpawnClientBudleFuzzTest" ]
-  deps += [ ":AppSpawnClientStringFuzzTest" ]
+  deps += [ ":AppSpawnClientClientInitFuzzTest" ]
+  deps += [ ":AppSpawnClientReqMsgCreateFuzzTest" ]
+  deps += [ ":AppSpawnClientTerminateMsgCreateFuzzTest" ]
+  deps += [ ":AppSpawnClientSendMsgFuzzTest" ]
+  deps += [ ":AppSpawnClientReqMsgFreeFuzzTest" ]
+  deps += [ ":AppSpawnClientAddStringInfoFuzzTest" ]
+  deps += [ ":AppSpawnClientSetAppOwnerIdFuzzTest" ]
+  deps += [ ":AppSpawnClientAddPermissionFuzzTest" ]
+  deps += [ ":AppSpawnClientAddExtInfoFuzzTest" ]
+  deps += [ ":AppSpawnClientPermissionIndexFuzzTest" ]
+  deps += [ ":AppSpawnClientMaxPermissionIndexFuzzTest" ]
+  deps += [ ":AppSpawnClientPermissionByIndexFuzzTest" ]
+  deps += [ ":AppspawnClientDestroyFuzzTest" ]
 }
 ###############################################################################
