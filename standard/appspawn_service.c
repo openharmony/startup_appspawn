@@ -2249,8 +2249,6 @@ APPSPAWN_STATIC int ProcessAppSpawnDeviceDebugMsg(AppSpawnMsgNode *message)
 APPSPAWN_STATIC bool ProcessAppSpawnLockStatusMsg(AppSpawnConnection *connection,
     AppSpawnMsgNode *message, int *result)
 {
-    APPSPAWN_LOGI("ProcessAppSpawnLockStatusMsg: connId=%{public}u msg=%{public}p",
-        connection ? connection->connectionId : 0, message);
     APPSPAWN_CHECK_ONLY_EXPER(message != NULL, return false);
     uint32_t len = 0;
     char *lockstatus = (char *)GetAppSpawnMsgExtInfo(message, "lockstatus", &len);

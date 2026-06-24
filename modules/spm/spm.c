@@ -1171,7 +1171,7 @@ static void BuildAndReplaceMessage(AppSpawnMsgNode *oldMsg,
 static int RebuildMessageFromSPM(const AppSpawnMgr *mgr, AppSpawningCtx *ctx)
 {
     APPSPAWN_CHECK(mgr != NULL && ctx != NULL && ctx->message != NULL, return SPM_ERROR_INVALID_PARAM,
-        "Invalid parameters: mgr=%{public}p, ctx=%{public}p, ctx->message=%{public}p", mgr, ctx, ctx->message);
+        "Invalid parameters is null");
 
     AppSpawnMsgNode *oldMsg = ctx->message;
     APPSPAWN_LOGI("RebuildMessageFromSPM: Rebuilding message for %{public}s, msgId=%{public}u",

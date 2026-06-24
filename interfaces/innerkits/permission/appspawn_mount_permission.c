@@ -244,8 +244,6 @@ static int InitPermissionQueueForSPM(AppSpawnMgr *mgr)
 
     // Expose permission queue to AppSpawnContent for SPM
     mgr->content.permissionQueue = &permMgr->permissionQueue;
-    APPSPAWN_LOGI("InitPermissionQueueForSPM: Set permissionQueue %{public}p",
-                  mgr->content.permissionQueue);
     return 0;
 }
 #endif
