@@ -829,21 +829,20 @@ void SandboxCommon::MakeAtomicServiceDir(const AppSpawningCtx *appProperty, std:
 
 int SandboxCommon::GetVarPackageNameType(const AppSpawningCtx *appProperty, uint32_t appIndex)
 {
-    int type = SANDBOX_PACKAGENAME_DEFAULT;
     if (CheckAppSpawnMsgFlag(appProperty->message, TLV_MSG_FLAGS, APP_FLAGS_ATOMIC_SERVICE)) {
-        type = SANDBOX_PACKAGENAME_ATOMIC_SERVICE;
-    } else if (CheckAppSpawnMsgFlag(appProperty->message, TLV_MSG_FLAGS, APP_FLAGS_BROWSER_TWIN) && appIndex > 0 &&
-        IsNoShareFsEnable()) {
-        type = SANDBOX_PACKAGENAME_BROWSER_TWIN;
-    } else if (CheckAppSpawnMsgFlag(appProperty->message, TLV_MSG_FLAGS, APP_FLAGS_CLONE_ENABLE) && appIndex > 0) {
-        type = SANDBOX_PACKAGENAME_CLONE;
-        if (CheckAppSpawnMsgFlag(appProperty->message, TLV_MSG_FLAGS, APP_FLAGS_EXTENSION_SANDBOX)) {
-            type = SANDBOX_PACKAGENAME_CLONE_AND_EXTENSION;
-        }
-    } else if (CheckAppSpawnMsgFlag(appProperty->message, TLV_MSG_FLAGS, APP_FLAGS_EXTENSION_SANDBOX)) {
-        type = SANDBOX_PACKAGENAME_EXTENSION;
+        return SANDBOX_PACKAGENAME_ATOMIC_SERVICE;
     }
-    return type;
+    if (CheckAppSpawnMsgFlag(appProperty->message, TLV_MSG_FLAGS, APP_FLAGS_CLONE_ENABLE) && appIndex > 0 &&
+        CheckAppSpawnMsgFlag(appProperty->message, TLV_MSG_FLAGS, APP_FLAGS_EXTENSION_SANDBOX)) {
+        return SANDBOX_PACKAGENAME_CLONE_AND_EXTENSION;
+    }
+    if (CheckAppSpawnMsgFlag(appProperty->message, TLV_MSG_FLAGS, APP_FLAGS_CLONE_ENABLE) && appIndex > 0) {
+        return SANDBOX_PACKAGENAME_CLONE;
+    }
+    if (CheckAppSpawnMsgFlag(appProperty->message, TLV_MSG_FLAGS, APP_FLAGS_EXTENSION_SANDBOX)) {
+        return SANDBOX_PACKAGENAME_EXTENSION;
+    }
+    return SANDBOX_PACKAGENAME_DEFAULT;
 }
 
 std::string SandboxCommon::ReplaceVariablePackageName(const AppSpawningCtx *appProperty, const std::string &path)
@@ -883,10 +882,6 @@ std::string SandboxCommon::ReplaceVariablePackageName(const AppSpawningCtx *appP
             atomicServicePath = ReplaceAllVariables(atomicServicePath, SandboxCommonDef::g_variablePackageName,
                                                     variablePackageName.str());
             MakeAtomicServiceDir(appProperty, atomicServicePath, variablePackageName.str());
-            break;
-        }
-        case SANDBOX_PACKAGENAME_BROWSER_TWIN: {  // 5 +aisandbox-bundleIndex+packageName
-            variablePackageName << "+aisandbox-" << appIndex << "+" << bundleInfo->bundleName;
             break;
         }
         default:
@@ -935,10 +930,6 @@ std::string SandboxCommon::ReplaceSandboxRootVariablePackageName(const AppSpawni
             std::string atomicServicePath = path;
             atomicServicePath = ReplaceAllVariables(atomicServicePath, SandboxCommonDef::g_variablePackageName,
                                                     variablePackageName.str());
-            break;
-        }
-        case SANDBOX_PACKAGENAME_BROWSER_TWIN: {  // 5 +aisandbox-bundleIndex+packageName
-            variablePackageName << "+aisandbox-" << appIndex << "+" << bundleInfo->bundleName;
             break;
         }
         default:
