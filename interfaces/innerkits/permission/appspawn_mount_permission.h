@@ -24,6 +24,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#define OPCODE_INVALID (-1)
 
 #ifdef APPSPAWN_CLIENT
 typedef struct TagSandboxQueue {

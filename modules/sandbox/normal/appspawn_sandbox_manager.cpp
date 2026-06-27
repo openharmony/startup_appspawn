@@ -49,9 +49,9 @@ int32_t SetAppSandboxProperty(AppSpawnMgr *content, AppSpawningCtx *property)
 
     StartAppspawnTrace("SetAppSandboxProperty");
     if (IsNWebSpawnMode(content)) {
-        ret = OHOS::AppSpawn::SandboxCore::SetAppSandboxPropertyNweb(property, sandboxNsFlags);
+        ret = OHOS::AppSpawn::SandboxCore::SetAppSandboxPropertyNweb(content, property, sandboxNsFlags);
     } else {
-        ret = OHOS::AppSpawn::SandboxCore::SetAppSandboxProperty(property, sandboxNsFlags);
+        ret = OHOS::AppSpawn::SandboxCore::SetAppSandboxProperty(content, property, sandboxNsFlags);
     }
     FinishAppspawnTrace();
     // for module test do not create sandbox, use APP_FLAGS_IGNORE_SANDBOX to ignore sandbox result

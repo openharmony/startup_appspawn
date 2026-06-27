@@ -115,7 +115,8 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_08, TestSize.Level0)
     g_testHelper.SetTestGid(1000);  // 1000 test
     g_testHelper.SetProcessName("ohos.samples.ecg");
     AppSpawningCtx *appProperty = GetTestAppProperty();
-    int32_t ret = AppSpawn::SandboxCore::SetAppSandboxProperty(appProperty, CLONE_NEWPID);
+    AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+    int32_t ret = AppSpawn::SandboxCore::SetAppSandboxProperty(mgr, appProperty, CLONE_NEWPID);
     EXPECT_EQ(ret, 0);
 
     DeleteAppSpawningCtx(appProperty);
@@ -133,7 +134,8 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_09, TestSize.Level0)
     g_testHelper.SetProcessName("com.ohos.dlpmanager");
     g_testHelper.SetTestApl("normal");
     AppSpawningCtx *appProperty = GetTestAppProperty();
-    int32_t ret = AppSpawn::SandboxCore::SetAppSandboxProperty(appProperty, CLONE_NEWPID);
+    AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+    int32_t ret = AppSpawn::SandboxCore::SetAppSandboxProperty(mgr, appProperty, CLONE_NEWPID);
     EXPECT_EQ(ret, 0);
 
     DeleteAppSpawningCtx(appProperty);
@@ -145,7 +147,8 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_09_1, TestSize.Level0)
     g_testHelper.SetTestGid(1000);  // 1000 test
     g_testHelper.SetProcessName("com.ohos.dlpmanager");
     g_testHelper.SetTestApl("normal");
-    int32_t ret = AppSpawn::SandboxCore::SetAppSandboxProperty(nullptr, CLONE_NEWPID);
+    AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+    int32_t ret = AppSpawn::SandboxCore::SetAppSandboxProperty(mgr, nullptr, CLONE_NEWPID);
     EXPECT_NE(ret, 0);
 }
 
@@ -156,7 +159,8 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_09_2, TestSize.Level0)
     g_testHelper.SetProcessName("");
     g_testHelper.SetTestApl("normal");
     AppSpawningCtx *appProperty = GetTestAppProperty();
-    int32_t ret = AppSpawn::SandboxCore::SetAppSandboxProperty(appProperty, CLONE_NEWPID);
+    AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+    int32_t ret = AppSpawn::SandboxCore::SetAppSandboxProperty(mgr, appProperty, CLONE_NEWPID);
     EXPECT_NE(ret, 0);
 
     DeleteAppSpawningCtx(appProperty);
@@ -169,7 +173,8 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_09_3, TestSize.Level0)
     g_testHelper.SetProcessName("com.\\ohos.dlpmanager");
     g_testHelper.SetTestApl("normal");
     AppSpawningCtx *appProperty = GetTestAppProperty();
-    int32_t ret = AppSpawn::SandboxCore::SetAppSandboxProperty(appProperty, CLONE_NEWPID);
+    AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+    int32_t ret = AppSpawn::SandboxCore::SetAppSandboxProperty(mgr, appProperty, CLONE_NEWPID);
     EXPECT_NE(ret, 0);
 
     DeleteAppSpawningCtx(appProperty);
@@ -182,7 +187,8 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_09_4, TestSize.Level0)
     g_testHelper.SetProcessName("com./ohos.dlpmanager");
     g_testHelper.SetTestApl("normal");
     AppSpawningCtx *appProperty = GetTestAppProperty();
-    int32_t ret = AppSpawn::SandboxCore::SetAppSandboxProperty(appProperty, CLONE_NEWPID);
+    AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+    int32_t ret = AppSpawn::SandboxCore::SetAppSandboxProperty(mgr, appProperty, CLONE_NEWPID);
     EXPECT_NE(ret, 0);
 
     DeleteAppSpawningCtx(appProperty);
@@ -223,7 +229,8 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_10, TestSize.Level0)
     g_testHelper.SetProcessName("test.appspawn");
     g_testHelper.SetTestApl("normal");
     AppSpawningCtx *appProperty = GetTestAppProperty();
-    int32_t ret = AppSpawn::SandboxCore::SetAppSandboxProperty(appProperty, CLONE_NEWPID);
+    AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+    int32_t ret = AppSpawn::SandboxCore::SetAppSandboxProperty(mgr, appProperty, CLONE_NEWPID);
     EXPECT_EQ(ret, 0);
 
     cJSON_Delete(j_config);
@@ -264,7 +271,8 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_13, TestSize.Level0)
     g_testHelper.SetProcessName("test.appspawn");
     g_testHelper.SetTestApl("normal");
     AppSpawningCtx *appProperty = GetTestAppProperty();
-    int32_t ret = AppSpawn::SandboxCore::SetAppSandboxProperty(appProperty, CLONE_NEWPID);
+    AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+    int32_t ret = AppSpawn::SandboxCore::SetAppSandboxProperty(mgr, appProperty, CLONE_NEWPID);
     EXPECT_EQ(ret, 0);
 
     cJSON_Delete(j_config);
@@ -304,7 +312,8 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_14, TestSize.Level0)
     g_testHelper.SetProcessName("test.appspawn");
     g_testHelper.SetTestApl("normal");
     AppSpawningCtx *appProperty = GetTestAppProperty();
-    int32_t ret = AppSpawn::SandboxCore::SetAppSandboxProperty(appProperty, CLONE_NEWPID);
+    AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+    int32_t ret = AppSpawn::SandboxCore::SetAppSandboxProperty(mgr, appProperty, CLONE_NEWPID);
     EXPECT_EQ(ret, 0);
 
     cJSON_Delete(j_config);
@@ -345,7 +354,8 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_15, TestSize.Level0)
     g_testHelper.SetProcessName("test.appspawn");
     g_testHelper.SetTestApl("normal");
     AppSpawningCtx *appProperty = GetTestAppProperty();
-    int32_t ret = AppSpawn::SandboxCore::SetAppSandboxProperty(appProperty, CLONE_NEWPID);
+    AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+    int32_t ret = AppSpawn::SandboxCore::SetAppSandboxProperty(mgr, appProperty, CLONE_NEWPID);
     EXPECT_EQ(ret, 0);
 
     cJSON_Delete(j_config);
@@ -379,7 +389,8 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_16, TestSize.Level0)
     g_testHelper.SetProcessName("test.appspawn");
     g_testHelper.SetTestApl("normal");
     AppSpawningCtx *appProperty = GetTestAppProperty();
-    int32_t ret = AppSpawn::SandboxCore::SetAppSandboxProperty(appProperty, CLONE_NEWPID);
+    AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+    int32_t ret = AppSpawn::SandboxCore::SetAppSandboxProperty(mgr, appProperty, CLONE_NEWPID);
     EXPECT_EQ(ret, 0);
 
     cJSON_Delete(j_config);
@@ -468,7 +479,8 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_20, TestSize.Level0)
     g_testHelper.SetProcessName("test.appspawn");
     g_testHelper.SetTestApl("normal");
     AppSpawningCtx *appProperty = GetTestAppProperty();
-    int32_t ret = AppSpawn::SandboxCore::SetAppSandboxProperty(appProperty, CLONE_NEWPID);
+    AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+    int32_t ret = AppSpawn::SandboxCore::SetAppSandboxProperty(mgr, appProperty, CLONE_NEWPID);
     EXPECT_EQ(ret, 0);
 
     std::string mJsconfig1 = "{ \
@@ -489,7 +501,7 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_20, TestSize.Level0)
     ASSERT_NE(j_config1, nullptr);
 
     AppSpawn::SandboxCommon::StoreCJsonConfig(j_config1, SandboxCommonDef::SANDBOX_APP_JSON_CONFIG);
-    ret = AppSpawn::SandboxCore::SetAppSandboxProperty(appProperty, CLONE_NEWPID);
+    ret = AppSpawn::SandboxCore::SetAppSandboxProperty(mgr, appProperty, CLONE_NEWPID);
     EXPECT_EQ(ret, 0);
 
     cJSON_Delete(j_config);
@@ -1801,7 +1813,8 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_56, TestSize.Level0)
     g_testHelper.SetProcessName("com.//ohos.dlpmanager");
     g_testHelper.SetTestApl("normal");
     AppSpawningCtx *appProperty = GetTestAppProperty();
-    int32_t ret = AppSpawn::SandboxCore::SetAppSandboxPropertyNweb(appProperty, CLONE_NEWPID);
+    AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
+    int32_t ret = AppSpawn::SandboxCore::SetAppSandboxPropertyNweb(mgr, appProperty, CLONE_NEWPID);
     EXPECT_NE(ret, 0);
     DeleteAppSpawningCtx(appProperty);
     g_testHelper.SetProcessName("com.example.myapplication");
@@ -1812,7 +1825,8 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_57, TestSize.Level0)
     g_testHelper.SetProcessName("com.ohos.dlpmanager");
     g_testHelper.SetTestApl("normal");
     AppSpawningCtx *appProperty = GetTestAppProperty();
-    int32_t ret = AppSpawn::SandboxCore::SetAppSandboxPropertyNweb(appProperty, CLONE_NEWPID);
+    AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
+    int32_t ret = AppSpawn::SandboxCore::SetAppSandboxPropertyNweb(mgr, appProperty, CLONE_NEWPID);
     EXPECT_NE(ret, 0);
     DeleteAppSpawningCtx(appProperty);
     g_testHelper.SetProcessName("com.example.myapplication");
@@ -1823,7 +1837,8 @@ HWTEST_F(AppSpawnSandboxTest, App_Spawn_Sandbox_58, TestSize.Level0)
     g_testHelper.SetProcessName("");
     g_testHelper.SetTestApl("normal");
     AppSpawningCtx *appProperty = GetTestAppProperty();
-    int32_t ret = AppSpawn::SandboxCore::SetAppSandboxPropertyNweb(appProperty, CLONE_NEWPID);
+    AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_NWEB_SPAWN);
+    int32_t ret = AppSpawn::SandboxCore::SetAppSandboxPropertyNweb(mgr, appProperty, CLONE_NEWPID);
     EXPECT_NE(ret, 0);
     DeleteAppSpawningCtx(appProperty);
     g_testHelper.SetProcessName("com.example.myapplication");
@@ -3452,7 +3467,8 @@ HWTEST_F(AppSpawnSandboxTest, Set_App_Sandbox_Property_For_Dlp_01, TestSize.Leve
 
     AppSpawningCtx *spawningCtx = GetTestAppProperty();
     ASSERT_EQ(spawningCtx != nullptr, 1);
-    bool ret = AppSpawn::SandboxCore::SetAppSandboxProperty(spawningCtx, CLONE_NEWPID);
+    AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+    bool ret = AppSpawn::SandboxCore::SetAppSandboxProperty(mgr, spawningCtx, CLONE_NEWPID);
     EXPECT_EQ(ret, false);
 
     DeleteAppSpawningCtx(spawningCtx);
@@ -3473,7 +3489,8 @@ HWTEST_F(AppSpawnSandboxTest, Set_App_Sandbox_Property_For_Dlp_02, TestSize.Leve
 
     AppSpawningCtx *spawningCtx = GetTestAppProperty();
     ASSERT_EQ(spawningCtx != nullptr, 1);
-    bool ret = AppSpawn::SandboxCore::SetAppSandboxProperty(spawningCtx, CLONE_NEWPID);
+    AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+    bool ret = AppSpawn::SandboxCore::SetAppSandboxProperty(mgr, spawningCtx, CLONE_NEWPID);
     EXPECT_EQ(ret, false);
 
     DeleteAppSpawningCtx(spawningCtx);
@@ -3492,7 +3509,8 @@ HWTEST_F(AppSpawnSandboxTest, Set_App_Sandbox_Property_For_Dlp_03, TestSize.Leve
 
     AppSpawningCtx *spawningCtx = GetTestAppProperty();
     ASSERT_EQ(spawningCtx != nullptr, 1);
-    bool ret = AppSpawn::SandboxCore::SetAppSandboxProperty(spawningCtx, CLONE_NEWPID);
+    AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+    bool ret = AppSpawn::SandboxCore::SetAppSandboxProperty(mgr, spawningCtx, CLONE_NEWPID);
     EXPECT_EQ(ret, false);
 
     DeleteAppSpawningCtx(spawningCtx);
@@ -3511,7 +3529,8 @@ HWTEST_F(AppSpawnSandboxTest, Set_App_Sandbox_Property_For_Dlp_04, TestSize.Leve
 
     AppSpawningCtx *spawningCtx = GetTestAppProperty();
     ASSERT_EQ(spawningCtx != nullptr, 1);
-    bool ret = AppSpawn::SandboxCore::SetAppSandboxProperty(spawningCtx, CLONE_NEWPID);
+    AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+    bool ret = AppSpawn::SandboxCore::SetAppSandboxProperty(mgr, spawningCtx, CLONE_NEWPID);
     EXPECT_EQ(ret, false);
 
     DeleteAppSpawningCtx(spawningCtx);
@@ -3530,7 +3549,8 @@ HWTEST_F(AppSpawnSandboxTest, Sandbox_Root_Path_Folder_Create_Test_01, TestSize.
     ASSERT_EQ(ret, 0);
 
     std::string sandboxRootPath = "/mnt/sandbox/100/com.ohos.sceneboard";
-    ret = AppSpawn::SandboxCore::DoSandboxRootFolderCreate(spawningCtx, sandboxRootPath);
+    AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+    ret = AppSpawn::SandboxCore::DoSandboxRootFolderCreate(mgr, spawningCtx, sandboxRootPath);
     EXPECT_EQ(ret, 0);
     DeleteAppSpawningCtx(spawningCtx);
 }
@@ -3546,7 +3566,8 @@ HWTEST_F(AppSpawnSandboxTest, Sandbox_Root_Path_Folder_Create_Test_02, TestSize.
     ASSERT_EQ(spawningCtx != nullptr, 1);
 
     std::string sandboxRootPath = "/mnt/sandbox/100/com.ohos.sceneboard";
-    int ret = AppSpawn::SandboxCore::DoSandboxRootFolderCreate(spawningCtx, sandboxRootPath);
+    AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+    int ret = AppSpawn::SandboxCore::DoSandboxRootFolderCreate(mgr, spawningCtx, sandboxRootPath);
     EXPECT_EQ(ret, 0);
     DeleteAppSpawningCtx(spawningCtx);
 }

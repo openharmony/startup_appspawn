@@ -77,7 +77,8 @@ HWTEST_F(AppSpawnSandboxManagerTest, App_Spawn_Sandbox_SpawnMountDirToShared_01,
 {
     AppSpawningCtx *appProperty = AppSpawn::GetTestAppPropertyCore();
     // SpawnMountDirToShared is a static function, test it indirectly
-    int32_t ret = AppSpawn::SandboxCore::SetAppSandboxProperty(appProperty);
+    AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+    int32_t ret = AppSpawn::SandboxCore::SetAppSandboxProperty(mgr, appProperty);
     EXPECT_EQ(ret, 0);
     DeleteAppSpawningCtx(appProperty);
 }
@@ -90,7 +91,8 @@ HWTEST_F(AppSpawnSandboxManagerTest, App_Spawn_Sandbox_SpawnMountDirToShared_01,
 HWTEST_F(AppSpawnSandboxManagerTest, App_Spawn_Sandbox_SpawnMountDirToShared_02, TestSize.Level0)
 {
     // Test with nullptr parameter
-    int32_t ret = AppSpawn::SandboxCore::SetAppSandboxProperty(nullptr);
+    AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+    int32_t ret = AppSpawn::SandboxCore::SetAppSandboxProperty(mgr, nullptr);
     EXPECT_NE(ret, 0);  // Should fail with nullptr
 }
 

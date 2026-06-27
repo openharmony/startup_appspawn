@@ -2151,15 +2151,14 @@ APPSPAWN_STATIC void ProcessCheckpointReqMsg(AppSpawnConnection *connection, App
         DeleteAppSpawningCtx(property);
         return;
     }
+
     ret = AddSpawnedProcessInfo(property, connection, message);
     APPSPAWN_CHECK(ret == 0,
         SendResponseEx(connection, &message->msgHeader, ret, 0, 0);
         DeleteAppSpawningCtx(property); return,
         "AddSpawnedProcessInfo failed %{public}d", ret);
-
     APPSPAWN_LOGI("Checkpoint process created successfully: pid=%{public}d, checkPointId=%{public}" PRId64"",
                   property->pid, property->checkPointId);
-
     SendResponseEx(connection, &message->msgHeader, ret, property->pid, property->checkPointId);
     DeleteAppSpawningCtx(property);
 }

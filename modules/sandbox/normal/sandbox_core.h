@@ -39,7 +39,8 @@ public:
     static int32_t DoAddGid(AppSpawningCtx *appProperty, cJSON *appConfig,
                             const char* permissionName, const std::string &section);
     static int32_t DoAllSymlinkPointslink(const AppSpawningCtx *appProperty, cJSON *appConfig);
-    static int32_t DoSandboxRootFolderCreate(const AppSpawningCtx *appProperty, std::string &sandboxPackagePath);
+    static int32_t DoSandboxRootFolderCreate(AppSpawnMgr *content, const AppSpawningCtx *appProperty,
+        std::string &sandboxPackagePath);
     static int32_t DoSandboxRootFolderCreateAdapt(std::string &sandboxPackagePath);
     static int32_t HandleFlagsPoint(const AppSpawningCtx *appProperty, cJSON *appConfig);
     static int32_t SetOverlayAppSandboxProperty(const AppSpawningCtx *appProperty, std::string &sandboxPackagePath);
@@ -54,10 +55,12 @@ public:
     static int32_t SetPrivateAppSandboxProperty(const AppSpawningCtx *appProperty);
     static int32_t SetPermissionAppSandboxProperty(AppSpawningCtx *appProperty);
     static int32_t SetSandboxProperty(AppSpawningCtx *appProperty, std::string &sandboxPackagePath);
-    static int32_t SetAppSandboxProperty(AppSpawningCtx *appProperty, uint32_t sandboxNsFlags = CLONE_NEWNS);
+    static int32_t SetAppSandboxProperty(AppSpawnMgr *content, AppSpawningCtx *appProperty,
+        uint32_t sandboxNsFlags = CLONE_NEWNS);
 
     static int32_t SetRenderSandboxPropertyNweb(const AppSpawningCtx *appProperty, std::string &sandboxPackagePath);
-    static int32_t SetAppSandboxPropertyNweb(AppSpawningCtx *appProperty, uint32_t sandboxNsFlags = CLONE_NEWNS);
+    static int32_t SetAppSandboxPropertyNweb(AppSpawnMgr *content, AppSpawningCtx *appProperty,
+        uint32_t sandboxNsFlags = CLONE_NEWNS);
 
     // 沙箱目录切根
     static int32_t ChangeCurrentDir(std::string &sandboxPackagePath, const std::string &bundleName,

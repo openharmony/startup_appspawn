@@ -124,6 +124,9 @@ static const char * const DISTRIBUTION_TYPE_MAP[] = {
 typedef struct {
     uint64_t accessTokenIdEx;  // 64-bit: [tokenidattr(32-bit) | tokenid(32-bit)]
     uint32_t uid;              // UID for refcount operations
+    uint32_t spmHighToken;
+    uint32_t spmLowToken;
+    uint32_t spmUid;
 } RefcountContext;
 
 uint32_t GetSpawnId(void)
@@ -710,8 +713,7 @@ static int CollectJitPermissionsFromSPM(const SpmData *spmData, ListNode *head)
     int32_t ret = BuildJITPermissionsJson(spmData, &json, &jsonLen);
     APPSPAWN_CHECK(ret == 0 && json != NULL, return -1, "Failed to build JIT permissions JSON");
 
-    APPSPAWN_LOGI("CollectJitPermissionsFromSPM: JSON len=%{public}u", jsonLen);
-    APPSPAWN_LOGI("CollectJitPermissionsFromSPM: JSON content=%{public}s", json);
+    APPSPAWN_LOGV("CollectJitPermissionsFromSPM: JSON len=%{public}u JSON content=%{public}s", jsonLen, json);
 
     // Copy JSON string to calloc-allocated memory to match free() in DestroyTlvEntry
     uint8_t *jsonData = (uint8_t *)calloc(1, jsonLen + 1);
@@ -903,13 +905,13 @@ static int IncRefCountsForContext(const AppSpawnMgr *mgr, AppSpawningCtx *ctx,
     ctx->spmRefAdded = refAdded;
 
     APPSPAWN_LOGI("IncRefCountsForContext: refcount bitmap=0x%{public}02x, tokenid=%{public}" PRIu64
-        ", uid=%{public}u, spawnId=%{public}u",
-        refAdded, refCtx->accessTokenIdEx, refCtx->uid, spawnId);
+        ", uid=%{public}u, spawnId=%{public}u, spmuid=%{public}u",
+        refAdded, refCtx->accessTokenIdEx, refCtx->uid, spawnId, refCtx->spmUid);
     uint32_t runMode = mgr->content.mode;
     bool isNWebMode = (runMode == MODE_FOR_NWEB_SPAWN || runMode == MODE_FOR_NWEB_COLD_RUN);
     bool hasIsolatedSandboxFlag = CheckAppMsgFlagsSet(ctx, APP_FLAGS_ISOLATED_SANDBOX_TYPE);
-
-    APPSPAWN_ONLY_EXPER(!isNWebMode && !hasIsolatedSandboxFlag, return 0);
+    APPSPAWN_ONLY_EXPER((!isNWebMode && !hasIsolatedSandboxFlag) || refCtx->spmUid == 0 ||
+        (hasIsolatedSandboxFlag && refCtx->uid == refCtx->spmUid), return 0);
 
     uint64_t uidRefCnt = 0;
     int getRet = SpmGetUidRefCnt(refCtx->uid, &uidRefCnt);
@@ -976,6 +978,9 @@ static int GetAndValidateSpmData(const AppSpawnMsgNode *oldMsg,
 
     // 2. Get SPM data from kernel
     int ret = SpmGetEntry(refCtx->accessTokenIdEx & 0xFFFFFFFF, spmData);
+    APPSPAWN_ONLY_EXPER(ret == EOPNOTSUPP, SpmDataFree(spmData);
+        APPSPAWN_LOGI("not support spm ignore rebuild msg");
+        return SPM_ERROR_SPM_NOSUPP);
     APPSPAWN_CHECK(ret == 0, SpmDataFree(spmData);
         return SPM_ERROR_GET_SPM_FAILED,
         "Failed to get SPM data for tokenid=%{public}" PRIu64 ", ret=%{public}d", refCtx->accessTokenIdEx, ret);
@@ -1006,6 +1011,7 @@ static int UseOriginalMsgForSpawn(const AppSpawnMgr *mgr,
 {
     // Increment refcounts for original message (must do this before using original message)
     int ret = IncRefCountsForContext(mgr, ctx, refCtx);
+    APPSPAWN_ONLY_EXPER(ret == SPM_ERROR_REF_COUNT_INC_FAILED, return 0);
     if (ret != 0) {
         APPSPAWN_LOGE("UseOriginalMsgForSpawn: Failed to increment refcounts (ret=%{public}d), aborting spawn", ret);
         return ret;  // Must abort: refcount increment failed
@@ -1187,6 +1193,7 @@ static int RebuildMessageFromSPM(const AppSpawnMgr *mgr, AppSpawningCtx *ctx)
     // 2. Get and validate SPM data from kernel
     SpmData *spmData = NULL;
     ret = GetAndValidateSpmData(oldMsg, &refCtx, mgr, ctx, &spmData);
+    APPSPAWN_ONLY_EXPER(ret == SPM_ERROR_SPM_NOSUPP, return 0);
     if (ret != 0) {
         // SPM data validation failed (security error) or get failed (resource error)
         // For security errors, abort spawn. For resource errors, use original message.
@@ -1200,8 +1207,11 @@ static int RebuildMessageFromSPM(const AppSpawnMgr *mgr, AppSpawningCtx *ctx)
     }
 
     // 3. Increment refcounts using uid/tokenid from original message
+    refCtx.spmHighToken = spmData->tokenidAttr;
+    refCtx.spmLowToken = spmData->tokenid;
+    refCtx.spmUid = spmData->uid;
     ret = IncRefCountsForContext(mgr, ctx, &refCtx);
-    APPSPAWN_CHECK(ret == 0, RollbackRefCounts(ctx, &refCtx);
+    APPSPAWN_CHECK(ret == 0 || ret == SPM_ERROR_REF_COUNT_INC_FAILED, RollbackRefCounts(ctx, &refCtx);
         SpmDataFree(spmData);
         return ret,
         "RebuildMessageFromSPM: Failed to increment refcounts (ret=%{public}d), aborting spawn", ret);

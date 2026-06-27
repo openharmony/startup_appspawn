@@ -345,7 +345,8 @@ HWTEST_F(AppSpawnSandboxCoreTest, DoSandboxRootFolderCreate_01, TestSize.Level0)
     ASSERT_NE(appProperty, nullptr);
 
     std::string sandboxPackagePath = "/data/test/sandbox";
-    int ret = AppSpawn::SandboxCore::DoSandboxRootFolderCreate(appProperty, sandboxPackagePath);
+    AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+    int ret = AppSpawn::SandboxCore::DoSandboxRootFolderCreate(mgr, appProperty, sandboxPackagePath);
     EXPECT_EQ(ret, 0);
 
     DeleteAppSpawningCtx(appProperty);
