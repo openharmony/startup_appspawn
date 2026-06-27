@@ -550,18 +550,6 @@
             "mount-paths": [],
             "symbol-links": []
         }],
-        "com.ohos.permissionmanager" : [{
-            "sandbox-switch": "ON",
-            "appIdentifier": "5765880207853534317",
-            "mount-paths" : [{
-                    "src-path" : "/data/app/el1/bundle/public/",
-                    "sandbox-path" : "/data/bundles/",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "true"
-                }
-            ],
-            "symbol-links" : []
-        }],
         "com.ohos.amsdialog" : [{
             "sandbox-switch": "ON",
             "appIdentifier": "5765880207853534317",
