@@ -16,6 +16,9 @@
 #ifndef DEC_CONFIG_H
 #define DEC_CONFIG_H
 
+#include <stdbool.h>
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -33,6 +36,26 @@ typedef struct DecIgnoreCaseInfo {
     {"/storage/Users/currentUser", DEC_MODE_IGNORE_CASE}, \
     {"/storage/Users/currentUser/appdata", DEC_MODE_NOT_IGNORE_CASE}, \
     {"/storage/External", DEC_MODE_IGNORE_CASE}
+
+#define DEC_IGNORE_CASE_LIST_SHAREFS \
+    {"/storage/Users/currentUser", DEC_MODE_IGNORE_CASE}, \
+    {"/storage/Users/currentUser/appdata", DEC_MODE_NOT_IGNORE_CASE}
+
+// Pick the proper ignore-case list based on NoShareFs state.
+// noShareFsEnabled == true -> full list; false -> sharefs list.
+// Returns pointer to the selected list and writes its element count to *count.
+static inline const DecIgnoreCaseInfo *GetDecIgnoreCaseList(bool noShareFsEnabled, uint32_t *count)
+{
+    static const DecIgnoreCaseInfo noShareList[] = { DEC_IGNORE_CASE_LIST };
+    static const DecIgnoreCaseInfo shareList[] = { DEC_IGNORE_CASE_LIST_SHAREFS };
+    if (noShareFsEnabled == true) {
+        *count = (uint32_t)(sizeof(noShareList) / sizeof(noShareList[0]));
+        return noShareList;
+    }
+    *count = (uint32_t)(sizeof(shareList) / sizeof(shareList[0]));
+    return shareList;
+}
+
 #ifdef __cplusplus
 }
 #endif

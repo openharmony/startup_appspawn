@@ -151,14 +151,14 @@ std::map<std::string, std::vector<std::string>> GetDecPathMap(void)
 
 std::vector<std::pair<std::string, int>> GetIgnoreCaseDirs(void)
 {
+    uint32_t count = 0;
+    const DecIgnoreCaseInfo *list = GetDecIgnoreCaseList(IsNoShareFsEnable(), &count);
     std::vector<std::pair<std::string, int>> result;
-    if (!IsNoShareFsEnable()) {
+    if (list == nullptr || count == 0) {
         return result;
     }
-    static const DecIgnoreCaseInfo list[] = { DEC_IGNORE_CASE_LIST };
-    size_t count = sizeof(list) / sizeof(list[0]);
     result.reserve(count);
-    for (size_t i = 0; i < count; i++) {
+    for (uint32_t i = 0; i < count; i++) {
         result.emplace_back(list[i].path, list[i].mode);
     }
     return result;

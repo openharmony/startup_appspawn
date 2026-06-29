@@ -156,4 +156,86 @@ HWTEST_F(DecUtilTest, App_Spawn_DecUtil_Macro_KERNEL_BATCH_SIZE_001, TestSize.Le
     // TC002: Verify KERNEL_BATCH_SIZE is 8 for batch delivery mechanism
     EXPECT_EQ(KERNEL_BATCH_SIZE, 8);
 }
+
+/**
+* @tc.name: App_Spawn_DecUtil_GetDecIgnoreCaseList_True_001
+* @tc.desc: Verify GetDecIgnoreCaseList returns the full list when noShareFsEnabled is true
+* @tc.type: FUNC
+*/
+HWTEST_F(DecUtilTest, App_Spawn_DecUtil_GetDecIgnoreCaseList_True_001, TestSize.Level0)
+{
+    uint32_t count = 0;
+    const DecIgnoreCaseInfo *list = GetDecIgnoreCaseList(true, &count);
+
+    ASSERT_NE(list, nullptr);
+    static const DecIgnoreCaseInfo expected[] = { DEC_IGNORE_CASE_LIST };
+    uint32_t expectedCount = (uint32_t)(sizeof(expected) / sizeof(expected[0]));
+    EXPECT_EQ(count, expectedCount);
+
+    for (uint32_t i = 0; i < count; i++) {
+        EXPECT_STREQ(list[i].path, expected[i].path);
+        EXPECT_EQ(list[i].mode, expected[i].mode);
+    }
+}
+
+/**
+* @tc.name: App_Spawn_DecUtil_GetDecIgnoreCaseList_False_001
+* @tc.desc: Verify GetDecIgnoreCaseList returns the sharefs list when noShareFsEnabled is false
+* @tc.type: FUNC
+*/
+HWTEST_F(DecUtilTest, App_Spawn_DecUtil_GetDecIgnoreCaseList_False_001, TestSize.Level0)
+{
+    uint32_t count = 0;
+    const DecIgnoreCaseInfo *list = GetDecIgnoreCaseList(false, &count);
+
+    ASSERT_NE(list, nullptr);
+    static const DecIgnoreCaseInfo expected[] = { DEC_IGNORE_CASE_LIST_SHAREFS };
+    uint32_t expectedCount = (uint32_t)(sizeof(expected) / sizeof(expected[0]));
+    EXPECT_EQ(count, expectedCount);
+
+    for (uint32_t i = 0; i < count; i++) {
+        EXPECT_STREQ(list[i].path, expected[i].path);
+        EXPECT_EQ(list[i].mode, expected[i].mode);
+    }
+}
+
+/**
+* @tc.name: App_Spawn_DecUtil_GetDecIgnoreCaseList_Stable_001
+* @tc.desc: Verify repeated calls return the same static list pointers and counts
+* @tc.type: FUNC
+*/
+HWTEST_F(DecUtilTest, App_Spawn_DecUtil_GetDecIgnoreCaseList_Stable_001, TestSize.Level0)
+{
+    uint32_t count1 = 0;
+    uint32_t count2 = 0;
+    const DecIgnoreCaseInfo *list1 = GetDecIgnoreCaseList(true, &count1);
+    const DecIgnoreCaseInfo *list2 = GetDecIgnoreCaseList(true, &count2);
+
+    EXPECT_EQ(list1, list2);
+    EXPECT_EQ(count1, count2);
+}
+
+/**
+* @tc.name: App_Spawn_DecUtil_GetDecIgnoreCaseList_Mode_001
+* @tc.desc: Verify all returned mode values are valid enum values
+* @tc.type: FUNC
+*/
+HWTEST_F(DecUtilTest, App_Spawn_DecUtil_GetDecIgnoreCaseList_Mode_001, TestSize.Level0)
+{
+    uint32_t trueCount = 0;
+    const DecIgnoreCaseInfo *trueList = GetDecIgnoreCaseList(true, &trueCount);
+    ASSERT_NE(trueList, nullptr);
+    for (uint32_t i = 0; i < trueCount; i++) {
+        EXPECT_TRUE(trueList[i].mode == DEC_MODE_IGNORE_CASE ||
+                    trueList[i].mode == DEC_MODE_NOT_IGNORE_CASE);
+    }
+
+    uint32_t falseCount = 0;
+    const DecIgnoreCaseInfo *falseList = GetDecIgnoreCaseList(false, &falseCount);
+    ASSERT_NE(falseList, nullptr);
+    for (uint32_t i = 0; i < falseCount; i++) {
+        EXPECT_TRUE(falseList[i].mode == DEC_MODE_IGNORE_CASE ||
+                    falseList[i].mode == DEC_MODE_NOT_IGNORE_CASE);
+    }
+}
 }
