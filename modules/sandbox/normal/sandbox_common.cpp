@@ -1106,7 +1106,10 @@ std::string SandboxCommon::ConvertToRealPath(const AppSpawningCtx *appProperty, 
     if (path.find(SandboxCommonDef::g_variablePackageName) != std::string::npos) {
         path = ReplaceVariablePackageName(appProperty, path);
     }
-
+    if (path.find(SandboxCommonDef::g_preunlock) != std::string::npos) {
+        std::string lockSuffix = CheckAppMsgFlagsSet(appProperty, APP_FLAGS_UNLOCKED_STATUS) ? "" : "_preunlock";
+        path = ReplaceAllVariables(path, SandboxCommonDef::g_preunlock, lockSuffix);
+    }
     if (path.find(SandboxCommonDef::g_clonePackageName) != std::string::npos) {
         path = ReplaceClonePackageName(appProperty, path);
     }

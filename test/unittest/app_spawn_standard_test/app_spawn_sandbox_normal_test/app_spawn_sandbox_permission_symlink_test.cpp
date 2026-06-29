@@ -190,9 +190,13 @@ HWTEST_F(AppSpawnSandboxPermissionSymlinkTest, DoSandboxFilePermissionSymlink_01
 
     AppSpawningCtx *appProperty = GetTestAppPropertyPermSymlink();
     ASSERT_NE(appProperty, nullptr);
-    // 设置 APP_FLAGS_UNLOCKED_STATUS 标志，使沙箱路径不包含 _preunlock 后缀
+    std::string sourcePath = "/data/local/<preunlock>";
+    std::string targetPath = SandboxCommon::ConvertToRealPath(appProperty, sourcePath);
+    EXPECT_EQ(targetPath, "/data/local/_preunlock");
     int ret = SetAppSpawnMsgFlag(appProperty->message, TLV_MSG_FLAGS, APP_FLAGS_UNLOCKED_STATUS);
     EXPECT_EQ(ret, 0);
+    std::string targetPath2 = SandboxCommon::ConvertToRealPath(appProperty, sourcePath);
+    EXPECT_EQ(targetPath2, "/data/local/");
     // 设置权限
     int index = GetPermissionIndex(nullptr, "ohos.permission.FILE_ACCESS_MANAGER");
     ASSERT_GE(index, 0);
@@ -205,32 +209,26 @@ HWTEST_F(AppSpawnSandboxPermissionSymlinkTest, DoSandboxFilePermissionSymlink_01
     const char *bundleName = GetBundleName(appProperty);
     ASSERT_NE(bundleName, nullptr);
     std::string sandboxRoot = "/mnt/sandbox/" + std::to_string(dacInfo->uid / UID_BASE) + "/" + bundleName;
-
     // 创建沙箱根目录
     SandboxCommon::CreateDirRecursive(sandboxRoot, 0755);
     // 清理可能残留的符号链接
     unlink((sandboxRoot + "/bin").c_str());
     unlink((sandboxRoot + "/lib").c_str());
-
     // 使用配置常量
     cJSON *wholeConfig = cJSON_Parse(CONFIG_SINGLE_PERMISSION_TWO_LINKS);
     ASSERT_NE(wholeConfig, nullptr);
-
     // 执行测试
     ret = AppSpawn::SandboxCore::DoSandboxFilePermissionBind(appProperty, wholeConfig);
     EXPECT_EQ(ret, 0);
-
     // 验证符号链接是否创建成功
     struct stat st = {};
     bool binExists = (lstat((sandboxRoot + "/bin").c_str(), &st) == 0 && S_ISLNK(st.st_mode));
     bool libExists = (lstat((sandboxRoot + "/lib").c_str(), &st) == 0 && S_ISLNK(st.st_mode));
     EXPECT_TRUE(binExists) << "symlink /bin should exist";
     EXPECT_TRUE(libExists) << "symlink /lib should exist";
-
     // 清理测试环境
     unlink((sandboxRoot + "/bin").c_str());
     unlink((sandboxRoot + "/lib").c_str());
-
     cJSON_Delete(wholeConfig);
     DeleteAppSpawningCtx(appProperty);
 }
