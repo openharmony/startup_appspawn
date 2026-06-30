@@ -53,6 +53,7 @@ typedef enum {
     SPM_ERROR_MSG_REBUILD_FAILED = -9,      // Message rebuild failed (processing error)
     SPM_ERROR_UID_MISMATCH = -10,
     SPM_ERROR_MISSING_MSG_DATA = -11,
+    SPM_ERROR_SPM_NOSUPP = -12,
 } SpmErrorCode;
 
 #ifdef __cplusplus

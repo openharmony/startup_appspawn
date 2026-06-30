@@ -168,7 +168,7 @@ int AddServerStageHook(AppSpawnHookStage stage, int prio, ServerStageHook hook)
     info.prio = prio;
     info.hook = ServerStageHookRun;
     info.hookCookie = (void *)hook;
-    APPSPAWN_LOGI("AddServerStageHook prio: %{public}d", prio);
+    APPSPAWN_LOGI("AddServerStageHook stage: %{public}d prio: %{public}d", stage, prio);
     return HookMgrAddEx(GetAppSpawnHookMgr(), &info);
 }
 

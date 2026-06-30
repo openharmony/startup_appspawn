@@ -79,14 +79,11 @@ int AddSandboxPermissionNode(const char *name, SandboxQueue *queue)
         return APPSPAWN_SYSTEM_ERROR, "Failed to copy name");
 #ifdef APPSPAWN_ENABLE_SPM
     // Server 端（Modern/Normal sandbox 都有 opcode 字段）
-    uint32_t opcode = 0;
+    uint32_t opcode = OPCODE_INVALID;
     bool hasOpcode = TransferPermissionToOpcode(name, &opcode);
     if (hasOpcode) {
         node->opcode = opcode;
         APPSPAWN_LOGV("Permission name %{public}s -> opcode %{public}u", name, opcode);
-    } else {
-        node->opcode = 0;
-        APPSPAWN_LOGW("Permission %{public}s has no opcode mapping", name);
     }
 #endif  // APPSPAWN_ENABLE_SPM
     OH_ListAddWithOrder(&queue->front, &node->sandboxNode.node, PermissionNodeCompareProc);

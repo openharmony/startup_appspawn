@@ -858,7 +858,8 @@ int32_t SandboxCore::DoSandboxRootFolderCreateAdapt(std::string &sandboxPackageP
     return 0;
 }
 
-int32_t SandboxCore::DoSandboxRootFolderCreate(const AppSpawningCtx *appProperty, std::string &sandboxPackagePath)
+int32_t SandboxCore::DoSandboxRootFolderCreate(AppSpawnMgr *content, const AppSpawningCtx *appProperty,
+    std::string &sandboxPackagePath)
 {
 #ifndef APPSPAWN_TEST
     int rc = mount(nullptr, "/", nullptr, MS_REC | MS_SLAVE, nullptr);
@@ -873,7 +874,7 @@ int32_t SandboxCore::DoSandboxRootFolderCreate(const AppSpawningCtx *appProperty
     arg.destPath = sandboxRootPath;
 
 #ifdef APPSPAWN_SANDBOX_ROOT_TMPFS
-    if (CheckAppMsgFlagsSet(appProperty, APP_FLAGS_UNLOCKED_STATUS)) {
+    if (CheckAppMsgFlagsSet(appProperty, APP_FLAGS_UNLOCKED_STATUS) && IsAppSpawnMode(content)) {
         arg.srcPath = "tmpfs";
         arg.destPath = sandboxRootPath;
         arg.fsType = "tmpfs";
@@ -1106,7 +1107,7 @@ int32_t SandboxCore::SetSandboxProperty(AppSpawningCtx *appProperty, std::string
     return ret;
 }
 
-int32_t SandboxCore::SetAppSandboxProperty(AppSpawningCtx *appProperty, uint32_t sandboxNsFlags)
+int32_t SandboxCore::SetAppSandboxProperty(AppSpawnMgr *content, AppSpawningCtx *appProperty, uint32_t sandboxNsFlags)
 {
     APPSPAWN_CHECK(appProperty != nullptr, return -1, "Invalid appspawn client");
     const char* bundleNameChar = GetBundleName(appProperty);
@@ -1140,7 +1141,7 @@ int32_t SandboxCore::SetAppSandboxProperty(AppSpawningCtx *appProperty, uint32_t
     if (!SandboxCommon::IsTotalSandboxEnabled(appProperty) || !SandboxCommon::IsAppSandboxEnabled(appProperty)) {
         rc = DoSandboxRootFolderCreateAdapt(sandboxPackagePath);
     } else {
-        rc = DoSandboxRootFolderCreate(appProperty, sandboxPackagePath);
+        rc = DoSandboxRootFolderCreate(content, appProperty, sandboxPackagePath);
     }
     APPSPAWN_CHECK(rc == 0, return rc, "DoSandboxRootFolderCreate failed, %{public}s", bundleName.c_str());
     rc = SetSandboxProperty(appProperty, sandboxPackagePath);
@@ -1205,7 +1206,8 @@ int32_t SandboxCore::SetRenderSandboxPropertyNweb(const AppSpawningCtx *appPrope
     return 0;
 }
 
-int32_t SandboxCore::SetAppSandboxPropertyNweb(AppSpawningCtx *appProperty, uint32_t sandboxNsFlags)
+int32_t SandboxCore::SetAppSandboxPropertyNweb(AppSpawnMgr *content, AppSpawningCtx *appProperty,
+    uint32_t sandboxNsFlags)
 {
     APPSPAWN_CHECK(appProperty != nullptr, return -1, "Invalid appspawn client");
     const char* bundleNameChar = GetBundleName(appProperty);
@@ -1229,7 +1231,7 @@ int32_t SandboxCore::SetAppSandboxPropertyNweb(AppSpawningCtx *appProperty, uint
         (SandboxCommon::IsAppSandboxEnabled(appProperty) == false)) {
         rc = DoSandboxRootFolderCreateAdapt(sandboxPackagePath);
     } else if (!sandboxSharedStatus) {
-        rc = DoSandboxRootFolderCreate(appProperty, sandboxPackagePath);
+        rc = DoSandboxRootFolderCreate(content, appProperty, sandboxPackagePath);
     }
     APPSPAWN_CHECK(rc == 0, return rc, "DoSandboxRootFolderCreate failed, %{public}s", bundleName.c_str());
 

@@ -63,7 +63,7 @@ int32_t GetSpawnFlagIndexesFromPermissionBitmap(const SandboxQueue *queue,
             (const SandboxPermissionNode *)ListEntry(node, SandboxMountNode, node);
 
         // 检查权限是否有 opcode（未定义 opcode 的权限跳过）
-        if (permNode->opcode == 0) {
+        if (permNode->opcode == OPCODE_INVALID) {
             node = node->next;
             continue;
         }

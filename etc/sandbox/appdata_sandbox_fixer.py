@@ -266,7 +266,7 @@ def fix_sandbox_config_file(options):
         if individuals is not None and len(individuals) > 0:
             _merge_scope_individual(origin_json.get("individual")[0], individuals[0])
             pass
-        
+
         # 处理permission
         permission = data.get("permission")
         if permission is not None and len(permission) > 0:

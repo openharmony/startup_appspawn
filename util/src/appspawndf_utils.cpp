@@ -38,8 +38,6 @@ const std::string CLOUD_PATH = "/data/service/el1/public/update/param_service/in
 const std::string APPSPAWN_DF_SWITCH_OFF_FLAG = "appspawn_df_switch_off_flag_v_0";
 constexpr int32_t VERSION_LEN = 4; // the number of digits extracted from the fixed format string "x.x.x.x"
 constexpr int32_t GWP_ASAN_NAME_LEN = 256;
-static std::atomic<uint8_t> g_processSampleRate = 128;
-static std::atomic<uint8_t> g_previousRandomValue = 0;
 constexpr int32_t MAX_VERSION_FILE_LEN = 1024 * 5;
 constexpr int32_t MAX_SWITCH_OFF_FILE_LEN = 1024 * 5;
 class AppSpawnDfUtils {
@@ -105,17 +103,6 @@ public:
         char paraName[GWP_ASAN_NAME_LEN + 1] = {0};
         int ret = sprintf_s(paraName, GWP_ASAN_NAME_LEN + 1, "%s%s", GWP_ASAN_ENABLE, name);
         if (ret >= 0 && ret <= GWP_ASAN_NAME_LEN && system::GetBoolParameter(paraName, false)) {
-            return true;
-        }
-
-        uint8_t randomValue;
-        // If getting a random number using a non-blocking fails, the random value is incremented.
-        if (getrandom(&randomValue, sizeof(randomValue), GRND_RANDOM | GRND_NONBLOCK) == -1) {
-            randomValue = g_previousRandomValue.fetch_add(1, std::memory_order_relaxed) + 1;
-        }
-
-        if ((randomValue % g_processSampleRate.load()) == 0) {
-            SetAppSpawnMsgFlags(msgFlags, APP_FLAGS_GWP_ENABLED_FORCE);
             return true;
         }
         return false;

@@ -122,16 +122,16 @@ typedef struct TagAppSpawnedProcess {
 } AppSpawnedProcess;
 
 /**
- * @brief Appspawn receives the request for starting an application from the client,
- *        and saves the image process information.
- * @param node Linked list head node.
- * @param uid User Id of the application process.
- * @param exitStatus Image process exit status.
+ * @brief appspawn receives the request for starting an application from the client,
+ *        and saves the image process information
+ * @param node Linked list head node
+ * @param uid User ID of the application process
+ * @param exitStatus Image process exit status
  * @param appIndex AppIndex information of the application
- * @param checkPointId Check point id of the application image process.
+ * @param checkPointId Check point id of the application image process
  * @param name Hap name
  */
-typedef struct {
+typedef struct TagAppSpawnedCheckPointProcesses {
     struct ListNode node;
     uid_t uid;
     int exitStatus;
