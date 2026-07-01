@@ -33,11 +33,6 @@
 #include "securec.h"
 #include "parameter.h"
 
-#define APPSPAWN_TAG_SUFFIX "_apptag"
-#define NWEB_TAG_SUFFIX "_nwebtag"
-#define NATIVE_TAG_SUFFIX "_nativetag"
-#define CJ_TAG_SUFFIX "_cjtag"
-#define HYBRID_TAG_SUFFIX "_hybridtag"
 #define CGROUP_ROOT_PATH "/dev/pids/"
 #define UID_DIR_MIN_LEN 3    // uid >= 100, min digit length
 #define UID_DIR_MAX_LEN 10   // uid <= 9999999999, max digit length
@@ -53,16 +48,15 @@
 #define DEVICE_CMD_STOP "stop"
 typedef struct {
     RunMode mode;
-    const char *tagSuffix;
     const char *serverName;
 } SpawnModeInfo;
 
 static const SpawnModeInfo G_SPAWN_MODE_MAP[] = {
-    {MODE_FOR_APP_SPAWN, APPSPAWN_TAG_SUFFIX, APPSPAWN_SERVER_NAME },
-    {MODE_FOR_NWEB_SPAWN, NWEB_TAG_SUFFIX, NWEBSPAWN_SERVER_NAME },
-    {MODE_FOR_NATIVE_SPAWN, NATIVE_TAG_SUFFIX, NATIVESPAWN_SERVER_NAME },
-    {MODE_FOR_CJAPP_SPAWN, CJ_TAG_SUFFIX, CJAPPSPAWN_SERVER_NAME },
-    {MODE_FOR_HYBRID_SPAWN, HYBRID_TAG_SUFFIX, HYBRIDSPAWN_SERVER_NAME },
+    {MODE_FOR_APP_SPAWN, APPSPAWN_SERVER_NAME },
+    {MODE_FOR_NWEB_SPAWN, NWEBSPAWN_SERVER_NAME },
+    {MODE_FOR_NATIVE_SPAWN, NATIVESPAWN_SERVER_NAME },
+    {MODE_FOR_CJAPP_SPAWN, CJAPPSPAWN_SERVER_NAME },
+    {MODE_FOR_HYBRID_SPAWN, HYBRIDSPAWN_SERVER_NAME },
 };
 static const size_t G_SPAWN_MODE_MAP_SIZE = sizeof(G_SPAWN_MODE_MAP) / sizeof(G_SPAWN_MODE_MAP[0]);
 
@@ -80,16 +74,13 @@ static const SpawnModeInfo *GetSpawnModeInfo(const AppSpawnMgr *content)
 
 APPSPAWN_STATIC int GetCgroupPath(const AppSpawnedProcessInfo *appInfo, char *buffer, uint32_t buffLen)
 {
-    const SpawnModeInfo *modeInfo = GetSpawnModeInfo(GetAppSpawnMgr());
-    APPSPAWN_CHECK(modeInfo != NULL, return -1, "Failed to get spawn mode info");
-    const char *tagSuffix = modeInfo->tagSuffix;
     const int userId = appInfo->uid / UID_BASE;
 #ifdef APPSPAWN_TEST
-    int ret = snprintf_s(buffer, buffLen, buffLen - 1, APPSPAWN_BASE_DIR "/dev/pids/testpids/%d/%s%s/app_%d/",
-        userId, appInfo->name, tagSuffix, appInfo->pid);
+    int ret = snprintf_s(buffer, buffLen, buffLen - 1, APPSPAWN_BASE_DIR "/dev/pids/testpids/%d/%s/app_%d/",
+        userId, appInfo->name, appInfo->pid);
 #else
-    int ret = snprintf_s(buffer, buffLen, buffLen - 1, "/dev/pids/%d/%s%s/app_%d/",
-        userId, appInfo->name, tagSuffix, appInfo->pid);
+    int ret = snprintf_s(buffer, buffLen, buffLen - 1, "/dev/pids/%d/%s/app_%d/",
+        userId, appInfo->name, appInfo->pid);
 #endif
     APPSPAWN_CHECK(ret > 0, return ret, "Failed to snprintf_s errno: %{public}d", errno);
     APPSPAWN_LOGV("Cgroup path %{public}s ", buffer);
@@ -220,21 +211,6 @@ APPSPAWN_STATIC int IsUidDir(const char *name)
     return 1;
 }
 
-// Check if directory name is a tag dir managed by current spawn server: must end with spawn-type tag suffix
-APPSPAWN_STATIC int IsTagDir(const char *name)
-{
-    APPSPAWN_CHECK_ONLY_EXPER(name != NULL && *name != '\0', return 0);
-    const SpawnModeInfo *modeInfo = GetSpawnModeInfo(GetAppSpawnMgr());
-    APPSPAWN_CHECK(modeInfo != NULL, return 0, "Failed to get spawn mode info");
-    const char *suffix = modeInfo->tagSuffix;
-    size_t nameLen = strlen(name);
-    size_t suffixLen = strlen(suffix);
-    if (nameLen <= suffixLen) {
-        return 0;
-    }
-    return strcmp(name + nameLen - suffixLen, suffix) == 0;
-}
-
 // Check if directory name matches "app_" prefix followed by digits, e.g. "app_12345"
 APPSPAWN_STATIC int IsAppDir(const char *name)
 {
@@ -295,7 +271,6 @@ static void CleanupOrphanedAppDir(const char *tagDirPath, const char *appDirName
 // Cleanup all app subdirectories under a tag dir, then remove the tag dir itself
 APPSPAWN_STATIC void CleanupOrphanedTagDir(const char *uidPath, const char *dirName)
 {
-    APPSPAWN_CHECK_ONLY_EXPER(IsTagDir(dirName), return);
     char tagDirPath[PATH_MAX] = {};
     int ret = snprintf_s(tagDirPath, sizeof(tagDirPath), sizeof(tagDirPath) - 1, "%s/%s", uidPath, dirName);
     APPSPAWN_CHECK(ret > 0, return, "Failed to build tag dir path for %{public}s", dirName);
