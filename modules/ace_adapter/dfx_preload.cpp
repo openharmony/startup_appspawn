@@ -25,6 +25,10 @@ static int CheckSupportDfxColdStart(const AppSpawningCtx *property)
         return APPSPAWN_PRELOAD_DFX_NOT_ALLOW;
     }
 
+    if (CheckEnabled("startup.appspawn.dfx.root.preload", "true")) {
+        return 0;
+    }
+
     if (!CheckAppMsgFlagsSet(property, APP_FLAGS_DEBUG_SIGN) ||
         !CheckEnabled("const.security.developermode.state", "true") ||
         !CheckEnabled("hiviewdfx.hiprofiler.preload", "1")) {

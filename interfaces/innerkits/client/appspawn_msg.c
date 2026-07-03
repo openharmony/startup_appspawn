@@ -392,6 +392,10 @@ int AppSpawnReqMsgSetBundleInfo(AppSpawnReqMsgHandle reqHandle, uint32_t bundleI
     data[1].data = (uint8_t *)bundleName;
     data[1].dataLen = strlen(bundleName);
     data[1].dataType = DATA_TYPE_STRING;
+
+    if (!reqNode->isColdRun && CheckEnabled("startup.appspawn.dfx.root.preload", "true")) {
+        reqNode->isColdRun = 1;
+    }
     return AddAppData(reqNode, TLV_BUNDLE_INFO, data, MAX_DATA_IN_TLV, "TLV_BUNDLE_INFO");
 }
 
