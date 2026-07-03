@@ -29,6 +29,7 @@
 
 #include "appspawn_adapter.h"
 #include "appspawn_hook.h"
+#include "appspawn_modulemgr.h"
 #include "appspawn_msg.h"
 #include "appspawn_manager.h"
 #include "securec.h"
@@ -292,6 +293,8 @@ static int GetProcessTerminationStatus(pid_t pid)
     }
 
     if (KillAndWaitStatus(pid, SIGKILL, &exitStatus) == 0) { // kill success, delete app
+        app->exitStatus = exitStatus;
+        ProcessMgrHookExecute(STAGE_SERVER_APP_CLEANUP, GetAppSpawnContent(), app);
         OH_ListRemove(&app->node);
         OH_ListInit(&app->node);
         free(app);

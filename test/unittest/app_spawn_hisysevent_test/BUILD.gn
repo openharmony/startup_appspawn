@@ -32,6 +32,7 @@ ohos_unittest("AppSpawn_HisysEvent_ut") {
     "${appspawn_path}/standard",
     "${appspawn_path}/interfaces/innerkits/include",
     "${appspawn_path}/modules/module_engine/include",
+    "${appspawn_path}/modules/modulemgr",
     "${appspawn_path}/common",
     "${appspawn_path}/modules/common",
     "${appspawn_path}/test/unittest/app_spawn_hisysevent_test",

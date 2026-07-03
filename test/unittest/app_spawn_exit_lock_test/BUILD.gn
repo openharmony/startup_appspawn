@@ -32,6 +32,7 @@ if (!defined(ohos_lite)) {
       "${appspawn_path}/common",
       "${appspawn_path}/standard",
       "${appspawn_path}/modules/common",
+      "${appspawn_path}/modules/modulemgr",
       "${appspawn_path}/test/mock",
       "${appspawn_path}/interfaces/innerkits/permission",
     ]
