@@ -28,6 +28,7 @@
 #include "appspawn_server.h"
 #include "appspawn_manager.h"
 #include "appspawn.h"
+#include "parameter.h"
 
 #include "dfx_preload_test_helper.h"
 
@@ -155,6 +156,85 @@ HWTEST_F(AppSpawnDfxPreloadTest, SetDfxPreloadEnableEnv_03, TestSize.Level0)
     DeleteAppSpawningCtx(property);
     AppSpawnClientDestroy(clientHandle);
     DeleteAppSpawnMgr(mgr);
+    ASSERT_EQ(ret, 0);
+}
+
+/**
+ * @brief 测试新增代码：配置项启用时允许dfx冷启动
+ * @tc.desc: 当startup.appspawn.dfx.root.preload设置为true时，非debug应用也允许dfx冷启动
+ *
+ */
+HWTEST_F(AppSpawnDfxPreloadTest, SetDfxPreloadEnableEnv_04, TestSize.Level0)
+{
+    int ret = -1;
+    AppSpawnMgr *mgr = nullptr;
+    AppSpawnClientHandle clientHandle = nullptr;
+    AppSpawningCtx *property = nullptr;
+    do {
+        SetParameter("startup.appspawn.dfx.root.preload", "true");
+
+        mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+        ASSERT_NE(mgr, nullptr);
+
+        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", APPSPAWN_SERVER_NAME);
+
+        DfxPreloadTestHelper dfxPreloadTestHelper;
+        AppSpawnReqMsgHandle reqHandle = dfxPreloadTestHelper.DfxPreloadTestCreateMsg(clientHandle, MSG_APP_SPAWN);
+        APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break, "Failed to create msg type %{public}d", MSG_APP_SPAWN);
+
+        property = dfxPreloadTestHelper.DfxPreloadTestGetAppProperty(clientHandle, reqHandle);
+        APPSPAWN_CHECK(property != nullptr, break, "Failed to get app property");
+        EXPECT_EQ(CheckAppMsgFlagsSet(property, APP_FLAGS_DEBUG_SIGN), 0);
+        EXPECT_EQ((property->client.flags & APP_COLD_START), 0);
+
+        ret = SetDfxPreloadEnableEnv(mgr, property);
+        EXPECT_EQ(ret, 0);
+    } while (0);
+    DeleteAppSpawningCtx(property);
+    AppSpawnClientDestroy(clientHandle);
+    DeleteAppSpawnMgr(mgr);
+    SetParameter("startup.appspawn.dfx.root.preload", "false");
+    ASSERT_EQ(ret, 0);
+}
+
+/**
+ * @brief 测试新增代码：配置项启用时asan冷启动应用不允许dfx冷启动
+ * @tc.desc: 当应用已标记APP_COLD_START时，即使配置项为true，也不允许dfx冷启动
+ *
+ */
+HWTEST_F(AppSpawnDfxPreloadTest, SetDfxPreloadEnableEnv_05, TestSize.Level0)
+{
+    int ret = -1;
+    AppSpawnMgr *mgr = nullptr;
+    AppSpawnClientHandle clientHandle = nullptr;
+    AppSpawningCtx *property = nullptr;
+    do {
+        SetParameter("startup.appspawn.dfx.root.preload", "true");
+
+        mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+        ASSERT_NE(mgr, nullptr);
+
+        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", APPSPAWN_SERVER_NAME);
+
+        DfxPreloadTestHelper dfxPreloadTestHelper;
+        AppSpawnReqMsgHandle reqHandle = dfxPreloadTestHelper.DfxPreloadTestCreateMsg(clientHandle, MSG_APP_SPAWN);
+        APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break, "Failed to create msg type %{public}d", MSG_APP_SPAWN);
+        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_ASANENABLED);
+
+        property = dfxPreloadTestHelper.DfxPreloadTestGetAppProperty(clientHandle, reqHandle);
+        APPSPAWN_CHECK(property != nullptr, break, "Failed to get app property");
+        property->client.flags |= APP_COLD_START;
+
+        ret = SetDfxPreloadEnableEnv(mgr, property);
+        EXPECT_EQ(ret, 0);
+        EXPECT_NE((property->client.flags & APP_COLD_START), 0);
+    } while (0);
+    DeleteAppSpawningCtx(property);
+    AppSpawnClientDestroy(clientHandle);
+    DeleteAppSpawnMgr(mgr);
+    SetParameter("startup.appspawn.dfx.root.preload", "false");
     ASSERT_EQ(ret, 0);
 }
 

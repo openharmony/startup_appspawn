@@ -32,6 +32,7 @@
 #include "appspawn_mount_permission.h"
 #include "appspawn_service.h"
 #include "appspawn_utils.h"
+#include "parameter.h"
 #include "securec.h"
 
 #include "app_spawn_stub.h"
@@ -222,6 +223,74 @@ HWTEST_F(AppSpawnInterfaceTest, App_Spawn_Interface_ReqMsgSetBundleInfo_001, Tes
             }
         }
     }
+    AppSpawnReqMsgFree(reqHandle);
+}
+
+/**
+ * @brief 测试新增代码：CheckEnabled返回true时设置isColdRun
+ * @tc.desc: 当isColdRun为0且CheckEnabled返回true时，isColdRun应设置为1
+ *
+ */
+HWTEST_F(AppSpawnInterfaceTest, App_Spawn_Interface_ReqMsgSetBundleInfo_ColdRun_001, TestSize.Level0)
+{
+    AppSpawnReqMsgHandle reqHandle = nullptr;
+    int ret = AppSpawnReqMsgCreate(MSG_APP_SPAWN, "com.ohos.myapplication", &reqHandle);
+    EXPECT_EQ(0, ret);
+
+    AppSpawnReqMsgNode *reqNode = (AppSpawnReqMsgNode *)reqHandle;
+    EXPECT_EQ(reqNode->isColdRun, 0);
+
+    SetParameter("startup.appspawn.dfx.root.preload", "true");
+    ret = AppSpawnReqMsgSetBundleInfo(reqHandle, 0, "com.ohos.test");
+    EXPECT_EQ(0, ret);
+    EXPECT_EQ(reqNode->isColdRun, 1);
+
+    SetParameter("startup.appspawn.dfx.root.preload", "false");
+    AppSpawnReqMsgFree(reqHandle);
+}
+
+/**
+ * @brief 测试新增代码：CheckEnabled返回false时不设置isColdRun
+ * @tc.desc: 当isColdRun为0且CheckEnabled返回false时，isColdRun应保持0
+ *
+ */
+HWTEST_F(AppSpawnInterfaceTest, App_Spawn_Interface_ReqMsgSetBundleInfo_ColdRun_002, TestSize.Level0)
+{
+    AppSpawnReqMsgHandle reqHandle = nullptr;
+    int ret = AppSpawnReqMsgCreate(MSG_APP_SPAWN, "com.ohos.myapplication", &reqHandle);
+    EXPECT_EQ(0, ret);
+
+    AppSpawnReqMsgNode *reqNode = (AppSpawnReqMsgNode *)reqHandle;
+    EXPECT_EQ(reqNode->isColdRun, 0);
+
+    SetParameter("startup.appspawn.dfx.root.preload", "false");
+    ret = AppSpawnReqMsgSetBundleInfo(reqHandle, 0, "com.ohos.test");
+    EXPECT_EQ(0, ret);
+    EXPECT_EQ(reqNode->isColdRun, 0);
+
+    AppSpawnReqMsgFree(reqHandle);
+}
+
+/**
+ * @brief 测试新增代码：isColdRun已为1时不修改
+ * @tc.desc: 当isColdRun已为1时，不应进入if分支，isColdRun保持1
+ *
+ */
+HWTEST_F(AppSpawnInterfaceTest, App_Spawn_Interface_ReqMsgSetBundleInfo_ColdRun_003, TestSize.Level0)
+{
+    AppSpawnReqMsgHandle reqHandle = nullptr;
+    int ret = AppSpawnReqMsgCreate(MSG_APP_SPAWN, "com.ohos.myapplication", &reqHandle);
+    EXPECT_EQ(0, ret);
+
+    AppSpawnReqMsgNode *reqNode = (AppSpawnReqMsgNode *)reqHandle;
+    reqNode->isColdRun = 1;
+
+    SetParameter("startup.appspawn.dfx.root.preload", "true");
+    ret = AppSpawnReqMsgSetBundleInfo(reqHandle, 0, "com.ohos.test");
+    EXPECT_EQ(0, ret);
+    EXPECT_EQ(reqNode->isColdRun, 1);
+
+    SetParameter("startup.appspawn.dfx.root.preload", "false");
     AppSpawnReqMsgFree(reqHandle);
 }
 
