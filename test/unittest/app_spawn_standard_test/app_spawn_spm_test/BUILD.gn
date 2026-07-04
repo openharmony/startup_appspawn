@@ -1,0 +1,118 @@
+# Copyright (c) 2026 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//base/startup/appspawn/appspawn.gni")
+import("//build/test.gni")
+
+# SPM module unit tests
+ohos_unittest("AppSpawn_SPM_ut") {
+  module_out_path = "appspawn/appspawn"
+
+  cflags = [ "-Dprivate=public" ]
+
+  if (appspawn_unittest_coverage) {
+    cflags += [ "--coverage" ]
+    ldflags = [ "--coverage" ]
+    cflags_cc = [ "--coverage" ]
+  }
+
+  defines = [
+    "APPSPAWN_TEST",
+    "APPSPAWN_CLIENT",  # Required for SPM module structure definitions
+    "APPSPAWN_ENABLE_SPM",
+    "APPSPAWN_HISYSEVENT",  # Required for hisysevent_adapter support
+  ]
+
+  include_dirs = [
+    # Mock headers MUST be first to override real access_token headers
+    "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_spm_test/mock",
+    "${appspawn_path}",
+    "${appspawn_path}/common",
+    "${appspawn_path}/standard",
+    "${appspawn_path}/util/include",
+    "${appspawn_path}/util",
+    "${appspawn_path}/interfaces/innerkits/permission",
+    "${appspawn_path}/interfaces/innerkits/include",
+    "${appspawn_path}/modules/module_engine/include",
+    "${appspawn_path}/modules/modulemgr",
+    "${appspawn_path}/modules/common",
+    "${appspawn_path}/modules/spm",
+    "${appspawn_path}/modules/sysevent",
+    # Test files
+    "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_spm_test",
+    "${appspawn_path}/test/mock",
+  ]
+
+  sources = [
+    # SPM module sources (only if SPM is enabled)
+    "${appspawn_path}/modules/spm/spm.c",
+    "${appspawn_path}/modules/spm/spm_permission.c",
+    "${appspawn_path}/modules/spm/tlv_builder.c",
+
+    # Common utility sources
+    "${appspawn_path}/util/src/appspawn_utils.c",
+    "${appspawn_path}/util/src/appspawndf_utils.cpp",
+
+    # Module manager sources (needed for hook support)
+    "${appspawn_path}/modules/modulemgr/appspawn_modulemgr.c",
+    # Note: appspawn_common.c and appspawn_adapter.cpp are excluded due to
+    # external dependencies (accesstoken_kit, selinux) that are not suitable for unit tests
+
+    # Test mock implementation
+    "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_spm_test/mock/spm_func_mock.cpp",
+    "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_spm_test/test_data_factory.cpp",
+    "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_spm_test/spm_test_base.cpp",
+
+    # Test cases
+    "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_spm_test/app_spawn_spm_permission_test.cpp",
+    "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_spm_test/app_spawn_tlv_builder_test.cpp",
+    "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_spm_test/app_spawn_spm_test.cpp",
+  ]
+
+  deps = [
+    "${appspawn_path}/modules/module_engine:libappspawn_module_engine",
+    "${appspawn_path}/util:libappspawn_util",
+  ]
+
+  external_deps = [
+    "googletest:gmock_main",
+    "bounds_checking_function:libsec_shared",
+    "cJSON:cjson",
+    "hilog:libhilog",
+    "c_utils:utils",
+    "init:libbegetutil",
+    "config_policy:configpolicy_util",  # Required by appspawndf_utils
+    # access_token dependencies removed - using mock implementations instead
+    # "access_token:libtoken_setproc",
+    # "access_token:libpermsetproc_shared",
+  ]
+
+  # HiSysEvent dependency (only if appspawn_report_event is enabled)
+  if (appspawn_report_event) {
+    external_deps += [ "hisysevent:libhisysevent" ]
+    sources += [
+      "${appspawn_path}/modules/sysevent/hisysevent_adapter.cpp",
+    ]
+  }
+
+  # Conditionally add sysevent source (if not already added by appspawn_report_event)
+  # This is needed because spm.c includes hisysevent_adapter.h
+  if (!appspawn_report_event) {
+    sources += [
+      "${appspawn_path}/modules/sysevent/hisysevent_adapter.cpp",
+    ]
+  }
+
+  subsystem_name = "${subsystem_name}"
+  part_name = "${part_name}"
+}

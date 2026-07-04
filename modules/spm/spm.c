@@ -157,7 +157,7 @@ static const struct {
 };
 #define SPAWN_ID_MAP_SIZE (sizeof(SPAWN_ID_MAP) / sizeof(SPAWN_ID_MAP[0]))
 
-static uint32_t RunModeToSpawnId(uint32_t runMode)
+APPSPAWN_STATIC uint32_t RunModeToSpawnId(uint32_t runMode)
 {
     for (uint32_t i = 0; i < SPAWN_ID_MAP_SIZE; i++) {
         if (SPAWN_ID_MAP[i].runMode == runMode) {
@@ -202,7 +202,7 @@ int CleanupStaleSpawns(void)
  * @param head List head to append entry to
  * @return 1 if entry was added, 0 if skipped, -1 on error
  */
-static int CollectDacInfoFromSPM(const AppSpawnMgr *mgr, const AppSpawningCtx *ctx,
+APPSPAWN_STATIC int CollectDacInfoFromSPM(const AppSpawnMgr *mgr, const AppSpawningCtx *ctx,
     const AppSpawnMsgNode *oldMsg, const SpmData *spmData, ListNode *head)
 {
     if (spmData == NULL || head == NULL || mgr == NULL || ctx == NULL) {
@@ -301,7 +301,7 @@ static int ComputePermissionFlags(const AppSpawnMgr *mgr,
  * @param head List head to append entry to
  * @return 1 if entry was added, 0 if skipped, -1 on error
  */
-static int CollectPermissionFromSPM(const AppSpawnMgr *mgr, const SpmData *spmData, ListNode *head)
+APPSPAWN_STATIC int CollectPermissionFromSPM(const AppSpawnMgr *mgr, const SpmData *spmData, ListNode *head)
 {
     APPSPAWN_CHECK(spmData != NULL && head != NULL && mgr != NULL, return -1, "invalid param");
 
@@ -336,7 +336,7 @@ static int CollectPermissionFromSPM(const AppSpawnMgr *mgr, const SpmData *spmDa
  * @param head List head to append entry to
  * @return 1 if entry was added, 0 if skipped, -1 on error
  */
-static int CollectBundleInfoFromSPM(const AppSpawnMsgNode *oldMsg,
+APPSPAWN_STATIC int CollectBundleInfoFromSPM(const AppSpawnMsgNode *oldMsg,
     const SpmData *spmData, ListNode *head)
 {
     if (spmData == NULL || head == NULL || spmData->name.buf == NULL) {
@@ -379,7 +379,7 @@ static int CollectBundleInfoFromSPM(const AppSpawnMsgNode *oldMsg,
  * @param head List head to append entry to
  * @return 1 if entry was added, 0 if skipped, -1 on error
  */
-static int CollectDomainInfoFromSPM(const AppSpawnMsgNode *oldMsg,
+APPSPAWN_STATIC int CollectDomainInfoFromSPM(const AppSpawnMsgNode *oldMsg,
     const SpmData *spmData, ListNode *head)
 {
     if (spmData == NULL || head == NULL) {
@@ -426,7 +426,7 @@ static int CollectDomainInfoFromSPM(const AppSpawnMsgNode *oldMsg,
  * @param head List head to append entry to
  * @return 1 if entry was added, 0 if skipped, -1 on error
  */
-static int CollectOwnerInfoFromSPM(const SpmData *spmData, ListNode *head)
+APPSPAWN_STATIC int CollectOwnerInfoFromSPM(const SpmData *spmData, ListNode *head)
 {
     if (spmData == NULL || head == NULL) {
         return -1;
@@ -492,7 +492,7 @@ static int CollectXpmIdTypeFromSPM(const SpmData *spmData, ListNode *head)
  * @param ctx AppSpawning context (to check flags for isolated)
  * @return 0 on success, error code on failure
  */
-static int ValidateSpmDataConsistency(const SpmData *spmData,
+APPSPAWN_STATIC int ValidateSpmDataConsistency(const SpmData *spmData,
     uint64_t accessTokenIdEx, uint32_t uidFromMsg, const AppSpawnMgr *mgr,
     const AppSpawningCtx *ctx)
 {
@@ -749,7 +749,7 @@ static int CollectJitPermissionsFromSPM(const SpmData *spmData, ListNode *head)
  * @param head List head to append entry to
  * @return 0 on success, -1 on failure
  */
-static int RebuildDistributionTypeTlv(uint32_t distributionType, ListNode *head)
+APPSPAWN_STATIC int RebuildDistributionTypeTlv(uint32_t distributionType, ListNode *head)
 {
     const char *distStr = "none";
     if (distributionType < DISTRIBUTION_TYPE_MAP_SIZE) {
@@ -877,7 +877,7 @@ static int CollectTlvsInOrder(const AppSpawnMgr *mgr, const AppSpawningCtx *ctx,
  * @param refCtx Refcount context containing accessTokenIdEx and uid
  * @return 0 on success, error code on failure
  */
-static int IncreaseRefCounts(AppSpawningCtx *ctx, const RefcountContext *refCtx)
+APPSPAWN_STATIC int IncreaseRefCounts(AppSpawningCtx *ctx, const RefcountContext *refCtx)
 {
     APPSPAWN_CHECK(ctx != NULL && refCtx != NULL, return SPM_ERROR_INVALID_PARAM,
         "Invalid parameters: ctx=%{public}p, refCtx=%{public}p", ctx, refCtx);
@@ -912,7 +912,7 @@ static int IncreaseRefCounts(AppSpawningCtx *ctx, const RefcountContext *refCtx)
     return 0;
 }
 
-static int ValidateUidRefCount(const AppSpawnMgr *mgr, const AppSpawningCtx *ctx,
+APPSPAWN_STATIC int ValidateUidRefCount(const AppSpawnMgr *mgr, const AppSpawningCtx *ctx,
     const RefcountContext *refCtx)
 {
     APPSPAWN_CHECK(mgr != NULL && ctx != NULL && refCtx != NULL, return SPM_ERROR_INVALID_PARAM,
@@ -1140,7 +1140,7 @@ static inline void ReportSpmFailEvent(int errorCode)
  * @param ctx AppSpawningCtx（包含消息指针）
  * @return 0 on success, error code on failure
  */
-static int RebuildMessageFromSPM(const AppSpawnMgr *mgr, AppSpawningCtx *ctx)
+APPSPAWN_STATIC int RebuildMessageFromSPM(const AppSpawnMgr *mgr, AppSpawningCtx *ctx)
 {
     APPSPAWN_CHECK(mgr != NULL && ctx != NULL && ctx->message != NULL, return SPM_ERROR_INVALID_PARAM,
         "Invalid parameters is null");
@@ -1307,7 +1307,7 @@ int OnAppExitUpdateRefCount(const AppSpawnMgr *mgr, const AppSpawnedProcess *app
     return 0;
 }
 
-static int SpmPreloadHook(AppSpawnMgr *mgr)
+APPSPAWN_STATIC int SpmPreloadHook(AppSpawnMgr *mgr)
 {
     if (mgr == NULL) {
         APPSPAWN_LOGE("SpmPreloadHook: invalid mgr");
