@@ -205,12 +205,20 @@ int AppSpawnTestCommander::AddInternetPermissionInfoFromJson(
     return AppSpawnReqMsgSetAppInternetPermissionInfo(reqHandle, allowInternet, setAllowInternet);
 }
 
+__attribute__((always_inline)) inline uint64_t GetUint64ValueFromJsonObj(const cJSON *json, const char *key,
+    uint32_t def)
+{
+    APPSPAWN_CHECK(json != NULL, return def, "Invalid json");
+    APPSPAWN_CHECK(cJSON_IsObject(json), return def, "json is not object.");
+    return cJSON_GetNumberValue(cJSON_GetObjectItemCaseSensitive(json, key));
+}
+
 int AppSpawnTestCommander::AddAccessTokenFromJson(const cJSON *appInfoConfig, AppSpawnReqMsgHandle reqHandle)
 {
     cJSON *config = cJSON_GetObjectItemCaseSensitive(appInfoConfig, "access-token");
     APPSPAWN_CHECK_ONLY_EXPER(config, return 0);
 
-    uint64_t accessTokenIdEx = GetIntValueFromJsonObj(config, "accessTokenIdEx", 0);
+    uint64_t accessTokenIdEx = GetUint64ValueFromJsonObj(config, "accessTokenIdEx", 0);
     return AppSpawnReqMsgSetAppAccessToken(reqHandle, accessTokenIdEx);
 }
 
