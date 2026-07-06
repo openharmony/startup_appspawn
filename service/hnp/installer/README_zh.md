@@ -36,11 +36,13 @@
         -f    : [optional]    if provided, the hnp package will be installed forcely, ignoring old versions of the hnp package
         -I    : [optional]    appIdentifier, This parameter needs to be transferred when an independent signed hnp package needs to be specified
         -S    : [optional]    The path of the independent sign hnp packet, must be used together with the -I parameter.
+
+    uninstall: uninstall one hap package
         hnp uninstall <-u [user id]> <-p [hap package name]>
         -u    : [required]    user id
         -p    : [required]    hap package name
-    for example:
 
+    for example:
         hnp install -u 1000 -p app_sample -i /data/app_sample/ -s /data/app_hap/demo.hap -a arm64 -f
         hnp uninstall -u 1000 -p app_sample
   ```

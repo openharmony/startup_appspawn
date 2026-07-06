@@ -63,8 +63,8 @@ int HnpShowHelp(int argc, char *argv[])
         "\r\nuninstall: uninstall one hap package"
         "\r\n           hnp uninstall <-u [user id]> <-p [hap package name]>"
         "\r\n           -u    : [required]    user id"
-        "\r\n           -p    : [required]    hap package name"
-        "\r\nfor example:\r\n"
+        "\r\n           -p    : [required]    hap package name\r\n"
+        "\r\nfor example:"
         "\r\n    hnp install -u 1000 -p app_sample -i /data/app_sample/ -s /data/app_hap/demo.hap -a arm64 -f"
         "\r\n    hnp uninstall -u 1000 -p app_sample\r\n");
 
