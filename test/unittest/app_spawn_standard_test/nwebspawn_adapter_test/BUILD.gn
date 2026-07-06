@@ -45,7 +45,6 @@ if (!defined(ohos_lite)) {
       "${appspawn_innerkits_path}/include",
       "${appspawn_innerkits_path}/permission",
       "${appspawn_path}/test/mock",
-      "${appspawn_path}/test/unittest",
       "${appspawn_path}/util/include",
     ]
     include_dirs += appspawn_sandbox_inc
@@ -58,7 +57,6 @@ if (!defined(ohos_lite)) {
     # Dependent code sources
     sources += [
       "${appspawn_path}/common/appspawn_trace.cpp",
-      "${appspawn_path}/modules/common/appspawn_adapter.cpp",
       "${appspawn_path}/modules/modulemgr/appspawn_modulemgr.c",
       "${appspawn_path}/standard/appspawn_appmgr.c",
       "${appspawn_path}/standard/appspawn_msgmgr.c",
@@ -75,7 +73,6 @@ if (!defined(ohos_lite)) {
 
     # Test sources
     sources += [
-      "${appspawn_path}/test/unittest/app_spawn_test_helper.cpp",
       "nwebspawn_adapter_test.cpp",
     ]
 
@@ -90,16 +87,15 @@ if (!defined(ohos_lite)) {
       "hilog:libhilog",
       "hitrace:hitrace_meter",
       "init:libbegetutil",
-      "init:seccomp",
     ]
 
     if (appspawn_support_nweb) {
       external_deps += [ "webview:libarkweb_utils" ]
     }
 
-    if (appspawn_hitrace_option == true) {
-      defines += [ "APPSPAWN_HITRACE_OPTION" ]
-      external_deps += [ "hitrace:libhitrace_option" ]
+    if (build_seccomp) {
+      defines += [ "WITH_SECCOMP" ]
+      external_deps += [ "init:seccomp" ]
     }
 
     if (build_selinux) {
@@ -108,20 +104,6 @@ if (!defined(ohos_lite)) {
         "selinux:libselinux",
         "selinux_adapter:libhap_restorecon",
       ]
-    }
-
-    if (appspawn_report_event) {
-      defines += [ "REPORT_EVENT" ]
-      external_deps += [ "hisysevent:libhisysevent" ]
-      sources += [
-        "${appspawn_path}/modules/sysevent/event_reporter.cpp",
-        "${appspawn_path}/modules/sysevent/hisysevent_adapter.cpp",
-      ]
-    }
-
-    if (target_cpu == "arm64" || target_cpu == "x86_64" ||
-        target_cpu == "riscv64") {
-      defines += [ "APPSPAWN_64" ]
     }
 
     if (dlp_permission_enable) {
