@@ -439,5 +439,6 @@ group("appspawn_standard_tests") {
     "native_spawn_adapter_test:Native_Spawn_Adapter_Test",
     "app_spawn_service_hnp_test:HnpFileTest",
     "app_spawn_service_hnp_test:HnpJsonTest",
+    "nwebspawn_adapter_test:Nweb_Spawn_Adapter_Test",
   ]
 }
