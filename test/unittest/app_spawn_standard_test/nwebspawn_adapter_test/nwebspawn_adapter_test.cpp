@@ -13,19 +13,12 @@
  * limitations under the License.
  */
 
-#include <cerrno>
-#include <cstdlib>
-#include <cstring>
-#include <memory>
 #include <string>
 #include <unistd.h>
 
 #include <gtest/gtest.h>
-#include <sys/stat.h>
-#include <sys/types.h>
 
 #include "appspawn.h"
-#include "appspawn_hook.h"
 #include "appspawn_manager.h"
 #include "appspawn_msg.h"
 #include "appspawn_server.h"
@@ -34,7 +27,6 @@
 #include "securec.h"
 
 #include "app_spawn_stub.h"
-#include "app_spawn_test_helper.h"
 #include "arkweb_utils.h"
 
 // RenderIpcFds is defined in anonymous namespace in nwebspawn_adapter.cpp.
