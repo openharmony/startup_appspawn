@@ -179,7 +179,7 @@ void UnmountLockedBundleMounts(const std::string &appSandboxPath)
         APPSPAWN_ONLY_EXPER(!fullDestPath.empty() && fullDestPath.back() == '/',
             fullDestPath.pop_back());
         int ret = umount2(fullDestPath.c_str(), MNT_DETACH);
-        APPSPAWN_CHECK_ONLY_LOG(ret == 0,
+        APPSPAWN_CHECK_ONLY_LOG(ret == 0 || errno == EINVAL,
             "Unmount locked bundle mount %{public}s failed, errno %{public}d",
             fullDestPath.c_str(), errno);
     }
