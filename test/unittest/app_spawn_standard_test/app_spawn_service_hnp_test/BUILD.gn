@@ -40,7 +40,7 @@ if (!defined(ohos_lite)) {
 
     defines = [
       "APPSPAWN_TEST",
-      "APPSPAWN_BASE_DIR=\"/tmp\"",
+      "APPSPAWN_BASE_DIR=\"/data/local/tmp\"",
     ]
 
     deps = [ "${appspawn_path}/util:libappspawn_util" ]
@@ -77,7 +77,7 @@ if (!defined(ohos_lite)) {
 
     defines = [
       "APPSPAWN_TEST",
-      "APPSPAWN_BASE_DIR=\"/tmp\"",
+      "APPSPAWN_BASE_DIR=\"/data/local/tmp\"",
     ]
 
     deps = [ "${appspawn_path}/util:libappspawn_util" ]

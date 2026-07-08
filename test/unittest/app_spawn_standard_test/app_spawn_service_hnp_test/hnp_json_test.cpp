@@ -267,7 +267,7 @@ HWTEST_F(HnpJsonTest, HnpCfgGetFromSteamTest_010, TestSize.Level0)
  */
 HWTEST_F(HnpJsonTest, ParseHnpCfgFileTest_001, TestSize.Level0)
 {
-    const char *testFile = "/tmp/test_hnp_cfg_001.json";
+    const char *testFile = "/data/local/tmp/test_hnp_cfg_001.json";
     HnpCfgInfo hnpCfg;
     (void)memset_s(&hnpCfg, sizeof(HnpCfgInfo), 0, sizeof(HnpCfgInfo));
     
@@ -282,7 +282,7 @@ HWTEST_F(HnpJsonTest, ParseHnpCfgFileTest_001, TestSize.Level0)
  */
 HWTEST_F(HnpJsonTest, ParseHnpCfgFileTest_002, TestSize.Level0)
 {
-    const char *testFile = "/tmp/test_hnp_cfg_002.json";
+    const char *testFile = "/data/local/tmp/test_hnp_cfg_002.json";
     const char *content = "{\"type\":\"hnp-config\",\"name\":\"test\",\"version\":\"1.0\",\"install\":{}}";
     
     EXPECT_EQ(CreateTestFile(testFile, content), 0);
@@ -305,7 +305,7 @@ HWTEST_F(HnpJsonTest, ParseHnpCfgFileTest_002, TestSize.Level0)
  */
 HWTEST_F(HnpJsonTest, ParseHnpCfgFileTest_003, TestSize.Level0)
 {
-    const char *testFile = "/tmp/test_hnp_cfg_003.json";
+    const char *testFile = "/data/local/tmp/test_hnp_cfg_003.json";
     const char *content = "invalid json";
     
     EXPECT_EQ(CreateTestFile(testFile, content), 0);
