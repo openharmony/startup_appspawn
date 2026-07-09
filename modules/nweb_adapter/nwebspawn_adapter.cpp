@@ -322,12 +322,15 @@ APPSPAWN_STATIC int DupNwebRenderFdsBeforeRunHook(AppSpawnMgr *content, AppSpawn
     APPSPAWN_CHECK_ONLY_EXPER(message != NULL && message->buffer != NULL, return APPSPAWN_ARG_INVALID);
     APPSPAWN_CHECK_ONLY_EXPER(message->tlvOffset != NULL, return APPSPAWN_TLV_NONE);
 
-    // Cold start mode: connection is NULL, read fd from environment variables
-    if (message->connection == NULL) {
+    // Cold start mode, read fd from environment variables
+    if (IsColdRunMode(content)) {
         RenderIpcFds envFds {};
         int ret = GetRenderIpcFdsFromEnv(envFds);
         if (ret != APPSPAWN_OK) {
-            return ret;
+            // In emulator mode, appspawn may fail to set fds into environment variables.
+            // Return OK here and let the browser process obtain fds from foundation later.
+            APPSPAWN_LOGW("Cold start env fd missing, pid=%{public}d", getpid());
+            return APPSPAWN_OK;
         }
         return DupRenderIpcFds(envFds);
     }
