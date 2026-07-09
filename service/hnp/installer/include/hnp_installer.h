@@ -43,9 +43,6 @@ extern "C" {
 // 0x801307 restorecon 安装目录失败
 #define HNP_ERRNO_INSTALLER_RESTORECON_HNP_PATH_FAIL       HNP_ERRNO_COMMON(HNP_MID_INSTALLER, 0x7)
 
-// 0x801308 安装命令参数sessionId错误
-#define HNP_ERRNO_INSTALLER_ARGV_SESSIONID_INVALID         HNP_ERRNO_COMMON(HNP_MID_INSTALLER, 0x8)
-
 #define HNP_DEFAULT_INSTALL_ROOT_PATH APPSPAWN_BASE_DIR "/data/app/el1/bundle"
 #define HNP_SANDBOX_BASE_PATH "/data/service/hnp"
 
@@ -60,7 +57,6 @@ typedef struct HapInstallInfoStru {
     int signHnpSize;                          // 独立签名的hnp数量
     char **signHnpPaths;                      // 独立签名hnp包路径
     char *appIdentifier;
-    int32_t sessionId;
 } HapInstallInfo;
 
 /* hnp安装信息 */
