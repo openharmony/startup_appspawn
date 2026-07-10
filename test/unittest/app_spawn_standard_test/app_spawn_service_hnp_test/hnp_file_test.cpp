@@ -106,7 +106,7 @@ static void RemoveTestDir(const char *dirPath)
  */
 HWTEST_F(HnpFileTest, GetFileSizeByHandleTest_001, TestSize.Level0)
 {
-    const char *testFile = "/tmp/test_file_size_001.txt";
+    const char *testFile = "/data/local/tmp/test_file_size_001.txt";
     const char *content = "hello world";
     
     EXPECT_EQ(CreateTestFile(testFile, content), 0);
@@ -132,7 +132,7 @@ HWTEST_F(HnpFileTest, GetFileSizeByHandleTest_001, TestSize.Level0)
  */
 HWTEST_F(HnpFileTest, GetFileSizeByHandleTest_002, TestSize.Level0)
 {
-    const char *testFile = "/tmp/test_file_size_002.txt";
+    const char *testFile = "/data/local/tmp/test_file_size_002.txt";
     const char *content = "";
     
     EXPECT_EQ(CreateTestFile(testFile, content), 0);
@@ -158,7 +158,7 @@ HWTEST_F(HnpFileTest, GetFileSizeByHandleTest_002, TestSize.Level0)
  */
 HWTEST_F(HnpFileTest, GetFileSizeByHandleTest_003, TestSize.Level0)
 {
-    const char *testFile = "/tmp/test_file_size_003.txt";
+    const char *testFile = "/data/local/tmp/test_file_size_003.txt";
     const int fileSize = 1024;
     char *content = (char *)malloc(fileSize);
     EXPECT_NE(content, nullptr);
@@ -190,7 +190,7 @@ HWTEST_F(HnpFileTest, GetFileSizeByHandleTest_003, TestSize.Level0)
  */
 HWTEST_F(HnpFileTest, ReadFileToStreamTest_001, TestSize.Level0)
 {
-    const char *testFile = "/tmp/non_existent_file_001.txt";
+    const char *testFile = "/data/local/tmp/non_existent_file_001.txt";
     char *stream = nullptr;
     int streamLen = 0;
     
@@ -209,7 +209,7 @@ HWTEST_F(HnpFileTest, ReadFileToStreamTest_001, TestSize.Level0)
  */
 HWTEST_F(HnpFileTest, ReadFileToStreamTest_002, TestSize.Level0)
 {
-    const char *testFile = "/tmp/test_read_stream_002.txt";
+    const char *testFile = "/data/local/tmp/test_read_stream_002.txt";
     const char *content = "hello world test";
     
     EXPECT_EQ(CreateTestFile(testFile, content), 0);
@@ -237,7 +237,7 @@ HWTEST_F(HnpFileTest, ReadFileToStreamTest_002, TestSize.Level0)
  */
 HWTEST_F(HnpFileTest, ReadFileToStreamTest_003, TestSize.Level0)
 {
-    const char *testFile = "/tmp/test_read_stream_003.txt";
+    const char *testFile = "/data/local/tmp/test_read_stream_003.txt";
     const char *content = "";
     
     EXPECT_EQ(CreateTestFile(testFile, content), 0);
@@ -258,7 +258,7 @@ HWTEST_F(HnpFileTest, ReadFileToStreamTest_003, TestSize.Level0)
  */
 HWTEST_F(HnpFileTest, ReadFileToStreamTest_004, TestSize.Level0)
 {
-    const char *testFile = "/tmp/test_read_stream_004.bin";
+    const char *testFile = "/data/local/tmp/test_read_stream_004.bin";
     unsigned char binaryData[] = {0x00, 0x01, 0x02, 0x7F, 0x80, 0xFF, 0xAB, 0xCD};
     size_t dataSize = sizeof(binaryData);
     
@@ -306,7 +306,7 @@ HWTEST_F(HnpFileTest, GetRealPathTest_001, TestSize.Level0)
  */
 HWTEST_F(HnpFileTest, GetRealPathTest_002, TestSize.Level0)
 {
-    char srcPath[] = "/tmp/test_realpath_002.txt";
+    char srcPath[] = "/data/local/tmp/test_realpath_002.txt";
     
     int ret = GetRealPath(srcPath, nullptr);
     EXPECT_EQ(ret, HNP_ERRNO_PARAM_INVALID);
@@ -319,7 +319,7 @@ HWTEST_F(HnpFileTest, GetRealPathTest_002, TestSize.Level0)
  */
 HWTEST_F(HnpFileTest, GetRealPathTest_003, TestSize.Level0)
 {
-    const char *testFile = "/tmp/non_existent_realpath_003.txt";
+    const char *testFile = "/data/local/tmp/non_existent_realpath_003.txt";
     char realPath[MAX_FILE_PATH_LEN] = {0};
     
     (void)remove(testFile);
@@ -335,7 +335,7 @@ HWTEST_F(HnpFileTest, GetRealPathTest_003, TestSize.Level0)
  */
 HWTEST_F(HnpFileTest, GetRealPathTest_004, TestSize.Level0)
 {
-    const char *testFile = "/tmp/test_realpath_004.txt";
+    const char *testFile = "/data/local/tmp/test_realpath_004.txt";
     const char *content = "test content";
     
     EXPECT_EQ(CreateTestFile(testFile, content), 0);
@@ -355,7 +355,7 @@ HWTEST_F(HnpFileTest, GetRealPathTest_004, TestSize.Level0)
  */
 HWTEST_F(HnpFileTest, GetRealPathTest_005, TestSize.Level0)
 {
-    const char *testFile = "/tmp/test_realpath_005.txt";
+    const char *testFile = "/data/local/tmp/test_realpath_005.txt";
     const char *content = "test content";
     
     EXPECT_EQ(CreateTestFile(testFile, content), 0);
@@ -387,7 +387,7 @@ HWTEST_F(HnpFileTest, HnpCreateFolderTest_001, TestSize.Level0)
  */
 HWTEST_F(HnpFileTest, HnpCreateFolderTest_002, TestSize.Level0)
 {
-    const char *testDir = "/tmp/test_hnp_create_002";
+    const char *testDir = "/data/local/tmp/test_hnp_create_002";
     
     RemoveTestDir(testDir);
     
@@ -407,9 +407,9 @@ HWTEST_F(HnpFileTest, HnpCreateFolderTest_002, TestSize.Level0)
  */
 HWTEST_F(HnpFileTest, HnpCreateFolderTest_003, TestSize.Level0)
 {
-    const char *testDir = "/tmp/test_hnp_create_003/subdir1/subdir2";
+    const char *testDir = "/data/local/tmp/test_hnp_create_003/subdir1/subdir2";
     
-    RemoveTestDir("/tmp/test_hnp_create_003");
+    RemoveTestDir("/data/local/tmp/test_hnp_create_003");
     
     int ret = HnpCreateFolder(testDir);
     EXPECT_EQ(ret, 0);
@@ -417,7 +417,7 @@ HWTEST_F(HnpFileTest, HnpCreateFolderTest_003, TestSize.Level0)
     struct stat buffer;
     EXPECT_EQ(stat(testDir, &buffer), 0);
     
-    RemoveTestDir("/tmp/test_hnp_create_003");
+    RemoveTestDir("/data/local/tmp/test_hnp_create_003");
 }
 
 /**
@@ -427,7 +427,7 @@ HWTEST_F(HnpFileTest, HnpCreateFolderTest_003, TestSize.Level0)
  */
 HWTEST_F(HnpFileTest, HnpCreateFolderTest_004, TestSize.Level0)
 {
-    const char *testDir = "/tmp/test_hnp_create_004";
+    const char *testDir = "/data/local/tmp/test_hnp_create_004";
     
     RemoveTestDir(testDir);
     
@@ -447,7 +447,7 @@ HWTEST_F(HnpFileTest, HnpCreateFolderTest_004, TestSize.Level0)
  */
 HWTEST_F(HnpFileTest, HnpDeleteFolderTest_001, TestSize.Level0)
 {
-    const char *testDir = "/tmp/test_hnp_delete_nonexistent_001";
+    const char *testDir = "/data/local/tmp/test_hnp_delete_nonexistent_001";
     
     RemoveTestDir(testDir);
     
@@ -462,7 +462,7 @@ HWTEST_F(HnpFileTest, HnpDeleteFolderTest_001, TestSize.Level0)
  */
 HWTEST_F(HnpFileTest, HnpDeleteFolderTest_002, TestSize.Level0)
 {
-    const char *testDir = "/tmp/test_hnp_delete_002";
+    const char *testDir = "/data/local/tmp/test_hnp_delete_002";
     
     RemoveTestDir(testDir);
     EXPECT_EQ(mkdir(testDir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
@@ -481,8 +481,8 @@ HWTEST_F(HnpFileTest, HnpDeleteFolderTest_002, TestSize.Level0)
  */
 HWTEST_F(HnpFileTest, HnpDeleteFolderTest_003, TestSize.Level0)
 {
-    const char *testDir = "/tmp/test_hnp_delete_003";
-    const char *testFile = "/tmp/test_hnp_delete_003/test_file.txt";
+    const char *testDir = "/data/local/tmp/test_hnp_delete_003";
+    const char *testFile = "/data/local/tmp/test_hnp_delete_003/test_file.txt";
     
     RemoveTestDir(testDir);
     EXPECT_EQ(mkdir(testDir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
@@ -502,10 +502,10 @@ HWTEST_F(HnpFileTest, HnpDeleteFolderTest_003, TestSize.Level0)
  */
 HWTEST_F(HnpFileTest, HnpDeleteFolderTest_004, TestSize.Level0)
 {
-    const char *testDir = "/tmp/test_hnp_delete_004";
-    const char *subDir = "/tmp/test_hnp_delete_004/subdir";
-    const char *testFile1 = "/tmp/test_hnp_delete_004/test_file1.txt";
-    const char *testFile2 = "/tmp/test_hnp_delete_004/subdir/test_file2.txt";
+    const char *testDir = "/data/local/tmp/test_hnp_delete_004";
+    const char *subDir = "/data/local/tmp/test_hnp_delete_004/subdir";
+    const char *testFile1 = "/data/local/tmp/test_hnp_delete_004/test_file1.txt";
+    const char *testFile2 = "/data/local/tmp/test_hnp_delete_004/subdir/test_file2.txt";
     
     RemoveTestDir(testDir);
     EXPECT_EQ(mkdir(testDir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
@@ -527,7 +527,7 @@ HWTEST_F(HnpFileTest, HnpDeleteFolderTest_004, TestSize.Level0)
  */
 HWTEST_F(HnpFileTest, HnpPathFileCountTest_001, TestSize.Level0)
 {
-    const char *testDir = "/tmp/test_hnp_count_nonexistent_001";
+    const char *testDir = "/data/local/tmp/test_hnp_count_nonexistent_001";
     
     RemoveTestDir(testDir);
     
@@ -542,7 +542,7 @@ HWTEST_F(HnpFileTest, HnpPathFileCountTest_001, TestSize.Level0)
  */
 HWTEST_F(HnpFileTest, HnpPathFileCountTest_002, TestSize.Level0)
 {
-    const char *testDir = "/tmp/test_hnp_count_002";
+    const char *testDir = "/data/local/tmp/test_hnp_count_002";
     
     RemoveTestDir(testDir);
     EXPECT_EQ(mkdir(testDir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
@@ -560,8 +560,8 @@ HWTEST_F(HnpFileTest, HnpPathFileCountTest_002, TestSize.Level0)
  */
 HWTEST_F(HnpFileTest, HnpPathFileCountTest_003, TestSize.Level0)
 {
-    const char *testDir = "/tmp/test_hnp_count_003";
-    const char *testFile = "/tmp/test_hnp_count_003/test_file.txt";
+    const char *testDir = "/data/local/tmp/test_hnp_count_003";
+    const char *testFile = "/data/local/tmp/test_hnp_count_003/test_file.txt";
     
     RemoveTestDir(testDir);
     EXPECT_EQ(mkdir(testDir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
@@ -580,10 +580,10 @@ HWTEST_F(HnpFileTest, HnpPathFileCountTest_003, TestSize.Level0)
  */
 HWTEST_F(HnpFileTest, HnpPathFileCountTest_004, TestSize.Level0)
 {
-    const char *testDir = "/tmp/test_hnp_count_004";
-    const char *testFile1 = "/tmp/test_hnp_count_004/test_file1.txt";
-    const char *testFile2 = "/tmp/test_hnp_count_004/test_file2.txt";
-    const char *testFile3 = "/tmp/test_hnp_count_004/test_file3.txt";
+    const char *testDir = "/data/local/tmp/test_hnp_count_004";
+    const char *testFile1 = "/data/local/tmp/test_hnp_count_004/test_file1.txt";
+    const char *testFile2 = "/data/local/tmp/test_hnp_count_004/test_file2.txt";
+    const char *testFile3 = "/data/local/tmp/test_hnp_count_004/test_file3.txt";
     
     RemoveTestDir(testDir);
     EXPECT_EQ(mkdir(testDir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
@@ -604,10 +604,10 @@ HWTEST_F(HnpFileTest, HnpPathFileCountTest_004, TestSize.Level0)
  */
 HWTEST_F(HnpFileTest, HnpPathFileCountTest_005, TestSize.Level0)
 {
-    const char *testDir = "/tmp/test_hnp_count_005";
-    const char *subDir = "/tmp/test_hnp_count_005/subdir";
-    const char *testFile1 = "/tmp/test_hnp_count_005/test_file1.txt";
-    const char *testFile2 = "/tmp/test_hnp_count_005/subdir/test_file2.txt";
+    const char *testDir = "/data/local/tmp/test_hnp_count_005";
+    const char *subDir = "/data/local/tmp/test_hnp_count_005/subdir";
+    const char *testFile1 = "/data/local/tmp/test_hnp_count_005/test_file1.txt";
+    const char *testFile2 = "/data/local/tmp/test_hnp_count_005/subdir/test_file2.txt";
     
     RemoveTestDir(testDir);
     EXPECT_EQ(mkdir(testDir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH), 0);
