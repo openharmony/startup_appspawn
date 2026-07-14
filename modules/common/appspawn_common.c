@@ -138,15 +138,13 @@ static int SetAmbientCapability(int cap)
     return 0;
 }
 
-static int SetAmbientCapabilities(const AppSpawningCtx *property)
+APPSPAWN_STATIC int SetAmbientCapabilities(const AppSpawningCtx *property)
 {
     if (!IsNoShareFsEnable()) {
         return 0;
     }
-    if (SetAmbientCapability(CAP_DAC_OVERRIDE) != 0) {
-        APPSPAWN_LOGE("set ambient failed:%{public}d", CAP_DAC_OVERRIDE);
-        return -1;
-    }
+    APPSPAWN_CHECK(SetAmbientCapability(CAP_DAC_OVERRIDE) == 0, return -1,
+        "set ambient failed:%{public}d", CAP_DAC_OVERRIDE);
 
     // Only custom sandbox app can set the CAP_KILL ambient to 1
     if (CheckAppMsgFlagsSet(property, APP_FLAGS_CUSTOM_SANDBOX)) {
@@ -203,7 +201,8 @@ APPSPAWN_STATIC int SetCapabilities(const AppSpawnMgr *content, const AppSpawnin
     if (IsNoShareFsEnable() &&
         !CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX_TYPE) &&
         (IsAppSpawnMode(content) || IsNativeSpawnMode(content))) {
-        APPSPAWN_CHECK(SetAmbientCapabilities(property) == 0, return -1, "Failed to set ambient");
+        isRet = SetAmbientCapabilities(property);
+        APPSPAWN_CHECK(!isRet, return -1, "Failed to set ambient");
     }
     return 0;
 }
@@ -326,7 +325,8 @@ APPSPAWN_STATIC int SetUidGid(const AppSpawnMgr *content, const AppSpawningCtx *
     AppSpawnMsgDacInfo *dacInfo = (AppSpawnMsgDacInfo *)GetAppProperty(property, TLV_DAC_INFO);
     APPSPAWN_CHECK(dacInfo != NULL, return APPSPAWN_TLV_NONE,
         "No tlv %{public}d in msg %{public}s", TLV_DAC_INFO, GetProcessName(property));
-    APPSPAWN_CHECK(dacInfo->uid >= MIN_VALID_APP_UID && dacInfo->gid >= MIN_VALID_APP_GID &&
+    APPSPAWN_CHECK(dacInfo->uid >= MIN_VALID_APP_UID && dacInfo->uid < UINT32_MAX &&
+        dacInfo->gid >= MIN_VALID_APP_GID && dacInfo->gid < UINT32_MAX &&
         dacInfo->gidCount <= APP_MAX_GIDS, return APPSPAWN_MSG_INVALID,
         "uid %{public}u or gid %{public}u gidCount %{public}u is invalid ",
         dacInfo->uid, dacInfo->gid, dacInfo->gidCount);

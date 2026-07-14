@@ -159,6 +159,8 @@ int AddPermissionStrArrayToValue(cJSON *arrayItem, UserEncap *encap);
 int AddPermissionArrayToValue(cJSON *permissionItemArr, UserEncap *encap);
 int SetSchedPriority(const AppSpawnMgr *content, const AppSpawningCtx *property);
 int SetUidGid(const AppSpawnMgr *content, const AppSpawningCtx *property);
+int SetAmbientCapabilities(const AppSpawningCtx *property);
+void SetPrctlResult(int result);
 int PrctlStub(int option, ...);
 int KillStub(pid_t pid, int sig);
 int SetXpmConfig(AppSpawnMgr *content, AppSpawningCtx *property);

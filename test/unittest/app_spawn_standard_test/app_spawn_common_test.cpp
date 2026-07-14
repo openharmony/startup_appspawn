@@ -2230,6 +2230,127 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_SetCapabilities_06, TestSize.Level0)
     ASSERT_EQ(ret, 0);
 }
 
+HWTEST_F(AppSpawnCommonTest, App_Spawn_SetCapabilities_07, TestSize.Level0)
+{
+    SetNoShareFsEnable(true);
+    AppSpawnClientHandle clientHandle = nullptr;
+    AppSpawnReqMsgHandle reqHandle = 0;
+    AppSpawningCtx *property = nullptr;
+    AppSpawnMgr *mgr = nullptr;
+    int ret = -1;
+    do {
+        mgr = CreateAppSpawnMgr(MODE_FOR_NATIVE_COLD_RUN);
+        EXPECT_EQ(mgr != nullptr, 1);
+        // create msg
+        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create reqMgr %{public}s", NATIVESPAWN_SERVER_NAME);
+        reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_SPAWN_NATIVE_PROCESS, 0);
+        APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break,
+            "Failed to create req %{public}s", APPSPAWN_SERVER_NAME);
+        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_ISOLATED_SANDBOX_TYPE);
+        property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
+        APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
+        ret = SetCapabilities(mgr, property);
+    } while (0);
+    DeleteAppSpawningCtx(property);
+    AppSpawnClientDestroy(clientHandle);
+    DeleteAppSpawnMgr(mgr);
+    ASSERT_EQ(ret, 0);
+    SetNoShareFsEnable(false);
+}
+
+HWTEST_F(AppSpawnCommonTest, App_Spawn_SetAmbientCapabilities_01, TestSize.Level0)
+{
+    SetPrctlResult(0);
+    SetNoShareFsEnable(true);
+    AppSpawnClientHandle clientHandle = nullptr;
+    AppSpawnReqMsgHandle reqHandle = 0;
+    AppSpawningCtx *property = nullptr;
+    AppSpawnMgr *mgr = nullptr;
+    int ret = -1;
+    do {
+        mgr = CreateAppSpawnMgr(MODE_FOR_NATIVE_COLD_RUN);
+        EXPECT_EQ(mgr != nullptr, 1);
+        // create msg
+        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create reqMgr %{public}s", NATIVESPAWN_SERVER_NAME);
+        reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_SPAWN_NATIVE_PROCESS, 0);
+        APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break,
+            "Failed to create req %{public}s", APPSPAWN_SERVER_NAME);
+        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_ISOLATED_SANDBOX_TYPE);
+        property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
+        APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
+        ret = SetAmbientCapabilities(property);
+    } while (0);
+    DeleteAppSpawningCtx(property);
+    AppSpawnClientDestroy(clientHandle);
+    DeleteAppSpawnMgr(mgr);
+    ASSERT_EQ(ret, 0);
+    SetNoShareFsEnable(false);
+    SetPrctlResult(-1);
+}
+
+HWTEST_F(AppSpawnCommonTest, App_Spawn_SetAmbientCapabilities_02, TestSize.Level0)
+{
+    SetPrctlResult(0);
+    SetNoShareFsEnable(true);
+    AppSpawnClientHandle clientHandle = nullptr;
+    AppSpawnReqMsgHandle reqHandle = 0;
+    AppSpawningCtx *property = nullptr;
+    AppSpawnMgr *mgr = nullptr;
+    int ret = -1;
+    do {
+        mgr = CreateAppSpawnMgr(MODE_FOR_NATIVE_COLD_RUN);
+        EXPECT_EQ(mgr != nullptr, 1);
+        // create msg
+        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create reqMgr %{public}s", NATIVESPAWN_SERVER_NAME);
+        reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_SPAWN_NATIVE_PROCESS, 0);
+        APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break,
+            "Failed to create req %{public}s", APPSPAWN_SERVER_NAME);
+        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_SET_CAPS_FOWNER);
+        property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
+        APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
+        ret = SetAmbientCapabilities(property);
+    } while (0);
+    DeleteAppSpawningCtx(property);
+    AppSpawnClientDestroy(clientHandle);
+    DeleteAppSpawnMgr(mgr);
+    ASSERT_EQ(ret, 0);
+    SetNoShareFsEnable(false);
+    SetPrctlResult(-1);
+}
+
+HWTEST_F(AppSpawnCommonTest, App_Spawn_SetAmbientCapabilities_03, TestSize.Level0)
+{
+    SetPrctlResult(0);
+    SetNoShareFsEnable(true);
+    AppSpawnClientHandle clientHandle = nullptr;
+    AppSpawnReqMsgHandle reqHandle = 0;
+    AppSpawningCtx *property = nullptr;
+    AppSpawnMgr *mgr = nullptr;
+    int ret = -1;
+    do {
+        mgr = CreateAppSpawnMgr(MODE_FOR_NATIVE_COLD_RUN);
+        EXPECT_EQ(mgr != nullptr, 1);
+        // create msg
+        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create reqMgr %{public}s", NATIVESPAWN_SERVER_NAME);
+        reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_SPAWN_NATIVE_PROCESS, 0);
+        APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break,
+            "Failed to create req %{public}s", APPSPAWN_SERVER_NAME);
+        AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_CUSTOM_SANDBOX);
+        property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
+        APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
+        ret = SetAmbientCapabilities(property);
+    } while (0);
+    DeleteAppSpawningCtx(property);
+    AppSpawnClientDestroy(clientHandle);
+    DeleteAppSpawnMgr(mgr);
+    ASSERT_EQ(ret, 0);
+    SetNoShareFsEnable(false);
+    SetPrctlResult(-1);
+}
 
 HWTEST_F(AppSpawnCommonTest, App_Spawn_SetSchedPriority_01, TestSize.Level0)
 {

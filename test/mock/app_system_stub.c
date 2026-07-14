@@ -331,9 +331,15 @@ int IoctlStub(int fd, unsigned long request, ...)
     return g_ioctlResult;
 }
 
+int g_prctlResult = -1;
+void SetPrctlResult(int result)
+{
+    g_prctlResult = result;
+}
+
 int PrctlStub(int option, ...)
 {
-    return -1;
+    return g_prctlResult;
 }
 
 int KillStub(pid_t pid, int sig)
