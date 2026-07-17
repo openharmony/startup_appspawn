@@ -21,6 +21,12 @@ if (!defined(ohos_lite)) {
   }
 
   ohos_shared_library("hnpapi") {
+    branch_protector_ret = "pac_ret"
+    sanitize = {
+      cfi = true
+      cfi_cross_dso = true
+      debug = false
+    }
     include_dirs = [ "${appspawn_path}/interfaces/innerkits/hnp/include" ]
     sources = [ "${appspawn_path}/interfaces/innerkits/hnp/src/hnp_api.c" ]
 

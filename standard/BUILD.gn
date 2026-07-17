@@ -39,6 +39,12 @@ config("appspawn_server_config") {
 }
 
 ohos_executable("appspawn") {
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
   sources = [
     "${appspawn_path}/common/appspawn_server.c",
     "${appspawn_path}/common/appspawn_trace.cpp",
@@ -121,6 +127,7 @@ ohos_executable("appspawn") {
 }
 
 ohos_shared_library("appspawn_helper") {
+  branch_protector_ret = "pac_ret"
   sources = [ "${appspawn_path}/common/appspawn_server.c" ]
   defines = [ "APPSPAWN_HELPER" ]
   configs = [
@@ -149,6 +156,12 @@ ohos_prebuilt_etc("appspawn.rc") {
 }
 
 ohos_executable("pid_ns_init") {
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
   sources = [ "${appspawn_path}/standard/pid_ns_init.c" ]
   install_enable = true
   subsystem_name = "${subsystem_name}"
@@ -221,6 +234,12 @@ ohos_executable("cjappspawn") {
 
 # to support nativespawn
 ohos_executable("nativespawn") {
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
   sources = [
     "${appspawn_path}/common/appspawn_server.c",
     "${appspawn_path}/common/appspawn_trace.cpp",
@@ -299,6 +318,12 @@ ohos_prebuilt_etc("nativespawn.rc") {
 
 # to support nwebspawn
 ohos_executable("nwebspawn") {
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
   sources = [
     "${appspawn_path}/common/appspawn_server.c",
     "${appspawn_path}/common/appspawn_trace.cpp",
@@ -380,6 +405,12 @@ ohos_executable("nwebspawn") {
 
 # to support hybridspawn
 ohos_executable("hybridspawn") {
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
   sources = [
     "${appspawn_path}/common/appspawn_server.c",
     "${appspawn_path}/common/appspawn_trace.cpp",
