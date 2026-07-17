@@ -136,7 +136,6 @@ ohos_shared_library("appspawn_helper") {
   ]
   cflags = [
     "-fvisibility=hidden",
-    "-fstack-protector-all",
   ]
   external_deps = [
     "hilog:libhilog",
