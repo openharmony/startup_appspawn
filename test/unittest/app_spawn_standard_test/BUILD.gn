@@ -123,9 +123,6 @@ if (!defined(ohos_lite)) {
     # add test
     include_dirs += [ "${appspawn_path}/test/unittest" ]
     sources += [
-      "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_appmgr_test.cpp",
-      "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_beget_test.cpp",
-      "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_command_lexer_test.cpp",
       "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_service_test.cpp",
       "${appspawn_path}/test/unittest/app_spawn_standard_test/nweb_spawn_service_test.cpp",
       "${appspawn_path}/test/unittest/app_spawn_test_helper.cpp",
@@ -291,6 +288,7 @@ if (!defined(ohos_lite)) {
       "${appspawn_path}/standard/appspawn_msgmgr.c",
       "${appspawn_path}/standard/appspawn_service.c",
       "${appspawn_path}/util/src/appspawn_utils.c",
+      "${appspawn_path}/util/src/appspawndf_utils.cpp",
     ]
 
     # client
@@ -335,7 +333,6 @@ if (!defined(ohos_lite)) {
     include_dirs += [ "${appspawn_path}/test/unittest" ]
     sources += [
       "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_common_test.cpp",
-      "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_df_utils_test.cpp",
       "${appspawn_path}/test/unittest/app_spawn_test_helper.cpp",
     ]
 
@@ -440,5 +437,8 @@ group("appspawn_standard_tests") {
     "app_spawn_service_hnp_test:HnpFileTest",
     "app_spawn_service_hnp_test:HnpJsonTest",
     "nwebspawn_adapter_test:Nweb_Spawn_Adapter_Test",
+    "app_spawn_appmgr_test:AppSpawn_AppMgr_Test",
+    "app_spawn_beget_test:AppSpawn_Beget_Test",
+    "app_spawn_cgroup_test:AppSpawn_CGroup_Test",
   ]
 }
