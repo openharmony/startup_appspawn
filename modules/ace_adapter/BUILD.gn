@@ -15,6 +15,12 @@ import("//base/startup/appspawn/appspawn.gni")
 import("//build/ohos.gni")
 
 ohos_shared_library("appspawn_ace") {
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
   sources = [
     "ace_adapter.cpp",
     "command_lexer.cpp",

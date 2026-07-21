@@ -15,6 +15,12 @@ import("//build/ohos.gni")
 
 if (!defined(ohos_lite)) {
   ohos_executable("devicedebug") {
+    branch_protector_ret = "pac_ret"
+    sanitize = {
+      cfi = true
+      cfi_cross_dso = true
+      debug = false
+    }
     include_dirs = [
       "base",
       "kill/include",

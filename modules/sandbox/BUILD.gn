@@ -64,6 +64,12 @@ if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
   }
 } else {
   ohos_shared_library("appspawn_sandbox") {
+    branch_protector_ret = "pac_ret"
+    sanitize = {
+      cfi = true
+      cfi_cross_dso = true
+      debug = false
+    }
     sources = [
       "${appspawn_innerkits_path}/permission/appspawn_mount_permission.c",
       "${appspawn_path}/common/appspawn_trace.cpp",

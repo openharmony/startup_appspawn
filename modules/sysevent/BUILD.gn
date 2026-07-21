@@ -14,6 +14,12 @@ import("//base/startup/appspawn/appspawn.gni")
 import("//build/ohos.gni")
 
 ohos_shared_library("event_reporter") {
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
   sources = [ "event_reporter.cpp" ]
   include_dirs = [
     ".",

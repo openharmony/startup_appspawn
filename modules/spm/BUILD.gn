@@ -18,6 +18,12 @@ import("//build/ohos.gni")
 # Only compile when SPM is enabled AND NOT in independent compilation mode
 if (appspawn_enable_spm) {
 ohos_shared_library("libappspawn_spm") {
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
   sources = [
     "spm.c",
     "spm_permission.c",
