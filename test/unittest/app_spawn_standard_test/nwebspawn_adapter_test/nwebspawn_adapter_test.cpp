@@ -617,7 +617,7 @@ HWTEST_F(NwebspawnAdapterTest, DupNwebRenderFdsBeforeRunHook_NullTlvOffset_001, 
  */
 HWTEST_F(NwebspawnAdapterTest, DupNwebRenderFdsBeforeRunHook_ColdStartNoEnv_001, TestSize.Level0)
 {
-    AppSpawnMgr *mgr = CreateMgrWithMode(MODE_FOR_NWEB_SPAWN, NWEBSPAWN_SERVER_NAME);
+    AppSpawnMgr *mgr = CreateMgrWithMode(MODE_FOR_NWEB_COLD_RUN, NWEBSPAWN_SERVER_NAME);
     ASSERT_NE(mgr, nullptr);
 
     uint8_t buffer[1024] = {0};
@@ -629,7 +629,6 @@ HWTEST_F(NwebspawnAdapterTest, DupNwebRenderFdsBeforeRunHook_ColdStartNoEnv_001,
     msgNode.buffer = buffer;
     msgNode.tlvOffset = tlvOffsets;
     msgNode.tlvCount = 0;
-    msgNode.connection = nullptr;  // Cold start mode
 
     AppSpawningCtx property = {};
     property.message = &msgNode;
@@ -639,7 +638,7 @@ HWTEST_F(NwebspawnAdapterTest, DupNwebRenderFdsBeforeRunHook_ColdStartNoEnv_001,
     unsetenv("APPSPAWN_FD_crash-fd");
 
     int ret = DupNwebRenderFdsBeforeRunHook(mgr, &property);
-    EXPECT_EQ(ret, APPSPAWN_ARG_INVALID);
+    EXPECT_EQ(ret, APPSPAWN_OK);
 }
 
 /**
@@ -648,7 +647,7 @@ HWTEST_F(NwebspawnAdapterTest, DupNwebRenderFdsBeforeRunHook_ColdStartNoEnv_001,
  */
 HWTEST_F(NwebspawnAdapterTest, DupNwebRenderFdsBeforeRunHook_ColdStartWithEnv_001, TestSize.Level0)
 {
-    AppSpawnMgr *mgr = CreateMgrWithMode(MODE_FOR_NWEB_SPAWN, NWEBSPAWN_SERVER_NAME);
+    AppSpawnMgr *mgr = CreateMgrWithMode(MODE_FOR_NWEB_COLD_RUN, NWEBSPAWN_SERVER_NAME);
     ASSERT_NE(mgr, nullptr);
 
     uint8_t buffer[1024] = {0};
@@ -660,7 +659,6 @@ HWTEST_F(NwebspawnAdapterTest, DupNwebRenderFdsBeforeRunHook_ColdStartWithEnv_00
     msgNode.buffer = buffer;
     msgNode.tlvOffset = tlvOffsets;
     msgNode.tlvCount = 0;
-    msgNode.connection = nullptr;  // Cold start mode
 
     AppSpawningCtx property = {};
     property.message = &msgNode;
