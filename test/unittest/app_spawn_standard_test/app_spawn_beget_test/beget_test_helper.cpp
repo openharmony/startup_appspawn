@@ -24,14 +24,16 @@
 #include "appspawn_msg.h"
 #include "appspawn_utils.h"
 #include "appspawn_client.h"
+#define  DEFAULT_TEST_ID 20010029
+#define  DAC_COUNT_TEST_ID 2
 
 namespace OHOS {
 void BegetTestHelper::BegetTestSetDefaultData(void)
 {
-    begetTestProcessName_ = std::string("com.example.myapplication");
-    begetTestDefaultTestUid_ = 20010029;
-    begetTestDefaultTestGid_ = 20010029;
-    begetTestDefaultTestGidGroup_ = 20010029;
+    begetTestProcessName_ = std::string("com.example.beget.app");
+    begetTestDefaultTestUid_ = DEFAULT_TEST_ID;
+    begetTestDefaultTestGid_ = DEFAULT_TEST_ID;
+    begetTestDefaultTestGidGroup_ = DEFAULT_TEST_ID;
     begetTestDefaultTestBundleIndex_ = 1;
     begetTestDefaultApl_ = std::string("system_core");
     begetTestDefaultMsgFlags_ = 0;
@@ -42,10 +44,10 @@ int BegetTestHelper::BegetTestAddDacInfo(AppSpawnReqMsgHandle &reqHandle)
     AppDacInfo dacInfo = {};
     dacInfo.uid = begetTestDefaultTestUid_;
     dacInfo.gid = begetTestDefaultTestGid_;
-    dacInfo.gidCount = 2;
+    dacInfo.gidCount = DAC_COUNT_TEST_ID;
     dacInfo.gidTable[0] = begetTestDefaultTestGidGroup_;
     dacInfo.gidTable[1] = begetTestDefaultTestGidGroup_ + 1;
-    APPSPAWN_CHECK_ONLY_EXPER(strcpy_s(dacInfo.userName, sizeof(dacInfo.userName), "test-app-name") == 0,
+    APPSPAWN_CHECK_ONLY_EXPER(strcpy_s(dacInfo.userName, sizeof(dacInfo.userName), "test-beget-app") == 0,
         return APPSPAWN_ARG_INVALID);
     return AppSpawnReqMsgSetAppDacInfo(reqHandle, &dacInfo);
 }
@@ -60,7 +62,7 @@ int BegetTestHelper::BegetTestAddFdInfo(AppSpawnReqMsgHandle &reqHandle)
 
 int BegetTestHelper::BegetTestSetMsgFlags(AppSpawnReqMsgHandle reqHandle, uint32_t tlv, uint32_t flags)
 {
-    AppSpawnReqMsgNode *reqNode = (AppSpawnReqMsgNode *)reqHandle;
+    AppSpawnReqMsgNode *reqNode = reinterpret_cast<AppSpawnReqMsgNode *>(reqHandle);
     APPSPAWN_CHECK_ONLY_EXPER(reqNode != nullptr, return APPSPAWN_ARG_INVALID);
     if (tlv == TLV_MSG_FLAGS) {
         *(uint32_t *)reqNode->msgFlags->flags = flags;
@@ -130,7 +132,7 @@ AppSpawnReqMsgHandle BegetTestHelper::BegetTestCreateSendMsg(AppSpawnClientHandl
         ret = AppSpawnReqMsgAddExtInfo(reqHandle, MSG_EXT_NAME_RENDER_CMD,
             reinterpret_cast<const uint8_t *>(renderCmd), strlen(renderCmd));
         APPSPAWN_CHECK(ret == 0, break, "Failed to render cmd %{public}s", begetTestProcessName_.c_str());
-        ret = AppSpawnReqMsgSetAppDomainInfo(reqHandle, 1, defaultApl_.c_str());
+        ret = AppSpawnReqMsgSetAppDomainInfo(reqHandle, 1, begetTestDefaultApl_.c_str());
         APPSPAWN_CHECK(ret == 0, break, "Failed to domain info %{public}s", begetTestProcessName_.c_str());
         return reqHandle;
     } while (0);
@@ -144,7 +146,7 @@ AppSpawningCtx *BegetTestHelper::BegetTestGetAppProperty(AppSpawnClientHandle ha
     APPSPAWN_CHECK(reqNode != nullptr && reqNode->msg != nullptr, AppSpawnReqMsgFree(reqHandle);
         return nullptr, "Invalid reqNode");
 
-    AppSpawnMsgNode *msgNode = BegetTestCreateSendMsg(reqNode->msg);
+    AppSpawnMsgNode *msgNode = BegetTestCreateAppSpawnMsg(reqNode->msg);
     APPSPAWN_CHECK(msgNode != nullptr, return nullptr, "Failed to alloc for msg");
 
     uint32_t bufferSize = reqNode->msg->msgLen;
