@@ -12,7 +12,6 @@
         "application.AbilityStage",
         "app.ability.ExtensionAbility",
         "app.ability.UIAbility",
-        "file.bfs",
         "deviceinfo",
         "data.preferences",
         "window_napi",
