@@ -821,7 +821,7 @@ static int CollectTlvsInOrder(const AppSpawnMgr *mgr, const AppSpawningCtx *ctx,
     const AppSpawnMsgNode *oldMsg, const SpmData *spmData, ListNode *head)
 {
     APPSPAWN_CHECK(oldMsg != NULL && spmData != NULL && head != NULL, return -1,
-        "Invalid parameters: oldMsg=%{public}p, spmData=%{public}p, head=%{public}p", oldMsg, spmData, head);
+        "Invalid parameters: oldMsg, spmData or head is NULL");
 
     uint32_t bufferLen = oldMsg->msgHeader.msgLen - sizeof(AppSpawnMsg);
     uint32_t currLen = 0;
@@ -880,7 +880,7 @@ static int CollectTlvsInOrder(const AppSpawnMgr *mgr, const AppSpawningCtx *ctx,
 APPSPAWN_STATIC int IncreaseRefCounts(AppSpawningCtx *ctx, const RefcountContext *refCtx)
 {
     APPSPAWN_CHECK(ctx != NULL && refCtx != NULL, return SPM_ERROR_INVALID_PARAM,
-        "Invalid parameters: ctx=%{public}p, refCtx=%{public}p", ctx, refCtx);
+        "Invalid parameters: ctx or refCtx is NULL");
 
     uint32_t spawnId = GetSpawnId();
     uint8_t refAdded = SPM_REF_NONE;
@@ -1016,8 +1016,7 @@ static int WriteTlvsToNewMsg(const AppSpawnMsgNode *oldMsg,
     ListNode *entryList, AppSpawnMsgNode **newMsgOut)
 {
     APPSPAWN_CHECK(oldMsg != NULL && entryList != NULL && newMsgOut != NULL, return -1,
-                   "Invalid parameters: oldMsg=%{public}p, entryList=%{public}p, newMsgOut=%{public}p",
-                   oldMsg, entryList, newMsgOut);
+                   "Invalid parameters: oldMsg, entryList or newMsgOut is NULL");
 
     // 1. Calculate exact buffer size and count extended TLVs
     uint32_t exactBufSize = 0;
