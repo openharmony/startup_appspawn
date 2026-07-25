@@ -497,39 +497,6 @@
         }]
     }],
     "individual" : [{
-        "com.ohos.medialibrary.medialibrarydata" : [{
-            "sandbox-switch": "ON",
-            "appIdentifier": "5765880207854616753",
-            "mount-paths" : [{
-                    "src-path" : "/storage/media/<currentUserId>",
-                    "sandbox-path" : "/storage/media",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/data/service/el2/<currentUserId>/hmdfs/cache/account_cache",
-                    "sandbox-path" : "/data/service/el2/<currentUserId>/hmdfs/cache/account_cache",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/storage/cloud/<currentUserId>",
-                    "sandbox-path" : "/storage/cloud",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "true"
-                }, {
-                    "src-path" : "none",
-                    "sandbox-path" : "/storage/cloud/epfs",
-                    "sandbox-flags" : [ "MS_NODEV" ],
-                    "fs-type": "epfs",
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/mnt/data/<currentUserId>",
-                    "sandbox-path" : "/mnt/data/<currentUserId>",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }
-            ],
-            "symbol-links" : []
-        }],
         "com.ohos.sceneboard" : [{
             "sandbox-switch": "ON",
             "appIdentifier": "5765880207853062833",
@@ -1225,6 +1192,37 @@
                     "src-path": "/data/virt_service/rgm_hmos/anco_hmos_log/LogService",
                     "sandbox-path": "/data/virt_service/rgm_hmos/anco_hmos_log/LogService",
                     "sandbox-flags": ["bind", "rec"]
+                }
+            ]
+        }],
+        "ohos.permission.ACCESS_MEDIALIB_SANDBOX":[{
+            "sandbox-switch": "ON",
+            "mount-paths" : [{
+                    "src-path" : "/storage/media/<currentUserId>",
+                    "sandbox-path" : "/storage/media",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/data/service/el2/<currentUserId>/hmdfs/cache/account_cache",
+                    "sandbox-path" : "/data/service/el2/<currentUserId>/hmdfs/cache/account_cache",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/storage/cloud/<currentUserId>",
+                    "sandbox-path" : "/storage/cloud",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "true"
+                }, {
+                    "src-path" : "none",
+                    "sandbox-path" : "/storage/cloud/epfs",
+                    "sandbox-flags" : [ "MS_NODEV" ],
+                    "fs-type": "epfs",
+                    "check-action-status": "false"
+                }, {
+                    "src-path" : "/mnt/data/<currentUserId>",
+                    "sandbox-path" : "/mnt/data/<currentUserId>",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
                 }
             ]
         }]
