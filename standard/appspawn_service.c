@@ -1478,6 +1478,14 @@ static int RunAppSpawnProcessMsg(AppSpawnContent *content, AppSpawnClient *clien
     return ret;
 }
 
+static void AbortSpawnAndCleanup(int ret, AppSpawnConnection *connection,
+                                 AppSpawnMsgNode *message, AppSpawningCtx *property)
+{
+    AppSpawnHookExecute(STAGE_SERVER_SPAWN_ABORT, 0, GetAppSpawnContent(), &property->client);
+    SendResponse(connection, &message->msgHeader, ret, 0);
+    DeleteAppSpawningCtx(property);
+}
+
 static void ProcessSpawnReqMsg(AppSpawnConnection *connection, AppSpawnMsgNode *message)
 {
     int ret = CheckAppSpawnMsg(message);
@@ -1517,23 +1525,25 @@ static void ProcessSpawnReqMsg(AppSpawnConnection *connection, AppSpawnMsgNode *
 
     // mount el2 dir
     // getWrapBundleNameValue
-    AppSpawnHookExecute(STAGE_PARENT_PRE_FORK, 0, GetAppSpawnContent(), &property->client);
+    ret = AppSpawnHookExecute(STAGE_PARENT_PRE_FORK, HOOK_STOP_WHEN_ERROR,
+                              GetAppSpawnContent(), &property->client);
+    if (ret != 0) {
+        APPSPAWN_LOGE("PRE_FORK hook failed: %{public}d, aborting spawn", ret);
+        AbortSpawnAndCleanup(ret, connection, message, property);
+        return;
+    }
     DumpAppSpawnMsg(property->message);
 
     clock_gettime(CLOCK_MONOTONIC, &property->spawnStart);
     ret = RunAppSpawnProcessMsg(GetAppSpawnContent(), &property->client, &property->pid);
     AppSpawnHookExecute(STAGE_PARENT_POST_FORK, 0, GetAppSpawnContent(), &property->client);
     if (ret != 0) { // wait child process result
-        AppSpawnHookExecute(STAGE_SERVER_SPAWN_ABORT, 0, GetAppSpawnContent(), &property->client);
-        SendResponse(connection, &message->msgHeader, ret, 0);
-        DeleteAppSpawningCtx(property);
+        AbortSpawnAndCleanup(ret, connection, message, property);
         return;
     }
     if (AddChildWatcher(property) != 0) { // wait child process result
         kill(property->pid, SIGKILL);
-        AppSpawnHookExecute(STAGE_SERVER_SPAWN_ABORT, 0, GetAppSpawnContent(), &property->client);
-        SendResponse(connection, &message->msgHeader, ret, 0);
-        DeleteAppSpawningCtx(property);
+        AbortSpawnAndCleanup(ret, connection, message, property);
         return;
     }
 }

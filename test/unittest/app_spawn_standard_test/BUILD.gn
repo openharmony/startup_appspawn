@@ -137,7 +137,15 @@ if (!defined(ohos_lite)) {
       ]
       defines += [ "APPSPAWN_SANDBOX_NEW" ]
     } else {
-      sources += [ "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_sandbox_test.cpp" ]
+      sources += [
+        "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_sandbox_test.cpp",
+      ]
+      if (appspawn_controlled_app) {
+        sources += [
+          "${appspawn_path}/test/unittest/app_spawn_standard_test/app_spawn_controlled_app_test.cpp",
+        ]
+        defines += [ "WITH_CONTROLLED_APP" ]
+      }
       defines += [ "APPSPAWN_SANDBOX_ROOT_TMPFS" ]
     }
 
