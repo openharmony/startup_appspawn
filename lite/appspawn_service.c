@@ -34,11 +34,11 @@ static const int CLIENT_ID = 100;
 #ifdef OHOS_DEBUG
 uint64_t DiffTime(const struct timespec *startTime, const struct timespec *endTime)
 {
-    uint64_t diff = (uint64_t)((endTime->tv_sec - startTime->tv_sec) * 1000000);  // 1000000 s-us
+    uint64_t diff = (uint64_t)((endTime->tv_sec - startTime->tv_sec) * 1000000);  // 1000000 s->us
     if (endTime->tv_nsec > startTime->tv_nsec) {
-        diff += (endTime->tv_nsec - startTime->tv_nsec) / 1000;  // 1000 ns - us
+        diff += (endTime->tv_nsec - startTime->tv_nsec) / 1000;  // 1000 ns->us
     } else {
-        diff -= (startTime->tv_nsec - endTime->tv_nsec) / 1000;  // 1000 ns - us
+        diff -= (startTime->tv_nsec - endTime->tv_nsec) / 1000;  // 1000 ns->us
     }
     return diff;
 }
@@ -164,7 +164,7 @@ static int Invoke(IServerProxy *iProxy, int funcId, void *origin, IpcIo *req, Ip
     struct timespec tmEnd = {0};
     clock_gettime(CLOCK_MONOTONIC, &tmEnd);
     long long diff = DiffTime(&tmStart, &tmEnd);
-    APPSPAWN_LOGI("[appspawn] invoke, reply pid %d, timeused %lld ns.", newPid, diff);
+    APPSPAWN_LOGI("[appspawn] invoke, reply pid %d, timeused %lld us.", newPid, diff);
 #else
     APPSPAWN_LOGI("[appspawn] invoke, reply pid %d.", newPid);
 #endif  // OHOS_DEBUG

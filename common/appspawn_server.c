@@ -166,25 +166,23 @@ static void NwebSpawnCloneChildProcess(AppSpawnContent *content, AppSpawnClient 
 
 static void AppSpawnForkChildProcess(AppSpawnContent *content, AppSpawnClient *client, pid_t *pid)
 {
-    struct timespec forkStart = {0};
 #ifndef OHOS_LITE
     enum fdsan_error_level errorLevel = fdsan_get_error_level();
 #endif
+    struct timespec forkStart = {0};
     clock_gettime(CLOCK_MONOTONIC, &forkStart);
     StartAppspawnTrace("AppspawnFork");
     *pid = fork();
     if (*pid == 0) {
-#ifndef OHOS_LITE
-        HilogCloseSocketFd();
-#endif
         struct timespec forkEnd = {0};
         clock_gettime(CLOCK_MONOTONIC, &forkEnd);
-        uint64_t diff = DiffTime(&forkStart, &forkEnd);
-        APPSPAWN_CHECK_ONLY_LOGW(diff < MAX_FORK_TIME, "fork time %{public}" PRId64 " us", diff);
 #ifndef OHOS_LITE
+        HilogCloseSocketFd();
         // Inherit the error level of the original process
         (void)fdsan_set_error_level(errorLevel);
 #endif
+        uint64_t diff = DiffTime(&forkStart, &forkEnd);
+        APPSPAWN_CHECK_ONLY_LOGW(diff < MAX_FORK_TIME, "fork time %{public}" PRIu64 " us", diff);
         ProcessExit(AppSpawnChild(content, client));
     } else {
         FinishAppspawnTrace();

@@ -1136,25 +1136,25 @@ APPSPAWN_STATIC pid_t ForkAndRegisterFds(AppSpawnMgr *mgr, AppSpawningCtx *prope
     StartAppspawnTrace("AppspawnPreFork");
     pid_t pid = fork();
     if (pid > 0) {
+        FinishAppspawnTrace();
         // Parent: update pid to child pid
         pfFds->pid = pid;
         pcFds->pid = pid;
         APPSPAWN_LOGV("create pipefd %{public}d %{public}d,%{public}d %{public}d,%{public}d",
             pid, childToParentFd[0], childToParentFd[1], parentToChildFd[0], parentToChildFd[1]);
-        FinishAppspawnTrace();
     } else if (pid == 0) {
         HilogCloseSocketFd();
         // Child: update pid to own pid
         pfFds->pid = getpid();
         pcFds->pid = getpid();
     } else {
+        FinishAppspawnTrace();
         // Fork failed: delete nodes (fd not closed) + close pipes
         DeleteSpawningFds(&pfFds);
         DeleteSpawningFds(&pcFds);
         ClearPipeFd(childToParentFd, PIPE_FD_LENGTH);
         ClearPipeFd(parentToChildFd, PIPE_FD_LENGTH);
         APPSPAWN_LOGE("prefork fork failed err %{public}d", errno);
-        FinishAppspawnTrace();
     }
     return pid;
 }
@@ -1546,7 +1546,7 @@ static void WaitChildDied(pid_t pid, int status)
     AppSpawningCtx *property = GetAppSpawningCtxByPid(pid);
     if (property != NULL && property->message != NULL && property->state == APP_STATE_SPAWNING) {
         const char *processName = GetProcessName(property);
-        APPSPAWN_LOGI("Child process %{public}s fail \'child crash \'pid %{public}d appId: %{public}d",
+        APPSPAWN_LOGW("Child process %{public}s fail \'child crash\' pid %{public}d appId: %{public}u",
             processName, property->pid, property->client.id);
 #ifdef APPSPAWN_HISYSEVENT
         ReportSpawnChildProcessFail(processName, ERR_APPSPAWN_CHILD_CRASH, APPSPAWN_CHILD_CRASH);
@@ -1579,7 +1579,7 @@ static void WaitChildDied(pid_t pid, int status)
 static void WaitChildTimeout(const TimerHandle taskHandle, void *context)
 {
     AppSpawningCtx *property = (AppSpawningCtx *)context;
-    APPSPAWN_LOGI("Child process %{public}s fail \'wait child timeout \'pid %{public}d appId: %{public}d",
+    APPSPAWN_LOGW("Child process %{public}s fail \'wait child timeout\' pid %{public}d appId: %{public}u",
         GetProcessName(property), property->pid, property->client.id);
     if (property->pid > 0) {
 #if (!defined(CJAPP_SPAWN) && !defined(NATIVE_SPAWN))
@@ -1599,7 +1599,7 @@ static int ProcessChildFdCheck(int fd, AppSpawningCtx *property)
 {
     int result = 0;
     (void)read(fd, &result, sizeof(result));
-    APPSPAWN_DUMPI("Child process:%{public}s success pid:%{public}d appId:%{public}d result:%{public}d",
+    APPSPAWN_DUMPI("Child process:%{public}s success pid:%{public}d appId:%{public}u result:%{public}d",
         GetProcessName(property), property->pid, property->client.id, result);
     APPSPAWN_CHECK(property->message != NULL, return -1, "Invalid message in ctx %{public}d", property->client.id);
 
@@ -1912,9 +1912,10 @@ static void AppSpawnColdRun(AppSpawnContent *content, int argc, char *const argv
 
 static void AppSpawnRun(AppSpawnContent *content, int argc, char *const argv[])
 {
-    APPSPAWN_LOGI("AppSpawnRun");
     AppSpawnMgr *appSpawnContent = (AppSpawnMgr *)content;
     APPSPAWN_CHECK(appSpawnContent != NULL, return, "Invalid appspawn content");
+    APPSPAWN_LOGI("AppSpawnRun mode: %{public}d", content->mode);
+    APPSPAWN_KLOGI("AppSpawnRun mode: %{public}d", content->mode);
 
     LE_STATUS status = LE_CreateSignalTask(LE_GetDefaultLoop(), &appSpawnContent->sigHandler, ProcessSignal);
     if (status == 0) {
@@ -1929,7 +1930,7 @@ static void AppSpawnRun(AppSpawnContent *content, int argc, char *const argv[])
         APPSPAWN_CHECK_ONLY_LOG(ret == 0, "UpdateSchedPrio failed ret: %{public}d, %{public}d", ret, errno);
     }
     LE_RunLoop(LE_GetDefaultLoop());
-    APPSPAWN_LOGI("AppSpawnRun exit mode: %{public}d ", content->mode);
+    APPSPAWN_LOGI("AppSpawnRun exit mode: %{public}d", content->mode);
 
     (void)ServerStageHookExecute(STAGE_SERVER_EXIT, content); // service exit,plugin can deal task
     AppSpawnDestroyContent(content);

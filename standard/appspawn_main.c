@@ -101,6 +101,7 @@ static AppSpawnStartArgTemplate *GetAppSpawnStartArg(const char *serverName, App
 int main(int argc, char *const argv[])
 {
     APPSPAWN_LOGI("main argc: %{public}d", argc);
+    APPSPAWN_KLOGI("main argc: %{public}d", argc);
     APPSPAWN_CHECK_ONLY_EXPER(argc > 0, return 0);
     uintptr_t start = (uintptr_t)argv[0];
     uintptr_t end = (uintptr_t)strchr(argv[argc - 1], 0);
@@ -158,5 +159,7 @@ int main(int argc, char *const argv[])
     if (content != NULL) {
         content->runAppSpawn(content, argc, argv);
     }
+    APPSPAWN_LOGI("main end");
+    APPSPAWN_KLOGI("main end");
     return 0;
 }

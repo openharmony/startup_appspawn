@@ -107,11 +107,11 @@ static void UpdateAppSpawnTime(int used)
 {
     if (used < GetAppSpawnMgr()->spawnTime.minAppspawnTime) {
         GetAppSpawnMgr()->spawnTime.minAppspawnTime = used;
-        APPSPAWN_LOGI("spawn min time: %{public}d", GetAppSpawnMgr()->spawnTime.minAppspawnTime);
+        APPSPAWN_LOGI("spawn min time: %{public}d us", GetAppSpawnMgr()->spawnTime.minAppspawnTime);
     }
     if (used > GetAppSpawnMgr()->spawnTime.maxAppspawnTime) {
         GetAppSpawnMgr()->spawnTime.maxAppspawnTime = used;
-        APPSPAWN_LOGI("spawn max time: %{public}d", GetAppSpawnMgr()->spawnTime.maxAppspawnTime);
+        APPSPAWN_LOGI("spawn max time: %{public}d us", GetAppSpawnMgr()->spawnTime.maxAppspawnTime);
     }
 }
 
@@ -136,7 +136,7 @@ static void PostHookExec(const HOOK_INFO *hookInfo, void *executionContext, int 
     AppSpawnMgr *spawnMgr = (AppSpawnMgr *)arg->content;
     clock_gettime(CLOCK_MONOTONIC, &spawnMgr->perLoadEnd);
     uint64_t diff = DiffTime(&spawnMgr->perLoadStart, &spawnMgr->perLoadEnd);
-    APPSPAWN_LOGI("Hook stage: %{public}d prio: %{public}d end time %{public}" PRId64 " ns result: %{public}d",
+    APPSPAWN_LOGI("Hook stage: %{public}d prio: %{public}d end time %{public}" PRId64 " us result: %{public}d",
         hookInfo->stage, hookInfo->prio, diff, executionRetVal);
     UpdateAppSpawnTime(diff);
 }
@@ -191,7 +191,7 @@ static void PostAppSpawnHookExec(const HOOK_INFO *hookInfo, void *executionConte
     AppSpawnHookArg *arg = (AppSpawnHookArg *)executionContext;
     clock_gettime(CLOCK_MONOTONIC, &arg->tmEnd);
     uint64_t diff = DiffTime(&arg->tmStart, &arg->tmEnd);
-    APPSPAWN_LOGV("Hook stage: %{public}d prio: %{public}d end time %{public}" PRId64 " ns result: %{public}d",
+    APPSPAWN_LOGV("Hook stage: %{public}d prio: %{public}d end time %{public}" PRId64 " us result: %{public}d",
         hookInfo->stage, hookInfo->prio, diff, executionRetVal);
 }
 
