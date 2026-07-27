@@ -120,36 +120,36 @@ typedef struct HnpFiles {
 } HnpFiles;
 
 /* hnp package文件信息
- * @attention:版本控住逻辑如下
- * @li 1.当前版本仍被其他hap使用,但是安装此版本的hap被卸载了，不会卸载当前版本，直到升级版本后
- * @li 2.如果安装版本不是当前版本，安装版本随hap一起卸载，如果安装版本是当前版本，则根据规则1进行卸载
+ * @attention:版本控制逻辑如下
+ * 核心约束：每个公有hnp名称仅属于一个HAP（由CanRecovery强制限制，
+ *           不同HAP安装同名公有hnp会被拒绝）。
+ * @li 1.首次安装v1：current_version=v1, install_version=v1，磁盘上仅v1目录
+ * @li 2.同一HAP升级到v2：
+ *        HnpPublicDealAfterInstall中HnpCurrentVersionUninstallCheck检查
+ *        若current==install（即v1==v1），跳过旧目录卸载，仅更新current_version=v2，
+ *        install_version保持v1。磁盘上v1、v2目录并存。
+ * @li 3.卸载该HAP：
+ *        hnpExist为false（无其他HAP引用，实际恒为false）→删除current_version(v2)目录；
+ *        install_version(v1)!="none"且!=current →删除install_version(v1)目录。
+ *        两个版本目录均清理。
  * 例如：
- * 1.a安装v1,b安装v2,c 安装v3
- * 1.1 状态：hnppublic:[v1,v2,v3],hnp_info:[a cur=v3,ins=v1],[b cur=v3,ins=v2],[c cur=v3,ins=v3]
- * 1.2 卸载b
- * 状态：hnppublic:[v1,v3],hnp_info:[a cur=v3,ins=v1],[c cur=v3,ins=v3]
- * 1.3 卸载c
- * 1.3.1 状态：hnppublic:[v1,v2,v3],hnp_info:[a cur=v3,ins=v1],[b cur=v3,ins=v2]
- * 1.3.2 d安装v4
- * 1.3.2.1 状态：hnppublic:[v1,v2,v4],hnp_info:[a cur=v4,ins=v1],[b cur=v4,ins=v2],[d cur=v4,ins=v4]
- * 1.3.2.2 卸载d
- * 状态：d被卸载,hnppublic:[v1,v2,v4],hnp_info:[a cur=v4,ins=v1],[b cur=v4,ins=v2]
- * 1.4 卸载a,b
- * 1.4.1 状态：hnppublic:[v3],hnp_info:[c cur=v3,ins=v3]
- * 1.4.2 卸载c
- * 状态：hnppublic:[],hnp_info:[]
- * 1.5 f安装v3
- * 1.5.1 状态：hnppublic:[v1,v2,v3],hnp_info:[a cur=v3,ins=v1],[b cur=v3,ins=v2],[c cur=v3,ins=v3],[f cur=v3,ins=none]
- * 1.5.2 卸载c
- * 1.5.2.1 状态：hnppublic:[v1,v2,v3],hnp_info:[a cur=v3,ins=v1],[b cur=v3,ins=v2],[f cur=v3,ins=none]
- * 1.5.3 卸载f
- * 1.5.3.1 状态：hnppublic:[v1,v2,v3],hnp_info:[a cur=v3,ins=v1],[b cur=v3,ins=v2],[c cur=v3,ins=v3]
+ * 1.应用a安装v1
+ * 1.1 状态：hnppublic:[v1], hnp_info:[a cur=v1, ins=v1]
+ * 1.2 应用a升级v2
+ * 1.2.1 状态：hnppublic:[v1,v2], hnp_info:[a cur=v2, ins=v1]
+ * 1.3 卸载a
+ * 1.3.1 状态：hnppublic:[], hnp_info:[]（v1、v2目录均删除）
+ *
+ * 注：install_version="none"仅在旧格式迁移（DoRebuildHnpInfoCfg）场景出现，
+ *     正常安装流程中isInstall恒为true，install_version恒等于实际安装版本。
+ *     hnpExist字段（HnpOtherPackageInstallCheck）为兼容性遗留逻辑，
+ *     因CanRecovery限制，正常流程下恒为false。
  */
 typedef struct HnpPackageInfoStru {
     char name[MAX_FILE_PATH_LEN];
-    char currentVersion[HNP_VERSION_LEN];    // Native当前软件包版本号
-    char installVersion[HNP_VERSION_LEN];    // Native安装软件包版本号，非此hap安装值为none
-    bool hnpExist;                           // hnp是否被其他hap使用
+    char currentVersion[HNP_VERSION_LEN];    // Native当前生效软件包版本号
+    char installVersion[HNP_VERSION_LEN];    // Native安装软件包版本号（本HAP实际安装的版本，迁移场景可为"none"）
+    bool hnpExist;                           // hnp是否被其他hap使用（CanRecovery限制下恒为false，兼容性遗留）
 } HnpPackageInfo;
 
 /* 日志级别 */
