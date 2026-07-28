@@ -899,31 +899,6 @@ APPSPAWN_STATIC void ClearPipeFd(int pipe[], int length)
     }
 }
 
-/**
- * @brief Set unlock mount result to system parameter
- * @param uid User ID
- * @param result Mount result (0 = success, non-zero = failure)
- */
-APPSPAWN_STATIC void SetUnlockMountResult(int uid, int result)
-{
-    char unlockMountParam[LOCK_STATUS_PARAM_SIZE] = {0};
-    int ret = snprintf_s(unlockMountParam, sizeof(unlockMountParam), sizeof(unlockMountParam) - 1,
-        "startup.appspawn.unlock_mount.%d", uid);
-    APPSPAWN_ONLY_EXPER(ret <= 0,
-#ifdef APPSPAWN_HISYSEVENT
-        ReportKeyEvent("UNLOCK_MOUNT_PARAM_FAIL");
-#endif
-        APPSPAWN_LOGE("snprintf_s failed for uid=%{public}d, ret=%{public}d", uid, ret);
-        return);
-    
-    int setRet = SetParameter(unlockMountParam, result == 0 ? "0" : "1");
-    APPSPAWN_ONLY_EXPER(setRet != 0,
-#ifdef APPSPAWN_HISYSEVENT
-        ReportKeyEvent("UNLOCK_MOUNT_PARAM_FAIL");
-#endif
-        APPSPAWN_LOGE("SetParameter failed for uid=%{public}d, ret=%{public}d", uid, setRet));
-}
-
 // ===== Unlock mount child watcher helpers (using AppSpawningCtx) =====
 // Pattern mirrors AddChildWatcher / ProcessChildResponse / WaitChildTimeout for MSG_APP_SPAWN.
 
@@ -1010,8 +985,6 @@ APPSPAWN_STATIC void HandlePreforkUnlockMsg(AppSpawnContent *content, const AppS
         unlockMsg->uid, getpid());
     int result = ProcessUnlockMessage(unlockMsg->uid);
 
-    // Write result via param and report KEY_EVENT
-    SetUnlockMountResult(unlockMsg->uid, result);
 #ifdef APPSPAWN_HISYSEVENT
     ReportKeyEvent(result == 0 ? UNLOCK_SUCCESS : "UNLOCK_MOUNT_FAIL");
 #endif
@@ -2591,7 +2564,6 @@ APPSPAWN_STATIC int ForkAndDoUnlockMount(AppSpawnContent *content, int uid, AppS
     if (pid == 0) {
         HilogCloseSocketFd();
         int result = ProcessUnlockMessage(uid);
-        SetUnlockMountResult(uid, result);
         APPSPAWN_LOGI("L2 child write result: uid=%{public}d result=%{public}d fd=%{public}d",
             uid, result, property->forkCtx.fd[1]);
         ssize_t writeSize = write(property->forkCtx.fd[1], &result, sizeof(result));
@@ -2630,8 +2602,6 @@ APPSPAWN_STATIC int DoUnlockMountSerial(AppSpawnContent *content, int uid)
     APPSPAWN_LOGI("DoUnlockMountSerial: uid=%{public}d", uid);
 
     int result = ProcessUnlockMessage(uid);
-
-    SetUnlockMountResult(uid, result);
 
     APPSPAWN_LOGI("DoUnlockMountSerial done: uid=%{public}d result=%{public}d", uid, result);
 #ifdef APPSPAWN_HISYSEVENT

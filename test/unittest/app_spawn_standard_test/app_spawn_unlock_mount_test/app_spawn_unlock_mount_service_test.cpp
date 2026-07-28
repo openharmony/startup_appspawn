@@ -881,10 +881,6 @@ HWTEST_F(AppSpawnUnlockMountServiceTest, UnlockMount_ForkAndDoUnlockMount_003, T
     // Hook should have been called
     EXPECT_EQ(g_hookCalled, 1);
     EXPECT_EQ(g_hookUid, uid);
-
-    // SetParameter should have been called with "0" (success)
-    EXPECT_GT(strlen(reinterpret_cast<const char *>(g_lastSetParamKey)), 0);
-    EXPECT_STREQ(reinterpret_cast<const char *>(g_lastSetParamValue), "0");
 }
 
 /**
@@ -934,10 +930,6 @@ HWTEST_F(AppSpawnUnlockMountServiceTest, UnlockMount_ForkAndDoUnlockMount_004, T
     // Hook should have been called
     EXPECT_EQ(g_hookCalled, 1);
     EXPECT_EQ(g_hookUid, uid);
-
-    // SetParameter should have been called with "1" (failure)
-    EXPECT_GT(strlen(reinterpret_cast<const char *>(g_lastSetParamKey)), 0);
-    EXPECT_STREQ(reinterpret_cast<const char *>(g_lastSetParamValue), "1");
 }
 
 // ============================================================================
@@ -1104,10 +1096,6 @@ HWTEST_F(AppSpawnUnlockMountServiceTest, UnlockMount_HandlePreforkUnlockMsg_001,
     // Hook should have been called with correct uid
     EXPECT_EQ(g_hookCalled, 1);
     EXPECT_EQ(g_hookUid, unlockMsg.uid);
-
-    // SetParameter should have been called with "0" (success)
-    EXPECT_GT(strlen(reinterpret_cast<const char *>(g_lastSetParamKey)), 0);
-    EXPECT_STREQ(reinterpret_cast<const char *>(g_lastSetParamValue), "0");
 }
 
 /**
@@ -1144,10 +1132,6 @@ HWTEST_F(AppSpawnUnlockMountServiceTest, UnlockMount_HandlePreforkUnlockMsg_002,
     // Hook should have been called with correct uid
     EXPECT_EQ(g_hookCalled, 1);
     EXPECT_EQ(g_hookUid, unlockMsg.uid);
-
-    // SetParameter should have been called with "1" (failure)
-    EXPECT_GT(strlen(reinterpret_cast<const char *>(g_lastSetParamKey)), 0);
-    EXPECT_STREQ(reinterpret_cast<const char *>(g_lastSetParamValue), "1");
 }
 
 // ============================================================================
