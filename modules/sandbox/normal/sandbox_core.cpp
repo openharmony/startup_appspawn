@@ -316,8 +316,9 @@ int32_t SandboxCore::DoSandboxFilePermissionBind(AppSpawningCtx *appProperty, cJ
             }
             APPSPAWN_LOGV("DoSandboxFilePermissionBind %{public}s index %{public}d", permissionChild->string, index);
             DoAddGid(appProperty, permissionMountPaths, permissionChild->string, SandboxCommonDef::g_permissionPrefix);
-            DoAllMntPointsMount(appProperty, permissionMountPaths, permissionChild->string,
-                                SandboxCommonDef::g_permissionPrefix);
+            int ret = DoAllMntPointsMount(appProperty, permissionMountPaths, permissionChild->string,
+                SandboxCommonDef::g_permissionPrefix);
+            APPSPAWN_CHECK(ret == 0, return ret, "DoAllMntPointsMount failed, %{public}s", GetBundleName(appProperty));
             // Support symbol-links in permission configuration
             DoAllSymlinkPointslink(appProperty, permissionMountPaths);
 
