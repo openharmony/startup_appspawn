@@ -126,11 +126,11 @@ uint64_t DiffTime(const struct timespec *startTime, const struct timespec *endTi
     APPSPAWN_CHECK_ONLY_EXPER(startTime != NULL, return 0);
     APPSPAWN_CHECK_ONLY_EXPER(endTime != NULL, return 0);
 
-    uint64_t diff = (uint64_t)((endTime->tv_sec - startTime->tv_sec) * 1000000);  // 1000000 s-us
+    uint64_t diff = (uint64_t)((endTime->tv_sec - startTime->tv_sec) * 1000000);  // 1000000 s->us
     if (endTime->tv_nsec > startTime->tv_nsec) {
-        diff += (endTime->tv_nsec - startTime->tv_nsec) / 1000;  // 1000 ns - us
+        diff += (endTime->tv_nsec - startTime->tv_nsec) / 1000;  // 1000 ns->us
     } else {
-        diff -= (startTime->tv_nsec - endTime->tv_nsec) / 1000;  // 1000 ns - us
+        diff -= (startTime->tv_nsec - endTime->tv_nsec) / 1000;  // 1000 ns->us
     }
     return diff;
 }
