@@ -31,6 +31,8 @@ constexpr const char* SPAWN_CHILD_PROCESS_FAIL = "SPAWN_CHILD_PROCESS_FAIL";
 // behavior event
 constexpr const char* SPAWN_KEY_EVENT = "SPAWN_KEY_EVENT";
 constexpr const char* SPAWN_ABNORMAL_DURATION = "SPAWN_ABNORMAL_DURATION";
+// coredump
+constexpr const char* SPAWN_CORE_DUMP = "SPAWN_CORE_DUMP";
 
 // statistic event
 constexpr const char* SPAWN_PROCESS_DURATION = "SPAWN_PROCESS_DURATION";
@@ -238,6 +240,15 @@ void ReportKeyEvent(const char *eventName)
         EVENT_NAME, eventName);
 
     APPSPAWN_CHECK_ONLY_LOG(ret == 0, "ReportKeyEvent error, ret: %{public}d", ret);
+}
+
+int ReportCoreDump()
+{
+    int ret = HiSysEventWrite(HiSysEvent::Domain::APPSPAWN, SPAWN_CORE_DUMP,
+        HiSysEvent::EventType::FAULT);
+	
+    APPSPAWN_CHECK_ONLY_LOG(ret == 0, "ReportCoreDump error, ret: %{public}d", ret);
+    return ret;
 }
 
 void ReportAbnormalDuration(const char* scene, uint64_t duration)

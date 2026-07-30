@@ -34,6 +34,7 @@ int32_t LoadSeLinuxConfig(void);
 // stub for extend func
 void DisallowInternet(void);
 void DumpSpawnStack(pid_t pid);
+void SaveCoredump(void);
 
 #ifdef __cplusplus
 }
