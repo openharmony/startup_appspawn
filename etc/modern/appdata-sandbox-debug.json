@@ -1,0 +1,35 @@
+{
+    "global": {
+        "sandbox-root" : "/mnt/debugtmp/<currentUserId>/debug_hap/<variablePackageName>"
+    },
+    "required": {
+        "system-const": {},
+        "app-variable": {
+            "mount-paths": [{
+                "src-path" : "/data/app/el1/<currentUserId>/base/<variablePackageName>",
+                "sandbox-path" : "/data/storage/el1/base"
+            }, {
+                "src-path" : "/data/app/el1/<currentUserId>/database/<variablePackageName>",
+                "sandbox-path" : "/data/storage/el1/database"
+            }, {
+                "src-path" : "/data/app/el2/<currentUserId>/base/<variablePackageName>",
+                "sandbox-path" : "/data/storage/el2/base"
+            }, {
+                "src-path" : "/data/app/el2/<currentUserId>/database/<variablePackageName>",
+                "sandbox-path" : "/data/storage/el2/database"
+            }]
+        }
+    },
+    "conditional": {
+        "permission": [{
+            "name": "ohos.permission.PROTECT_SCREEN_LOCK_DATA",
+            "mount-paths": [{
+                "src-path" : "/data/app/el5/<currentUserId>/base/<variablePackageName>",
+                "sandbox-path" : "/data/storage/el5/base"
+            }, {
+                "src-path" : "/data/app/el5/<currentUserId>/database/<variablePackageName>",
+                "sandbox-path" : "/data/storage/el5/database"
+            }]
+        }]
+    }
+}
