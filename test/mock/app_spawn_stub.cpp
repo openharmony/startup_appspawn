@@ -119,9 +119,17 @@ int SetSelfTokenID(uint64_t tokenId)
 void SetTraceDisabled(int disable) {}
 
 #ifdef WITH_SECCOMP
+static const char *g_lastSeccompPolicyName = NULL;
+
 bool SetSeccompPolicyWithName(SeccompFilterType filter, const char *filterName)
 {
+    g_lastSeccompPolicyName = filterName;
     return true;
+}
+
+const char *GetLastSeccompPolicyName(void)
+{
+    return g_lastSeccompPolicyName;
 }
 
 bool IsEnableSeccomp(void)

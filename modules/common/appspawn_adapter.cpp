@@ -23,6 +23,7 @@
 #include "token_setproc.h"
 #include "tokenid_kit.h"
 #include "securec.h"
+#include <cstring>
 
 #ifdef WITH_SELINUX
 #include "hap_restorecon.h"
@@ -165,6 +166,23 @@ int SetUidGidFilter(const AppSpawnMgr *content)
     return 0;
 }
 
+#ifdef NORMAL_SANDBOX
+static const char *TryGetAllowPtracePolicy(const AppSpawningCtx *property)
+{
+    uint32_t jitSize = 0;
+    char *jitInfo = (char *)GetAppSpawnMsgExtInfo(
+        property->message, MSG_EXT_NAME_JIT_PERMISSIONS, &jitSize);
+    if (jitSize > 0 && jitInfo != NULL &&
+        strstr(jitInfo, "ohos.permission.kernel.ALLOW_PTRACE") != NULL) {
+        APPSPAWN_LOGI("SetSeccompFilter: ALLOW_PTRACE matched, "
+            "use allow_ptrace policy for %{public}s",
+            GetProcessName(property));
+        return "app_normal_allow_ptrace";
+    }
+    return NULL;
+}
+#endif
+
 int SetSeccompFilter(const AppSpawnMgr *content, const AppSpawningCtx *property)
 {
 #ifdef WITH_SECCOMP
@@ -175,6 +193,10 @@ int SetSeccompFilter(const AppSpawnMgr *content, const AppSpawningCtx *property)
 #ifdef NORMAL_SANDBOX
     // Set seccomp policy for normal process.
     appName = APP_NORMAL;
+    const char *jitPolicy = TryGetAllowPtracePolicy(property);
+    if (jitPolicy != NULL) {
+        appName = jitPolicy;
+    }
 #endif
 
     if (IsNWebSpawnMode(content)) {
