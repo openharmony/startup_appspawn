@@ -43,6 +43,7 @@ typedef struct SandboxMountConfig {
 typedef struct MountPointProcessParams {
     const AppSpawningCtx *appProperty;  // 引用属性
     bool checkFlag;                     // 检查标志
+    bool isControlledApp;               // 受控应用标记
     std::string section;                // 分区名称
     std::string sandboxRoot;            // 沙箱根路径
     std::string bundleName;             // 包名

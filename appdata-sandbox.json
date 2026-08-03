@@ -97,7 +97,8 @@
                     "src-path" : "/data/app/el2/<currentUserId>/base/<variablePackageName>",
                     "sandbox-path" : "/data/storage/el2/base",
                     "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
+                    "check-action-status": "false",
+                    "controlled-fuse-path": "/data/service/el1/public/dlp_credential_service/mounts/data_fuse"
                 }, {
                     "src-path" : "/data/app/el2/<currentUserId>/log/<variablePackageName>",
                     "sandbox-path" : "/data/storage/el2/log",
@@ -218,6 +219,11 @@
                     "sandbox-path" : "/data/service/el1/public/for-all-app/fonts",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
+                }, {
+                    "sandbox-path" : "/storage",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "controlled-fuse-path": "/data/service/el1/public/dlp_credential_service/mounts/storage_fuse",
+                    "check-action-status": "false"
                 }
             ],
             "symbol-links" : [{
@@ -263,7 +269,8 @@
                     "src-path" : "/data/app/el2/<currentUserId>/base/<PackageName_index>",
                     "sandbox-path" : "/data/storage/el2/base",
                     "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
+                    "check-action-status": "false",
+                    "controlled-skip": "true"
                 }, {
                     "src-path" : "/data/app/el1/<currentUserId>/database/<PackageName_index>",
                     "sandbox-path" : "/data/storage/el1/database",
@@ -303,7 +310,8 @@
                     "src-path" : "/data/app/el2/<currentUserId>/base/<PackageName_index>",
                     "sandbox-path" : "/data/storage/el2/base",
                     "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
+                    "check-action-status": "false",
+                    "controlled-skip": "true"
                 }, {
                     "src-path" : "/data/app/el1/<currentUserId>/database/<PackageName_index>",
                     "sandbox-path" : "/data/storage/el1/database",
@@ -384,21 +392,25 @@
             "mount-paths": [{
                     "src-path": "/mnt/data/external",
                     "sandbox-path": "/storage/External",
-                    "sandbox-flags": [ "bind", "rec" ]
+                    "sandbox-flags": [ "bind", "rec" ],
+                    "controlled-skip": "true"
                 }, {
                     "src-path": "/mnt/user/<currentUserId>/nosharefs/docs",
                     "sandbox-path": "/storage/Users",
-                    "sandbox-flags": [ "bind", "rec" ]
+                    "sandbox-flags": [ "bind", "rec" ],
+                    "controlled-skip": "true"
                 }, {
                     "src-path": "/mnt/data/<currentUserId>/userExternal",
                     "sandbox-path": "/storage/userExternal",
                     "sandbox-flags": [ "bind", "rec" ],
-                    "check-action-status": "false"
+                    "check-action-status": "false",
+                    "controlled-skip": "true"
                 }, {
                     "src-path": "/mnt/data/voldata/",
                     "sandbox-path": "/storage/voldata",
                     "sandbox-flags": [ "bind", "rec" ],
-                    "check-action-status": "false"
+                    "check-action-status": "false",
+                    "controlled-skip": "true"
                 }
             ],
             "symbol-links" : [{
@@ -774,31 +786,37 @@
             "mount-paths": [{
                     "src-path": "/mnt/user/<currentUserId>/nosharefs/docs",
                     "sandbox-path": "/storage/Users",
-                    "sandbox-flags": [ "bind", "rec" ]
+                    "sandbox-flags": [ "bind", "rec" ],
+                    "controlled-skip": "true"
                 },{
                     "src-path": "/data/service/el1/public/storage_daemon/share/public",
                     "sandbox-path": "/storage/Share",
-                    "sandbox-flags": [ "bind", "rec" ]
+                    "sandbox-flags": [ "bind", "rec" ],
+                    "controlled-skip": "true"
                 },
                 {
                     "src-path": "/mnt/data/external",
                     "sandbox-path": "/storage/External",
-                    "sandbox-flags": [ "bind", "rec" ]
+                    "sandbox-flags": [ "bind", "rec" ],
+                    "controlled-skip": "true"
                 },
                 {
                     "src-path": "/storage/media/<currentUserId>/local/files/.Recent",
                     "sandbox-path": "/storage/Users/<currentUserId>/.Recent",
-                    "sandbox-flags": [ "bind", "rec" ]
+                    "sandbox-flags": [ "bind", "rec" ],
+                    "controlled-skip": "true"
                 },
                 {
                     "src-path": "/mnt/data/<currentUserId>/hmdfs",
                     "sandbox-path": "/storage/hmdfs",
-                    "sandbox-flags": [ "bind", "rec" ]
+                    "sandbox-flags": [ "bind", "rec" ],
+                    "controlled-skip": "true"
                 },
                 {
                     "src-path": "/mnt/data/<currentUserId>/userExternal",
                     "sandbox-path": "/storage/userExternal",
-                    "sandbox-flags": [ "bind", "rec" ]
+                    "sandbox-flags": [ "bind", "rec" ],
+                    "controlled-skip": "true"
                 },
                 {
                     "src-path": "",

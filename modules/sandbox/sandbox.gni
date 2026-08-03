@@ -11,6 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import("//base/startup/appspawn/appspawn.gni")
+
 appspawn_sandbox_inc = [
     "//base/startup/appspawn/modules/sandbox"
 ]
@@ -46,6 +48,11 @@ if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
         "//base/startup/appspawn/modules/sandbox/normal/sandbox_unlock_mount.cpp",
         "//base/startup/appspawn/modules/sandbox/normal/appspawn_sandbox_manager.cpp",
         "//base/startup/appspawn/modules/sandbox/normal/sandbox_common.cpp",
-        "//base/startup/appspawn/modules/sandbox/normal/sandbox_core.cpp"
+        "//base/startup/appspawn/modules/sandbox/normal/sandbox_core.cpp",
     ]
+    if (appspawn_controlled_app) {
+        appspawn_sandbox_src += [
+            "//base/startup/appspawn/modules/sandbox/normal/sandbox_controlled_app.cpp"
+        ]
+    }
 }
