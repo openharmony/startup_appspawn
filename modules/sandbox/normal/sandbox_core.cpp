@@ -694,14 +694,6 @@ int32_t SandboxCore::ProcessMountPointNocheck(cJSON *mntPoint, MountPointProcess
     return ProcessMountPointCommmon(mntPoint, params, false);
 }
 
-static void InitControlledAppFields(const AppSpawningCtx *appProperty,
-                                    MountPointProcessParams &params)
-{
-    params.isControlledApp = CheckAppMsgFlagsSet(appProperty, APP_FLAGS_CONTROLLED_APP);
-
-    APPSPAWN_LOGV("ctrl: child init flag=%{public}d", static_cast<int>(params.isControlledApp));
-}
-
 int32_t SandboxCore::DoAllMntPointsMount(const AppSpawningCtx *appProperty, cJSON *appConfig,
                                          const char *typeName, const std::string &section)
 {
@@ -724,7 +716,7 @@ int32_t SandboxCore::DoAllMntPointsMount(const AppSpawningCtx *appProperty, cJSO
         .sandboxRoot = sandboxRoot,
         .bundleName = bundleName
     };
-    InitControlledAppFields(appProperty, mountPointParams);
+    mountPointParams.isControlledApp = CheckAppMsgFlagsSet(appProperty, APP_FLAGS_CONTROLLED_APP);
     auto processor = [&mountPointParams](cJSON *mntPoint) {
         return ProcessMountPoint(mntPoint, mountPointParams);
     };
@@ -754,7 +746,7 @@ int32_t SandboxCore::DoAllMntPointsMountNocheck(const AppSpawningCtx *appPropert
         .sandboxRoot = sandboxRoot,
         .bundleName = bundleName
     };
-    InitControlledAppFields(appProperty, mountPointParams);
+    mountPointParams.isControlledApp = CheckAppMsgFlagsSet(appProperty, APP_FLAGS_CONTROLLED_APP);
     auto processor = [&mountPointParams](cJSON *mntPoint) {
         return ProcessMountPointNocheck(mntPoint, mountPointParams);
     };
@@ -837,7 +829,7 @@ int32_t SandboxCore::DoAllCreateOnDaemonMount(const AppSpawningCtx *appProperty,
         .sandboxRoot = sandboxRoot,
         .bundleName = bundleName
     };
-    InitControlledAppFields(appProperty, mountPointParams);
+    mountPointParams.isControlledApp = CheckAppMsgFlagsSet(appProperty, APP_FLAGS_CONTROLLED_APP);
     auto processor = [&mountPointParams](cJSON *mntPoint) {
         return ProcessCreateOnDaemonMount(mntPoint, mountPointParams);
     };
