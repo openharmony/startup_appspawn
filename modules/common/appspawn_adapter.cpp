@@ -173,7 +173,7 @@ static const char *TryGetAllowPtracePolicy(const AppSpawningCtx *property)
     char *kernelPermissionInfo = (char *)GetAppSpawnMsgExtInfo(
         property->message, MSG_EXT_NAME_JIT_PERMISSIONS, &kernelPermissionSize);
     if (kernelPermissionSize > 0 && kernelPermissionInfo != NULL &&
-        strstr(jitInfo, "ohos.permission.kernel.ALLOW_PTRACE") != NULL) {
+        strstr(kernelPermissionInfo, "ohos.permission.kernel.ALLOW_PTRACE") != NULL) {
         APPSPAWN_LOGI("SetSeccompFilter: ALLOW_PTRACE matched, "
             "use allow_ptrace policy for %{public}s",
             GetProcessName(property));
@@ -193,8 +193,8 @@ int SetSeccompFilter(const AppSpawnMgr *content, const AppSpawningCtx *property)
 #ifdef NORMAL_SANDBOX
     // Set seccomp policy for normal process.
     appName = APP_NORMAL;
-    const char *jitPolicy = TryGetAllowPtracePolicy(property);
-    if (jitPolicy != NULL) {
+    const char *policy = TryGetAllowPtracePolicy(property);
+    if (policy != NULL) {
         appName = jitPolicy;
     }
 #endif
