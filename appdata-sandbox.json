@@ -285,8 +285,7 @@
                     "src-path" : "/data/app/el1/<currentUserId>/base/<PackageName_index>",
                     "sandbox-path" : "/data/storage/el1/base",
                     "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false",
-                    "controlled-fuse-path": "/data/service/el1/public/dlp_credential_service/mounts/data_fuse"
+                    "check-action-status": "false"
                 }, {
                     "src-path" : "/data/app/el2/<currentUserId>/log/<PackageName_index>",
                     "sandbox-path" : "/data/storage/el2/log",
@@ -327,7 +326,7 @@
                     "src-path" : "/data/app/el1/<currentUserId>/base/<PackageName_index>",
                     "sandbox-path" : "/data/storage/el1/base",
                     "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false",
+                    "check-action-status": "false"
                 }, {
                     "src-path" : "/data/app/el2/<currentUserId>/log/<PackageName_index>",
                     "sandbox-path" : "/data/storage/el2/log",
@@ -1185,8 +1184,7 @@
             "mount-paths": [{
                 "src-path": "/storage/media/<currentUserId>/local/files/.backup",
                 "sandbox-path": "/data/storage/el2/base/files/mediadata/",
-                "sandbox-flags": ["bind", "rec"],
-                "controlled-skip": "true"
+                "sandbox-flags": ["bind", "rec"]
                 }
             ]
         }],
