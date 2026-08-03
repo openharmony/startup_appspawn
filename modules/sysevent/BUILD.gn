@@ -14,10 +14,15 @@ import("//base/startup/appspawn/appspawn.gni")
 import("//build/ohos.gni")
 
 ohos_shared_library("event_reporter") {
+  if (!use_clang_coverage) {
+    version_script = "event_reporter.versionscript"
+  }
   branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
     cfi_cross_dso = true
+    cfi_no_nvcall = true
+    cfi_vcall_icall_only = true
     debug = false
   }
   sources = [ "event_reporter.cpp" ]
