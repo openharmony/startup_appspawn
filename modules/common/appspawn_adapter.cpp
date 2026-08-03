@@ -195,7 +195,7 @@ int SetSeccompFilter(const AppSpawnMgr *content, const AppSpawningCtx *property)
     appName = APP_NORMAL;
     const char *policy = TryGetAllowPtracePolicy(property);
     if (policy != NULL) {
-        appName = jitPolicy;
+        appName = policy;
     }
 #endif
 
