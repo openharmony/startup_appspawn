@@ -169,10 +169,10 @@ int SetUidGidFilter(const AppSpawnMgr *content)
 #ifdef NORMAL_SANDBOX
 static const char *TryGetAllowPtracePolicy(const AppSpawningCtx *property)
 {
-    uint32_t jitSize = 0;
-    char *jitInfo = (char *)GetAppSpawnMsgExtInfo(
-        property->message, MSG_EXT_NAME_JIT_PERMISSIONS, &jitSize);
-    if (jitSize > 0 && jitInfo != NULL &&
+    uint32_t kernelPermissionSize = 0;
+    char *kernelPermissionInfo = (char *)GetAppSpawnMsgExtInfo(
+        property->message, MSG_EXT_NAME_JIT_PERMISSIONS, &kernelPermissionSize);
+    if (kernelPermissionSize > 0 && kernelPermissionInfo != NULL &&
         strstr(jitInfo, "ohos.permission.kernel.ALLOW_PTRACE") != NULL) {
         APPSPAWN_LOGI("SetSeccompFilter: ALLOW_PTRACE matched, "
             "use allow_ptrace policy for %{public}s",
