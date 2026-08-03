@@ -637,6 +637,82 @@ HWTEST_F(AppSpawnCommonTest, Nweb_Spawn_SetSeccompFilter_01, TestSize.Level0)
     ASSERT_EQ(ret, 0);
 }
 
+#ifdef NORMAL_SANDBOX
+/**
+ * @brief appspawn为携带ALLOW_PTRACE JIT权限的应用设置allow_ptrace seccomp策略
+ *
+ */
+HWTEST_F(AppSpawnCommonTest, App_Spawn_SetSeccompFilter_JitPtrace_001, TestSize.Level0)
+{
+    int ret = -1;
+    AppSpawnMgr *mgr = nullptr;
+    AppSpawnClientHandle clientHandle = nullptr;
+    AppSpawningCtx *property = nullptr;
+    do {
+        mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+        EXPECT_NE(mgr, nullptr);
+
+        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", APPSPAWN_SERVER_NAME);
+
+        AppSpawnReqMsgHandle reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+        APPSPAWN_CHECK(reqHandle != nullptr, break, "Failed to create msg type %{public}d", MSG_APP_SPAWN);
+
+        const char *permissions = "{\"permissions\":[{\"ohos.permission.kernel.ALLOW_PTRACE\":true}]}";
+        ret = AppSpawnReqMsgAddExtInfo(reqHandle, MSG_EXT_NAME_JIT_PERMISSIONS,
+            reinterpret_cast<uint8_t *>(const_cast<char *>(permissions)), strlen(permissions) + 1);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to add JIT permissions");
+
+        property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
+        APPSPAWN_CHECK(property != nullptr, break, "Failed to get app property");
+
+        ret = SetSeccompFilter(mgr, property);
+        EXPECT_STREQ(GetLastSeccompPolicyName(), "app_normal_allow_ptrace");
+    } while (0);
+    DeleteAppSpawningCtx(property);
+    AppSpawnClientDestroy(clientHandle);
+    DeleteAppSpawnMgr(mgr);
+    ASSERT_EQ(ret, 0);
+}
+
+/**
+ * @brief appspawn为不携带ALLOW_PTRACE JIT权限的应用使用默认normal seccomp策略
+ *
+ */
+HWTEST_F(AppSpawnCommonTest, App_Spawn_SetSeccompFilter_JitPtrace_002, TestSize.Level0)
+{
+    int ret = -1;
+    AppSpawnMgr *mgr = nullptr;
+    AppSpawnClientHandle clientHandle = nullptr;
+    AppSpawningCtx *property = nullptr;
+    do {
+        mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+        EXPECT_NE(mgr, nullptr);
+
+        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create client %{public}s", APPSPAWN_SERVER_NAME);
+
+        AppSpawnReqMsgHandle reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+        APPSPAWN_CHECK(reqHandle != nullptr, break, "Failed to create msg type %{public}d", MSG_APP_SPAWN);
+
+        const char *permissions = "{\"permissions\":[{\"ohos.permission.OTHER\":true}]}";
+        ret = AppSpawnReqMsgAddExtInfo(reqHandle, MSG_EXT_NAME_JIT_PERMISSIONS,
+            reinterpret_cast<uint8_t *>(const_cast<char *>(permissions)), strlen(permissions) + 1);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to add JIT permissions");
+
+        property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
+        APPSPAWN_CHECK(property != nullptr, break, "Failed to get app property");
+
+        ret = SetSeccompFilter(mgr, property);
+        EXPECT_STRNE(GetLastSeccompPolicyName(), "app_normal_allow_ptrace");
+    } while (0);
+    DeleteAppSpawningCtx(property);
+    AppSpawnClientDestroy(clientHandle);
+    DeleteAppSpawnMgr(mgr);
+    ASSERT_EQ(ret, 0);
+}
+#endif
+
 /**
  * @brief appspawn为应用设置Internet Permission [0, 0]
  *

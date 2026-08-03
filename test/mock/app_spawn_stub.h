@@ -166,6 +166,9 @@ int KillStub(pid_t pid, int sig);
 int SetXpmConfig(AppSpawnMgr *content, AppSpawningCtx *property);
 void SetIoctlResult(int result);
 void GetSpecialGid(const char *bundleName, gid_t gidTable[], uint32_t *gidCount);
+#ifdef WITH_SECCOMP
+const char *GetLastSeccompPolicyName(void);
+#endif
 #ifdef APPSPAWN_HITRACE_OPTION
 int FilterAppSpawnTrace(AppSpawnMgr *content, AppSpawningCtx *property);
 #endif
