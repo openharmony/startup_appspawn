@@ -59,6 +59,8 @@ ohos_shared_library("appspawn_ace") {
     "init:libbegetutil",
     "ipc:ipc_single",
     "napi:ace_napi",
+    "node:node_header_notice",
+    "libuv:uv",
     "os_account:os_account_innerkits",
     "resource_management:global_resmgr",
     "selinux:libselinux",
