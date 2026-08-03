@@ -1096,8 +1096,7 @@
             "mount-paths": [{
                     "src-path": "/data/service/el2/<currentUserId>/file_monitor_service/content_share",
                     "sandbox-path": "/storage/ContentShare",
-                    "sandbox-flags": [ "bind", "rec" ],
-                    "controlled-skip": "true"
+                    "sandbox-flags": [ "bind", "rec" ]
                 }
             ]
         }],
