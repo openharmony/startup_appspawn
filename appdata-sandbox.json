@@ -841,8 +841,7 @@
             "mount-paths": [{
                     "src-path": "/storage/cloud/<currentUserId>/files/.thumbs/Photo",
                     "sandbox-path": "/storage/Share/.thumbs/Photo",
-                    "sandbox-flags": [ "bind", "rec" ],
-                    "controlled-skip": "true"
+                    "sandbox-flags": [ "bind", "rec" ]
                 }
             ]
         }],
@@ -1108,8 +1107,7 @@
             "mount-paths": [{
                     "src-path": "/storage/media/<currentUserId>/local/files",
                     "sandbox-path": "/storage/media/local/files",
-                    "sandbox-flags": [ "bind", "rec" ],
-                    "controlled-skip": "true"
+                    "sandbox-flags": [ "bind", "rec" ]
                 }
             ]
         }],
@@ -1222,8 +1220,7 @@
                     "src-path" : "/storage/media/<currentUserId>",
                     "sandbox-path" : "/storage/media",
                     "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false",
-                    "controlled-skip": "true"
+                    "check-action-status": "false"
                 }, {
                     "src-path" : "/data/service/el2/<currentUserId>/hmdfs/cache/account_cache",
                     "sandbox-path" : "/data/service/el2/<currentUserId>/hmdfs/cache/account_cache",
@@ -1233,15 +1230,13 @@
                     "src-path" : "/storage/cloud/<currentUserId>",
                     "sandbox-path" : "/storage/cloud",
                     "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "true",
-                    "controlled-skip": "true"
+                    "check-action-status": "true"
                 }, {
                     "src-path" : "none",
                     "sandbox-path" : "/storage/cloud/epfs",
                     "sandbox-flags" : [ "MS_NODEV" ],
                     "fs-type": "epfs",
-                    "check-action-status": "false",
-                    "controlled-skip": "true"
+                    "check-action-status": "false"
                 }, {
                     "src-path" : "/mnt/data/<currentUserId>",
                     "sandbox-path" : "/mnt/data/<currentUserId>",
