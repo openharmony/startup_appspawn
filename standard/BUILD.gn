@@ -79,7 +79,6 @@ ohos_executable("appspawn") {
     "hilog:libhilog",
     "hitrace:hitrace_meter",
     "init:libbegetutil",
-    "faultloggerd:libfaultloggerd",
   ]
 
   if (enable_appspawn_dump_catcher) {
@@ -340,7 +339,6 @@ ohos_executable("nwebspawn") {
     "hilog:libhilog",
     "hitrace:hitrace_meter",
     "init:libbegetutil",
-    "faultloggerd:libfaultloggerd",
   ]
   if (enable_appspawn_dump_catcher) {
     external_deps += [ "faultloggerd:libdfx_dumpcatcher" ]
@@ -422,7 +420,6 @@ ohos_executable("hybridspawn") {
     "hilog:libhilog",
     "hitrace:hitrace_meter",
     "init:libbegetutil",
-    "faultloggerd:libfaultloggerd",
   ]
   if (enable_appspawn_dump_catcher) {
     external_deps += [ "faultloggerd:libdfx_dumpcatcher" ]

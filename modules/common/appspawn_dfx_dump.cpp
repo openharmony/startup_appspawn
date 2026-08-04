@@ -19,7 +19,6 @@
 
 #ifndef APPSPAWN_TEST
 #include "dfx_dump_catcher.h"
-#include "faultloggerd_client.h"
 #endif
 
 void DumpSpawnStack(pid_t pid)
@@ -33,13 +32,5 @@ void DumpSpawnStack(pid_t pid)
     } else {
         APPSPAWN_LOGE("dumpCatch stackTrace for pid %{public}d failed", pid);
     }
-#endif
-}
-void SaveCoredump(void)
-{
-#ifndef APPSPAWN_TEST
-    APPSPAWN_LOGI("SaveCoredumpstart");
-	
-    SaveCoredumpToFileTimeout(getpid(), (10 * 1000));
 #endif
 }
