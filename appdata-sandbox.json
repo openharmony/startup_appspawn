@@ -509,19 +509,6 @@
         }]
     }],
     "individual" : [{
-        "com.ohos.sceneboard" : [{
-            "sandbox-switch": "ON",
-            "appIdentifier": "5765880207853062833",
-            "gids": [1065],
-            "mount-paths" : [{
-                    "src-path" : "/data/app/el1/bundle/public/",
-                    "sandbox-path" : "/data/app/el1/bundle/public/",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "true"
-                }
-            ],
-            "symbol-links" : []
-        }],
         "com.ohos.settingsdata":[{
             "sandbox-switch": "ON",
             "appIdentifier": "5765880207853771197",
@@ -780,6 +767,17 @@
         }]
     }],
     "permission":[{
+        "ohos.permission.MOUNT_BUNDLE_INFO" : [{
+            "sandbox-switch": "ON",
+            "gids": [1065],
+            "mount-paths" : [{
+                    "src-path" : "/data/app/el1/bundle/public/",
+                    "sandbox-path" : "/data/app/el1/bundle/public/",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "true"
+                }
+            ]
+        }],
         "ohos.permission.FILE_ACCESS_MANAGER":[{
             "sandbox-switch": "ON",
             "gids": [1006, 1008],
