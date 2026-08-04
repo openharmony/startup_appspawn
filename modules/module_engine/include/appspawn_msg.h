@@ -61,6 +61,7 @@ typedef enum {
     TLV_PERMISSION,
     TLV_INTERNET_INFO,
     TLV_RENDER_TERMINATION_INFO,
+    TLV_IMG_PROCESS_INFO,
     TLV_CHECK_POINT_INFO,
     TLV_MAX
 } AppSpawnMsgTlvType;
@@ -122,6 +123,11 @@ typedef struct {
     char bundleName[0];  // process name
 } AppSpawnMsgBundleInfo;
 
+typedef struct {
+    pid_t imgPid;
+    uint64_t checkPointId;
+} AppSpawnMsgImgProcessInfo;
+
 /**
  * @brief checkpoint信息结构体
  */
@@ -145,6 +151,11 @@ typedef struct {
     AppSpawnMsg msgHdr;
     AppSpawnResult result;
 } AppSpawnResponseMsg;
+
+typedef struct {
+    AppSpawnMsg msgHdr;
+    AppSpawnImgInfoResult result;
+} AppSpawnImgInfoResponseMsg;
 #pragma pack()
 
 #if defined(__clang__)

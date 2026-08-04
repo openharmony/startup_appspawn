@@ -74,6 +74,12 @@ typedef struct {
     pid_t pid;
     uint64_t checkPointId;  // checkpoint ID (valid for image process response)
 } AppSpawnResult;
+
+typedef struct {
+    int result;
+    pid_t pid;
+    uint64_t checkPointId;
+} AppSpawnImgInfoResult;
 #pragma pack()
 
 /**

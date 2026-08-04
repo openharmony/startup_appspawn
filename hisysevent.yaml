@@ -52,6 +52,9 @@ SPAWN_MOUNT_COUNT:
   AVG_NAMESPACE_MOUNT_COUNT: {type: INT32, desc: Average Main Namespace Mount Count}
   AVG_DEVICE_MOUNT_COUNT: {type: INT32, desc: Average Device Mount Count}
 
+SPAWN_CORE_DUMP:
+  __BASE: {type: FAULT, level: CRITICAL, desc: appspawn coredump events, preserve: true}
+
 UNLOCK_MOUNT_ALL_DONE:
   __BASE: {type: STATISTIC, level: MINOR, desc: Unlock mount all apps done}
   UID: {type: INT32, desc: User ID}

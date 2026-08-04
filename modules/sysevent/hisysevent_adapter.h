@@ -100,6 +100,7 @@ typedef struct {
 #define UNLOCK_SUCCESS "UNLOCK_SUCCESS"
 #define LOCK_SUCCESS "LOCK_SUCCESS"
 #define APPSPAWN_MAX_FAILURES_EXCEEDED "APPSPAWN_MAX_FAILURES_EXCEEDED"
+#define APPSPAWN_RESTART_CORE_DUMP "APPSPAWN_RESTART_CORE_DUMP"
 
 // Unlock mount event names
 #define UNLOCK_MOUNT_L1_SUCCESS "UNLOCK_MOUNT_L1_SUCCESS"
@@ -126,6 +127,7 @@ void ReportKeyEvent(const char *eventName);
 void ReportAbnormalDuration(const char* funcName, uint64_t duration);
 void ReportSpawnStatisticDuration(const TimerHandle taskHandle, void* content);
 
+int ReportCoreDump();
 void ReportMountFull(int32_t errCode, int32_t nsMountCount, int32_t deviceMountCount, int32_t spawnResult);
 
 // Unlock mount event report functions (structured events with queryable params)
