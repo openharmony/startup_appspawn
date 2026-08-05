@@ -31,6 +31,7 @@
 #endif
 #endif
 
+#ifndef APPSPAWN_HELPER
 #define MAX_FORK_TIME (30 * 1000)   // 30ms
 
 static void NotifyResToParent(struct AppSpawnContent *content, AppSpawnClient *client, int result)
@@ -42,6 +43,7 @@ static void NotifyResToParent(struct AppSpawnContent *content, AppSpawnClient *c
     content->notifyResToParent(content, client, result);
     FinishAppspawnTrace();
 }
+#endif
 
 void ProcessExit(int code)
 {
@@ -76,6 +78,7 @@ void exit(int code)
 }
 #endif
 
+#ifndef APPSPAWN_HELPER
 int AppSpawnChild(AppSpawnContent *content, AppSpawnClient *client)
 {
     APPSPAWN_CHECK(content != NULL && client != NULL, return -1, "Invalid arg for appspawn child");
@@ -210,3 +213,4 @@ int AppSpawnProcessMsg(AppSpawnContent *content, AppSpawnClient *client, pid_t *
     *childPid = pid;
     return 0;
 }
+#endif
