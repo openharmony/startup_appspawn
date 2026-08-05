@@ -17,6 +17,9 @@ import("//build/ohos.gni")
 
 if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
   ohos_shared_library("appspawn_sandbox") {
+    if (!use_clang_coverage) {
+      version_script = "appspawn_sandbox.versionscript"
+    }
     sources += appspawn_sandbox_src
 
     include_dirs = [
@@ -64,10 +67,15 @@ if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
   }
 } else {
   ohos_shared_library("appspawn_sandbox") {
+    if (!use_clang_coverage) {
+      version_script = "appspawn_sandbox.versionscript"
+    }
     branch_protector_ret = "pac_ret"
     sanitize = {
       cfi = true
       cfi_cross_dso = true
+      cfi_no_nvcall = true
+      cfi_vcall_icall_only = true
       debug = false
     }
     sources = [

@@ -19,6 +19,8 @@ ohos_static_library("libappspawn_util") {
   sanitize = {
     cfi = true
     cfi_cross_dso = true
+    cfi_no_nvcall = true
+    cfi_vcall_icall_only = true
     debug = false
   }
   sources = [
