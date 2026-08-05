@@ -166,6 +166,7 @@ if (!defined(ohos_lite)) {
       "ipc:ipc_core",
       "os_account:os_account_innerkits",
       "resource_management:global_resmgr",
+      "hitrace:hitrace_meter",
     ]
 
     if (build_selinux) {

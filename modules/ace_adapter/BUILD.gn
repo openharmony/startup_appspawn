@@ -15,10 +15,15 @@ import("//base/startup/appspawn/appspawn.gni")
 import("//build/ohos.gni")
 
 ohos_shared_library("appspawn_ace") {
+  if (!use_clang_coverage) {
+    version_script = "appspawn_ace.versionscript"
+  }
   branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
     cfi_cross_dso = true
+    cfi_no_nvcall = true
+    cfi_vcall_icall_only = true
     debug = false
   }
   sources = [
@@ -59,6 +64,8 @@ ohos_shared_library("appspawn_ace") {
     "init:libbegetutil",
     "ipc:ipc_single",
     "napi:ace_napi",
+    "node:node_header_notice",
+    "libuv:uv",
     "os_account:os_account_innerkits",
     "resource_management:global_resmgr",
     "selinux:libselinux",

@@ -22,7 +22,12 @@ ohos_shared_library("libappspawn_spm") {
   sanitize = {
     cfi = true
     cfi_cross_dso = true
+    cfi_no_nvcall = true
+    cfi_vcall_icall_only = true
     debug = false
+  }
+  if (!use_clang_coverage) {
+    version_script = "libappspawn_spm.versionscript"
   }
   sources = [
     "spm.c",

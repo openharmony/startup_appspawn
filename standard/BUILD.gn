@@ -43,6 +43,8 @@ ohos_executable("appspawn") {
   sanitize = {
     cfi = true
     cfi_cross_dso = true
+    cfi_no_nvcall = true
+    cfi_vcall_icall_only = true
     debug = false
   }
   sources = [
@@ -159,6 +161,8 @@ ohos_executable("pid_ns_init") {
   sanitize = {
     cfi = true
     cfi_cross_dso = true
+    cfi_no_nvcall = true
+    cfi_vcall_icall_only = true
     debug = false
   }
   sources = [ "${appspawn_path}/standard/pid_ns_init.c" ]
@@ -243,6 +247,8 @@ ohos_executable("nativespawn") {
   sanitize = {
     cfi = true
     cfi_cross_dso = true
+    cfi_no_nvcall = true
+    cfi_vcall_icall_only = true
     debug = false
   }
   sources = [
@@ -327,6 +333,8 @@ ohos_executable("nwebspawn") {
   sanitize = {
     cfi = true
     cfi_cross_dso = true
+    cfi_no_nvcall = true
+    cfi_vcall_icall_only = true
     debug = false
   }
   sources = [
@@ -414,6 +422,8 @@ ohos_executable("hybridspawn") {
   sanitize = {
     cfi = true
     cfi_cross_dso = true
+    cfi_no_nvcall = true
+    cfi_vcall_icall_only = true
     debug = false
   }
   sources = [

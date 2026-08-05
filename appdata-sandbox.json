@@ -509,13 +509,6 @@
         }]
     }],
     "individual" : [{
-        "com.ohos.settingsdata":[{
-            "sandbox-switch": "ON",
-            "appIdentifier": "5765880207853771197",
-            "gids": [1065],
-            "mount-paths": [],
-            "symbol-links": []
-        }],
         "com.ohos.amsdialog" : [{
             "sandbox-switch": "ON",
             "appIdentifier": "5765880207853534317",
@@ -1241,6 +1234,11 @@
                     "check-action-status": "false"
                 }
             ]
+        }],
+        "ohos.permission.MOUNT_SANDBOX_SETTINGSDATA":[{
+            "sandbox-switch": "ON",
+            "gids": [1065],
+            "mount-paths": []
         }]
     }],
     "debug": [{
