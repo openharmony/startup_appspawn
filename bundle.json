@@ -62,6 +62,8 @@
                 "hisysevent",
                 "security_component_manager",
                 "napi",
+                "node",
+                "libuv",
                 "netmanager_base",
                 "ace_engine",
                 "os_account",
