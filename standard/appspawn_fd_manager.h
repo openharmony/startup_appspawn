@@ -50,6 +50,7 @@ typedef enum {
     TYPE_FOR_FORK_ALL,    /**< FD shared across all fork children */
     TYPE_CHILD_PARENT,    /**< Child-to-parent pipe FD (fork result notification) */
     TYPE_PARENT_CHILD,    /**< Parent-to-child pipe FD (for sending fork requests) */
+    TYPE_KILL_REASON_FD,  /**< FD for /dev/sysload kill reason reporting (registered with appspawn's own pid) */
     TYPE_INVALID          /**< Sentinel value, must be last */
 } SpawningFdType;
 
