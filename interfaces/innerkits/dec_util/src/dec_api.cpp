@@ -154,9 +154,6 @@ std::vector<std::pair<std::string, int>> GetIgnoreCaseDirs(void)
     uint32_t count = 0;
     const DecIgnoreCaseInfo *list = GetDecIgnoreCaseList(IsNoShareFsEnable(), &count);
     std::vector<std::pair<std::string, int>> result;
-    if (list == nullptr || count == 0) {
-        return result;
-    }
     result.reserve(count);
     for (uint32_t i = 0; i < count; i++) {
         result.emplace_back(list[i].path, list[i].mode);
