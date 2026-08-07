@@ -1246,7 +1246,7 @@
             "mount-paths": [{
                     "src-path" : "/data/service/el2/<currentUserId>/file_monitor_service",
                     "sandbox-path" : "/data/file_monitor_service",
-                    "sandbox-flags": ["bind", "rec", "rdonly"]
+                    "sandbox-flags": [ "bind", "rec" ]
                 }
             ]
         }]
