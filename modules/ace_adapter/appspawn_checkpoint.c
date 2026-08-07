@@ -282,7 +282,7 @@ APPSPAWN_STATIC int32_t SpawnPrepareCheckpointFd(AppSpawnMgr *content, AppSpawni
     }
 
     // 打开设备并缓存
-    int fd = open(CHECKPOINT_DEVICE_PATH, O_RDWR);
+    int fd = open(CHECKPOINT_DEVICE_PATH, O_RDWR | O_CLOEXEC);
     APPSPAWN_CHECK(fd >= 0, return APPSPAWN_SYSTEM_ERROR,
                     "Open checkpoint device failed, errno: %{public}s", strerror(errno));
 
