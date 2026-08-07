@@ -41,6 +41,7 @@
 #include "init_utils.h"
 #include "parameter.h"
 #include "appspawn_adapter.h"
+#include "appspawn_fd_manager.h"
 #include "securec.h"
 #include "cJSON.h"
 #ifdef APPSPAWN_HISYSEVENT
@@ -92,6 +93,9 @@ static void AppQueueDestroyProc(const AppSpawnMgr *mgr, AppSpawnedProcess *appIn
 {
     pid_t pid = appInfo->pid;
     APPSPAWN_LOGI("kill %{public}s pid: %{public}d", appInfo->name, appInfo->pid);
+    appInfo->killReason = REASON_APPSPAWN_STOP;
+    APPSPAWN_LOGI("AppQueueDestroyProc: set killReason=%{public}d for pid:%{public}d",
+        appInfo->killReason, appInfo->pid);
     // notify child proess died,clean sandbox info
     ProcessMgrHookExecute(STAGE_SERVER_APP_DIED, GetAppSpawnContent(), appInfo);
     ProcessMgrHookExecute(STAGE_SERVER_APP_CLEANUP, GetAppSpawnContent(), appInfo);

@@ -694,8 +694,9 @@ HWTEST_F(SpawningFdTest, SpawningFd_DataStructure_001, TestSize.Level0)
     EXPECT_EQ(TYPE_FOR_FORK_ALL, 1);
     EXPECT_EQ(TYPE_CHILD_PARENT, 2);
     EXPECT_EQ(TYPE_PARENT_CHILD, 3);
-    EXPECT_EQ(TYPE_INVALID, 4);
-    EXPECT_LT(TYPE_INVALID, 5);  // Boundary
+    EXPECT_EQ(TYPE_KILL_REASON_FD, 4);
+    EXPECT_EQ(TYPE_INVALID, 5);
+    EXPECT_LT(TYPE_INVALID, 6);  // Boundary
 }
 
 /**

@@ -448,5 +448,6 @@ group("appspawn_standard_tests") {
     "app_spawn_appmgr_test:AppSpawn_AppMgr_Test",
     "app_spawn_beget_test:AppSpawn_Beget_Test",
     "app_spawn_cgroup_test:AppSpawn_CGroup_Test",
+    "app_spawn_kill_reason_test:AppSpawn_KillReason_Test",
   ]
 }

@@ -28,11 +28,13 @@ ohos_shared_library("appspawn_common") {
   }
   sources = [
     "${appspawn_path}/common/appspawn_trace.cpp",
+    "${appspawn_path}/standard/appspawn_fd_manager.c",
     "appspawn_adapter.cpp",
     "appspawn_cgroup.c",
     "appspawn_common.c",
     "appspawn_namespace.c",
     "appspawn_silk.c",
+    "appspawn_kill_reason.c",
   ]
   if (appspawn_use_encaps == true) {
     sources += [ "appspawn_encaps.c" ]

@@ -118,6 +118,7 @@ typedef struct TagAppSpawnedProcess {
     uint8_t spmRefAdded;  // Bitmap: which SPM refcounts have been incremented
                           //   bit0 (0x01): tokenid refcount
                           //   bit1 (0x02): uid refcount
+    int killReason;       // Kill reason for process exit reporting (0=none, REASON_APPSPAWN_STOP, REASON_KILL_CGROUP)
     char name[0];
 } AppSpawnedProcess;
 
