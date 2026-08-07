@@ -1239,6 +1239,17 @@
             "sandbox-switch": "ON",
             "gids": [1065],
             "mount-paths": []
+        }],
+        "ohos.permission.ACCESS_FILE_MONITOR_DIR":[{
+            "sandbox-switch": "ON",
+            "gids": [1006],
+            "mount-paths": [
+                {
+                    "src-path" : "/data/service/el2/<currentUserId>/file_monitor_service",
+                    "sandbox-path" : "/data/file_monitor_service",
+                    "sandbox-flags": ["bind", "rec", "rdonly"]
+                }
+            ]
         }]
     }],
     "debug": [{
