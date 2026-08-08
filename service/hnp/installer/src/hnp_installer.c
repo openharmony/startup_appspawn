@@ -374,6 +374,7 @@ static int HnpNativeUnInstall(HnpPackageInfo *packageInfo, int uid, const char *
 /**
 * 卸载bss信息，so不存在时返回0，其他情况按照执行结果返回
 */
+__attribute__((no_sanitize("cfi")))
 static int BssUninstall(int uid, const char *packageName)
 {
 #ifndef APPSPAWN_TEST
@@ -889,6 +890,7 @@ APPSPAWN_STATIC void HapInstallInfoDestory(HapInstallInfo **installInfo)
 }
 
 #ifdef CODE_SIGNATURE_ENABLE
+__attribute__((no_sanitize("cfi")))
 static int BssInstall(HnpSignMapInfo *hnpSignMapInfos, int count, HapInstallInfo *installInfo, int execFilesCount)
 {
     HNP_INFO_CHECK(access(BIN_SEC_PATH, F_OK) == 0, return 0,

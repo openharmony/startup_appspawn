@@ -63,6 +63,7 @@ void ProcessExit(int code)
 
 #ifdef APPSPAWN_HELPER
 __attribute__((visibility("default")))
+__attribute__((no_sanitize("cfi")))
 _Noreturn
 void exit(int code)
 {
