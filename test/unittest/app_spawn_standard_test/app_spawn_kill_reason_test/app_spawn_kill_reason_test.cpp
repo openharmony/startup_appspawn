@@ -489,7 +489,7 @@ HWTEST_F(AppSpawnKillReasonTest, App_Spawn_KillReason_Hook_005, TestSize.Level0)
 
 /**
  * @tc.name: App_Spawn_KillReason_Define_001
- * @tc.desc: 校验kill reason上报相关常量：REASON_APPSPAWN_STOP=3053、REASON_KILL_CGROUP=7、
+ * @tc.desc: 校验kill reason上报相关常量：REASON_APPSPAWN_STOP=3053、REASON_KILL_CGROUP=8、
  *           DEV_SYSLOAD="/dev/sysload"
  * @tc.type: FUNC
  * @tc.level: Level0
@@ -498,7 +498,7 @@ HWTEST_F(AppSpawnKillReasonTest, App_Spawn_KillReason_Hook_005, TestSize.Level0)
 HWTEST_F(AppSpawnKillReasonTest, App_Spawn_KillReason_Define_001, TestSize.Level0)
 {
     EXPECT_EQ(REASON_APPSPAWN_STOP, 3053);
-    EXPECT_EQ(REASON_KILL_CGROUP, 7);
+    EXPECT_EQ(REASON_KILL_CGROUP, 8);
     EXPECT_STREQ(DEV_SYSLOAD, "/dev/sysload");
 }
 /**
