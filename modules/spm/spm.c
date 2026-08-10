@@ -899,6 +899,7 @@ APPSPAWN_STATIC int IncreaseRefCounts(AppSpawningCtx *ctx, const RefcountContext
     // Increment uid refcount
     incRet = SpmIncUidRefCnt(refCtx->uid, spawnId);
     APPSPAWN_ONLY_EXPER(incRet == EOPNOTSUPP, APPSPAWN_LOGI("not support spm ignore refcount");
+        ctx->spmRefAdded = refAdded;
         return SPM_ERROR_SPM_NOSUPP);
     APPSPAWN_CHECK(incRet == 0,
         ctx->spmRefAdded = refAdded;
