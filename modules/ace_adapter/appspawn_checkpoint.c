@@ -84,7 +84,7 @@ APPSPAWN_STATIC AppSpawnFds *GetSpawningFd(AppSpawnMgr *content, SpawningFdType 
 {
     APPSPAWN_CHECK_ONLY_EXPER(content != NULL, return NULL);
     ListNode *node = OH_ListFind(&content->spawningFdsQueue, &fdType, SpawningFdComparePro);
-    APPSPAWN_CHECK_ONLY_EXPER(content != NULL, return NULL);
+    APPSPAWN_CHECK_ONLY_EXPER(node != NULL, return NULL);
     return ListEntry(node, AppSpawnFds, node);
 }
 
