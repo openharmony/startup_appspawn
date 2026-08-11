@@ -18,6 +18,7 @@
 #include <dlfcn.h>
 #include <set>
 #include <string>
+#include <thread>
 #include <unistd.h>
 #include <utility>
 #include <vector>
@@ -489,8 +490,16 @@ APPSPAWN_STATIC int DlopenAppSpawn(AppSpawnMgr *content)
 #ifdef ARKWEB_UTILS_ENABLE
     OHOS::ArkWeb::PreloadArkWebLibForBrowser();
 #endif
-    APPSPAWN_LOGI("DlopenAppSpawn: Start reclaim file cache");
-    OHOS::Ace::AceForwardCompatibility::ReclaimFileCache(getpid());
+    if (content->content.mode == MODE_FOR_APP_SPAWN) {
+        APPSPAWN_LOGI("DlopenAppSpawn: Start reclaim file cache async");
+        std::thread reclaimThread([]() {
+            OHOS::Ace::AceForwardCompatibility::ReclaimFileCache(getpid());
+        });
+        reclaimThread.detach();
+    } else {
+        APPSPAWN_LOGI("DlopenAppSpawn: Start reclaim file cache sync");
+        OHOS::Ace::AceForwardCompatibility::ReclaimFileCache(getpid());
+    }
     return 0;
 }
 
