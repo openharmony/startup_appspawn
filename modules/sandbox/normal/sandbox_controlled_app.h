@@ -39,7 +39,6 @@ class ControlledAppCache {
 public:
     static ControlledAppCache& GetInstance();
 
-    bool LoadFromJson();
     bool LoadFromJsonLocked();   // caller must hold mutex_
     bool IsControlled(uint32_t userId, const std::string& ownerId) const;
     int32_t EnsureCacheLoaded(int32_t cryptoStatus);

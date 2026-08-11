@@ -35,7 +35,8 @@
             "appspawn_lib_prelink_path",
             "appspawn_allow_dumpable",
             "appspawn_change_sched",
-            "appspawn_sandbox_root_tmpfs"
+            "appspawn_sandbox_root_tmpfs",
+            "appspawn_controlled_app"
         ],
         "rom": "296KB",
         "ram": "13125KB",

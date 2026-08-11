@@ -153,12 +153,14 @@ int MakeDirRec(const char *path, mode_t mode, int lastPath)
         APPSPAWN_CHECK(ret == 0, return -1, "Failed to copy path");
         ret = mkdir(buffer, mode);
         if (ret == -1 && errno != EEXIST) {
+            APPSPAWN_LOGW("errno:%{public}d mkdir %{public}s failed", errno, buffer);
             return errno;
         }
         curPos = strchr(p, slash);
     }
     if (lastPath) {
         if (mkdir(path, mode) == -1 && errno != EEXIST) {
+            APPSPAWN_LOGW("errno:%{public}d mkdir %{public}s failed", errno, path);
             return errno;
         }
     }

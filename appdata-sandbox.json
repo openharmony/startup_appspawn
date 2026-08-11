@@ -222,8 +222,8 @@
                 }, {
                     "sandbox-path" : "/storage",
                     "sandbox-flags" : [ "bind", "rec" ],
-                    "controlled-fuse-path": "/data/service/el1/public/dlp_credential_service/mounts/storage_fuse",
-                    "check-action-status": "false"
+                    "check-action-status": "false",
+                    "controlled-fuse-path": "/data/service/el1/public/dlp_credential_service/mounts/storage_fuse"
                 }
             ],
             "symbol-links" : [{
@@ -390,22 +390,25 @@
             ]}, {
             "flags": "FILE_CROSS_APP",
             "mount-paths": [{
-                    "src-path": "/mnt/data/external",
-                    "sandbox-path": "/storage/External",
-                    "sandbox-flags": [ "bind", "rec" ],
-                    "controlled-skip": "true"
-                }, {
                     "src-path": "/mnt/user/<currentUserId>/nosharefs/docs",
                     "sandbox-path": "/storage/Users",
                     "sandbox-flags": [ "bind", "rec" ],
                     "controlled-skip": "true"
-                }, {
+                },
+                {
                     "src-path": "/mnt/data/<currentUserId>/userExternal",
                     "sandbox-path": "/storage/userExternal",
                     "sandbox-flags": [ "bind", "rec" ],
                     "check-action-status": "false",
                     "controlled-skip": "true"
-                }, {
+                },
+                {
+                    "src-path": "/mnt/data/external",
+                    "sandbox-path": "/storage/External",
+                    "sandbox-flags": [ "bind", "rec" ],
+                    "controlled-skip": "true"
+                },
+                {
                     "src-path": "/mnt/data/voldata/",
                     "sandbox-path": "/storage/voldata",
                     "sandbox-flags": [ "bind", "rec" ],
@@ -414,9 +417,16 @@
                 }
             ],
             "symbol-links" : [{
-                    "target-name" : "/storage/Users",
-                    "link-name" : "/storage/users",
-                    "check-action-status": "false"
+                    "target-name" : "/storage/Users/currentUser",
+                    "link-name" : "/storage/users/currentuser",
+                    "check-action-status": "false",
+                    "controlled-skip": "true"
+                },
+                {
+                    "target-name" : "/storage/External",
+                    "link-name" : "/storage/external",
+                    "check-action-status": "false",
+                    "controlled-skip": "true"
                 }
             ]}, {
             "flags": "FILE_ACCESS_COMMON_DIR",

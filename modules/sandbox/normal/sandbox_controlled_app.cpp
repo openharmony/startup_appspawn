@@ -18,7 +18,7 @@
 #include <cstdlib>
 #include "appspawn_manager.h"
 #include "appspawn_utils.h"
-#include "parameters.h"
+#include "parameter.h"
 #include "securec.h"
 #include "json_utils.h"
 #include "cJSON.h"
@@ -28,6 +28,7 @@ namespace AppSpawn {
 
 static const char* CONTROLLED_APPS_JSON =
     "/data/service/el1/public/dlp_credential_service/ControlledAppList.json";
+static constexpr size_t PARAM_VALUE_LEN = 32;
 
 ControlledAppCache& ControlledAppCache::GetInstance()
 {
@@ -39,15 +40,10 @@ ControlledAppCache& ControlledAppCache::GetInstance()
 bool ControlledAppCache::LoadFromJsonLocked()
 {
     cJSON *root = GetJsonObjFromFile(CONTROLLED_APPS_JSON);
-    if (root == nullptr) {
-        APPSPAWN_LOGW("controlled: ControlledAppList.json not found, no apps controlled");
-        return false;
-    }
-    if (!cJSON_IsObject(root)) {
-        APPSPAWN_LOGW("controlled: ControlledAppList.json root is not object");
-        cJSON_Delete(root);
-        return false;
-    }
+    APPSPAWN_CHECK_LOGW(root != nullptr, return false,
+        "controlled: ControlledAppList.json not found, no apps controlled");
+ 	APPSPAWN_CHECK_LOGW(cJSON_IsObject(root), cJSON_Delete(root); return false,
+        "controlled: ControlledAppList.json root is not object");
 
     std::map<std::string, std::set<std::string>> tempCache;
     for (cJSON *item = root->child; item != nullptr; item = item->next) {
@@ -80,12 +76,6 @@ bool ControlledAppCache::LoadFromJsonLocked()
     return true;
 }
 
-bool ControlledAppCache::LoadFromJson()
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-    return LoadFromJsonLocked();
-}
-
 bool ControlledAppCache::IsControlled(uint32_t userId, const std::string& ownerId) const
 {
     std::lock_guard<std::mutex> lock(mutex_);
@@ -97,8 +87,7 @@ bool ControlledAppCache::IsControlled(uint32_t userId, const std::string& ownerI
     return it->second.count(ownerId) > 0;
 }
 
-
-// Clear client-settable flag 44 before server-side determination.
+// Clear client-settable APP_FLAGS_CONTROLLED_APP before server-side determination.
 static void ClearControlledFlag(const AppSpawningCtx *property)
 {
     AppSpawnMsgFlags *msgFlags = (AppSpawnMsgFlags *)GetAppSpawnMsgInfo(property->message, TLV_MSG_FLAGS);
@@ -112,15 +101,12 @@ static void ClearControlledFlag(const AppSpawningCtx *property)
     }
 }
 
-
 int32_t ControlledAppCache::EnsureCacheLoaded(int32_t cryptoStatus)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     if (cryptoStatus == CRYPTO_UPDATE) {
-        int32_t setRet = system::SetParameter("security.dlp.transparent.crypto.status", "1");
-        if (setRet != 0) {
-            APPSPAWN_LOGW("controlled_app: SetParam status=1 failed: %{public}d", setRet);
-        }
+        int ret = SetParameter("security.dlp.transparent.crypto.status", "1");
+        APPSPAWN_CHECK_ONLY_LOGW(ret == 0, "controlled_app: SetParam status=1 failed: %{public}d", ret);
         if (!LoadFromJsonLocked()) {
             cacheLoaded = false;
             APPSPAWN_LOGE("controlled_app: DLP notified update (status=2) but LoadFromJson failed, degraded mount");
@@ -143,48 +129,44 @@ int32_t ControlledAppCache::ComputeForSpawn(const AppSpawningCtx *property)
 {
     ClearControlledFlag(property);
 
-    std::string cryptoStr = system::GetParameter("security.dlp.transparent.crypto.status", "0");
+    char cryptoBuffer[PARAM_VALUE_LEN] = {0};
+    int ret = GetParameter("security.dlp.transparent.crypto.status", "0", cryptoBuffer, sizeof(cryptoBuffer));
+    APPSPAWN_LOGV("ctrl: get crypto status %{public}s ret %{public}d", cryptoBuffer, ret);
+
     char *endPtr = nullptr;
-    long val = strtol(cryptoStr.c_str(), &endPtr, 10);
-    int32_t cryptoStatus = (endPtr != cryptoStr.c_str() && *endPtr == '\0' && val >= 0)
+    long val = strtol(cryptoBuffer, &endPtr, 10);
+    int32_t cryptoStatus = (endPtr != cryptoBuffer && *endPtr == '\0' && val >= 0)
         ? static_cast<int32_t>(val) : CRYPTO_UNAVAILABLE;
     APPSPAWN_LOGV("ctrl: crypto status=%{public}d", cryptoStatus);
 
     if (cryptoStatus == CRYPTO_UNAVAILABLE) {
-        APPSPAWN_LOGV("ctrl: crypto unavailable, skip controlled flow");
         return 0;
     }
 
     int32_t cacheRet = EnsureCacheLoaded(cryptoStatus);
     if (cacheRet != 0) {
-        system::SetParameter("startup.appspawn.dlp_errorcode", "-1");
-        APPSPAWN_LOGW("ctrl: cache load failed, set dlp_errorcode=-1, degraded mount");
+        ret = SetParameter("startup.appspawn.dlp_errorcode", "controlled_app: get control json failed");
+        APPSPAWN_LOGW("ctrl: cache load failed, set dlp_errorcode, ret %{public}d, degraded mount", ret);
         return 0;
     }
 
     AppSpawnMsgDacInfo *dacInfo = reinterpret_cast<AppSpawnMsgDacInfo *>(
         GetAppProperty(property, TLV_DAC_INFO));
+    APPSPAWN_CHECK(dacInfo != nullptr, return -1,
+        "ctrl: security context dacInfo missing (crypto=%{public}d), aborting", cryptoStatus);
     AppSpawnMsgOwnerId *ownerInfo = reinterpret_cast<AppSpawnMsgOwnerId *>(
         GetAppProperty(property, TLV_OWNER_INFO));
-    if (dacInfo == nullptr || ownerInfo == nullptr) {
-        APPSPAWN_LOGE("ctrl: security context missing (crypto=%{public}d), aborting", cryptoStatus);
-        return -1;
-    }
+    APPSPAWN_CHECK(ownerInfo != nullptr, return -1,
+        "ctrl: security context ownerInfo missing (crypto=%{public}d), aborting", cryptoStatus);
 
     std::string ownerId(ownerInfo->ownerId);
     uint32_t userId = dacInfo->uid / UID_BASE;
     bool matched = IsControlled(userId, ownerId);
     if (matched) {
-        int32_t rc = SetAppSpawnMsgFlag(property->message, TLV_MSG_FLAGS, APP_FLAGS_CONTROLLED_APP);
-        APPSPAWN_LOGV("ctrl: flag %{public}d set ret=%{public}d", APP_FLAGS_CONTROLLED_APP, rc);
-        if (rc != 0) {
-            APPSPAWN_LOGE("controlled_app: matched controlled app but SetAppSpawnMsgFlag(44) returned"
-                          " %{public}d, aborting spawn", APP_FLAGS_CONTROLLED_APP);
-            return -1;
-        }
-    } else {
-        APPSPAWN_LOGV("ctrl: flag %{public}d NOT SET, matched=%{public}d",
-                      APP_FLAGS_CONTROLLED_APP, static_cast<int32_t>(matched));
+        ret = SetAppSpawnMsgFlag(property->message, TLV_MSG_FLAGS, APP_FLAGS_CONTROLLED_APP);
+        APPSPAWN_CHECK(ret == 0, return -1, "ctrl: matched controlled app but setflag %{public}d "
+            "returned ret %{public}d, aborting spawn", APP_FLAGS_CONTROLLED_APP, ret);
+        APPSPAWN_LOGV("ctrl: matched controlled app setflag %{public}d ret %{public}d", APP_FLAGS_CONTROLLED_APP, ret);
     }
     return matched ? 1 : 0;
 }
