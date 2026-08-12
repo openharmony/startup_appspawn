@@ -384,13 +384,28 @@ HWTEST_F(AppSpawnAceTest, App_Spawn_Ace_Dlopen_001, TestSize.Level0)
 }
 
 /**
- * @brief appspawn进行加载system libs
- * @note 预期结果: appspawn加载system libs正常
+ * @brief appspawn(MODE_FOR_APP_SPAWN)进行加载system libs，ReclaimFileCache异步执行
+ * @note 预期结果: appspawn加载system libs正常，ReclaimFileCache在独立线程中异步执行
  *
  */
 HWTEST_F(AppSpawnAceTest, App_Spawn_Ace_Dlopen_002, TestSize.Level0)
 {
     AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+    ASSERT_NE(mgr, nullptr);
+
+    int ret = DlopenAppSpawn(mgr);
+    DeleteAppSpawnMgr(mgr);
+    EXPECT_EQ(ret, 0);
+}
+
+/**
+ * @brief appspawn(MODE_FOR_APP_COLD_RUN)进行加载system libs，ReclaimFileCache同步执行
+ * @note 预期结果: appspawn加载system libs正常，ReclaimFileCache同步执行
+ *
+ */
+HWTEST_F(AppSpawnAceTest, App_Spawn_Ace_Dlopen_003, TestSize.Level0)
+{
+    AppSpawnMgr *mgr = CreateAppSpawnMgr(MODE_FOR_APP_COLD_RUN);
     ASSERT_NE(mgr, nullptr);
 
     int ret = DlopenAppSpawn(mgr);
