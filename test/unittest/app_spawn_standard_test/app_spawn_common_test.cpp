@@ -658,7 +658,7 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_SetSeccompFilter_JitPtrace_001, TestSize.
         AppSpawnReqMsgHandle reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
         APPSPAWN_CHECK(reqHandle != nullptr, break, "Failed to create msg type %{public}d", MSG_APP_SPAWN);
 
-        const char *permissions = "{\"permissions\":[{\"ohos.permission.kernel.ALLOW_PTRACE\":true}]}";
+        const char *permissions = "{\"permissions\":[{\"ohos.permission.kernel.ALLOW_PTRACE_READ\":true}]}";
         ret = AppSpawnReqMsgAddExtInfo(reqHandle, MSG_EXT_NAME_JIT_PERMISSIONS,
             reinterpret_cast<uint8_t *>(const_cast<char *>(permissions)), strlen(permissions) + 1);
         APPSPAWN_CHECK(ret == 0, break, "Failed to add JIT permissions");

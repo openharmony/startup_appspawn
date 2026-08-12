@@ -30,6 +30,7 @@
 #ifdef WITH_CONTROLLED_APP
 #include "sandbox_controlled_app.h"
 #endif
+#include "parameter.h"
 #include "tokenid_kit.h"
 #ifdef APPSPAWN_HISYSEVENT
 #include "hisysevent_adapter.h"
@@ -581,18 +582,16 @@ int32_t SandboxCore::MountAllGroup(const AppSpawningCtx *appProperty, std::strin
     return ret;
 }
 
-
-// Resolve mount source path considering controlled app FUSE override.
+// mount source path = isControlledApp ?
+//    (g_controlledFusePath != null ? g_controlledFusePath : (g_srcPath != null ? g_srcPath : g_paramPath) :
+//    (g_srcPath != null ? g_srcPath : g_paramPath)
 static const char* ResolveMountSrcPath(cJSON *mntPoint, MountPointProcessParams &params,
                                        std::string &paramSrcPath, bool &usingFusePath)
 {
     usingFusePath = false;
     if (params.isControlledApp) {
         const char *fusePath = GetStringFromJsonObj(mntPoint, SandboxCommonDef::g_controlledFusePath);
-        if (fusePath != nullptr) {
-            usingFusePath = true;
-            return fusePath;
-        }
+        APPSPAWN_ONLY_EXPER(fusePath != nullptr, usingFusePath = true; return fusePath);
     }
     const char *srcPath = GetStringFromJsonObj(mntPoint, SandboxCommonDef::g_srcPath);
     if (srcPath != nullptr) {
@@ -602,62 +601,55 @@ static const char* ResolveMountSrcPath(cJSON *mntPoint, MountPointProcessParams 
     return nullptr;
 }
 
-
 // Check and handle controlled-skip for mount point.
 // Returns true if the mount point should be skipped (caller returns 0).
 static bool TryControlledSkip(cJSON *mntPoint, const MountPointProcessParams &params)
 {
-    if (!params.isControlledApp) {
-        return false;
-    }
-    if (!GetBoolValueFromJsonObj(mntPoint, SandboxCommonDef::g_controlledSkip, false)) {
-        return false;
-    }
+    APPSPAWN_ONLY_EXPER(!params.isControlledApp, return false);
+    APPSPAWN_ONLY_EXPER(!GetBoolValueFromJsonObj(mntPoint, SandboxCommonDef::g_controlledSkip, false), return false);
+
     const char *rawPathChr = GetStringFromJsonObj(mntPoint, SandboxCommonDef::g_sandBoxPath);
     APPSPAWN_LOGV("ctrl skip: %{public}s", rawPathChr != nullptr ? rawPathChr : "?");
     return true;
 }
 
-
 // Execute a single mount operation, respecting fail-closed for controlled FUSE paths.
-static int ExecuteMountOnce(const SharedMountArgs &arg, MountPointProcessParams &params,
-                            bool enableLogging, bool isMountCritical)
+static int ExecuteMountOnce(cJSON *mntPoint, const SharedMountArgs &arg, MountPointProcessParams &params,
+                            bool enableLogging, bool usingFusePath)
 {
     if (enableLogging) {
         int ret = SandboxCommon::DoAppSandboxMountOnce(params.appProperty, &arg);
-        APPSPAWN_CHECK(ret == 0 || !isMountCritical,
+        APPSPAWN_ONLY_EXPER(usingFusePath && ret != 0,
+            SetParameter("startup.appspawn.dlp_errorcode", "controlled_app: sandbox fuse path is not ready"));
+        APPSPAWN_CHECK(ret == 0 || !SandboxCommon::IsMountSuccessful(mntPoint),
 #ifdef APPSPAWN_HISYSEVENT
-        ReportMountFail(params.bundleName.c_str(), arg.srcPath, arg.destPath, errno);
-        ret = APPSPAWN_SANDBOX_MOUNT_FAIL;
+            ReportMountFail(params.bundleName.c_str(), arg.srcPath, arg.destPath, errno);
+            ret = APPSPAWN_SANDBOX_MOUNT_FAIL;
 #endif
-        return ret,
-        "DoAppSandboxMountOnce section %{public}s failed, %{public}s", params.section.c_str(), arg.destPath);
-        return 0;
+            return ret,
+            "DoAppSandboxMountOnce section %{public}s failed, %{public}s", params.section.c_str(), arg.destPath);
+    } else {
+        int ret = SandboxCommon::DoAppSandboxMountOnceNocheck(params.appProperty, &arg);
+        APPSPAWN_ONLY_EXPER(usingFusePath && ret != 0,
+            SetParameter("startup.appspawn.dlp_errorcode", "controlled_app: sandbox fuse path is not ready"));
+        APPSPAWN_CHECK(ret == 0 || !SandboxCommon::IsMountSuccessful(mntPoint), return ret,
+            "DoAppSandboxMountOnceNocheck section %{public}s failed, %{public}s", params.section.c_str(), arg.destPath);
     }
-    int ret = SandboxCommon::DoAppSandboxMountOnceNocheck(params.appProperty, &arg);
-    APPSPAWN_CHECK(ret == 0 || !isMountCritical,
-    return ret,
-    "DoAppSandboxMountOnceNocheck section %{public}s failed, %{public}s", params.section.c_str(), arg.destPath);
     return 0;
 }
 
-
 int32_t SandboxCore::ProcessMountPointCommmon(cJSON *mntPoint, MountPointProcessParams &params, bool enableLogging)
 {
-    if (TryControlledSkip(mntPoint, params)) {
-        return 0;
-    }
+    APPSPAWN_ONLY_EXPER(TryControlledSkip(mntPoint, params), return 0);
+
     std::string paramSrcPath = "";
     bool usingFusePath = false;
     const char *srcPathChr = ResolveMountSrcPath(mntPoint, params, paramSrcPath, usingFusePath);
-    if (srcPathChr == nullptr) {
-        APPSPAWN_CHECK_ONLY_EXPER(!paramSrcPath.empty(), return 0);
-    }
-    if (!usingFusePath) {
-        APPSPAWN_CHECK_ONLY_EXPER(SandboxCommon::IsValidMountConfig(mntPoint, params.appProperty, params.checkFlag),
-                                  return 0);
-    }
+    APPSPAWN_ONLY_EXPER(srcPathChr == nullptr && paramSrcPath.empty(), return 0);
+    APPSPAWN_ONLY_EXPER(!usingFusePath &&
+        !SandboxCommon::IsValidMountConfig(mntPoint, params.appProperty, params.checkFlag), return 0);
     const char *sandboxPathChr = GetStringFromJsonObj(mntPoint, SandboxCommonDef::g_sandBoxPath);
+
     std::string srcPath = srcPathChr == nullptr ? paramSrcPath : srcPathChr;
     std::string sandboxPath(sandboxPathChr != nullptr ? sandboxPathChr : "");
     srcPath = SandboxCommon::ConvertToRealPath(params.appProperty, srcPath);
@@ -674,11 +666,11 @@ int32_t SandboxCore::ProcessMountPointCommmon(cJSON *mntPoint, MountPointProcess
         .mountSharedFlag =
             GetBoolValueFromJsonObj(mntPoint, SandboxCommonDef::g_mountSharedFlag, false) ? MS_SHARED : MS_SLAVE
     };
-    bool isMountCritical = SandboxCommon::IsMountSuccessful(mntPoint) || usingFusePath;
-    int ret = ExecuteMountOnce(arg, params, enableLogging, isMountCritical);
+    int ret = ExecuteMountOnce(mntPoint, arg, params, enableLogging, usingFusePath);
     if (ret != 0) {
         return ret;
     }
+
     SetDecPolicyWithPermission(params.appProperty, mountConfig);
     SetDecReadOnlyPolicyWithPermission(params.appProperty, mountConfig);
     SandboxCommon::SetSandboxPathChmod(mntPoint, params.sandboxRoot);
@@ -709,15 +701,16 @@ int32_t SandboxCore::DoAllMntPointsMount(const AppSpawningCtx *appProperty, cJSO
 
     std::string sandboxRoot = SandboxCommon::GetSandboxRootPath(appProperty, appConfig);
     bool checkFlag = CheckMountFlag(appProperty, bundleName, appConfig);
+    bool isControlledApp = CheckAppMsgFlagsSet(appProperty, APP_FLAGS_CONTROLLED_APP);
     MountPointProcessParams mountPointParams = {
         .appProperty = appProperty,
         .checkFlag = checkFlag,
-        .isControlledApp = false,
+        .isControlledApp = isControlledApp,
         .section = section,
         .sandboxRoot = sandboxRoot,
         .bundleName = bundleName
     };
-    mountPointParams.isControlledApp = CheckAppMsgFlagsSet(appProperty, APP_FLAGS_CONTROLLED_APP);
+
     auto processor = [&mountPointParams](cJSON *mntPoint) {
         return ProcessMountPoint(mntPoint, mountPointParams);
     };
@@ -739,15 +732,16 @@ int32_t SandboxCore::DoAllMntPointsMountNocheck(const AppSpawningCtx *appPropert
 
     std::string sandboxRoot = SandboxCommon::GetSandboxRootPath(appProperty, appConfig);
     bool checkFlag = CheckMountFlag(appProperty, bundleName, appConfig);
+    bool isControlledApp = CheckAppMsgFlagsSet(appProperty, APP_FLAGS_CONTROLLED_APP);
     MountPointProcessParams mountPointParams = {
         .appProperty = appProperty,
         .checkFlag = checkFlag,
-        .isControlledApp = false,
+        .isControlledApp = isControlledApp,
         .section = section,
         .sandboxRoot = sandboxRoot,
         .bundleName = bundleName
     };
-    mountPointParams.isControlledApp = CheckAppMsgFlagsSet(appProperty, APP_FLAGS_CONTROLLED_APP);
+
     auto processor = [&mountPointParams](cJSON *mntPoint) {
         return ProcessMountPointNocheck(mntPoint, mountPointParams);
     };
@@ -821,16 +815,16 @@ int32_t SandboxCore::DoAllCreateOnDaemonMount(const AppSpawningCtx *appProperty,
 
     std::string sandboxRoot = SandboxCommon::GetSandboxRootPath(appProperty, appConfig);
     bool checkFlag = CheckMountFlag(appProperty, bundleName, appConfig);
-
+    bool isControlledApp = CheckAppMsgFlagsSet(appProperty, APP_FLAGS_CONTROLLED_APP);
     MountPointProcessParams mountPointParams = {
         .appProperty = appProperty,
         .checkFlag = checkFlag,
-        .isControlledApp = false,
+        .isControlledApp = isControlledApp,
         .section = section,
         .sandboxRoot = sandboxRoot,
         .bundleName = bundleName
     };
-    mountPointParams.isControlledApp = CheckAppMsgFlagsSet(appProperty, APP_FLAGS_CONTROLLED_APP);
+
     auto processor = [&mountPointParams](cJSON *mntPoint) {
         return ProcessCreateOnDaemonMount(mntPoint, mountPointParams);
     };
@@ -878,8 +872,11 @@ int32_t SandboxCore::DoAllSymlinkPointslink(const AppSpawningCtx *appProperty, c
         return 0;
     }
 
+    bool isControlledApp = CheckAppMsgFlagsSet(appProperty, APP_FLAGS_CONTROLLED_APP);
     std::string sandboxRoot = SandboxCommon::GetSandboxRootPath(appProperty, appConfig);
-    auto processor = [&appProperty, &sandboxRoot](cJSON *item) {
+    auto processor = [&appProperty, &sandboxRoot, &isControlledApp](cJSON *item) {
+        APPSPAWN_ONLY_EXPER(isControlledApp && GetBoolValueFromJsonObj(item,
+            SandboxCommonDef::g_controlledSkip, true), return 0);
         const char *targetNameChr = GetStringFromJsonObj(item, SandboxCommonDef::g_targetName);
         const char *linkNameChr = GetStringFromJsonObj(item, SandboxCommonDef::g_linkName);
         if (targetNameChr == nullptr || linkNameChr == nullptr) {
@@ -890,11 +887,11 @@ int32_t SandboxCore::DoAllSymlinkPointslink(const AppSpawningCtx *appProperty, c
         targetName = SandboxCommon::ConvertToRealPath(appProperty, targetName);
         linkName = sandboxRoot + SandboxCommon::ConvertToRealPath(appProperty, linkName);
         MakeDirRec(linkName.c_str(), SandboxCommonDef::DIR_MODE, 0);
+        APPSPAWN_LOGV("symlink target %{public}s link %{public}s", targetName.c_str(), linkName.c_str());
         int ret = symlink(targetName.c_str(), linkName.c_str());
-        if (ret && errno != EEXIST && SandboxCommon::IsMountSuccessful(item)) {
-            APPSPAWN_LOGE("errno is %{public}d, symlink failed, %{public}s", errno, linkName.c_str());
-            return -1;
-        }
+        APPSPAWN_CHECK_ONLY_LOG(!(ret && (errno != EEXIST)),
+            "errno:%{public}d symlink %{public}s failed", errno, linkName.c_str());
+        APPSPAWN_ONLY_EXPER(ret && (errno != EEXIST) && SandboxCommon::IsMountSuccessful(item), return -1);
         SandboxCommon::SetSandboxPathChmod(item, sandboxRoot);
         return 0;
     };

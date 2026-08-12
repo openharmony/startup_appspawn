@@ -1502,13 +1502,10 @@ static void ProcessSpawnReqMsg(AppSpawnConnection *connection, AppSpawnMsgNode *
 
     // mount el2 dir
     // getWrapBundleNameValue
-    ret = AppSpawnHookExecute(STAGE_PARENT_PRE_FORK, HOOK_STOP_WHEN_ERROR,
-                              GetAppSpawnContent(), &property->client);
-    if (ret != 0) {
-        APPSPAWN_LOGE("PRE_FORK hook failed: %{public}d, aborting spawn", ret);
-        AbortSpawnAndCleanup(ret, connection, message, property);
-        return;
-    }
+    ret = AppSpawnHookExecute(STAGE_PARENT_PRE_FORK, HOOK_STOP_WHEN_ERROR, GetAppSpawnContent(), &property->client);
+    APPSPAWN_CHECK(ret == 0, AbortSpawnAndCleanup(ret, connection, message, property);
+        return, "PRE_FORK hook failed: %{public}d, aborting spawn", ret);
+
     DumpAppSpawnMsg(property->message);
 
     clock_gettime(CLOCK_MONOTONIC, &property->spawnStart);
