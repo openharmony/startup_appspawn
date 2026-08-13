@@ -145,6 +145,7 @@ if (!defined(ohos_lite)) {
       "ace_engine:ace_forward_compatibility",
       "bundle_framework:appexecfwk_base",
       "bundle_framework:appexecfwk_core",
+      "bounds_checking_function:libsec_shared",
       "cJSON:cjson",
       "c_utils:utils",
       "config_policy:configpolicy_util",

@@ -45,6 +45,7 @@ ohos_executable("AppSpawnTest") {
   ]
 
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "cJSON:cjson",
     "c_utils:utils",
     "config_policy:configpolicy_util",
@@ -89,6 +90,7 @@ ohos_moduletest("AppSpawnModuleTest") {
   ]
 
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "cJSON:cjson",
     "c_utils:utils",
     "config_policy:configpolicy_util",

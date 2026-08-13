@@ -36,7 +36,10 @@ ohos_static_library("libappspawn_util") {
   ]
 
   if (!defined(ohos_lite)) {
-    external_deps += [ "c_utils:utils" ]
+    external_deps += [ 
+      "c_utils:utils", 
+      "bounds_checking_function:libsec_shared",
+      ]
   }
 
   public_configs = [ "${appspawn_path}:appspawn_config" ]

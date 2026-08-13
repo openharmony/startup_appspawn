@@ -38,6 +38,7 @@ if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
       "${appspawn_path}/util:libappspawn_util",
     ]
     external_deps = [
+      "bounds_checking_function:libsec_shared",
       "cJSON:cjson",
       "c_utils:utils",
       "hilog:libhilog",
@@ -101,6 +102,7 @@ if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
       "${appspawn_path}/util:libappspawn_util",
     ]
     external_deps = [
+      "bounds_checking_function:libsec_shared",
       "cJSON:cjson",
       "c_utils:utils",
       "config_policy:configpolicy_util",

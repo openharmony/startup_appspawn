@@ -76,6 +76,7 @@ if (!defined(ohos_lite)) {
     external_deps = [
       "ability_runtime:appkit_native",
       "ability_runtime:runtime",
+      "bounds_checking_function:libsec_shared",
       "cJSON:cjson",
       "c_utils:utils",
       "config_policy:configpolicy_util",

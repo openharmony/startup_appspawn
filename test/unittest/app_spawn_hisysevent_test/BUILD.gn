@@ -47,6 +47,7 @@ ohos_unittest("AppSpawn_HisysEvent_ut") {
   ]
 
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "hisysevent:libhisysevent",
     "hilog:libhilog",
     "init:libbegetutil",

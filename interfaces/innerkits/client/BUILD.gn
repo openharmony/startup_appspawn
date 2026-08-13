@@ -64,6 +64,7 @@ if (!defined(ohos_lite)) {
 
     deps = [ "${appspawn_path}/util:libappspawn_util" ]
     external_deps = [
+      "bounds_checking_function:libsec_shared",
       "cJSON:cjson",
       "c_utils:utils",
       "config_policy:configpolicy_util",
