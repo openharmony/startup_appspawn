@@ -130,6 +130,13 @@ ohos_executable("appspawn") {
 
 ohos_shared_library("appspawn_helper") {
   branch_protector_ret = "pac_ret"
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    cfi_no_nvcall = true
+    cfi_vcall_icall_only = true
+    debug = false
+  }
   sources = [ "${appspawn_path}/common/appspawn_server.c" ]
   defines = [ "APPSPAWN_HELPER" ]
   configs = [
