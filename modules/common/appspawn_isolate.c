@@ -33,6 +33,8 @@
 #define ADD_ISOLATE_DIR_CMD _IOWR(HM_DEC_IOCTL_BASE, HM_ADD_ISOLATE_DIR, IsolateDirInfo)
 #define ADD_PATH_MARK_CMD _IOWR(HM_DEC_IOCTL_BASE, HM_ADD_PATH_MARK, MarkPathInfo)
 
+#define SEC_UGC_PATH_TYPE (1 << 0)
+#define SEC_ISOLATE_PATH_TYPE (1 << 1)
 #define SEC_SANDBOX_PATH_TYPE (1 << 3)
 
 #define MARK_PATH_INFO_RESERVED_SIZE 7
@@ -53,12 +55,61 @@ typedef struct {
     const char *suffix;
 } IsolateDirAffix;
 
+#define DEV_DEC "/dev/dec"
+#define CURRENT_USER_PATH "/storage/Users/currentUser"  /* Current user's storage root */
+#define EL1_BASE_PATH "/data/storage/el1/base"  /* Level 1 encryption base path */
+#define EL2_BASE_PATH "/data/storage/el2/base"  /* Level 2 encryption base path */
+
 typedef struct MarkPathInfo {
     char *path;
     uint32_t flags;
     uint32_t recursive;
     uint32_t reserved[MARK_PATH_INFO_RESERVED_SIZE]; // 28-bytes reserved field
 } MarkPathInfo;
+
+/* Specific isolate/ugc paths must be marked before the recursive "/" mark. */
+static MarkPathInfo g_pathMarkInfos[] = {
+    {.path = CURRENT_USER_PATH, .flags = SEC_ISOLATE_PATH_TYPE, .recursive = 0, .reserved = {0} },
+    {.path = EL1_BASE_PATH, .flags = SEC_ISOLATE_PATH_TYPE, .recursive = 0, .reserved = {0} },
+    {.path = EL2_BASE_PATH, .flags = SEC_ISOLATE_PATH_TYPE, .recursive = 0, .reserved = {0} },
+    {.path = CURRENT_USER_PATH, .flags = SEC_UGC_PATH_TYPE, .recursive = 0, .reserved = {0} },
+    {.path = "/", .flags = SEC_SANDBOX_PATH_TYPE, .recursive = MARK_ENABLE_RECURSIVE, .reserved = {0} },
+};
+
+/* Mark the mount entry of the path, the filesystem will use these tags for ugc or isolate purposes. */
+static void SetMark(MarkPathInfo *pathInfos, int32_t pathNum)
+{
+    if (pathInfos == NULL || pathNum <= 0) {
+        APPSPAWN_LOGE("Invalid parameters for SetMark");
+        return;
+    }
+
+    int fd = open(DEV_DEC, O_RDWR);
+    if (fd < 0) {
+        APPSPAWN_LOGE("Failed to open %{public}s: %{public}s, skipping path mark", DEV_DEC, strerror(errno));
+        return;
+    }
+
+    for (int32_t i = 0; i < pathNum; i++) {
+        if (ioctl(fd, ADD_PATH_MARK_CMD, &pathInfos[i]) < 0) {
+            APPSPAWN_LOGE("Set %{public}s 0x%{public}x mark failed errno %{public}d",
+                pathInfos[i].path, pathInfos[i].flags, errno);
+        } else {
+            APPSPAWN_LOGV("Set %{public}s 0x%{public}x mark success", pathInfos[i].path, pathInfos[i].flags);
+        }
+    }
+
+    close(fd);
+}
+
+static int SpawnSetPathMark(AppSpawnMgr *content, AppSpawningCtx *property)
+{
+    if (IsNWebSpawnMode(content) || GetAppSpawnMsgType(property) == MSG_SPAWN_NATIVE_PROCESS) {
+        return APPSPAWN_OK;
+    }
+    SetMark(g_pathMarkInfos, sizeof(g_pathMarkInfos) / sizeof(g_pathMarkInfos[0]));
+    return APPSPAWN_OK;
+}
 
 static const IsolateDirAffix g_dirAffix[ISOLATE_PATH_NUM] = {{"/data/app/el2", "base"},
                                                              {"/storage/media", "local/files/Docs"},
@@ -199,28 +250,9 @@ static int SpawnSetIsolateDir(AppSpawnMgr *content, AppSpawningCtx *property)
     return APPSPAWN_OK;
 }
 
-static int MarkSandboxMounts(AppSpawnMgr *content, AppSpawningCtx *property)
-{
-    if (IsNWebSpawnMode(content) || GetAppSpawnMsgType(property) == MSG_SPAWN_NATIVE_PROCESS) {
-        return 0;
-    }
-
-    const char *decFilename = "/dev/dec";
-    int fd = open(decFilename, O_RDWR);
-    APPSPAWN_CHECK(fd >= 0, return 0, "Open dec file failed errno %{public}d", errno);
-
-    MarkPathInfo pathInfo = { "/", SEC_SANDBOX_PATH_TYPE, MARK_ENABLE_RECURSIVE };
-    if (ioctl(fd, ADD_PATH_MARK_CMD, &pathInfo) < 0) {
-        APPSPAWN_LOGE("Set %{public}s 0x%{public}x mark failed errno %{public}d", pathInfo.path, pathInfo.flags, errno);
-    } else {
-        APPSPAWN_LOGV("Set %{public}s 0x%{public}x mark success", pathInfo.path, pathInfo.flags);
-    }
-    close(fd);
-    return 0;
-}
-
 MODULE_CONSTRUCTOR(void)
 {
     AddAppSpawnHook(STAGE_CHILD_PRE_COLDBOOT, HOOK_PRIO_HIGHEST, SpawnSetIsolateDir);
-    AddAppSpawnHook(STAGE_CHILD_EXECUTE, HOOK_PRIO_SANDBOX_MARK_PATH, MarkSandboxMounts);
+    /* Path marking should be done between sandbox and setuid. */
+    AddAppSpawnHook(STAGE_CHILD_EXECUTE, HOOK_PRIO_SANDBOX_MARK_PATH, SpawnSetPathMark);
 }
