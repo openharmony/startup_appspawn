@@ -157,6 +157,12 @@ void DisallowInternet(void)
 {
 }
 
+int RestoreconRecurse(const char *path)
+{
+    (void)path;
+    return 0;
+}
+
 // Mock kill to avoid killing real processes
 int __wrap_kill(pid_t pid, int sig)
 {

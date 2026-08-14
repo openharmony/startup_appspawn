@@ -27,6 +27,9 @@ from scripts.util import build_utils  # noqa: E402
 
 APP_SANDBOX_DEFAULT = '''
 {
+    "create-only-on-daemon" : [{
+        "path" : []
+    }],
     "common" : [{
         "top-sandbox-switch": "ON",
         "app-base" : [{
@@ -175,6 +178,14 @@ def _merge_scope_permission(origin, new):
             _merge_scope_app(origin[k], v)
 
 
+def _merge_scope_create_only(origin, new):
+    for k, v in new.items():
+        if k not in origin:
+            origin[k] = v
+        else:
+            origin[k].extend(v)
+
+
 def _merge_scope_common(origin, new):
     # 处理 top-sandbox-switch
     for name in ["top-sandbox-switch"]:
@@ -256,6 +267,11 @@ def fix_sandbox_config_file(options):
     origin_json = json.loads(APP_SANDBOX_DEFAULT)
 
     for data in data_list:
+        # 处理 create-only-on-daemon
+        createOnly = data.get("create-only-on-daemon")
+        if createOnly is not None and len(createOnly) > 0:
+            _merge_scope_create_only(origin_json.get("create-only-on-daemon")[0], createOnly[0])
+
         # 处理common
         common = data.get("common")
         if common is not None and len(common) > 0:

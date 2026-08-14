@@ -381,12 +381,10 @@
                 }
             ]}, {
             "flags": "CUSTOM_SANDBOX_HAP",
-            "mount-paths": [{
-                    "src-path": "/tmp",
-                    "sandbox-path": "/tmp",
-                    "sandbox-flags": [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }
+            "src-path-info": {
+                "gid" : 1076
+            },
+            "mount-paths": [
             ]}, {
             "flags": "FILE_CROSS_APP",
             "mount-paths": [{

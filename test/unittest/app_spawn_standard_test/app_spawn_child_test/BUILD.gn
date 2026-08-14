@@ -45,6 +45,7 @@ if (!defined(ohos_lite)) {
       "${appspawn_innerkits_path}/client",
       "${appspawn_innerkits_path}/permission",
       "${appspawn_path}/test/unittest/app_spawn_standard_test/spawning_test_helper/",
+      "${appspawn_path}/test/mock",
     ]
     include_dirs += appspawn_sandbox_inc
 
@@ -65,6 +66,7 @@ if (!defined(ohos_lite)) {
       "${appspawn_path}/standard/appspawn_service.c",
       "${appspawn_path}/util/src/appspawn_utils.c",
       "${appspawn_path}/util/src/appspawndf_utils.cpp",
+      "${appspawn_path}/test/mock/app_system_stub.c",
     ]
     sources += appspawn_sandbox_src
 

@@ -49,6 +49,8 @@ public:
     static bool NeedNetworkIsolated(AppSpawningCtx *property);
     static int32_t DoAllCreateOnDaemonMount(const AppSpawningCtx *appProperty, cJSON *appConfig,
         const std::string &section = "create-on-daemon");
+    static int32_t DoAllCreateOnlyOnDaemon(const AppSpawningCtx *appProperty, cJSON *appConfig,
+        const std::string &section = "create-only-on-daemon");
 
     // 处理应用沙箱挂载
     static int32_t SetCommonAppSandboxProperty(const AppSpawningCtx *appProperty, std::string &sandboxPackagePath);
@@ -123,6 +125,7 @@ private:
     // 沙箱回调函数
     static int32_t ProcessMountPoint(cJSON *mntPoint, MountPointProcessParams &params);
     static int32_t ProcessCreateOnDaemonMount(cJSON *mntPoint, MountPointProcessParams &params);
+    static int32_t ProcessCreateOnlyOnDaemon(cJSON *pathItem, MountPointProcessParams &params);
     static int32_t ProcessMountPointNocheck(cJSON *mntPoint, MountPointProcessParams &params);
     static int32_t ProcessMountPointCommmon(cJSON *mntPoint, MountPointProcessParams &params, bool eableLogging);
 
@@ -139,6 +142,7 @@ private:
                                          const AppSpawningCtx *appProperty);
     static int32_t MountNonShellPreInstallHap(const AppSpawningCtx *appProperty, cJSON *item);
     static int32_t MountShellPreInstallHap(const AppSpawningCtx *appProperty, cJSON *item);
+    static int32_t HandleCustomSandboxHap(const AppSpawningCtx *appProperty, cJSON *item);
 };
 
 } // namespace AppSpawn
