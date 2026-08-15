@@ -43,6 +43,7 @@ if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
       "hilog:libhilog",
       "init:libbegetutil",
       "access_token:libtokenid_sdk",
+      "selinux_adapter:librestorecon",
     ]
     if (build_selinux) {
       defines += [ "WITH_SELINUX" ]
@@ -107,6 +108,7 @@ if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
       "hilog:libhilog",
       "init:libbegetutil",
       "access_token:libtokenid_sdk",
+      "selinux_adapter:librestorecon",
     ]
     if (!defined(ohos_lite)) {
       external_deps += [ "hitrace:hitrace_meter" ]

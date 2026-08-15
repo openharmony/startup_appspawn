@@ -3571,4 +3571,199 @@ HWTEST_F(AppSpawnSandboxTest, Sandbox_Root_Path_Folder_Create_Test_02, TestSize.
     EXPECT_EQ(ret, 0);
     DeleteAppSpawningCtx(spawningCtx);
 }
+
+/**
+ * @tc.name: Sandbox_CreateOnlyOnDaemon_Test_01
+ * @tc.desc: Test DoAllCreateOnlyOnDaemon with nullptr, empty path, and path without src-path-info.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AppSpawnSandboxTest, Sandbox_CreateOnlyOnDaemon_Test_01, TestSize.Level0)
+{
+    g_testHelper.SetTestUid(1000);  // 1000 test
+    g_testHelper.SetTestGid(1000);  // 1000 test
+    g_testHelper.SetProcessName("com.example.myapplication");
+    g_testHelper.SetTestApl("system_basic");
+    AppSpawningCtx *appProperty = GetTestAppProperty();
+
+    // nullptr config
+    int32_t ret = AppSpawn::SandboxCore::DoAllCreateOnlyOnDaemon(appProperty, nullptr);
+    EXPECT_EQ(ret, 0);
+
+    // empty path array
+    char config1[] = R"({
+        "path" : ""
+    })";
+    cJSON *j_config1 = cJSON_Parse(config1);
+    ASSERT_NE(j_config1, nullptr);
+    ret = AppSpawn::SandboxCore::DoAllCreateOnlyOnDaemon(appProperty, j_config1);
+    EXPECT_EQ(ret, 0);
+
+    // path without src-path-info (APPSPAWN_CHECK fails, return 0)
+    char config2[] = R"({
+        "path" : [{
+            "src-path" : "/data/service/el1/<currentUserId>/fhsmgr/tmp"
+        }]
+    })";
+    cJSON *j_config2 = cJSON_Parse(config2);
+    ASSERT_NE(j_config2, nullptr);
+    ret = AppSpawn::SandboxCore::DoAllCreateOnlyOnDaemon(appProperty, j_config2);
+    EXPECT_EQ(ret, 0);
+
+    cJSON_Delete(j_config1);
+    cJSON_Delete(j_config2);
+    DeleteAppSpawningCtx(appProperty);
+}
+
+/**
+ * @tc.name: Sandbox_CreateOnlyOnDaemon_Test_02
+ * @tc.desc: Test DoAllCreateOnlyOnDaemon with valid path + src-path-info (uid/gid/mode as numbers).
+ * @tc.type: FUNC
+ */
+HWTEST_F(AppSpawnSandboxTest, Sandbox_CreateOnlyOnDaemon_Test_02, TestSize.Level0)
+{
+    g_testHelper.SetTestUid(1000);  // 1000 test
+    g_testHelper.SetTestGid(1000);  // 1000 test
+    g_testHelper.SetProcessName("com.example.myapplication");
+    g_testHelper.SetTestApl("system_basic");
+    AppSpawningCtx *appProperty = GetTestAppProperty();
+
+    char config1[] = R"({
+        "path" : [{
+            "src-path" : "/data/service/el1/<currentUserId>/fhsmgr/tmp",
+            "src-path-info" : {
+                "uid" : 0,
+                "gid" : 0,
+                "mode" : 1023
+            }
+        }]
+    })";
+    cJSON *j_config1 = cJSON_Parse(config1);
+    ASSERT_NE(j_config1, nullptr);
+
+    int32_t ret = AppSpawn::SandboxCore::DoAllCreateOnlyOnDaemon(appProperty, j_config1);
+    EXPECT_EQ(ret, 0);
+
+    cJSON_Delete(j_config1);
+    DeleteAppSpawningCtx(appProperty);
+}
+
+/**
+ * @tc.name: Sandbox_CreateOnlyOnDaemon_Test_03
+ * @tc.desc: Test DoAllCreateOnlyOnDaemon with src-path-info as strings (invalid type, should use defaults).
+ * @tc.type: FUNC
+ */
+HWTEST_F(AppSpawnSandboxTest, Sandbox_CreateOnlyOnDaemon_Test_03, TestSize.Level0)
+{
+    g_testHelper.SetTestUid(1000);  // 1000 test
+    g_testHelper.SetTestGid(1000);  // 1000 test
+    g_testHelper.SetProcessName("com.example.myapplication");
+    g_testHelper.SetTestApl("system_basic");
+    AppSpawningCtx *appProperty = GetTestAppProperty();
+
+    char config1[] = R"({
+        "path" : [{
+            "src-path" : "/data/service/el1/<currentUserId>/fhsmgr/tmp",
+            "src-path-info" : {
+                "uid" : "0",
+                "gid" : "0",
+                "mode" : "1023"
+            }
+        }]
+    })";
+    cJSON *j_config1 = cJSON_Parse(config1);
+    ASSERT_NE(j_config1, nullptr);
+
+    int32_t ret = AppSpawn::SandboxCore::DoAllCreateOnlyOnDaemon(appProperty, j_config1);
+    EXPECT_EQ(ret, 0);
+
+    cJSON_Delete(j_config1);
+    DeleteAppSpawningCtx(appProperty);
+}
+
+/**
+ * @tc.name: Sandbox_CreateOnlyOnDaemon_Test_04
+ * @tc.desc: Test DoAllCreateOnlyOnDaemon with restorecon=true.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AppSpawnSandboxTest, Sandbox_CreateOnlyOnDaemon_Test_04, TestSize.Level0)
+{
+    g_testHelper.SetTestUid(1000);  // 1000 test
+    g_testHelper.SetTestGid(1000);  // 1000 test
+    g_testHelper.SetProcessName("com.example.myapplication");
+    g_testHelper.SetTestApl("system_basic");
+    AppSpawningCtx *appProperty = GetTestAppProperty();
+
+    char config1[] = R"({
+        "path" : [{
+            "src-path" : "/data/service/el1/<currentUserId>/fhsmgr/tmp",
+            "src-path-info" : {
+                "uid" : 0,
+                "gid" : 0,
+                "mode" : 1023,
+                "restorecon" : true
+            }
+        }]
+    })";
+    cJSON *j_config1 = cJSON_Parse(config1);
+    ASSERT_NE(j_config1, nullptr);
+
+    int32_t ret = AppSpawn::SandboxCore::DoAllCreateOnlyOnDaemon(appProperty, j_config1);
+    EXPECT_EQ(ret, 0);
+
+    cJSON_Delete(j_config1);
+    DeleteAppSpawningCtx(appProperty);
+}
+
+/**
+ * @tc.name: Sandbox_CreateOnlyOnDaemon_Test_05
+ * @tc.desc: Test DoSandboxFileCommonBind with create-only-on-daemon before common, plus bind mount in app-base.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AppSpawnSandboxTest, Sandbox_CreateOnlyOnDaemon_Test_5, TestSize.Level0)
+{
+    g_testHelper.SetTestUid(1000);  // 1000 test
+    g_testHelper.SetTestGid(1000);  // 1000 test
+    g_testHelper.SetProcessName("com.example.myapplication");
+    g_testHelper.SetTestApl("system_basic");
+    AppSpawningCtx *appProperty = GetTestAppProperty();
+
+    char config1[] = R"({
+        "create-only-on-daemon" : [{
+            "path" : [{
+                "src-path" : "/data/service/el1/<currentUserId>/fhsmgr/tmp",
+                "src-path-info" : {
+                    "uid" : 0,
+                    "gid" : 0,
+                    "mode" : 1023,
+                    "restorecon" : true
+                }
+            }]
+        }],
+        "common" : [{
+            "app-base" : [{
+                "sandbox-root" : "/mnt/sandbox/<currentUserId>/<PackageName>",
+                "mount-paths" : [{
+                    "src-path" : "/data/service/el1/<currentUserId>/fhsmgr/tmp",
+                    "sandbox-path" : "/tmp",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }]
+            }],
+            "app-resources" : [{
+                "sandbox-root" : "/mnt/sandbox/<currentUserId>/<PackageName>"
+            }],
+            "create-on-daemon" : [{
+                "sandbox-root" : "/mnt/sandbox/<currentUserId>/<PackageName>"
+            }]
+        }]
+    })";
+    cJSON *j_config1 = cJSON_Parse(config1);
+    ASSERT_NE(j_config1, nullptr);
+
+    int32_t ret = AppSpawn::SandboxCore::DoSandboxFileCommonBind(appProperty, j_config1);
+    EXPECT_EQ(ret, 0);
+
+    cJSON_Delete(j_config1);
+    DeleteAppSpawningCtx(appProperty);
+}
 }  // namespace OHOS

@@ -349,6 +349,12 @@ int KillStub(pid_t pid, int sig)
     return 0;
 }
 
+int RestoreconRecurse(const char *path)
+{
+    UNUSED(path);
+    return 0;
+}
+
 #ifdef __cplusplus
 }
 #endif

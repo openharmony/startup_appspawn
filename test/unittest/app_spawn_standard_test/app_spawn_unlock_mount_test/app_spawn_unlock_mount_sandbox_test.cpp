@@ -253,6 +253,12 @@ void DisallowInternet(void)
     // Mock implementation - do nothing
 }
 
+int RestoreconRecurse(const char *path)
+{
+    (void)path;
+    return 0;
+}
+
 }  // extern "C"
 
 // Redefine system calls to use stubs

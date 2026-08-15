@@ -67,6 +67,12 @@ StubNode *GetStubNode(int type)
 
 int AppSpawnColdStartApp(struct AppSpawnContent *content, AppSpawnClient *client);
 
+int RestoreconRecurse(const char *path)
+{
+    (void)path;
+    return 0;
+}
+
 #ifdef __cplusplus
 }
 #endif

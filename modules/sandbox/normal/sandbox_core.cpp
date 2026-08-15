@@ -32,6 +32,7 @@
 #endif
 #include "parameter.h"
 #include "tokenid_kit.h"
+#include "policycoreutils.h"
 #ifdef APPSPAWN_HISYSEVENT
 #include "hisysevent_adapter.h"
 #endif
@@ -363,6 +364,12 @@ cJSON *SandboxCore::GetFirstSubConfig(cJSON *parent, const char *key)
 
 int32_t SandboxCore::DoSandboxFileCommonBind(const AppSpawningCtx *appProperty, cJSON *wholeConfig)
 {
+    cJSON *createOnlyConfig = GetFirstCommonConfig(wholeConfig, SandboxCommonDef::g_createOnlyOnDaemon);
+    if (createOnlyConfig) {
+        int ret = DoAllCreateOnlyOnDaemon(appProperty, createOnlyConfig);
+        APPSPAWN_ONLY_EXPER(ret, return ret);
+    }
+
     cJSON *firstCommon = GetFirstCommonConfig(wholeConfig, SandboxCommonDef::g_commonPrefix);
     if (!firstCommon) {
         return 0;
@@ -832,6 +839,111 @@ int32_t SandboxCore::DoAllCreateOnDaemonMount(const AppSpawningCtx *appProperty,
     return SandboxCommon::HandleArrayForeach(mountPoints, processor);
 }
 
+int32_t SandboxCore::DoAllCreateOnlyOnDaemon(const AppSpawningCtx *appProperty, cJSON *appConfig,
+                                             const std::string &section)
+{
+    const char *bundleNameChar = GetBundleName(appProperty);
+    std::string bundleName = (bundleNameChar != nullptr) ? std::string(bundleNameChar) : "";
+    cJSON *paths = cJSON_GetObjectItemCaseSensitive(appConfig, SandboxCommonDef::g_createOnlyPath);
+    if (paths == nullptr || !cJSON_IsArray(paths)) {
+        APPSPAWN_LOGE("DoAllCreateOnlyOnDaemon: path config is not found in %{public}s, app name is %{public}s",
+                      section.c_str(), bundleName.c_str());
+        return 0;
+    }
+    std::string sandboxRoot = SandboxCommon::GetSandboxRootPath(appProperty, appConfig);
+    bool checkFlag = CheckMountFlag(appProperty, bundleName, appConfig);
+    MountPointProcessParams mountPointParams = {
+        .appProperty = appProperty,
+        .checkFlag = checkFlag,
+        .section = section,
+        .sandboxRoot = sandboxRoot,
+        .bundleName = bundleName
+    };
+    auto processor = [&mountPointParams](cJSON *pathItem) {
+        return ProcessCreateOnlyOnDaemon(pathItem, mountPointParams);
+    };
+    int ret = SandboxCommon::HandleArrayForeach(paths, processor);
+    return ret;
+}
+
+// Parse src-path-info (uid/gid/mode/restorecon) from a JSON mount/path item.
+// Returns false if src-path-info or any required field is missing; caller should return 0.
+static bool ParseSrcPathInfo(cJSON *item, uid_t &uid, gid_t &gid, mode_t &mode, bool &restorecon)
+{
+    cJSON *pathInfo = cJSON_GetObjectItemCaseSensitive(item, SandboxCommonDef::g_srcPathInfo);
+    if (pathInfo == nullptr) {
+        return false;
+    }
+    cJSON *field = cJSON_GetObjectItemCaseSensitive(pathInfo, SandboxCommonDef::g_srcPathUid);
+    if (field == nullptr) {
+        return false;
+    }
+    if (cJSON_IsNumber(field)) {
+        uid = static_cast<uid_t>(cJSON_GetNumberValue(field));
+    }
+    field = cJSON_GetObjectItemCaseSensitive(pathInfo, SandboxCommonDef::g_srcPathGid);
+    if (field == nullptr) {
+        return false;
+    }
+    if (cJSON_IsNumber(field)) {
+        gid = static_cast<gid_t>(cJSON_GetNumberValue(field));
+    }
+    field = cJSON_GetObjectItemCaseSensitive(pathInfo, SandboxCommonDef::g_srcPathMode);
+    if (field == nullptr) {
+        return false;
+    }
+    if (cJSON_IsNumber(field)) {
+        mode = static_cast<mode_t>(cJSON_GetNumberValue(field));
+    }
+    field = cJSON_GetObjectItemCaseSensitive(pathInfo, SandboxCommonDef::g_restorecon);
+    if (cJSON_IsBool(field)) {
+        restorecon = cJSON_IsTrue(field);
+    }
+    return true;
+}
+
+int32_t SandboxCore::ProcessCreateOnlyOnDaemon(cJSON *pathItem, MountPointProcessParams &params)
+{
+    const char *srcPathChr = GetStringFromJsonObj(pathItem, SandboxCommonDef::g_srcPath);
+    if (srcPathChr == nullptr) {
+        APPSPAWN_LOGE("ProcessCreateOnlyOnDaemon: create-only-on-daemon: src-path is not found");
+        return 0;
+    }
+    std::string srcPath(srcPathChr);
+    srcPath = SandboxCommon::ConvertToRealPath(params.appProperty, srcPath);
+
+    uid_t uid = 0;
+    gid_t gid = 0;
+    mode_t mode = SandboxCommonDef::FILE_MODE;
+    bool restorecon = false;
+    APPSPAWN_CHECK(ParseSrcPathInfo(pathItem, uid, gid, mode, restorecon), return 0,
+        "ProcessCreateOnlyOnDaemon: Invalid json object");
+
+    struct stat statBuff;
+    int ret = stat(srcPath.c_str(), &statBuff);
+    if (ret < 0 || statBuff.st_uid != uid || statBuff.st_gid != gid ||
+        (statBuff.st_mode & SandboxCommonDef::ALL_FILE_MODE_BITS) != mode) {
+        ret = SandboxCommon::CreateDirRecursive(srcPath, SandboxCommonDef::FILE_MODE);
+        APPSPAWN_CHECK(ret == 0, return 0, "ProcessCreateOnlyOnDaemon: mkdir failed, errno %{public}d", errno);
+        if (chmod(srcPath.c_str(), mode) < 0 || chown(srcPath.c_str(), uid, gid) < 0) {
+            APPSPAWN_LOGE("ProcessCreateOnlyOnDaemon: chmod or chown failed for %{public}s, errno %{public}d",
+                          srcPath.c_str(), errno);
+            if (stat(srcPath.c_str(), &statBuff) < 0) {
+                APPSPAWN_LOGE("ProcessCreateOnlyOnDaemon: stat srcPath failed, path: %{public}s", srcPath.c_str());
+            } else if (statBuff.st_uid != uid || statBuff.st_gid != gid ||
+                (statBuff.st_mode & SandboxCommonDef::ALL_FILE_MODE_BITS) != mode) {
+                APPSPAWN_LOGE("ProcessCreateOnlyOnDaemon: chmod or chown mismatch, expected uid=%{public}d, \
+                    gid=%{public}d, mode=%{public}d; actual uid=%{public}d, gid=%{public}d, mode=%{public}d",
+                    uid, gid, mode, statBuff.st_uid, statBuff.st_gid, statBuff.st_mode);
+            }
+        }
+    }
+    if (restorecon && RestoreconRecurse(srcPath.c_str())) {
+        APPSPAWN_LOGW("ProcessCreateOnlyOnDaemon: restorecon failed for %{public}s", srcPath.c_str());
+    }
+    return 0;
+}
+
 int32_t SandboxCore::DoAddGid(AppSpawningCtx *appProperty, cJSON *appConfig,
                               const char *permissionName, const std::string &section)
 {
@@ -978,6 +1090,37 @@ int32_t SandboxCore::MountShellPreInstallHap(const AppSpawningCtx *appProperty, 
     return 0;
 }
 
+int32_t SandboxCore::HandleCustomSandboxHap(const AppSpawningCtx *appProperty, cJSON *item)
+{
+    if (CheckAppMsgFlagsSet(appProperty, APP_FLAGS_CUSTOM_SANDBOX) == 0) {
+        return 0;
+    }
+    AppSpawnMsgDacInfo *dacInfo = reinterpret_cast<AppSpawnMsgDacInfo *>(
+        GetAppProperty(appProperty, TLV_DAC_INFO));
+    APPSPAWN_CHECK(dacInfo != nullptr, return 0,
+        "HandleCustomSandboxHap: dacInfo is null, %{public}s", GetBundleName(appProperty));
+    cJSON *pathInfo = cJSON_GetObjectItemCaseSensitive(item, SandboxCommonDef::g_srcPathInfo);
+    APPSPAWN_CHECK(pathInfo != nullptr, return 0,
+        "HandleCustomSandboxHap: Invalid json object, %{public}s", GetBundleName(appProperty));
+    cJSON *gidItem = cJSON_GetObjectItemCaseSensitive(pathInfo, SandboxCommonDef::g_srcPathGid);
+    APPSPAWN_CHECK(gidItem != nullptr, return 0,
+        "HandleCustomSandboxHap: Invalid json object, %{public}s", GetBundleName(appProperty));
+    if (!cJSON_IsNumber(gidItem)) {
+        APPSPAWN_LOGW("HandleCustomSandboxHap: gid is not a number, skip, bundleName=%{public}s",
+            GetBundleName(appProperty));
+        return 0;
+    }
+    if (dacInfo->gidCount >= APP_MAX_GIDS) {
+        APPSPAWN_LOGW("HandleCustomSandboxHap: gidTable full (gidCount=%{public}u), gid dropped, \
+            tmp mount skipped, bundleName=%{public}s",
+            dacInfo->gidCount, GetBundleName(appProperty));
+        return 0;
+    }
+    dacInfo->gidTable[dacInfo->gidCount++] = static_cast<uint32_t>(cJSON_GetNumberValue(gidItem));
+    DoAllSymlinkPointslink(appProperty, item);
+    return DoAllMntPointsMount(appProperty, item, nullptr, SandboxCommonDef::g_flagsPoint);
+}
+
 int32_t SandboxCore::HandleFlagsPoint(const AppSpawningCtx *appProperty, cJSON *appConfig)
 {
     cJSON *flagsPoints = cJSON_GetObjectItemCaseSensitive(appConfig, SandboxCommonDef::g_flagsPoint);
@@ -995,6 +1138,7 @@ int32_t SandboxCore::HandleFlagsPoint(const AppSpawningCtx *appProperty, cJSON *
 
         const std::string preInstallFlag = "PREINSTALLED_HAP";
         const std::string preInstallShellFlag = "PREINSTALLED_SHELL_HAP";
+        const std::string customSandboxFlag = "CUSTOM_SANDBOX_HAP";
 
         if (flagsStr == preInstallFlag) {
             return MountNonShellPreInstallHap(appProperty, item);
@@ -1002,6 +1146,10 @@ int32_t SandboxCore::HandleFlagsPoint(const AppSpawningCtx *appProperty, cJSON *
 
         if (flagsStr == preInstallShellFlag) {
             return MountShellPreInstallHap(appProperty, item);
+        }
+
+        if (flagsStr == customSandboxFlag) {
+            return HandleCustomSandboxHap(appProperty, item);
         }
 
         uint32_t flag = SandboxCommon::ConvertFlagStr(flagsStr);
