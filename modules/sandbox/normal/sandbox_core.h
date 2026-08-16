@@ -142,7 +142,6 @@ private:
                                          const AppSpawningCtx *appProperty);
     static int32_t MountNonShellPreInstallHap(const AppSpawningCtx *appProperty, cJSON *item);
     static int32_t MountShellPreInstallHap(const AppSpawningCtx *appProperty, cJSON *item);
-    static int32_t HandleCustomSandboxHap(const AppSpawningCtx *appProperty, cJSON *item);
 };
 
 } // namespace AppSpawn

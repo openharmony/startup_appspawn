@@ -1090,37 +1090,6 @@ int32_t SandboxCore::MountShellPreInstallHap(const AppSpawningCtx *appProperty, 
     return 0;
 }
 
-int32_t SandboxCore::HandleCustomSandboxHap(const AppSpawningCtx *appProperty, cJSON *item)
-{
-    if (CheckAppMsgFlagsSet(appProperty, APP_FLAGS_CUSTOM_SANDBOX) == 0) {
-        return 0;
-    }
-    AppSpawnMsgDacInfo *dacInfo = reinterpret_cast<AppSpawnMsgDacInfo *>(
-        GetAppProperty(appProperty, TLV_DAC_INFO));
-    APPSPAWN_CHECK(dacInfo != nullptr, return 0,
-        "HandleCustomSandboxHap: dacInfo is null, %{public}s", GetBundleName(appProperty));
-    cJSON *pathInfo = cJSON_GetObjectItemCaseSensitive(item, SandboxCommonDef::g_srcPathInfo);
-    APPSPAWN_CHECK(pathInfo != nullptr, return 0,
-        "HandleCustomSandboxHap: Invalid json object, %{public}s", GetBundleName(appProperty));
-    cJSON *gidItem = cJSON_GetObjectItemCaseSensitive(pathInfo, SandboxCommonDef::g_srcPathGid);
-    APPSPAWN_CHECK(gidItem != nullptr, return 0,
-        "HandleCustomSandboxHap: Invalid json object, %{public}s", GetBundleName(appProperty));
-    if (!cJSON_IsNumber(gidItem)) {
-        APPSPAWN_LOGW("HandleCustomSandboxHap: gid is not a number, skip, bundleName=%{public}s",
-            GetBundleName(appProperty));
-        return 0;
-    }
-    if (dacInfo->gidCount >= APP_MAX_GIDS) {
-        APPSPAWN_LOGW("HandleCustomSandboxHap: gidTable full (gidCount=%{public}u), gid dropped, \
-            tmp mount skipped, bundleName=%{public}s",
-            dacInfo->gidCount, GetBundleName(appProperty));
-        return 0;
-    }
-    dacInfo->gidTable[dacInfo->gidCount++] = static_cast<uint32_t>(cJSON_GetNumberValue(gidItem));
-    DoAllSymlinkPointslink(appProperty, item);
-    return DoAllMntPointsMount(appProperty, item, nullptr, SandboxCommonDef::g_flagsPoint);
-}
-
 int32_t SandboxCore::HandleFlagsPoint(const AppSpawningCtx *appProperty, cJSON *appConfig)
 {
     cJSON *flagsPoints = cJSON_GetObjectItemCaseSensitive(appConfig, SandboxCommonDef::g_flagsPoint);
@@ -1138,8 +1107,6 @@ int32_t SandboxCore::HandleFlagsPoint(const AppSpawningCtx *appProperty, cJSON *
 
         const std::string preInstallFlag = "PREINSTALLED_HAP";
         const std::string preInstallShellFlag = "PREINSTALLED_SHELL_HAP";
-        const std::string customSandboxFlag = "CUSTOM_SANDBOX_HAP";
-
         if (flagsStr == preInstallFlag) {
             return MountNonShellPreInstallHap(appProperty, item);
         }
@@ -1148,15 +1115,12 @@ int32_t SandboxCore::HandleFlagsPoint(const AppSpawningCtx *appProperty, cJSON *
             return MountShellPreInstallHap(appProperty, item);
         }
 
-        if (flagsStr == customSandboxFlag) {
-            return HandleCustomSandboxHap(appProperty, item);
-        }
-
         uint32_t flag = SandboxCommon::ConvertFlagStr(flagsStr);
         APPSPAWN_LOGV("Convert flag %{public}u from %{public}s", flag, flagsStr.c_str());
         if (CheckAppMsgFlagsSet(appProperty, flag) == 0) {
             return 0;
         }
+        DoAddGid((AppSpawningCtx *)appProperty, item, "", SandboxCommonDef::g_flagsPoint);
         DoAllSymlinkPointslink(appProperty, item);
         return DoAllMntPointsMount(appProperty, item, nullptr, SandboxCommonDef::g_flagsPoint);
     };
