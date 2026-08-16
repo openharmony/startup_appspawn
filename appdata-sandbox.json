@@ -381,9 +381,7 @@
                 }
             ]}, {
             "flags": "CUSTOM_SANDBOX_HAP",
-            "src-path-info": {
-                "gid" : 1076
-            },
+            "gids": [1076],
             "mount-paths": [
             ]}, {
             "flags": "FILE_CROSS_APP",
