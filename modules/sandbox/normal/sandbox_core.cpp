@@ -925,6 +925,9 @@ int32_t SandboxCore::ProcessCreateOnlyOnDaemon(cJSON *pathItem, MountPointProces
         (statBuff.st_mode & SandboxCommonDef::ALL_FILE_MODE_BITS) != mode) {
         ret = SandboxCommon::CreateDirRecursive(srcPath, SandboxCommonDef::FILE_MODE);
         APPSPAWN_CHECK(ret == 0, return 0, "ProcessCreateOnlyOnDaemon: mkdir failed, errno %{public}d", errno);
+        if (restorecon && RestoreconRecurse(srcPath.c_str())) {
+            APPSPAWN_LOGW("ProcessCreateOnlyOnDaemon: restorecon failed for %{public}s", srcPath.c_str());
+        }
         if (chmod(srcPath.c_str(), mode) < 0 || chown(srcPath.c_str(), uid, gid) < 0) {
             APPSPAWN_LOGE("ProcessCreateOnlyOnDaemon: chmod or chown failed for %{public}s, errno %{public}d",
                           srcPath.c_str(), errno);
@@ -937,9 +940,6 @@ int32_t SandboxCore::ProcessCreateOnlyOnDaemon(cJSON *pathItem, MountPointProces
                     uid, gid, mode, statBuff.st_uid, statBuff.st_gid, statBuff.st_mode);
             }
         }
-    }
-    if (restorecon && RestoreconRecurse(srcPath.c_str())) {
-        APPSPAWN_LOGW("ProcessCreateOnlyOnDaemon: restorecon failed for %{public}s", srcPath.c_str());
     }
     return 0;
 }
