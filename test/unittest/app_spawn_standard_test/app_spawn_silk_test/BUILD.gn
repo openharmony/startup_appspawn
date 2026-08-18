@@ -59,6 +59,7 @@ if (!defined(ohos_lite)) {
     external_deps = [
     "access_token:libtokenid_sdk",
     "access_token:libtokensetproc_shared",
+    "bounds_checking_function:libsec_shared",
     "cJSON:cjson",
     "c_utils:utils",
     "config_policy:configpolicy_util",

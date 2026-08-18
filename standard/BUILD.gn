@@ -80,6 +80,7 @@ ohos_executable("appspawn") {
   }
 
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "cJSON:cjson",
     "c_utils:utils",
     "config_policy:configpolicy_util",
@@ -212,6 +213,7 @@ ohos_executable("cjappspawn") {
   }
 
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "cJSON:cjson",
     "c_utils:utils",
     "config_policy:configpolicy_util",
@@ -284,6 +286,7 @@ ohos_executable("nativespawn") {
   }
 
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "cJSON:cjson",
     "c_utils:utils",
     "config_policy:configpolicy_util",
@@ -377,6 +380,7 @@ ohos_executable("nwebspawn") {
   }
 
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "cJSON:cjson",
     "c_utils:utils",
     "config_policy:configpolicy_util",
@@ -466,6 +470,7 @@ ohos_executable("hybridspawn") {
   }
 
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "cJSON:cjson",
     "c_utils:utils",
     "config_policy:configpolicy_util",

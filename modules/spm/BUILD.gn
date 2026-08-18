@@ -55,9 +55,9 @@ ohos_shared_library("libappspawn_spm") {
   ]
 
   external_deps = [
-    "bounds_checking_function:libsec_shared",
     "access_token:libtoken_setproc",
     "access_token:libpermsetproc_shared",
+    "bounds_checking_function:libsec_shared",
     "hilog:libhilog",
     "c_utils:utils",
     "init:libbegetutil",

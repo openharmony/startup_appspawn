@@ -53,6 +53,7 @@ ohos_shared_library("appspawn_ace") {
     "ability_runtime:runtime",
     "access_token:libtokensetproc_shared",
     "ace_engine:ace_forward_compatibility",
+    "bounds_checking_function:libsec_shared",
     "cJSON:cjson",
     "c_utils:utils",
     "common_event_service:cesfwk_innerkits",

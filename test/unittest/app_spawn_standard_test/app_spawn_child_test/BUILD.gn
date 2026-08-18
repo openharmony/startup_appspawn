@@ -80,6 +80,7 @@ if (!defined(ohos_lite)) {
     configs = [ "${appspawn_path}:appspawn_config" ]
     external_deps = [
       "access_token:libtokenid_sdk",
+      "bounds_checking_function:libsec_shared",
       "cJSON:cjson",
       "c_utils:utils",
       "config_policy:configpolicy_util",
