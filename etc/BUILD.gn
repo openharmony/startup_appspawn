@@ -15,61 +15,28 @@ import("//base/startup/appspawn/appspawn.gni")
 import("//base/startup/appspawn/etc/sandbox/appdata_sandbox_fixer.gni")
 import("//build/ohos.gni")
 
-if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
-  ohos_prebuilt_etc("appdata-sandbox-render.json") {
-    source = "../appdata-sandbox-render.json"
-    part_name = "${part_name}"
-    module_install_dir = "etc/sandbox"
+ohos_prebuilt_appdata_sandbox("appdata-sandbox.json") {
+  source = "../appdata-sandbox.json"
+  patterns = []
+  extra_sandbox_cfgs = []
+  if (target_cpu == "arm64" || target_cpu == "x86_64") {
+    extra_sandbox_cfgs += [ "../appdata-sandbox64.json" ]
   }
+  if (is_asan || asan_detector) {
+    extra_sandbox_cfgs += [ "../appdata-sandbox-asan.json" ]
+  }
+  subsystem_name = "${subsystem_name}"
+  part_name = "${part_name}"
+  module_install_dir = "etc/sandbox"
+}
 
-  ohos_prebuilt_etc("appdata-sandbox-gpu.json") {
-    source = "../appdata-sandbox-gpu.json"
-    part_name = "${part_name}"
-    module_install_dir = "etc/sandbox"
-  }
-
-  ohos_prebuilt_etc("appdata-sandbox.json") {
-    source = "../appdata-sandbox-app.json"
-    symlink_target_name = [ "appdata-sandbox.json" ]
-    part_name = "${part_name}"
-    module_install_dir = "etc/sandbox"
-  }
-
-  ohos_prebuilt_etc("appdata-sandbox-isolated-new.json") {
-    source = "../appdata-sandbox-isolated-new.json"
-    part_name = "${part_name}"
-    module_install_dir = "etc/sandbox"
-  }
-
-  ohos_prebuilt_etc("appdata-sandbox-debug.json") {
-    source = "../appdata-sandbox-debug.json"
-    part_name = "${part_name}"
-    module_install_dir = "etc/sandbox"
-  }
-} else {
-  ohos_prebuilt_appdata_sandbox("appdata-sandbox.json") {
-    source = "../appdata-sandbox.json"
-    patterns = []
-    extra_sandbox_cfgs = []
-    if (target_cpu == "arm64" || target_cpu == "x86_64") {
-      extra_sandbox_cfgs += [ "../appdata-sandbox64.json" ]
-    }
-    if (is_asan || asan_detector) {
-      extra_sandbox_cfgs += [ "../appdata-sandbox-asan.json" ]
-    }
-    subsystem_name = "${subsystem_name}"
-    part_name = "${part_name}"
-    module_install_dir = "etc/sandbox"
-  }
-
-  ohos_prebuilt_appdata_sandbox("appdata-sandbox-isolated.json") {
-    source = "../appdata-sandbox-isolated.json"
-    patterns = []
-    extra_sandbox_cfgs = []
-    subsystem_name = "${subsystem_name}"
-    part_name = "${part_name}"
-    module_install_dir = "etc/sandbox"
-  }
+ohos_prebuilt_appdata_sandbox("appdata-sandbox-isolated.json") {
+  source = "../appdata-sandbox-isolated.json"
+  patterns = []
+  extra_sandbox_cfgs = []
+  subsystem_name = "${subsystem_name}"
+  part_name = "${part_name}"
+  module_install_dir = "etc/sandbox"
 }
 
 ohos_prebuilt_etc("appspawn_preload.json") {
@@ -113,6 +80,7 @@ ohos_prebuilt_etc("ohos.startup.appspawn.para.dac") {
 group("etc_files") {
   deps = [
     ":appdata-sandbox.json",
+    ":appdata-sandbox-isolated.json",
     ":appspawn_preload.json",
     ":appspawn_preload_ets.json",
     ":appspawn_prelink_dso_list",
@@ -120,14 +88,5 @@ group("etc_files") {
     ":ohos.startup.appspawn.para",
     ":ohos.startup.appspawn.para.dac"
   ]
-  if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
-    deps += [
-      ":appdata-sandbox-debug.json",
-      ":appdata-sandbox-gpu.json",
-      ":appdata-sandbox-isolated-new.json",
-      ":appdata-sandbox-render.json",
-    ]
-  } else {
-    deps += [ ":appdata-sandbox-isolated.json" ]
-  }
+  deps += [ ":appdata-sandbox-isolated.json" ]
 }

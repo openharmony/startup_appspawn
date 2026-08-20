@@ -129,10 +129,6 @@ if (!defined(ohos_lite)) {
       "${appspawn_path}/test/unittest/app_spawn_test_helper.cpp",
     ]
 
-    if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
-      defines += [ "APPSPAWN_SANDBOX_NEW" ]
-    }
-
     configs = [ "${appspawn_path}:appspawn_config" ]
     external_deps = [
       "ability_base:want",
