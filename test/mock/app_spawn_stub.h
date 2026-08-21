@@ -67,6 +67,13 @@ typedef struct TagAppSpawnNamespace {
     int nsSelfPidFd;
     int nsInitPidFd;
 } AppSpawnNamespace;
+
+// Extended permission result structure for JIT permissions
+typedef struct {
+    uint64_t caps;
+    int capValues[1];  // Support multiple permissions including duplicates for testing
+    int capCount;
+} ExtPermResult;
 typedef struct TagAppSpawnedProcess AppSpawnedProcessInfo;
 
 void SetMockDlprelinkReserveMemFailed(bool v);
@@ -159,7 +166,9 @@ int AddPermissionStrArrayToValue(cJSON *arrayItem, UserEncap *encap);
 int AddPermissionArrayToValue(cJSON *permissionItemArr, UserEncap *encap);
 int SetSchedPriority(const AppSpawnMgr *content, const AppSpawningCtx *property);
 int SetUidGid(const AppSpawnMgr *content, const AppSpawningCtx *property);
-int SetAmbientCapabilities(const AppSpawningCtx *property);
+int SetAmbientCapabilities(const AppSpawningCtx *property, const ExtPermResult *result);
+void GetExtPermResult(const AppSpawningCtx *property, ExtPermResult *result);
+int SetExtPermAmbientFromResult(const ExtPermResult *result);
 void SetPrctlResult(int result);
 int PrctlStub(int option, ...);
 int KillStub(pid_t pid, int sig);
