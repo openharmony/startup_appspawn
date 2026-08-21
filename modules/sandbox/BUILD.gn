@@ -15,147 +15,93 @@ import("//base/startup/appspawn/appspawn.gni")
 import("//base/startup/appspawn/modules/sandbox/sandbox.gni")
 import("//build/ohos.gni")
 
-if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
-  ohos_shared_library("appspawn_sandbox") {
-    if (!use_clang_coverage) {
-      version_script = "appspawn_sandbox.versionscript"
-    }
-    sources += appspawn_sandbox_src
-
-    include_dirs = [
-      ".",
-      "${appspawn_path}/common",
-      "${appspawn_path}/standard",
-    ]
-
-    include_dirs += appspawn_sandbox_inc
-
-    configs = [ "${appspawn_path}:appspawn_config" ]
-
-    defines = [ "APPSPAWN_SANDBOX_NEW" ]
-    deps = [
-      "${appspawn_path}/modules/module_engine:libappspawn_module_engine",
-      "${appspawn_path}/util:libappspawn_util",
-    ]
-    external_deps = [
-      "bounds_checking_function:libsec_shared",
-      "cJSON:cjson",
-      "c_utils:utils",
-      "hilog:libhilog",
-      "init:libbegetutil",
-      "access_token:libtokenid_sdk",
-      "selinux_adapter:librestorecon",
-    ]
-    if (build_selinux) {
-      defines += [ "WITH_SELINUX" ]
-      external_deps += [ "selinux_adapter:libhap_restorecon" ]
-    }
-
-    subsystem_name = "${subsystem_name}"
-    part_name = "${part_name}"
-    install_enable = true
-    if (target_cpu == "arm64" || target_cpu == "x86_64" ||
-        target_cpu == "riscv64") {
-      defines += [ "APPSPAWN_64" ]
-      module_install_dir = "lib64/appspawn/common"
-    } else {
-      module_install_dir = "lib/appspawn/common"
-    }
-
-    if (dlp_permission_enable) {
-      cflags = [ "-DWITH_DLP" ]
-      external_deps += [ "dlp_permission_service:libdlp_fuse" ]
-    }
+ohos_shared_library("appspawn_sandbox") {
+  if (!use_clang_coverage) {
+    version_script = "appspawn_sandbox.versionscript"
   }
-} else {
-  ohos_shared_library("appspawn_sandbox") {
-    if (!use_clang_coverage) {
-      version_script = "appspawn_sandbox.versionscript"
-    }
-    branch_protector_ret = "pac_ret"
-    sanitize = {
-      cfi = true
-      cfi_cross_dso = true
-      cfi_no_nvcall = true
-      cfi_vcall_icall_only = true
-      debug = false
-    }
-    sources = [
-      "${appspawn_innerkits_path}/permission/appspawn_mount_permission.c",
-      "${appspawn_path}/common/appspawn_trace.cpp",
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    cfi_no_nvcall = true
+    cfi_vcall_icall_only = true
+    debug = false
+  }
+  sources = [
+    "${appspawn_innerkits_path}/permission/appspawn_mount_permission.c",
+    "${appspawn_path}/common/appspawn_trace.cpp",
+  ]
+  sources += appspawn_sandbox_src
+
+  include_dirs = [
+    ".",
+    "${appspawn_path}/common",
+    "${appspawn_path}/standard",
+    "${appspawn_innerkits_path}/client",
+    "${appspawn_innerkits_path}/permission",
+  ]
+  include_dirs += appspawn_sandbox_inc
+
+  configs = [ "${appspawn_path}:appspawn_config" ]
+
+  defines = [ "APPSPAWN_CLIENT" ]
+  deps = [
+    "${appspawn_path}/modules/module_engine:libappspawn_module_engine",
+    "${appspawn_path}/util:libappspawn_util",
+  ]
+  external_deps = [
+    "bounds_checking_function:libsec_shared",
+    "cJSON:cjson",
+    "c_utils:utils",
+    "config_policy:configpolicy_util",
+    "hilog:libhilog",
+    "init:libbegetutil",
+    "access_token:libtokenid_sdk",
+    "selinux_adapter:librestorecon",
+  ]
+  if (!defined(ohos_lite)) {
+    external_deps += [ "hitrace:hitrace_meter" ]
+  }
+  if (build_selinux) {
+    defines += [ "WITH_SELINUX" ]
+    external_deps += [ "selinux_adapter:libhap_restorecon" ]
+  }
+  if (appspawn_report_event) {
+    defines += [ "APPSPAWN_HISYSEVENT" ]
+    external_deps += [ "hisysevent:libhisysevent" ]
+    include_dirs += [ "${appspawn_path}/modules/sysevent" ]
+    sources += [ "${appspawn_path}/modules/sysevent/hisysevent_adapter.cpp" ]
+  }
+
+  if (appspawn_sandbox_root_tmpfs) {
+    defines += [ "APPSPAWN_SANDBOX_ROOT_TMPFS" ]
+  }
+
+  subsystem_name = "${subsystem_name}"
+  part_name = "${part_name}"
+  install_enable = true
+  if (target_cpu == "arm64" || target_cpu == "x86_64" ||
+      target_cpu == "riscv64") {
+    defines += [ "APPSPAWN_64" ]
+    module_install_dir = "lib64/appspawn/common"
+  } else {
+    module_install_dir = "lib/appspawn/common"
+  }
+
+  if (dlp_permission_enable) {
+    cflags_cc = [ "-DWITH_DLP" ]
+    external_deps += [ "dlp_permission_service:libdlp_fuse" ]
+  }
+
+  if (appspawn_controlled_app) {
+    defines += [ "WITH_CONTROLLED_APP" ]
+  }
+
+  # SPM module integration
+  if (appspawn_enable_spm) {
+    defines += [ "APPSPAWN_ENABLE_SPM" ]
+    external_deps += [
+      "access_token:libpermsetproc_shared",
     ]
-    sources += appspawn_sandbox_src
-
-    include_dirs = [
-      ".",
-      "${appspawn_path}/common",
-      "${appspawn_path}/standard",
-      "${appspawn_innerkits_path}/client",
-      "${appspawn_innerkits_path}/permission",
-    ]
-    include_dirs += appspawn_sandbox_inc
-
-    configs = [ "${appspawn_path}:appspawn_config" ]
-
-    defines = [ "APPSPAWN_CLIENT" ]
-    deps = [
-      "${appspawn_path}/modules/module_engine:libappspawn_module_engine",
-      "${appspawn_path}/util:libappspawn_util",
-    ]
-    external_deps = [
-      "bounds_checking_function:libsec_shared",
-      "cJSON:cjson",
-      "c_utils:utils",
-      "config_policy:configpolicy_util",
-      "hilog:libhilog",
-      "init:libbegetutil",
-      "access_token:libtokenid_sdk",
-      "selinux_adapter:librestorecon",
-    ]
-    if (!defined(ohos_lite)) {
-      external_deps += [ "hitrace:hitrace_meter" ]
-    }
-    if (build_selinux) {
-      defines += [ "WITH_SELINUX" ]
-      external_deps += [ "selinux_adapter:libhap_restorecon" ]
-    }
-    if (appspawn_report_event) {
-      defines += [ "APPSPAWN_HISYSEVENT" ]
-      external_deps += [ "hisysevent:libhisysevent" ]
-      include_dirs += [ "${appspawn_path}/modules/sysevent" ]
-      sources += [ "${appspawn_path}/modules/sysevent/hisysevent_adapter.cpp" ]
-    }
-
-    if (appspawn_sandbox_root_tmpfs) {
-      defines += [ "APPSPAWN_SANDBOX_ROOT_TMPFS" ]
-    }
-
-    subsystem_name = "${subsystem_name}"
-    part_name = "${part_name}"
-    install_enable = true
-    if (target_cpu == "arm64" || target_cpu == "x86_64" ||
-        target_cpu == "riscv64") {
-      defines += [ "APPSPAWN_64" ]
-      module_install_dir = "lib64/appspawn/common"
-    } else {
-      module_install_dir = "lib/appspawn/common"
-    }
-
-    if (dlp_permission_enable) {
-      cflags_cc = [ "-DWITH_DLP" ]
-      external_deps += [ "dlp_permission_service:libdlp_fuse" ]
-    }
-
-    if (appspawn_controlled_app) {
-      defines += [ "WITH_CONTROLLED_APP" ]
-    }
-
-    # SPM module integration
-    if (appspawn_enable_spm) {
-      defines += [ "APPSPAWN_ENABLE_SPM" ]
-      external_deps += [
-        "access_token:libpermsetproc_shared",
-      ]
-    }
   }
 }

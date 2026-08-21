@@ -41,8 +41,6 @@
 #include "hisysevent_adapter.h"
 #endif
 
-#ifndef APPSPAWN_SANDBOX_NEW
-
 constexpr const char *USER_ID_PLACEHOLDER = "<userId>";
 constexpr const char *BUNDLE_NAME_PLACEHOLDER = "<bundleName>";
 
@@ -298,5 +296,3 @@ MODULE_CONSTRUCTOR(void)
     (void)AddServerStageHook(STAGE_SERVER_LOCK, HOOK_PRIO_COMMON, HandleUnlockMountForUser);
     APPSPAWN_LOGI("RegisterUnlockMountHook: unlock mount hook registered");
 }
-
-#endif // APPSPAWN_SANDBOX_NEW

@@ -67,12 +67,10 @@ int32_t SetAppSandboxProperty(AppSpawnMgr *content, AppSpawningCtx *property)
 
 static int SpawnMountDirToShared(AppSpawnMgr *content, AppSpawningCtx *property)
 {
-#ifndef APPSPAWN_SANDBOX_NEW
     if (!IsNWebSpawnMode(content)) {
         // mount dynamic directory
         MountToShared(content, property);
     }
-#endif
     return 0;
 }
 
@@ -98,7 +96,6 @@ static int InstallDebugSandbox(AppSpawnMgr *content, AppSpawningCtx *property)
     return OHOS::AppSpawn::SandboxCore::InstallDebugSandbox(content, property);
 }
 
-#ifndef APPSPAWN_SANDBOX_NEW
 MODULE_CONSTRUCTOR(void)
 {
     APPSPAWN_LOGV("Load sandbox module ...");
@@ -114,4 +111,3 @@ MODULE_CONSTRUCTOR(void)
     (void)AddServerStageHook(STAGE_SERVER_EXIT, HOOK_PRIO_SANDBOX,
                              OHOS::AppSpawn::SandboxCommon::FreeAppSandboxConfigCJson);
 }
-#endif

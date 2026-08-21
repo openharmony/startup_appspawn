@@ -50,9 +50,6 @@ if (!defined(ohos_lite)) {
       "APPSPAWN_LABEL=\"APPSPAWN_CLIENT\"",
     ]
 
-    if (defined(appspawn_sandbox_new) && appspawn_sandbox_new) {
-      defines += [ "APPSPAWN_SANDBOX_NEW" ]
-    }
     if (is_asan) {
       defines += [ "APPSPAWN_ASAN" ]
     }
