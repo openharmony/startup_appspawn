@@ -160,16 +160,6 @@
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
-                    "src-path" : "/data/service/el1/public/themes/<currentUserId>/a/app",
-                    "sandbox-path" : "/data/themes/a/app",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
-                    "src-path" : "/data/service/el1/public/themes/<currentUserId>/b/app",
-                    "sandbox-path" : "/data/themes/b/app",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
                     "src-path" : "/data/service/el0/public/for-all-app",
                     "sandbox-path" : "/data/service/el0/public/for-all-app",
                     "sandbox-flags" : [ "bind", "rec" ],
@@ -870,45 +860,6 @@
             "mount-paths": [{
                     "src-path": "/data/service/el1/public/edm/log/<currentUserId>/<PackageName>",
                     "sandbox-path": "/data/edm/log",
-                    "sandbox-flags": [ "bind", "rec" ]
-                }
-            ]
-        }],
-        "ohos.permission.ACTIVATE_THEME_PACKAGE":[{
-            "sandbox-switch": "ON",
-            "gids": [3817],
-            "mount-paths": [{
-                    "src-path": "/data/service/el1/public/themes/<currentUserId>/a/system",
-                    "sandbox-path": "/data/themes/a/system",
-                    "sandbox-flags": [ "bind", "rec" ]
-                },
-                {
-                    "src-path": "/data/service/el1/public/themes/<currentUserId>/b/system",
-                    "sandbox-path": "/data/themes/b/system",
-                    "sandbox-flags": [ "bind", "rec" ]
-                },
-                {
-                    "src-path": "/data/service/el1/public/themes/<currentUserId>/fa",
-                    "sandbox-path": "/data/themes/f",
-                    "sandbox-flags": [ "bind", "rec" ]
-                },
-                {
-                    "src-path": "/data/service/el1/public/themes/<currentUserId>/share",
-                    "sandbox-path": "/data/themes/s",
-                    "sandbox-flags": [ "bind", "rec" ]
-                }
-            ]
-        }],
-        "ohos.permission.THEME_SKIN":[{
-            "sandbox-switch": "ON",
-            "mount-paths": [{
-                    "src-path": "/data/service/el1/public/themes/<currentUserId>/a/skin",
-                    "sandbox-path": "/data/themes/a/skin",
-                    "sandbox-flags": [ "bind", "rec" ]
-                },
-                {
-                    "src-path": "/data/service/el1/public/themes/<currentUserId>/b/skin",
-                    "sandbox-path": "/data/themes/b/skin",
                     "sandbox-flags": [ "bind", "rec" ]
                 }
             ]
