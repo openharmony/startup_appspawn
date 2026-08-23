@@ -18,6 +18,8 @@
 #include <cerrno>
 #include <memory>
 #include <string>
+#include <sys/stat.h>
+#include <unistd.h>
 
 #include "appspawn_server.h"
 #include "appspawn_service.h"
@@ -3764,6 +3766,177 @@ HWTEST_F(AppSpawnSandboxTest, Sandbox_CreateOnlyOnDaemon_Test_5, TestSize.Level0
     EXPECT_EQ(ret, 0);
 
     cJSON_Delete(j_config1);
+    DeleteAppSpawningCtx(appProperty);
+}
+
+/**
+ * @tc.name: Sandbox_CreateOnlyOnDaemon_Test_06
+ * @tc.desc: Test ParseSrcPathInfo missing-field branches and src-path missing branch (no FS side effects).
+ * @tc.type: FUNC
+ */
+HWTEST_F(AppSpawnSandboxTest, Sandbox_CreateOnlyOnDaemon_Test_06, TestSize.Level0)
+{
+    g_testHelper.SetTestUid(1000);  // 1000 test
+    g_testHelper.SetTestGid(1000);  // 1000 test
+    g_testHelper.SetProcessName("com.example.myapplication");
+    g_testHelper.SetTestApl("system_basic");
+    AppSpawningCtx *appProperty = GetTestAppProperty();
+
+    // path items that make ParseSrcPathInfo return false (missing uid / gid / mode)
+    // and one item missing src-path (srcPathChr == nullptr)
+    char config1[] = R"({
+        "path" : [{
+            "src-path" : "/tmp/appspawn_co_06_a",
+            "src-path-info" : {}
+        }, {
+            "src-path" : "/tmp/appspawn_co_06_b",
+            "src-path-info" : { "uid" : 0 }
+        }, {
+            "src-path" : "/tmp/appspawn_co_06_c",
+            "src-path-info" : { "uid" : 0, "gid" : 0 }
+        }, {
+            "src-path-info" : { "uid" : 0, "gid" : 0, "mode" : 1023 }
+        }]
+    })";
+    cJSON *j_config1 = cJSON_Parse(config1);
+    ASSERT_NE(j_config1, nullptr);
+
+    int32_t ret = AppSpawn::SandboxCore::DoAllCreateOnlyOnDaemon(appProperty, j_config1);
+    EXPECT_EQ(ret, 0);
+
+    cJSON_Delete(j_config1);
+    DeleteAppSpawningCtx(appProperty);
+}
+
+/**
+ * @tc.name: Sandbox_CreateOnlyOnDaemon_Test_07
+ * @tc.desc: Test ProcessCreateOnlyOnDaemon: pre-created dir matches uid/gid/mode, skip create block; restorecon:false.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AppSpawnSandboxTest, Sandbox_CreateOnlyOnDaemon_Test_07, TestSize.Level0)
+{
+    g_testHelper.SetTestUid(1000);  // 1000 test
+    g_testHelper.SetTestGid(1000);  // 1000 test
+    g_testHelper.SetProcessName("com.example.myapplication");
+    g_testHelper.SetTestApl("system_basic");
+    AppSpawningCtx *appProperty = GetTestAppProperty();
+
+    const char *dir = "/data/appspawn_ut/appspawn_co_07";
+    (void)rmdir(dir);
+    ASSERT_EQ(mkdir(dir, 1023), 0);  // 1023 decimal, matches json mode
+    ASSERT_EQ(chmod(dir, 1023), 0);
+
+    char config1[256];
+    int n = snprintf_s(config1, sizeof(config1), sizeof(config1) - 1,
+        R"({"path":[{"src-path":"%s","src-path-info":{"uid":%u,"gid":%u,"mode":1023,"restorecon":false}}]})",
+        dir, (unsigned int)getuid(), (unsigned int)getgid());
+    ASSERT_GT(n, 0);
+    cJSON *j_config1 = cJSON_Parse(config1);
+    ASSERT_NE(j_config1, nullptr);
+
+    int32_t ret = AppSpawn::SandboxCore::DoAllCreateOnlyOnDaemon(appProperty, j_config1);
+    EXPECT_EQ(ret, 0);
+
+    cJSON_Delete(j_config1);
+    (void)rmdir(dir);
+    DeleteAppSpawningCtx(appProperty);
+}
+
+/**
+ * @tc.name: Sandbox_CreateOnlyOnDaemon_Test_08
+ * @tc.desc: Test ProcessCreateOnlyOnDaemon: stat succeeds but mode mismatch, mkdir EEXIST, chmod/chown success.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AppSpawnSandboxTest, Sandbox_CreateOnlyOnDaemon_Test_08, TestSize.Level0)
+{
+    g_testHelper.SetTestUid(1000);  // 1000 test
+    g_testHelper.SetTestGid(1000);  // 1000 test
+    g_testHelper.SetProcessName("com.example.myapplication");
+    g_testHelper.SetTestApl("system_basic");
+    AppSpawningCtx *appProperty = GetTestAppProperty();
+
+    const char *dir = "/data/appspawn_ut/appspawn_co_08";
+    (void)rmdir(dir);
+    ASSERT_EQ(mkdir(dir, 0700), 0);  // pre-create with mismatched mode 0700
+    ASSERT_EQ(chmod(dir, 0700), 0);
+
+    char config1[256];
+    int n = snprintf_s(config1, sizeof(config1), sizeof(config1) - 1,
+        R"({"path":[{"src-path":"%s","src-path-info":{"uid":%u,"gid":%u,"mode":1023,"restorecon":true}}]})",
+        dir, (unsigned int)getuid(), (unsigned int)getgid());
+    ASSERT_GT(n, 0);
+    cJSON *j_config1 = cJSON_Parse(config1);
+    ASSERT_NE(j_config1, nullptr);
+
+    int32_t ret = AppSpawn::SandboxCore::DoAllCreateOnlyOnDaemon(appProperty, j_config1);
+    EXPECT_EQ(ret, 0);
+
+    cJSON_Delete(j_config1);
+    (void)rmdir(dir);
+    DeleteAppSpawningCtx(appProperty);
+}
+
+/**
+ * @tc.name: Sandbox_CreateOnlyOnDaemon_Test_09
+ * @tc.desc: Test ProcessCreateOnlyOnDaemon: empty src-path -> stat fails and CreateDirRecursive returns -1 (return 0).
+ * @tc.type: FUNC
+ */
+HWTEST_F(AppSpawnSandboxTest, Sandbox_CreateOnlyOnDaemon_Test_09, TestSize.Level0)
+{
+    g_testHelper.SetTestUid(1000);  // 1000 test
+    g_testHelper.SetTestGid(1000);  // 1000 test
+    g_testHelper.SetProcessName("com.example.myapplication");
+    g_testHelper.SetTestApl("system_basic");
+    AppSpawningCtx *appProperty = GetTestAppProperty();
+
+    // empty src-path: stat fails and CreateDirRecursive returns -1, APPSPAWN_CHECK return 0
+    char config1[] = R"({
+        "path" : [{
+            "src-path" : "",
+            "src-path-info" : { "uid" : 0, "gid" : 0, "mode" : 1023 }
+        }]
+    })";
+    cJSON *j_config1 = cJSON_Parse(config1);
+    ASSERT_NE(j_config1, nullptr);
+
+    int32_t ret = AppSpawn::SandboxCore::DoAllCreateOnlyOnDaemon(appProperty, j_config1);
+    EXPECT_EQ(ret, 0);
+
+    cJSON_Delete(j_config1);
+    DeleteAppSpawningCtx(appProperty);
+}
+
+/**
+ * @tc.name: Sandbox_FlagsPoint_Gids_Test_01
+ * @tc.desc: Test HandleFlagsPoint DoAddGid path (gids optimization) with CUSTOM_SANDBOX_HAP flag set.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AppSpawnSandboxTest, Sandbox_FlagsPoint_Gids_Test_01, TestSize.Level0)
+{
+    g_testHelper.SetTestUid(1000);  // 1000 test
+    g_testHelper.SetTestGid(1000);  // 1000 test
+    g_testHelper.SetProcessName("com.example.myapplication");
+    g_testHelper.SetTestApl("system_basic");
+    g_testHelper.SetTestMsgFlags(1U << APP_FLAGS_CUSTOM_SANDBOX);  // set CUSTOM_SANDBOX bit
+    AppSpawningCtx *appProperty = GetTestAppProperty();
+
+    char config1[] = R"({
+        "flags-point" : [{
+            "flags" : "CUSTOM_SANDBOX_HAP",
+            "sandbox-root" : "/mnt/sandbox/<currentUserId>/<PackageName>",
+            "gids" : [1076],
+            "mount-paths" : [],
+            "symbol-links" : []
+        }]
+    })";
+    cJSON *j_config1 = cJSON_Parse(config1);
+    ASSERT_NE(j_config1, nullptr);
+
+    int32_t ret = AppSpawn::SandboxCore::HandleFlagsPoint(appProperty, j_config1);
+    EXPECT_EQ(ret, 0);
+
+    cJSON_Delete(j_config1);
+    g_testHelper.SetTestMsgFlags(0);  // reset to avoid polluting later cases
     DeleteAppSpawningCtx(appProperty);
 }
 }  // namespace OHOS
