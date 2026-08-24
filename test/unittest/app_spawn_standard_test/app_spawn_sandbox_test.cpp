@@ -3863,7 +3863,7 @@ HWTEST_F(AppSpawnSandboxTest, Sandbox_CreateOnlyOnDaemon_Test_08, TestSize.Level
     char config1[256];
     int n = snprintf_s(config1, sizeof(config1), sizeof(config1) - 1,
         R"({"path":[{"src-path":"%s","src-path-info":{"uid":%u,"gid":%u,"mode":1023,"restorecon":true}}]})",
-        dir, (unsigned int)getuid(), (unsigned int)getgid());
+        dir, static_cast<unsigned int>(getuid()), static_cast<unsigned int>(getgid()));
     ASSERT_GT(n, 0);
     cJSON *j_config1 = cJSON_Parse(config1);
     ASSERT_NE(j_config1, nullptr);
