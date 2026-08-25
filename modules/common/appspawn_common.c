@@ -766,6 +766,7 @@ static int CloseFdArgs(AppSpawnMgr *content, AppSpawningCtx *property)
         for (int i = 0; i < fdCount; i++) {
             if (fds[i] > 0) {
                 close(fds[i]);
+                fds[i] = -1;
             }
         }
     }

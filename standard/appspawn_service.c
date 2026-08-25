@@ -246,6 +246,23 @@ static void AppSpawningCtxOnClose(const AppSpawnMgr *mgr, AppSpawningCtx *ctx, v
     DeleteAppSpawningCtx(ctx);
 }
 
+APPSPAWN_STATIC void CloseFdArgsFromConnection(AppSpawnConnection *connection)
+{
+    APPSPAWN_CHECK(connection != NULL, return, "Invalid connection");
+    int fdCount = connection->receiverCtx.fdCount;
+    int *fds = connection->receiverCtx.fds;
+    APPSPAWN_CHECK_LOGW(fds != NULL && fdCount > 0, return,
+        "Invalid fd info %{public}d %{public}d", fds == NULL, fdCount);
+
+    APPSPAWN_LOGI("CloseFdArgsFromConnection: close %{public}d fds", fdCount);
+    for (int i = 0; i < fdCount; i++) {
+        APPSPAWN_CHECK_ONLY_EXPER(fds[i] > 0, continue);
+        close(fds[i]);
+        fds[i] = -1;
+    }
+    connection->receiverCtx.fdCount = 0;
+}
+
 static void OnClose(const TaskHandle taskHandle)
 {
     int fd = LE_GetSocketFd(taskHandle);
@@ -267,6 +284,7 @@ static void OnClose(const TaskHandle taskHandle)
     APPSPAWN_LOGI("OnClose connectionId: %{public}u socket %{public}d", connection->connectionId, fd);
     DeleteAppSpawnMsg(&connection->receiverCtx.incompleteMsg);
     connection->receiverCtx.incompleteMsg = NULL;
+    CloseFdArgsFromConnection(connection);
     // connect close, to close spawning app
     AppSpawningCtxTraversal(AppSpawningCtxOnClose, connection);
 }
@@ -300,10 +318,11 @@ static void SendMessageComplete(const TaskHandle taskHandle, BufferHandle handle
     }
 }
 
-static int SendResponse(const AppSpawnConnection *connection, const AppSpawnMsg *msg, int result, pid_t pid)
+static int SendResponse(AppSpawnConnection *connection, const AppSpawnMsg *msg, int result, pid_t pid)
 {
     APPSPAWN_LOGV("SendResponse connectionId: %{public}u result: 0x%{public}x pid: %{public}d",
         connection->connectionId, result, pid);
+    CloseFdArgsFromConnection(connection);
     uint32_t bufferSize = sizeof(AppSpawnResponseMsg);
     BufferHandle handle = LE_CreateBuffer(LE_GetDefaultLoop(), bufferSize);
     AppSpawnResponseMsg *buffer = (AppSpawnResponseMsg *)LE_GetBufferInfo(handle, NULL, &bufferSize);
@@ -327,11 +346,12 @@ static int SendResponse(const AppSpawnConnection *connection, const AppSpawnMsg 
  * @param checkPointId checkpoint ID
  * @return 成功返回0，失败返回错误码
  */
-static int SendResponseEx(const AppSpawnConnection *connection, const AppSpawnMsg *msg,
+static int SendResponseEx(AppSpawnConnection *connection, const AppSpawnMsg *msg,
                           int result, pid_t pid, uint64_t checkPointId)
 {
     APPSPAWN_LOGI("SendResponseEx connectionId: %{public}u result: 0x%{public}x pid: %{public}d "
                   "checkPointId: %{public}" PRId64"", connection->connectionId, result, pid, checkPointId);
+    CloseFdArgsFromConnection(connection);
     uint32_t bufferSize = sizeof(AppSpawnResponseMsg);
     BufferHandle handle = LE_CreateBuffer(LE_GetDefaultLoop(), bufferSize);
     AppSpawnResponseMsg *buffer = (AppSpawnResponseMsg *)LE_GetBufferInfo(handle, NULL, &bufferSize);
@@ -388,16 +408,30 @@ static int HandleRecvMessage(const TaskHandle taskHandle, uint8_t * buffer, int 
     APPSPAWN_CHECK_ONLY_LOG(errno == 0, "recvmsg with errno %{public}d", errno);
     struct cmsghdr *cmsg = NULL;
     for (cmsg = CMSG_FIRSTHDR(&msg); cmsg != NULL; cmsg = CMSG_NXTHDR(&msg, cmsg)) {
-        if (cmsg->cmsg_level == SOL_SOCKET && cmsg->cmsg_type == SCM_RIGHTS) {
-            int fdCount = (cmsg->cmsg_len - CMSG_LEN(0)) / sizeof(int);
-            int *fd = (int *) CMSG_DATA(cmsg);
-            APPSPAWN_CHECK(fdCount <= APP_MAX_FD_COUNT, return -1,
-                "failed to recv fd %{public}d %{public}d", connection->receiverCtx.fdCount, fdCount);
-            int ret = memcpy_s(connection->receiverCtx.fds,
-                fdCount * sizeof(int), fd, fdCount * sizeof(int));
-            APPSPAWN_CHECK(ret == 0, return -1, "memcpy_s fd ret %{public}d", ret);
-            connection->receiverCtx.fdCount = fdCount;
+        if (cmsg->cmsg_level != SOL_SOCKET || cmsg->cmsg_type != SCM_RIGHTS) {
+            continue;
         }
+        CloseFdArgsFromConnection(connection);
+        int fdCount = (cmsg->cmsg_len - CMSG_LEN(0)) / sizeof(int);
+        int *fds = (int *) CMSG_DATA(cmsg);
+        if (fdCount > APP_MAX_FD_COUNT) {
+            APPSPAWN_LOGE("failed to recv fd %{public}d %{public}d", connection->receiverCtx.fdCount, fdCount);
+            for (int i = 0; i < fdCount; i++) {
+                APPSPAWN_CHECK_ONLY_EXPER(fds[i] > 0, continue);
+                close(fds[i]);
+            }
+            return -1;
+        }
+        int ret = memcpy_s(connection->receiverCtx.fds, fdCount * sizeof(int), fds, fdCount * sizeof(int));
+        if (ret != 0) {
+            APPSPAWN_LOGE("failed to memcpy_s fd %{public}d ret %{public}d errno %{public}d", fdCount, ret, errno);
+            for (int i = 0; i < fdCount; i++) {
+                APPSPAWN_CHECK_ONLY_EXPER(fds[i] > 0, continue);
+                close(fds[i]);
+            }
+            return -1;
+        }
+        connection->receiverCtx.fdCount = fdCount;
     }
 
     return recvLen;
@@ -1495,10 +1529,9 @@ static void ProcessSpawnReqMsg(AppSpawnConnection *connection, AppSpawnMsgNode *
     ret = AppSpawnHookExecute(STAGE_PARENT_MSG_DECODE, HOOK_STOP_WHEN_ERROR, GetAppSpawnContent(), &property->client);
     FinishAppspawnTrace();
     // Check if SPM message rebuild hook failed
-    APPSPAWN_ONLY_EXPER(ret != 0, APPSPAWN_LOGE("rebuild hook failed: %{public}d, aborting spawn", ret);
-        SendResponse(connection, &message->msgHeader, ret, 0);
+    APPSPAWN_CHECK(ret == 0, SendResponse(connection, &message->msgHeader, ret, 0);
         DeleteAppSpawningCtx(property);
-        return);
+        return, "MSG_DECODE hook failed: %{public}d, aborting spawn", ret);
 
     // mount el2 dir
     // getWrapBundleNameValue
@@ -1511,10 +1544,9 @@ static void ProcessSpawnReqMsg(AppSpawnConnection *connection, AppSpawnMsgNode *
     clock_gettime(CLOCK_MONOTONIC, &property->spawnStart);
     ret = RunAppSpawnProcessMsg(GetAppSpawnContent(), &property->client, &property->pid);
     AppSpawnHookExecute(STAGE_PARENT_POST_FORK, 0, GetAppSpawnContent(), &property->client);
-    if (ret != 0) { // wait child process result
-        AbortSpawnAndCleanup(ret, connection, message, property);
-        return;
-    }
+    APPSPAWN_CHECK(ret == 0, AbortSpawnAndCleanup(ret, connection, message, property);
+        return, "POST_FORK hook failed: %{public}d", ret);
+
     if (AddChildWatcher(property) != 0) { // wait child process result
         kill(property->pid, SIGKILL);
         AbortSpawnAndCleanup(ret, connection, message, property);
