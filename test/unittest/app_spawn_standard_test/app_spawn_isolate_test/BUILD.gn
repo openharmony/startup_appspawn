@@ -19,8 +19,9 @@ if (!defined(ohos_lite)) {
     module_out_path = "appspawn/appspawn"
     cflags = [ "-Dprivate=public" ]
 
-    ldflags = [ 
+    ldflags = [
       "-Wl,--wrap=ioctl",
+      "-Wl,--wrap=open",
     ]
 
     if (appspawn_unittest_coverage) {

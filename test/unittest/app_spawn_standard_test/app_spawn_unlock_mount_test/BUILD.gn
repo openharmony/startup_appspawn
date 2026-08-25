@@ -75,6 +75,15 @@ if (!defined(ohos_lite)) {
       "DEBUG_BEGETCTL_BOOT",
       "USER_TIMER_TO_CHECK",
       "OHOS_DEBUG",
+      "opendir=OpendirStub",
+      "closedir=ClosedirStub",
+      "readdir=ReaddirStub",
+      "stat=StatStub",
+      "access=AccessStub",
+      "mount=MountStub",
+      "umount=UmountStub",
+      "mkdir=MkdirStub",
+      "rmdir=RmdirStub",
     ]
 
     include_dirs = [

@@ -14,6 +14,7 @@
  */
 
 #include <gtest/gtest.h>
+#include <cstring>
 
 #include "appspawn.h"
 #include "appspawn_hook.h"
@@ -64,8 +65,15 @@ HWTEST_F(AppSpawnIsolateTest, App_Spawn_SetIsolateDir, TestSize.Level0)
     IoctlFunc ioctlFunc = [](int fd, int req, va_list args) -> int {
         return 0;
     };
+    OpenFunc openFunc = [](const char *pathname, int flags, mode_t mode) -> int {
+        if (pathname != nullptr && strcmp(pathname, "/dev/dec") == 0) {
+            return 3;
+        }
+        return __real_open(pathname, flags, mode);
+    };
 
     UpdateIoctlFunc(ioctlFunc);
+    UpdateOpenFunc(openFunc);
     do {
         // create msg
         ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
@@ -84,6 +92,7 @@ HWTEST_F(AppSpawnIsolateTest, App_Spawn_SetIsolateDir, TestSize.Level0)
     DeleteAppSpawningCtx(property);
     AppSpawnClientDestroy(clientHandle);
     UpdateIoctlFunc(nullptr);
+    UpdateOpenFunc(nullptr);
     ASSERT_EQ(ret, 0);
 }
 
