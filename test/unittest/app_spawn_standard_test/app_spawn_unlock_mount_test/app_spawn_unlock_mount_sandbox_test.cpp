@@ -261,17 +261,7 @@ int RestoreconRecurse(const char *path)
 
 }  // extern "C"
 
-// Redefine system calls to use stubs
-#define opendir OpendirStub
-#define closedir ClosedirStub
-#define readdir ReaddirStub
-#define stat StatStub
-#define access AccessStub
-#define mount MountStub
-#define umount UmountStub
-#define mkdir MkdirStub
 #define GetParameter GetParameterStub
-#define rmdir RmdirStub
 
 class AppSpawnUnlockMountSandboxTest : public testing::Test {
 public:
@@ -809,6 +799,7 @@ HWTEST_F(AppSpawnUnlockMountSandboxTest, HandleUnlockMountForUser_004, TestSize.
  */
 HWTEST_F(AppSpawnUnlockMountSandboxTest, DoSharedMountForApp_001, TestSize.Level1)
 {
+    g_accessShouldFail = true;
     // Arrange
     LockBundleInfo bundle;
     bundle.lockPath = "/mnt/sandbox/100";
@@ -838,6 +829,7 @@ HWTEST_F(AppSpawnUnlockMountSandboxTest, DoSharedMountForApp_001, TestSize.Level
  */
 HWTEST_F(AppSpawnUnlockMountSandboxTest, DoSharedMountForApp_003, TestSize.Level1)
 {
+    g_accessShouldFail = true;
     // Arrange
     LockBundleInfo bundle;
     bundle.lockPath = "noslash";  // No '/' in path
@@ -895,6 +887,7 @@ HWTEST_F(AppSpawnUnlockMountSandboxTest, DoSharedMountForApp_004, TestSize.Level
  */
 HWTEST_F(AppSpawnUnlockMountSandboxTest, DoSharedMountForApp_005, TestSize.Level1)
 {
+    g_accessShouldFail = true;
     // 覆盖: DoSharedMountForApp empty path (sandbox_shared_mount.cpp:739)
     // Arrange
     LockBundleInfo bundle;
@@ -932,7 +925,7 @@ HWTEST_F(AppSpawnUnlockMountSandboxTest, DoSharedMountForApp_007, TestSize.Level
     std::atomic<int> successCount{0};
     std::atomic<int> failCount{0};
     std::atomic<int> skipCount{0};
-    g_accessShouldFail = false;  // All source paths exist
+    g_accessShouldFail = true;  // dest paths don't exist on device
 
     // Act
     DoSharedMountForApp(bundle, successCount, failCount, skipCount);
@@ -962,7 +955,7 @@ HWTEST_F(AppSpawnUnlockMountSandboxTest, DoSharedMountForApp_009, TestSize.Level
     std::atomic<int> successCount{0};
     std::atomic<int> failCount{0};
     std::atomic<int> skipCount{0};
-    g_accessShouldFail = false;  // All source paths exist
+    g_accessShouldFail = true;  // dest paths don't exist on device
 
     // Act
     DoSharedMountForApp(bundle, successCount, failCount, skipCount);
@@ -984,6 +977,7 @@ HWTEST_F(AppSpawnUnlockMountSandboxTest, DoSharedMountForApp_009, TestSize.Level
  */
 HWTEST_F(AppSpawnUnlockMountSandboxTest, MountWorkerThread_001, TestSize.Level1)
 {
+    g_accessShouldFail = true;
     // Arrange
     std::vector<LockBundleInfo> tasks;
     LockBundleInfo b1 = {1, 200100, "/mnt/sandbox/100", "chipset"};
@@ -1012,6 +1006,7 @@ HWTEST_F(AppSpawnUnlockMountSandboxTest, MountWorkerThread_001, TestSize.Level1)
  */
 HWTEST_F(AppSpawnUnlockMountSandboxTest, MountWorkerThread_002, TestSize.Level1)
 {
+    g_accessShouldFail = true;
     // Arrange
     std::vector<LockBundleInfo> tasks;
     LockBundleInfo b2 = {1, 200100, "/mnt/sandbox/100", "com.example.app1"};
@@ -1052,7 +1047,7 @@ HWTEST_F(AppSpawnUnlockMountSandboxTest, MountWorkerThread_003, TestSize.Level1)
     std::atomic<int> failCount{0};
     std::atomic<int> skipCount{0};
     MountWorkerContext ctx = { &tasks, &successCount, &failCount, &skipCount };
-    g_accessShouldFail = false;
+    g_accessShouldFail = true;
 
     // Act - mod=2, index=1 -> processes tasks[1] only
     MountWorkerThread(1, 2, ctx);
