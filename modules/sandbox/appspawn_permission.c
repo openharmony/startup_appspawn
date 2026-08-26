@@ -18,8 +18,6 @@
 #include "perm_setproc_c.h"
 #endif  //APPSPAWN_ENABLE_SPM
 #include "appspawn_mount_permission.h"
-#else
-#include "appspawn_sandbox.h"
 #endif // APPSPAWN_CLIENT
 
 #include "appspawn_msg.h"

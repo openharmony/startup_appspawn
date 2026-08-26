@@ -25,16 +25,7 @@
 extern "C" {
 #endif
 
-#ifdef APPSPAWN_SANDBOX_NEW
-#define APP_SANDBOX_FILE_NAME "/appdata-sandbox-app.json"
-#else
 #define APP_SANDBOX_FILE_NAME "/appdata-sandbox.json"
-#endif
-
-#define RENDER_SANDBOX_FILE_NAME      "/appdata-sandbox-render.json"
-#define GPU_SANDBOX_FILE_NAME         "/appdata-sandbox-gpu.json"
-#define ISOLATED_SANDBOX_FILE_NAME    "/appdata-sandbox-isolated-new.json"
-#define DEBUG_SANDBOX_FILE_NAME       "/appdata-sandbox-debug.json"
 
 typedef struct TagSandboxQueue SandboxQueue;
 typedef struct TagPermissionNode SandboxPermissionNode;

@@ -143,8 +143,6 @@ bool IsValidDataGroupItem(cJSON *item)
     return false;
 }
 
-#ifndef APPSPAWN_SANDBOX_NEW
-
 // Global map for managing lock bundle info, key is lockPath (complete _preunlock directory path)
 APPSPAWN_STATIC std::map<std::string, LockBundleInfo> g_lockBundleMap;
 
@@ -537,18 +535,14 @@ APPSPAWN_STATIC void MountDirToShared(AppSpawnMgr *content, const AppSpawningCtx
     const_cast<AppSpawningCtx *>(property)->lockPath = lock;
     const_cast<AppSpawningCtx *>(property)->lockBundleRefAdded = true;
 }
-#endif
 
 int MountToShared(AppSpawnMgr *content, const AppSpawningCtx *property)
 {
-#ifndef APPSPAWN_SANDBOX_NEW
     // mount dynamic directory to shared
     MountDirToShared(content, property);
-#endif
     return 0;
 }
 
-#ifndef APPSPAWN_SANDBOX_NEW
 APPSPAWN_STATIC int AppCleanupHook(const AppSpawnMgr *content, const AppSpawnedProcessInfo *appInfo)
 {
     APPSPAWN_ONLY_EXPER(appInfo == nullptr || IsNWebSpawnMode(content),
@@ -580,14 +574,11 @@ APPSPAWN_STATIC int SpawnFailedHook(AppSpawnMgr *content, AppSpawningCtx *proper
     property->lockBundleRefAdded = false;
     return 0;
 }
-#endif
 
 MODULE_CONSTRUCTOR(void)
 {
-#ifndef APPSPAWN_SANDBOX_NEW
     AddProcessMgrHook(STAGE_SERVER_APP_CLEANUP, HOOK_PRIO_COMMON, AppCleanupHook);
     AddAppSpawnHook(STAGE_SERVER_SPAWN_ABORT, HOOK_PRIO_COMMON, SpawnFailedHook);
     (void)AddServerStageHook(STAGE_SERVER_LOCK, HOOK_PRIO_COMMON, UpdateDataGroupDirs);
     APPSPAWN_LOGI("RegisterLockBundleHooks: hooks registered");
-#endif
 }

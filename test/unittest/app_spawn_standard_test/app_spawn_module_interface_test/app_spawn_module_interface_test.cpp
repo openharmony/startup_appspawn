@@ -329,13 +329,8 @@ static int TestParseAppSandboxConfig(const cJSON *root, ParseJsonContext *contex
 HWTEST_F(AppSpawnModuleInterfaceTest, App_Spawn_ParseJsonConfig_001, TestSize.Level0)
 {
     int ret = 0;
-#ifdef APPSPAWN_SANDBOX_NEW
     ret = ParseJsonConfig("etc/sandbox", APP_SANDBOX_FILE_NAME, TestParseAppSandboxConfig, nullptr);
     EXPECT_EQ(ret, 0);
-#else
-    ret = ParseJsonConfig("etc/sandbox", APP_SANDBOX_FILE_NAME, TestParseAppSandboxConfig, nullptr);
-    EXPECT_EQ(ret, 0);
-#endif
     ret = ParseJsonConfig("etc/sandbox", APP_SANDBOX_FILE_NAME, nullptr, nullptr);
     EXPECT_NE(ret, 0);
     ret = ParseJsonConfig("etc/sandbox", nullptr, TestParseAppSandboxConfig, nullptr);

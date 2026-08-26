@@ -1172,18 +1172,6 @@ HWTEST_F(AppSpawnClientTest, App_Spawn_Permission_006, TestSize.Level0)
     EXPECT_EQ(ret, 0);
 
     // for old sandbox, only one config
-#ifdef APPSPAWN_SANDBOX_NEW
-    int max = GetMaxPermissionIndex(clientHandle);
-    EXPECT_EQ(max, sizeof(g_spawnerPermissionList) / sizeof(g_spawnerPermissionList[0]));
-
-    int index = GetPermissionIndex(clientHandle, nullptr);
-    EXPECT_EQ(index, INVALID_PERMISSION_INDEX);
-
-    index = GetPermissionIndex(clientHandle, "ohos.permission.ACCESS_BUNDLE_DIR");
-    EXPECT_EQ(index, INVALID_PERMISSION_INDEX);
-    const char *permission = GetPermissionByIndex(clientHandle, 1);
-    EXPECT_EQ(permission == nullptr, 1);
-#endif
     AppSpawnClientDestroy(clientHandle);
 }
 

@@ -15,9 +15,6 @@
 #include <pthread.h>
 #include <stdlib.h>
 
-#ifndef APPSPAWN_CLIENT
-#include "appspawn_sandbox.h"
-#endif
 #include "appspawn_client.h"
 #include "appspawn_mount_permission.h"
 #include "appspawn_msg.h"
@@ -39,37 +36,6 @@ typedef struct TagParseJsonContext {
 
 static pthread_mutex_t g_mutex = PTHREAD_MUTEX_INITIALIZER;
 static PermissionManager g_permissionMgr[CLIENT_MAX] = {};
-
-#ifdef APPSPAWN_SANDBOX_NEW
-static int ParseAppSandboxConfig(const cJSON *root, PermissionManager *mgr)
-{
-    // conditional
-    cJSON *json = cJSON_GetObjectItemCaseSensitive(root, "conditional");
-    APPSPAWN_CHECK(json != NULL, return 0, "No found conditional in config");
-
-    // permission
-    cJSON *config = cJSON_GetObjectItemCaseSensitive(json, "permission");
-    APPSPAWN_CHECK(config != NULL && cJSON_IsArray(config), return 0, "No found permission in config");
-
-    uint32_t configSize = cJSON_GetArraySize(config);
-    for (uint32_t i = 0; i < configSize; i++) {
-        json = cJSON_GetArrayItem(config, i);
-        char *name = GetStringFromJsonObj(json, "name");
-        APPSPAWN_CHECK(name != NULL, break, "No found name in config");
-
-        int ret = AddSandboxPermissionNode(name, &mgr->permissionQueue);
-        APPSPAWN_CHECK_ONLY_EXPER(ret == 0, return ret);
-    }
-    return 0;
-}
-
-static PermissionManager *GetPermissionMgrByType(AppSpawnClientType type)
-{
-    APPSPAWN_CHECK_ONLY_EXPER(type < CLIENT_MAX, return NULL);
-    g_permissionMgr[type].type = type;
-    return &g_permissionMgr[type];
-}
-#else
 
 static int ParsePermissionConfig(const cJSON *permissionConfigs, PermissionManager *mgr)
 {
@@ -104,13 +70,10 @@ static PermissionManager *GetPermissionMgrByType(AppSpawnClientType type)
     g_permissionMgr[0].type = CLIENT_FOR_APPSPAWN;
     return &g_permissionMgr[0];
 }
-#endif
 
 static int LoadPermissionConfig(PermissionManager *mgr)
 {
-    (void)ParseJsonConfig("etc/sandbox",
-                          mgr->type == CLIENT_FOR_APPSPAWN ? APP_SANDBOX_FILE_NAME : RENDER_SANDBOX_FILE_NAME,
-                          ParseAppSandboxConfig, mgr);
+    (void)ParseJsonConfig("etc/sandbox", APP_SANDBOX_FILE_NAME, ParseAppSandboxConfig, mgr);
     size_t count = sizeof(g_spawnerPermissionList) / sizeof(g_spawnerPermissionList[0]);
     for (size_t i = 0; i < count; i++) {
         AddSandboxPermissionNode(g_spawnerPermissionList[i], &mgr->permissionQueue);
@@ -251,7 +214,6 @@ static int InitPermissionQueueForSPM(AppSpawnMgr *mgr)
 __attribute__((constructor)) static void LoadPermissionModule(void)
 {
     (void)LoadPermission(CLIENT_FOR_APPSPAWN);
-    (void)LoadPermission(CLIENT_FOR_NWEBSPAWN);
 #ifdef APPSPAWN_ENABLE_SPM
     (void)AddServerStageHook(STAGE_SERVER_PRELOAD, HOOK_PRIO_COMMON, InitPermissionQueueForSPM);
 #endif
@@ -260,5 +222,4 @@ __attribute__((constructor)) static void LoadPermissionModule(void)
 __attribute__((destructor)) static void DeletePermissionModule(void)
 {
     DeletePermission(CLIENT_FOR_APPSPAWN);
-    DeletePermission(CLIENT_FOR_NWEBSPAWN);
 }

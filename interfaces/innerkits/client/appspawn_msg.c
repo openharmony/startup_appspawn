@@ -572,13 +572,6 @@ int AppSpawnClientAddPermission(AppSpawnClientHandle handle, AppSpawnReqMsgHandl
         return AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_SET_CAPS_FOWNER);
     }
 
-#ifdef APPSPAWN_SANDBOX_NEW
-    // Don't need to transmit sandbox permission in nwebspawn mode
-    if (reqMgr->type == CLIENT_FOR_NWEBSPAWN) {
-        return 0;
-    }
-#endif
-
     int32_t maxIndex = GetMaxPermissionIndex(handle);
     int index = GetPermissionIndex(handle, permission);
     APPSPAWN_CHECK(index >= 0 && index < maxIndex,
