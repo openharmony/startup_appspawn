@@ -48,6 +48,7 @@ if (!defined(ohos_lite)) {
       "-Wl,--wrap=close",
       "-Wl,--wrap=clock_gettime",
       "-Wl,--wrap=AddServerStageHook",
+      "-Wl,--wrap=strdup",
     ]
 
     deps = [ "${appspawn_path}/util:libappspawn_util" ]

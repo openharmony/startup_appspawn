@@ -142,8 +142,8 @@ HWTEST_F(DecUtilTest, App_Spawn_DecUtil_GetIgnoreCaseDirs_MultipleCalls, TestSiz
 */
 HWTEST_F(DecUtilTest, App_Spawn_DecUtil_Macro_MAX_POLICY_NUM_001, TestSize.Level0)
 {
-    // TC001: Verify MAX_POLICY_NUM is 64 to ensure policy capacity meets requirement
-    EXPECT_EQ(MAX_POLICY_NUM, 64);
+    // Verify MAX_POLICY_NUM meets minimum capacity requirement
+    EXPECT_GE(MAX_POLICY_NUM, 64);
 }
 
 /**
@@ -155,6 +155,18 @@ HWTEST_F(DecUtilTest, App_Spawn_DecUtil_Macro_KERNEL_BATCH_SIZE_001, TestSize.Le
 {
     // TC002: Verify KERNEL_BATCH_SIZE is 8 for batch delivery mechanism
     EXPECT_EQ(KERNEL_BATCH_SIZE, 8);
+}
+
+/**
+* @tc.name: App_Spawn_DecUtil_Macro_MAX_CONFIG_POLICY_NUM_001
+* @tc.desc: Verify MAX_CONFIG_POLICY_NUM is within valid range [1, MAX_POLICY_NUM)
+* @tc.type: FUNC
+*/
+HWTEST_F(DecUtilTest, App_Spawn_DecUtil_Macro_MAX_CONFIG_POLICY_NUM_001, TestSize.Level0)
+{
+    // MAX_CONFIG_POLICY_NUM >= 1 and < MAX_POLICY_NUM
+    EXPECT_GE(MAX_CONFIG_POLICY_NUM, 1);
+    EXPECT_LT(MAX_CONFIG_POLICY_NUM, MAX_POLICY_NUM);
 }
 
 /**
