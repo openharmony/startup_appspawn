@@ -38,6 +38,7 @@ if (!defined(ohos_lite)) {
       "${appspawn_path}",
       "${appspawn_path}/common",
       "${appspawn_path}/standard",
+      "${appspawn_path}/test/unittest",
       "${appspawn_path}/modules/modulemgr",
       "${appspawn_path}/modules/common",
       "${appspawn_path}/modules/module_engine/include",
@@ -57,10 +58,16 @@ if (!defined(ohos_lite)) {
     # Dependent code sources
     sources += [
       "${appspawn_path}/common/appspawn_trace.cpp",
+      "${appspawn_path}/modules/common/appspawn_dfx_dump.cpp",
       "${appspawn_path}/modules/modulemgr/appspawn_modulemgr.c",
       "${appspawn_path}/standard/appspawn_appmgr.c",
+      "${appspawn_path}/standard/appspawn_fd_manager.c",
       "${appspawn_path}/standard/appspawn_msgmgr.c",
+      "${appspawn_path}/standard/appspawn_service.c",
       "${appspawn_path}/util/src/appspawn_utils.c",
+      "${appspawn_path}/util/src/appspawndf_utils.cpp",
+      "${appspawn_innerkits_path}/client/appspawn_client.c",
+      "${appspawn_innerkits_path}/client/appspawn_msg.c",
       "${appspawn_innerkits_path}/permission/appspawn_mount_permission.c",
     ]
     sources += appspawn_sandbox_src
@@ -74,6 +81,8 @@ if (!defined(ohos_lite)) {
     # Test sources
     sources += [
       "nwebspawn_adapter_test.cpp",
+      "nwebspawn_adapter_branch_test.cpp",
+      "${appspawn_path}/test/unittest/app_spawn_test_helper.cpp",
     ]
 
     configs = [ "${appspawn_path}:appspawn_config" ]
