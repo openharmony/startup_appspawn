@@ -23,7 +23,10 @@
 #include "token_setproc.h"
 #include "tokenid_kit.h"
 #include "securec.h"
+
+#ifdef NORMAL_SANDBOX
 #include <cstring>
+#endif
 
 #ifdef WITH_SELINUX
 #include "hap_restorecon.h"
