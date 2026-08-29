@@ -16,5 +16,12 @@
     { "name": "DumpAppSpawnMsg" },
     { "name": "AppSpawnDump" },
     { "name": "RegisterExpandSandboxCfgHandler"},
-    { "name": "GetAppSpawnMgr" }
+    { "name": "GetAppSpawnMgr" },
+    { "name": "SetUidGid" },
+    { "name": "SetCapabilities" },
+    { "name": "SetAmbientCapabilities" },
+    { "name": "SetSelinuxCon" },
+    { "name": "ExecvTarget" },
+    { "name": "SpawnPolicyInit" },
+    { "name": "ResolvePolicy" }
 ]

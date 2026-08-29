@@ -23,7 +23,7 @@ extern "C" {
 #endif
 
 int SetAppAccessToken(const AppSpawnMgr *content, const AppSpawningCtx *property);
-int SetSelinuxCon(const AppSpawnMgr *content, const AppSpawningCtx *property);
+int SetAppSelinuxCon(const AppSpawnMgr *content, const AppSpawningCtx *property);
 
 int SetUidGidFilter(const AppSpawnMgr *content);
 int SetSeccompFilter(const AppSpawnMgr *content, const AppSpawningCtx *property);

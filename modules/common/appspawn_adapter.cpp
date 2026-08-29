@@ -116,10 +116,10 @@ void SetHapDomainInfo(const AppSpawnMgr *content, const AppSpawningCtx *property
 }
 #endif
 
-int SetSelinuxCon(const AppSpawnMgr *content, const AppSpawningCtx *property)
+int SetAppSelinuxCon(const AppSpawnMgr *content, const AppSpawningCtx *property)
 {
 #ifdef WITH_SELINUX
-    APPSPAWN_LOGV("SetSelinuxCon IsDeveloperModeOn %{public}d", IsDeveloperModeOn(property));
+    APPSPAWN_LOGV("SetAppSelinuxCon IsDeveloperModeOn %{public}d", IsDeveloperModeOn(property));
     if (GetAppSpawnMsgType(property) == MSG_SPAWN_NATIVE_PROCESS) {
         if (!IsDeveloperModeOn(property)) {
             APPSPAWN_LOGE("Denied Launching a native process: not in developer mode");
@@ -137,7 +137,7 @@ int SetSelinuxCon(const AppSpawnMgr *content, const AppSpawningCtx *property)
     int32_t ret = hapContext.HapDomainSetcontext(hapDomainInfo);
     APPSPAWN_CHECK(ret == 0, return APPSPAWN_ACCESS_TOKEN_INVALID,
         "Set domain context failed, ret: %{public}d %{public}s", ret, GetProcessName(property));
-    APPSPAWN_LOGV("SetSelinuxCon success for %{public}s", GetProcessName(property));
+    APPSPAWN_LOGV("SetAppSelinuxCon success for %{public}s", GetProcessName(property));
 #endif
     return 0;
 }

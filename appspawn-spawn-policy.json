@@ -1,0 +1,36 @@
+{
+  "policies": [
+    {
+      "name": "app",
+      "uidFrom": "tlv:dac",
+      "gidFrom": "tlv:dac",
+      "caps": "tlv:caps",
+      "selinux": "tlv:selinux",
+      "sandboxCfg": "appdata-sandbox.json",
+      "sandboxRootFrom": "tlv:bundle",
+      "execFrom": "tlv:hap_entry",
+      "notifyAms": true
+    },
+    {
+      "name": "daemon-owned",
+      "uid": 0,
+      "gid": 0,
+      "caps": "sudo",
+      "selinux": "sudo",
+      "sandboxCfg": "appdata-sandbox.json",
+      "sandboxRootFrom": "ext:owner",
+      "execFrom": "ext:daemon_bin_path",
+      "notifyAms": true
+    },
+    {
+      "name": "daemon-system",
+      "uid": 0,
+      "gid": 0,
+      "caps": "sudo",
+      "selinux": "sudo",
+      "sandboxCfg": "appdata-sandbox-daemon-system.json",
+      "execFrom": "ext:daemon_bin_path",
+      "notifyAms": true
+    }
+  ]
+}

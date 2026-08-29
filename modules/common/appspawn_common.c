@@ -41,6 +41,7 @@
 
 #include "appspawn_adapter.h"
 #include "appspawn_hook.h"
+#include "spawn_primitives.h"
 #include "appspawn_service.h"
 #include "appspawn_msg.h"
 #include "appspawn_manager.h"
@@ -214,7 +215,7 @@ APPSPAWN_STATIC int SetExtPermAmbientFromResult(const ExtPermResult *result)
 }
 
 
-APPSPAWN_STATIC int SetAmbientCapabilities(const AppSpawningCtx *property, const ExtPermResult *result)
+APPSPAWN_STATIC int SetAppAmbientCapabilities(const AppSpawningCtx *property, const ExtPermResult *result)
 {
     if (!IsNoShareFsEnable()) {
         return 0;
@@ -236,18 +237,8 @@ APPSPAWN_STATIC int SetAmbientCapabilities(const AppSpawningCtx *property, const
     return ret;
 }
 
-APPSPAWN_STATIC int SetCapabilities(const AppSpawnMgr *content, const AppSpawningCtx *property)
+APPSPAWN_STATIC int SetAppCapabilities(const AppSpawnMgr *content, const AppSpawningCtx *property)
 {
-    // init cap
-    struct __user_cap_header_struct capHeader;
-    bool isRet = memset_s(&capHeader, sizeof(capHeader), 0, sizeof(capHeader)) != EOK;
-    APPSPAWN_CHECK(!isRet, return -EINVAL, "Failed to memset cap header");
-
-    capHeader.version = _LINUX_CAPABILITY_VERSION_3;
-    capHeader.pid = 0;
-    struct __user_cap_data_struct capData[2];
-    isRet = memset_s(&capData, sizeof(capData), 0, sizeof(capData)) != EOK;
-    APPSPAWN_CHECK(!isRet, return -EINVAL, "Failed to memset cap data");
     bool needExtPerm = IsNoShareFsEnable() &&
         !CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX_TYPE) &&
         (IsAppSpawnMode(content) || IsNativeSpawnMode(content));
@@ -255,7 +246,7 @@ APPSPAWN_STATIC int SetCapabilities(const AppSpawnMgr *content, const AppSpawnin
     if (needExtPerm) {
         GetExtPermResult(property, &extResult);
     }
-    // init inheritable permitted effective zero
+    // compute capability mask (app policy); mechanism moved to engine primitive SetCapabilities
 #ifdef GRAPHIC_PERMISSION_CHECK
     u_int64_t baseCaps = 0;
     if (needExtPerm) {
@@ -272,17 +263,11 @@ APPSPAWN_STATIC int SetCapabilities(const AppSpawnMgr *content, const AppSpawnin
     const uint64_t permitted = 0x3fffffffff;
     const uint64_t effective = 0x3fffffffff;
 #endif
-    capData[0].inheritable = (__u32)(inheriTable);
-    capData[1].inheritable = (__u32)(inheriTable >> BITLEN32);
-    capData[0].permitted = (__u32)(permitted);
-    capData[1].permitted = (__u32)(permitted >> BITLEN32);
-    capData[0].effective = (__u32)(effective);
-    capData[1].effective = (__u32)(effective >> BITLEN32);
-    isRet = capset(&capHeader, &capData[0]) != 0;
-    APPSPAWN_CHECK(!isRet, return -errno, "Failed to capset errno: %{public}d", errno);
+    int ret = SetCapabilities(inheriTable, permitted, effective);
+    APPSPAWN_CHECK(ret == 0, return ret, "Failed to capset via primitive, ret: %{public}d", ret);
 
     if (needExtPerm) {
-        isRet = SetAmbientCapabilities(property, &extResult);
+        bool isRet = SetAppAmbientCapabilities(property, &extResult);
         APPSPAWN_CHECK(!isRet, return -1, "Failed to set ambient");
     }
     return 0;
@@ -401,7 +386,7 @@ APPSPAWN_STATIC int SetXpmConfig(const AppSpawnMgr *content, const AppSpawningCt
     return 0;
 }
 
-APPSPAWN_STATIC int SetUidGid(const AppSpawnMgr *content, const AppSpawningCtx *property)
+APPSPAWN_STATIC int SetAppUidGid(const AppSpawnMgr *content, const AppSpawningCtx *property)
 {
     AppSpawnMsgDacInfo *dacInfo = (AppSpawnMsgDacInfo *)GetAppProperty(property, TLV_DAC_INFO);
     APPSPAWN_CHECK(dacInfo != NULL, return APPSPAWN_TLV_NONE,
@@ -682,17 +667,17 @@ static int SpawnSetProperties(AppSpawnMgr *content, AppSpawningCtx *property)
     ret = SetSchedPriority(content, property);
     APPSPAWN_CHECK_ONLY_EXPER(ret == 0, return ret);
 
-    ret = SetUidGid(content, property);
+    ret = SetAppUidGid(content, property);
     APPSPAWN_CHECK_ONLY_EXPER(ret == 0, return ret);
 
     ret = SetFileDescriptors(content, property);
     APPSPAWN_CHECK_ONLY_EXPER(ret == 0, return ret);
 
-    ret = SetCapabilities(content, property);
+    ret = SetAppCapabilities(content, property);
     APPSPAWN_CHECK_ONLY_EXPER(ret == 0, return ret);
 
-    StartAppspawnTrace("SetSelinuxCon");
-    ret = SetSelinuxCon(content, property);
+    StartAppspawnTrace("SetAppSelinuxCon");
+    ret = SetAppSelinuxCon(content, property);
     FinishAppspawnTrace();
     APPSPAWN_CHECK_ONLY_EXPER(ret == 0, return ret);
 

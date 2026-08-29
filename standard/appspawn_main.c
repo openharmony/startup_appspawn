@@ -18,6 +18,7 @@
 #include <stdlib.h>
 
 #include "appspawn_hook.h"
+#include "spawn_policy.h"
 #include "appspawn_modulemgr.h"
 #include "appspawn_manager.h"
 #include "appspawn_service.h"
@@ -109,6 +110,7 @@ int main(int argc, char *const argv[])
         return 0;
     }
     InitCommonEnv();
+    (void)SpawnPolicyInit();  // 启动期加载策略表（P2 旁路态，仅 app 策略生效，daemon 分类 P4 启用）
     CheckPreload(argv);
     (void)signal(SIGPIPE, SIG_IGN);
     uint32_t argvSize = end - start;
