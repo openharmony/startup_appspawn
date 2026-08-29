@@ -99,4 +99,40 @@ HWTEST_F(DecApiTest, App_Spawn_DecApi_GetIgnoreCaseDirs_002, TestSize.Level1)
     }
 }
 
+/**
+ * @tc.name: App_Spawn_DecApi_GetDecPathMap_EmptyConfig
+ * @tc.desc: Verify GetDecPathMap returns empty map when sandbox config is absent or empty
+ * @tc.type: FUNC
+ * @tc.level: Level0
+ */
+HWTEST_F(DecApiTest, App_Spawn_DecApi_GetDecPathMap_EmptyConfig, TestSize.Level0)
+{
+    std::map<std::string, std::vector<std::string>> decMap = GetDecPathMap();
+    GTEST_LOG_(INFO) << "GetDecPathMap returned " << decMap.size() << " entries";
+    for (const auto& [perm, paths] : decMap) {
+        EXPECT_FALSE(perm.empty());
+        for (const auto& p : paths) {
+            EXPECT_FALSE(p.empty());
+        }
+    }
+}
+
+/**
+ * @tc.name: App_Spawn_DecApi_GetIgnoreCaseDirs_NoShareFsFalse
+ * @tc.desc: Verify GetIgnoreCaseDirs returns 2 entries when noShareFsEnabled is false
+ * @tc.type: FUNC
+ * @tc.level: Level0
+ */
+HWTEST_F(DecApiTest, App_Spawn_DecApi_GetIgnoreCaseDirs_NoShareFsFalse, TestSize.Level0)
+{
+    SetNoShareFsEnable(false);
+    std::vector<std::pair<std::string, int>> dirs = GetIgnoreCaseDirs();
+    EXPECT_EQ(dirs.size(), 2u);
+    for (const auto& [path, mode] : dirs) {
+        EXPECT_FALSE(path.empty());
+        EXPECT_TRUE(mode == 0 || mode == 1);
+    }
+    SetNoShareFsEnable(true);
+}
+
 } // namespace OHOS

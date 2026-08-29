@@ -1518,10 +1518,12 @@ int32_t SandboxCore::SetDecPolicyWithPermission(const AppSpawningCtx *appPropert
     APPSPAWN_CHECK(tokenInfo != nullptr, return APPSPAWN_MSG_INVALID, "Get token id failed.");
 
     DecPolicyInfo decPolicyInfo = {0};
-    decPolicyInfo.pathNum = mountConfig.decPaths.size();
-    // Kernel supports at most KERNEL_BATCH_SIZE DEC policies per request
-    APPSPAWN_CHECK(decPolicyInfo.pathNum <= KERNEL_BATCH_SIZE, return APPSPAWN_SANDBOX_DEC_OUT_BOUND,
-        "dec policy out of bound %{public}d", decPolicyInfo.pathNum);
+    uint32_t totalPaths = mountConfig.decPaths.size();
+    decPolicyInfo.pathNum = (totalPaths > MAX_CONFIG_POLICY_NUM) ? MAX_CONFIG_POLICY_NUM : totalPaths;
+    if (totalPaths > MAX_CONFIG_POLICY_NUM) {
+        APPSPAWN_LOGW("dec policy %{public}u exceeds max %{public}d, truncating to first %{public}d",
+            totalPaths, MAX_CONFIG_POLICY_NUM, MAX_CONFIG_POLICY_NUM);
+    }
     int ret = 0;
     for (uint32_t i = 0; i < decPolicyInfo.pathNum; i++) {
         PathInfo pathInfo = {0};
@@ -1557,9 +1559,12 @@ int32_t SandboxCore::SetDecReadOnlyPolicyWithPermission(
         reinterpret_cast<AppSpawnMsgAccessToken *>(GetAppProperty(appProperty, TLV_ACCESS_TOKEN_INFO));
     APPSPAWN_CHECK(tokenInfo != nullptr, return APPSPAWN_MSG_INVALID, "Get token id failed.");
     DecPolicyInfo decPolicyInfo = {0};
-    decPolicyInfo.pathNum = mountConfig.decReadOnlyPaths.size();
-    APPSPAWN_CHECK(decPolicyInfo.pathNum <= KERNEL_BATCH_SIZE, return APPSPAWN_SANDBOX_DEC_OUT_BOUND,
-        "dec read-only policy out of bound %{public}d", decPolicyInfo.pathNum);
+    uint32_t totalReadOnlyPaths = mountConfig.decReadOnlyPaths.size();
+    decPolicyInfo.pathNum = (totalReadOnlyPaths > MAX_CONFIG_POLICY_NUM) ? MAX_CONFIG_POLICY_NUM : totalReadOnlyPaths;
+    if (totalReadOnlyPaths > MAX_CONFIG_POLICY_NUM) {
+        APPSPAWN_LOGW("dec read-only policy %{public}u exceeds max %{public}d, truncating to first %{public}d",
+            totalReadOnlyPaths, MAX_CONFIG_POLICY_NUM, MAX_CONFIG_POLICY_NUM);
+    }
     int ret = 0;
     for (uint32_t i = 0; i < decPolicyInfo.pathNum; i++) {
         PathInfo pathInfo = {0};
@@ -1607,7 +1612,7 @@ void SandboxCore::SetDecDenyWithDir(const AppSpawningCtx *appProperty)
         if (CheckAppPermissionFlagSet(appProperty, static_cast<uint32_t>(index))) {
             continue;
         }
-        APPSPAWN_CHECK(j < KERNEL_BATCH_SIZE, return, "dec policy out of bound currentIndex %{public}d", j);
+        APPSPAWN_CHECK(j < MAX_CONFIG_POLICY_NUM, return, "dec policy out of bound currentIndex %{public}d", j);
         PathInfo pathInfo = {0};
         pathInfo.path = const_cast<char *>(DEC_DENY_PATH_MAP[i].decPath);
         pathInfo.pathLen = static_cast<uint32_t>(strlen(pathInfo.path));
