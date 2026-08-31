@@ -14,6 +14,7 @@
  */
 
 #include "appspawn_utils.h"
+#include "parse_spawn_timeout.h"
 
 #include <ctype.h>
 #include <dirent.h>
@@ -423,9 +424,10 @@ uint32_t GetSpawnTimeout(uint32_t def, bool isColdRun)
     char *key = (isColdRun ? "const.appspawn.reqMgr.asanTimeout" : "persist.appspawn.reqMgr.timeout");
     int ret = GetParameter(key, "0", data, sizeof(data));
     if (ret > 0 && strcmp(data, "0") != 0) {
-        errno = 0;
-        value = (uint32_t)atoi(data);
-        return (errno != 0) ? def : ((value < def) ? def : value);
+        if (!ParseSpawnTimeoutU32(data, &value) || value < def) {
+            return def;
+        }
+        return value;
     }
     return value;
 }
