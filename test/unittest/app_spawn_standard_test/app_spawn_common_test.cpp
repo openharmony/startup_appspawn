@@ -2385,7 +2385,7 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_SetAmbientCapabilities_01, TestSize.Level
         AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_ISOLATED_SANDBOX_TYPE);
         property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
         APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
-        ret = SetAmbientCapabilities(property, nullptr);
+        ret = SetAmbientCapabilities(property);
     } while (0);
     DeleteAppSpawningCtx(property);
     AppSpawnClientDestroy(clientHandle);
@@ -2416,7 +2416,7 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_SetAmbientCapabilities_02, TestSize.Level
         AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_SET_CAPS_FOWNER);
         property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
         APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
-        ret = SetAmbientCapabilities(property, nullptr);
+        ret = SetAmbientCapabilities(property);
     } while (0);
     DeleteAppSpawningCtx(property);
     AppSpawnClientDestroy(clientHandle);
@@ -2447,7 +2447,7 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_SetAmbientCapabilities_03, TestSize.Level
         AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_CUSTOM_SANDBOX);
         property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
         APPSPAWN_CHECK_ONLY_EXPER(property != nullptr, break);
-        ret = SetAmbientCapabilities(property, nullptr);
+        ret = SetAmbientCapabilities(property);
     } while (0);
     DeleteAppSpawningCtx(property);
     AppSpawnClientDestroy(clientHandle);
@@ -2732,61 +2732,25 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_SetUidGid_008, TestSize.Level0)
 // ============================================================================
 // UT Test Cases for Extended Permission Capability Feature
 // Feature: Add JIT permission support for kernel capabilities (NET_RAW)
-// Added functions: GetExtPermResult, SetExtPermAmbientFromResult
+// Added functions: GetExtPermResult
 // Modified functions: SetAmbientCapabilities, SetCapabilities
 // ============================================================================
 
 /**
- * @brief Test GetExtPermResult with NULL result parameter
- * Expected: Function returns immediately without crash
- * Branch: result == NULL (line 159)
- */
-HWTEST_F(AppSpawnCommonTest, App_Spawn_GetExtPermResult_001, TestSize.Level0)
-{
-    AppSpawnClientHandle clientHandle = nullptr;
-    AppSpawningCtx *property = nullptr;
-    int ret = -1;
-    do {
-        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
-        APPSPAWN_CHECK(ret == 0, break, "Failed to create client");
-
-        AppSpawnReqMsgHandle reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
-        APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break, "Failed to create msg");
-
-        property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
-        APPSPAWN_CHECK(property != nullptr, break, "Failed to get property");
-
-        // Call with NULL result - should not crash
-        GetExtPermResult(property, nullptr);
-        ret = 0;
-    } while (0);
-    DeleteAppSpawningCtx(property);
-    AppSpawnClientDestroy(clientHandle);
-    ASSERT_EQ(ret, 0);
-}
-
-/**
  * @brief Test GetExtPermResult with NULL property
- * Expected: Result is initialized to zero
- * Branch: property->message check fails (line 165-167)
+ * Expected: Returns 0
+ * Branch: property == NULL
  */
 HWTEST_F(AppSpawnCommonTest, App_Spawn_GetExtPermResult_002, TestSize.Level0)
 {
-    ExtPermResult result;
-    result.caps = 0xFFFFFFFFFFFFFFFFULL;
-    result.capCount = 999;
-    result.capValues[0] = 12345;
-
-    GetExtPermResult(nullptr, &result);
-
-    EXPECT_EQ(result.caps, 0xFFFFFFFFFFFFFFFFULL);
-    EXPECT_EQ(result.capCount, 999);
+    uint64_t caps = GetExtPermResult(nullptr);
+    EXPECT_EQ(caps, 0ULL);
 }
 
 /**
  * @brief Test GetExtPermResult with no JIT permissions in message
  * Expected: Result remains empty
- * Branch: extInfo == NULL or size == 0 (line 167)
+ * Branch: extInfo == NULL or size == 0
  */
 HWTEST_F(AppSpawnCommonTest, App_Spawn_GetExtPermResult_003, TestSize.Level0)
 {
@@ -2803,14 +2767,9 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_GetExtPermResult_003, TestSize.Level0)
         property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
         APPSPAWN_CHECK(property != nullptr, break, "Failed to get property");
 
-        ExtPermResult result = {0};
-        result.caps = 0xDEADBEEF;
-        result.capCount = 777;
+        uint64_t caps = GetExtPermResult(property);
 
-        GetExtPermResult(property, &result);
-
-        EXPECT_EQ(result.caps, 0ULL);
-        EXPECT_EQ(result.capCount, 0);
+        EXPECT_EQ(caps, 0ULL);
         ret = 0;
     } while (0);
     DeleteAppSpawningCtx(property);
@@ -2821,7 +2780,7 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_GetExtPermResult_003, TestSize.Level0)
 /**
  * @brief Test GetExtPermResult with invalid JSON
  * Expected: Result is reset to zero
- * Branch: cJSON_Parse returns NULL (line 170-171)
+ * Branch: cJSON_Parse returns NULL
  */
 HWTEST_F(AppSpawnCommonTest, App_Spawn_GetExtPermResult_004, TestSize.Level0)
 {
@@ -2843,13 +2802,9 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_GetExtPermResult_004, TestSize.Level0)
         property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
         APPSPAWN_CHECK(property != nullptr, break, "Failed to get property");
 
-        ExtPermResult result = {0};
-        result.caps = 0xCAFEBABE;
-        result.capCount = 555;
+        uint64_t caps = GetExtPermResult(property);
 
-        GetExtPermResult(property, &result);
-
-        EXPECT_EQ(result.capCount, 0);
+        EXPECT_EQ(caps, 0ULL);
         ret = 0;
     } while (0);
     DeleteAppSpawningCtx(property);
@@ -2860,7 +2815,7 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_GetExtPermResult_004, TestSize.Level0)
 /**
  * @brief Test GetExtPermResult with JSON but no permissions field
  * Expected: Result is reset to zero
- * Branch: permissionsArray == NULL (line 174-176)
+ * Branch: permissionsArray == NULL
  */
 HWTEST_F(AppSpawnCommonTest, App_Spawn_GetExtPermResult_005, TestSize.Level0)
 {
@@ -2882,11 +2837,9 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_GetExtPermResult_005, TestSize.Level0)
         property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
         APPSPAWN_CHECK(property != nullptr, break, "Failed to get property");
 
-        ExtPermResult result = {0};
-        GetExtPermResult(property, &result);
+        uint64_t caps = GetExtPermResult(property);
 
-        EXPECT_EQ(result.caps, 0ULL);
-        EXPECT_EQ(result.capCount, 0);
+        EXPECT_EQ(caps, 0ULL);
         ret = 0;
     } while (0);
     DeleteAppSpawningCtx(property);
@@ -2897,7 +2850,7 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_GetExtPermResult_005, TestSize.Level0)
 /**
  * @brief Test GetExtPermResult with permissions field as object instead of array
  * Expected: Result is reset to zero
- * Branch: !cJSON_IsArray (line 174-176)
+ * Branch: !cJSON_IsArray
  */
 HWTEST_F(AppSpawnCommonTest, App_Spawn_GetExtPermResult_006, TestSize.Level0)
 {
@@ -2919,11 +2872,9 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_GetExtPermResult_006, TestSize.Level0)
         property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
         APPSPAWN_CHECK(property != nullptr, break, "Failed to get property");
 
-        ExtPermResult result = {0};
-        GetExtPermResult(property, &result);
+        uint64_t caps = GetExtPermResult(property);
 
-        EXPECT_EQ(result.caps, 0ULL);
-        EXPECT_EQ(result.capCount, 0);
+        EXPECT_EQ(caps, 0ULL);
         ret = 0;
     } while (0);
     DeleteAppSpawningCtx(property);
@@ -2934,7 +2885,7 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_GetExtPermResult_006, TestSize.Level0)
 /**
  * @brief Test GetExtPermResult with empty permissions array
  * Expected: Result is empty
- * Branch: count == 0, loop doesn't execute (line 178-193)
+ * Branch: count == 0, loop doesn't execute
  */
 HWTEST_F(AppSpawnCommonTest, App_Spawn_GetExtPermResult_007, TestSize.Level0)
 {
@@ -2956,11 +2907,9 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_GetExtPermResult_007, TestSize.Level0)
         property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
         APPSPAWN_CHECK(property != nullptr, break, "Failed to get property");
 
-        ExtPermResult result = {0};
-        GetExtPermResult(property, &result);
+        uint64_t caps = GetExtPermResult(property);
 
-        EXPECT_EQ(result.caps, 0ULL);
-        EXPECT_EQ(result.capCount, 0);
+        EXPECT_EQ(caps, 0ULL);
         ret = 0;
     } while (0);
     DeleteAppSpawningCtx(property);
@@ -2971,7 +2920,7 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_GetExtPermResult_007, TestSize.Level0)
 /**
  * @brief Test GetExtPermResult with valid NET_RAW permission
  * Expected: Result contains CAP_NET_RAW
- * Branch: Successful parsing and mapping (line 185-190)
+ * Branch: Successful parsing and mapping
  */
 HWTEST_F(AppSpawnCommonTest, App_Spawn_GetExtPermResult_008, TestSize.Level0)
 {
@@ -2993,12 +2942,9 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_GetExtPermResult_008, TestSize.Level0)
         property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
         APPSPAWN_CHECK(property != nullptr, break, "Failed to get property");
 
-        ExtPermResult result = {0};
-        GetExtPermResult(property, &result);
+        uint64_t caps = GetExtPermResult(property);
 
-        EXPECT_NE(result.caps & CAP_TO_MASK(CAP_NET_RAW), 0ULL);
-        EXPECT_EQ(result.capCount, 1);
-        EXPECT_EQ(result.capValues[0], CAP_NET_RAW);
+        EXPECT_EQ(caps, (uint64_t)CAP_TO_MASK(CAP_NET_RAW));
         ret = 0;
     } while (0);
     DeleteAppSpawningCtx(property);
@@ -3009,7 +2955,7 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_GetExtPermResult_008, TestSize.Level0)
 /**
  * @brief Test GetExtPermResult with unknown permission
  * Expected: Result remains empty
- * Branch: No match in g_permissionCapabilityMap (line 184-192)
+ * Branch: No match in g_permissionCapabilityMap
  */
 HWTEST_F(AppSpawnCommonTest, App_Spawn_GetExtPermResult_009, TestSize.Level0)
 {
@@ -3031,11 +2977,9 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_GetExtPermResult_009, TestSize.Level0)
         property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
         APPSPAWN_CHECK(property != nullptr, break, "Failed to get property");
 
-        ExtPermResult result = {0};
-        GetExtPermResult(property, &result);
+        uint64_t caps = GetExtPermResult(property);
 
-        EXPECT_EQ(result.caps, 0ULL);
-        EXPECT_EQ(result.capCount, 0);
+        EXPECT_EQ(caps, 0ULL);
         ret = 0;
     } while (0);
     DeleteAppSpawningCtx(property);
@@ -3046,7 +2990,7 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_GetExtPermResult_009, TestSize.Level0)
 /**
  * @brief Test GetExtPermResult with permission item without name
  * Expected: Continues to next item
- * Branch: permItem->child == NULL (line 182)
+ * Branch: permItem->child == NULL
  */
 HWTEST_F(AppSpawnCommonTest, App_Spawn_GetExtPermResult_010, TestSize.Level0)
 {
@@ -3068,11 +3012,9 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_GetExtPermResult_010, TestSize.Level0)
         property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
         APPSPAWN_CHECK(property != nullptr, break, "Failed to get property");
 
-        ExtPermResult result = {0};
-        GetExtPermResult(property, &result);
+        uint64_t caps = GetExtPermResult(property);
 
-        EXPECT_EQ(result.caps, 0ULL);
-        EXPECT_EQ(result.capCount, 0);
+        EXPECT_EQ(caps, 0ULL);
         ret = 0;
     } while (0);
     DeleteAppSpawningCtx(property);
@@ -3083,7 +3025,7 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_GetExtPermResult_010, TestSize.Level0)
 /**
  * @brief Test GetExtPermResult with mixed valid and invalid permissions
  * Expected: Only valid permissions are parsed
- * Branch: Mix of matching and non-matching (line 184-192)
+ * Branch: Mix of matching and non-matching
  */
 HWTEST_F(AppSpawnCommonTest, App_Spawn_GetExtPermResult_011, TestSize.Level0)
 {
@@ -3109,11 +3051,9 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_GetExtPermResult_011, TestSize.Level0)
         property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
         APPSPAWN_CHECK(property != nullptr, break, "Failed to get property");
 
-        ExtPermResult result = {0};
-        GetExtPermResult(property, &result);
+        uint64_t caps = GetExtPermResult(property);
 
-        EXPECT_NE(result.caps & CAP_TO_MASK(CAP_NET_RAW), 0ULL);
-        EXPECT_EQ(result.capCount, 1);
+        EXPECT_NE(caps & CAP_TO_MASK(CAP_NET_RAW), 0ULL);
         ret = 0;
     } while (0);
     DeleteAppSpawningCtx(property);
@@ -3124,7 +3064,7 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_GetExtPermResult_011, TestSize.Level0)
 /**
  * @brief Test GetExtPermResult with duplicate NET_RAW permission
  * Expected: CAP_NET_RAW is set once (OR operation)
- * Branch: Duplicate permission names (line 186)
+ * Branch: Duplicate permission names
  */
 HWTEST_F(AppSpawnCommonTest, App_Spawn_GetExtPermResult_012, TestSize.Level0)
 {
@@ -3149,12 +3089,9 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_GetExtPermResult_012, TestSize.Level0)
         property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
         APPSPAWN_CHECK(property != nullptr, break, "Failed to get property");
 
-        ExtPermResult result = {0};
-        GetExtPermResult(property, &result);
+        uint64_t caps = GetExtPermResult(property);
 
-        EXPECT_NE(result.caps & CAP_TO_MASK(CAP_NET_RAW), 0ULL);
-        EXPECT_EQ(result.capCount, 1);
-        EXPECT_EQ(result.capValues[0], CAP_NET_RAW);
+        EXPECT_EQ(caps, (uint64_t)CAP_TO_MASK(CAP_NET_RAW));
         ret = 0;
     } while (0);
     DeleteAppSpawningCtx(property);
@@ -3165,7 +3102,7 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_GetExtPermResult_012, TestSize.Level0)
 /**
  * @brief Test GetExtPermResult with malformed permission object
  * Expected: Continues without error
- * Branch: permItem == NULL (line 181-182)
+ * Branch: permItem == NULL
  */
 HWTEST_F(AppSpawnCommonTest, App_Spawn_GetExtPermResult_013, TestSize.Level0)
 {
@@ -3187,11 +3124,9 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_GetExtPermResult_013, TestSize.Level0)
         property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
         APPSPAWN_CHECK(property != nullptr, break, "Failed to get property");
 
-        ExtPermResult result = {0};
-        GetExtPermResult(property, &result);
+        uint64_t caps = GetExtPermResult(property);
 
-        EXPECT_EQ(result.caps, 0ULL);
-        EXPECT_EQ(result.capCount, 0);
+        EXPECT_EQ(caps, 0ULL);
         ret = 0;
     } while (0);
     DeleteAppSpawningCtx(property);
@@ -3199,39 +3134,10 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_GetExtPermResult_013, TestSize.Level0)
     ASSERT_EQ(ret, 0);
 }
 
-HWTEST_F(AppSpawnCommonTest, App_Spawn_SetExtPermAmbientFromResult_001, TestSize.Level0)
-{
-    int ret = SetExtPermAmbientFromResult(nullptr);
-    EXPECT_EQ(ret, 0);
-    ExtPermResult result = {0};
-    result.caps = 0;
-    result.capCount = 0;
-
-    ret = SetExtPermAmbientFromResult(&result);
-    EXPECT_EQ(ret, 0);
-}
-
 /**
- * @brief Test SetExtPermAmbientFromResult with NET_RAW capability
- * Expected: Attempts to set CAP_NET_RAW ambient capability
- * Branch: Successful SetAmbientCapability (line 203-204)
- */
-HWTEST_F(AppSpawnCommonTest, App_Spawn_SetExtPermAmbientFromResult_002, TestSize.Level0)
-{
-    ExtPermResult result = {0};
-    result.caps = CAP_TO_MASK(CAP_NET_RAW);
-    result.capValues[0] = CAP_NET_RAW;
-    result.capCount = 1;
-
-    int ret = SetExtPermAmbientFromResult(&result);
-    // In test environment, prctl may be stubbed
-    EXPECT_TRUE(ret == 0 || ret == -1);
-}
-
-/**
- * @brief Test SetAmbientCapabilities with NULL result
- * Expected: Sets base capabilities (DAC_OVERRIDE) and flag-based caps
- * Branch: result == NULL, SetExtPermAmbientFromResult skipped (line 228)
+ * @brief Test SetAmbientCapabilities with no flags
+ * Expected: Sets base capabilities (DAC_OVERRIDE) only
+ * Branch: No additional flags
  */
 HWTEST_F(AppSpawnCommonTest, App_Spawn_SetAmbientCapabilities_001, TestSize.Level0)
 {
@@ -3249,7 +3155,7 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_SetAmbientCapabilities_001, TestSize.Leve
         property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
         APPSPAWN_CHECK(property != nullptr, break, "Failed to get property");
 
-        ret = SetAmbientCapabilities(property, nullptr);
+        ret = SetAmbientCapabilities(property);
     } while (0);
     DeleteAppSpawningCtx(property);
     AppSpawnClientDestroy(clientHandle);
@@ -3259,7 +3165,7 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_SetAmbientCapabilities_001, TestSize.Leve
 /**
  * @brief Test SetAmbientCapabilities with CUSTOM_SANDBOX flag
  * Expected: Sets CAP_DAC_OVERRIDE and CAP_KILL
- * Branch: CheckAppMsgFlagsSet(CUSTOM_SANDBOX) == true (line 219-221)
+ * Branch: CheckAppMsgFlagsSet(CUSTOM_SANDBOX) == true
  */
 HWTEST_F(AppSpawnCommonTest, App_Spawn_SetAmbientCapabilities_002, TestSize.Level0)
 {
@@ -3279,7 +3185,7 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_SetAmbientCapabilities_002, TestSize.Leve
         property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
         APPSPAWN_CHECK(property != nullptr, break, "Failed to get property");
 
-        ret = SetAmbientCapabilities(property, nullptr);
+        ret = SetAmbientCapabilities(property);
     } while (0);
     DeleteAppSpawningCtx(property);
     AppSpawnClientDestroy(clientHandle);
@@ -3289,7 +3195,7 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_SetAmbientCapabilities_002, TestSize.Leve
 /**
  * @brief Test SetAmbientCapabilities with SET_CAPS_FOWNER flag
  * Expected: Sets CAP_DAC_OVERRIDE and CAP_FOWNER
- * Branch: CheckAppMsgFlagsSet(SET_CAPS_FOWNER) == true (line 224-226)
+ * Branch: CheckAppMsgFlagsSet(SET_CAPS_FOWNER) == true
  */
 HWTEST_F(AppSpawnCommonTest, App_Spawn_SetAmbientCapabilities_003, TestSize.Level0)
 {
@@ -3309,7 +3215,7 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_SetAmbientCapabilities_003, TestSize.Leve
         property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
         APPSPAWN_CHECK(property != nullptr, break, "Failed to get property");
 
-        ret = SetAmbientCapabilities(property, nullptr);
+        ret = SetAmbientCapabilities(property);
     } while (0);
     DeleteAppSpawningCtx(property);
     AppSpawnClientDestroy(clientHandle);
@@ -3319,7 +3225,7 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_SetAmbientCapabilities_003, TestSize.Leve
 /**
  * @brief Test SetAmbientCapabilities with both sandbox flags
  * Expected: Sets CAP_DAC_OVERRIDE, CAP_KILL, and CAP_FOWNER
- * Branch: Both flags set (line 219-226)
+ * Branch: Both flags set
  */
 HWTEST_F(AppSpawnCommonTest, App_Spawn_SetAmbientCapabilities_004, TestSize.Level0)
 {
@@ -3340,69 +3246,7 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_SetAmbientCapabilities_004, TestSize.Leve
         property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
         APPSPAWN_CHECK(property != nullptr, break, "Failed to get property");
 
-        ret = SetAmbientCapabilities(property, nullptr);
-    } while (0);
-    DeleteAppSpawningCtx(property);
-    AppSpawnClientDestroy(clientHandle);
-    EXPECT_TRUE(ret == 0 || ret == -1);
-}
-
-/**
- * @brief Test SetAmbientCapabilities with NET_RAW in result
- * Expected: Sets base capabilities and calls SetExtPermAmbientFromResult
- * Branch: SetExtPermAmbientFromResult called (line 228)
- */
-HWTEST_F(AppSpawnCommonTest, App_Spawn_SetAmbientCapabilities_005, TestSize.Level0)
-{
-    AppSpawnClientHandle clientHandle = nullptr;
-    AppSpawningCtx *property = nullptr;
-    AppSpawnReqMsgHandle reqHandle = 0;
-    int ret = -1;
-    do {
-        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
-        APPSPAWN_CHECK(ret == 0, break, "Failed to create client");
-
-        reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
-        APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break, "Failed to create msg");
-
-        property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
-        APPSPAWN_CHECK(property != nullptr, break, "Failed to get property");
-
-        ExtPermResult result = {0};
-        result.caps = CAP_TO_MASK(CAP_NET_RAW);
-        result.capValues[0] = CAP_NET_RAW;
-        result.capCount = 1;
-
-        ret = SetAmbientCapabilities(property, &result);
-    } while (0);
-    DeleteAppSpawningCtx(property);
-    AppSpawnClientDestroy(clientHandle);
-    EXPECT_TRUE(ret == 0 || ret == -1);
-}
-
-/**
- * @brief Test SetAmbientCapabilities with empty result and no flags
- * Expected: Only sets CAP_DAC_OVERRIDE
- * Branch: No additional flags or extended perms (line 215-228)
- */
-HWTEST_F(AppSpawnCommonTest, App_Spawn_SetAmbientCapabilities_006, TestSize.Level0)
-{
-    AppSpawnClientHandle clientHandle = nullptr;
-    AppSpawningCtx *property = nullptr;
-    AppSpawnReqMsgHandle reqHandle = 0;
-    int ret = -1;
-    do {
-        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
-        APPSPAWN_CHECK(ret == 0, break, "Failed to create client");
-
-        reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
-        APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break, "Failed to create msg");
-
-        property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
-        APPSPAWN_CHECK(property != nullptr, break, "Failed to get property");
-
-        ExtPermResult result = {0};
-        ret = SetAmbientCapabilities(property, &result);
+        ret = SetAmbientCapabilities(property);
     } while (0);
     DeleteAppSpawningCtx(property);
     AppSpawnClientDestroy(clientHandle);
@@ -3412,7 +3256,7 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_SetAmbientCapabilities_006, TestSize.Leve
 /**
  * @brief Test SetCapabilities with isolated sandbox flag
  * Expected: needExtPerm is false, no extended capabilities set
- * Branch: CheckAppMsgFlagsSet(ISOLATED_SANDBOX_TYPE) == true (line 245)
+ * Branch: CheckAppMsgFlagsSet(ISOLATED_SANDBOX_TYPE) == true
  */
 HWTEST_F(AppSpawnCommonTest, App_Spawn_SetCapabilities_001, TestSize.Level0)
 {
@@ -3447,7 +3291,7 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_SetCapabilities_001, TestSize.Level0)
 /**
  * @brief Test SetCapabilities with NET_RAW JIT permission
  * Expected: needExtPerm is true, NET_RAW capability is added
- * Branch: needExtPerm == true, GetExtPermResult called (line 248-250)
+ * Branch: needExtPerm == true, GetExtPermResult called
  */
 HWTEST_F(AppSpawnCommonTest, App_Spawn_SetCapabilities_002, TestSize.Level0)
 {
@@ -3485,7 +3329,7 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_SetCapabilities_002, TestSize.Level0)
 /**
  * @brief Test SetCapabilities with CUSTOM_SANDBOX flag
  * Expected: CAP_KILL is added to baseCaps
- * Branch: CheckAppMsgFlagsSet(CUSTOM_SANDBOX) == true (line 256)
+ * Branch: CheckAppMsgFlagsSet(CUSTOM_SANDBOX) == true
  */
 HWTEST_F(AppSpawnCommonTest, App_Spawn_SetCapabilities_003, TestSize.Level0)
 {
@@ -3520,7 +3364,7 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_SetCapabilities_003, TestSize.Level0)
 /**
  * @brief Test SetCapabilities with SET_CAPS_FOWNER flag
  * Expected: CAP_FOWNER is added to baseCaps
- * Branch: CheckAppMsgFlagsSet(SET_CAPS_FOWNER) == true (line 257)
+ * Branch: CheckAppMsgFlagsSet(SET_CAPS_FOWNER) == true
  */
 HWTEST_F(AppSpawnCommonTest, App_Spawn_SetCapabilities_004, TestSize.Level0)
 {
@@ -3555,7 +3399,7 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_SetCapabilities_004, TestSize.Level0)
 /**
  * @brief Test SetCapabilities with all flags and NET_RAW
  * Expected: All capabilities are combined
- * Branch: All conditions true (line 256-258)
+ * Branch: All conditions true
  */
 HWTEST_F(AppSpawnCommonTest, App_Spawn_SetCapabilities_005, TestSize.Level0)
 {
@@ -3596,7 +3440,7 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_SetCapabilities_005, TestSize.Level0)
 /**
  * @brief Test SetCapabilities with native spawn mode
  * Expected: needExtPerm is true for native processes
- * Branch: IsNativeSpawnMode(content) == true (line 246)
+ * Branch: IsNativeSpawnMode(content) == true
  */
 HWTEST_F(AppSpawnCommonTest, App_Spawn_SetCapabilities_006, TestSize.Level0)
 {
@@ -3629,7 +3473,7 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_SetCapabilities_006, TestSize.Level0)
 /**
  * @brief Test SetCapabilities with no flags and no JIT permissions
  * Expected: Only base CAP_DAC_OVERRIDE is set
- * Branch: Minimal capabilities (line 255-258)
+ * Branch: Minimal capabilities
  */
 HWTEST_F(AppSpawnCommonTest, App_Spawn_SetCapabilities_007, TestSize.Level0)
 {
@@ -3662,7 +3506,7 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_SetCapabilities_007, TestSize.Level0)
 /**
  * @brief Test SetCapabilities with invalid JIT permissions JSON
  * Expected: GetExtPermResult handles invalid JSON gracefully
- * Branch: GetExtPermResult handles cJSON_Parse failure (line 249)
+ * Branch: GetExtPermResult handles cJSON_Parse failure
  */
 HWTEST_F(AppSpawnCommonTest, App_Spawn_SetCapabilities_008, TestSize.Level0)
 {
@@ -3700,7 +3544,7 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_SetCapabilities_008, TestSize.Level0)
 /**
  * @brief Test SetCapabilities with empty JIT permissions array
  * Expected: GetExtPermResult returns empty result
- * Branch: GetExtPermResult handles empty array (line 249)
+ * Branch: GetExtPermResult handles empty array
  */
 HWTEST_F(AppSpawnCommonTest, App_Spawn_SetCapabilities_009, TestSize.Level0)
 {
@@ -3738,7 +3582,7 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_SetCapabilities_009, TestSize.Level0)
 /**
  * @brief Test SetCapabilities with unknown JIT permission
  * Expected: Unknown permissions are ignored
- * Branch: GetExtPermResult ignores unknown permissions (line 249)
+ * Branch: GetExtPermResult ignores unknown permissions
  */
 HWTEST_F(AppSpawnCommonTest, App_Spawn_SetCapabilities_010, TestSize.Level0)
 {
@@ -3806,11 +3650,9 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_ExtPerm_Integration_001, TestSize.Level0)
         APPSPAWN_CHECK(property != nullptr, break, "Failed to get property");
 
         // Verify GetExtPermResult works
-        ExtPermResult extResult = {0};
-        GetExtPermResult(property, &extResult);
+        uint64_t extCaps = GetExtPermResult(property);
 
-        EXPECT_NE(extResult.caps & CAP_TO_MASK(CAP_NET_RAW), 0ULL);
-        EXPECT_EQ(extResult.capCount, 1);
+        EXPECT_EQ(extCaps, (uint64_t)CAP_TO_MASK(CAP_NET_RAW));
 
         // Verify SetCapabilities processes the result
         ret = SetCapabilities(mgr, property);
@@ -3847,15 +3689,11 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_ExtPerm_Integration_002, TestSize.Level0)
         APPSPAWN_CHECK(property != nullptr, break, "Failed to get property");
 
         // Call GetExtPermResult multiple times
-        ExtPermResult result1 = {0};
-        ExtPermResult result2 = {0};
-
-        GetExtPermResult(property, &result1);
-        GetExtPermResult(property, &result2);
+        uint64_t caps1 = GetExtPermResult(property);
+        uint64_t caps2 = GetExtPermResult(property);
 
         // Results should be consistent
-        EXPECT_EQ(result1.caps, result2.caps);
-        EXPECT_EQ(result1.capCount, result2.capCount);
+        EXPECT_EQ(caps1, caps2);
 
         ret = 0;
     } while (0);

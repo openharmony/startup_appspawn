@@ -86,12 +86,6 @@ static const PermissionCapabilityMap g_permissionCapabilityMap[] = {
     {"ohos.permission.kernel.NET_RAW", CAP_NET_RAW},
 };
 
-typedef struct {
-    uint64_t caps;
-    int capValues[ARRAY_LENGTH(g_permissionCapabilityMap)];
-    int capCount;
-} ExtPermResult;
-
 int __attribute__((weak)) SetUserId(char *userIdStr)
 {
     APPSPAWN_LOGV("SetUserId called (weak implementation)");
@@ -154,67 +148,49 @@ static int SetAmbientCapability(int cap)
     return 0;
 }
 
-APPSPAWN_STATIC void MatchPermToCap(const char *permName, ExtPermResult *result)
+APPSPAWN_STATIC void MatchPermToCap(const char *permName, uint64_t *caps)
 {
     for (size_t j = 0; j < ARRAY_LENGTH(g_permissionCapabilityMap); j++) {
         if (strcmp(permName, g_permissionCapabilityMap[j].permissionName) != 0) {
             continue;
         }
-        result->caps |= CAP_TO_MASK(g_permissionCapabilityMap[j].capability);
-        APPSPAWN_LOGV("SetExtPermAmbient Permission %{public}s maps to cap %{public}d",
+        *caps |= CAP_TO_MASK(g_permissionCapabilityMap[j].capability);
+        APPSPAWN_LOGV("MatchPermToCap Permission %{public}s maps to cap %{public}d",
             permName, g_permissionCapabilityMap[j].capability);
-        if (result->capCount < (int)ARRAY_LENGTH(g_permissionCapabilityMap)) {
-            result->capValues[result->capCount++] = g_permissionCapabilityMap[j].capability;
-        }
         break;
     }
 }
 
-APPSPAWN_STATIC void GetExtPermResult(const AppSpawningCtx *property, ExtPermResult *result)
+APPSPAWN_STATIC uint64_t GetExtPermResult(const AppSpawningCtx *property)
 {
-    if (property == NULL || result == NULL) {
-        return;
-    }
-    result->caps = 0;
-    result->capCount = 0;
+    uint64_t caps = 0;
+    APPSPAWN_CHECK_ONLY_EXPER(property != NULL, return 0);
     uint32_t size = 0;
     char *extInfo = (char *)(GetAppSpawnMsgExtInfo(property->message,
         MSG_EXT_NAME_JIT_PERMISSIONS, &size));
-    APPSPAWN_CHECK_ONLY_EXPER(size != 0 && extInfo != NULL, return);
+    APPSPAWN_CHECK_ONLY_EXPER(size != 0 && extInfo != NULL, return 0);
     APPSPAWN_LOGV("GetExtPermResult: %{public}s", extInfo);
     cJSON *extInfoJson = cJSON_Parse(extInfo);
-    APPSPAWN_CHECK(extInfoJson != NULL, return,
+    APPSPAWN_CHECK(extInfoJson != NULL, return 0,
         "GetExtPermResult: Invalid ext info for %{public}s", MSG_EXT_NAME_JIT_PERMISSIONS);
-    
+
     cJSON *permissionsArray = cJSON_GetObjectItemCaseSensitive(extInfoJson, "permissions");
     if (permissionsArray == NULL || !cJSON_IsArray(permissionsArray)) {
         cJSON_Delete(extInfoJson);
-        return;
+        return 0;
     }
     int count = cJSON_GetArraySize(permissionsArray);
 
     for (int i = 0; i < count; i++) {
         cJSON *permItem = cJSON_GetArrayItem(permissionsArray, i);
         APPSPAWN_CHECK_ONLY_EXPER(permItem != NULL && permItem->child != NULL, continue);
-        MatchPermToCap(permItem->child->string, result);
+        MatchPermToCap(permItem->child->string, &caps);
     }
     cJSON_Delete(extInfoJson);
+    return caps;
 }
 
-APPSPAWN_STATIC int SetExtPermAmbientFromResult(const ExtPermResult *result)
-{
-    if (result == NULL) {
-        return 0;
-    }
-    for (int i = 0; i < result->capCount; i++) {
-        APPSPAWN_CHECK(SetAmbientCapability(result->capValues[i]) == 0,
-            return -1, "SetExtPermAmbientFromResult set ambient failed:%{public}d", result->capValues[i]);
-    }
-    return 0;
-}
-
-
-APPSPAWN_STATIC int SetAmbientCapabilities(const AppSpawningCtx *property, const ExtPermResult *result)
+APPSPAWN_STATIC int SetAmbientCapabilities(const AppSpawningCtx *property)
 {
     if (!IsNoShareFsEnable()) {
         return 0;
@@ -231,9 +207,7 @@ APPSPAWN_STATIC int SetAmbientCapabilities(const AppSpawningCtx *property, const
     if (CheckAppMsgFlagsSet(property, APP_FLAGS_SET_CAPS_FOWNER)) {
         APPSPAWN_CHECK(SetAmbientCapability(CAP_FOWNER) == 0, return -1, "set ambient failed:%{public}d", CAP_FOWNER);
     }
-
-    int ret = SetExtPermAmbientFromResult(result);
-    return ret;
+    return 0;
 }
 
 APPSPAWN_STATIC int SetCapabilities(const AppSpawnMgr *content, const AppSpawningCtx *property)
@@ -251,9 +225,9 @@ APPSPAWN_STATIC int SetCapabilities(const AppSpawnMgr *content, const AppSpawnin
     bool needExtPerm = IsNoShareFsEnable() &&
         !CheckAppMsgFlagsSet(property, APP_FLAGS_ISOLATED_SANDBOX_TYPE) &&
         (IsAppSpawnMode(content) || IsNativeSpawnMode(content));
-    ExtPermResult extResult = {0};
+    uint64_t extPermCaps = 0;
     if (needExtPerm) {
-        GetExtPermResult(property, &extResult);
+        extPermCaps = GetExtPermResult(property);
     }
     // init inheritable permitted effective zero
 #ifdef GRAPHIC_PERMISSION_CHECK
@@ -262,7 +236,7 @@ APPSPAWN_STATIC int SetCapabilities(const AppSpawnMgr *content, const AppSpawnin
         baseCaps = CAP_TO_MASK(CAP_DAC_OVERRIDE);
         baseCaps |= CheckAppMsgFlagsSet(property, APP_FLAGS_CUSTOM_SANDBOX) ? CAP_TO_MASK(CAP_KILL) : 0;
         baseCaps |= CheckAppMsgFlagsSet(property, APP_FLAGS_SET_CAPS_FOWNER) ? CAP_TO_MASK(CAP_FOWNER) : 0;
-        baseCaps |= extResult.caps;
+        baseCaps |= extPermCaps;
     }
     const uint64_t inheriTable = baseCaps;
     const uint64_t permitted = baseCaps;
@@ -282,7 +256,7 @@ APPSPAWN_STATIC int SetCapabilities(const AppSpawnMgr *content, const AppSpawnin
     APPSPAWN_CHECK(!isRet, return -errno, "Failed to capset errno: %{public}d", errno);
 
     if (needExtPerm) {
-        isRet = SetAmbientCapabilities(property, &extResult);
+        isRet = SetAmbientCapabilities(property);
         APPSPAWN_CHECK(!isRet, return -1, "Failed to set ambient");
     }
     return 0;
