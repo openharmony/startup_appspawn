@@ -430,3 +430,28 @@ void DumpAppSpawnMsg(const AppSpawnMsgNode *message)
         DumpMsgExtInfo((AppSpawnTlv *)(message->buffer + message->tlvOffset[i]));
     }
 }
+
+void DumpFailedAppspawnMsg(const AppSpawnMsgNode *message, int ret)
+{
+    APPSPAWN_CHECK_ONLY_EXPER(message != NULL, return);
+    APPSPAWN_LOGE("DumpFailedAppspawnMsg: ret=%{public}d, errno=%{public}d",
+        ret, errno);
+    APPSPAWN_LOGE(" msgHeader: magic=0x%{public}x, msgType=%{public}u, msgLen=%{public}u, "
+        "msgId=%{public}u, tlvCount=%{public}u, processName=%{public}s",
+        message->msgHeader.magic, message->msgHeader.msgType, message->msgHeader.msgLen,
+        message->msgHeader.msgId, message->msgHeader.tlvCount, message->msgHeader.processName);
+    APPSPAWN_CHECK_ONLY_EXPER(message->tlvOffset != NULL, return);
+    for (uint32_t i = 0; i < message->tlvCount; i++) {
+        uint32_t idx = TLV_MAX + i;
+        APPSPAWN_CHECK_ONLY_EXPER(message->tlvOffset[idx] != INVALID_OFFSET, continue);
+        AppSpawnTlvExt *tlv = (AppSpawnTlvExt *)(message->buffer + message->tlvOffset[idx]);
+        APPSPAWN_CHECK(tlv != NULL, continue, "invalid TLV %{public}d", i);
+        char *value = (char *)(message->buffer + message->tlvOffset[idx] + sizeof(AppSpawnTlvExt));
+        APPSPAWN_ONLY_EXPER(tlv->dataType == DATA_TYPE_STRING,
+            APPSPAWN_LOGE(" extTLV[%{public}u]: key=%{public}s value='%{public}s' dataLen=%{public}u",
+                i, tlv->tlvName, value, tlv->dataLen));
+        APPSPAWN_ONLY_EXPER(tlv->dataType != DATA_TYPE_STRING,
+            APPSPAWN_LOGE(" extTLV[%{public}u]: key=%{public}s dataLen=%{public}u dataType=%{public}u",
+                i, tlv->tlvName, tlv->dataLen, tlv->dataType));
+    }
+}

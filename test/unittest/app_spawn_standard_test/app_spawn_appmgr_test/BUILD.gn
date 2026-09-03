@@ -42,6 +42,9 @@ if (!defined(ohos_lite)) {
       "${appspawn_path}/modules/modulemgr",
       "${appspawn_path}/modules/module_engine/include",
       "${appspawn_path}/standard",
+      "${appspawn_innerkits_path}/client",
+      "${appspawn_path}/test/mock",
+      "${appspawn_path}/test/unittest",
     ]
 
     # Test specific include dir
@@ -60,6 +63,7 @@ if (!defined(ohos_lite)) {
       "${appspawn_path}/standard/appspawn_msgmgr.c",
       "${appspawn_path}/util/src/appspawn_utils.c",
       "${appspawn_path}/util/src/appspawndf_utils.cpp",
+      "${appspawn_path}/standard/appspawn_service.c",
     ]
 
     # Test specific sources

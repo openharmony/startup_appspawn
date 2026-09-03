@@ -40,7 +40,7 @@ public:
 
     int AppMgrTestCreateSendMsg(std::vector<uint8_t> &buffer, uint32_t msgType, uint32_t &msgLen,
         const std::vector<AddTlvFunction> &addTlvFuncs);
-    int AppMgrTestAddBaseTlv(uint8_t *buffer, uint32_t bufferLen, uint32_t &realLen, uint32_t &tlvCount);
+    static int AppMgrTestAddBaseTlv(uint8_t *buffer, uint32_t bufferLen, uint32_t &realLen, uint32_t &tlvCount);
     int AppMgrTestAddRenderTerminationTlv(uint8_t *buffer, uint32_t bufferLen, uint32_t &realLen, uint32_t &tlvCount);
     int AppMgrTestAddExtTlv(uint8_t *buffer, uint32_t bufferLen, uint32_t &realLen, uint32_t &tlvCount);
     static void SignalHandle(int sig);

@@ -233,6 +233,7 @@ AppSpawnMsgNode *RebuildAppSpawnMsgNode(AppSpawnMsgNode *message, AppSpawnedProc
  *
  */
 void DumpAppSpawnMsg(const AppSpawnMsgNode *message);
+void DumpFailedAppspawnMsg(const AppSpawnMsgNode *message, int ret);
 void *GetAppSpawnMsgInfo(const AppSpawnMsgNode *message, int type);
 void *GetAppSpawnMsgExtInfo(const AppSpawnMsgNode *message, const char *name, uint32_t *len);
 int CheckAppSpawnMsgFlag(const AppSpawnMsgNode *message, uint32_t type, uint32_t index);
