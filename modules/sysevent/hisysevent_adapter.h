@@ -94,7 +94,7 @@ typedef struct {
 } AppSpawnHisyseventInfo;
 
 #define FUNC_REPORT_DURATION (20 * 1000)
-#define SPAWN_DURATION (120 * 1000)
+#define SPAWN_DURATION (200 * 1000)
 #define SPAWN_COLDRUN_DURATION (5 * 1000 * 1000)
 
 #define UNLOCK_SUCCESS "UNLOCK_SUCCESS"
