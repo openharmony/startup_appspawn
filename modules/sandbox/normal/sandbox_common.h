@@ -41,12 +41,13 @@ typedef struct SandboxMountConfig {
 } SandboxMountConfig;
 
 typedef struct MountPointProcessParams {
-    const AppSpawningCtx *appProperty;  // 引用属性
-    bool checkFlag;                     // 检查标志
-    bool isControlledApp;               // 受控应用标记
-    std::string section;                // 分区名称
-    std::string sandboxRoot;            // 沙箱根路径
-    std::string bundleName;             // 包名
+    const AppSpawningCtx *appProperty;           // 引用属性
+    bool checkFlag;                              // 检查标志
+    bool isControlledApp;                        // 受控应用标记
+    std::string section;                         // 分区名称
+    std::string sandboxRoot;                     // 沙箱根路径
+    std::string bundleName;                      // 包名
+    SandboxPathType pathType = SANDBOX_DIR_PATH; // 路径类型,默认为目录
 } MountPointProcessParams;
 
 using ArrayItemProcessor = std::function<int32_t(cJSON*)>;
@@ -69,7 +70,7 @@ public:
     // 文件操作
     static int CreateDirRecursive(const std::string &path, mode_t mode); // MakeDirRecursive
     static void CreateDirRecursiveWithClock(const std::string &path, mode_t mode); // MakeDirRecursiveWithClock
-    static void SetSandboxPathChmod(cJSON *jsonConfig, std::string &sandboxRoot); // DoSandboxChmod
+    static void SetSandboxPathChmod(cJSON *jsonConfig, const std::string &sandboxRoot); // DoSandboxChmod
 
     // 获取挂载配置参数信息
     static uint32_t ConvertFlagStr(const std::string &flagStr);

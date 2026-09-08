@@ -328,7 +328,7 @@ void SandboxCommon::CreateFileIfNotExist(const char *file)
     return;
 }
 
-void SandboxCommon::SetSandboxPathChmod(cJSON *jsonConfig, std::string &sandboxRoot)
+void SandboxCommon::SetSandboxPathChmod(cJSON *jsonConfig, const std::string &sandboxRoot)
 {
     const std::map<std::string, mode_t> modeMap = {{"S_IRUSR", S_IRUSR}, {"S_IWUSR", S_IWUSR}, {"S_IXUSR", S_IXUSR},
                                                    {"S_IRGRP", S_IRGRP}, {"S_IWGRP", S_IWGRP}, {"S_IXGRP", S_IXGRP},
@@ -593,6 +593,7 @@ void SandboxCommon::GetSandboxMountConfig(const AppSpawningCtx *appProperty, con
                                           cJSON *mntPoint, SandboxMountConfig &mountConfig)
 {
     if (section.compare(SandboxCommonDef::g_permissionPrefix) == 0 ||
+        section.compare(SandboxCommonDef::g_invertedPermissionPrefix) == 0 ||
         section.compare(SandboxCommonDef::g_flagsPoint) == 0 ||
         section.compare(SandboxCommonDef::g_debughap) == 0) {
         mountConfig.optionsPoint = GetOptions(appProperty, mntPoint);
@@ -1133,9 +1134,10 @@ int32_t SandboxCommon::DoAppSandboxMountOnce(const AppSpawningCtx *appProperty, 
     if (!(arg && arg->srcPath && arg->destPath && arg->srcPath[0] != '\0' && arg->destPath[0] != '\0')) {
         return 0;
     }
-    if (strstr(arg->srcPath, "system/etc/hosts") != nullptr ||
-        strstr(arg->srcPath, "system/etc/profile") != nullptr ||
-        strstr(arg->srcPath, "system/etc/sudoers") != nullptr) {
+    bool isFilePath = (arg->pathType == SANDBOX_FILE_PATH) || (strstr(arg->srcPath, "system/etc/hosts") != nullptr) ||
+                      (strstr(arg->srcPath, "system/etc/profile") != nullptr) ||
+                      (strstr(arg->srcPath, "system/etc/sudoers") != nullptr);
+    if (isFilePath) {
         CreateFileIfNotExist(arg->destPath);
     } else {
         (void)CreateDirRecursive(arg->destPath, SandboxCommonDef::FILE_MODE);
@@ -1186,9 +1188,12 @@ int32_t SandboxCommon::DoAppSandboxMountOnceNocheck(const AppSpawningCtx *appPro
     if (!(arg && arg->srcPath && arg->destPath && arg->srcPath[0] != '\0' && arg->destPath[0] != '\0')) {
         return 0;
     }
-    if ((strncmp(arg->srcPath, SandboxCommonDef::g_hostsPrefix, strlen(SandboxCommonDef::g_hostsPrefix)) == 0) ||
+    bool isFilePath =
+        (arg->pathType == SANDBOX_FILE_PATH) ||
+        (strncmp(arg->srcPath, SandboxCommonDef::g_hostsPrefix, strlen(SandboxCommonDef::g_hostsPrefix)) == 0) ||
         (strncmp(arg->srcPath, SandboxCommonDef::g_profilePrefix, strlen(SandboxCommonDef::g_profilePrefix)) == 0) ||
-        (strncmp(arg->srcPath, SandboxCommonDef::SUDOERS_PREFIX, strlen(SandboxCommonDef::SUDOERS_PREFIX)) == 0)) {
+        (strncmp(arg->srcPath, SandboxCommonDef::SUDOERS_PREFIX, strlen(SandboxCommonDef::SUDOERS_PREFIX)) == 0);
+    if (isFilePath) {
         CreateFileIfNotExist(arg->destPath);
     } else {
         (void)CreateDirRecursive(arg->destPath, SandboxCommonDef::FILE_MODE);

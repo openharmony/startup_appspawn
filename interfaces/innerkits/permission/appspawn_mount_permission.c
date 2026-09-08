@@ -49,18 +49,29 @@ static int ParsePermissionConfig(const cJSON *permissionConfigs, PermissionManag
     return 0;
 }
 
-static int ParseAppSandboxConfig(const cJSON *appSandboxConfig, PermissionManager *mgr)
+static int ParsePermissionsConfig(const char *key, const cJSON *appSandboxConfig, PermissionManager *mgr)
 {
-    cJSON *configs = cJSON_GetObjectItemCaseSensitive(appSandboxConfig, "permission");
-    APPSPAWN_CHECK(configs != NULL && cJSON_IsArray(configs), return 0, "No permission in json");
+    cJSON *configs = cJSON_GetObjectItemCaseSensitive(appSandboxConfig, key);
+    APPSPAWN_CHECK(configs != NULL && cJSON_IsArray(configs), return 0, "No %{public}s in json", key);
 
     int ret = 0;
     uint32_t configSize = (uint32_t)cJSON_GetArraySize(configs);
     for (uint32_t i = 0; i < configSize; i++) {
         cJSON *json = cJSON_GetArrayItem(configs, i);
         ret = ParsePermissionConfig(json, mgr);
-        APPSPAWN_CHECK(ret == 0, return ret, "Parse permission config fail result: %{public}d ", ret);
+        APPSPAWN_CHECK_ONLY_EXPER(ret == 0, return ret);
     }
+    return ret;
+}
+
+static int ParseAppSandboxConfig(const cJSON *appSandboxConfig, PermissionManager *mgr)
+{
+    int ret = ParsePermissionsConfig("permission", appSandboxConfig, mgr);
+    APPSPAWN_CHECK(ret == 0, return ret, "Parse permission config fail result: %{public}d ", ret);
+ 
+    ret = ParsePermissionsConfig("inverted-permission", appSandboxConfig, mgr);
+    APPSPAWN_CHECK(ret == 0, return ret, "Parse inverted-permission config fail result: %{public}d ", ret);
+ 
     return ret;
 }
 

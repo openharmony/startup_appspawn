@@ -603,11 +603,6 @@
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
-                    "src-path" : "/data/app/el1/bundle/public/<arkWebPackageName>",
-                    "sandbox-path" : "/data/app/el1/bundle/public/<arkWebPackageName>",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
                     "src-path" : "/system/app/NWeb",
                     "sandbox-path" : "/system/app/NWeb",
                     "sandbox-flags" : [ "bind", "rec" ],
@@ -618,8 +613,25 @@
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
+                    "src-path": "/mnt/sandbox/arkwebcore/dummylibs",
+                    "sandbox-path": "/data/storage/el1/bundle/arkwebcore/feature",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
                     "src-path" : "/data/service/el1/<hostUserId>/for-all-app/fonts",
                     "sandbox-path" : "/data/service/el1/public/for-all-app/fonts",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }
+            ],
+            "mount-files" : [{
+                    "src-path": "/mnt/sandbox/arkwebcore/dummyfile",
+                    "sandbox-path": "/system/app/ArkWebCore/ArkWebCoreEx.hap",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path": "/mnt/sandbox/arkwebcore/dummyfile",
+                    "sandbox-path": "/data/storage/el1/bundle/arkwebcore/feature.hap",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }
@@ -698,11 +710,6 @@
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
-                    "src-path" : "/data/app/el1/bundle/public/<arkWebPackageName>",
-                    "sandbox-path" : "/data/app/el1/bundle/public/<arkWebPackageName>",
-                    "sandbox-flags" : [ "bind", "rec" ],
-                    "check-action-status": "false"
-                }, {
                     "src-path" : "/system/app/NWeb",
                     "sandbox-path" : "/system/app/NWeb",
                     "sandbox-flags" : [ "bind", "rec" ],
@@ -710,6 +717,11 @@
                 }, {
                     "src-path" : "/module_update/ArkWebCore/app/<arkWebPackageName>",
                     "sandbox-path" : "/module_update/ArkWebCore/app/<arkWebPackageName>",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path": "/mnt/sandbox/arkwebcore/dummylibs",
+                    "sandbox-path": "/data/storage/el1/bundle/arkwebcore/feature",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status": "false"
                 }, {
@@ -737,6 +749,18 @@
                     "sandbox-path" : "/data/service/el1/public/for-all-app",
                     "sandbox-flags" : [ "bind", "rec" ],
                     "check-action-status" : "false"
+                }
+            ],
+            "mount-files" : [{
+                    "src-path": "/mnt/sandbox/arkwebcore/dummyfile",
+                    "sandbox-path": "/system/app/ArkWebCore/ArkWebCoreEx.hap",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
+                }, {
+                    "src-path": "/mnt/sandbox/arkwebcore/dummyfile",
+                    "sandbox-path": "/data/storage/el1/bundle/arkwebcore/feature.hap",
+                    "sandbox-flags" : [ "bind", "rec" ],
+                    "check-action-status": "false"
                 }
             ],
             "symbol-links" : [{
@@ -1206,6 +1230,25 @@
                     "sandbox-flags": [ "bind", "rec" ]
                 }
             ]
+        }]
+    }],
+    "inverted-permission": [{
+        "ohos.permission.ARKWEBCORE_SYS_CAP": [{
+            "sandbox-switch": "ON",
+            "mount-paths": [{
+                "src-path": "/mnt/sandbox/arkwebcore/dummylibs",
+                "sandbox-path": "/data/storage/el1/bundle/arkwebcore/feature",
+                "sandbox-flags": [ "bind", "rec" ]
+            }],
+            "mount-files": [{
+                "src-path": "/mnt/sandbox/arkwebcore/dummyfile",
+                "sandbox-path": "/system/app/ArkWebCore/ArkWebCoreEx.hap",
+                "sandbox-flags": [ "bind", "rec" ]
+            }, {
+                "src-path": "/mnt/sandbox/arkwebcore/dummyfile",
+                "sandbox-path": "/data/storage/el1/bundle/arkwebcore/feature.hap",
+                "sandbox-flags": [ "bind", "rec" ]
+            }]
         }]
     }],
     "debug": [{

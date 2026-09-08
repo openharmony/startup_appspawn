@@ -56,6 +56,7 @@ public:
     static int32_t SetCommonAppSandboxProperty(const AppSpawningCtx *appProperty, std::string &sandboxPackagePath);
     static int32_t SetPrivateAppSandboxProperty(const AppSpawningCtx *appProperty);
     static int32_t SetPermissionAppSandboxProperty(AppSpawningCtx *appProperty);
+    static int32_t SetInvertedPermissionAppSandboxProperty(AppSpawningCtx *appProperty);
     static int32_t SetSandboxProperty(AppSpawningCtx *appProperty, std::string &sandboxPackagePath);
     static int32_t SetAppSandboxProperty(AppSpawnMgr *content, AppSpawningCtx *appProperty,
         uint32_t sandboxNsFlags = CLONE_NEWNS);
@@ -99,6 +100,11 @@ private:
     static int32_t HandleDlpMount(const AppSpawnMsgDacInfo *dacInfo);
     static bool CheckDlpMount(const AppSpawningCtx *appProperty);
 
+    // 沙箱挂载公共逻辑
+    static int32_t DoAllMntPointsMount(const char *key, cJSON *appConfig, const MountPointProcessParams &params);
+    static int32_t DoAllMntPointsMountNocheck(const char *key, cJSON *appConfig, const MountPointProcessParams &params);
+    static int32_t DoAllCreateOnDaemonMount(const char *key, cJSON *appConfig, const MountPointProcessParams &params);
+
     // 处理应用私有挂载
     static cJSON *GetPrivateJsonInfo(const AppSpawningCtx *appProperty, cJSON *wholeConfig);
     static bool CheckSystemAppByTokenId(const AppSpawningCtx *appProperty);
@@ -112,6 +118,10 @@ private:
     static int32_t DoSandboxFilePermissionBind(AppSpawningCtx *appProperty, cJSON *wholeConfig);
     static int32_t SetPermissionAppSandboxProperty_(AppSpawningCtx *appProperty, cJSON *config);
 
+    // 处理应用基于反向权限挂载
+    static int32_t DoSandboxFileInvertedPermissionBind(AppSpawningCtx *appProperty, cJSON *wholeConfig);
+    static int32_t SetInvertedPermissionAppSandboxProperty_(AppSpawningCtx *appProperty, cJSON *config);
+
     // 处理应用公共挂载
     static int32_t DoSandboxFileCommonBind(const AppSpawningCtx *appProperty, cJSON *wholeConfig);
     static int32_t DoSandboxFileCommonSymlink(const AppSpawningCtx *appProperty, cJSON *wholeConfig);
@@ -124,19 +134,28 @@ private:
     static int32_t MountIPCGroup(const AppSpawningCtx *appProperty, std::string &sandboxPackagePath);
 
     // 沙箱回调函数
-    static int32_t ProcessMountPoint(cJSON *mntPoint, MountPointProcessParams &params);
-    static int32_t ProcessCreateOnDaemonMount(cJSON *mntPoint, MountPointProcessParams &params);
-    static int32_t ProcessCreateOnlyOnDaemon(cJSON *pathItem, MountPointProcessParams &params);
-    static int32_t ProcessMountPointNocheck(cJSON *mntPoint, MountPointProcessParams &params);
-    static int32_t ProcessMountPointCommmon(cJSON *mntPoint, MountPointProcessParams &params, bool eableLogging);
+    static int32_t ProcessMountPoint(cJSON *mntPoint, const MountPointProcessParams &params);
+    static int32_t ProcessCreateOnDaemonMount(cJSON *mntPoint, const MountPointProcessParams &params);
+    static int32_t ProcessCreateOnlyOnDaemon(cJSON *pathItem, const MountPointProcessParams &params);
+    static int32_t ProcessMountPointNocheck(cJSON *mntPoint, const MountPointProcessParams &params);
+    static int32_t ProcessMountPointCommmon(cJSON *mntPoint, const MountPointProcessParams &params, bool eableLogging);
 
     // debug hap
     static std::string ConvertDebugRealPath(const AppSpawningCtx *appProperty, std::string path);
+    static void DoUninstallDebugSandbox(const char *key, std::vector<std::string> &bundleList, cJSON *config);
     static void DoUninstallDebugSandbox(std::vector<std::string> &bundleList, cJSON *mountPoints);
     static int32_t GetPackageList(AppSpawningCtx *property, std::vector<std::string> &bundleList, bool tmp);
 
+    static int32_t DoMountDebugPoints(
+        SandboxPathType pathType, const char *key, const AppSpawningCtx *appProperty, cJSON *appConfig);
     static int32_t DoMountDebugPoints(const AppSpawningCtx *appProperty, cJSON *appConfig);
     static int32_t MountDebugSharefs(const AppSpawningCtx *property, const char *src, const char *target);
+
+    // debug permission and inverted-permission
+    static int32_t DoInstallDebugPermissionPoints(const AppSpawningCtx *property, cJSON *debugJson);
+    static int32_t DoInstallDebugInvertedPermissionPoints(const AppSpawningCtx *property, cJSON *debugJson);
+    static int32_t DoUninstallDebugPermissionPoints(std::vector<std::string> &bundleList, cJSON *debugJson);
+    static int32_t DoUninstallDebugInvertedPermissionPoints(std::vector<std::string> &bundleList, cJSON *debugJson);
 
     // 处理拥有沙箱权限应用的挂载
     static void GetSpecialMountCondition(bool &isPreInstalled, bool &isHaveSandBoxPermission,
