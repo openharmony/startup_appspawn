@@ -34,6 +34,7 @@ constexpr static mode_t BASIC_MOUNT_FLAGS = MS_REC | MS_BIND;
 constexpr int32_t MAX_MOUNT_TIME = 5000;  // 5000us
 constexpr int32_t LOCK_STATUS_SIZE = 16;
 constexpr mode_t ALL_FILE_MODE_BITS = 07777;
+constexpr mode_t IPC_GROUP_SRC_PATH_MODE = 01771;
 constexpr int32_t MAX_MOUNT_INVALID_COUNT = 8;
 constexpr int32_t MIN_PARAM_SRC_PATH_LEN = 2;
 
@@ -125,6 +126,12 @@ const std::string g_hspList_key_bundles = "bundles";
 const std::string g_hspList_key_modules = "modules";
 const std::string g_hspList_key_versions = "versions";
 const std::string g_sandboxHspInstallPath = "/data/storage/el1/bundle/";
+
+/* IPCGroup */
+const std::string g_ipcGroupSrcPathPrefix = "/mnt/sandbox/shm/";
+const std::string g_ipcGroupSandboxPathPrefix = "/dev/group/shm/";
+const std::string g_ipcGroupList_key_groupId = "ipcGroupId";
+const std::string g_ipcGroupList_key_groupGid = "ipcGroupGid";
 
 /* DataGroup */
 const std::string DATA_GROUP_SOCKET_TYPE = "DataGroup";

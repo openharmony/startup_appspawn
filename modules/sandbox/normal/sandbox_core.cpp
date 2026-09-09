@@ -484,6 +484,36 @@ static inline cJSON *GetJsonObjFromProperty(const AppSpawningCtx *appProperty, c
     return root;
 }
 
+static int EnsureDirWithMode(const std::string &path, uid_t uid, gid_t gid, mode_t mode, bool restorecon = false)
+{
+    struct stat statBuff;
+    if (stat(path.c_str(), &statBuff) == 0 &&
+        statBuff.st_uid == uid && statBuff.st_gid == gid &&
+        (statBuff.st_mode & SandboxCommonDef::ALL_FILE_MODE_BITS) == mode) {
+        return 0;
+    }
+    int ret = SandboxCommon::CreateDirRecursive(path, SandboxCommonDef::FILE_MODE);
+    if (ret != 0) {
+        APPSPAWN_LOGE("mkdir %{public}s failed, errno %{public}d", path.c_str(), errno);
+        return -1;
+    }
+    if (restorecon && RestoreconRecurse(path.c_str()) != 0) {
+        APPSPAWN_LOGW("restorecon failed for %{public}s", path.c_str());
+    }
+    if (chmod(path.c_str(), mode) < 0 || chown(path.c_str(), uid, gid) < 0) {
+        APPSPAWN_LOGE("chmod or chown failed for %{public}s, errno %{public}d", path.c_str(), errno);
+        if (stat(path.c_str(), &statBuff) < 0) {
+            APPSPAWN_LOGE("stat %{public}s failed", path.c_str());
+        } else if (statBuff.st_uid != uid || statBuff.st_gid != gid ||
+            (statBuff.st_mode & SandboxCommonDef::ALL_FILE_MODE_BITS) != mode) {
+            APPSPAWN_LOGE("chmod or chown mismatch for %{public}s, expected uid=%{public}d, "
+                "gid=%{public}d, mode=%{public}d; actual uid=%{public}d, gid=%{public}d, mode=%{public}d",
+                path.c_str(), uid, gid, mode, statBuff.st_uid, statBuff.st_gid, statBuff.st_mode);
+        }
+    }
+    return 0;
+}
+
 int32_t SandboxCore::MountAllHsp(const AppSpawningCtx *appProperty, std::string &sandboxPackagePath, cJSON *hspRoot)
 {
     if (appProperty == nullptr || sandboxPackagePath == "") {
@@ -756,6 +786,64 @@ int32_t SandboxCore::DoAllMntPointsMountNocheck(const AppSpawningCtx *appPropert
     return SandboxCommon::HandleArrayForeach(mountPoints, processor);
 }
 
+static int32_t ProcessIPCGroupItem(cJSON *groupItem, const AppSpawningCtx *appProperty,
+    const std::string &sandboxPackagePath, const std::string &userId)
+{
+    cJSON *groupIdItem = cJSON_GetObjectItemCaseSensitive(
+        groupItem, SandboxCommonDef::g_ipcGroupList_key_groupId.c_str());
+    if (groupIdItem == nullptr || !cJSON_IsString(groupIdItem) || strlen(groupIdItem->valuestring) == 0) {
+        APPSPAWN_LOGI("IPCGroup item missing or empty groupId");
+        return -1;
+    }
+    std::string groupId(groupIdItem->valuestring);
+    if (groupId.find_first_not_of("0123456789") != std::string::npos) {
+        APPSPAWN_LOGI("IPCGroup item invalid groupId");
+        return -1;
+    }
+    cJSON *groupGidItem = cJSON_GetObjectItemCaseSensitive(
+        groupItem, SandboxCommonDef::g_ipcGroupList_key_groupGid.c_str());
+    if (groupGidItem == nullptr || !cJSON_IsString(groupGidItem)) {
+        APPSPAWN_LOGI("IPCGroup item missing or invalid groupGid");
+        return -1;
+    }
+    gid_t groupGid = static_cast<gid_t>(atoi(groupGidItem->valuestring));
+    if (groupGid == 0) {
+        APPSPAWN_LOGI("IPCGroup item invalid groupGid value");
+        return -1;
+    }
+    std::string srcPath = SandboxCommonDef::g_ipcGroupSrcPathPrefix + userId + "/group/" + groupId;
+    APPSPAWN_CHECK_ONLY_EXPER(
+        EnsureDirWithMode(srcPath, 0, groupGid, SandboxCommonDef::IPC_GROUP_SRC_PATH_MODE) == 0, return 0);
+    std::string sandboxPath = sandboxPackagePath + SandboxCommonDef::g_ipcGroupSandboxPathPrefix + groupId;
+    SharedMountArgs arg = {.srcPath = srcPath.c_str(), .destPath = sandboxPath.c_str()};
+    int32_t mountRet = SandboxCommon::DoAppSandboxMountOnce(appProperty, &arg);
+    APPSPAWN_CHECK_ONLY_LOG(mountRet == 0, "mount ipcGroup %{public}s failed, ret %{public}d",
+        srcPath.c_str(), mountRet);
+    return 0;
+}
+
+int32_t SandboxCore::MountIPCGroup(const AppSpawningCtx *appProperty, std::string &sandboxPackagePath)
+{
+    if (appProperty == nullptr || sandboxPackagePath == "") {
+        return 0;
+    }
+    cJSON *ipcGroupRoot = GetJsonObjFromProperty(appProperty, MSG_EXT_NAME_IPC_GROUP);
+    APPSPAWN_CHECK_ONLY_EXPER(ipcGroupRoot != nullptr, return 0);
+    APPSPAWN_CHECK(cJSON_IsArray(ipcGroupRoot), cJSON_Delete(ipcGroupRoot); return 0, "ipcGroupRoot is not array");
+    AppSpawnMsgDacInfo *dacInfo = reinterpret_cast<AppSpawnMsgDacInfo *>(GetAppProperty(appProperty, TLV_DAC_INFO));
+    if (dacInfo == nullptr) {
+        cJSON_Delete(ipcGroupRoot);
+        return 0;
+    }
+    std::string userId = std::to_string(dacInfo->uid / UID_BASE);
+    auto processor = [&appProperty, &sandboxPackagePath, &userId](cJSON *item) {
+        return ProcessIPCGroupItem(item, appProperty, sandboxPackagePath, userId);
+    };
+    int32_t ret = SandboxCommon::HandleArrayForeach(ipcGroupRoot, processor);
+    cJSON_Delete(ipcGroupRoot);
+    return ret;
+}
+
 int32_t SandboxCore::ProcessCreateOnDaemonMount(cJSON *mntPoint, MountPointProcessParams &params)
 {
     const char *srcPathChr = GetStringFromJsonObj(mntPoint, SandboxCommonDef::g_srcPath);
@@ -789,22 +877,7 @@ int32_t SandboxCore::ProcessCreateOnDaemonMount(cJSON *mntPoint, MountPointProce
         mode = (mode_t)cJSON_GetNumberValue(item);
     }
 
-    struct stat statBuff;
-    int ret = stat(srcPath.c_str(), &statBuff);
-    if (ret < 0 || statBuff.st_uid != uid || statBuff.st_gid != gid ||
-        (statBuff.st_mode & SandboxCommonDef::ALL_FILE_MODE_BITS) != mode) {
-        ret = SandboxCommon::CreateDirRecursive(srcPath, SandboxCommonDef::FILE_MODE);
-        APPSPAWN_CHECK(ret == 0, return 0, "mkdir %{public}s failed, errno %{public}d", srcPath.c_str(), errno);
-        if (chmod(srcPath.c_str(), mode) < 0 || chown(srcPath.c_str(), uid, gid) < 0) {
-            if (stat(srcPath.c_str(), &statBuff) < 0) {
-                APPSPAWN_LOGI("stat srcPath failed, path: %{public}s", srcPath.c_str());
-            } else if (statBuff.st_uid != uid || statBuff.st_gid != gid ||
-                (statBuff.st_mode & SandboxCommonDef::ALL_FILE_MODE_BITS) != mode) {
-                APPSPAWN_LOGI("chmod or chown failed. statBuff.st_uid = %{public}d, statBuff.st_gid = %{public}d, \
-                    statBuff.st_mode = %{public}d", statBuff.st_uid, statBuff.st_gid, statBuff.st_mode);
-            }
-        }
-    }
+    APPSPAWN_CHECK_ONLY_EXPER(EnsureDirWithMode(srcPath, uid, gid, mode) == 0, return 0);
     return ProcessMountPoint(mntPoint, params);
 }
 
@@ -919,28 +992,7 @@ int32_t SandboxCore::ProcessCreateOnlyOnDaemon(cJSON *pathItem, MountPointProces
     APPSPAWN_CHECK(ParseSrcPathInfo(pathItem, uid, gid, mode, restorecon), return 0,
         "ProcessCreateOnlyOnDaemon: Invalid json object");
 
-    struct stat statBuff;
-    int ret = stat(srcPath.c_str(), &statBuff);
-    if (ret < 0 || statBuff.st_uid != uid || statBuff.st_gid != gid ||
-        (statBuff.st_mode & SandboxCommonDef::ALL_FILE_MODE_BITS) != mode) {
-        ret = SandboxCommon::CreateDirRecursive(srcPath, SandboxCommonDef::FILE_MODE);
-        APPSPAWN_CHECK(ret == 0, return 0, "ProcessCreateOnlyOnDaemon: mkdir failed, errno %{public}d", errno);
-        if (restorecon && RestoreconRecurse(srcPath.c_str())) {
-            APPSPAWN_LOGW("ProcessCreateOnlyOnDaemon: restorecon failed for %{public}s", srcPath.c_str());
-        }
-        if (chmod(srcPath.c_str(), mode) < 0 || chown(srcPath.c_str(), uid, gid) < 0) {
-            APPSPAWN_LOGE("ProcessCreateOnlyOnDaemon: chmod or chown failed for %{public}s, errno %{public}d",
-                          srcPath.c_str(), errno);
-            if (stat(srcPath.c_str(), &statBuff) < 0) {
-                APPSPAWN_LOGE("ProcessCreateOnlyOnDaemon: stat srcPath failed, path: %{public}s", srcPath.c_str());
-            } else if (statBuff.st_uid != uid || statBuff.st_gid != gid ||
-                (statBuff.st_mode & SandboxCommonDef::ALL_FILE_MODE_BITS) != mode) {
-                APPSPAWN_LOGE("ProcessCreateOnlyOnDaemon: chmod or chown mismatch, expected uid=%{public}d, \
-                    gid=%{public}d, mode=%{public}d; actual uid=%{public}d, gid=%{public}d, mode=%{public}d",
-                    uid, gid, mode, statBuff.st_uid, statBuff.st_gid, statBuff.st_mode);
-            }
-        }
-    }
+    (void)EnsureDirWithMode(srcPath, uid, gid, mode, restorecon);
     return 0;
 }
 
@@ -1200,6 +1252,9 @@ int32_t SandboxCore::SetCommonAppSandboxProperty(const AppSpawningCtx *appProper
 
     ret = MountAllGroup(appProperty, sandboxPackagePath);
     APPSPAWN_CHECK(ret == 0, return ret, "mount groupList failed, %{public}s", sandboxPackagePath.c_str());
+
+    ret = MountIPCGroup(appProperty, sandboxPackagePath);
+    APPSPAWN_CHECK(ret == 0, return ret, "mount ipcGroup failed, %{public}s", sandboxPackagePath.c_str());
 
     AppSpawnMsgDomainInfo *info =
         reinterpret_cast<AppSpawnMsgDomainInfo *>(GetAppProperty(appProperty, TLV_DOMAIN_INFO));
