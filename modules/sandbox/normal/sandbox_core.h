@@ -121,6 +121,7 @@ private:
     // 处理可变参数的挂载
     static int32_t MountAllHsp(const AppSpawningCtx *appProperty, std::string &sandboxPackagePath, cJSON *hspRoot);
     static int32_t MountAllGroup(const AppSpawningCtx *appProperty, std::string &sandboxPackagePath);
+    static int32_t MountIPCGroup(const AppSpawningCtx *appProperty, std::string &sandboxPackagePath);
 
     // 沙箱回调函数
     static int32_t ProcessMountPoint(cJSON *mntPoint, MountPointProcessParams &params);

@@ -18,6 +18,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <unistd.h>
 
 #include "appspawn_server.h"
 #include "appspawn_service.h"
@@ -536,6 +537,702 @@ HWTEST_F(AppSpawnSandboxCoreTest, SetPermissionAppSandboxProperty_01, TestSize.L
     ASSERT_NE(appProperty, nullptr);
 
     int ret = AppSpawn::SandboxCore::SetPermissionAppSandboxProperty(appProperty);
+    EXPECT_EQ(ret, 0);
+
+    DeleteAppSpawningCtx(appProperty);
+}
+
+/**
+ * @tc.name: MountIPCGroup_01
+ * @tc.desc: Test MountIPCGroup with appProperty nullptr
+ *           Branch: appProperty == nullptr → return 0
+ * @tc.type: FUNC
+ * @tc.require: issueI5NTX6
+ */
+HWTEST_F(AppSpawnSandboxCoreTest, MountIPCGroup_01, TestSize.Level0)
+{
+    std::string sandboxPackagePath = "/mnt/sandbox/100/com.test.app";
+    int ret = AppSpawn::SandboxCore::MountIPCGroup(nullptr, sandboxPackagePath);
+    EXPECT_EQ(ret, 0);
+}
+
+/**
+ * @tc.name: MountIPCGroup_02
+ * @tc.desc: Test MountIPCGroup with empty sandboxPackagePath
+ *           Branch: sandboxPackagePath == "" → return 0
+ * @tc.type: FUNC
+ * @tc.require: issueI5NTX6
+ */
+HWTEST_F(AppSpawnSandboxCoreTest, MountIPCGroup_02, TestSize.Level0)
+{
+    g_testHelperCore.SetProcessName("com.ohos.test.app");
+    g_testHelperCore.SetTestApl("normal");
+
+    AppSpawningCtx *appProperty = GetTestAppPropertyCore();
+    ASSERT_NE(appProperty, nullptr);
+
+    std::string sandboxPackagePath = "";
+    int ret = AppSpawn::SandboxCore::MountIPCGroup(appProperty, sandboxPackagePath);
+    EXPECT_EQ(ret, 0);
+
+    DeleteAppSpawningCtx(appProperty);
+}
+
+/**
+ * @tc.name: MountIPCGroup_03
+ * @tc.desc: Test MountIPCGroup with no IPCGroup ext info
+ *           Branch: ipcGroupRoot == nullptr → return 0
+ * @tc.type: FUNC
+ * @tc.require: issueI5NTX6
+ */
+HWTEST_F(AppSpawnSandboxCoreTest, MountIPCGroup_03, TestSize.Level0)
+{
+    g_testHelperCore.SetProcessName("com.ohos.test.app");
+    g_testHelperCore.SetTestApl("normal");
+
+    AppSpawningCtx *appProperty = GetTestAppPropertyCore();
+    ASSERT_NE(appProperty, nullptr);
+
+    std::string sandboxPackagePath = "/mnt/sandbox/100/com.test.app";
+    int ret = AppSpawn::SandboxCore::MountIPCGroup(appProperty, sandboxPackagePath);
+    EXPECT_EQ(ret, 0);
+
+    DeleteAppSpawningCtx(appProperty);
+}
+
+/**
+ * @tc.name: MountIPCGroup_04
+ * @tc.desc: Test MountIPCGroup with empty IPCGroup array
+ *           Branch: HandleArrayForeach iterates nothing → return 0
+ * @tc.type: FUNC
+ * @tc.require: issueI5NTX6
+ */
+HWTEST_F(AppSpawnSandboxCoreTest, MountIPCGroup_04, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = nullptr;
+    int ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+    ASSERT_EQ(ret, 0);
+    AppSpawnReqMsgHandle reqHandle = g_testHelperCore.CreateMsg(
+        clientHandle, MSG_APP_SPAWN, 0);
+    ASSERT_NE(reqHandle, INVALID_REQ_HANDLE);
+
+    const char *appGroupInfo = R"([])";
+    ret = AppSpawnReqMsgAddStringInfo(reqHandle, MSG_EXT_NAME_IPC_GROUP, appGroupInfo);
+    ASSERT_EQ(ret, 0);
+
+    AppSpawningCtx *appProperty = g_testHelperCore.GetAppProperty(
+        clientHandle, reqHandle);
+    ASSERT_NE(appProperty, nullptr);
+
+    std::string sandboxPackagePath = "/mnt/sandbox/100/com.test.app";
+    ret = AppSpawn::SandboxCore::MountIPCGroup(appProperty, sandboxPackagePath);
+    EXPECT_EQ(ret, 0);
+
+    DeleteAppSpawningCtx(appProperty);
+}
+
+/**
+ * @tc.name: MountIPCGroup_05
+ * @tc.desc: Test MountIPCGroup with array item missing ipcGroupId
+ *           Branch: ProcessIPCGroupItem groupIdItem == nullptr → return -1, abort
+ * @tc.type: FUNC
+ * @tc.require: issueI5NTX6
+ */
+HWTEST_F(AppSpawnSandboxCoreTest, MountIPCGroup_05, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = nullptr;
+    int ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+    ASSERT_EQ(ret, 0);
+    AppSpawnReqMsgHandle reqHandle = g_testHelperCore.CreateMsg(
+        clientHandle, MSG_APP_SPAWN, 0);
+    ASSERT_NE(reqHandle, INVALID_REQ_HANDLE);
+
+    const char *appGroupInfo = R"([{"ipcGroupGid":"3000"}])";
+    ret = AppSpawnReqMsgAddStringInfo(reqHandle, MSG_EXT_NAME_IPC_GROUP, appGroupInfo);
+    ASSERT_EQ(ret, 0);
+
+    AppSpawningCtx *appProperty = g_testHelperCore.GetAppProperty(
+        clientHandle, reqHandle);
+    ASSERT_NE(appProperty, nullptr);
+
+    std::string sandboxPackagePath = "/mnt/sandbox/100/com.test.app";
+    ret = AppSpawn::SandboxCore::MountIPCGroup(appProperty, sandboxPackagePath);
+    // ProcessIPCGroupItem: groupIdItem == nullptr → return -1, abort
+    EXPECT_EQ(ret, -1);
+
+    DeleteAppSpawningCtx(appProperty);
+}
+
+/**
+ * @tc.name: MountIPCGroup_06
+ * @tc.desc: Test MountIPCGroup with ipcGroupId as non-string type (number)
+ *           Branch: ProcessIPCGroupItem !cJSON_IsString(groupIdItem) → return -1, abort
+ * @tc.type: FUNC
+ * @tc.require: issueI5NTX6
+ */
+HWTEST_F(AppSpawnSandboxCoreTest, MountIPCGroup_06, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = nullptr;
+    int ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+    ASSERT_EQ(ret, 0);
+    AppSpawnReqMsgHandle reqHandle = g_testHelperCore.CreateMsg(
+        clientHandle, MSG_APP_SPAWN, 0);
+    ASSERT_NE(reqHandle, INVALID_REQ_HANDLE);
+
+    const char *appGroupInfo = R"([{"ipcGroupId":12345,"ipcGroupGid":"3000"}])";
+    ret = AppSpawnReqMsgAddStringInfo(reqHandle, MSG_EXT_NAME_IPC_GROUP, appGroupInfo);
+    ASSERT_EQ(ret, 0);
+
+    AppSpawningCtx *appProperty = g_testHelperCore.GetAppProperty(
+        clientHandle, reqHandle);
+    ASSERT_NE(appProperty, nullptr);
+
+    std::string sandboxPackagePath = "/mnt/sandbox/100/com.test.app";
+    ret = AppSpawn::SandboxCore::MountIPCGroup(appProperty, sandboxPackagePath);
+    // ProcessIPCGroupItem: !cJSON_IsString → return -1, abort
+    EXPECT_EQ(ret, -1);
+
+    DeleteAppSpawningCtx(appProperty);
+}
+
+/**
+ * @tc.name: MountIPCGroup_07
+ * @tc.desc: Test MountIPCGroup with empty string ipcGroupId
+ *           Branch: ProcessIPCGroupItem strlen == 0 → return -1, abort
+ * @tc.type: FUNC
+ * @tc.require: issueI5NTX6
+ */
+HWTEST_F(AppSpawnSandboxCoreTest, MountIPCGroup_07, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = nullptr;
+    int ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+    ASSERT_EQ(ret, 0);
+    AppSpawnReqMsgHandle reqHandle = g_testHelperCore.CreateMsg(
+        clientHandle, MSG_APP_SPAWN, 0);
+    ASSERT_NE(reqHandle, INVALID_REQ_HANDLE);
+
+    const char *appGroupInfo = R"([{"ipcGroupId":"","ipcGroupGid":"3000"}])";
+    ret = AppSpawnReqMsgAddStringInfo(reqHandle, MSG_EXT_NAME_IPC_GROUP, appGroupInfo);
+    ASSERT_EQ(ret, 0);
+
+    AppSpawningCtx *appProperty = g_testHelperCore.GetAppProperty(
+        clientHandle, reqHandle);
+    ASSERT_NE(appProperty, nullptr);
+
+    std::string sandboxPackagePath = "/mnt/sandbox/100/com.test.app";
+    ret = AppSpawn::SandboxCore::MountIPCGroup(appProperty, sandboxPackagePath);
+    // ProcessIPCGroupItem: strlen == 0 → return -1, abort
+    EXPECT_EQ(ret, -1);
+
+    DeleteAppSpawningCtx(appProperty);
+}
+
+/**
+ * @tc.name: MountIPCGroup_08
+ * @tc.desc: Test MountIPCGroup with array item missing ipcGroupGid
+ *           Branch: ProcessIPCGroupItem groupGidItem == nullptr → return -1, abort
+ * @tc.type: FUNC
+ * @tc.require: issueI5NTX6
+ */
+HWTEST_F(AppSpawnSandboxCoreTest, MountIPCGroup_08, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = nullptr;
+    int ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+    ASSERT_EQ(ret, 0);
+    AppSpawnReqMsgHandle reqHandle = g_testHelperCore.CreateMsg(
+        clientHandle, MSG_APP_SPAWN, 0);
+    ASSERT_NE(reqHandle, INVALID_REQ_HANDLE);
+
+    const char *appGroupInfo = R"([{"ipcGroupId":"308"}])";
+    ret = AppSpawnReqMsgAddStringInfo(reqHandle, MSG_EXT_NAME_IPC_GROUP, appGroupInfo);
+    ASSERT_EQ(ret, 0);
+
+    AppSpawningCtx *appProperty = g_testHelperCore.GetAppProperty(
+        clientHandle, reqHandle);
+    ASSERT_NE(appProperty, nullptr);
+
+    std::string sandboxPackagePath = "/mnt/sandbox/100/com.test.app";
+    ret = AppSpawn::SandboxCore::MountIPCGroup(appProperty, sandboxPackagePath);
+    // ProcessIPCGroupItem: groupGidItem == nullptr → return -1, abort
+    EXPECT_EQ(ret, -1);
+
+    DeleteAppSpawningCtx(appProperty);
+}
+
+/**
+ * @tc.name: MountIPCGroup_09
+ * @tc.desc: Test MountIPCGroup with ipcGroupGid as non-string type (number)
+ *           Branch: ProcessIPCGroupItem !cJSON_IsString(groupGidItem) → return -1, abort
+ * @tc.type: FUNC
+ * @tc.require: issueI5NTX6
+ */
+HWTEST_F(AppSpawnSandboxCoreTest, MountIPCGroup_09, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = nullptr;
+    int ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+    ASSERT_EQ(ret, 0);
+    AppSpawnReqMsgHandle reqHandle = g_testHelperCore.CreateMsg(
+        clientHandle, MSG_APP_SPAWN, 0);
+    ASSERT_NE(reqHandle, INVALID_REQ_HANDLE);
+
+    const char *appGroupInfo = R"([{"ipcGroupId":"309","ipcGroupGid":3000}])";
+    ret = AppSpawnReqMsgAddStringInfo(reqHandle, MSG_EXT_NAME_IPC_GROUP, appGroupInfo);
+    ASSERT_EQ(ret, 0);
+
+    AppSpawningCtx *appProperty = g_testHelperCore.GetAppProperty(
+        clientHandle, reqHandle);
+    ASSERT_NE(appProperty, nullptr);
+
+    std::string sandboxPackagePath = "/mnt/sandbox/100/com.test.app";
+    ret = AppSpawn::SandboxCore::MountIPCGroup(appProperty, sandboxPackagePath);
+    // ProcessIPCGroupItem: !cJSON_IsString(groupGidItem) → return -1, abort
+    EXPECT_EQ(ret, -1);
+
+    DeleteAppSpawningCtx(appProperty);
+}
+
+/**
+ * @tc.name: MountIPCGroup_10
+ * @tc.desc: Test MountIPCGroup with valid single-element IPCGroup array
+ *           Branch: ProcessIPCGroupItem valid → EnsureDirWithMode + mount → return 0
+ * @tc.type: FUNC
+ * @tc.require: issueI5NTX6
+ */
+HWTEST_F(AppSpawnSandboxCoreTest, MountIPCGroup_10, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = nullptr;
+    int ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+    ASSERT_EQ(ret, 0);
+    AppSpawnReqMsgHandle reqHandle = g_testHelperCore.CreateMsg(
+        clientHandle, MSG_APP_SPAWN, 0);
+    ASSERT_NE(reqHandle, INVALID_REQ_HANDLE);
+
+    const char *appGroupInfo =
+        R"([{"ipcGroupId":"123","ipcGroupGid":"3000"}])";
+    ret = AppSpawnReqMsgAddStringInfo(reqHandle, MSG_EXT_NAME_IPC_GROUP, appGroupInfo);
+    ASSERT_EQ(ret, 0);
+
+    AppSpawningCtx *appProperty = g_testHelperCore.GetAppProperty(
+        clientHandle, reqHandle);
+    ASSERT_NE(appProperty, nullptr);
+
+    std::string sandboxPackagePath = "/mnt/sandbox/100/com.test.app";
+    ret = AppSpawn::SandboxCore::MountIPCGroup(appProperty, sandboxPackagePath);
+    // Valid data: srcPath = /mnt/sandbox/shm/100/group/123
+    EXPECT_EQ(ret, 0);
+
+    rmdir("/mnt/sandbox/shm/100/group/123");
+    DeleteAppSpawningCtx(appProperty);
+}
+
+/**
+ * @tc.name: MountIPCGroup_11
+ * @tc.desc: Test MountIPCGroup with multi-element IPCGroup array
+ *           Branch: HandleArrayForeach iterates all items, all valid → return 0
+ * @tc.type: FUNC
+ * @tc.require: issueI5NTX6
+ */
+HWTEST_F(AppSpawnSandboxCoreTest, MountIPCGroup_11, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = nullptr;
+    int ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+    ASSERT_EQ(ret, 0);
+    AppSpawnReqMsgHandle reqHandle = g_testHelperCore.CreateMsg(
+        clientHandle, MSG_APP_SPAWN, 0);
+    ASSERT_NE(reqHandle, INVALID_REQ_HANDLE);
+
+    const char *appGroupInfo =
+        R"([{"ipcGroupId":"133","ipcGroupGid":"3000"},)"
+        R"({"ipcGroupId":"456","ipcGroupGid":"4000"}])";
+    ret = AppSpawnReqMsgAddStringInfo(reqHandle, MSG_EXT_NAME_IPC_GROUP, appGroupInfo);
+    ASSERT_EQ(ret, 0);
+
+    AppSpawningCtx *appProperty = g_testHelperCore.GetAppProperty(
+        clientHandle, reqHandle);
+    ASSERT_NE(appProperty, nullptr);
+
+    std::string sandboxPackagePath = "/mnt/sandbox/100/com.test.app";
+    ret = AppSpawn::SandboxCore::MountIPCGroup(appProperty, sandboxPackagePath);
+    EXPECT_EQ(ret, 0);
+
+    rmdir("/mnt/sandbox/shm/100/group/133");
+    rmdir("/mnt/sandbox/shm/100/group/456");
+    DeleteAppSpawningCtx(appProperty);
+}
+
+/**
+ * @tc.name: MountIPCGroup_12
+ * @tc.desc: Test MountIPCGroup with first item valid, second item invalid
+ *           Branch: HandleArrayForeach aborts on second item → return -1
+ * @tc.type: FUNC
+ * @tc.require: issueI5NTX6
+ */
+HWTEST_F(AppSpawnSandboxCoreTest, MountIPCGroup_12, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = nullptr;
+    int ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+    ASSERT_EQ(ret, 0);
+    AppSpawnReqMsgHandle reqHandle = g_testHelperCore.CreateMsg(
+        clientHandle, MSG_APP_SPAWN, 0);
+    ASSERT_NE(reqHandle, INVALID_REQ_HANDLE);
+
+    const char *appGroupInfo =
+        R"([{"ipcGroupId":"140","ipcGroupGid":"3000"},)"
+        R"({"ipcGroupId":"abc","ipcGroupGid":"4000"}])";
+    ret = AppSpawnReqMsgAddStringInfo(reqHandle, MSG_EXT_NAME_IPC_GROUP, appGroupInfo);
+    ASSERT_EQ(ret, 0);
+
+    AppSpawningCtx *appProperty = g_testHelperCore.GetAppProperty(
+        clientHandle, reqHandle);
+    ASSERT_NE(appProperty, nullptr);
+
+    std::string sandboxPackagePath = "/mnt/sandbox/100/com.test.app";
+    ret = AppSpawn::SandboxCore::MountIPCGroup(appProperty, sandboxPackagePath);
+    // item 0 valid → return 0, item 1 non-numeric groupId → return -1 → abort
+    EXPECT_EQ(ret, -1);
+
+    rmdir("/mnt/sandbox/shm/100/group/140");
+    DeleteAppSpawningCtx(appProperty);
+}
+
+/**
+ * @tc.name: MountIPCGroup_13
+ * @tc.desc: Test MountIPCGroup with ipcGroupGid as non-numeric string
+ *           Branch: ProcessIPCGroupItem atoi == 0 → groupGid == 0 → return -1, abort
+ * @tc.type: FUNC
+ * @tc.require: issueI5NTX6
+ */
+HWTEST_F(AppSpawnSandboxCoreTest, MountIPCGroup_13, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = nullptr;
+    int ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+    ASSERT_EQ(ret, 0);
+    AppSpawnReqMsgHandle reqHandle = g_testHelperCore.CreateMsg(
+        clientHandle, MSG_APP_SPAWN, 0);
+    ASSERT_NE(reqHandle, INVALID_REQ_HANDLE);
+
+    const char *appGroupInfo =
+        R"([{"ipcGroupId":"312","ipcGroupGid":"not_a_number"}])";
+    ret = AppSpawnReqMsgAddStringInfo(reqHandle, MSG_EXT_NAME_IPC_GROUP, appGroupInfo);
+    ASSERT_EQ(ret, 0);
+
+    AppSpawningCtx *appProperty = g_testHelperCore.GetAppProperty(
+        clientHandle, reqHandle);
+    ASSERT_NE(appProperty, nullptr);
+
+    std::string sandboxPackagePath = "/mnt/sandbox/100/com.test.app";
+    ret = AppSpawn::SandboxCore::MountIPCGroup(appProperty, sandboxPackagePath);
+    // ProcessIPCGroupItem: atoi == 0 → groupGid == 0 → return -1, abort
+    EXPECT_EQ(ret, -1);
+
+    DeleteAppSpawningCtx(appProperty);
+}
+
+/**
+ * @tc.name: MountIPCGroup_14
+ * @tc.desc: Test MountIPCGroup with non-numeric ipcGroupId
+ *           Branch: ProcessIPCGroupItem find_first_not_of != npos → return -1, abort
+ * @tc.type: FUNC
+ * @tc.require: issueI5NTX6
+ */
+HWTEST_F(AppSpawnSandboxCoreTest, MountIPCGroup_14, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = nullptr;
+    int ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+    ASSERT_EQ(ret, 0);
+    AppSpawnReqMsgHandle reqHandle = g_testHelperCore.CreateMsg(
+        clientHandle, MSG_APP_SPAWN, 0);
+    ASSERT_NE(reqHandle, INVALID_REQ_HANDLE);
+
+    const char *appGroupInfo =
+        R"([{"ipcGroupId":"123abc","ipcGroupGid":"3000"}])";
+    ret = AppSpawnReqMsgAddStringInfo(reqHandle, MSG_EXT_NAME_IPC_GROUP, appGroupInfo);
+    ASSERT_EQ(ret, 0);
+
+    AppSpawningCtx *appProperty = g_testHelperCore.GetAppProperty(
+        clientHandle, reqHandle);
+    ASSERT_NE(appProperty, nullptr);
+
+    std::string sandboxPackagePath = "/mnt/sandbox/100/com.test.app";
+    ret = AppSpawn::SandboxCore::MountIPCGroup(appProperty, sandboxPackagePath);
+    // ProcessIPCGroupItem: non-numeric groupId → return -1, abort
+    EXPECT_EQ(ret, -1);
+
+    DeleteAppSpawningCtx(appProperty);
+}
+
+/**
+ * @tc.name: MountIPCGroup_15
+ * @tc.desc: Test MountIPCGroup with appProperty missing DAC info
+ *           Branch: dacInfo == nullptr → cJSON_Delete + return 0
+ * @tc.type: FUNC
+ * @tc.require: issueI5NTX6
+ */
+HWTEST_F(AppSpawnSandboxCoreTest, MountIPCGroup_15, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = nullptr;
+    int ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+    ASSERT_EQ(ret, 0);
+    // MSG_DUMP: valid msgType but not spawn type → CreateMsg skips AddDacInfo → no TLV_DAC_INFO
+    AppSpawnReqMsgHandle reqHandle = g_testHelperCore.CreateMsg(
+        clientHandle, MSG_DUMP, 0);
+    ASSERT_NE(reqHandle, INVALID_REQ_HANDLE);
+
+    const char *appGroupInfo =
+        R"([{"ipcGroupId":"316","ipcGroupGid":"3000"}])";
+    ret = AppSpawnReqMsgAddStringInfo(reqHandle, MSG_EXT_NAME_IPC_GROUP, appGroupInfo);
+    ASSERT_EQ(ret, 0);
+
+    AppSpawningCtx *appProperty = g_testHelperCore.GetAppProperty(
+        clientHandle, reqHandle);
+    ASSERT_NE(appProperty, nullptr);
+
+    std::string sandboxPackagePath = "/mnt/sandbox/100/com.test.app";
+    ret = AppSpawn::SandboxCore::MountIPCGroup(appProperty, sandboxPackagePath);
+    // dacInfo == nullptr → cJSON_Delete + return 0, HandleArrayForeach not reached
+    EXPECT_EQ(ret, 0);
+
+    DeleteAppSpawningCtx(appProperty);
+}
+
+/**
+ * @tc.name: MountIPCGroup_16
+ * @tc.desc: Test MountIPCGroup with pre-existing src dir owned by non-root
+ *           Branch: EnsureDirWithMode stat ok, uid mismatch → recreate → mount → return 0
+ * @tc.type: FUNC
+ * @tc.require: issueI5NTX6
+ */
+HWTEST_F(AppSpawnSandboxCoreTest, MountIPCGroup_16, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = nullptr;
+    int ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+    ASSERT_EQ(ret, 0);
+    AppSpawnReqMsgHandle reqHandle = g_testHelperCore.CreateMsg(
+        clientHandle, MSG_APP_SPAWN, 0);
+    ASSERT_NE(reqHandle, INVALID_REQ_HANDLE);
+
+    const char *appGroupInfo =
+        R"([{"ipcGroupId":"3017","ipcGroupGid":"3000"}])";
+    ret = AppSpawnReqMsgAddStringInfo(reqHandle, MSG_EXT_NAME_IPC_GROUP, appGroupInfo);
+    ASSERT_EQ(ret, 0);
+
+    AppSpawningCtx *appProperty = g_testHelperCore.GetAppProperty(
+        clientHandle, reqHandle);
+    ASSERT_NE(appProperty, nullptr);
+
+    // Pre-create src dir with wrong owner (uid=1000, not root)
+    std::string srcPath = "/mnt/sandbox/shm/100/group/3017";
+    SandboxCommon::CreateDirRecursive(srcPath, SandboxCommonDef::FILE_MODE);
+    chown(srcPath.c_str(), 1000, 1000);
+
+    std::string sandboxPackagePath = "/mnt/sandbox/100/com.test.app";
+    ret = AppSpawn::SandboxCore::MountIPCGroup(appProperty, sandboxPackagePath);
+    // EnsureDirWithMode: stat ok, uid=1000 != 0 → recreate → mount → ret=0
+    EXPECT_EQ(ret, 0);
+
+    rmdir(srcPath.c_str());
+    DeleteAppSpawningCtx(appProperty);
+}
+
+/**
+ * @tc.name: MountIPCGroup_17
+ * @tc.desc: Test MountIPCGroup with pre-existing src dir, correct uid but wrong gid
+ *           Branch: EnsureDirWithMode stat ok, gid mismatch → recreate → mount → return 0
+ * @tc.type: FUNC
+ * @tc.require: issueI5NTX6
+ */
+HWTEST_F(AppSpawnSandboxCoreTest, MountIPCGroup_17, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = nullptr;
+    int ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+    ASSERT_EQ(ret, 0);
+    AppSpawnReqMsgHandle reqHandle = g_testHelperCore.CreateMsg(
+        clientHandle, MSG_APP_SPAWN, 0);
+    ASSERT_NE(reqHandle, INVALID_REQ_HANDLE);
+
+    const char *appGroupInfo =
+        R"([{"ipcGroupId":"3018","ipcGroupGid":"3000"}])";
+    ret = AppSpawnReqMsgAddStringInfo(reqHandle, MSG_EXT_NAME_IPC_GROUP, appGroupInfo);
+    ASSERT_EQ(ret, 0);
+
+    AppSpawningCtx *appProperty = g_testHelperCore.GetAppProperty(
+        clientHandle, reqHandle);
+    ASSERT_NE(appProperty, nullptr);
+
+    // Pre-create src dir as root → uid=0, gid=0 (gid != groupGid 3000)
+    std::string srcPath = "/mnt/sandbox/shm/100/group/3018";
+    SandboxCommon::CreateDirRecursive(srcPath, SandboxCommonDef::FILE_MODE);
+
+    std::string sandboxPackagePath = "/mnt/sandbox/100/com.test.app";
+    ret = AppSpawn::SandboxCore::MountIPCGroup(appProperty, sandboxPackagePath);
+    // EnsureDirWithMode: stat ok, uid==0, gid=0 != 3000 → recreate → mount → ret=0
+    EXPECT_EQ(ret, 0);
+
+    rmdir(srcPath.c_str());
+    DeleteAppSpawningCtx(appProperty);
+}
+
+/**
+ * @tc.name: MountIPCGroup_18
+ * @tc.desc: Test MountIPCGroup with pre-existing src dir, correct owner but wrong mode
+ *           Branch: EnsureDirWithMode stat ok, mode mismatch → recreate → mount → return 0
+ * @tc.type: FUNC
+ * @tc.require: issueI5NTX6
+ */
+HWTEST_F(AppSpawnSandboxCoreTest, MountIPCGroup_18, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = nullptr;
+    int ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+    ASSERT_EQ(ret, 0);
+    AppSpawnReqMsgHandle reqHandle = g_testHelperCore.CreateMsg(
+        clientHandle, MSG_APP_SPAWN, 0);
+    ASSERT_NE(reqHandle, INVALID_REQ_HANDLE);
+
+    const char *appGroupInfo =
+        R"([{"ipcGroupId":"3019","ipcGroupGid":"3000"}])";
+    ret = AppSpawnReqMsgAddStringInfo(reqHandle, MSG_EXT_NAME_IPC_GROUP, appGroupInfo);
+    ASSERT_EQ(ret, 0);
+
+    AppSpawningCtx *appProperty = g_testHelperCore.GetAppProperty(
+        clientHandle, reqHandle);
+    ASSERT_NE(appProperty, nullptr);
+
+    // Pre-create src dir with correct owner but wrong mode
+    std::string srcPath = "/mnt/sandbox/shm/100/group/3019";
+    SandboxCommon::CreateDirRecursive(srcPath, SandboxCommonDef::FILE_MODE);
+    chown(srcPath.c_str(), 0, 3000);
+    chmod(srcPath.c_str(), 0755);
+
+    std::string sandboxPackagePath = "/mnt/sandbox/100/com.test.app";
+    ret = AppSpawn::SandboxCore::MountIPCGroup(appProperty, sandboxPackagePath);
+    // EnsureDirWithMode: stat ok, uid==0, gid==3000, mode=0755 != 01771 → recreate → mount → ret=0
+    EXPECT_EQ(ret, 0);
+
+    rmdir(srcPath.c_str());
+    DeleteAppSpawningCtx(appProperty);
+}
+
+/**
+ * @tc.name: MountIPCGroup_19
+ * @tc.desc: Test MountIPCGroup with pre-existing src dir, all metadata correct
+ *           Branch: EnsureDirWithMode stat ok, all match → skip creation → mount → return 0
+ * @tc.type: FUNC
+ * @tc.require: issueI5NTX6
+ */
+HWTEST_F(AppSpawnSandboxCoreTest, MountIPCGroup_19, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = nullptr;
+    int ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+    ASSERT_EQ(ret, 0);
+    AppSpawnReqMsgHandle reqHandle = g_testHelperCore.CreateMsg(
+        clientHandle, MSG_APP_SPAWN, 0);
+    ASSERT_NE(reqHandle, INVALID_REQ_HANDLE);
+
+    const char *appGroupInfo =
+        R"([{"ipcGroupId":"3020","ipcGroupGid":"3000"}])";
+    ret = AppSpawnReqMsgAddStringInfo(reqHandle, MSG_EXT_NAME_IPC_GROUP, appGroupInfo);
+    ASSERT_EQ(ret, 0);
+
+    AppSpawningCtx *appProperty = g_testHelperCore.GetAppProperty(
+        clientHandle, reqHandle);
+    ASSERT_NE(appProperty, nullptr);
+
+    // Pre-create src dir with fully correct metadata
+    std::string srcPath = "/mnt/sandbox/shm/100/group/3020";
+    SandboxCommon::CreateDirRecursive(srcPath, SandboxCommonDef::FILE_MODE);
+    chown(srcPath.c_str(), 0, 3000);
+    chmod(srcPath.c_str(), SandboxCommonDef::IPC_GROUP_SRC_PATH_MODE);
+
+    std::string sandboxPackagePath = "/mnt/sandbox/100/com.test.app";
+    ret = AppSpawn::SandboxCore::MountIPCGroup(appProperty, sandboxPackagePath);
+    // EnsureDirWithMode: stat ok, all match → skip creation → mount → ret=0
+    EXPECT_EQ(ret, 0);
+
+    rmdir(srcPath.c_str());
+    DeleteAppSpawningCtx(appProperty);
+}
+
+/**
+ * @tc.name: MountIPCGroup_20
+ * @tc.desc: Test MountIPCGroup with mount failure (non-fatal)
+ *           Branch: ProcessIPCGroupItem mount fails → log only, return 0 (continue)
+ * @tc.type: FUNC
+ * @tc.require: issueI5NTX6
+ */
+HWTEST_F(AppSpawnSandboxCoreTest, MountIPCGroup_20, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = nullptr;
+    int ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+    ASSERT_EQ(ret, 0);
+    AppSpawnReqMsgHandle reqHandle = g_testHelperCore.CreateMsg(
+        clientHandle, MSG_APP_SPAWN, 0);
+    ASSERT_NE(reqHandle, INVALID_REQ_HANDLE);
+
+    const char *appGroupInfo =
+        R"([{"ipcGroupId":"3021","ipcGroupGid":"3000"}])";
+    ret = AppSpawnReqMsgAddStringInfo(reqHandle, MSG_EXT_NAME_IPC_GROUP, appGroupInfo);
+    ASSERT_EQ(ret, 0);
+
+    AppSpawningCtx *appProperty = g_testHelperCore.GetAppProperty(
+        clientHandle, reqHandle);
+    ASSERT_NE(appProperty, nullptr);
+
+    // Configure MountStub to return failure:
+    // originPath must MATCH the actual srcPath so the if-check passes,
+    // then destinationPath mismatches → result=0 → errno=-EINVAL → mount fails
+    StubNode *node = GetStubNode(STUB_MOUNT);
+    MountTestArg mountArg = {
+        "/mnt/sandbox/shm/100/group/3021",  // matches actual srcPath
+        "/wrong_dest",  // mismatches actual destPath → failure
+        "",             // fsType (non-NULL, printf-safe)
+        0,              // mountFlags (mismatches MS_REC|MS_BIND)
+        "",             // options (non-NULL, printf-safe)
+        0               // mountSharedFlag
+    };
+    node->arg = &mountArg;
+    node->flags |= STUB_NEED_CHECK;
+
+    std::string sandboxPackagePath = "/mnt/sandbox/100/com.test.app";
+    ret = AppSpawn::SandboxCore::MountIPCGroup(appProperty, sandboxPackagePath);
+    // mount fails → log only, return 0 (continue) → ret stays 0
+    EXPECT_EQ(ret, 0);
+
+    // Restore MountStub
+    node->flags &= ~STUB_NEED_CHECK;
+    node->arg = nullptr;
+
+    // Cleanup
+    rmdir("/mnt/sandbox/shm/100/group/3021");
+    DeleteAppSpawningCtx(appProperty);
+}
+
+/**
+ * @tc.name: MountIPCGroup_21
+ * @tc.desc: Test MountIPCGroup with IPCGroup ext info not an array
+ *           Branch: !cJSON_IsArray(ipcGroupRoot) → cJSON_Delete + return 0
+ * @tc.type: FUNC
+ * @tc.require: issueI5NTX6
+ */
+HWTEST_F(AppSpawnSandboxCoreTest, MountIPCGroup_21, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = nullptr;
+    int ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+    ASSERT_EQ(ret, 0);
+    AppSpawnReqMsgHandle reqHandle = g_testHelperCore.CreateMsg(
+        clientHandle, MSG_APP_SPAWN, 0);
+    ASSERT_NE(reqHandle, INVALID_REQ_HANDLE);
+
+    const char *appGroupInfo = R"({})";
+    ret = AppSpawnReqMsgAddStringInfo(reqHandle, MSG_EXT_NAME_IPC_GROUP, appGroupInfo);
+    ASSERT_EQ(ret, 0);
+
+    AppSpawningCtx *appProperty = g_testHelperCore.GetAppProperty(
+        clientHandle, reqHandle);
+    ASSERT_NE(appProperty, nullptr);
+
+    std::string sandboxPackagePath = "/mnt/sandbox/100/com.test.app";
+    ret = AppSpawn::SandboxCore::MountIPCGroup(appProperty, sandboxPackagePath);
+    // !cJSON_IsArray → cJSON_Delete + return 0
     EXPECT_EQ(ret, 0);
 
     DeleteAppSpawningCtx(appProperty);
