@@ -53,6 +53,7 @@ const std::string g_ohosRender = "__internal__.com.ohos.render";
 constexpr const char *g_commonPrefix = "common";
 constexpr const char *g_privatePrefix = "individual";
 constexpr const char *g_permissionPrefix = "permission";
+constexpr const char *g_invertedPermissionPrefix = "inverted-permission";
 constexpr const char *g_appBase = "app-base";
 constexpr const char *g_appResources = "app-resources";
 constexpr const char *g_appNocheck = "app-nocheck";
@@ -72,6 +73,7 @@ const std::string g_sandboxRootPathTemplate = "/mnt/sandbox/<currentUserId>/<Pac
 const std::string g_originSandboxPath = "/mnt/sandbox/<PackageName>";
 
 // 挂载目录字段
+constexpr const char *g_mountFiles = "mount-files";
 constexpr const char *g_mountPrefix = "mount-paths";
 constexpr const char *g_srcPath = "src-path";
 constexpr const char *g_sandBoxPath = "sandbox-path";

@@ -44,6 +44,11 @@ enum {
     ELX_MAX
 };
 
+enum SandboxPathType {
+    SANDBOX_DIR_PATH = 0,
+    SANDBOX_FILE_PATH,
+};
+
 typedef struct DataGroupSandboxPathTemplate {
     const char *elxName;
     uint32_t category;
@@ -58,6 +63,7 @@ struct SharedMountArgs {
     unsigned long mountFlags = MS_REC | MS_BIND;
     const char *options = "";
     mode_t mountSharedFlag = MS_SLAVE;
+    SandboxPathType pathType = SANDBOX_DIR_PATH;
 };
 
 // Lock bundle info structure for _preunlock directory management

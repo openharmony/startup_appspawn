@@ -1238,4 +1238,671 @@ HWTEST_F(AppSpawnSandboxCoreTest, MountIPCGroup_21, TestSize.Level0)
     DeleteAppSpawningCtx(appProperty);
 }
 
+// ==================== 普通权限 Debug 相关测试 ====================
+
+/**
+ * @tc.name: DoInstallDebugPermissionPoints_01
+ * @tc.desc: Test debug install permission points with null json
+ * @tc.type: FUNC
+ * @tc.require: issueI5NTX6
+ */
+HWTEST_F(AppSpawnSandboxCoreTest, DoInstallDebugPermissionPoints_01, TestSize.Level0)
+{
+    g_testHelperCore.SetProcessName("com.ohos.debug.app");
+    g_testHelperCore.SetTestApl("normal");
+
+    AppSpawningCtx *appProperty = GetTestAppPropertyCore();
+    ASSERT_NE(appProperty, nullptr);
+
+    cJSON *debugJson = nullptr;
+    int ret = AppSpawn::SandboxCore::DoInstallDebugPermissionPoints(appProperty, debugJson);
+    EXPECT_EQ(ret, 0);
+
+    DeleteAppSpawningCtx(appProperty);
+}
+
+/**
+ * @tc.name: DoInstallDebugPermissionPoints_02
+ * @tc.desc: Test debug install permission points with valid config but app does NOT have
+ *           the permission (unregistered name), should skip mount
+ * @tc.type: FUNC
+ * @tc.require: issueI5NTX6
+ */
+HWTEST_F(AppSpawnSandboxCoreTest, DoInstallDebugPermissionPoints_02, TestSize.Level0)
+{
+    g_testHelperCore.SetProcessName("com.ohos.debug.app");
+    g_testHelperCore.SetTestApl("normal");
+
+    AppSpawningCtx *appProperty = GetTestAppPropertyCore();
+    ASSERT_NE(appProperty, nullptr);
+
+    // Use an unregistered permission name so CheckAppPermissionFlagSet returns 0
+    // (app does NOT have the permission), the mount is skipped.
+    const char *configStr = R"({
+        "permission": [
+            {
+                "ohos.permission.UNREGISTERED_TEST": {
+                    "mount-paths": [
+                        {
+                            "src-path": "/data/test/debug/src",
+                            "sandbox-path": "/data/test/debug/dest"
+                        }
+                    ]
+                }
+            }
+        ]
+    })";
+    cJSON *debugJson = cJSON_Parse(configStr);
+    ASSERT_NE(debugJson, nullptr);
+    int ret = AppSpawn::SandboxCore::DoInstallDebugPermissionPoints(appProperty, debugJson);
+    EXPECT_EQ(ret, 0);
+
+    cJSON_Delete(debugJson);
+    DeleteAppSpawningCtx(appProperty);
+}
+
+/**
+ * @tc.name: DoInstallDebugPermissionPoints_03
+ * @tc.desc: Test debug install permission points with valid config and app HAS the
+ *           registered permission (FILE_ACCESS_MANAGER), should mount
+ * @tc.type: FUNC
+ * @tc.require: issueI5NTX6
+ */
+HWTEST_F(AppSpawnSandboxCoreTest, DoInstallDebugPermissionPoints_03, TestSize.Level0)
+{
+    g_testHelperCore.SetProcessName("com.ohos.debug.app");
+    g_testHelperCore.SetTestApl("normal");
+
+    AppSpawningCtx *appProperty = GetTestAppPropertyCore();
+    ASSERT_NE(appProperty, nullptr);
+
+    // Set the permission flag for a registered permission so that
+    // CheckAppPermissionFlagSet returns non-zero (app has the permission).
+    int index = GetPermissionIndex(nullptr, "ohos.permission.FILE_ACCESS_MANAGER");
+    ASSERT_GE(index, 0);
+    int ret = SetAppPermissionFlags(appProperty, static_cast<uint32_t>(index));
+    EXPECT_EQ(ret, 0);
+
+    const char *configStr = R"({
+        "permission": [
+            {
+                "ohos.permission.FILE_ACCESS_MANAGER": {
+                    "mount-paths": [
+                        {
+                            "src-path": "/data/test/debug/src",
+                            "sandbox-path": "/data/test/debug/dest"
+                        }
+                    ]
+                }
+            }
+        ]
+    })";
+    cJSON *debugJson = cJSON_Parse(configStr);
+    ASSERT_NE(debugJson, nullptr);
+    ret = AppSpawn::SandboxCore::DoInstallDebugPermissionPoints(appProperty, debugJson);
+    EXPECT_EQ(ret, 0);
+
+    cJSON_Delete(debugJson);
+    DeleteAppSpawningCtx(appProperty);
+}
+
+/**
+ * @tc.name: DoInstallDebugPermissionPoints_04
+ * @tc.desc: Test debug install permission points with empty permission child (no array items),
+ *           permissionMountPaths is null, should skip
+ * @tc.type: FUNC
+ * @tc.require: issueI5NTX6
+ */
+HWTEST_F(AppSpawnSandboxCoreTest, DoInstallDebugPermissionPoints_04, TestSize.Level0)
+{
+    g_testHelperCore.SetProcessName("com.ohos.debug.app");
+    g_testHelperCore.SetTestApl("normal");
+
+    AppSpawningCtx *appProperty = GetTestAppPropertyCore();
+    ASSERT_NE(appProperty, nullptr);
+
+    // The permission child value is an empty object {}, so cJSON_GetArrayItem(child, 0)
+    // returns null and the !permissionMountPaths branch is taken.
+    // Set the permission flag so that CheckAppPermissionFlagSet returns non-zero,
+    // allowing the code to reach the !permissionMountPaths check.
+    int index = GetPermissionIndex(nullptr, "ohos.permission.FILE_ACCESS_MANAGER");
+    ASSERT_GE(index, 0);
+    int ret = SetAppPermissionFlags(appProperty, static_cast<uint32_t>(index));
+    EXPECT_EQ(ret, 0);
+
+    const char *configStr = R"({
+        "permission": [
+            {
+                "ohos.permission.FILE_ACCESS_MANAGER": {}
+            }
+        ]
+    })";
+    cJSON *debugJson = cJSON_Parse(configStr);
+    ASSERT_NE(debugJson, nullptr);
+    ret = AppSpawn::SandboxCore::DoInstallDebugPermissionPoints(appProperty, debugJson);
+    EXPECT_EQ(ret, 0);
+
+    cJSON_Delete(debugJson);
+    DeleteAppSpawningCtx(appProperty);
+}
+
+/**
+ * @tc.name: DoUninstallDebugPermissionPoints_01
+ * @tc.desc: Test debug uninstall permission points with null json
+ * @tc.type: FUNC
+ * @tc.require: issueI5NTX6
+ */
+HWTEST_F(AppSpawnSandboxCoreTest, DoUninstallDebugPermissionPoints_01, TestSize.Level0)
+{
+    std::vector<std::string> bundleList;
+    cJSON *debugJson = nullptr;
+    int ret = AppSpawn::SandboxCore::DoUninstallDebugPermissionPoints(bundleList, debugJson);
+    EXPECT_EQ(ret, 0);
+}
+
+/**
+ * @tc.name: DoUninstallDebugPermissionPoints_02
+ * @tc.desc: Test debug uninstall permission points with valid config and mount-paths,
+ *           should uninstall
+ * @tc.type: FUNC
+ * @tc.require: issueI5NTX6
+ */
+HWTEST_F(AppSpawnSandboxCoreTest, DoUninstallDebugPermissionPoints_02, TestSize.Level0)
+{
+    std::vector<std::string> bundleList;
+    bundleList.push_back("com.ohos.test.app");
+
+    const char *configStr = R"({
+        "permission": [
+            {
+                "ohos.permission.FILE_ACCESS_MANAGER": {
+                    "mount-paths": [
+                        {
+                            "src-path": "/data/test/debug/src",
+                            "sandbox-path": "/data/test/debug/dest"
+                        }
+                    ]
+                }
+            }
+        ]
+    })";
+    cJSON *debugJson = cJSON_Parse(configStr);
+    ASSERT_NE(debugJson, nullptr);
+    int ret = AppSpawn::SandboxCore::DoUninstallDebugPermissionPoints(bundleList, debugJson);
+    EXPECT_EQ(ret, 0);
+
+    cJSON_Delete(debugJson);
+}
+
+/**
+ * @tc.name: DoUninstallDebugPermissionPoints_03
+ * @tc.desc: Test debug uninstall permission points with empty permission child (no array items),
+ *           permissionMountPaths is null, should skip
+ * @tc.type: FUNC
+ * @tc.require: issueI5NTX6
+ */
+HWTEST_F(AppSpawnSandboxCoreTest, DoUninstallDebugPermissionPoints_03, TestSize.Level0)
+{
+    std::vector<std::string> bundleList;
+    bundleList.push_back("com.ohos.test.app");
+
+    // The permission child value is an empty object {}, so cJSON_GetArrayItem(child, 0)
+    // returns null and the !permissionMountPaths branch is taken.
+    const char *configStr = R"({
+        "permission": [
+            {
+                "ohos.permission.TEST_INVERTED": {}
+            }
+        ]
+    })";
+    cJSON *debugJson = cJSON_Parse(configStr);
+    ASSERT_NE(debugJson, nullptr);
+    int ret = AppSpawn::SandboxCore::DoUninstallDebugPermissionPoints(bundleList, debugJson);
+    EXPECT_EQ(ret, 0);
+
+    cJSON_Delete(debugJson);
+}
+
+// ==================== 反向权限文件相关测试 ====================
+
+/**
+ * @tc.name: DoSandboxFileInvertedPermissionBind_01
+ * @tc.desc: Test inverted-permission file binding with null config
+ * @tc.type: FUNC
+ * @tc.require: issueI5NTX6
+ */
+HWTEST_F(AppSpawnSandboxCoreTest, DoSandboxFileInvertedPermissionBind_01, TestSize.Level0)
+{
+    g_testHelperCore.SetProcessName("com.ohos.inverted.app");
+    g_testHelperCore.SetTestApl("normal");
+
+    AppSpawningCtx *appProperty = GetTestAppPropertyCore();
+    ASSERT_NE(appProperty, nullptr);
+
+    cJSON *wholeConfig = nullptr;
+    int ret = AppSpawn::SandboxCore::DoSandboxFileInvertedPermissionBind(appProperty, wholeConfig);
+    EXPECT_EQ(ret, 0);
+
+    DeleteAppSpawningCtx(appProperty);
+}
+
+/**
+ * @tc.name: DoSandboxFileInvertedPermissionBind_02
+ * @tc.desc: Test inverted-permission file binding with valid config (app without permission, should mount)
+ * @tc.type: FUNC
+ * @tc.require: issueI5NTX6
+ */
+HWTEST_F(AppSpawnSandboxCoreTest, DoSandboxFileInvertedPermissionBind_02, TestSize.Level0)
+{
+    g_testHelperCore.SetProcessName("com.ohos.inverted.app");
+    g_testHelperCore.SetTestApl("normal");
+
+    AppSpawningCtx *appProperty = GetTestAppPropertyCore();
+    ASSERT_NE(appProperty, nullptr);
+
+    const char *configStr = R"({
+        "inverted-permission": [
+            {
+                "ohos.permission.TEST_INVERTED": {
+                    "mount-paths": [
+                        {
+                            "src-path": "/data/test/inverted/src",
+                            "sandbox-path": "/data/test/inverted/dest"
+                        }
+                    ]
+                }
+            }
+        ]
+    })";
+    cJSON *wholeConfig = cJSON_Parse(configStr);
+    ASSERT_NE(wholeConfig, nullptr);
+    int ret = AppSpawn::SandboxCore::DoSandboxFileInvertedPermissionBind(appProperty, wholeConfig);
+    EXPECT_EQ(ret, 0);
+
+    cJSON_Delete(wholeConfig);
+    DeleteAppSpawningCtx(appProperty);
+}
+
+/**
+ * @tc.name: DoSandboxFileInvertedPermissionBind_03
+ * @tc.desc: Test inverted-permission with app having the permission (should skip mount)
+ * @tc.type: FUNC
+ * @tc.require: issueI5NTX6
+ */
+HWTEST_F(AppSpawnSandboxCoreTest, DoSandboxFileInvertedPermissionBind_03, TestSize.Level0)
+{
+    g_testHelperCore.SetProcessName("com.ohos.inverted.app");
+    g_testHelperCore.SetTestApl("normal");
+    std::vector<const char *> &permissions = g_testHelperCore.GetPermissions();
+    permissions.push_back("ohos.permission.FILE_CROSS_APP");
+
+    AppSpawningCtx *appProperty = GetTestAppPropertyCore();
+    ASSERT_NE(appProperty, nullptr);
+
+    const char *configStr = R"({
+        "inverted-permission": [
+            {
+                "ohos.permission.FILE_CROSS_APP": {
+                    "mount-paths": [
+                        {
+                            "src-path": "/data/test/inverted/src",
+                            "sandbox-path": "/data/test/inverted/dest"
+                        }
+                    ]
+                }
+            }
+        ]
+    })";
+    cJSON *wholeConfig = cJSON_Parse(configStr);
+    ASSERT_NE(wholeConfig, nullptr);
+    int ret = AppSpawn::SandboxCore::DoSandboxFileInvertedPermissionBind(appProperty, wholeConfig);
+    EXPECT_EQ(ret, 0);
+
+    cJSON_Delete(wholeConfig);
+    DeleteAppSpawningCtx(appProperty);
+}
+
+/**
+ * @tc.name: DoSandboxFileInvertedPermissionBind_04
+ * @tc.desc: Test inverted-permission with app having a registered permission (FILE_ACCESS_MANAGER),
+ *           should skip mount and cover line 366 TRUE branch
+ * @tc.type: FUNC
+ * @tc.require: issueI5NTX6
+ */
+HWTEST_F(AppSpawnSandboxCoreTest, DoSandboxFileInvertedPermissionBind_04, TestSize.Level0)
+{
+    g_testHelperCore.SetProcessName("com.ohos.inverted.app");
+    g_testHelperCore.SetTestApl("normal");
+
+    AppSpawningCtx *appProperty = GetTestAppPropertyCore();
+    ASSERT_NE(appProperty, nullptr);
+
+    // Set the permission flag for a registered permission so that
+    // CheckAppPermissionFlagSet returns non-zero (app has the permission).
+    int index = GetPermissionIndex(nullptr, "ohos.permission.FILE_ACCESS_MANAGER");
+    ASSERT_GE(index, 0);
+    int ret = SetAppPermissionFlags(appProperty, static_cast<uint32_t>(index));
+    EXPECT_EQ(ret, 0);
+
+    const char *configStr = R"({
+        "inverted-permission": [
+            {
+                "ohos.permission.FILE_ACCESS_MANAGER": {
+                    "mount-paths": [
+                        {
+                            "src-path": "/data/test/inverted/src",
+                            "sandbox-path": "/data/test/inverted/dest"
+                        }
+                    ]
+                }
+            }
+        ]
+    })";
+    cJSON *wholeConfig = cJSON_Parse(configStr);
+    ASSERT_NE(wholeConfig, nullptr);
+    ret = AppSpawn::SandboxCore::DoSandboxFileInvertedPermissionBind(appProperty, wholeConfig);
+    EXPECT_EQ(ret, 0);
+
+    cJSON_Delete(wholeConfig);
+    DeleteAppSpawningCtx(appProperty);
+}
+
+/**
+ * @tc.name: DoSandboxFileInvertedPermissionBind_05
+ * @tc.desc: Test inverted-permission with empty permission child (no mount-paths array),
+ *           permissionMountPaths is null, cover line 372 TRUE branch
+ * @tc.type: FUNC
+ * @tc.require: issueI5NTX6
+ */
+HWTEST_F(AppSpawnSandboxCoreTest, DoSandboxFileInvertedPermissionBind_05, TestSize.Level0)
+{
+    g_testHelperCore.SetProcessName("com.ohos.inverted.app");
+    g_testHelperCore.SetTestApl("normal");
+
+    AppSpawningCtx *appProperty = GetTestAppPropertyCore();
+    ASSERT_NE(appProperty, nullptr);
+
+    // The permission child value is an empty object {}, so cJSON_GetArrayItem(child, 0)
+    // returns null and the !permissionMountPaths branch (line 372) is taken.
+    const char *configStr = R"({
+        "inverted-permission": [
+            {
+                "ohos.permission.TEST_INVERTED": {}
+            }
+        ]
+    })";
+    cJSON *wholeConfig = cJSON_Parse(configStr);
+    ASSERT_NE(wholeConfig, nullptr);
+    int ret = AppSpawn::SandboxCore::DoSandboxFileInvertedPermissionBind(appProperty, wholeConfig);
+    EXPECT_EQ(ret, 0);
+
+    cJSON_Delete(wholeConfig);
+    DeleteAppSpawningCtx(appProperty);
+}
+
+/**
+ * @tc.name: SetInvertedPermissionAppSandboxProperty__01
+ * @tc.desc: Test inverted-permission app sandbox property setting with null config
+ * @tc.type: FUNC
+ * @tc.require: issueI5NTX6
+ */
+HWTEST_F(AppSpawnSandboxCoreTest, SetInvertedPermissionAppSandboxProperty__01, TestSize.Level0)
+{
+    g_testHelperCore.SetProcessName("com.ohos.inverted.app");
+    g_testHelperCore.SetTestApl("normal");
+
+    AppSpawningCtx *appProperty = GetTestAppPropertyCore();
+    ASSERT_NE(appProperty, nullptr);
+
+    cJSON *config = nullptr;
+    int ret = AppSpawn::SandboxCore::SetInvertedPermissionAppSandboxProperty_(appProperty, config);
+    EXPECT_EQ(ret, 0);
+
+    DeleteAppSpawningCtx(appProperty);
+}
+
+/**
+ * @tc.name: SetInvertedPermissionAppSandboxProperty_01
+ * @tc.desc: Test inverted-permission app sandbox property setting
+ * @tc.type: FUNC
+ * @tc.require: issueI5NTX6
+ */
+HWTEST_F(AppSpawnSandboxCoreTest, SetInvertedPermissionAppSandboxProperty_01, TestSize.Level0)
+{
+    g_testHelperCore.SetProcessName("com.ohos.inverted.app");
+    g_testHelperCore.SetTestApl("normal");
+
+    AppSpawningCtx *appProperty = GetTestAppPropertyCore();
+    ASSERT_NE(appProperty, nullptr);
+
+    int ret = AppSpawn::SandboxCore::SetInvertedPermissionAppSandboxProperty(appProperty);
+    EXPECT_EQ(ret, 0);
+
+    DeleteAppSpawningCtx(appProperty);
+}
+
+/**
+ * @tc.name: DoInstallDebugInvertedPermissionPoints_01
+ * @tc.desc: Test debug install inverted-permission points with null json
+ * @tc.type: FUNC
+ * @tc.require: issueI5NTX6
+ */
+HWTEST_F(AppSpawnSandboxCoreTest, DoInstallDebugInvertedPermissionPoints_01, TestSize.Level0)
+{
+    g_testHelperCore.SetProcessName("com.ohos.debug.app");
+    g_testHelperCore.SetTestApl("normal");
+
+    AppSpawningCtx *appProperty = GetTestAppPropertyCore();
+    ASSERT_NE(appProperty, nullptr);
+
+    cJSON *debugJson = nullptr;
+    int ret = AppSpawn::SandboxCore::DoInstallDebugInvertedPermissionPoints(appProperty, debugJson);
+    EXPECT_EQ(ret, 0);
+
+    DeleteAppSpawningCtx(appProperty);
+}
+
+/**
+ * @tc.name: DoInstallDebugInvertedPermissionPoints_02
+ * @tc.desc: Test debug install inverted-permission points with valid config but app does NOT
+ *           have the permission (unregistered name), should mount (inverted logic)
+ * @tc.type: FUNC
+ * @tc.require: issueI5NTX6
+ */
+HWTEST_F(AppSpawnSandboxCoreTest, DoInstallDebugInvertedPermissionPoints_02, TestSize.Level0)
+{
+    g_testHelperCore.SetProcessName("com.ohos.debug.app");
+    g_testHelperCore.SetTestApl("normal");
+
+    AppSpawningCtx *appProperty = GetTestAppPropertyCore();
+    ASSERT_NE(appProperty, nullptr);
+
+    // Use an unregistered permission name so CheckAppPermissionFlagSet returns 0
+    // (app does NOT have the permission), inverted-permission proceeds to mount.
+    const char *configStr = R"({
+        "inverted-permission": [
+            {
+                "ohos.permission.UNREGISTERED_TEST": {
+                    "mount-paths": [
+                        {
+                            "src-path": "/data/test/debug/src",
+                            "sandbox-path": "/data/test/debug/dest"
+                        }
+                    ]
+                }
+            }
+        ]
+    })";
+    cJSON *debugJson = cJSON_Parse(configStr);
+    ASSERT_NE(debugJson, nullptr);
+    int ret = AppSpawn::SandboxCore::DoInstallDebugInvertedPermissionPoints(appProperty, debugJson);
+    EXPECT_EQ(ret, 0);
+
+    cJSON_Delete(debugJson);
+    DeleteAppSpawningCtx(appProperty);
+}
+
+/**
+ * @tc.name: DoInstallDebugInvertedPermissionPoints_03
+ * @tc.desc: Test debug install inverted-permission points with valid config and app HAS the
+ *           registered permission (FILE_ACCESS_MANAGER), should skip (inverted logic)
+ * @tc.type: FUNC
+ * @tc.require: issueI5NTX6
+ */
+HWTEST_F(AppSpawnSandboxCoreTest, DoInstallDebugInvertedPermissionPoints_03, TestSize.Level0)
+{
+    g_testHelperCore.SetProcessName("com.ohos.debug.app");
+    g_testHelperCore.SetTestApl("normal");
+
+    AppSpawningCtx *appProperty = GetTestAppPropertyCore();
+    ASSERT_NE(appProperty, nullptr);
+
+    // Set the permission flag for a registered permission so that
+    // CheckAppPermissionFlagSet returns non-zero (app has the permission),
+    // inverted-permission skips the mount.
+    int index = GetPermissionIndex(nullptr, "ohos.permission.FILE_ACCESS_MANAGER");
+    ASSERT_GE(index, 0);
+    int ret = SetAppPermissionFlags(appProperty, static_cast<uint32_t>(index));
+    EXPECT_EQ(ret, 0);
+
+    const char *configStr = R"({
+        "inverted-permission": [
+            {
+                "ohos.permission.FILE_ACCESS_MANAGER": {
+                    "mount-paths": [
+                        {
+                            "src-path": "/data/test/debug/src",
+                            "sandbox-path": "/data/test/debug/dest"
+                        }
+                    ]
+                }
+            }
+        ]
+    })";
+    cJSON *debugJson = cJSON_Parse(configStr);
+    ASSERT_NE(debugJson, nullptr);
+    ret = AppSpawn::SandboxCore::DoInstallDebugInvertedPermissionPoints(appProperty, debugJson);
+    EXPECT_EQ(ret, 0);
+
+    cJSON_Delete(debugJson);
+    DeleteAppSpawningCtx(appProperty);
+}
+
+/**
+ * @tc.name: DoInstallDebugInvertedPermissionPoints_04
+ * @tc.desc: Test debug install inverted-permission points with empty permission child (no array
+ *           items), permissionMountPaths is null, should skip
+ * @tc.type: FUNC
+ * @tc.require: issueI5NTX6
+ */
+HWTEST_F(AppSpawnSandboxCoreTest, DoInstallDebugInvertedPermissionPoints_04, TestSize.Level0)
+{
+    g_testHelperCore.SetProcessName("com.ohos.debug.app");
+    g_testHelperCore.SetTestApl("normal");
+
+    AppSpawningCtx *appProperty = GetTestAppPropertyCore();
+    ASSERT_NE(appProperty, nullptr);
+
+    // The permission child value is an empty object {}, so cJSON_GetArrayItem(child, 0)
+    // returns null and the !permissionMountPaths branch is taken.
+    // Set the permission flag so that CheckAppPermissionFlagSet returns non-zero,
+    // allowing the code to reach the !permissionMountPaths check.
+    int index = GetPermissionIndex(nullptr, "ohos.permission.FILE_ACCESS_MANAGER");
+    ASSERT_GE(index, 0);
+    int ret = SetAppPermissionFlags(appProperty, static_cast<uint32_t>(index));
+    EXPECT_EQ(ret, 0);
+
+    const char *configStr = R"({
+        "inverted-permission": [
+            {
+                "ohos.permission.FILE_ACCESS_MANAGER": {}
+            }
+        ]
+    })";
+    cJSON *debugJson = cJSON_Parse(configStr);
+    ASSERT_NE(debugJson, nullptr);
+    ret = AppSpawn::SandboxCore::DoInstallDebugInvertedPermissionPoints(appProperty, debugJson);
+    EXPECT_EQ(ret, 0);
+
+    cJSON_Delete(debugJson);
+    DeleteAppSpawningCtx(appProperty);
+}
+
+/**
+ * @tc.name: DoUninstallDebugInvertedPermissionPoints_01
+ * @tc.desc: Test debug uninstall inverted-permission points with null json
+ * @tc.type: FUNC
+ * @tc.require: issueI5NTX6
+ */
+HWTEST_F(AppSpawnSandboxCoreTest, DoUninstallDebugInvertedPermissionPoints_01, TestSize.Level0)
+{
+    std::vector<std::string> bundleList;
+    cJSON *debugJson = nullptr;
+    int ret = AppSpawn::SandboxCore::DoUninstallDebugInvertedPermissionPoints(bundleList, debugJson);
+    EXPECT_EQ(ret, 0);
+}
+
+/**
+ * @tc.name: DoUninstallDebugInvertedPermissionPoints_02
+ * @tc.desc: Test debug uninstall inverted-permission points with valid config and mount-paths,
+ *           should uninstall
+ * @tc.type: FUNC
+ * @tc.require: issueI5NTX6
+ */
+HWTEST_F(AppSpawnSandboxCoreTest, DoUninstallDebugInvertedPermissionPoints_02, TestSize.Level0)
+{
+    std::vector<std::string> bundleList;
+    bundleList.push_back("com.ohos.test.app");
+
+    const char *configStr = R"({
+        "inverted-permission": [
+            {
+                "ohos.permission.FILE_ACCESS_MANAGER": {
+                    "mount-paths": [
+                        {
+                            "src-path": "/data/test/debug/src",
+                            "sandbox-path": "/data/test/debug/dest"
+                        }
+                    ]
+                }
+            }
+        ]
+    })";
+    cJSON *debugJson = cJSON_Parse(configStr);
+    ASSERT_NE(debugJson, nullptr);
+    int ret = AppSpawn::SandboxCore::DoUninstallDebugInvertedPermissionPoints(bundleList, debugJson);
+    EXPECT_EQ(ret, 0);
+
+    cJSON_Delete(debugJson);
+}
+
+/**
+ * @tc.name: DoUninstallDebugInvertedPermissionPoints_03
+ * @tc.desc: Test debug uninstall inverted-permission points with empty permission child (no
+ *           array items), permissionMountPaths is null, should skip
+ * @tc.type: FUNC
+ * @tc.require: issueI5NTX6
+ */
+HWTEST_F(AppSpawnSandboxCoreTest, DoUninstallDebugInvertedPermissionPoints_03, TestSize.Level0)
+{
+    std::vector<std::string> bundleList;
+    bundleList.push_back("com.ohos.test.app");
+
+    // The permission child value is an empty object {}, so cJSON_GetArrayItem(child, 0)
+    // returns null and the !permissionMountPaths branch is taken.
+    const char *configStr = R"({
+        "inverted-permission": [
+            {
+                "ohos.permission.TEST_INVERTED": {}
+            }
+        ]
+    })";
+    cJSON *debugJson = cJSON_Parse(configStr);
+    ASSERT_NE(debugJson, nullptr);
+    int ret = AppSpawn::SandboxCore::DoUninstallDebugInvertedPermissionPoints(bundleList, debugJson);
+    EXPECT_EQ(ret, 0);
+
+    cJSON_Delete(debugJson);
+}
+
 } // namespace OHOS

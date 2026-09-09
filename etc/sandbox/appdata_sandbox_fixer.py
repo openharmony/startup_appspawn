@@ -60,6 +60,7 @@ APP_SANDBOX_DEFAULT = '''
     }],
     "individual" : [{}],
     "permission" :[{}],
+    "inverted-permission" :[{}],
     "debug" : [{}]
 }
 '''
@@ -137,6 +138,7 @@ def _merge_scope_flags_point(origin, new):
 def _merge_scope_app(origin, new):
     field_infos = {
         "mount-paths": ["src-path"],
+        "mount-files": ["src-path", "sandbox-path"],
         "symbol-links": ["target-name"]
     }
     # normal filed
@@ -171,6 +173,14 @@ def _merge_scope_individual(origin, new):
 
 
 def _merge_scope_permission(origin, new):
+    for k, v in new.items():
+        if k not in origin:
+            origin[k] = v
+        else:
+            _merge_scope_app(origin[k], v)
+
+
+def _merge_scope_inverted_permission(origin, new):
     for k, v in new.items():
         if k not in origin:
             origin[k] = v
@@ -287,6 +297,11 @@ def fix_sandbox_config_file(options):
         permission = data.get("permission")
         if permission is not None and len(permission) > 0:
             _merge_scope_permission(origin_json.get("permission")[0], permission[0])
+
+        # 处理inverted-permission
+        inverted_permission = data.get("inverted-permission")
+        if inverted_permission is not None and len(inverted_permission) > 0:
+            _merge_scope_inverted_permission(origin_json.get("inverted-permission")[0], inverted_permission[0])
 
         debug = data.get("debug")
         if debug is not None and len(debug) > 0:

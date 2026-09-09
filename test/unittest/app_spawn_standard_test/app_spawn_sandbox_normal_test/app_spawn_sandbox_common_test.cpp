@@ -1278,4 +1278,107 @@ HWTEST_F(AppSpawnSandboxCommonTest, App_Spawn_SandboxCommon_GetDecReadOnlyPath_0
     EXPECT_EQ(result.size(), 0);
 }
 
+// ==================== 反向权限相关测试 ====================
+
+/**
+ * @tc.name: App_Spawn_SandboxCommon_GetSandboxMountConfig_InvertedPermission_01
+ * @tc.desc: Test GetSandboxMountConfig with inverted-permission section
+ * @tc.type: FUNC
+ */
+HWTEST_F(
+    AppSpawnSandboxCommonTest, App_Spawn_SandboxCommon_GetSandboxMountConfig_InvertedPermission_01, TestSize.Level0)
+{
+    AppSpawningCtx *appProperty = AppSpawn::GetTestAppPropertyCore();
+    ASSERT_NE(appProperty, nullptr);
+
+    const char *configStr = R"({
+        "src-path": "/data/test/src",
+        "sandbox-path": "/data/test/dest",
+        "fs-type": "ext4",
+        "options": "rw",
+        "dec-paths": ["/data/dec/path1"],
+        "dec-readonly-paths": ["/data/dec/readonly1"]
+    })";
+    cJSON *mntPoint = cJSON_Parse(configStr);
+    ASSERT_NE(mntPoint, nullptr);
+
+    std::string section = "inverted-permission";
+    AppSpawn::SandboxMountConfig mountConfig;
+    AppSpawn::SandboxCommon::GetSandboxMountConfig(appProperty, section, mntPoint, mountConfig);
+
+    EXPECT_EQ(mountConfig.fsType, "ext4");
+    EXPECT_EQ(mountConfig.decPaths.size(), 1);
+    EXPECT_EQ(mountConfig.decReadOnlyPaths.size(), 1);
+    EXPECT_EQ(mountConfig.optionsPoint, "rw,user_id=100");
+
+    cJSON_Delete(mntPoint);
+    DeleteAppSpawningCtx(appProperty);
+}
+
+/**
+ * @tc.name: App_Spawn_SandboxCommon_DoAppSandboxMountOnce_FilePathType_01
+ * @tc.desc: Test DoAppSandboxMountOnce with SANDBOX_FILE_PATH path type
+ * @tc.type: FUNC
+ */
+HWTEST_F(AppSpawnSandboxCommonTest, App_Spawn_SandboxCommon_DoAppSandboxMountOnce_FilePathType_01, TestSize.Level0)
+{
+    SharedMountArgs arg;
+    arg.srcPath = "/data/test/src_file";
+    arg.destPath = "/data/test/dest_file";
+    arg.pathType = SANDBOX_FILE_PATH;
+
+    int32_t ret = AppSpawn::SandboxCommon::DoAppSandboxMountOnce(nullptr, &arg);
+    EXPECT_EQ(ret, 0);
+}
+
+/**
+ * @tc.name: App_Spawn_SandboxCommon_DoAppSandboxMountOnce_DirPathType_01
+ * @tc.desc: Test DoAppSandboxMountOnce with SANDBOX_DIR_PATH path type
+ * @tc.type: FUNC
+ */
+HWTEST_F(AppSpawnSandboxCommonTest, App_Spawn_SandboxCommon_DoAppSandboxMountOnce_DirPathType_01, TestSize.Level0)
+{
+    SharedMountArgs arg;
+    arg.srcPath = "/data/test/src_dir";
+    arg.destPath = "/data/test/dest_dir";
+    arg.pathType = SANDBOX_DIR_PATH;
+
+    int32_t ret = AppSpawn::SandboxCommon::DoAppSandboxMountOnce(nullptr, &arg);
+    EXPECT_EQ(ret, 0);
+}
+
+/**
+ * @tc.name: App_Spawn_SandboxCommon_DoAppSandboxMountOnceNocheck_FilePathType_01
+ * @tc.desc: Test DoAppSandboxMountOnceNocheck with SANDBOX_FILE_PATH path type
+ * @tc.type: FUNC
+ */
+HWTEST_F(
+    AppSpawnSandboxCommonTest, App_Spawn_SandboxCommon_DoAppSandboxMountOnceNocheck_FilePathType_01, TestSize.Level0)
+{
+    SharedMountArgs arg;
+    arg.srcPath = "/data/test/src_file";
+    arg.destPath = "/data/test/dest_file";
+    arg.pathType = SANDBOX_FILE_PATH;
+
+    int32_t ret = AppSpawn::SandboxCommon::DoAppSandboxMountOnceNocheck(nullptr, &arg);
+    EXPECT_EQ(ret, 0);
+}
+
+/**
+ * @tc.name: App_Spawn_SandboxCommon_DoAppSandboxMountOnceNocheck_DirPathType_01
+ * @tc.desc: Test DoAppSandboxMountOnceNocheck with SANDBOX_DIR_PATH path type
+ * @tc.type: FUNC
+ */
+HWTEST_F(
+    AppSpawnSandboxCommonTest, App_Spawn_SandboxCommon_DoAppSandboxMountOnceNocheck_DirPathType_01, TestSize.Level0)
+{
+    SharedMountArgs arg;
+    arg.srcPath = "/data/test/src_dir";
+    arg.destPath = "/data/test/dest_dir";
+    arg.pathType = SANDBOX_DIR_PATH;
+
+    int32_t ret = AppSpawn::SandboxCommon::DoAppSandboxMountOnceNocheck(nullptr, &arg);
+    EXPECT_EQ(ret, 0);
+}
+
 }  // namespace OHOS
