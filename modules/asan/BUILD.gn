@@ -46,6 +46,17 @@ ohos_shared_library("appspawn_asan") {
   if ((!is_asan && asan_detector) || use_hwasan) {
       defines += [ "HWASAN_TW" ]
   }
+  # RaceGuard detector preload (天网版本). File isolation: compile
+  # raceguard_detector.c and define RACEGUARD_ENABLE only when the build-level
+  # GN arg raceguard_detector = true (default false, declared in
+  # build/config/sanitizers/sanitizers.gni, same mechanism as asan_detector).
+  # The so is explicitly installed via ASAN_MODULE_PATH by StartSpawnService
+  # (loaded by every spawner); the hook guards with IsAppSpawnMode so only
+  # standard appspawn spawns are injected.
+  if (raceguard_detector) {
+    sources += [ "raceguard_detector.c" ]
+    defines += [ "RACEGUARD_ENABLE" ]
+  }
   external_deps = [
     "bounds_checking_function:libsec_shared",
     "c_utils:utils",
