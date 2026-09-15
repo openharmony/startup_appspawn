@@ -19,6 +19,7 @@
 #include <string>
 #include <thread>
 #include <unistd.h>
+#include <sys/wait.h>
 
 #include <gtest/gtest.h>
 #include <sys/stat.h>
@@ -28,6 +29,7 @@
 #include "appspawn_manager.h"
 #include "appspawn_modulemgr.h"
 #include "appspawn_server.h"
+#include "appspawn_service.h"
 #include "json_utils.h"
 #include "parameter.h"
 #include "securec.h"
@@ -1236,5 +1238,35 @@ HWTEST_F(AppSpawnServiceTest, App_Spawn_GetSpawnNameByRunMode_001, TestSize.Leve
             EXPECT_EQ(strcmp(name, ""), 0);
         }
     }
+}
+
+class AppSpawnSingleThreadTest : public testing::Test {
+public:
+    static void SetUpTestCase() {}
+    static void TearDownTestCase() {}
+    void SetUp() {}
+    void TearDown() {}
+};
+
+HWTEST_F(AppSpawnSingleThreadTest, AppSpawnSingleThreadCheck_001, TestSize.Level0)
+{
+    CheckSingleThread();
+    SUCCEED();
+}
+
+HWTEST_F(AppSpawnSingleThreadTest, AppSpawnSingleThreadCheck_002, TestSize.Level0)
+{
+    pid_t pid = fork();
+    ASSERT_GE(pid, 0);
+    if (pid == 0) {
+        std::thread t([]() { while (true) { sleep(1); } });
+        t.detach();
+        CheckSingleThread();
+        _exit(0);
+    }
+    int status = 0;
+    waitpid(pid, &status, 0);
+    EXPECT_TRUE(WIFSIGNALED(status));
+    EXPECT_EQ(WTERMSIG(status), SIGABRT);
 }
 }  // namespace OHOS
