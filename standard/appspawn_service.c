@@ -16,6 +16,7 @@
 #include "appspawn_service.h"
 
 #include <dlfcn.h>
+#include <dirent.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -1998,6 +1999,55 @@ AppSpawnContent *AppSpawnCreateContent(const char *socketName, char *longProcNam
     return &appSpawnContent->content;
 }
 
+void CheckSingleThread(void)
+{
+    DIR *dir = opendir("/proc/self/task");
+    if (dir == NULL) {
+        APPSPAWN_LOGW("skip thread count check: /proc unavailable, err=%{public}d", errno);
+        return;
+    }
+    int count = 0;
+    struct dirent *entry = NULL;
+    while ((entry = readdir(dir)) != NULL) {
+        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
+            continue;
+        }
+        count++;
+    }
+    if (count <= 1) {
+        closedir(dir);
+        APPSPAWN_LOGI("single thread check passed");
+        return;
+    }
+    rewinddir(dir);
+    APPSPAWN_LOGF("thread count: %{public}d, expected: 1", count);
+    while ((entry = readdir(dir)) != NULL) {
+        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
+            continue;
+        }
+        char commPath[64] = {0};
+        if (sprintf_s(commPath, sizeof(commPath), "/proc/self/task/%s/comm", entry->d_name) <= 0) {
+            continue;
+        }
+        int fd = open(commPath, O_RDONLY);
+        if (fd < 0) {
+            continue;
+        }
+        char comm[16] = {0};
+        ssize_t n = read(fd, comm, sizeof(comm) - 1);
+        close(fd);
+        if (n > 0) {
+            char *nl = strchr(comm, '\n');
+            if (nl) {
+                *nl = '\0';
+            }
+        }
+        APPSPAWN_LOGF("thread[%{public}s]: %{public}s", entry->d_name, comm);
+    }
+    closedir(dir);
+    abort();
+}
+
 AppSpawnContent *StartSpawnService(const AppSpawnStartArg *startArg, uint32_t argvSize, int argc, char *const argv[])
 {
     APPSPAWN_CHECK(startArg != NULL && argv != NULL, return NULL, "Invalid start arg");
@@ -2028,6 +2078,9 @@ AppSpawnContent *StartSpawnService(const AppSpawnStartArg *startArg, uint32_t ar
     int ret = ServerStageHookExecute(STAGE_SERVER_PRELOAD, content);   // Preload, prase the sandbox
     APPSPAWN_CHECK(ret == 0, AppSpawnDestroyContent(content);
         return NULL, "Failed to prepare load %{public}s result: %{public}d", arg->serviceName, ret);
+#ifndef APPSPAWN_TEST
+    CheckSingleThread();
+#endif
 #ifndef APPSPAWN_TEST
     if (content->runChildProcessor == NULL) {
         APPSPAWN_LOGE("ChildLooper is not registered for %{public}s", arg->serviceName);
