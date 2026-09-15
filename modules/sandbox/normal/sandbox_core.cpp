@@ -777,8 +777,6 @@ int32_t SandboxCore::DoAllMntPointsMount(const char *key, cJSON *appConfig, cons
 {
     cJSON *mountPoints = cJSON_GetObjectItemCaseSensitive(appConfig, key);
     if (mountPoints == nullptr || !cJSON_IsArray(mountPoints)) {
-        APPSPAWN_LOGI("mount config %{public}s is not found in %{public}s, app name is %{public}s", key,
-            params.section.c_str(), params.bundleName.c_str());
         return 0;
     }
 
@@ -817,8 +815,6 @@ int32_t SandboxCore::DoAllMntPointsMountNocheck(
 {
     cJSON *mountPoints = cJSON_GetObjectItemCaseSensitive(appConfig, key);
     if (mountPoints == nullptr || !cJSON_IsArray(mountPoints)) {
-        APPSPAWN_LOGI("mount config %{public}s is not found in %{public}s, app name is %{public}s", key,
-            params.section.c_str(), params.bundleName.c_str());
         return 0;
     }
 
