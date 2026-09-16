@@ -120,6 +120,7 @@ Architecture invariants:
 - `lite/` and `standard/` are separate code paths, not `#ifdef`s inside shared files.
 - The 5 binaries share the same core `.c` files — shared code must stay correct under all 5 compile-time defines (see Multiple executables).
 - Modules self-register via `MODULE_CONSTRUCTOR` and hook stages; they must not call engine symbols outside the stub JSON.
+- When modifying multi-consumer shared logic, enumerate every combination of consumer / mount level / startup order, confirm each has no side effects, and self-verify the complete functional path beyond the fix point — never verify only the originally reported error scenario.
 
 ## Code conventions
 
