@@ -14,6 +14,14 @@
 import("//base/startup/appspawn/appspawn.gni")
 import("//build/ohos.gni")
 
+# Fallback for source trees whose build repo predates the raceguard_detector
+# declaration in build/config/sanitizers/sanitizers.gni: default the switch
+# off locally so GN parsing succeeds and the module still builds (detector
+# compiled out, same as raceguard_detector = false).
+if (!defined(raceguard_detector)) {
+  raceguard_detector = false
+}
+
 ohos_shared_library("appspawn_asan") {
   if (!use_clang_coverage) {
     version_script = "appspawn_asan.versionscript"
@@ -49,7 +57,9 @@ ohos_shared_library("appspawn_asan") {
   # RaceGuard detector preload (天网版本). File isolation: compile
   # raceguard_detector.c and define RACEGUARD_ENABLE only when the build-level
   # GN arg raceguard_detector = true (default false, declared in
-  # build/config/sanitizers/sanitizers.gni, same mechanism as asan_detector).
+  # build/config/sanitizers/sanitizers.gni, same mechanism as asan_detector;
+  # the fallback above the target covers older build repos without the
+  # declaration).
   # The so is explicitly installed via ASAN_MODULE_PATH by StartSpawnService
   # (loaded by every spawner); the hook guards with IsAppSpawnMode so only
   # standard appspawn spawns are injected.
