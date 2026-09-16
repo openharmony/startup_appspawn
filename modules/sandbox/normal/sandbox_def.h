@@ -37,6 +37,7 @@ constexpr mode_t ALL_FILE_MODE_BITS = 07777;
 constexpr mode_t IPC_GROUP_SRC_PATH_MODE = 01771;
 constexpr int32_t MAX_MOUNT_INVALID_COUNT = 8;
 constexpr int32_t MIN_PARAM_SRC_PATH_LEN = 2;
+constexpr uint32_t CLONE_APP_INDEX_THRESHOLD = 10000;
 
 // 沙盒配置文件
 const std::string APP_JSON_CONFIG = "/appdata-sandbox.json";
@@ -118,6 +119,7 @@ const std::string g_packageNameIndex = "<PackageName_index>";
 const std::string g_variablePackageName = "<variablePackageName>";
 const std::string g_preunlock = "<preunlock>";
 const std::string g_clonePackageName = "<clonePackageName>";
+const std::string g_installPackageName = "<installPackageName>";
 const std::string g_arkWebPackageName = "<arkWebPackageName>";
 const std::string g_hostUserId = "<hostUserId>";
 const std::string g_devModel = "<devModel>";
