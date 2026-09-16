@@ -151,11 +151,18 @@ void SetDeveloperMode(bool mode)
 
 static bool g_startupPrelinkExist  = false;
 static bool g_startupPrelinkEnable = true;
+static bool g_enterpriseSpaceExist  = false;
+static constexpr uint32_t ENTERPRISE_SPACE_VALUE_LEN = 128;
+static char g_enterpriseSpaceValue[ENTERPRISE_SPACE_VALUE_LEN] = {0};
 int SetParameter(const char *key, const char *value)
 {
     if (strcmp(key, "const.startup.prelink.enable") == 0) {
         g_startupPrelinkExist = true;
         g_startupPrelinkEnable = strcmp(value, "true") == 0 ? true : false;
+    }
+    if (strcmp(key, "persist.space_mgr_service.enterprise_space_enable") == 0) {
+        g_enterpriseSpaceExist = strcpy_s(g_enterpriseSpaceValue, sizeof(g_enterpriseSpaceValue), value) == 0;
+        return g_enterpriseSpaceExist ? 0 : -1;
     }
 
     return 0;
@@ -225,6 +232,27 @@ static int GetParameterForPrelink(char *value, uint32_t len)
     return strcpy_s(value, len, "false") == 0 ? strlen("false") : -1;
 }
 
+static int GetParameterForEnterpriseSpace(char *value, uint32_t len)
+{
+    if (!g_enterpriseSpaceExist) {
+        return -1;
+    }
+    return strcpy_s(value, len, g_enterpriseSpaceValue) == 0 ? strlen(g_enterpriseSpaceValue) : -1;
+}
+ 
+static int GetParameterForReqMgrTimeout(uint32_t count, const char *def, char *value, uint32_t len)
+{
+    const char *tmp = def;
+    if ((count % 3) == 0) { // 3 test
+        return -1;
+    } else if ((count % 3) == 1) { // 3 test
+        tmp = "a";
+    } else {
+        tmp = "5";
+    }
+    return strcpy_s(value, len, tmp) == 0 ? strlen(tmp) : -1;
+}
+
 int GetParameter(const char *key, const char *def, char *value, uint32_t len)
 {
     static uint32_t count = 0;
@@ -233,15 +261,7 @@ int GetParameter(const char *key, const char *def, char *value, uint32_t len)
         return strcpy_s(value, len, "true") == 0 ? strlen("true") : -1;
     }
     if (strcmp(key, "persist.appspawn.reqMgr.timeout") == 0) {
-        const char *tmp = def;
-        if ((count % 3) == 0) { // 3 test
-            return -1;
-        } else if ((count % 3) == 1) { // 3 test
-            tmp = "a";
-        } else {
-            tmp = "5";
-        }
-        return strcpy_s(value, len, tmp) == 0 ? strlen(tmp) : -1;
+        return GetParameterForReqMgrTimeout(count, def, value, len);
     }
     if (strcmp(key, "const.security.developermode.state") == 0) {
         return g_developerMode ? (strcpy_s(value, len, "true") == 0 ? strlen("true") : -1) : -1;
@@ -261,6 +281,9 @@ int GetParameter(const char *key, const char *def, char *value, uint32_t len)
     }
     if (strcmp(key, "const.startup.prelink.enable") == 0) {
         return GetParameterForPrelink(value, len);
+    }
+    if (strcmp(key, "persist.space_mgr_service.enterprise_space_enable") == 0) {
+        return GetParameterForEnterpriseSpace(value, len);
     }
     return -1;
 }

@@ -78,6 +78,7 @@ int SetAppAccessToken(const AppSpawnMgr *content, const AppSpawningCtx *property
 }
 
 #ifdef WITH_SELINUX
+
 void SetHapDomainInfo(const AppSpawnMgr *content, const AppSpawningCtx *property,
     AppSpawnMsgDomainInfo *msgDomainInfo, HapDomainInfo *hapDomainInfo)
 {
@@ -102,6 +103,14 @@ void SetHapDomainInfo(const AppSpawnMgr *content, const AppSpawningCtx *property
         } else {
             hapDomainInfo->hapFlags |= SELINUX_HAP_INPUT_ISOLATE_FULL;
         }
+    }
+    /*
+     * If the enterprise space param value exists and is false, disableMCS is set to true.
+     * that is, the MCS lable is disabled. If the param value does not exist or is true,
+     * disableMCS uses the default value of seharmony.
+     */
+    if (CheckEnabled("persist.space_mgr_service.enterprise_space_enable", "false")) {
+        hapDomainInfo->disableMCS = true;
     }
 #ifdef CUSTOM_SANDBOX
     if (CheckAppMsgFlagsSet(property, APP_FLAGS_CUSTOM_SANDBOX)) {
