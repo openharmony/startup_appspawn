@@ -51,6 +51,9 @@
 #include "parameter.h"
 #include "securec.h"
 #include "cJSON.h"
+#ifdef APPSPAWN_HISYSEVENT
+#include "hisysevent_adapter.h"
+#endif
 
 #ifdef APPSPAWN_HITRACE_OPTION
 #include "hitrace_option/hitrace_option.h"
@@ -146,7 +149,11 @@ static int SetKeepCapabilities(const AppSpawnMgr *content, const AppSpawningCtx 
     // set keep capabilities when user not root.
     if (dacInfo->uid != 0) {
         bool isRet = prctl(PR_SET_KEEPCAPS, 1, 0, 0, 0) == -1;
-        APPSPAWN_CHECK(!isRet, return errno, "set keepcaps failed: %{public}d", errno);
+        APPSPAWN_CHECK(!isRet,
+#ifdef APPSPAWN_HISYSEVENT
+            ReportSpawnChildProcessFail(GetProcessName(property), ERR_APPSPAWN_PRCTL_FAIL, errno);
+#endif
+            return errno, "set keepcaps failed: %{public}d", errno);
     }
     return 0;
 }
@@ -479,12 +486,17 @@ APPSPAWN_STATIC void GetExtPermGids(const AppSpawningCtx *property,
 
 APPSPAWN_STATIC int SetUidGid(const AppSpawnMgr *content, const AppSpawningCtx *property)
 {
+    const char *processName = GetProcessName(property);
+    APPSPAWN_CHECK(processName != NULL, return APPSPAWN_TLV_NONE, "Can not get process name");
     AppSpawnMsgDacInfo *dacInfo = (AppSpawnMsgDacInfo *)GetAppProperty(property, TLV_DAC_INFO);
     APPSPAWN_CHECK(dacInfo != NULL, return APPSPAWN_TLV_NONE,
-        "No tlv %{public}d in msg %{public}s", TLV_DAC_INFO, GetProcessName(property));
+        "No tlv %{public}d in msg %{public}s", TLV_DAC_INFO, processName);
     APPSPAWN_CHECK(dacInfo->uid >= MIN_VALID_APP_UID && dacInfo->uid < UINT32_MAX &&
-        dacInfo->gid >= MIN_VALID_APP_GID && dacInfo->gid < UINT32_MAX &&
-        dacInfo->gidCount <= APP_MAX_GIDS, return APPSPAWN_MSG_INVALID,
+        dacInfo->gid >= MIN_VALID_APP_GID && dacInfo->gid < UINT32_MAX && dacInfo->gidCount <= APP_MAX_GIDS,
+#ifdef APPSPAWN_HISYSEVENT
+        ReportSpawnChildProcessFail(processName, ERR_APPSPAWN_MSG_PARAM_INVALID, APPSPAWN_MSG_INVALID);
+#endif
+        return APPSPAWN_MSG_INVALID,
         "uid %{public}u or gid %{public}u gidCount %{public}u is invalid",
         dacInfo->uid, dacInfo->gid, dacInfo->gidCount);
 
@@ -515,7 +527,7 @@ APPSPAWN_STATIC int SetUidGid(const AppSpawnMgr *content, const AppSpawningCtx *
 
     char *userIdStr = (char *)GetAppSpawnMsgExtInfo(property->message, MSG_EXT_NAME_USERID, NULL);
     if (userIdStr != NULL) {
-        APPSPAWN_LOGV("Set userId to %{public}s for process %{public}s", userIdStr, GetProcessName(property));
+        APPSPAWN_LOGV("Set userId to %{public}s for process %{public}s", userIdStr, processName);
         ret = SetUserId(userIdStr);
         APPSPAWN_CHECK_ONLY_LOGW(ret == 0, "SetUserId(%{public}s) failed", userIdStr);
     }

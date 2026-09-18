@@ -68,7 +68,11 @@ int SetAppAccessToken(const AppSpawnMgr *content, const AppSpawningCtx *property
     }
     AccessTokenID accessTokenId = tokenId & TOKEN_ID_LOWMASK;
     ATokenTypeEnum type = AccessTokenKit::GetTokenTypeFlag(accessTokenId);
-    APPSPAWN_CHECK(type == TOKEN_HAP, return APPSPAWN_ACCESS_TOKEN_INVALID, "token type %{public}d is invalid", type);
+    APPSPAWN_CHECK(type == TOKEN_HAP,
+#ifdef APPSPAWN_HISYSEVENT
+        ReportSpawnChildProcessFail(GetProcessName(property), ERR_APPSPAWN_MSG_PARAM_INVALID, APPSPAWN_MSG_INVALID);
+#endif
+        return APPSPAWN_ACCESS_TOKEN_INVALID, "token type %{public}d is invalid", type);
 
     ret = SetSelfTokenID(tokenId);
     APPSPAWN_CHECK(ret == 0, return APPSPAWN_ACCESS_TOKEN_INVALID,

@@ -30,6 +30,9 @@
 #include "ffrt_inner.h"
 #endif
 #endif
+#ifdef APPSPAWN_HISYSEVENT
+#include "hisysevent_adapter.h"
+#endif
 
 #ifndef APPSPAWN_HELPER
 #define MAX_FORK_TIME (30 * 1000)   // 30ms
@@ -210,7 +213,11 @@ int AppSpawnProcessMsg(AppSpawnContent *content, AppSpawnClient *client, pid_t *
 #endif
         AppSpawnForkChildProcess(content, client, &pid);
     }
-    APPSPAWN_CHECK(pid >= 0, return APPSPAWN_FORK_FAIL, "fork child process error: %{public}d", errno);
+    APPSPAWN_CHECK(pid >= 0,
+#ifdef APPSPAWN_HISYSEVENT
+        ReportKeyEvent(FORK_FAIL);
+#endif
+        return APPSPAWN_FORK_FAIL, "fork or clone child process error: %{public}d", errno);
     *childPid = pid;
     return 0;
 }

@@ -1166,6 +1166,9 @@ APPSPAWN_STATIC pid_t ForkAndRegisterFds(AppSpawnMgr *mgr, AppSpawningCtx *prope
         ClearPipeFd(childToParentFd, PIPE_FD_LENGTH);
         ClearPipeFd(parentToChildFd, PIPE_FD_LENGTH);
         APPSPAWN_LOGE("prefork fork failed err %{public}d", errno);
+#ifdef APPSPAWN_HISYSEVENT
+        ReportKeyEvent(PREFORK_FAIL);
+#endif
     }
     return pid;
 }
@@ -2032,13 +2035,25 @@ AppSpawnContent *StartSpawnService(const AppSpawnStartArg *startArg, uint32_t ar
     if (content->runChildProcessor == NULL) {
         APPSPAWN_LOGE("ChildLooper is not registered for %{public}s", arg->serviceName);
         APPSPAWN_KLOGE("ChildLooper is not registered for %{public}s", arg->serviceName);
+#ifdef APPSPAWN_HISYSEVENT
+        ReportKeyEvent(CHILDLOOPER_NOT_REGISTERED);
+#endif
         AppSpawnDestroyContent(content);
         return NULL;
     }
 #endif
     AddAppSpawnHook(STAGE_CHILD_PRE_RUN, HOOK_PRIO_LOWEST, AppSpawnClearEnv);
     if (arg->mode == MODE_FOR_APP_SPAWN) {
-        SetParameter("bootevent.appspawn.started", "true");
+        ret = SetParameter("bootevent.appspawn.started", "true");
+        if (ret != 0) {
+            ret = SetParameter("bootevent.appspawn.started", "true");
+            if (ret != 0) {
+#ifdef APPSPAWN_HISYSEVENT
+                ReportKeyEvent(SET_BOOTEVENT_PARAM_FAIL);
+#endif
+                APPSPAWN_LOGE("Set bootevent.appspawn.started param retry failed %{public}d", ret);
+            }
+        }
     }
     return content;
 }
