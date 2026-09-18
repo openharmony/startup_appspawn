@@ -98,7 +98,7 @@ static const PermissionAttrMap g_permissionAttrMap[] = {
     {"ohos.permission.test.GID_ONLY", {APPSPAWN_CAP_NONE, false}, {g_testGidOnlyGids, ARRAY_LENGTH(g_testGidOnlyGids)}},
 #endif
     {"ohos.permission.kernel.NET_RAW", {CAP_NET_RAW, false}, {NULL, 0}},
-    {"ohos.permission.kernel.NET_RAW", {APPSPAWN_CAP_NONE, false}, {g_GidUsbmons, ARRAY_LENGTH(g_GidUsbmons)}},
+    {"ohos.permission.kernel.USB_CAPTURE", {APPSPAWN_CAP_NONE, false}, {g_GidUsbmons, ARRAY_LENGTH(g_GidUsbmons)}},
 };
 
 int __attribute__((weak)) SetUserId(char *userIdStr)
