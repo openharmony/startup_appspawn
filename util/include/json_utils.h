@@ -25,7 +25,7 @@
 extern "C" {
 #endif  // __cplusplus
 
-#define MAX_JSON_FILE_LEN 102400
+#define MAX_JSON_FILE_LEN 204800
 typedef struct TagParseJsonContext ParseJsonContext;
 typedef int (*ParseConfig)(const cJSON *root, ParseJsonContext *context);
 int ParseJsonConfig(const char *path, const char *fileName, ParseConfig parseConfig, ParseJsonContext *context);
