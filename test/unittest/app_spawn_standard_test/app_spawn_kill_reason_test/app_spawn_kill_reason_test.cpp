@@ -53,6 +53,8 @@ using namespace testing::ext;
 namespace OHOS {
 namespace {
 // Keep in sync with struct KillInfo/KillEventInfo in modules/common/appspawn_kill_reason.c
+#define CALLING_PROCESS_NAME_SIZE 16
+
 struct TestKillEventInfo {
     int id;
     int adj;
@@ -60,6 +62,8 @@ struct TestKillEventInfo {
     bool foreground;
     pid_t pid;
     int uid;
+    pid_t callingPid;
+    char callingProcessName[CALLING_PROCESS_NAME_SIZE];
     int64_t timestamp;
     int64_t eventParamFirst;
     int64_t eventParamSecond;
@@ -525,6 +529,8 @@ HWTEST_F(AppSpawnKillReasonTest, App_Spawn_KillReason_Set_008, TestSize.Level0)
     // Fields not set by InitKillInfo must stay zeroed, not carry over from the previous call
     EXPECT_EQ(g_ioctlLastInfo.data.adj, 0);
     EXPECT_EQ(g_ioctlLastInfo.data.timestamp, 0);
+    EXPECT_EQ(g_ioctlLastInfo.data.callingPid, 0);
+    EXPECT_EQ(sizeof(g_ioctlLastInfo.data.callingProcessName), CALLING_PROCESS_NAME_SIZE);
     EXPECT_EQ(g_ioctlLastInfo.data.eventParamFirst, 0);
     EXPECT_EQ(g_ioctlLastInfo.data.eventParamSecond, 0);
     EXPECT_EQ(g_ioctlLastInfo.data.eventParamThird, 0);

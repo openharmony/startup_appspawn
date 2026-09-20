@@ -29,6 +29,7 @@
 
 #define KILL_LOG_BASE 'S'
 #define SYSLOAD_SET_KILL_INFO_MAGIC 0xE5AC03
+#define CALLING_PROCESS_NAME_SIZE 16
 
 struct KillEventInfo {
     int id;
@@ -37,6 +38,8 @@ struct KillEventInfo {
     bool foreground;
     pid_t pid;
     int uid;
+    pid_t callingPid;
+    char callingProcessName[CALLING_PROCESS_NAME_SIZE];
     int64_t timestamp;
     int64_t eventParamFirst;
     int64_t eventParamSecond;
