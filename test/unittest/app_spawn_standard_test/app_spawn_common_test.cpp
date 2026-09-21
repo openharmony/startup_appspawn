@@ -1126,6 +1126,482 @@ HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_035, TestSize.Level0)
     EXPECT_EQ(hapDomainInfo.hapFlags & SELINUX_HAP_ISOLATED_RENDER, SELINUX_HAP_ISOLATED_RENDER);
     ASSERT_EQ(ret, 0);
 }
+
+/**
+ * @brief 非企业空间场景（企业空间参数为false），MCS默认关闭
+ * @note 预期结果: disableMCS为true，且apl/packageName等既有字段赋值不受影响
+ *
+ */
+HWTEST_F(AppSpawnCommonTest, App_Spawn_SetHapDomainInfo_MCS_01, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = nullptr;
+    AppSpawnReqMsgHandle reqHandle = 0;
+    AppSpawningCtx *property = nullptr;
+    AppSpawnMgr *mgr = nullptr;
+    int ret = -1;
+    HapDomainInfo hapDomainInfo;
+    SetParameter("persist.space_mgr_service.enterprise_space_enable", "false");
+    do {
+        mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+        EXPECT_EQ(mgr != nullptr, 1);
+        // create msg
+        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create reqMgr %{public}s", APPSPAWN_SERVER_NAME);
+        reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+        APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break,
+            "Failed to create req %{public}s", APPSPAWN_SERVER_NAME);
+        property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
+        APPSPAWN_CHECK(property != nullptr, break, "Failed to get app property");
+        AppSpawnMsgDomainInfo *msgDomainInfo =
+            reinterpret_cast<AppSpawnMsgDomainInfo *>(GetAppProperty(property, TLV_DOMAIN_INFO));
+        APPSPAWN_CHECK(msgDomainInfo != NULL, break,
+            "No domain info in req form %{public}s", GetProcessName(property));
+        SetHapDomainInfo(mgr, property, msgDomainInfo, &hapDomainInfo);
+        EXPECT_TRUE(hapDomainInfo.disableMCS);
+        EXPECT_EQ(hapDomainInfo.apl, msgDomainInfo->apl);
+        EXPECT_EQ(hapDomainInfo.packageName, GetBundleName(property));
+    } while (0);
+    SetParameter("persist.space_mgr_service.enterprise_space_enable", "false");
+    DeleteAppSpawningCtx(property);
+    AppSpawnClientDestroy(clientHandle);
+    DeleteAppSpawnMgr(mgr);
+    ASSERT_EQ(ret, 0);
+}
+ 
+/**
+ * @brief 企业空间场景（企业空间参数为true），不设置disableMCS，保持HapDomainInfo默认值
+ * @note 预期结果: disableMCS保持HapDomainInfo默认值，且DEBUGGABLE标志依旧正常设置，既有功能不受影响
+ *
+ */
+HWTEST_F(AppSpawnCommonTest, App_Spawn_SetHapDomainInfo_MCS_02, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = nullptr;
+    AppSpawnReqMsgHandle reqHandle = 0;
+    AppSpawningCtx *property = nullptr;
+    AppSpawnMgr *mgr = nullptr;
+    int ret = -1;
+    HapDomainInfo hapDomainInfo;
+    SetParameter("persist.space_mgr_service.enterprise_space_enable", "true");
+    do {
+        mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+        EXPECT_EQ(mgr != nullptr, 1);
+        // create msg
+        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create reqMgr %{public}s", APPSPAWN_SERVER_NAME);
+        reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+        APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break,
+            "Failed to create req %{public}s", APPSPAWN_SERVER_NAME);
+        ret = AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_DEBUGGABLE);
+        APPSPAWN_CHECK_ONLY_EXPER(ret == 0, break);
+        property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
+        APPSPAWN_CHECK(property != nullptr, break, "Failed to get app property");
+        AppSpawnMsgDomainInfo *msgDomainInfo =
+            reinterpret_cast<AppSpawnMsgDomainInfo *>(GetAppProperty(property, TLV_DOMAIN_INFO));
+        APPSPAWN_CHECK(msgDomainInfo != NULL, break,
+            "No domain info in req form %{public}s", GetProcessName(property));
+        SetHapDomainInfo(mgr, property, msgDomainInfo, &hapDomainInfo);
+        EXPECT_EQ(hapDomainInfo.disableMCS, false);
+        EXPECT_EQ(hapDomainInfo.hapFlags & SELINUX_HAP_DEBUGGABLE, SELINUX_HAP_DEBUGGABLE);
+        EXPECT_EQ(hapDomainInfo.apl, msgDomainInfo->apl);
+    } while (0);
+    SetParameter("persist.space_mgr_service.enterprise_space_enable", "false");
+    DeleteAppSpawningCtx(property);
+    AppSpawnClientDestroy(clientHandle);
+    DeleteAppSpawnMgr(mgr);
+    ASSERT_EQ(ret, 0);
+}
+ 
+/**
+ * @brief 企业空间参数值大小写敏感（值为True不匹配"true"），不设置disableMCS
+ * @note 预期结果: 参数值"True"不匹配"true", disableMCS保持默认值false
+ *
+ */
+HWTEST_F(AppSpawnCommonTest, App_Spawn_SetHapDomainInfo_MCS_03, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = nullptr;
+    AppSpawnReqMsgHandle reqHandle = 0;
+    AppSpawningCtx *property = nullptr;
+    AppSpawnMgr *mgr = nullptr;
+    int ret = -1;
+    HapDomainInfo hapDomainInfo;
+    SetParameter("persist.space_mgr_service.enterprise_space_enable", "True");
+    do {
+        mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+        EXPECT_EQ(mgr != nullptr, 1);
+        // create msg
+        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create reqMgr %{public}s", APPSPAWN_SERVER_NAME);
+        reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+        APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break,
+            "Failed to create req %{public}s", APPSPAWN_SERVER_NAME);
+        property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
+        APPSPAWN_CHECK(property != nullptr, break, "Failed to get app property");
+        AppSpawnMsgDomainInfo *msgDomainInfo =
+            reinterpret_cast<AppSpawnMsgDomainInfo *>(GetAppProperty(property, TLV_DOMAIN_INFO));
+        APPSPAWN_CHECK(msgDomainInfo != NULL, break,
+            "No domain info in req form %{public}s", GetProcessName(property));
+        SetHapDomainInfo(mgr, property, msgDomainInfo, &hapDomainInfo);
+        EXPECT_FALSE(hapDomainInfo.disableMCS);
+    } while (0);
+    SetParameter("persist.space_mgr_service.enterprise_space_enable", "false");
+    DeleteAppSpawningCtx(property);
+    AppSpawnClientDestroy(clientHandle);
+    DeleteAppSpawnMgr(mgr);
+    ASSERT_EQ(ret, 0);
+}
+ 
+/**
+ * @brief 企业空间参数值长度超过CheckEnabled内部32字节缓冲区（魔鬼数组边界），不设置disableMCS
+ * @note 预期结果: 不发生越界，参数值过长不匹配"false", disableMCS保持默认值false
+ *
+ */
+HWTEST_F(AppSpawnCommonTest, App_Spawn_SetHapDomainInfo_MCS_04, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = nullptr;
+    AppSpawnReqMsgHandle reqHandle = 0;
+    AppSpawningCtx *property = nullptr;
+    AppSpawnMgr *mgr = nullptr;
+    int ret = -1;
+    HapDomainInfo hapDomainInfo;
+    // 40 is value len, greater than PARAM_LEN (32) in CheckEnabled
+    const char *longValue = "true_true_true_true_true_true_true_true_";
+    SetParameter("persist.space_mgr_service.enterprise_space_enable", longValue);
+    do {
+        mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+        EXPECT_EQ(mgr != nullptr, 1);
+        // create msg
+        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create reqMgr %{public}s", APPSPAWN_SERVER_NAME);
+        reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+        APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break,
+            "Failed to create req %{public}s", APPSPAWN_SERVER_NAME);
+        property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
+        APPSPAWN_CHECK(property != nullptr, break, "Failed to get app property");
+        AppSpawnMsgDomainInfo *msgDomainInfo =
+            reinterpret_cast<AppSpawnMsgDomainInfo *>(GetAppProperty(property, TLV_DOMAIN_INFO));
+        APPSPAWN_CHECK(msgDomainInfo != NULL, break,
+            "No domain info in req form %{public}s", GetProcessName(property));
+        SetHapDomainInfo(mgr, property, msgDomainInfo, &hapDomainInfo);
+        EXPECT_FALSE(hapDomainInfo.disableMCS);
+    } while (0);
+    SetParameter("persist.space_mgr_service.enterprise_space_enable", "false");
+    DeleteAppSpawningCtx(property);
+    AppSpawnClientDestroy(clientHandle);
+    DeleteAppSpawnMgr(mgr);
+    ASSERT_EQ(ret, 0);
+}
+ 
+/**
+ * @brief 企业空间参数运行时动态切换（true→false），MCS状态随之实时变化
+ * @note 预期结果: 同一应用上下文中，参数由true切换为false后，disableMCS由默认值false变为true
+ *
+ */
+HWTEST_F(AppSpawnCommonTest, App_Spawn_SetHapDomainInfo_MCS_05, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = nullptr;
+    AppSpawnReqMsgHandle reqHandle = 0;
+    AppSpawningCtx *property = nullptr;
+    AppSpawnMgr *mgr = nullptr;
+    int ret = -1;
+    HapDomainInfo hapDomainInfo;
+    SetParameter("persist.space_mgr_service.enterprise_space_enable", "true");
+    do {
+        mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+        EXPECT_EQ(mgr != nullptr, 1);
+        // create msg
+        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create reqMgr %{public}s", APPSPAWN_SERVER_NAME);
+        reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+        APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break,
+            "Failed to create req %{public}s", APPSPAWN_SERVER_NAME);
+        property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
+        APPSPAWN_CHECK(property != nullptr, break, "Failed to get app property");
+        AppSpawnMsgDomainInfo *msgDomainInfo =
+            reinterpret_cast<AppSpawnMsgDomainInfo *>(GetAppProperty(property, TLV_DOMAIN_INFO));
+        APPSPAWN_CHECK(msgDomainInfo != NULL, break,
+            "No domain info in req form %{public}s", GetProcessName(property));
+        SetHapDomainInfo(mgr, property, msgDomainInfo, &hapDomainInfo);
+        EXPECT_FALSE(hapDomainInfo.disableMCS);
+        // switch enterprise space param at runtime
+        SetParameter("persist.space_mgr_service.enterprise_space_enable", "false");
+        SetHapDomainInfo(mgr, property, msgDomainInfo, &hapDomainInfo);
+        EXPECT_TRUE(hapDomainInfo.disableMCS);
+    } while (0);
+    SetParameter("persist.space_mgr_service.enterprise_space_enable", "false");
+    DeleteAppSpawningCtx(property);
+    AppSpawnClientDestroy(clientHandle);
+    DeleteAppSpawnMgr(mgr);
+    ASSERT_EQ(ret, 0);
+}
+ 
+/**
+ * @brief 企业空间参数值为空字符串，字符串不匹配"false", 不设置disableMCS
+ * @note 预期结果: 空字符串不匹配“false", disableMCS保持默认值false
+ *
+ */
+HWTEST_F(AppSpawnCommonTest, App_Spawn_SetHapDomainInfo_MCS_06, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = nullptr;
+    AppSpawnReqMsgHandle reqHandle = 0;
+    AppSpawningCtx *property = nullptr;
+    AppSpawnMgr *mgr = nullptr;
+    int ret = -1;
+    HapDomainInfo hapDomainInfo;
+    SetParameter("persist.space_mgr_service.enterprise_space_enable", "");
+    do {
+        mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+        EXPECT_EQ(mgr != nullptr, 1);
+        // create msg
+        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create reqMgr %{public}s", APPSPAWN_SERVER_NAME);
+        reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+        APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break,
+            "Failed to create req %{public}s", APPSPAWN_SERVER_NAME);
+        property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
+        APPSPAWN_CHECK(property != nullptr, break, "Failed to get app property");
+        AppSpawnMsgDomainInfo *msgDomainInfo =
+            reinterpret_cast<AppSpawnMsgDomainInfo *>(GetAppProperty(property, TLV_DOMAIN_INFO));
+        APPSPAWN_CHECK(msgDomainInfo != NULL, break,
+            "No domain info in req form %{public}s", GetProcessName(property));
+        // unit-level: empty value not match "false", so disableMCS not set
+        EXPECT_EQ(CheckEnabled("persist.space_mgr_service.enterprise_space_enable", "false"), 0);
+        SetHapDomainInfo(mgr, property, msgDomainInfo, &hapDomainInfo);
+        EXPECT_FALSE(hapDomainInfo.disableMCS);
+    } while (0);
+    SetParameter("persist.space_mgr_service.enterprise_space_enable", "false");
+    DeleteAppSpawningCtx(property);
+    AppSpawnClientDestroy(clientHandle);
+    DeleteAppSpawnMgr(mgr);
+    ASSERT_EQ(ret, 0);
+}
+ 
+/**
+ * @brief 企业空间参数值长度恰为CheckEnabled内部缓冲区32字节，不设置disableMCS
+ * @note 预期结果: 32字节值无法携带'\0'放入tmp[32]，GetParameter返回-1，不匹配"false", 保持默认值
+ *
+ */
+HWTEST_F(AppSpawnCommonTest, App_Spawn_SetHapDomainInfo_MCS_07, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = nullptr;
+    AppSpawnReqMsgHandle reqHandle = 0;
+    AppSpawningCtx *property = nullptr;
+    AppSpawnMgr *mgr = nullptr;
+    int ret = -1;
+    HapDomainInfo hapDomainInfo;
+    // 32 is value len, equal to PARAM_LEN (32) in CheckEnabled, needs 33 bytes with '\0'
+    const std::string boundaryValue = "true_" + std::string(27, 'x');
+    SetParameter("persist.space_mgr_service.enterprise_space_enable", boundaryValue.c_str());
+    do {
+        mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+        EXPECT_EQ(mgr != nullptr, 1);
+        // create msg
+        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create reqMgr %{public}s", APPSPAWN_SERVER_NAME);
+        reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+        APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break,
+            "Failed to create req %{public}s", APPSPAWN_SERVER_NAME);
+        property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
+        APPSPAWN_CHECK(property != nullptr, break, "Failed to get app property");
+        AppSpawnMsgDomainInfo *msgDomainInfo =
+            reinterpret_cast<AppSpawnMsgDomainInfo *>(GetAppProperty(property, TLV_DOMAIN_INFO));
+        APPSPAWN_CHECK(msgDomainInfo != NULL, break,
+            "No domain info in req form %{public}s", GetProcessName(property));
+        // unit-level: value len equal to PARAM_LEN (32) in CheckEnabled is rejected
+        EXPECT_EQ(CheckEnabled("persist.space_mgr_service.enterprise_space_enable", "false"), 0);
+        SetHapDomainInfo(mgr, property, msgDomainInfo, &hapDomainInfo);
+        EXPECT_FALSE(hapDomainInfo.disableMCS);
+    } while (0);
+    SetParameter("persist.space_mgr_service.enterprise_space_enable", "false");
+    DeleteAppSpawningCtx(property);
+    AppSpawnClientDestroy(clientHandle);
+    DeleteAppSpawnMgr(mgr);
+    ASSERT_EQ(ret, 0);
+}
+ 
+/**
+ * @brief 企业空间参数值达到mock缓冲区边界（127/128字节），存储与读取均不越界，不设置disableMCS
+ * @note 预期结果: 127字节值存储成功但CheckEnabled返回0；128字节值存储失败返回-1；全程无越界，disableMCS保持默认
+ *
+ */
+HWTEST_F(AppSpawnCommonTest, App_Spawn_SetHapDomainInfo_MCS_08, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = nullptr;
+    AppSpawnReqMsgHandle reqHandle = 0;
+    AppSpawningCtx *property = nullptr;
+    AppSpawnMgr *mgr = nullptr;
+    int ret = -1;
+    int paramRet = -1;
+    HapDomainInfo hapDomainInfo;
+    // 127 is value len, equal to ENTERPRISE_SPACE_VALUE_LEN (128) in mock minus '\0'
+    const std::string maxStoredValue = "true_" + std::string(122, 'x');
+    // 128 is value len, exceeds ENTERPRISE_SPACE_VALUE_LEN (128) in mock
+    const std::string overflowValue = "true_" + std::string(123, 'x');
+    paramRet = SetParameter("persist.space_mgr_service.enterprise_space_enable", maxStoredValue.c_str());
+    EXPECT_EQ(paramRet, 0);
+    do {
+        mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+        EXPECT_EQ(mgr != nullptr, 1);
+        // create msg
+        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create reqMgr %{public}s", APPSPAWN_SERVER_NAME);
+        reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+        APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break,
+            "Failed to create req %{public}s", APPSPAWN_SERVER_NAME);
+        property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
+        APPSPAWN_CHECK(property != nullptr, break, "Failed to get app property");
+        AppSpawnMsgDomainInfo *msgDomainInfo =
+            reinterpret_cast<AppSpawnMsgDomainInfo *>(GetAppProperty(property, TLV_DOMAIN_INFO));
+        APPSPAWN_CHECK(msgDomainInfo != NULL, break,
+            "No domain info in req form %{public}s", GetProcessName(property));
+        // unit-level: stored value longer than PARAM_LEN (32) in CheckEnabled is rejected
+        EXPECT_EQ(CheckEnabled("persist.space_mgr_service.enterprise_space_enable", "false"), 0);
+        SetHapDomainInfo(mgr, property, msgDomainInfo, &hapDomainInfo);
+        EXPECT_FALSE(hapDomainInfo.disableMCS);
+        // value len 128 exceeds mock buffer, SetParameter fails and the param becomes not exist
+        paramRet = SetParameter("persist.space_mgr_service.enterprise_space_enable", overflowValue.c_str());
+        EXPECT_EQ(paramRet, -1);
+        SetHapDomainInfo(mgr, property, msgDomainInfo, &hapDomainInfo);
+        EXPECT_FALSE(hapDomainInfo.disableMCS);
+    } while (0);
+    SetParameter("persist.space_mgr_service.enterprise_space_enable", "false");
+    DeleteAppSpawningCtx(property);
+    AppSpawnClientDestroy(clientHandle);
+    DeleteAppSpawnMgr(mgr);
+    ASSERT_EQ(ret, 0);
+}
+ 
+/**
+ * @brief 企业空间场景下extension与isolated sandbox标志正常设置，不受disableMCS变化影响
+ * @note 预期结果: disableMCS为false，且hapFlags包含SELINUX_HAP_INPUT_ISOLATE
+ *
+ */
+HWTEST_F(AppSpawnCommonTest, App_Spawn_SetHapDomainInfo_MCS_09, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = nullptr;
+    AppSpawnReqMsgHandle reqHandle = 0;
+    AppSpawningCtx *property = nullptr;
+    AppSpawnMgr *mgr = nullptr;
+    int ret = -1;
+    HapDomainInfo hapDomainInfo;
+    SetParameter("persist.space_mgr_service.enterprise_space_enable", "true");
+    do {
+        mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+        EXPECT_EQ(mgr != nullptr, 1);
+        // create msg
+        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create reqMgr %{public}s", APPSPAWN_SERVER_NAME);
+        reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+        APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break,
+            "Failed to create req %{public}s", APPSPAWN_SERVER_NAME);
+        ret = AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_EXTENSION_SANDBOX);
+        APPSPAWN_CHECK_ONLY_EXPER(ret == 0, break);
+        ret = AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_ISOLATED_SANDBOX);
+        APPSPAWN_CHECK_ONLY_EXPER(ret == 0, break);
+        property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
+        APPSPAWN_CHECK(property != nullptr, break, "Failed to get app property");
+        AppSpawnMsgDomainInfo *msgDomainInfo =
+            reinterpret_cast<AppSpawnMsgDomainInfo *>(GetAppProperty(property, TLV_DOMAIN_INFO));
+        APPSPAWN_CHECK(msgDomainInfo != NULL, break,
+            "No domain info in req form %{public}s", GetProcessName(property));
+        SetHapDomainInfo(mgr, property, msgDomainInfo, &hapDomainInfo);
+        EXPECT_FALSE(hapDomainInfo.disableMCS);
+        EXPECT_EQ(hapDomainInfo.hapFlags & SELINUX_HAP_INPUT_ISOLATE, SELINUX_HAP_INPUT_ISOLATE);
+    } while (0);
+    SetParameter("persist.space_mgr_service.enterprise_space_enable", "false");
+    DeleteAppSpawningCtx(property);
+    AppSpawnClientDestroy(clientHandle);
+    DeleteAppSpawnMgr(mgr);
+    ASSERT_EQ(ret, 0);
+}
+ 
+/**
+ * @brief 企业空间场景下DLP权限标志正常设置，apl/packageName等既有字段赋值不受影响
+ * @note 预期结果: disableMCS为false，hapFlags包含SELINUX_HAP_DLP_FULL_CONTROL，apl/packageName保持
+ *
+ */
+HWTEST_F(AppSpawnCommonTest, App_Spawn_SetHapDomainInfo_MCS_10, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = nullptr;
+    AppSpawnReqMsgHandle reqHandle = 0;
+    AppSpawningCtx *property = nullptr;
+    AppSpawnMgr *mgr = nullptr;
+    int ret = -1;
+    HapDomainInfo hapDomainInfo;
+    SetParameter("persist.space_mgr_service.enterprise_space_enable", "true");
+    do {
+        mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+        EXPECT_EQ(mgr != nullptr, 1);
+        // create msg
+        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create reqMgr %{public}s", APPSPAWN_SERVER_NAME);
+        reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+        APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break,
+            "Failed to create req %{public}s", APPSPAWN_SERVER_NAME);
+        ret = AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_DLP_MANAGER_FULL_CONTROL);
+        APPSPAWN_CHECK_ONLY_EXPER(ret == 0, break);
+        property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
+        APPSPAWN_CHECK(property != nullptr, break, "Failed to get app property");
+        AppSpawnMsgDomainInfo *msgDomainInfo =
+            reinterpret_cast<AppSpawnMsgDomainInfo *>(GetAppProperty(property, TLV_DOMAIN_INFO));
+        APPSPAWN_CHECK(msgDomainInfo != NULL, break,
+            "No domain info in req form %{public}s", GetProcessName(property));
+        SetHapDomainInfo(mgr, property, msgDomainInfo, &hapDomainInfo);
+        EXPECT_FALSE(hapDomainInfo.disableMCS);
+        EXPECT_EQ(hapDomainInfo.hapFlags & SELINUX_HAP_DLP_FULL_CONTROL, SELINUX_HAP_DLP_FULL_CONTROL);
+        EXPECT_EQ(hapDomainInfo.apl, msgDomainInfo->apl);
+        EXPECT_EQ(hapDomainInfo.packageName, GetBundleName(property));
+    } while (0);
+    SetParameter("persist.space_mgr_service.enterprise_space_enable", "false");
+    DeleteAppSpawningCtx(property);
+    AppSpawnClientDestroy(clientHandle);
+    DeleteAppSpawnMgr(mgr);
+    ASSERT_EQ(ret, 0);
+}
+ 
+/**
+ * @brief 企业空间场景下ISOLATED_SELINUX_LABEL标志正常设置extensionType，不受disableMCS变化影响
+ * @note 预期结果: disableMCS为false，extensionType为TLV中设置的值
+ *
+ */
+HWTEST_F(AppSpawnCommonTest, App_Spawn_SetHapDomainInfo_MCS_11, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = nullptr;
+    AppSpawnReqMsgHandle reqHandle = 0;
+    AppSpawningCtx *property = nullptr;
+    AppSpawnMgr *mgr = nullptr;
+    int ret = -1;
+    HapDomainInfo hapDomainInfo;
+    SetParameter("persist.space_mgr_service.enterprise_space_enable", "true");
+    do {
+        mgr = CreateAppSpawnMgr(MODE_FOR_APP_SPAWN);
+        EXPECT_EQ(mgr != nullptr, 1);
+        // create msg
+        ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+        APPSPAWN_CHECK(ret == 0, break, "Failed to create reqMgr %{public}s", APPSPAWN_SERVER_NAME);
+        reqHandle = g_testHelper.CreateMsg(clientHandle, MSG_APP_SPAWN, 0);
+        APPSPAWN_CHECK(reqHandle != INVALID_REQ_HANDLE, break,
+            "Failed to create req %{public}s", APPSPAWN_SERVER_NAME);
+        ret = AppSpawnReqMsgAddStringInfo(reqHandle, MSG_EXT_NAME_EXTENSION_TYPE, "test");
+        APPSPAWN_CHECK(ret == 0, break, "Failed to add MSG_EXT_NAME_EXTENSION_TYPE %{public}s", "test");
+        ret = AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_ISOLATED_SELINUX_LABEL);
+        APPSPAWN_CHECK_ONLY_EXPER(ret == 0, break);
+        property = g_testHelper.GetAppProperty(clientHandle, reqHandle);
+        APPSPAWN_CHECK(property != nullptr, break, "Failed to get app property");
+        AppSpawnMsgDomainInfo *msgDomainInfo =
+            reinterpret_cast<AppSpawnMsgDomainInfo *>(GetAppProperty(property, TLV_DOMAIN_INFO));
+        APPSPAWN_CHECK(msgDomainInfo != NULL, break,
+            "No domain info in req form %{public}s", GetProcessName(property));
+        SetHapDomainInfo(mgr, property, msgDomainInfo, &hapDomainInfo);
+        EXPECT_FALSE(hapDomainInfo.disableMCS);
+        EXPECT_EQ(hapDomainInfo.extensionType, "test");
+    } while (0);
+    SetParameter("persist.space_mgr_service.enterprise_space_enable", "false");
+    DeleteAppSpawningCtx(property);
+    AppSpawnClientDestroy(clientHandle);
+    DeleteAppSpawnMgr(mgr);
+    ASSERT_EQ(ret, 0);
+}
+
 #endif // WITH_SELINUX
 
 HWTEST_F(AppSpawnCommonTest, App_Spawn_Common_GetAppSpawnNamespace, TestSize.Level0)
