@@ -45,6 +45,7 @@
 #include "appspawn_msg.h"
 #include "appspawn_manager.h"
 #include "appspawn_silk.h"
+#include "appspawn_thread_gate.h"
 #include "appspawn_trace.h"
 #include "appspawn_utils.h"
 #include "init_param.h"
@@ -776,6 +777,13 @@ static int SpawnSetProperties(AppSpawnMgr *content, AppSpawningCtx *property)
     ret = SetSelinuxCon(content, property);
     FinishAppspawnTrace();
     APPSPAWN_CHECK_ONLY_EXPER(ret == 0, return ret);
+
+    // Strict setcon recovery point: notify the parent that the child has
+    // passed the selinux label switch so it can move this pid out of the
+    // limited group and re-tighten pids.max. No-op when the gate is not armed
+    // (unarmed service, cold-run children); the frame carries the client id
+    // because children in a separate pid namespace can never match on pid.
+    SpawnGateNotify(&property->client);
 
     ret = WaitForDebugger(property);
     APPSPAWN_CHECK_ONLY_EXPER(ret == 0, return ret);

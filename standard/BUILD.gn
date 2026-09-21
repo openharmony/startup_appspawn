@@ -67,6 +67,7 @@ ohos_executable("appspawn") {
   ]
   deps = [
     "${appspawn_path}/modules/module_engine:libappspawn_stub_versionscript",
+    "${appspawn_path}/modules/common:appspawn_common",
     "${appspawn_path}/util:libappspawn_util",
   ]
   if (asan_detector || is_asan) {
@@ -206,6 +207,7 @@ ohos_executable("cjappspawn") {
   ]
   deps = [
     "${appspawn_path}/modules/module_engine:libappspawn_stub_versionscript",
+    "${appspawn_path}/modules/common:appspawn_common",
     "${appspawn_path}/util:libappspawn_util",
   ]
   if (asan_detector || is_asan) {
@@ -279,6 +281,7 @@ ohos_executable("nativespawn") {
   ]
   deps = [
     "${appspawn_path}/modules/module_engine:libappspawn_stub_versionscript",
+    "${appspawn_path}/modules/common:appspawn_common",
     "${appspawn_path}/util:libappspawn_util",
   ]
   if (asan_detector || is_asan) {
@@ -367,6 +370,7 @@ ohos_executable("nwebspawn") {
   ]
   deps = [
     "${appspawn_path}/modules/module_engine:libappspawn_stub_versionscript",
+    "${appspawn_path}/modules/common:appspawn_common",
     "${appspawn_path}/util:libappspawn_util",
   ]
   if (asan_detector || is_asan) {
@@ -457,6 +461,7 @@ ohos_executable("hybridspawn") {
   ]
   deps = [
     "${appspawn_path}/modules/module_engine:libappspawn_stub_versionscript",
+    "${appspawn_path}/modules/common:appspawn_common",
     "${appspawn_path}/util:libappspawn_util",
   ]
   if (asan_detector || is_asan) {

@@ -35,6 +35,7 @@ ohos_shared_library("appspawn_common") {
     "appspawn_namespace.c",
     "appspawn_silk.c",
     "appspawn_kill_reason.c",
+    "appspawn_thread_gate.c",
   ]
   if (appspawn_use_encaps == true) {
     sources += [ "appspawn_encaps.c" ]

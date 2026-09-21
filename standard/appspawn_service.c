@@ -33,6 +33,7 @@
 #include "appspawn_hook.h"
 #include "appspawn_modulemgr.h"
 #include "appspawn_manager.h"
+#include "appspawn_thread_gate.h"
 #include "appspawn_msg.h"
 #include "appspawn_server.h"
 #include "appspawn_trace.h"
@@ -1932,6 +1933,15 @@ static void AppSpawnRun(AppSpawnContent *content, int argc, char *const argv[])
     APPSPAWN_CHECK(appSpawnContent != NULL, return, "Invalid appspawn content");
     APPSPAWN_LOGI("AppSpawnRun mode: %{public}d", content->mode);
     APPSPAWN_KLOGI("AppSpawnRun mode: %{public}d", content->mode);
+#ifndef OHOS_LITE
+    // Arm the thread gate here: after STAGE_SERVER_PRELOAD (preloader forks and
+    // dlopen'ed library threads must not be rejected) and before LE_RunLoop
+    // (the first spawn request, including a prefork refill, may arrive at any
+    // time once the loop starts). Cold-run children take AppSpawnColdRun and
+    // never arm. Arming failure degrades to the rule-only constraint and the
+    // service keeps running.
+    (void)SpawnGateArm(appSpawnContent);
+#endif
 
     LE_STATUS status = LE_CreateSignalTask(LE_GetDefaultLoop(), &appSpawnContent->sigHandler, ProcessSignal);
     if (status == 0) {

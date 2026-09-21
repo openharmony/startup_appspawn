@@ -11,9 +11,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# This library exports no symbols. Hook registration is done via
-# __attribute__((constructor)) in .init_array; hide all symbols to reduce ROM.
+# This library historically exported no symbols (hook registration goes through
+# __attribute__((constructor)) in .init_array). The thread gate deliberately
+# breaks that rule with a minimal, explicit surface: the five spawn-gate entry
+# points are called directly by the spawn executables (which compile
+# appspawn_service.c) and by appspawn_ace (checkpoint path). SpawnGateNotify is
+# NOT exported: it is only called from appspawn_common.c inside this so. The
+# single-instance red line forbids linking this module as a static library into
+# two link domains (a duplicated global state would silently kill the setcon
+# notification path).
 {
+  global:
+    SpawnGateArm;
+    SpawnGateEnter;
+    SpawnGateRegisterPid;
+    SpawnGateEnterFail;
+    SpawnGateLeave;
   local:
     *;
 };
