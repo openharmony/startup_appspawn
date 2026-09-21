@@ -228,6 +228,21 @@ APPSPAWN_STATIC std::unique_ptr<MountQueueContext> CreateMountContext(int uid)
     return ctx;
 }
 
+/**
+ * @brief Mount shared directories for the unlocked user, in parallel child processes or serially in the main process.
+ *
+ * Entry for shared mount on user unlock. When running in a forked one-shot child
+ * (unlock L1 prefork child / L2 fork child, detected via IsSpawnServer), worker
+ * threads drain the mount task queue in parallel for speed. When the rare L3
+ * fallback runs inside the main spawn process, the queue is drained serially on
+ * the current thread instead: the main process must stay single-threaded so every
+ * fork() it performs happens in a single-threaded process (cheaper page-table
+ * copy, no inherited-lock risk). Both paths report the same result counters.
+ *
+ * @param uid Target user id whose bundles need shared mounts.
+ * @return 0 on completion (also when there is nothing to mount); per-task failures
+ *         are counted in the context and reported via log/hisyvent.
+ */
 int DoSharedMountForUser(int uid)
 {
     APPSPAWN_LOGI("DoSharedMountForUser start, uid=%{public}d, g_lockBundleMap.size=%{public}zu",
@@ -244,15 +259,23 @@ int DoSharedMountForUser(int uid)
         return 0;
     }
 
-    // Create worker threads
-    std::vector<std::thread> workers;
-    for (unsigned int i = 0; i < ctx->threadCount; i++) {
-        workers.emplace_back(MountQueueWorkerThread, std::ref(*ctx), i);
-    }
+    // Single-thread constraint: in the main spawn process (rare L3 fallback) drain
+    // the queue on the current thread; only forked children may spawn worker threads.
+    bool inMainProcess = IsSpawnServer(GetAppSpawnMgr());
+    if (inMainProcess) {
+        APPSPAWN_LOGI("DoSharedMountForUser: serial mode in main process, uid=%{public}d", uid);
+        MountQueueWorkerThread(*ctx, 0);
+    } else {
+        // Create worker threads
+        std::vector<std::thread> workers;
+        for (unsigned int i = 0; i < ctx->threadCount; i++) {
+            workers.emplace_back(MountQueueWorkerThread, std::ref(*ctx), i);
+        }
 
-    // Wait for all threads to complete
-    for (auto &worker : workers) {
-        APPSPAWN_ONLY_EXPER(worker.joinable(), worker.join());
+        // Wait for all threads to complete
+        for (auto &worker : workers) {
+            APPSPAWN_ONLY_EXPER(worker.joinable(), worker.join());
+        }
     }
 
     auto mountEnd = std::chrono::steady_clock::now();

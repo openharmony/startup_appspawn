@@ -127,6 +127,7 @@ Architecture invariants:
 - Logging: use `APPSPAWN_LOGI/LOGE/LOGV/LOGW/LOGF` and `APPSPAWN_CHECK(cond, recovery, fmt, ...)` from `util/include/appspawn_utils.h`. Format strings MUST use HiLog privacy markers like `%{public}s` / `%{public}d` — plain `%s` is flagged. Don't call `printf`/`HiLog` directly.
 - Error codes are bit-packed via macros in `util/include/appspawn_error.h` (`DECLARE_APPSPAWN_ERRORCODE(module, submodule, error)`); reuse the scheme rather than inventing raw numbers.
 - Apache-2.0 Huawei copyright header required on new files (copy from an existing file).
+- **Single-thread rule**: the spawn main process (all 5 binaries) must stay single-threaded — no `pthread_create` / `std::thread` / `std::async` / FFRT submission into the main process. fork() from a multithreaded parent pays a bigger page-table copy and risks inheriting held locks. Slow or async work goes through the event loop (`LE_CreateTimer`/watchers, see `ReclaimTimerCallback` in `modules/ace_adapter/ace_adapter.cpp`) or a forked one-shot child (see `ForkAndDoUnlockMount`); forked children may use threads freely.
 
 ## Tests
 

@@ -14,11 +14,12 @@
  */
 
 #include <cerrno>
+#include <chrono>
+#include <cinttypes>
 #include <cstring>
 #include <dlfcn.h>
 #include <set>
 #include <string>
-#include <thread>
 #include <unistd.h>
 #include <utility>
 #include <vector>
@@ -32,6 +33,7 @@
 #include "appspawn_service.h"
 #include "appspawn_manager.h"
 #include "appspawn_utils.h"
+#include "loop_event.h"
 #ifdef ARKWEB_UTILS_ENABLE
 #include "arkweb_utils.h"
 #endif
@@ -63,6 +65,11 @@ static const std::string PRELOAD_JSON_CONFIG("/appspawn_preload.json");
 static const std::string PRELOAD_ETS_JSON_CONFIG("/appspawn_preload_ets.json");
 static const std::string PRELINK_DSO_LIST_CONFIG("etc/appspawn/appspawn_prelink_dso_list");
 static const bool DEFAULT_SPAWN_UNIFIED_VALUE = false;
+// Single-thread constraint: reclaim of preloaded file cache is deferred into the main
+// event loop instead of a detached std::thread, so every fork() from appspawn happens
+// in a single-threaded process (cheaper page-table copy, no inherited-lock risk).
+static constexpr char RECLAIM_DELAY_PARAM[] = "persist.appspawn.reclaim.delay";
+static constexpr int32_t DEFAULT_RECLAIM_DELAY_SEC = 32;
 
 typedef struct TagParseJsonContext {
     std::set<std::string> names;
@@ -480,6 +487,46 @@ APPSPAWN_STATIC int DoDlopenLibs(const cJSON *root, ParseJsonContext *context)
     return 0;
 }
 
+/**
+ * @brief Timer callback that reclaims preloaded file cache on the main thread.
+ *
+ * Runs inside the LE event loop after the delay configured for
+ * "persist.appspawn.reclaim.delay" (default 32 s). Executing the reclaim here keeps
+ * the spawn service single-threaded (no detached std::thread) so fork() always
+ * happens from a single-threaded process; the one-shot timer fires in a post-boot
+ * low-activity window, so the synchronous reclaim does not delay spawn requests.
+ * The cost of the reclaim is logged for latency observation.
+ *
+ * @param taskHandle Handle of the one-shot timer that fired; unused beyond logging.
+ * @param context Timer context; always nullptr for this timer.
+ */
+static void ReclaimTimerCallback(const TimerHandle taskHandle, void *context)
+{
+    (void)taskHandle;
+    (void)context;
+    auto start = std::chrono::steady_clock::now();
+    OHOS::Ace::AceForwardCompatibility::ReclaimFileCache(getpid());
+    auto end = std::chrono::steady_clock::now();
+    int64_t costMs = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    APPSPAWN_LOGI("ReclaimTimerCallback: reclaim file cache done, cost %{public}" PRId64 " ms", costMs);
+}
+
+/**
+ * @brief Preload hook: dlopen configured system libs and schedule deferred cache reclaim.
+ *
+ * Loads the system libraries listed in appspawn_systemLib.json (plus the ArkWeb
+ * preload when enabled), then schedules ReclaimFileCache via a one-shot loop timer
+ * instead of running it inline or on a detached thread. Inline execution would block
+ * preload (slowing service readiness); a helper thread would break the
+ * single-thread constraint on the spawn process. The delay is read from
+ * "persist.appspawn.reclaim.delay" (seconds, default 32, negative values fall back
+ * to the default). All spawn modes share this deferred path. If timer setup fails,
+ * the reclaim is skipped with an error log: the file cache simply stays resident,
+ * which is harmless, and spawn service behavior is unaffected.
+ *
+ * @param content Spawn service content, used to check the spawn mode.
+ * @return Always 0; a timer setup failure degrades to skipping the reclaim.
+ */
 APPSPAWN_STATIC int DlopenAppSpawn(AppSpawnMgr *content)
 {
     if (!(IsAppSpawnMode(content) || IsHybridSpawnMode(content))) {
@@ -490,16 +537,19 @@ APPSPAWN_STATIC int DlopenAppSpawn(AppSpawnMgr *content)
 #ifdef ARKWEB_UTILS_ENABLE
     OHOS::ArkWeb::PreloadArkWebLibForBrowser();
 #endif
-    if (content->content.mode == MODE_FOR_APP_SPAWN) {
-        APPSPAWN_LOGI("DlopenAppSpawn: Start reclaim file cache async");
-        std::thread reclaimThread([]() {
-            OHOS::Ace::AceForwardCompatibility::ReclaimFileCache(getpid());
-        });
-        reclaimThread.detach();
-    } else {
-        APPSPAWN_LOGI("DlopenAppSpawn: Start reclaim file cache sync");
-        OHOS::Ace::AceForwardCompatibility::ReclaimFileCache(getpid());
-    }
+    int32_t delaySec = OHOS::system::GetIntParameter<int32_t>(RECLAIM_DELAY_PARAM, DEFAULT_RECLAIM_DELAY_SEC);
+    APPSPAWN_CHECK(delaySec >= 0, delaySec = DEFAULT_RECLAIM_DELAY_SEC,
+        "Invalid %{public}s %{public}d, use default", RECLAIM_DELAY_PARAM, delaySec);
+    APPSPAWN_LOGI("DlopenAppSpawn: schedule reclaim file cache after %{public}d s (single-thread)", delaySec);
+
+    TimerHandle reclaimTimer = nullptr;
+    LE_STATUS status = LE_CreateTimer(LE_GetDefaultLoop(), &reclaimTimer, ReclaimTimerCallback, nullptr);
+    APPSPAWN_CHECK(status == LE_SUCCESS, return 0,
+        "Failed to create reclaim timer %{public}d, skip reclaim", status);
+    // repeat = 0: one-shot timer, fires once on the main loop thread.
+    status = LE_StartTimer(LE_GetDefaultLoop(), reclaimTimer, static_cast<uint64_t>(delaySec) * 1000, 0);
+    APPSPAWN_CHECK(status == LE_SUCCESS, return 0,
+        "Failed to start reclaim timer %{public}d, skip reclaim", status);
     return 0;
 }
 
