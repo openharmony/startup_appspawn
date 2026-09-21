@@ -38,6 +38,8 @@ void DumpSpawnStack(pid_t pid);
 // Process kill reason reporting
 #define REASON_APPSPAWN_STOP 3053
 #define REASON_KILL_CGROUP 8
+#define REASON_SIGNAL_KILL 1008
+#define REASON_SIGNAL_EXIT 1009
 #define DEV_SYSLOAD "/dev/sysload"
 
 void SetKillReason(const AppSpawnMgr *mgr, pid_t pid, uid_t uid, int reason);

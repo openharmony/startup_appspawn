@@ -193,6 +193,9 @@ APPSPAWN_STATIC void HandleDiedPid(pid_t pid, uid_t uid, int status)
     }
 
     appInfo->exitStatus = status;
+    // Map the waitpid status to a DFX kill reason: killed by a signal (WIFSIGNALED) ->
+    // REASON_SIGNAL_KILL, exited normally via exit()/return (WIFEXITED) -> REASON_SIGNAL_EXIT.
+    appInfo->killReason = WIFSIGNALED(status) ? REASON_SIGNAL_KILL : (WIFEXITED(status) ? REASON_SIGNAL_EXIT : 0);
     APPSPAWN_CHECK_ONLY_LOG(appInfo->uid == uid, "Invalid uid %{public}u %{public}u", appInfo->uid, uid);
     DumpStatus(appInfo->name, pid, status, &signal);
     WriteSignalInfoToFd(appInfo, content, signal);

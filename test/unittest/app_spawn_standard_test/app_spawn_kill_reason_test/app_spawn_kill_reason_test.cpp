@@ -499,6 +499,8 @@ HWTEST_F(AppSpawnKillReasonTest, App_Spawn_KillReason_Define_001, TestSize.Level
 {
     EXPECT_EQ(REASON_APPSPAWN_STOP, 3053);
     EXPECT_EQ(REASON_KILL_CGROUP, 8);
+    EXPECT_EQ(REASON_SIGNAL_KILL, 1008);
+    EXPECT_EQ(REASON_SIGNAL_EXIT, 1009);
     EXPECT_STREQ(DEV_SYSLOAD, "/dev/sysload");
 }
 /**
