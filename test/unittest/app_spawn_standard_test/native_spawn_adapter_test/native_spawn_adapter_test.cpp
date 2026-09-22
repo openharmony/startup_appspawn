@@ -43,6 +43,7 @@ public:
         const TestInfo *info = UnitTest::GetInstance()->current_test_info();
         GTEST_LOG_(INFO) << info->test_suite_name() << "." << info->name() << " start";
         APPSPAWN_LOGI("%{public}s.%{public}s start", info->test_suite_name(), info->name());
+        SetBoolParamResult("persist.init.debug.checkexit", false);
     }
     void TearDown()
     {
@@ -265,10 +266,10 @@ HWTEST_F(NativeSpawnAdapterTest, Native_Spawn_BuildFdInfoMap_010, TestSize.Level
     tlvExt->tlvLen = sizeof(AppSpawnTlvExt) + 4;  // 4 bytes for key name "test"
     tlvExt->dataLen = 0;
     tlvExt->dataType = 0;
-    (void)sprintf_s(tlvExt->tlvName, sizeof(tlvExt->tlvName), "%s", MSG_EXT_NAME_APP_FD);
+    ASSERT_GT(sprintf_s(tlvExt->tlvName, sizeof(tlvExt->tlvName), "%s", MSG_EXT_NAME_APP_FD), 0);
     // key string after AppSpawnTlvExt header
     char *keyPtr = reinterpret_cast<char *>(buffer + sizeof(AppSpawnTlvExt));
-    (void)sprintf_s(keyPtr, 5, "%s", "test");
+    ASSERT_GT(sprintf_s(keyPtr, 5, "%s", "test"), 0);
     tlvOffsets[TLV_MAX] = 0;
     AppSpawnMsgNode msg = {};
     msg.buffer = buffer;
@@ -301,9 +302,9 @@ HWTEST_F(NativeSpawnAdapterTest, Native_Spawn_BuildFdInfoMap_011, TestSize.Level
     tlvExt->tlvLen = sizeof(AppSpawnTlvExt) + 4;
     tlvExt->dataLen = 0;
     tlvExt->dataType = 0;
-    (void)sprintf_s(tlvExt->tlvName, sizeof(tlvExt->tlvName), "%s", MSG_EXT_NAME_APP_FD);
+    ASSERT_GT(sprintf_s(tlvExt->tlvName, sizeof(tlvExt->tlvName), "%s", MSG_EXT_NAME_APP_FD), 0);
     char *keyPtr = reinterpret_cast<char *>(buffer + sizeof(AppSpawnTlvExt));
-    (void)sprintf_s(keyPtr, 6, "%s", "noenv");
+    ASSERT_GT(sprintf_s(keyPtr, 6, "%s", "noenv"), 0);
     tlvOffsets[TLV_MAX] = 0;
     AppSpawnMsgNode msg = {};
     msg.buffer = buffer;
@@ -334,9 +335,9 @@ HWTEST_F(NativeSpawnAdapterTest, Native_Spawn_BuildFdInfoMap_012, TestSize.Level
     tlvExt->tlvLen = sizeof(AppSpawnTlvExt) + 4;
     tlvExt->dataLen = 0;
     tlvExt->dataType = 0;
-    (void)sprintf_s(tlvExt->tlvName, sizeof(tlvExt->tlvName), "%s", MSG_EXT_NAME_APP_FD);
+    ASSERT_GT(sprintf_s(tlvExt->tlvName, sizeof(tlvExt->tlvName), "%s", MSG_EXT_NAME_APP_FD), 0);
     char *keyPtr = reinterpret_cast<char *>(buffer + sizeof(AppSpawnTlvExt));
-    (void)sprintf_s(keyPtr, 6, "%s", "badfd");
+    ASSERT_GT(sprintf_s(keyPtr, 6, "%s", "badfd"), 0);
     tlvOffsets[TLV_MAX] = 0;
     AppSpawnMsgNode msg = {};
     msg.buffer = buffer;
@@ -368,9 +369,9 @@ HWTEST_F(NativeSpawnAdapterTest, Native_Spawn_BuildFdInfoMap_013, TestSize.Level
     tlvExt->tlvLen = sizeof(AppSpawnTlvExt) + 4;
     tlvExt->dataLen = 0;
     tlvExt->dataType = 0;
-    (void)sprintf_s(tlvExt->tlvName, sizeof(tlvExt->tlvName), "%s", MSG_EXT_NAME_APP_FD);
+    ASSERT_GT(sprintf_s(tlvExt->tlvName, sizeof(tlvExt->tlvName), "%s", MSG_EXT_NAME_APP_FD), 0);
     char *keyPtr = reinterpret_cast<char *>(buffer + sizeof(AppSpawnTlvExt));
-    (void)sprintf_s(keyPtr, 5, "%s", "test");
+    ASSERT_GT(sprintf_s(keyPtr, 5, "%s", "test"), 0);
     tlvOffsets[TLV_MAX] = 0;
 
     AppSpawnConnection connection = {};
@@ -406,9 +407,9 @@ HWTEST_F(NativeSpawnAdapterTest, Native_Spawn_BuildFdInfoMap_014, TestSize.Level
     tlvExt->tlvLen = sizeof(AppSpawnTlvExt) + 4;
     tlvExt->dataLen = 0;
     tlvExt->dataType = 0;
-    (void)sprintf_s(tlvExt->tlvName, sizeof(tlvExt->tlvName), "%s", MSG_EXT_NAME_APP_FD);
+    ASSERT_GT(sprintf_s(tlvExt->tlvName, sizeof(tlvExt->tlvName), "%s", MSG_EXT_NAME_APP_FD), 0);
     char *keyPtr = reinterpret_cast<char *>(buffer + sizeof(AppSpawnTlvExt));
-    (void)sprintf_s(keyPtr, 5, "%s", "test");
+    ASSERT_GT(sprintf_s(keyPtr, 5, "%s", "test"), 0);
     tlvOffsets[TLV_MAX] = 0;
 
     AppSpawnConnection connection = {};
@@ -424,6 +425,72 @@ HWTEST_F(NativeSpawnAdapterTest, Native_Spawn_BuildFdInfoMap_014, TestSize.Level
     std::map<std::string, int> fdMap;
     int ret = BuildFdInfoMap(&msg, fdMap, false);
     EXPECT_EQ(ret, -1);
+}
+
+HWTEST_F(NativeSpawnAdapterTest, Native_Spawn_BuildFdInfoMap_015, TestSize.Level0)
+{
+    // Test cold-run with partial-numeric env (strtol parses "5", endptr points to 'x')
+    uint8_t buffer[512] = {0};
+    uint32_t tlvOffsets[TLV_MAX + 1];
+    for (uint32_t i = 0; i < TLV_MAX; i++) {
+        tlvOffsets[i] = 0;
+    }
+    AppSpawnTlvExt *tlvExt = reinterpret_cast<AppSpawnTlvExt *>(buffer);
+    tlvExt->tlvType = TLV_MAX;
+    tlvExt->tlvLen = sizeof(AppSpawnTlvExt) + 4;
+    tlvExt->dataLen = 0;
+    tlvExt->dataType = 0;
+    ASSERT_GT(sprintf_s(tlvExt->tlvName, sizeof(tlvExt->tlvName), "%s", MSG_EXT_NAME_APP_FD), 0);
+    char *keyPtr = reinterpret_cast<char *>(buffer + sizeof(AppSpawnTlvExt));
+    ASSERT_GT(sprintf_s(keyPtr, 6, "%s", "pfx"), 0);
+    tlvOffsets[TLV_MAX] = 0;
+    AppSpawnMsgNode msg = {};
+    msg.buffer = buffer;
+    msg.tlvOffset = tlvOffsets;
+    msg.connection = nullptr;
+    msg.tlvCount = 1;
+
+    std::string envKey = std::string(APP_FDENV_PREFIX) + "pfx";
+    setenv(envKey.c_str(), "5x", 1);
+
+    std::map<std::string, int> fdMap;
+    int ret = BuildFdInfoMap(&msg, fdMap, true);
+    unsetenv(envKey.c_str());
+    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(fdMap.size(), 0u);
+}
+
+HWTEST_F(NativeSpawnAdapterTest, Native_Spawn_BuildFdInfoMap_016, TestSize.Level0)
+{
+    // Test cold-run with valid numeric but non-positive fd (env="0")
+    uint8_t buffer[512] = {0};
+    uint32_t tlvOffsets[TLV_MAX + 1];
+    for (uint32_t i = 0; i < TLV_MAX; i++) {
+        tlvOffsets[i] = 0;
+    }
+    AppSpawnTlvExt *tlvExt = reinterpret_cast<AppSpawnTlvExt *>(buffer);
+    tlvExt->tlvType = TLV_MAX;
+    tlvExt->tlvLen = sizeof(AppSpawnTlvExt) + 4;
+    tlvExt->dataLen = 0;
+    tlvExt->dataType = 0;
+    ASSERT_GT(sprintf_s(tlvExt->tlvName, sizeof(tlvExt->tlvName), "%s", MSG_EXT_NAME_APP_FD), 0);
+    char *keyPtr = reinterpret_cast<char *>(buffer + sizeof(AppSpawnTlvExt));
+    ASSERT_GT(sprintf_s(keyPtr, 6, "%s", "zfd"), 0);
+    tlvOffsets[TLV_MAX] = 0;
+    AppSpawnMsgNode msg = {};
+    msg.buffer = buffer;
+    msg.tlvOffset = tlvOffsets;
+    msg.connection = nullptr;
+    msg.tlvCount = 1;
+
+    std::string envKey = std::string(APP_FDENV_PREFIX) + "zfd";
+    setenv(envKey.c_str(), "0", 1);
+
+    std::map<std::string, int> fdMap;
+    int ret = BuildFdInfoMap(&msg, fdMap, true);
+    unsetenv(envKey.c_str());
+    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(fdMap.size(), 0u);
 }
 
 // ==================== RunChildProcessor additional tests ====================

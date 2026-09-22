@@ -24,6 +24,9 @@
 namespace OHOS {
 namespace AppExecFwk {
 
+extern bool g_startChildCalled;  // NOLINT: only for sequential unit tests, not thread-safe
+extern std::map<std::string, int32_t> g_lastStartChildFdMap;  // NOLINT: only for sequential unit tests, not thread-safe
+
 /**
  * @brief Child Process API
  */
@@ -37,7 +40,24 @@ public:
      */
     static void StartChild(const std::map<std::string, int32_t> &fds)
     {
-        return;
+        g_startChildCalled = true;
+        g_lastStartChildFdMap = fds;
+    }
+
+    static bool WasStartChildCalled()
+    {
+        return g_startChildCalled;
+    }
+
+    static std::map<std::string, int32_t> GetLastStartChildFdMap()
+    {
+        return g_lastStartChildFdMap;
+    }
+
+    static void Reset()
+    {
+        g_startChildCalled = false;
+        g_lastStartChildFdMap.clear();
     }
 };
 
