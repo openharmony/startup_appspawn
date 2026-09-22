@@ -137,6 +137,7 @@ private:
                                      std::string variablePackageName);
     static std::string ReplaceHostUserId(const AppSpawningCtx *appProperty, const std::string &path);
     static std::string ReplaceClonePackageName(const AppSpawningCtx *appProperty, const std::string &path);
+    static std::string ReplaceInstallPackageName(const AppSpawningCtx *appProperty, const std::string &path);
     static const std::string &GetArkWebPackageName(void);
     static const std::string &GetDevModel(void);
 

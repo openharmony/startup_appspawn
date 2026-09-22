@@ -976,6 +976,26 @@ std::string SandboxCommon::ReplaceClonePackageName(const AppSpawningCtx *appProp
     return tmpSandboxPath;
 }
 
+std::string SandboxCommon::ReplaceInstallPackageName(const AppSpawningCtx *appProperty, const std::string &path)
+{
+    std::string tmpSandboxPath = path;
+    AppSpawnMsgBundleInfo *bundleInfo =
+        reinterpret_cast<AppSpawnMsgBundleInfo *>(GetAppProperty(appProperty, TLV_BUNDLE_INFO));
+    APPSPAWN_CHECK(bundleInfo != nullptr, return "", "No bundle info in msg %{public}s", GetBundleName(appProperty));
+
+    std::string tmpBundlePath = bundleInfo->bundleName;
+    if (CheckAppSpawnMsgFlag(appProperty->message, TLV_MSG_FLAGS, APP_FLAGS_CLONE_ENABLE) &&
+        bundleInfo->bundleIndex >= SandboxCommonDef::CLONE_APP_INDEX_THRESHOLD) {
+        std::ostringstream variablePackageName;
+        variablePackageName << "+clone-" << bundleInfo->bundleIndex << "+" << bundleInfo->bundleName;
+        tmpBundlePath = variablePackageName.str();
+    }
+
+    tmpSandboxPath = ReplaceAllVariables(tmpSandboxPath, SandboxCommonDef::g_installPackageName, tmpBundlePath);
+    APPSPAWN_LOGV("tmpSandboxPath %{public}s", tmpSandboxPath.c_str());
+    return tmpSandboxPath;
+}
+
 const std::string& SandboxCommon::GetArkWebPackageName(void)
 {
     static std::string arkWebPackageName;
@@ -1113,6 +1133,10 @@ std::string SandboxCommon::ConvertToRealPath(const AppSpawningCtx *appProperty, 
     }
     if (path.find(SandboxCommonDef::g_clonePackageName) != std::string::npos) {
         path = ReplaceClonePackageName(appProperty, path);
+    }
+
+    if (path.find(SandboxCommonDef::g_installPackageName) != std::string::npos) {
+        path = ReplaceInstallPackageName(appProperty, path);
     }
 
     if (path.find(SandboxCommonDef::g_arkWebPackageName) != std::string::npos) {

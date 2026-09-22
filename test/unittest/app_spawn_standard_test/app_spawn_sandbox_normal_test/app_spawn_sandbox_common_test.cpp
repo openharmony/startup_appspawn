@@ -1381,4 +1381,123 @@ HWTEST_F(
     EXPECT_EQ(ret, 0);
 }
 
+/**
+ * @tc.name: App_Spawn_SandboxCommon_ReplaceInstallPackageName_01
+ * @tc.desc: Test ReplaceInstallPackageName with nullptr appProperty
+ * @tc.type: FUNC
+ */
+HWTEST_F(AppSpawnSandboxCommonTest, App_Spawn_SandboxCommon_ReplaceInstallPackageName_01, TestSize.Level0)
+{
+    AppSpawningCtx *appProperty = nullptr;
+
+    std::string path = "/data/app/el1/bundle/public/<installPackageName>";
+    std::string result = AppSpawn::SandboxCommon::ReplaceInstallPackageName(appProperty, path);
+    EXPECT_TRUE(result.empty());
+}
+
+/**
+ * @tc.name: App_Spawn_SandboxCommon_ReplaceInstallPackageName_02
+ * @tc.desc: Test ReplaceInstallPackageName with normal input (no clone flag)
+ * @tc.type: FUNC
+ */
+HWTEST_F(AppSpawnSandboxCommonTest, App_Spawn_SandboxCommon_ReplaceInstallPackageName_02, TestSize.Level0)
+{
+    AppSpawningCtx *appProperty = AppSpawn::GetTestAppPropertyCore();
+    ASSERT_NE(appProperty, nullptr);
+
+    std::string path = "/data/app/el1/bundle/public/<installPackageName>";
+    std::string result = AppSpawn::SandboxCommon::ReplaceInstallPackageName(appProperty, path);
+    EXPECT_EQ(result, "/data/app/el1/bundle/public/com.example.myapplication");
+
+    DeleteAppSpawningCtx(appProperty);
+}
+
+/**
+ * @tc.name: App_Spawn_SandboxCommon_ReplaceInstallPackageName_03
+ * @tc.desc: Test ReplaceInstallPackageName with clone flag but bundleIndex below threshold
+ * @tc.type: FUNC
+ */
+HWTEST_F(AppSpawnSandboxCommonTest, App_Spawn_SandboxCommon_ReplaceInstallPackageName_03, TestSize.Level0)
+{
+    AppSpawningCtx *appProperty = AppSpawn::GetTestAppPropertyCore();
+    ASSERT_NE(appProperty, nullptr);
+
+    int ret = SetAppSpawnMsgFlag(appProperty->message, TLV_MSG_FLAGS, APP_FLAGS_CLONE_ENABLE);
+    ASSERT_EQ(ret, 0);
+    // default test bundleIndex is 100, below CLONE_APP_INDEX_THRESHOLD(10000)
+
+    std::string path = "/data/app/el1/bundle/public/<installPackageName>";
+    std::string result = AppSpawn::SandboxCommon::ReplaceInstallPackageName(appProperty, path);
+    EXPECT_EQ(result, "/data/app/el1/bundle/public/com.example.myapplication");
+
+    DeleteAppSpawningCtx(appProperty);
+}
+
+/**
+ * @tc.name: App_Spawn_SandboxCommon_ReplaceInstallPackageName_04
+ * @tc.desc: Test ReplaceInstallPackageName with clone flag and bundleIndex above threshold
+ * @tc.type: FUNC
+ */
+HWTEST_F(AppSpawnSandboxCommonTest, App_Spawn_SandboxCommon_ReplaceInstallPackageName_04, TestSize.Level0)
+{
+    AppSpawningCtx *appProperty = AppSpawn::GetTestAppPropertyCore();
+    ASSERT_NE(appProperty, nullptr);
+
+    int ret = SetAppSpawnMsgFlag(appProperty->message, TLV_MSG_FLAGS, APP_FLAGS_CLONE_ENABLE);
+    ASSERT_EQ(ret, 0);
+
+    AppSpawnMsgBundleInfo *bundleInfo = reinterpret_cast<AppSpawnMsgBundleInfo *>(
+        GetAppProperty(appProperty, TLV_BUNDLE_INFO));
+    ASSERT_NE(bundleInfo, nullptr);
+    bundleInfo->bundleIndex = AppSpawn::SandboxCommonDef::CLONE_APP_INDEX_THRESHOLD;    // 10000
+
+    std::string path = "/data/app/el1/bundle/public/<installPackageName>";
+    std::string result = AppSpawn::SandboxCommon::ReplaceInstallPackageName(appProperty, path);
+    EXPECT_EQ(result, "/data/app/el1/bundle/public/+clone-10000+com.example.myapplication");
+
+    DeleteAppSpawningCtx(appProperty);
+}
+
+/**
+ * @tc.name: App_Spawn_SandboxCommon_ConvertToRealPath_InstallPackageName_01
+ * @tc.desc: Test ConvertToRealPath replaces <installPackageName> with bundleName
+ * @tc.type: FUNC
+ */
+HWTEST_F(AppSpawnSandboxCommonTest, App_Spawn_SandboxCommon_ConvertToRealPath_InstallPackageName_01, TestSize.Level0)
+{
+    AppSpawningCtx *ctx = AppSpawn::GetTestAppPropertyCore();
+    ASSERT_NE(ctx, nullptr);
+
+    std::string path = "/data/app/el1/bundle/public/<installPackageName>";
+    std::string realPath = AppSpawn::SandboxCommon::ConvertToRealPath(ctx, path);
+    EXPECT_EQ(realPath, "/data/app/el1/bundle/public/com.example.myapplication");
+
+    DeleteAppSpawningCtx(ctx);
+}
+
+/**
+ * @tc.name: App_Spawn_SandboxCommon_ConvertToRealPath_InstallPackageName_02
+ * @tc.desc: Test ConvertToRealPath replaces <installPackageName> with clone format when index above threshold
+ * @tc.type: FUNC
+ */
+HWTEST_F(AppSpawnSandboxCommonTest, App_Spawn_SandboxCommon_ConvertToRealPath_InstallPackageName_02, TestSize.Level0)
+{
+    AppSpawningCtx *ctx = AppSpawn::GetTestAppPropertyCore();
+    ASSERT_NE(ctx, nullptr);
+
+    int ret = SetAppSpawnMsgFlag(ctx->message, TLV_MSG_FLAGS, APP_FLAGS_CLONE_ENABLE);
+    ASSERT_EQ(ret, 0);
+
+    AppSpawnMsgBundleInfo *bundleInfo = reinterpret_cast<AppSpawnMsgBundleInfo *>(
+        GetAppProperty(ctx, TLV_BUNDLE_INFO));
+    ASSERT_NE(bundleInfo, nullptr);
+    bundleInfo->bundleIndex = AppSpawn::SandboxCommonDef::CLONE_APP_INDEX_THRESHOLD;    // 10000
+
+    std::string path = "/data/app/el1/bundle/public/<installPackageName>";
+    std::string realPath = AppSpawn::SandboxCommon::ConvertToRealPath(ctx, path);
+    EXPECT_EQ(realPath, "/data/app/el1/bundle/public/+clone-10000+com.example.myapplication");
+
+    DeleteAppSpawningCtx(ctx);
+}
+
 }  // namespace OHOS
