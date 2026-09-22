@@ -1031,7 +1031,7 @@
                     "check-action-status": "false"
                 },
                 {
-                    "src-path": "/data/app/el5/<currentUserId>/database/<PackageName>",
+                    "src-path": "/data/app/el5/<currentUserId>/database/<variablePackageName>",
                     "sandbox-path": "/data/storage/el5/database",
                     "sandbox-flags": [ "bind", "rec" ],
                     "check-action-status": "false"
