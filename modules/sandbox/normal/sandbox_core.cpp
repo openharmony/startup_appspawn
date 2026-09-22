@@ -726,13 +726,12 @@ int32_t SandboxCore::ProcessMountPointCommmon(
     cJSON *mntPoint, const MountPointProcessParams &params, bool enableLogging)
 {
     APPSPAWN_ONLY_EXPER(TryControlledSkip(mntPoint, params), return 0);
+    APPSPAWN_ONLY_EXPER(!SandboxCommon::IsValidMountConfig(mntPoint, params.appProperty, params.checkFlag), return 0);
 
     std::string paramSrcPath = "";
     bool usingFusePath = false;
     const char *srcPathChr = ResolveMountSrcPath(mntPoint, params, paramSrcPath, usingFusePath);
     APPSPAWN_ONLY_EXPER(srcPathChr == nullptr && paramSrcPath.empty(), return 0);
-    APPSPAWN_ONLY_EXPER(!usingFusePath &&
-        !SandboxCommon::IsValidMountConfig(mntPoint, params.appProperty, params.checkFlag), return 0);
     const char *sandboxPathChr = GetStringFromJsonObj(mntPoint, SandboxCommonDef::g_sandBoxPath);
 
     std::string srcPath = srcPathChr == nullptr ? paramSrcPath : srcPathChr;
@@ -1110,7 +1109,7 @@ int32_t SandboxCore::DoAllSymlinkPointslink(const AppSpawningCtx *appProperty, c
     std::string sandboxRoot = SandboxCommon::GetSandboxRootPath(appProperty, appConfig);
     auto processor = [&appProperty, &sandboxRoot, &isControlledApp](cJSON *item) {
         APPSPAWN_ONLY_EXPER(isControlledApp && GetBoolValueFromJsonObj(item,
-            SandboxCommonDef::g_controlledSkip, true), return 0);
+            SandboxCommonDef::g_controlledSkip, false), return 0);
         const char *targetNameChr = GetStringFromJsonObj(item, SandboxCommonDef::g_targetName);
         const char *linkNameChr = GetStringFromJsonObj(item, SandboxCommonDef::g_linkName);
         if (targetNameChr == nullptr || linkNameChr == nullptr) {

@@ -67,7 +67,12 @@ bool ControlledAppCache::LoadFromJsonLocked()
             if (idItem == nullptr || !cJSON_IsString(idItem) || idItem->valuestring == nullptr) {
                 continue;
             }
-            tempCache[userId].insert(std::string(idItem->valuestring));
+            const char *ownerId = idItem->valuestring;
+            if (ownerId[0] == '\0' || strlen(ownerId) > APP_OWNER_ID_LEN) {
+                APPSPAWN_LOGW("controlled: invalid ownerId for userId %{public}s, skip", userId.c_str());
+                continue;
+            }
+            tempCache[userId].insert(std::string(ownerId));
         }
     }
     cJSON_Delete(root);
