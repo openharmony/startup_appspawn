@@ -1238,6 +1238,120 @@ HWTEST_F(AppSpawnSandboxCoreTest, MountIPCGroup_21, TestSize.Level0)
     DeleteAppSpawningCtx(appProperty);
 }
 
+/**
+ * @tc.name: MountIPCGroup_22
+ * @tc.desc: Test MountIPCGroup with dlpmanager app (has ohos.permission.ACCESS_DLP_FILE)
+ *           Branch: IsDlpApp access-dlp-file permission set → return 0, skip mount
+ * @tc.type: FUNC
+ * @tc.require: issueI5NTX6
+ */
+HWTEST_F(AppSpawnSandboxCoreTest, MountIPCGroup_22, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = nullptr;
+    int ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+    ASSERT_EQ(ret, 0);
+    AppSpawnReqMsgHandle reqHandle = g_testHelperCore.CreateMsg(
+        clientHandle, MSG_APP_SPAWN, 0);
+    ASSERT_NE(reqHandle, INVALID_REQ_HANDLE);
+
+    const char *appGroupInfo =
+        R"([{"ipcGroupId":"4001","ipcGroupGid":"3000"}])";
+    ret = AppSpawnReqMsgAddStringInfo(reqHandle, MSG_EXT_NAME_IPC_GROUP, appGroupInfo);
+    ASSERT_EQ(ret, 0);
+
+    AppSpawningCtx *appProperty = g_testHelperCore.GetAppProperty(
+        clientHandle, reqHandle);
+    ASSERT_NE(appProperty, nullptr);
+
+    int index = GetPermissionIndex(nullptr, "ohos.permission.ACCESS_DLP_FILE");
+    ASSERT_GE(index, 0);
+    ret = SetAppPermissionFlags(appProperty, static_cast<uint32_t>(index));
+    ASSERT_EQ(ret, 0);
+
+    std::string sandboxPackagePath = "/mnt/sandbox/100/com.test.app";
+    rmdir("/mnt/sandbox/shm/100/group/4001");
+    ret = AppSpawn::SandboxCore::MountIPCGroup(appProperty, sandboxPackagePath);
+    // IsDlpApp: ACCESS_DLP_FILE permission set → return 0 without mounting
+    EXPECT_EQ(ret, 0);
+    EXPECT_NE(rmdir("/mnt/sandbox/shm/100/group/4001"), 0);
+
+    DeleteAppSpawningCtx(appProperty);
+}
+
+/**
+ * @tc.name: MountIPCGroup_23
+ * @tc.desc: Test MountIPCGroup with dlp split app (APP_FLAGS_DLP_MANAGER_FULL_CONTROL)
+ *           Branch: IsDlpApp DLP_MANAGER_FULL_CONTROL flag set → return 0, skip mount
+ * @tc.type: FUNC
+ * @tc.require: issueI5NTX6
+ */
+HWTEST_F(AppSpawnSandboxCoreTest, MountIPCGroup_23, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = nullptr;
+    int ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+    ASSERT_EQ(ret, 0);
+    AppSpawnReqMsgHandle reqHandle = g_testHelperCore.CreateMsg(
+        clientHandle, MSG_APP_SPAWN, 0);
+    ASSERT_NE(reqHandle, INVALID_REQ_HANDLE);
+
+    AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_DLP_MANAGER_FULL_CONTROL);
+
+    const char *appGroupInfo =
+        R"([{"ipcGroupId":"4002","ipcGroupGid":"3000"}])";
+    ret = AppSpawnReqMsgAddStringInfo(reqHandle, MSG_EXT_NAME_IPC_GROUP, appGroupInfo);
+    ASSERT_EQ(ret, 0);
+
+    AppSpawningCtx *appProperty = g_testHelperCore.GetAppProperty(
+        clientHandle, reqHandle);
+    ASSERT_NE(appProperty, nullptr);
+
+    std::string sandboxPackagePath = "/mnt/sandbox/100/com.test.app";
+    rmdir("/mnt/sandbox/shm/100/group/4002");
+    ret = AppSpawn::SandboxCore::MountIPCGroup(appProperty, sandboxPackagePath);
+    // IsDlpApp: DLP_MANAGER_FULL_CONTROL flag set → return 0 without mounting
+    EXPECT_EQ(ret, 0);
+    EXPECT_NE(rmdir("/mnt/sandbox/shm/100/group/4002"), 0);
+
+    DeleteAppSpawningCtx(appProperty);
+}
+
+/**
+ * @tc.name: MountIPCGroup_24
+ * @tc.desc: Test MountIPCGroup with dlp split app (APP_FLAGS_DLP_MANAGER_READ_ONLY)
+ *           Branch: IsDlpApp DLP_MANAGER_READ_ONLY flag set → return 0, skip mount
+ * @tc.type: FUNC
+ * @tc.require: issueI5NTX6
+ */
+HWTEST_F(AppSpawnSandboxCoreTest, MountIPCGroup_24, TestSize.Level0)
+{
+    AppSpawnClientHandle clientHandle = nullptr;
+    int ret = AppSpawnClientInit(APPSPAWN_SERVER_NAME, &clientHandle);
+    ASSERT_EQ(ret, 0);
+    AppSpawnReqMsgHandle reqHandle = g_testHelperCore.CreateMsg(
+        clientHandle, MSG_APP_SPAWN, 0);
+    ASSERT_NE(reqHandle, INVALID_REQ_HANDLE);
+
+    AppSpawnReqMsgSetAppFlag(reqHandle, APP_FLAGS_DLP_MANAGER_READ_ONLY);
+
+    const char *appGroupInfo =
+        R"([{"ipcGroupId":"4003","ipcGroupGid":"3000"}])";
+    ret = AppSpawnReqMsgAddStringInfo(reqHandle, MSG_EXT_NAME_IPC_GROUP, appGroupInfo);
+    ASSERT_EQ(ret, 0);
+
+    AppSpawningCtx *appProperty = g_testHelperCore.GetAppProperty(
+        clientHandle, reqHandle);
+    ASSERT_NE(appProperty, nullptr);
+
+    std::string sandboxPackagePath = "/mnt/sandbox/100/com.test.app";
+    rmdir("/mnt/sandbox/shm/100/group/4003");
+    ret = AppSpawn::SandboxCore::MountIPCGroup(appProperty, sandboxPackagePath);
+    // IsDlpApp: DLP_MANAGER_READ_ONLY flag set → return 0 without mounting
+    EXPECT_EQ(ret, 0);
+    EXPECT_NE(rmdir("/mnt/sandbox/shm/100/group/4003"), 0);
+
+    DeleteAppSpawningCtx(appProperty);
+}
+
 // ==================== 普通权限 Debug 相关测试 ====================
 
 /**
