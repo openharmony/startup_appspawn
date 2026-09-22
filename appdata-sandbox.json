@@ -1025,7 +1025,7 @@
         "ohos.permission.PROTECT_SCREEN_LOCK_DATA":[{
             "sandbox-switch": "ON",
             "mount-paths": [{
-                    "src-path": "/data/app/el5/<currentUserId>/base/<PackageName>",
+                    "src-path": "/data/app/el5/<currentUserId>/base/<variablePackageName>",
                     "sandbox-path": "/data/storage/el5/base",
                     "sandbox-flags": [ "bind", "rec" ],
                     "check-action-status": "false"
