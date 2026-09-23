@@ -93,12 +93,15 @@ static const uint32_t g_testAmbientGids[] = { 9999, 9998 };   // AMBIENT_GID ent
 static const uint32_t g_testGidOnlyGids[] = { 7001, 7002 };   // GID_ONLY entry: CAP_NONE + gid-append
 #endif
 
+static const uint32_t GID_USBMONS[] = { 3825 };
+
 static const PermissionAttrMap g_permissionAttrMap[] = {
 #ifdef APPSPAWN_TEST
     {"ohos.permission.test.AMBIENT_GID", {CAP_NET_RAW, true}, {g_testAmbientGids, ARRAY_LENGTH(g_testAmbientGids)}},
     {"ohos.permission.test.GID_ONLY", {APPSPAWN_CAP_NONE, false}, {g_testGidOnlyGids, ARRAY_LENGTH(g_testGidOnlyGids)}},
 #endif
     {"ohos.permission.kernel.NET_RAW", {CAP_NET_RAW, false}, {NULL, 0}},
+    {"ohos.permission.kernel.USB_CAPTURE", {APPSPAWN_CAP_NONE, false}, {GID_USBMONS, ARRAY_LENGTH(GID_USBMONS)}},
 };
 
 int __attribute__((weak)) SetUserId(char *userIdStr)
