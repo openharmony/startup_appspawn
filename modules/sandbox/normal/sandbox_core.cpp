@@ -884,9 +884,29 @@ static int32_t ProcessIPCGroupItem(cJSON *groupItem, const AppSpawningCtx *appPr
     return 0;
 }
 
+static bool IsDlpApp(const AppSpawningCtx *appProperty)
+{
+    // dlp manager app: owns the ohos.permission.ACCESS_DLP_FILE permission
+    int32_t accessDlpFileIndex = GetPermissionIndex(nullptr, SandboxCommonDef::ACCESS_DLP_FILE_MODE.c_str());
+    if (accessDlpFileIndex >= 0 &&
+        CheckAppPermissionFlagSet(appProperty, static_cast<uint32_t>(accessDlpFileIndex)) != 0) {
+        return true;
+    }
+    // dlp split app: carries DLP_MANAGER_FULL_CONTROL or DLP_MANAGER_READ_ONLY flag
+    if (CheckAppMsgFlagsSet(appProperty, APP_FLAGS_DLP_MANAGER_FULL_CONTROL) ||
+        CheckAppMsgFlagsSet(appProperty, APP_FLAGS_DLP_MANAGER_READ_ONLY)) {
+        return true;
+    }
+    return false;
+}
+
 int32_t SandboxCore::MountIPCGroup(const AppSpawningCtx *appProperty, std::string &sandboxPackagePath)
 {
     if (appProperty == nullptr || sandboxPackagePath == "") {
+        return 0;
+    }
+    if (IsDlpApp(appProperty)) {
+        APPSPAWN_LOGI("Skip ipc group mount for dlp app %{public}s", GetBundleName(appProperty));
         return 0;
     }
     cJSON *ipcGroupRoot = GetJsonObjFromProperty(appProperty, MSG_EXT_NAME_IPC_GROUP);
