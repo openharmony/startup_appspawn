@@ -1086,6 +1086,10 @@ std::string SandboxCommon::ConvertToRealPathWithPermission(const AppSpawningCtx 
         path = ReplaceAllVariables(path, SandboxCommonDef::g_packageName, info->bundleName);
     }
 
+    if (path.find(SandboxCommonDef::g_variablePackageName) != std::string::npos) {
+        path = ReplaceVariablePackageName(appProperty, path);
+    }
+
     if (path.find(SandboxCommonDef::g_userId) != std::string::npos) {
         path = ReplaceAllVariables(path, SandboxCommonDef::g_userId, "currentUser");
     }
