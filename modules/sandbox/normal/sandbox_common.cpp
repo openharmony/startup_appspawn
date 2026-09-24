@@ -713,11 +713,12 @@ bool SandboxCommon::IsValidMountConfig(cJSON *mntPoint, const AppSpawningCtx *ap
     const char *srcPath = GetStringFromJsonObj(mntPoint, SandboxCommonDef::g_srcPath);
     const char *sandboxPath = GetStringFromJsonObj(mntPoint, SandboxCommonDef::g_sandBoxPath);
     const char *srcParamPathChr = GetStringFromJsonObj(mntPoint, SandboxCommonDef::g_paramPath);
+    const char *srcFusePath = GetStringFromJsonObj(mntPoint, SandboxCommonDef::g_controlledFusePath);
     cJSON *customizedFlags = cJSON_GetObjectItemCaseSensitive(mntPoint, SandboxCommonDef::g_sandBoxFlagsCustomized);
     cJSON *flags = cJSON_GetObjectItemCaseSensitive(mntPoint, SandboxCommonDef::g_sandBoxFlags);
-    if ((srcPath == nullptr && srcParamPathChr == nullptr) || sandboxPath == nullptr ||
+    if ((srcPath == nullptr && srcParamPathChr == nullptr && srcFusePath == nullptr) || sandboxPath == nullptr ||
         (customizedFlags == nullptr && flags == nullptr)) {
-        APPSPAWN_LOGE("read mount config failed, app name is %{public}s", GetBundleName(appProperty));
+        APPSPAWN_LOGW("mount point config is incomplete for %{public}s, skip", GetBundleName(appProperty));
         return false;
     }
 
