@@ -25,7 +25,7 @@
 #include "appspawn_manager.h"
 #include "sandbox_shared_mount.h"
 #include "sandbox_common.h"
-
+#include "sandbox_clone_app.h"
 namespace OHOS {
 namespace AppSpawn {
 
@@ -79,7 +79,9 @@ public:
     // debug hap
     static int32_t UninstallDebugSandbox(AppSpawnMgr *content, AppSpawningCtx *property);
     static int32_t InstallDebugSandbox(AppSpawnMgr *content, AppSpawningCtx *property);
-
+    static int LoadCloneAppGrantDownloadConfig(AppSpawnMgr *content);
+    static void BuildClonePackageName(const AppSpawnMsgBundleInfo *bundleInfo,
+        std::ostringstream &clonePackageName);
 private:
     // 获取应用信息
     static int EnableSandboxNamespace(AppSpawningCtx *appProperty, uint32_t sandboxNsFlags);

@@ -31,7 +31,8 @@ appspawn_sandbox_src += [
     "//base/startup/appspawn/modules/sandbox/normal/sandbox_unlock_mount.cpp",
     "//base/startup/appspawn/modules/sandbox/normal/appspawn_sandbox_manager.cpp",
     "//base/startup/appspawn/modules/sandbox/normal/sandbox_common.cpp",
-    "//base/startup/appspawn/modules/sandbox/normal/sandbox_core.cpp"
+    "//base/startup/appspawn/modules/sandbox/normal/sandbox_core.cpp",
+    "//base/startup/appspawn/modules/sandbox/normal/sandbox_clone_app.cpp",
 ]
 
 if (appspawn_controlled_app) {
