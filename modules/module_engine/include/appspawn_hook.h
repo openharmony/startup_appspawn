@@ -39,6 +39,7 @@ typedef struct TagAppSpawnedProcess AppSpawnedProcessInfo;
 
 typedef enum {
     EXT_DATA_NAMESPACE,
+    EXT_DATA_CLONE_APP_GRANT,  // 分身应用下载目录授权配置
     EXT_DATA_COUNT,
 } ExtDataType;
 

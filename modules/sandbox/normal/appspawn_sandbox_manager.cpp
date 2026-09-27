@@ -101,6 +101,7 @@ MODULE_CONSTRUCTOR(void)
     APPSPAWN_LOGV("Load sandbox module ...");
     (void)AddServerStageHook(STAGE_SERVER_PRELOAD, HOOK_PRIO_SANDBOX,
                              OHOS::AppSpawn::SandboxCommon::LoadAppSandboxConfigCJson);
+    (void)AddPreloadHook(HOOK_PRIO_COMMON, OHOS::AppSpawn::SandboxCore::LoadCloneAppGrantDownloadConfig);
 #ifdef WITH_CONTROLLED_APP
     (void)AddAppSpawnHook(STAGE_PARENT_PRE_FORK, HOOK_PRIO_SANDBOX, LoadControlledAppList);
 #endif

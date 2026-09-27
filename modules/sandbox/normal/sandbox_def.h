@@ -39,9 +39,17 @@ constexpr int32_t MAX_MOUNT_INVALID_COUNT = 8;
 constexpr int32_t MIN_PARAM_SRC_PATH_LEN = 2;
 constexpr uint32_t CLONE_APP_INDEX_THRESHOLD = 10000;
 
+// 分身应用下载目录授权规则中grantUri取值: 决定下载目录名使用的包名类型
+constexpr uint32_t GRANT_URI_ORIGINAL_NAME = 0;  // 0使用原应用包名
+constexpr uint32_t GRANT_URI_CLONE_NAME = 1;     // 非0值使用分身包名
+
 // 沙盒配置文件
 const std::string APP_JSON_CONFIG = "/appdata-sandbox.json";
 const std::string APP_ISOLATED_JSON_CONFIG = "/appdata-sandbox-isolated.json";
+
+// 分身应用下载目录授权配置, 读取方式与appdata-sandbox.json一致(按配置目录策略解析)
+constexpr const char *CLONE_APP_DOWNLOAD_CFG_DIR = "etc/clone_app";
+const std::string CLONE_APP_DOWNLOAD_CFG_FILE = "/clone_app_download_folder.json";
 
 /* 沙盒配置文件中关键字 */
 // 公共属性

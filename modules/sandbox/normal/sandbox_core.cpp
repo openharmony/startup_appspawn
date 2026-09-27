@@ -22,11 +22,14 @@
 #include <sstream>
 #include <set>
 #include "securec.h"
+#include "appspawn_hook.h"
 #include "appspawn_manager.h"
 #include "appspawn_trace.h"
 #include "appspawn_utils.h"
 #include "sandbox_dec.h"
 #include "sandbox_def.h"
+#include "sandbox_clone_app.h"
+#include "config_policy_utils.h"
 #ifdef WITH_CONTROLLED_APP
 #include "sandbox_controlled_app.h"
 #endif
@@ -1645,11 +1648,12 @@ int32_t SandboxCore::SetDecWithDir(const AppSpawningCtx *appProperty, uint32_t u
     }
     std::ostringstream clonePackageName;
     if (flags == 1) {
-        clonePackageName << "+clone-" << bundleInfo->bundleIndex << "+" << bundleInfo->bundleName;
+        SandboxCore::BuildClonePackageName(bundleInfo, clonePackageName);
     } else {
         clonePackageName << bundleInfo->bundleName;
     }
     std::string dir = "/storage/Users/currentUser/Download/" + clonePackageName.str();
+    APPSPAWN_LOGV("SetDecWithDir flags %{public}u dir %{public}s", flags, dir.c_str());
     DecPolicyInfo decPolicyInfo = {0};
     decPolicyInfo.pathNum = 1;
     PathInfo pathInfo = {0};
