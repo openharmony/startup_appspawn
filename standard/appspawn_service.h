@@ -77,6 +77,7 @@ typedef struct {
 
 AppSpawnContent *StartSpawnService(const AppSpawnStartArg *arg, uint32_t argvSize, int argc, char *const argv[]);
 void AppSpawnDestroyContent(AppSpawnContent *content);
+void CheckSingleThread(void);
 
 #ifdef __cplusplus
 }
