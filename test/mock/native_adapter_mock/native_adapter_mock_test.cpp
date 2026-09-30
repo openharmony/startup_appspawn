@@ -15,7 +15,10 @@
 
 #include "native_adapter_mock_test.h"
 
+#include <map>
 #include <string>
+
+#include "child_process_api.h"
 
 static uint32_t g_checkExitParamResult = 0;
 void SetBoolParamResult(const char *key, bool flag)
@@ -35,4 +38,11 @@ namespace system {
         return def;
     }
 }  // namespace system
+}  // namespace OHOS
+
+namespace OHOS {
+namespace AppExecFwk {
+bool g_startChildCalled = false;
+std::map<std::string, int32_t> g_lastStartChildFdMap;
+}  // namespace AppExecFwk
 }  // namespace OHOS

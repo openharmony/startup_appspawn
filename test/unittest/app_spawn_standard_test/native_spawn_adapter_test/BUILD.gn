@@ -69,6 +69,7 @@ if (!defined(ohos_lite)) {
     sources += [
       "${appspawn_path}/test/mock/native_adapter_mock/native_adapter_mock_test.cpp",
       "native_spawn_adapter_test.cpp",
+      "native_spawn_adapter_branch_test.cpp",
     ]
 
     configs = [ "${appspawn_path}:appspawn_config" ]
